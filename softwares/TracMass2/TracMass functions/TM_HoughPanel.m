@@ -1,0 +1,303 @@
+classdef TM_HoughPanel < handle
+    
+    %arguments: parent, parameters, Database
+    
+    %by: Erik Tengstrand
+        
+    properties
+        parameters
+        Database
+        
+        UpperPlot
+        LowerPlot
+        MiddlePlot
+        startbutton
+        RadialButtons
+        
+        UpperPlotHighLight  = 0;
+        cmap =  [ lines(7); .7 .7 .7];
+        peakID=0;
+        plotrawcolor=1
+        parentobj
+        CollisionsList
+        FullCollisionsList
+        houghID
+        TimeUnit
+    end
+    
+    events
+        Finished
+        C2Finish
+        LoadAlignment
+    end
+    
+    methods
+        
+        function obj=TM_HoughPanel(parent,parameters,Database,parentobj)
+            
+            obj.parentobj=parentobj;
+            obj.Database=Database;
+            VBox=uiextras.VBox('Parent',double(parent),'Spacing',2,'Padding',2);
+            HBox=uiextras.HBox('Parent',double(VBox),'Spacing',2,'Padding',0);
+            VBoxFlex=uiextras.VBoxFlex('Parent',double(VBox),'Spacing',5,'Padding',0);
+            
+            %radial buttons for intensity selection
+            obj.RadialButtons=uibuttongroup('visible','off','parent',double(VBoxFlex),'Title','Shows the most intense percent of clusters');
+            uicontrol('Style','Radio','String','100%','UserData',100,'pos',[10 5 50 20],'parent',double(obj.RadialButtons),'HandleVisibility','off');
+            uicontrol('Style','Radio','String','50%','UserData',50,'pos',[70 5 50 20],'parent',double(obj.RadialButtons),'HandleVisibility','off');
+            uicontrol('Style','Radio','String','25%','UserData',25,'pos',[130 5 50 20],'parent',double(obj.RadialButtons),'HandleVisibility','off');
+            uicontrol('Style','Radio','String','10%','UserData',10,'pos',[190 5 50 20],'parent',double(obj.RadialButtons),'HandleVisibility','off');
+            uicontrol('Style','Radio','String','5%','UserData',5,'pos',[250 5 50 20],'parent',double(obj.RadialButtons),'HandleVisibility','off');
+            uicontrol('Style','Radio','String','1%','UserData',1,'pos',[310 5 50 20],'parent',double(obj.RadialButtons),'HandleVisibility','off');
+            set(obj.RadialButtons,'Visible','on');
+            set(obj.RadialButtons,'SelectionChangeFcn',@(src,evt)obj.IntensitySelection());
+            
+            %axes
+            obj.UpperPlot=axes('Parent',double(VBoxFlex),'box','on');
+            obj.MiddlePlot=axes('Parent',double(VBoxFlex),'box','on');
+            obj.LowerPlot=axes('Parent',double(VBoxFlex),'box','on');
+                        
+            set(VBox,'Sizes',[95 -1])
+            set(VBoxFlex,'Sizes',[45 -3 -1.5 -1.5])
+            
+            obj.parameters=ParamPanel(parameters,'Parent',double(HBox),'Title','Parameters');
+            obj.startbutton=uicontrol('Parent',double(HBox),'Style','PushButton','String','Start','enable','off','Callback',@(src,evt)obj.Start());
+            
+            addlistener(obj.parentobj.SampleList,'Change',@(src,evt)obj.plotRawFromSamplelist());
+            addlistener(obj,'C2Finish',@(src,evt)obj.PlotCollisions());
+            addlistener(obj.parameters.param,'ParamChange',@(src,evt)obj.PlotMiddle());
+            addlistener(obj,'LoadAlignment',@(src,evt)obj.UpdateListener())
+        end
+        
+        %GFHT is performed by external function
+         function Start(obj)
+             obj.Database.peakList.gid=obj.Database.Cluster2ID;
+             [ obj.houghID, obj.Database.peakList.hScore] = GFHT_Alignment( obj.Database.peakList, obj.parameters.param, numel(obj.Database.sample.id));
+             obj.Database.HoughID=obj.houghID;
+             
+             notify(obj,'Finished')
+        end
+        
+        %plots unresolved peaks from the second clustering
+        function PlotCollisions(obj)
+            %finding the unresolved peaks
+            obj.Database.peakList.gid=obj.Database.Cluster2ID;
+            gidc=getCollisions(obj.Database.peakList);
+            AmbClust=numel(unique(gidc));
+            disp(sprintf('%i ambiguous clusters',AmbClust))
+            peakSummary = firmPeakStats4( obj.Database.peakList );
+            obj.CollisionsList=subsetTable( peakSummary, 'id', gidc );
+            obj.FullCollisionsList=obj.CollisionsList;
+            %plotting them
+            obj.PlotMain
+        end
+        
+        function UpdateListener(obj)
+            addlistener(obj.parameters.param,'ParamChange',@(src,evt)obj.PlotMiddle());
+        end
+        
+        function PlotMain(obj)
+            cla(obj.UpperPlot,'reset')
+            hold( obj.UpperPlot, 'on' )
+            hCollisions=plot(obj.UpperPlot,obj.CollisionsList.timeMean,obj.CollisionsList.massMean,'k.','MarkerSize',6);
+            xlabel( obj.UpperPlot, 'Time (minutes)' )
+            ylabel( obj.UpperPlot, 'm/z' )
+            title( obj.UpperPlot, 'Each marker is a cluster of peaks. Click to view detail.')
+            
+            %calls function for plotting the individual clusters when
+            %clicked
+            set( hCollisions, 'ButtonDownFcn', @( src, evt )obj.PushUpperPlot() );
+        end
+        
+        %selects intensities to investigate in the upper plot
+        function IntensitySelection(obj)
+            percent=get(get(obj.RadialButtons,'SelectedObject'),'UserData');
+            IntLimit=prctile(obj.FullCollisionsList.intensityMax,100-percent);
+            mask=obj.FullCollisionsList.intensityMax>IntLimit;
+            ids=obj.FullCollisionsList.id(mask);
+            obj.CollisionsList = subsetTable( obj.FullCollisionsList, 'id', ids );
+            obj.PlotMain
+        end
+        
+        %plots a cluster of peaks in the middle plot
+        function PushUpperPlot(obj)
+            % get the CurrentPoint and determine which peak cluster is
+            % closest to that.
+            point = get( obj.UpperPlot, 'CurrentPoint' );
+            x = point(1,1);
+            y = point(1,2);
+            b = axis( obj.UpperPlot );
+            
+            %identify the clicked cluser
+            % scale by the axis limits to make distance euclidian to the user that clicks.
+            % otherwise unexpected highlighting will occur.
+            d = ( obj.CollisionsList.timeMean - x ).^2 / diff( b( 1 : 2 ), 1 )^2 + ( obj.CollisionsList.massMean - y ).^2 / diff( b( 3 : 4 ), 1 )^2;
+            [ ~, ii ] = min( d );
+            obj.peakID=obj.CollisionsList.id(ii);
+            
+            %darkens older highlights
+            try
+                set(obj.UpperPlotHighLight,'color',[0.5 0 0])
+            end
+            
+            %creates a new highlight
+            obj.UpperPlotHighLight = plot( obj.CollisionsList.timeMean( ii ), obj.CollisionsList.massMean( ii ), ...
+                'ro', 'LineWidth', 3, 'MarkerSize', 9 );
+            %creates a callback so that the highlight can be clicked again
+            set(obj.UpperPlotHighLight,'ButtonDownFcn', @( src, evt )obj.PushUpperPlot())
+            obj.PlotMiddle
+            obj.plotRawFromSamplelist;
+        end
+        
+        %does GFHT on a signle cluster and plots the results in the middle
+        %plot
+        function PlotMiddle(obj)
+            if obj.peakID>0
+            [hID, Expected, Patterns, PatternTimes, ExpVar] = GFHT_Single( obj.Database.peakList, obj.parameters.param, obj.peakID, numel(obj.Database.sample.id));
+            disp('Explained Variance (%)')
+            mc=min(numel(ExpVar),10);
+            disp(ExpVar(1:mc)')
+            
+            cla( obj.MiddlePlot, 'reset' );
+            hold(obj.MiddlePlot,'on');
+            
+            %identifies the peaks
+            peakList=obj.Database.peakList;
+            PLindex=peakList.gid==obj.peakID;
+            samp = peakList.sample( PLindex );
+            time = peakList.time( PLindex );
+            
+            %Plot the cluster before resoln colored/marked by ID after
+            uid = unique( hID' );
+            nUid = numel( uid );
+            mark = 'posdvx+.';
+            colormap = lines( nUid );
+            for i  = 1 : nUid
+                mask = hID == uid( i );
+                mrk = mark( mod( i - 1 , numel( mark ) ) + 1 );
+                Etimes=Expected.Time(Expected.ID==uid( i ));
+                if numel(Etimes)>1 && sum(mask)>2
+                    ExpMarker=plot( obj.MiddlePlot, Etimes*60, obj.Database.sample.id,'Marker',mrk,'Color',[0.7 0.7 0.7],'LineWidth', 2);
+                    set(ExpMarker,'ButtonDownFcn',@(src,evt)obj.plotRawFromMiddle())
+                end
+                middlePlotMarker=plot( obj.MiddlePlot, time( mask )*60, samp( mask ),'Marker',mrk,'Color',colormap( i, : ),'LineWidth', 2);
+                set(middlePlotMarker,'ButtonDownFcn',@(src,evt)obj.plotRawFromMiddle())
+            end
+            
+            ii=find(obj.CollisionsList.id==obj.peakID);
+            TimeSpan=max(obj.CollisionsList.timeMax(ii))-min(obj.CollisionsList.timeMin(ii));
+            TimeMean=obj.CollisionsList.timeMean(ii);
+            set(obj.MiddlePlot,'XLim',[TimeMean-2*TimeSpan TimeMean+2*TimeSpan]*60);
+            
+            lim = axis( obj.MiddlePlot );
+            axis( obj.MiddlePlot, [lim(1:2), 0, max( peakList.sample ) + 1] );
+            
+            %no longer plots the patterns
+            
+            %getting the peaks used for GFHT
+%             [~, index]=sort(abs(PatternTimes-TimeMean));
+%             SelectedPatterns=Patterns(:,index(1:20));
+%             [U,s,~] = svd(mean_center(SelectedPatterns));
+%             Components=obj.parameters.param.Components;
+%             PCAPatterns=U(:,1:Components)*s(1:Components,1:Components)+TimeMean;
+            
+            %plots the peaks used for GFHT
+            %PCAmarker=plot(obj.MiddlePlot,PCAPatterns*60,obj.Database.sample.id,'x-','color',[0.8 0.8 0.8]);
+            %set(PCAmarker,'ButtonDownFcn',@(src,evt)obj.plotRawFromMiddle())
+
+            
+            set( obj.MiddlePlot, 'YMinorGrid', 'on' )
+            box( obj.MiddlePlot, 'on' )
+            xlabel( obj.MiddlePlot, 'Time (seconds)' )
+            ylabel( obj.MiddlePlot, 'Sample' )
+            title( obj.MiddlePlot, 'Click either in plot or select sample in the sample list to plot the raw data.')
+            
+            %clears selected samples so that clicked samples will be
+            %plotted alone first
+            end
+        end
+            
+        
+        %plots rawdata from a sample clicken in the middle plot
+        function plotRawFromMiddle(obj)
+            current=get(obj.MiddlePlot,'CurrentPoint');
+            sample=round(current(1,2));
+            %if the sample is already plotted it is instead removed
+            if sum(obj.parentobj.SampleList.MultiSample==sample)==1
+                obj.parentobj.SampleList.MultiSample(obj.parentobj.SampleList.MultiSample==sample)=[];
+                obj.plotRawFromSamplelist;
+            %if the sample is not plotted, it will be
+            else
+                obj.parentobj.SampleList.MultiSample(end+1)=sample;
+                set(obj.parentobj.SampleList.ListBox,'value',obj.parentobj.SampleList.MultiSample)
+                obj.PlotRaw(sample);
+            end
+        end
+        
+        %plots samples from the sample list
+        function plotRawFromSamplelist(obj)
+            cla(obj.LowerPlot,'reset')
+            if obj.peakID>0
+            for N=1:numel(obj.parentobj.SampleList.MultiSample)
+                obj.PlotRaw(obj.parentobj.SampleList.MultiSample(N))
+            end
+            end
+        end
+        
+        %handles the actual plotting of raw data in the lower plot
+        function PlotRaw(obj,sample)
+            hold(obj.LowerPlot,'on')
+            %gets the range of m/z and time, and adds a little to get raw
+            %data properly
+            ii=find(obj.CollisionsList.id==obj.peakID);
+            TimeSpan=max(obj.CollisionsList.timeMax(ii))-obj.CollisionsList.timeMin(ii);
+            TimeMean=obj.CollisionsList.timeMean(ii);
+            
+            try
+                peak=find(obj.Database.Cluster2ID==obj.peakID & obj.Database.peakList.sample==sample);
+                pic=obj.Database.peakList.pic(peak(1));
+                PicFile=[obj.parentobj.SampleList.ProjectPath filesep 'pic' filesep obj.parentobj.SampleList.Samples{sample} '.pic'];
+                TrackerData=load(char(PicFile),'-mat');
+                inds=TrackerData.trackerData(:,1)==pic;
+                intinds=TrackerData.trackerData(inds,2);
+                timeinds=TrackerData.trackerData(inds,3);
+                
+                DatFile=[obj.parentobj.SampleList.ProjectPath filesep 'raw-dat' filesep obj.parentobj.SampleList.Samples{sample} '.dat'];
+                fid = fopen( DatFile, 'r' );
+                data = fread( fid, inf, '*double' );
+                fclose(fid);
+                intensity_values = data( ( numel(data) / 2 + intinds) ) ;
+                
+                matFile=[obj.parentobj.SampleList.ProjectPath filesep 'raw-dat' filesep obj.parentobj.SampleList.Samples{sample} '.mat'];
+                raw = load( matFile );
+                time = raw.time(timeinds);
+                rawhandle=plot(obj.LowerPlot,time/60,intensity_values,'-');
+                plot(obj.LowerPlot,obj.Database.peakList.time(peak),obj.Database.peakList.intensity(peak),'or','Linewidth',2)
+                timerange=[TimeMean-3*TimeSpan TimeMean+3*TimeSpan];
+                set(obj.LowerPlot,'Xlim',timerange)
+            catch
+                MassSpan=max(obj.CollisionsList.massMax(ii))-obj.CollisionsList.massMin(ii);
+                MassMean=obj.CollisionsList.massMean(ii);
+                msrange=[MassMean-4*MassSpan MassMean+4*MassSpan];
+                timerange=[TimeMean-3*TimeSpan TimeMean+3*TimeSpan]*60;
+                rawdata=LoadRawDataV3(obj.Database.sample.rawFile{sample},obj.parentobj.SampleList.ProjectPath);
+                subset=subsetRawData(rawdata,timerange,msrange);
+                bpc=getBPC(subset);
+                rawhandle=plot(obj.LowerPlot,subset.time_axis/60,bpc,'-');
+            end
+            
+            xlabel(obj.LowerPlot,'Time (minutes)')
+            ylabel(obj.LowerPlot,'Intensity')
+            set(rawhandle,'color',obj.cmap(obj.plotrawcolor,:))
+            set(rawhandle,'ButtonDownFcn',@(src,evt)obj.ClearRaw(src))
+            obj.plotrawcolor=obj.plotrawcolor+1;
+            if obj.plotrawcolor>7
+                obj.plotrawcolor=1;
+            end
+        end
+        
+        function ClearRaw(obj,src)
+            delete(src)
+        end
+    end
+end
