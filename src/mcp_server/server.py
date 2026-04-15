@@ -308,6 +308,193 @@ async def filter_redundant_features_ramclustr_tool(
     return f"已使用 RAMClustR 完成冗余特征过滤，输入文件: {input_rds}, 输出文件: {output_rds}"
 
 
+# ============================= 库匹配定性 =============================
+# Cosine
+@mcp.tool(
+    name="library_match_cosine",
+    description="""
+    使用 Cosine（余弦相似度）对两个向量进行相似度计算，适用于谱图向量化后的库匹配定性任务。
+
+    此工具适用于：
+    - 计算查询谱图向量与参考谱图向量之间的相似度
+    - 作为库匹配定性的基础评分函数
+
+    参数：
+    - query_vector: 查询向量（数值列表）
+    - reference_vector: 参考向量（数值列表）
+
+    此工具执行结果：
+    - 返回两个向量的余弦相似度分数（范围 [-1, 1]）
+    """
+)
+async def library_match_cosine_tool(
+    query_vector: list[float],
+    reference_vector: list[float]
+):
+    score = library_match_cosine_impl(query_vector, reference_vector)
+    return f"已完成 Cosine 相似度计算，score={score:.6f}"
+
+
+# Jaccard
+@mcp.tool(
+    name="library_match_jaccard",
+    description="""
+    使用 Jaccard 相似度对两个向量进行相似度计算，适用于基于“特征是否出现”的库匹配定性任务。
+
+    此工具适用于：
+    - 计算查询向量与参考向量的特征重叠程度
+    - 作为二值化特征匹配的基础评分函数
+
+    参数：
+    - query_vector: 查询向量（数值列表，非零表示该特征出现）
+    - reference_vector: 参考向量（数值列表，非零表示该特征出现）
+
+    此工具执行结果：
+    - 返回两个向量的 Jaccard 相似度分数（范围 [0, 1]）
+    """
+)
+async def library_match_jaccard_tool(
+    query_vector: list[float],
+    reference_vector: list[float]
+):
+    score = library_match_jaccard_impl(query_vector, reference_vector)
+    return f"已完成 Jaccard 相似度计算，score={score:.6f}"
+
+
+# Spectral entropy
+@mcp.tool(
+    name="library_match_spectral_entropy",
+    description="""
+    使用 Spectral entropy 相似度对两个谱图向量进行匹配，适用于质谱库匹配定性任务。
+
+    此工具适用于：
+    - 计算查询谱图与参考谱图的谱熵相似度
+    - 作为谱图分布相似性的评分函数
+
+    参数：
+    - query_vector: 查询向量（数值列表，建议为非负强度）
+    - reference_vector: 参考向量（数值列表，建议为非负强度）
+
+    此工具执行结果：
+    - 返回两个向量的 Spectral entropy 相似度分数（范围 [0, 1]）
+    """
+)
+async def library_match_spectral_entropy_tool(
+    query_vector: list[float],
+    reference_vector: list[float]
+):
+    score = library_match_spectral_entropy_impl(query_vector, reference_vector)
+    return f"已完成 Spectral entropy 相似度计算，score={score:.6f}"
+
+
+# Spec2Vec
+@mcp.tool(
+    name="library_match_spec2vec",
+    description="""
+    使用 Spec2Vec 嵌入向量进行库匹配定性评分。
+
+    此工具适用于：
+    - 计算查询谱图与参考谱图的 Spec2Vec 嵌入相似度
+    - 作为深度表示学习驱动的库匹配评分函数
+
+    参数：
+    - query_embedding: 查询谱图的 Spec2Vec 嵌入向量
+    - reference_embedding: 参考谱图的 Spec2Vec 嵌入向量
+
+    此工具执行结果：
+    - 返回两个嵌入向量的相似度分数（Cosine）
+    """
+)
+async def library_match_spec2vec_tool(
+    query_embedding: list[float],
+    reference_embedding: list[float]
+):
+    score = library_match_spec2vec_impl(query_embedding, reference_embedding)
+    return f"已完成 Spec2Vec 相似度计算，score={score:.6f}"
+
+
+# MS2DeepScore
+@mcp.tool(
+    name="library_match_ms2deepscore",
+    description="""
+    使用 MS2DeepScore 嵌入向量进行库匹配定性评分。
+
+    此工具适用于：
+    - 计算查询谱图与参考谱图的 MS2DeepScore 嵌入相似度
+    - 作为深度学习驱动的库匹配评分函数
+
+    参数：
+    - query_embedding: 查询谱图的 MS2DeepScore 嵌入向量
+    - reference_embedding: 参考谱图的 MS2DeepScore 嵌入向量
+
+    此工具执行结果：
+    - 返回两个嵌入向量的相似度分数（Cosine）
+    """
+)
+async def library_match_ms2deepscore_tool(
+    query_embedding: list[float],
+    reference_embedding: list[float]
+):
+    score = library_match_ms2deepscore_impl(query_embedding, reference_embedding)
+    return f"已完成 MS2DeepScore 相似度计算，score={score:.6f}"
+
+
+# BLINK
+@mcp.tool(
+    name="library_match_blink",
+    description="""
+    使用 BLINK 风格快速匹配计算两条谱图的相似度。
+
+    此工具适用于：
+    - 在给定 m/z 容差下进行谱峰快速匹配
+    - 对查询谱图与参考谱图进行快速库匹配打分
+
+    参数：
+    - query_mz: 查询谱图 m/z 列表
+    - query_intensity: 查询谱图强度列表
+    - reference_mz: 参考谱图 m/z 列表
+    - reference_intensity: 参考谱图强度列表
+    - mz_tolerance: 峰匹配容差（默认 0.01）
+
+    此工具执行结果：
+    - 返回 BLINK 风格相似度分数（范围 [0, 1]）
+    """
+)
+async def library_match_blink_tool(
+    query_mz: list[float],
+    query_intensity: list[float],
+    reference_mz: list[float],
+    reference_intensity: list[float],
+    mz_tolerance: float = 0.01
+):
+    score = library_match_blink_impl(query_mz, query_intensity, reference_mz, reference_intensity, mz_tolerance)
+    return f"已完成 BLINK 相似度计算，score={score:.6f}"
+
+
+# MS-BERT
+@mcp.tool(
+    name="library_match_msbert",
+    description="""
+    使用 MS-BERT 嵌入向量进行库匹配定性评分。
+
+    此工具适用于：
+    - 计算查询谱图与参考谱图的 MS-BERT 嵌入相似度
+    - 作为 BERT 表示学习驱动的库匹配评分函数
+
+    参数：
+    - query_embedding: 查询谱图的 MS-BERT 嵌入向量
+    - reference_embedding: 参考谱图的 MS-BERT 嵌入向量
+
+    此工具执行结果：
+    - 返回两个嵌入向量的相似度分数（Cosine）
+    """
+)
+async def library_match_msbert_tool(
+    query_embedding: list[float],
+    reference_embedding: list[float]
+):
+    score = library_match_msbert_impl(query_embedding, reference_embedding)
+    return f"已完成 MS-BERT 相似度计算，score={score:.6f}"
 
 if __name__ == "__main__":
     mcp.run(transport="stdio")
