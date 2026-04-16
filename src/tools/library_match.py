@@ -1,4 +1,8 @@
+import json
 import math
+import os
+import subprocess
+from pathlib import Path
 
 
 # ============================= Cosine 相似度实现 =============================
@@ -99,26 +103,85 @@ def library_match_spectral_entropy_impl(
 
 # ============================= Spec2Vec 相似度实现 =============================
 def library_match_spec2vec_impl(
-    query_embedding: list[float],
-    reference_embedding: list[float]
+    query_mz: list[float],
+    query_intensity: list[float],
+    reference_mz: list[float],
+    reference_intensity: list[float],
+    model_path: str | None = None,
+    precursor_mz: float | None = None,
+    reference_precursor_mz: float | None = None,
+    n_decimals: int = 2
 ) -> float:
     """
-    计算 Spec2Vec 嵌入向量的相似度。
-    实现上使用嵌入向量的 Cosine 相似度。
+    基于真实 Spec2Vec 模型计算两条谱图的相似度。
+    模型路径默认从环境变量 SPEC2VEC_MODEL_PATH 读取。
     """
-    return library_match_cosine_impl(query_embedding, reference_embedding)
+    _validate_spectrum_arrays(query_mz, query_intensity, "query")
+    _validate_spectrum_arrays(reference_mz, reference_intensity, "reference")
+
+    resolved_model_path = model_path or os.getenv("SPEC2VEC_MODEL_PATH")
+    if not resolved_model_path:
+        raise ValueError("未提供 Spec2Vec 模型路径，请传入 model_path 或在 .env 中设置 SPEC2VEC_MODEL_PATH。")
+
+    from gensim.models import KeyedVectors, Word2Vec
+    from matchms import Spectrum
+    from spec2vec import Spec2Vec, SpectrumDocument
+
+    model_file = Path(resolved_model_path)
+    if not model_file.exists():
+        raise FileNotFoundError(f"Spec2Vec 模型文件不存在: {resolved_model_path}")
+
+    if model_file.suffix in {".kv", ".bin"}:
+        model = KeyedVectors.load(str(model_file), mmap="r")
+    else:
+        model = Word2Vec.load(str(model_file))
+        model = model.wv
+
+    query_spectrum = _build_spectrum(query_mz, query_intensity, precursor_mz)
+    reference_spectrum = _build_spectrum(reference_mz, reference_intensity, reference_precursor_mz)
+
+    scorer = Spec2Vec(model=model)
+    query_doc = SpectrumDocument(query_spectrum, n_decimals=n_decimals)
+    reference_doc = SpectrumDocument(reference_spectrum, n_decimals=n_decimals)
+
+    return float(scorer.pair(query_doc, reference_doc))
 
 
 # ============================= MS2DeepScore 相似度实现 =============================
 def library_match_ms2deepscore_impl(
-    query_embedding: list[float],
-    reference_embedding: list[float]
+    query_mz: list[float],
+    query_intensity: list[float],
+    reference_mz: list[float],
+    reference_intensity: list[float],
+    model_path: str | None = None,
+    precursor_mz: float | None = None,
+    reference_precursor_mz: float | None = None
 ) -> float:
     """
-    计算 MS2DeepScore 嵌入向量的相似度。
-    实现上使用嵌入向量的 Cosine 相似度。
+    基于真实 MS2DeepScore 模型计算两条谱图的相似度。
+    模型路径默认从环境变量 MS2DEEPSCORE_MODEL_PATH 读取。
     """
-    return library_match_cosine_impl(query_embedding, reference_embedding)
+    _validate_spectrum_arrays(query_mz, query_intensity, "query")
+    _validate_spectrum_arrays(reference_mz, reference_intensity, "reference")
+
+    resolved_model_path = model_path or os.getenv("MS2DEEPSCORE_MODEL_PATH")
+    if not resolved_model_path:
+        raise ValueError("未提供 MS2DeepScore 模型路径，请传入 model_path 或在 .env 中设置 MS2DEEPSCORE_MODEL_PATH。")
+
+    from matchms import Spectrum
+    from ms2deepscore import MS2DeepScore
+    from ms2deepscore.models import load_model
+
+    model_file = Path(resolved_model_path)
+    if not model_file.exists():
+        raise FileNotFoundError(f"MS2DeepScore 模型文件不存在: {resolved_model_path}")
+
+    query_spectrum = _build_spectrum(query_mz, query_intensity, precursor_mz)
+    reference_spectrum = _build_spectrum(reference_mz, reference_intensity, reference_precursor_mz)
+
+    model = load_model(str(model_file))
+    scorer = MS2DeepScore(model)
+    return float(scorer.pair(query_spectrum, reference_spectrum))
 
 
 # ============================= BLINK 相似度实现 =============================
@@ -182,11 +245,82 @@ def library_match_blink_impl(
 
 # ============================= MS-BERT 相似度实现 =============================
 def library_match_msbert_impl(
-    query_embedding: list[float],
-    reference_embedding: list[float]
+    query_mz: list[float],
+    query_intensity: list[float],
+    reference_mz: list[float],
+    reference_intensity: list[float],
+    script_path: str | None = None,
+    model_path: str | None = None,
+    precursor_mz: float | None = None,
+    reference_precursor_mz: float | None = None,
+    timeout_sec: int = 120
 ) -> float:
     """
-    计算 MS-BERT 嵌入向量的相似度。
-    实现上使用嵌入向量的 Cosine 相似度。
+    外部脚本推理版模板：
+    - 通过 subprocess 调用你自己的 MS-BERT 推理脚本
+    - 推理脚本需输出 JSON: {"score": 0.123}
+
+    脚本路径默认读取环境变量 MSBERT_INFER_SCRIPT；
+    模型路径默认读取环境变量 MSBERT_MODEL_PATH。
     """
-    return library_match_cosine_impl(query_embedding, reference_embedding)
+    _validate_spectrum_arrays(query_mz, query_intensity, "query")
+    _validate_spectrum_arrays(reference_mz, reference_intensity, "reference")
+
+    resolved_script_path = script_path or os.getenv("MSBERT_INFER_SCRIPT")
+    resolved_model_path = model_path or os.getenv("MSBERT_MODEL_PATH")
+
+    if not resolved_script_path:
+        raise ValueError("未提供 MS-BERT 推理脚本路径，请传入 script_path 或在 .env 中设置 MSBERT_INFER_SCRIPT。")
+
+    script_file = Path(resolved_script_path)
+    if not script_file.exists():
+        raise FileNotFoundError(f"MS-BERT 推理脚本不存在: {resolved_script_path}")
+
+    payload = {
+        "query": {
+            "mz": query_mz,
+            "intensity": query_intensity,
+            "precursor_mz": precursor_mz,
+        },
+        "reference": {
+            "mz": reference_mz,
+            "intensity": reference_intensity,
+            "precursor_mz": reference_precursor_mz,
+        },
+        "model_path": resolved_model_path,
+    }
+
+    result = subprocess.run(
+        ["python", str(script_file)],
+        input=json.dumps(payload, ensure_ascii=False),
+        text=True,
+        capture_output=True,
+        check=True,
+        timeout=timeout_sec,
+    )
+
+    try:
+        output = json.loads(result.stdout.strip())
+        score = float(output["score"])
+    except Exception as exc:
+        raise ValueError(f"MS-BERT 脚本输出格式错误，需返回 JSON 且包含 score 字段。stdout={result.stdout}") from exc
+
+    return score
+
+
+def _validate_spectrum_arrays(mz: list[float], intensity: list[float], prefix: str) -> None:
+    if not mz or not intensity:
+        raise ValueError(f"{prefix}_mz 和 {prefix}_intensity 不能为空。")
+    if len(mz) != len(intensity):
+        raise ValueError(f"{prefix}_mz 和 {prefix}_intensity 长度必须一致。")
+    if any(i < 0 for i in intensity):
+        raise ValueError(f"{prefix}_intensity 不能包含负值。")
+
+
+def _build_spectrum(mz: list[float], intensity: list[float], precursor_mz: float | None):
+    from matchms import Spectrum
+
+    metadata = {}
+    if precursor_mz is not None:
+        metadata["precursor_mz"] = precursor_mz
+    return Spectrum(mz=mz, intensities=intensity, metadata=metadata)
