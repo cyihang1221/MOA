@@ -21,40 +21,19 @@ class Agent:
         self.tasks = []
         self.history_summary = []
         self.tools_info = asyncio.run(self.get_all_mcp_tools_info(mcp))
-        self.tools_prompt = self.format_tools_for_llm(self.tools_info)
         
         # 初始化核心组件
         self.llm_client = LLM_Client()
-        self.prompt_generator = PromptGenerator(goal_description=self.goal_description, PERSIST_DIR=PERSIST_DIR, SOURCE_DIR=SOURCE_DIR)
+        self.prompt_generator = PromptGenerator(goal_description=self.goal_description, PERSIST_DIR=PERSIST_DIR, SOURCE_DIR=SOURCE_DIR)  # 实例化PromptGenerator类时，会创建RAG检索器
 
 
     async def get_all_mcp_tools_info(self, mcp_server: FastMCP) -> list:
         """
-        自动提取当前 MCP 服务中所有注册的工具信息
-        返回：工具名、描述、参数列表
-        """
-        tools_info = []
-
-        # 遍历所有 MCP 工具
-        tools = await mcp_server.list_tools()
-        for tool in tools:
-            tools_info.append({
-                "name": tool.name,
-                "description": tool.description,
-                "parameters": tool.inputSchema
-            })
-
+        自动提取当前 mcp_server 中所有注册的工具信息，包括工具元数据 (name and description) 和参数列表 inputSchema
+        参数列表 inputSchema 由 函数参数解析而来，例如：async def convert_raw_to_mzml_ThermoRawFileParser_tool(input_dir: str, output_dir: str):
+        """    
+        tools_info = await mcp_server.list_tools()     
         return tools_info
-
-
-    def format_tools_for_llm(self, tools_info):
-        """
-        把工具信息格式化成自然语言，送给大模型
-        """
-        tools_prompt = "=== 可用工具 ===\n"
-        for tool in tools_info:
-            tools_prompt += f"\n工具名：{tool['name']}\n描述：{tool['description']}\n参数：{tool['parameters']}\n"
-        return tools_prompt
 
 
     def _extract_json(self, response):
@@ -71,7 +50,7 @@ class Agent:
         """计划生成阶段"""
         print(f"\n===== : 生成分析计划 =====")
         # 生成提示词并调用LLM
-        prompt = self.prompt_generator.plan_prompt(data_list=self.data_list, tools_prompt=self.tools_prompt)
+        prompt = self.prompt_generator.plan_prompt(data_list=self.data_list, tools_info=self.tools_info)
         messages = [{"role": "user", "content": str(prompt)}]
         print("✅ 正在调用 LLM 生成计划")
         resp = self.llm_client.think(messages)
@@ -93,7 +72,7 @@ class Agent:
                 while self.tasks:
                     task = self.tasks.pop(0)
                     print(f"\n===== 执行任务: {task} =====")
-                    prompt = self.prompt_generator.tool_match_prompt(task=task, tools_prompt=self.tools_prompt, workspace=self.workspace, history_summary=self.history_summary)
+                    prompt = self.prompt_generator.tool_match_prompt(task=task, tools_info=self.tools_info, workspace=self.workspace, history_summary=self.history_summary)
                     messages = [{"role": "user", "content": str(prompt)}]
                     print(f"===== : 工具查询结果 =====")
                     response = self.llm_client.think(messages)
