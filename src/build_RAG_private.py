@@ -22,7 +22,7 @@ def preload_retriever(local_engine=False, PERSIST_DIR=None, SOURCE_DIR=None):
         if os.getenv("LLM_MODEL_TYPE") == "openai":
             Settings.embed_model = OpenAIEmbedding(api_key=os.getenv("LLM_API_KEY"))  # 配置全局的 Settings.embed_model 为 OpenAI 的嵌入模型
         elif os.getenv("LLM_MODEL_TYPE") == "DashScope":
-             Settings.embed_model = DashScopeEmbedding(api_key=os.getenv("LLM_API_KEY"))
+            Settings.embed_model = DashScopeEmbedding(api_key=os.getenv("LLM_API_KEY"))
         else:
             Settings.embed_model = HuggingFaceEmbedding(  
                 model_name="BAAI/bge-small-en-v1.5"  # 使用本地模型时，配置嵌入模型为 HuggingFace 上的开源模型
@@ -43,3 +43,24 @@ def retrive(retriever, retriever_prompt=""):
     response = retriever.retrieve(retriever_prompt)
     response = response[0].get_text()
     return response
+
+def retrive(retriever, retriever_prompt=""):
+    # 空查询保护
+    if not retriever_prompt.strip():
+        return "No context"
+    
+    try:
+        response = retriever.retrieve(retriever_prompt)
+
+        # 空结果保护
+        if not response:
+            return "No relevant information found"
+        
+        # 安全取值
+        return response[0].get_text()
+    
+    except Exception as e:
+        # 全局异常捕获
+        print(f"检索失败: {e}")
+        return "Retrieval error"
+    
