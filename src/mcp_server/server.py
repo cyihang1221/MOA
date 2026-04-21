@@ -392,25 +392,46 @@ async def library_match_spectral_entropy_tool(
 @mcp.tool(
     name="library_match_spec2vec",
     description="""
-    使用 Spec2Vec 嵌入向量进行库匹配定性评分。
+    使用真实 Spec2Vec 模型进行库匹配定性评分。
 
     此工具适用于：
-    - 计算查询谱图与参考谱图的 Spec2Vec 嵌入相似度
-    - 作为深度表示学习驱动的库匹配评分函数
+    - 计算查询谱图与参考谱图的 Spec2Vec 相似度
+    - 通过 model_path 或环境变量 SPEC2VEC_MODEL_PATH 加载模型
 
     参数：
-    - query_embedding: 查询谱图的 Spec2Vec 嵌入向量
-    - reference_embedding: 参考谱图的 Spec2Vec 嵌入向量
+    - query_mz: 查询谱图 m/z 列表
+    - query_intensity: 查询谱图强度列表
+    - reference_mz: 参考谱图 m/z 列表
+    - reference_intensity: 参考谱图强度列表
+    - model_path: Spec2Vec 模型路径（可选）
+    - precursor_mz: 查询谱图前体离子 m/z（可选）
+    - reference_precursor_mz: 参考谱图前体离子 m/z（可选）
+    - n_decimals: 生成 Spec2Vec token 时的保留小数位（默认 2）
 
     此工具执行结果：
-    - 返回两个嵌入向量的相似度分数（Cosine）
+    - 返回两个谱图的 Spec2Vec 相似度分数
     """
 )
 async def library_match_spec2vec_tool(
-    query_embedding: list[float],
-    reference_embedding: list[float]
+    query_mz: list[float],
+    query_intensity: list[float],
+    reference_mz: list[float],
+    reference_intensity: list[float],
+    model_path: str = "",
+    precursor_mz: float | None = None,
+    reference_precursor_mz: float | None = None,
+    n_decimals: int = 2
 ):
-    score = library_match_spec2vec_impl(query_embedding, reference_embedding)
+    score = library_match_spec2vec_impl(
+        query_mz,
+        query_intensity,
+        reference_mz,
+        reference_intensity,
+        model_path or None,
+        precursor_mz,
+        reference_precursor_mz,
+        n_decimals
+    )
     return f"已完成 Spec2Vec 相似度计算，score={score:.6f}"
 
 
@@ -418,25 +439,43 @@ async def library_match_spec2vec_tool(
 @mcp.tool(
     name="library_match_ms2deepscore",
     description="""
-    使用 MS2DeepScore 嵌入向量进行库匹配定性评分。
+    使用真实 MS2DeepScore 模型进行库匹配定性评分。
 
     此工具适用于：
-    - 计算查询谱图与参考谱图的 MS2DeepScore 嵌入相似度
-    - 作为深度学习驱动的库匹配评分函数
+    - 计算查询谱图与参考谱图的 MS2DeepScore 相似度
+    - 通过 model_path 或环境变量 MS2DEEPSCORE_MODEL_PATH 加载模型
 
     参数：
-    - query_embedding: 查询谱图的 MS2DeepScore 嵌入向量
-    - reference_embedding: 参考谱图的 MS2DeepScore 嵌入向量
+    - query_mz: 查询谱图 m/z 列表
+    - query_intensity: 查询谱图强度列表
+    - reference_mz: 参考谱图 m/z 列表
+    - reference_intensity: 参考谱图强度列表
+    - model_path: MS2DeepScore 模型路径（可选）
+    - precursor_mz: 查询谱图前体离子 m/z（可选）
+    - reference_precursor_mz: 参考谱图前体离子 m/z（可选）
 
     此工具执行结果：
-    - 返回两个嵌入向量的相似度分数（Cosine）
+    - 返回两个谱图的 MS2DeepScore 相似度分数
     """
 )
 async def library_match_ms2deepscore_tool(
-    query_embedding: list[float],
-    reference_embedding: list[float]
+    query_mz: list[float],
+    query_intensity: list[float],
+    reference_mz: list[float],
+    reference_intensity: list[float],
+    model_path: str = "",
+    precursor_mz: float | None = None,
+    reference_precursor_mz: float | None = None
 ):
-    score = library_match_ms2deepscore_impl(query_embedding, reference_embedding)
+    score = library_match_ms2deepscore_impl(
+        query_mz,
+        query_intensity,
+        reference_mz,
+        reference_intensity,
+        model_path or None,
+        precursor_mz,
+        reference_precursor_mz
+    )
     return f"已完成 MS2DeepScore 相似度计算，score={score:.6f}"
 
 
@@ -476,25 +515,49 @@ async def library_match_blink_tool(
 @mcp.tool(
     name="library_match_msbert",
     description="""
-    使用 MS-BERT 嵌入向量进行库匹配定性评分。
+    使用外部脚本进行 MS-BERT 推理并返回相似度评分。
 
     此工具适用于：
-    - 计算查询谱图与参考谱图的 MS-BERT 嵌入相似度
-    - 作为 BERT 表示学习驱动的库匹配评分函数
+    - 通过独立脚本对查询谱图和参考谱图进行 MS-BERT 推理
+    - 通过 script_path 或环境变量 MSBERT_INFER_SCRIPT 指定推理脚本
 
     参数：
-    - query_embedding: 查询谱图的 MS-BERT 嵌入向量
-    - reference_embedding: 参考谱图的 MS-BERT 嵌入向量
+    - query_mz: 查询谱图 m/z 列表
+    - query_intensity: 查询谱图强度列表
+    - reference_mz: 参考谱图 m/z 列表
+    - reference_intensity: 参考谱图强度列表
+    - script_path: MS-BERT 推理脚本路径（可选）
+    - model_path: MS-BERT 模型路径（可选）
+    - precursor_mz: 查询谱图前体离子 m/z（可选）
+    - reference_precursor_mz: 参考谱图前体离子 m/z（可选）
+    - timeout_sec: 脚本超时时间（秒）
 
     此工具执行结果：
-    - 返回两个嵌入向量的相似度分数（Cosine）
+    - 返回 MS-BERT 推理得到的相似度分数
     """
 )
 async def library_match_msbert_tool(
-    query_embedding: list[float],
-    reference_embedding: list[float]
+    query_mz: list[float],
+    query_intensity: list[float],
+    reference_mz: list[float],
+    reference_intensity: list[float],
+    script_path: str = "",
+    model_path: str = "",
+    precursor_mz: float | None = None,
+    reference_precursor_mz: float | None = None,
+    timeout_sec: int = 120
 ):
-    score = library_match_msbert_impl(query_embedding, reference_embedding)
+    score = library_match_msbert_impl(
+        query_mz,
+        query_intensity,
+        reference_mz,
+        reference_intensity,
+        script_path or None,
+        model_path or None,
+        precursor_mz,
+        reference_precursor_mz,
+        timeout_sec
+    )
     return f"已完成 MS-BERT 相似度计算，score={score:.6f}"
 
 if __name__ == "__main__":
