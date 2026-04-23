@@ -1,15 +1,30 @@
 from mcp.server.fastmcp import FastMCP
+from src.tools.group_peaks import group_peaks_openms_PeakGroup_impl, group_peaks_xcms_groupChromPeaks_impl
+from src.tools.identify_isotopes import identify_isotopes_openms_IsotopeTools_impl
+from src.tools.mzmine_lcms import mzmine_lcms_datapreprocess_impl
 from src.tools.convert_raw_to_mzml import (
     convert_raw_to_mzml_msconvert_impl,
     convert_raw_to_mzml_ThermoRawFileParser_impl,
     convert_raw_to_mzml_OpenMS_FileConverter_impl,
     mzml_directory_to_mgf_impl,
 )
-from src.tools.peak_detection import peak_detection_xcms_centwave_impl, peak_detection_peakonly_impl
-from src.tools.peak_alignment import align_retention_time_obiwarp_impl, align_retention_time_loess_impl
-from src.tools.peak_group import group_peaks_xcms_groupChromPeaks_impl
+from src.tools.peak_detection import (
+    peak_detection_kpic_impl,
+    peak_detection_openms_featurefinder_impl,
+    peak_detection_openms_peakpickerhires_impl,
+    peak_detection_xcms_centwave_impl,
+    peak_detection_peakonly_impl,
+)
+from src.tools.align_retention_time import (
+    align_retention_time_xcms_loess_impl,
+    align_retention_time_xcms_obiwarp_impl,
+)
 from src.tools.missing_peak_filling import fill_missing_peaks_xcms_fillChromPeaks_impl
-from src.tools.filter_redundant_features import filter_redundant_features_camera_impl, filter_redundant_features_ramclustr_impl
+from src.tools.filter_redundant_features import (
+    filter_redundant_features_camera_impl,
+    filter_redundant_features_mzannotation_impl,
+    filter_redundant_features_ramclustr_impl,
+)
 from src.tools.library_match import (
     library_match_blink_impl,
     library_match_cosine_impl,
@@ -23,6 +38,45 @@ from src.tools.library_match import (
 )
 
 mcp = FastMCP("MOA_tools")
+
+
+
+# ============================= MZmine LC-MS 非靶向代谢组全流程 =============================
+@mcp.tool(
+    name="mzmine_lcms_datapreprocess",
+    description="""
+    MZmine LC-MS 非靶向代谢组数据预处理流程: mzML原始数据 → 峰检测 → 冗余过滤 → 保留时间对齐 → 同位素注释 → 谱峰对齐 → 缺失峰填充
+
+    适用于 LC-MS，不适用于 GC-MS
+
+    输出：可直接用于多元统计、差异分析的完整定量峰表
+    """
+)
+async def mzmine_lcms_datapreprocess_tool(
+    input_dir: str,
+    output_dir: str,
+    file_pattern: str = "*.mzML",
+    mz_tolerance: float = 0.01,
+    rt_tolerance: float = 0.2,
+    min_intensity: float = 1000.0,
+    sn_threshold: float = 3.0,
+    min_matched_samples: int = 2,
+    min_peak_width: float = 0.05,
+    max_peak_width: float = 2.0
+):
+    mzmine_lcms_datapreprocess_impl(
+        input_dir,
+        output_dir,
+        file_pattern,
+        mz_tolerance,
+        rt_tolerance,
+        min_intensity,
+        sn_threshold,
+        min_matched_samples,
+        min_peak_width,
+        max_peak_width
+    )
+    return f"已使用 MZmine 完成非靶向代谢组 LC-MS 数据预处理，输入目录: {input_dir}, 输出目录: {output_dir}"
 
 
 
@@ -134,6 +188,9 @@ async def convert_raw_to_mzml_OpenMS_FileConverter_tool(input_file: str, output_
     - 进行质谱数据预处理
     - 提取色谱峰（feature detection）
 
+    特点：
+    - 峰检测时自动完成解卷积
+
     参数：
     - input_dir: 输入目录，包含 mzML 文件
     - output_dir: 输出目录，保存峰检测结果
@@ -146,12 +203,159 @@ async def convert_raw_to_mzml_OpenMS_FileConverter_tool(input_file: str, output_
     - prefilter_intensity: 预过滤的最小强度，默认为 1000
 
     此工具执行结果：
-    - 保存峰检测结果的 RDS 文件，包含所有检测到的色谱峰信息
+    - .rds: xcms-CentWave 完整结果对象，可用于下游分析
+    - .csv: 通用峰表，可用于解卷积/下游分析
     """
 )
 async def peak_detection_xcms_centwave_tool(input_dir: str, output_dir: str, file_pattern: str, peakwidth_min: int, peakwidth_max: int, snthresh: int, ppm: int, prefilter_n: int, prefilter_intensity: int):
     peak_detection_xcms_centwave_impl(input_dir, output_dir, file_pattern, peakwidth_min, peakwidth_max, snthresh, ppm, prefilter_n, prefilter_intensity)
     return f"已使用 xcms-CentWave 完成峰检测，输入目录: {input_dir}, 输出目录: {output_dir}"
+
+
+# OpenMS-PeakPickerHiRes
+@mcp.tool(
+    name="peak_detection_openms_peakpickerhires",
+    description="""
+    基于 OpenMS-PeakPickerHiRes 对 LC-MS/GC-MS 代谢组学数据进行高精度峰检测。
+
+    工具特点：
+    - 高精度、高稳定性
+    - 适合 Orbitrap / QE 等高分辨质谱
+    - 输出标准 CSV 峰表
+
+    参数：
+    - input_dir: 输入目录，包含 mzML 文件
+    - output_dir: 输出目录
+    - file_pattern: 文件匹配模式，默认 *.mzML
+    - peak_width: 预期峰宽度（分钟），默认 0.15
+    - snr_threshold: 信噪比阈值，默认 3.0
+    - mz_tol_ppm: 质量容差，默认 10 ppm
+    - intensity_threshold: 最小强度阈值，默认 1000
+
+    输出：
+    - CSV 标准峰表
+    - .featureXML OpenMS 峰对象，包含完整峰信息，可用于下游分析
+    """
+)
+async def peak_detection_openms_peakpickerhires_tool(
+    input_dir: str,
+    output_dir: str,
+    file_pattern: str = "*.mzML",
+    peak_width: float = 0.15,
+    snr_threshold: float = 3.0,
+    mz_tol_ppm: float = 10.0,
+    intensity_threshold: float = 1000.0
+):
+    peak_detection_openms_peakpickerhires_impl(
+        input_dir=input_dir,
+        output_dir=output_dir,
+        file_pattern=file_pattern,
+        peak_width=peak_width,
+        snr_threshold=snr_threshold,
+        mz_tol_ppm=mz_tol_ppm,
+        intensity_threshold=intensity_threshold
+    )
+    return f"已使用 OpenMS-PeakPickerHiRes 完成峰检测，输入目录: {input_dir}, 输出目录: {output_dir}"
+
+
+# OpenMS-FeatureFinderMetabo
+@mcp.tool(
+    name="peak_detection_openms_featurefinder",
+    description="""
+    基于 OpenMS-FeatureFinderMetabo 对 LC-MS 代谢组学非靶向数据进行峰检测。
+    
+    特点：
+    - OpenMS 官方专为代谢组学设计的核心峰检测算法
+    - 自动过滤同位素、加合物、噪声
+    - 高稳定性、高重复性
+    - 适合高分辨质谱（Orbitrap、QE、Fusion）
+
+    参数：
+    - input_dir: 输入目录，包含 mzML 文件
+    - output_dir: 输出目录
+    - file_pattern: mzML 文件匹配模式，默认 "*.mzML"
+    - mass_error: 质量偏差（ppm），默认 10.0
+    - intensity_threshold: 最小强度阈值，默认 1000.0
+    - min_peak_width: 最小峰宽度（分钟），默认 0.05
+    - max_peak_width: 最大峰宽度（分钟），默认 0.5
+    - snr_threshold: 信噪比阈值，默认 3.0
+
+    输出：
+    - CSV 标准代谢组学峰表（m/z、RT、强度、峰面积、SNR）
+    - .featureXML OpenMS 峰对象，包含完整峰信息，可用于下游分析
+    """
+)
+async def peak_detection_openms_featurefinder_tool(
+    input_dir: str,
+    output_dir: str,
+    file_pattern: str = "*.mzML",
+    mass_error: float = 10.0,
+    intensity_threshold: float = 1000.0,
+    min_peak_width: float = 0.05,
+    max_peak_width: float = 0.5,
+    snr_threshold: float = 3.0
+):
+    peak_detection_openms_featurefinder_impl(
+        input_dir=input_dir,
+        output_dir=output_dir,
+        file_pattern=file_pattern,
+        mass_error=mass_error,
+        intensity_threshold=intensity_threshold,
+        min_peak_width=min_peak_width,
+        max_peak_width=max_peak_width,
+        snr_threshold=snr_threshold
+    )
+    return f"已使用 OpenMS-FeatureFinderMetabo 完成代谢组学峰检测，输入目录: {input_dir}, 输出目录: {output_dir}"
+
+
+# KPIC
+@mcp.tool(
+    name="peak_detection_kpic",
+    description="""
+    基于 KPIC（Kernel-based Peak Identification）对 LC-MS 代谢组学数据进行峰检测。
+
+    特点：
+    - 基于核函数拟合，对噪声、基质效应更稳健
+    - 适合复杂基质、峰形较差、低信噪比数据
+    - 与 XCMS 对象兼容，可后续对齐/分组
+
+    适用：
+    - LC-MS 非靶向代谢组学
+    - 复杂基质（血清、植物、微生物样本）
+
+    参数：
+    - input_dir: 输入目录，包含 mzML 文件
+    - output_dir: 输出目录
+    - file_pattern: mzML 文件匹配模式，默认 "*.mzML"
+    - ppm: 质量偏差，默认 10.0
+    - peak_width: 预期峰宽（秒/点数），默认 10.0
+    - sn_thresh: 信噪比阈值，默认 3.0
+    - min_intensity: 最小强度阈值，默认 1000.0
+
+    输出：
+    - .rds: KPIC 完整结果对象
+    - .csv: 通用峰表，可用于解卷积/下游分析
+    """
+)
+async def peak_detection_kpic_tool(
+    input_dir: str,
+    output_dir: str,
+    file_pattern: str = "*.mzML",
+    ppm: float = 10.0,
+    peak_width: float = 10.0,
+    sn_thresh: float = 3.0,
+    min_intensity: float = 1000.0
+):
+    peak_detection_kpic_impl(
+        input_dir=input_dir,
+        output_dir=output_dir,
+        file_pattern=file_pattern,
+        ppm=ppm,
+        peak_width=peak_width,
+        sn_thresh=sn_thresh,
+        min_intensity=min_intensity
+    )
+    return f"已使用 KPIC 完成峰检测，结果保存为 .rds + .csv，输入目录: {input_dir}, 输出目录: {output_dir}"
 
 
 # peakonly
@@ -172,7 +376,7 @@ async def peak_detection_xcms_centwave_tool(input_dir: str, output_dir: str, fil
     - model_dir: peakonly 模型文件所在目录，默认为 "workspace/models/
 
     此工具执行结果：
-    - 保存峰检测结果的 RDS 文件，包含所有检测到的色谱峰信息
+    - .csv: 通用峰表，可用于解卷积/下游分析
     """
 )
 async def peak_detection_peakonly_tool(input_dir: str, output_dir: str, file_pattern: str = "*.mzML", model_dir: str = "workspace/models/"):
@@ -181,10 +385,126 @@ async def peak_detection_peakonly_tool(input_dir: str, output_dir: str, file_pat
 
 
 
-# ============================= 峰对齐 =============================
+# ============================= 峰解卷积 =============================
+
+
+
+# ============================= 过滤冗余特征 =============================
+# CAMERA
+@mcp.tool(
+    name="filter_redundant_features_camera",
+    description="""
+    使用 CAMERA 进行冗余特征过滤。
+
+    工具特点：
+    - 自动识别输入格式：XCMS的.rds格式，OpenMS的.featureXML格式，.csv通用峰表格式
+    - 基于同位素、加合物、碎片的特征关系进行过滤，去除冗余特征
+    
+    参数：
+    - input_rds: 输入的 RDS 文件，包含 XCMS 处理后的色谱峰数据
+    - output_rds: 输出的 RDS 文件，保存过滤后的结果
+
+    输出：
+    - 过滤后的 RDS 文件，包含去除冗余特征后的色谱峰数据
+    """
+)
+async def filter_redundant_features_camera_tool(
+    input_rds: str,
+    output_rds: str
+):
+    filter_redundant_features_camera_impl(input_rds, output_rds)
+    return f"已使用 CAMERA 完成冗余特征过滤，输入文件: {input_rds}, 输出文件: {output_rds}"
+
+
+# RAMClustR
+@mcp.tool(
+    name="filter_redundant_features_ramclustr",
+    description="""
+    使用 RAMClustR 进行冗余特征过滤。
+    
+    工具特点：
+    - RAMClustR 基于谱图相关性 + RT 进行特征聚类，去除同位素/加合物/碎片冗余
+    - 自动识别输入格式：XCMS的.rds格式，OpenMS的.featureXML格式，.csv通用峰表格式
+    
+    参数：
+    - input_rds: 输入的 .rds/.featureXML/.csv 文件，包含色谱峰数据
+    - output_rds: 输出的 RDS 文件，保存过滤后的结果
+
+    输出：
+    - 过滤后的 RDS 文件，包含去除冗余特征后的色谱峰数据
+    """
+)
+async def filter_redundant_features_ramclustr_tool(
+    input_rds: str,
+    output_rds: str
+):
+    filter_redundant_features_ramclustr_impl(input_rds, output_rds)
+    return f"已使用 RAMClustR 完成冗余特征过滤，输入文件: {input_rds}, 输出文件: {output_rds}"
+
+
+# mzAnnotation
+@mcp.tool(
+    name="filter_redundant_features_mzannotation",
+    description="""
+    使用 mzAnnotation 进行冗余特征过滤。
+    
+    工具特点：
+    - 自动识别输入格式：XCMS的.rds格式，OpenMS的.featureXML格式，.csv通用峰表格式
+    
+    参数：
+    - input_rds: 输入的 .rds/.featureXML/.csv 文件，包含色谱峰数据
+    - output_rds: 输出的 RDS 文件，保存过滤后的结果
+
+    输出：
+    - 过滤后的 RDS 文件，包含去除冗余特征后的色谱峰数据
+    """
+)
+async def filter_redundant_features_mzannotation_tool(
+    input_rds: str,
+    output_rds: str
+):
+    filter_redundant_features_mzannotation_impl(input_rds, output_rds)
+    return f"已使用 mzAnnotation 完成冗余特征过滤，输入文件: {input_rds}, 输出文件: {output_rds}"
+
+
+
+# ============================= 同位素识别 =============================
+# OpenMS-IsotopeTools
+@mcp.tool(
+    name="identify_isotopes_openms_IsotopeTools",
+    description="""
+    使用 OpenMS-IsotopeTools 进行同位素识别。
+
+    适用于：
+    - 对已完成峰检测、冗余特征过滤的 LC-MS 代谢组学特征进行同位素标注
+    - 自动识别同一物质的同位素峰簇（M0、M+1、M+2）并分配分组ID
+
+    局限：
+    - 不做元素组成推断、仅做同位素峰分组
+    - 无法区分同分异构、仅依靠 mz/RT 二维信息
+
+    参数：
+    - input_rds: 输入的 RDS 文件（已过滤后的特征表）
+    - output_rds: 输出的 RDS 文件，添加了同位素分组注释结果
+
+    此工具执行结果：
+    - 新增 isotope_group、charge 等同位素注释列
+    - 保留所有原始特征，不删除、不修改原始定量数据
+    """
+)
+async def identify_isotopes_openms_IsotopeTools_tool(
+    input_rds: str,
+    output_rds: str
+):
+    identify_isotopes_openms_IsotopeTools_impl(input_rds, output_rds)
+    return f"已使用 OpenMS-IsotopeTools 完成同位素识别，输入文件: {input_rds}, 输出文件: {output_rds}"
+
+
+
+# ============================= 保留时间对齐 =============================
 # XCMS-Obiwarp
 @mcp.tool(
-    name="align_retention_time_obiwarp",
+    name="align_retention_time_xcms_obiwarp",
     description="""
     基于 XCMS 的 Obiwarp 方法进行保留时间（RT）对齐。
 
@@ -200,14 +520,14 @@ async def peak_detection_peakonly_tool(input_dir: str, output_dir: str, file_pat
     - 对齐后的 RDS 文件，包含调整保留时间后的色谱峰数据
     """
 )
-async def align_retention_time_obiwarp_tool(input_rds: str, output_rds: str):
-    align_retention_time_obiwarp_impl(input_rds, output_rds)
+async def align_retention_time_xcms_obiwarp_tool(input_rds: str, output_rds: str):
+    align_retention_time_xcms_obiwarp_impl(input_rds, output_rds)
     return f"已使用 XCMS_Obiwarp 完成保留时间（RT）对齐，输入文件: {input_rds}, 输出文件: {output_rds}"
 
 
 # XCMS-LOESS
 @mcp.tool(
-    name="align_retention_time_loess",
+    name="align_retention_time_xcms_loess",
     description="""
     基于 XCMS 的 LOESS 方法进行保留时间（RT）对齐。
 
@@ -223,13 +543,13 @@ async def align_retention_time_obiwarp_tool(input_rds: str, output_rds: str):
     - 校正后的 RDS 文件，包含调整保留时间后的色谱峰数据
     """
 )
-async def align_retention_time_loess_tool(input_rds: str, output_rds: str):
-    align_retention_time_loess_impl(input_rds, output_rds)
+async def align_retention_time_xcms_loess_tool(input_rds: str, output_rds: str):
+    align_retention_time_xcms_loess_impl(input_rds, output_rds)
     return f"已使用 XCMS_LOESS 完成保留时间校正，输入文件: {input_rds}, 输出文件: {output_rds}"
 
 
 
-# ============================= 峰分组 =============================
+# ============================= 峰分组（谱峰对齐） =============================
 # XCMS-groupChromPeaks
 @mcp.tool(
     name="group_peaks_xcms_groupChromPeaks",
@@ -264,6 +584,30 @@ async def group_peaks_xcms_groupChromPeaks_tool(
     return f"已使用 XCMS_groupChromPeaks 完成峰分组，输入文件: {input_rds}, 输出文件: {output_rds}"
 
 
+# OpenMS-PeakGroup
+@mcp.tool(
+    name="group_peaks_openms_PeakGroup",
+    description="""
+    基于 OpenMS-PeakGroupFinder 进行多样品谱峰分组与保留时间对齐。
+
+    此工具适用于：
+    - 对已完成同位素注释的 LC-MS 特征进行跨样本峰对齐
+    - 解决不同样本间 m/z 和保留时间漂移导致的峰不匹配问题
+    
+    参数：
+    - input_rds: 输入的 RDS 文件（已完成同位素注释）
+    - output_rds: 输出的 RDS 文件，保存谱峰对齐结果
+
+    此工具执行结果：
+    - 新增 peak_group（峰组ID）、aligned_rt（对齐后保留时间）列
+    - 同一物质在不同样本中归属为同一组，实现标准化对齐
+    """
+)
+async def group_peaks_openms_PeakGroup_tool(input_rds: str, output_rds: str):
+    group_peaks_openms_PeakGroup_impl(input_rds, output_rds)
+    return f"已使用 OpenMS_PeakGroup 完成谱峰分组与保留时间对齐，输入文件: {input_rds}, 输出文件: {output_rds}"
+
+
 
 # ============================= 缺失峰填充 =============================
 # XCMS-fillChromPeaks
@@ -295,59 +639,6 @@ async def fill_missing_peaks_xcms_fillChromPeaks_tool(
     fill_missing_peaks_xcms_fillChromPeaks_impl(input_rds, output_rds, expand_rt, expand_mz)
     return f"已使用 XCMS_fillChromPeaks 完成缺失峰填补，输入文件: {input_rds}, 输出文件: {output_rds}"
 
-
-
-# ============================= 过滤冗余特征 =============================
-# CAMERA
-@mcp.tool(
-    name="filter_redundant_features_camera",
-    description="""
-    使用 CAMERA 进行冗余特征过滤。
-
-    此工具适用于：
-    - 基于 XCMS 生成的数据，通过 CAMERA 对冗余特征进行过滤
-    - 去除多余的特征，并保留最具代表性的特征
-    
-    参数：
-    - input_rds: 输入的 RDS 文件，包含 XCMS 处理后的色谱峰数据
-    - output_rds: 输出的 RDS 文件，保存过滤后的结果
-
-    此工具执行结果：
-    - 过滤后的 RDS 文件，包含去除冗余特征后的色谱峰数据
-    """
-)
-async def filter_redundant_features_camera_tool(
-    input_rds: str,
-    output_rds: str
-):
-    filter_redundant_features_camera_impl(input_rds, output_rds)
-    return f"已使用 CAMERA 完成冗余特征过滤，输入文件: {input_rds}, 输出文件: {output_rds}"
-
-
-# RAMClustR
-@mcp.tool(
-    name="filter_redundant_features_ramclustr",
-    description="""
-    使用 RAMClustR 进行冗余特征过滤。
-
-    此工具适用于：
-    - 基于 XCMS 生成的数据，通过 RAMClustR 对冗余特征进行过滤
-    - 利用 RAMClustR 提供的算法进行高效特征过滤
-    
-    参数：
-    - input_rds: 输入的 RDS 文件，包含 XCMS 处理后的色谱峰数据
-    - output_rds: 输出的 RDS 文件，保存过滤后的结果
-
-    此工具执行结果：
-    - 过滤后的 RDS 文件，包含去除冗余特征后的色谱峰数据
-    """
-)
-async def filter_redundant_features_ramclustr_tool(
-    input_rds: str,
-    output_rds: str
-):
-    filter_redundant_features_ramclustr_impl(input_rds, output_rds)
-    return f"已使用 RAMClustR 完成冗余特征过滤，输入文件: {input_rds}, 输出文件: {output_rds}"
 
 
 # ============================= 库匹配定性 =============================
