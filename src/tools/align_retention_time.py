@@ -4,7 +4,7 @@ import tempfile
 
 
 # ============================= XCMS-Obiwarp 实现 =============================
-def align_retention_time_obiwarp_impl(input_rds: str, output_rds: str) -> str:
+def align_retention_time_xcms_obiwarp_impl(input_rds: str, output_rds: str) -> str:
     r_script = f'''
     library(xcms)
 
@@ -30,7 +30,7 @@ def align_retention_time_obiwarp_impl(input_rds: str, output_rds: str) -> str:
 
 
 # ============================= XCMS-LOESS 实现 =============================
-def align_retention_time_loess_impl(input_rds: str, output_rds: str) -> str:
+def align_retention_time_xcms_loess_impl(input_rds: str, output_rds: str) -> str:
     r_script = f'''
     library(xcms)
 
