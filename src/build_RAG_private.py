@@ -39,28 +39,27 @@ def preload_retriever(local_engine=False, PERSIST_DIR=None, SOURCE_DIR=None):
     retriever = index.as_retriever(similarity_top_k=1)  # 将向量索引转换成「检索器对象」，后续使用 retriever.retrieve("查询语句") 调用；指定检索时只返回「与查询语句最相似的 1 个文档片段」
     return retriever
 
-def retrive(retriever, retriever_prompt=""):
-    response = retriever.retrieve(retriever_prompt)
-    response = response[0].get_text()
-    return response
+
+# DashScope 等嵌入 API 通常要求单条文本长度在 [1, 2048] 内，过长会报 InvalidParameter
+_MAX_EMBED_QUERY_CHARS = 2000
+
 
 def retrive(retriever, retriever_prompt=""):
-    # 空查询保护
-    if not retriever_prompt.strip():
+    text = retriever_prompt if isinstance(retriever_prompt, str) else str(retriever_prompt)
+    text = text.strip()
+    if not text:
         return "No context"
-    
-    try:
-        response = retriever.retrieve(retriever_prompt)
+    if len(text) > _MAX_EMBED_QUERY_CHARS:
+        text = text[:_MAX_EMBED_QUERY_CHARS]
 
-        # 空结果保护
+    try:
+        response = retriever.retrieve(text)
         if not response:
             return "No relevant information found"
-        
-        # 安全取值
-        return response[0].get_text()
-    
+        chunk = response[0].get_text()
+        if not (chunk or "").strip():
+            return "No relevant information found"
+        return chunk
     except Exception as e:
-        # 全局异常捕获
         print(f"检索失败: {e}")
         return "Retrieval error"
-    
