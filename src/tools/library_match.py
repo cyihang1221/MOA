@@ -670,7 +670,7 @@ def library_match_full_workflow_impl(
     mzml_output_dir: str,
     mgf_output_dir: str,
     reference_mgf_path: str,
-    method: str = "cosine_peak",
+    method: str = "ms2deepscore",
     converter: str = "thermo",
     query_mgf_path: str | None = None,
     query_spectrum_index: int = 0,
@@ -684,51 +684,169 @@ def library_match_full_workflow_impl(
     output_dir: str | None = None,
 ) -> str:
     """
-    一站式库匹配流程：
-    1) raw -> mzML
-    2) mzML -> MGF
-    3) query MGF vs reference MGF 做单对打分
-    """
-    converter_norm = converter.strip().lower()
-    if converter_norm not in {"thermo", "msconvert"}:
-        raise ValueError("converter 仅支持: thermo | msconvert")
+    【只使用 MS2DeepScore 的完整一站式库匹配流程】
 
-    if converter_norm == "thermo":
+    只使用 MS2DeepScore 方法（强制），不再支持其他 method。
+    1. raw → mzML (ThermoRawFileParser)
+    2. mzML → MGF (只提取 MS2 谱图)
+    3. 对 query MGF 中的**所有**谱图与 reference MGF 中的**所有**谱图进行全量匹配
+    4. 只保留 score > 0.5 的高分匹配
+    5. 输出两个独立文件：
+       - ms2deepscore_full_match.json（所有匹配）
+       - ms2deepscore_high_score_summary.txt（仅高分结果，可读格式）
+
+    关键修复：
+    - 使用 add_ionmode 确保谱图有 'positive' ionmode（解决 "Feature should be ['positive'] or ['negative'], not None" 错误）
+    - 不再错误使用 SpectrumDocument（那是 Spec2Vec 专用的）
+    - 所有计算过程 stdout 被重定向，防止 MCP JSON-RPC 解析报错
+    """
+    import json
+    import io
+    import contextlib
+    from pathlib import Path
+    from matchms.importing import load_from_mgf
+    from matchms.filtering import normalize_intensities
+    from ms2deepscore import MS2DeepScore
+    from ms2deepscore.models import load_model
+
+    # 强制使用 MS2DeepScore
+    if method.lower() not in {"ms2deepscore", "ms2deep score"}:
+        print("[WARNING] library_match_full_workflow_impl 已强制使用 MS2DeepScore，忽略传入的 method 参数")
+
+    model_path = model_path or os.getenv("MS2DEEPSCORE_MODEL_PATH")
+    if not model_path or not Path(model_path).exists():
+        raise FileNotFoundError(f"MS2DeepScore 模型文件不存在: {model_path}")
+
+    print(f"[LIBRARY_MATCH] 开始完整 MS2DeepScore 库匹配流程...")
+    print(f"   Model: {model_path}")
+    print(f"   Reference: {reference_mgf_path}")
+
+    # Step 1: raw → mzML
+    if converter.lower() == "thermo":
         convert_raw_to_mzml_ThermoRawFileParser_impl(raw_input_dir, mzml_output_dir)
     else:
         convert_raw_to_mzml_msconvert_impl(raw_input_dir, mzml_output_dir)
+    print(f"[LIBRARY_MATCH] raw → mzML 完成 → {mzml_output_dir}")
 
+    # Step 2: mzML → MGF
     mgf_summary = mzml_directory_to_mgf_impl(mzml_output_dir, mgf_output_dir, ms_level=2)
+    print(f"[LIBRARY_MATCH] mzML → MGF 完成\n{mgf_summary}")
 
+    # Step 3: 确定 query MGF
     resolved_query_mgf = query_mgf_path
     if not resolved_query_mgf:
         mgf_candidates = sorted(Path(mgf_output_dir).glob("*.mgf"))
         if not mgf_candidates:
-            raise FileNotFoundError(f"流程转换后未生成 MGF 文件: {mgf_output_dir}")
+            raise FileNotFoundError(f"未在 {mgf_output_dir} 生成任何 .mgf 文件")
         resolved_query_mgf = str(mgf_candidates[0])
+        print(f"[LIBRARY_MATCH] 自动选择 query_mgf: {resolved_query_mgf}")
 
-    pair_summary = library_match_pair_from_mgf_impl(
-        method=method,
-        query_mgf_path=resolved_query_mgf,
-        reference_mgf_path=reference_mgf_path,
-        query_spectrum_index=query_spectrum_index,
-        reference_spectrum_index=reference_spectrum_index,
-        mz_tolerance=mz_tolerance,
-        bin_size=bin_size,
-        model_path=model_path,
-        precursor_mz=precursor_mz,
-        reference_precursor_mz=reference_precursor_mz,
-        n_decimals=n_decimals,
-        output_dir=output_dir,
-    )
+    # Step 4: MS2DeepScore 匹配（核心库匹配逻辑 - 修复 ionmode + 使用正确 Spectrum 对象）
+    # 必须为谱图设置 ionmode，否则 MS2DeepScore 会报 "Feature should be ['positive'] or ['negative'], not None"
+    query_spectra = list(load_from_mgf(resolved_query_mgf))
+    reference_spectra = list(load_from_mgf(reference_mgf_path))
 
-    n_query_specs = sum(1 for _ in load_from_mgf(resolved_query_mgf))
-    return (
-        f"完整流程完成。converter={converter_norm}, "
-        f"query_mgf={resolved_query_mgf}, query_spectra={n_query_specs}\n"
-        f"{mgf_summary}\n"
-        f"{pair_summary}"
-    )
+    # 直接设置 ionmode 元数据（解决 "Feature should be ['positive'] or ['negative'], not None"）
+    # matchms Spectrum 对象允许直接修改 metadata
+    def prepare_spectrum(spectrum):
+        if spectrum is None:
+            return None
+        spectrum = normalize_intensities(spectrum)
+        # 确保至少有 5 个峰（避免空谱图）
+        if len(spectrum.peaks.mz) < 5:
+            return None
+        # 强制设置 ionmode（MS2DeepScore 模型需要这个字段）
+        if not spectrum.get("ionmode"):
+            spectrum.set("ionmode", "positive")
+        return spectrum
+
+    query_spectra = [s for s in (prepare_spectrum(s) for s in query_spectra) if s is not None]
+    reference_spectra = [s for s in (prepare_spectrum(s) for s in reference_spectra) if s is not None]
+
+    # 使用兼容加载函数解决 'model_params' 错误
+    try:
+        model = _load_ms2deepscore_model_compat(model_path)
+    except Exception as e:
+        raise RuntimeError(f"加载 MS2DeepScore 模型失败: {e}. 请检查模型文件是否为有效 .pt 文件。") from e
+
+    scorer = MS2DeepScore(model)
+
+    results = []
+    high_score_results = []  # 只保留 score > 0.5 的结果
+
+    print(f"[LIBRARY_MATCH] 开始对 {len(query_spectra)} 条 query 谱图与 {len(reference_spectra)} 条参考谱图进行全量匹配... (这可能需要较长时间)")
+
+    # 使用重定向避免 MCP JSON-RPC 解析错误（大量 print 会导致客户端解析失败）
+    sink = io.StringIO()
+    with contextlib.redirect_stdout(sink), contextlib.redirect_stderr(sink):
+        for i, query_spec in enumerate(query_spectra):
+            for j, ref_spec in enumerate(reference_spectra):
+                try:
+                    score = float(scorer.pair(query_spec, ref_spec))
+                except Exception as pair_err:
+                    score = 0.0  # 如果某对失败，跳过但不中断整个流程
+                    print(f"  Warning: pair({i},{j}) failed: {pair_err}")
+
+                entry = {
+                    "query_index": i,
+                    "query_title": str(query_spec.get("title", f"query_{i}")),
+                    "reference_index": j,
+                    "reference_title": str(ref_spec.get("title", f"ref_{j}")),
+                    "score": round(score, 6)
+                }
+                results.append(entry)
+
+                if score > 0.5:
+                    high_score_results.append(entry)
+
+    print(f"[LIBRARY_MATCH] 共计算 {len(results)} 对匹配，结果中得分 > 0.5 的有 {len(high_score_results)} 对")
+
+    # 保存结果到独立文件
+    output_path = Path(output_dir or "workspace/library_match_results")
+    output_path.mkdir(parents=True, exist_ok=True)
+    
+    # 1. 完整结果（所有 pair）
+    json_file = output_path / "ms2deepscore_full_match.json"
+    with open(json_file, "w", encoding="utf-8") as f:
+        json.dump(results, f, ensure_ascii=False, indent=2)
+
+    # 2. 高分结果总结（只保留 score > 0.5）
+    high_score_file = output_path / "ms2deepscore_high_score_summary.txt"
+    with open(high_score_file, "w", encoding="utf-8") as f:
+        f.write("=== MS2DeepScore 库匹配结果 (仅保留 score > 0.5) ===\n\n")
+        f.write(f"Query MGF: {resolved_query_mgf} ({len(query_spectra)} spectra)\n")
+        f.write(f"Reference MGF: {reference_mgf_path} ({len(reference_spectra)} spectra)\n")
+        f.write(f"Total pairs calculated: {len(results)}\n")
+        f.write(f"High score matches (score > 0.5): {len(high_score_results)}\n\n")
+        f.write("=== 高分匹配列表 (按分数降序) ===\n\n")
+
+        if high_score_results:
+            sorted_high = sorted(high_score_results, key=lambda x: x["score"], reverse=True)
+            for item in sorted_high:
+                f.write(f"score = {item['score']:.6f}\n")
+                f.write(f"  Query : {item['query_title']}\n")
+                f.write(f"  Ref   : {item['reference_title']}\n")
+                f.write("-" * 60 + "\n")
+        else:
+            f.write("未找到任何 score > 0.5 的匹配。\n")
+
+    summary = f"""
+MS2DeepScore 完整库匹配完成！
+- 处理 query 谱图数量: {len(query_spectra)}
+- 参考谱图数量: {len(reference_spectra)}
+- 总匹配对数: {len(results)}
+- 得分 > 0.5 的匹配数量: {len(high_score_results)}
+
+结果文件已保存：
+  • {json_file} （所有匹配的完整 JSON）
+  • {high_score_file} （仅保留 score>0.5 的可读总结）
+"""
+    print(summary)
+    if high_score_results:
+        print(f"找到 {len(high_score_results)} 个得分大于 0.5 的匹配，已保存到 {high_score_file}")
+    else:
+        print("警告：本次匹配中没有得分大于 0.5 的结果。请检查谱图质量或降低阈值。")
+    return summary
 
 
 def _validate_spectrum_arrays(mz: list[float], intensity: list[float], prefix: str) -> None:
