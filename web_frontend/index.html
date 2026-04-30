@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MassAgent Chat</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <aside class="session-sidebar">
+        <div class="sidebar-header">
+          <h1>MassAgent</h1>
+          <button id="newSessionBtn" type="button">+ 新会话</button>
+        </div>
+        <div id="sessionList" class="session-list"></div>
+      </aside>
+      <main class="chat-panel">
+        <header class="chat-toolbar">
+          <div class="toolbar-left">
+            <label for="modelSelect">模型</label>
+            <select id="modelSelect"></select>
+          </div>
+          <div class="toolbar-left">
+            <label for="tempInput">Temperature</label>
+            <input id="tempInput" type="number" min="0" max="2" step="0.1" value="0" />
+          </div>
+          <button id="clearSessionBtn" type="button" class="secondary-btn">清空当前会话</button>
+          <div class="upload-box">
+            <div id="dropZone" class="drop-zone">
+              <span>拖拽 .mgf / .raw 文件或</span>
+              <input id="fileInput" type="file" accept=".mgf,.MGF,.raw,.RAW" style="display:none;" />
+              <button id="uploadBtn" type="button" class="secondary-btn">选择文件</button>
+            </div>
+            <button id="analyzeBtn" type="button" class="secondary-btn">上传并分析</button>
+          </div>
+        </header>
+        <div id="messages" class="messages"></div>
+        <form id="chatForm" class="chat-input-row">
+          <textarea id="promptInput" placeholder="输入你的问题...（Enter 发送，Shift+Enter 换行）" required></textarea>
+          <button type="submit" id="sendButton">发送</button>
+        </form>
+        <p id="statusText" class="status-text"></p>
+      </main>
+    </div>
+    <script src="/static/app.js"></script>
+  </body>
+</html>

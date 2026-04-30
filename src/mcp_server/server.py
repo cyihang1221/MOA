@@ -695,26 +695,26 @@ async def library_match_pair_from_mgf_tool(
 @mcp.tool(
     name="library_match_full_workflow",
     description="""
-    一站式库匹配流程工具：raw -> mzML -> MGF -> library matching。
+    【只使用 MS2DeepScore 的完整一站式库匹配工具】
 
-    适用于：
-    - 已有 raw 文件目录，想直接完成转换与单对库匹配
-    - 避免手动分步调用多个工具
+    此工具会自动完成以下全部步骤（严格只使用 MS2DeepScore，不再支持其他方法）：
+    1. raw → mzML (使用 ThermoRawFileParser)
+    2. mzML → MGF (只导出 MS2)
+    3. 使用 MS2DeepScore 模型对 query MGF 中的所有谱图与 reference 进行完整库匹配
+    4. 将结果保存为独立的 JSON 和总结文本文件（不会污染 library_match_pair_results.txt）
 
     参数：
-    - raw_input_dir: 原始 raw 文件目录
+    - raw_input_dir: 原始 .raw 文件所在目录
     - mzml_output_dir: mzML 输出目录
     - mgf_output_dir: MGF 输出目录
-    - reference_mgf_path: 参考库 MGF 文件路径
-    - method: 匹配方法（默认 cosine_peak）
-    - converter: raw 转 mzML 的转换器，thermo 或 msconvert
-    - query_mgf_path: 可选，指定用于匹配的 query mgf；不传则默认选 mgf_output_dir 下第一个
-    - query_spectrum_index / reference_spectrum_index: 谱序号（默认 0）
-    - mz_tolerance / bin_size: 匹配参数
-    - model_path: spec2vec/ms2deepscore 可选模型路径
-    - precursor_mz / reference_precursor_mz: 可选覆盖前体 m/z
-    - n_decimals: spec2vec token 小数位
-    - output_dir: 可选，写入摘要日志目录
+    - reference_mgf_path: 参考谱库 MGF 文件的绝对路径
+    - model_path: MS2DeepScore 模型路径（可留空，从 .env 读取）
+    - output_dir: 结果输出目录（建议 workspace/library_match_results）
+    - query_spectrum_index / reference_spectrum_index: 通常保持默认 0
+
+    执行结果：
+    - 在 output_dir 下生成 ms2deepscore_full_match.json（完整结果）
+    - 生成 ms2deepscore_summary.txt（Top-10 匹配总结）
     """
 )
 async def library_match_full_workflow_tool(
@@ -722,38 +722,25 @@ async def library_match_full_workflow_tool(
     mzml_output_dir: str,
     mgf_output_dir: str,
     reference_mgf_path: str,
-    method: str = "cosine_peak",
-    converter: str = "thermo",
-    query_mgf_path: str = "",
+    model_path: str = "",
+    output_dir: str = "",
     query_spectrum_index: int = 0,
     reference_spectrum_index: int = 0,
-    mz_tolerance: float = 0.01,
-    bin_size: float = 0.1,
-    model_path: str = "",
-    precursor_mz: float | None = None,
-    reference_precursor_mz: float | None = None,
-    n_decimals: int = 2,
-    output_dir: str = "",
 ):
     summary = library_match_full_workflow_impl(
         raw_input_dir=raw_input_dir,
         mzml_output_dir=mzml_output_dir,
         mgf_output_dir=mgf_output_dir,
         reference_mgf_path=reference_mgf_path,
-        method=method,
-        converter=converter,
-        query_mgf_path=query_mgf_path or None,
+        method="ms2deepscore",
+        converter="thermo",
+        query_mgf_path=None,
         query_spectrum_index=query_spectrum_index,
         reference_spectrum_index=reference_spectrum_index,
-        mz_tolerance=mz_tolerance,
-        bin_size=bin_size,
         model_path=model_path or None,
-        precursor_mz=precursor_mz,
-        reference_precursor_mz=reference_precursor_mz,
-        n_decimals=n_decimals,
         output_dir=output_dir or None,
     )
-    return f"已完成完整库匹配流程: {summary}"
+    return f"MS2DeepScore 完整库匹配完成！\n{summary}"
 
 
 # Cosine

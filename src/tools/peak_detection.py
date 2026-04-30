@@ -234,7 +234,10 @@ def peak_detection_kpic_impl(
 
 # ============================= ms-peakonly 实现 =============================
 from glob import glob
-from ms_peakonly import PeakOnly
+try:
+    from ms_peakonly import PeakOnly
+except ModuleNotFoundError:
+    PeakOnly = None
 
 
 def peak_detection_peakonly_impl(
@@ -246,6 +249,12 @@ def peak_detection_peakonly_impl(
     """
     使用 PeakOnly 进行峰检测，并保存结果为 CSV 文件
     """
+    if PeakOnly is None:
+        raise ModuleNotFoundError(
+            "缺少 ms_peakonly 依赖，无法执行 peak_detection_peakonly_impl。"
+            "你可以先只做库匹配（library_match_*）的流程，或安装 ms-peakonly 以启用该工具。"
+        )
+
     os.makedirs(output_dir, exist_ok=True)
     result_file = os.path.join(output_dir, "peakonly_peak_detection_result.csv")
 

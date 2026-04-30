@@ -1,5 +1,6 @@
 import os
 import json
+import traceback
 from src.llm_client import LLM_Client
 from src.prompt import PromptGenerator
 import asyncio
@@ -75,16 +76,25 @@ class Agent:
                     prompt = self.prompt_generator.tool_match_prompt(task=task, tools_info=self.tools_info, workspace=self.workspace, history_summary=self.history_summary)
                     messages = [{"role": "user", "content": str(prompt)}]
                     print(f"===== : 工具查询结果 =====")
-                    response = self.llm_client.think(messages)
-                    response = json.loads(response)
+                    raw_response = self.llm_client.think(messages)
+                    response = self._extract_json(raw_response)
                     
                     if "tool_call" in response:
                         tool_name = response["tool_call"]["name"]
                         tool_args = response["tool_call"]["arguments"]
-                        result = await session.call_tool(tool_name, tool_args)
-
-                        self.history_summary.append({"role":"tool","content":str(result)})
-                        print(f"\nExecuted {tool_name}, result: {result}")
+                        try:
+                            result = await session.call_tool(tool_name, tool_args)
+                            self.history_summary.append({"role":"tool","content":str(result)})
+                            print(f"\nExecuted {tool_name}, result: {result}")
+                        except Exception as e:
+                            err_msg = f"Tool call failed: {tool_name}, error={repr(e)}"
+                            self.history_summary.append({"role": "tool", "content": err_msg})
+                            print(f"\n❌ {err_msg}")
+                            print(traceback.format_exc())
+                    else:
+                        err_msg = f"Tool match parse failed, raw response: {raw_response}"
+                        self.history_summary.append({"role": "assistant", "content": err_msg})
+                        print(f"\n❌ {err_msg}")
 
 
     def run(self):
@@ -95,3 +105,4 @@ class Agent:
             print("\n🎉 所有任务完成!")
         except Exception as e:
             print(f"\n❌ 任务中断: {str(e)}")
+            print(traceback.format_exc())
