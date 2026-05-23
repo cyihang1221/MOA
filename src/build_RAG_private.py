@@ -9,7 +9,6 @@ from llama_index.core import (
 )
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.embeddings.dashscope import DashScopeEmbedding
-from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 
 
 def preload_retriever(local_engine=False, PERSIST_DIR=None, SOURCE_DIR=None):
@@ -24,9 +23,10 @@ def preload_retriever(local_engine=False, PERSIST_DIR=None, SOURCE_DIR=None):
         elif os.getenv("LLM_MODEL_TYPE") == "DashScope":
             Settings.embed_model = DashScopeEmbedding(api_key=os.getenv("LLM_API_KEY"))
         else:
-            Settings.embed_model = HuggingFaceEmbedding(  
-                model_name="BAAI/bge-small-en-v1.5"  # 使用本地模型时，配置嵌入模型为 HuggingFace 上的开源模型
-            )  # 首次运行时，HuggingFaceEmbedding 会自动从 HuggingFaceHub 下载模型文件保存到本地缓存目录（默认 ~/.cache/huggingface/），后续运行时直接加载本地缓存的模型文件
+            from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+            Settings.embed_model = HuggingFaceEmbedding(
+                model_name="BAAI/bge-small-en-v1.5"
+            )
 
     if not os.path.exists(PERSIST_DIR):  # 检查索引文件是否存在，避免重复创建索引文件
         documents = SimpleDirectoryReader(SOURCE_DIR).load_data()  # load the documents and create the index

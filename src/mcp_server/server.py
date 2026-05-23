@@ -5,8 +5,6 @@ from src.tools.convert_raw_to_mzml import (
     convert_raw_to_mzml_OpenMS_FileConverter_impl,
     mzml_directory_to_mgf_impl,
 )
-from src.tools.peak_alignment import align_retention_time_obiwarp_impl, align_retention_time_loess_impl
-from src.tools.peak_group import group_peaks_xcms_groupChromPeaks_impl
 from src.tools.filter_redundant_features import filter_redundant_features_camera_impl, filter_redundant_features_ramclustr_impl
 from src.tools.library_match import (
     library_match_blink_impl,
@@ -19,9 +17,9 @@ from src.tools.library_match import (
     library_match_spectral_entropy_impl,
     library_match_spec2vec_impl,
 )
-from MOA.src.tools.group_peaks import group_peaks_openms_PeakGroup_impl, group_peaks_xcms_groupChromPeaks_impl
-from MOA.src.tools.identify_isotopes import identify_isotopes_openms_IsotopeTools_impl
-from MOA.src.tools.mzmine_lcms import mzmine_lcms_datapreprocess_impl
+from src.tools.group_peaks import group_peaks_openms_PeakGroup_impl, group_peaks_xcms_groupChromPeaks_impl
+from src.tools.identify_isotopes import identify_isotopes_openms_IsotopeTools_impl
+from src.tools.mzmine_lcms import mzmine_lcms_datapreprocess_impl
 from src.tools.peak_detection import peak_detection_kpic_impl, peak_detection_openms_featurefinder_impl, peak_detection_openms_peakpickerhires_impl, peak_detection_xcms_centwave_impl, peak_detection_peakonly_impl
 from src.tools.align_retention_time import align_retention_time_xcms_loess_impl, align_retention_time_xcms_obiwarp_impl
 from src.tools.missing_peak_filling import fill_missing_peaks_xcms_fillChromPeaks_impl
@@ -384,11 +382,12 @@ async def peak_detection_peakonly_tool(input_dir: str, output_dir: str, file_pat
 @mcp.tool(
     name="filter_redundant_features_camera",
     description="""
-    使用 CAMERA 进行冗余特征过滤。
+    对 CentWave 峰检测结果（XCMSnExp .rds）做同位素/冗余特征注释与过滤。
 
     工具特点：
-    - 自动识别输入格式：XCMS的.rds格式，OpenMS的.featureXML格式，.csv通用峰表格式
-    - 基于同位素、加合物、碎片的特征关系进行过滤，去除冗余特征
+    - 输入须为峰检测输出的 .rds（XCMSnExp，xcms 3+）
+    - 使用 groupChromPeaks + findChromPeakFeatures(IsotopeParam)，兼容现代 xcms
+    - 旧版 xcmsSet 仍走 CAMERA xsAnnotate
     
     参数：
     - input_rds: 输入的 RDS 文件，包含 XCMS 处理后的色谱峰数据

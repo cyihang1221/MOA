@@ -1,13 +1,17 @@
 import os
-import json
+import sys
 import traceback
+from pathlib import Path
+
 from src.llm_client import LLM_Client
+from src.json_parse import extract_first_json_object, parse_tool_call
 from src.prompt import PromptGenerator
 import asyncio
-from mcp.client.stdio import stdio_client, StdioServerParameters
+from mcp.client.stdio import stdio_client
 from mcp.client.session import ClientSession
 from mcp.server.fastmcp import FastMCP
 from src.mcp_server.server import mcp
+from src.platform_utils import mcp_stdio_parameters, should_fallback_to_msconvert
 
 
 class Agent:
@@ -37,16 +41,6 @@ class Agent:
         return tools_info
 
 
-    def _extract_json(self, response):
-        """提取响应中的JSON内容"""
-        try:
-            start = response.find("{")
-            end = response.rfind("}") + 1
-            return json.loads(response[start:end])  # json.loads()将符合JSON格式的str解析成Python对应的原生数据类型（这里是字典）；loads是“load string”的缩写，专门处理字符串，区别于json.load()
-        except:
-            return {}
-
-
     def plan_phase(self):
         """计划生成阶段"""
         print(f"\n===== : 生成分析计划 =====")
@@ -57,7 +51,7 @@ class Agent:
         resp = self.llm_client.think(messages)
 
         # 解析计划
-        plan_data = self._extract_json(resp)
+        plan_data = extract_first_json_object(resp or "")
         self.tasks = plan_data.get("plan", [])  # 取plan键的值，若plan键不存在，返回指定的默认值[]
         self.history_summary.append({"role":"user","content":f"Your plan for {self.goal_description} is {self.tasks}."})
         print(f"✅ 计划生成完成，共 {len(self.tasks)} 个子任务")
@@ -65,7 +59,7 @@ class Agent:
 
     async def execution_phase(self):
         """执行阶段"""
-        params = StdioServerParameters(command="python", args=["-m", "src.mcp_server.server"])
+        params = mcp_stdio_parameters()
         async with stdio_client(params) as (read, write):
             async with ClientSession(read, write) as session:
                 await session.initialize()
@@ -77,11 +71,14 @@ class Agent:
                     messages = [{"role": "user", "content": str(prompt)}]
                     print(f"===== : 工具查询结果 =====")
                     raw_response = self.llm_client.think(messages)
-                    response = self._extract_json(raw_response)
-                    
-                    if "tool_call" in response:
-                        tool_name = response["tool_call"]["name"]
-                        tool_args = response["tool_call"]["arguments"]
+                    tool_name, tool_args = parse_tool_call(raw_response or "")
+
+                    if should_fallback_to_msconvert(tool_name):
+                        tool_name = "convert_raw_to_mzml_msconvert"
+                        print("ℹ️ 未检测到 ThermoRawFileParser，改用 convert_raw_to_mzml_msconvert")
+
+                    if tool_name and tool_args:
+                        print(f"正在调用工具 {tool_name}（R/Docker 步骤可能需数分钟，请查看下方进度输出）...")
                         try:
                             result = await session.call_tool(tool_name, tool_args)
                             self.history_summary.append({"role":"tool","content":str(result)})
@@ -92,7 +89,7 @@ class Agent:
                             print(f"\n❌ {err_msg}")
                             print(traceback.format_exc())
                     else:
-                        err_msg = f"Tool match parse failed, raw response: {raw_response}"
+                        err_msg = f"Tool match parse failed, raw response: {raw_response!r}"
                         self.history_summary.append({"role": "assistant", "content": err_msg})
                         print(f"\n❌ {err_msg}")
 

@@ -3,50 +3,92 @@ from pathlib import Path
 import subprocess
 import pymzml
 
+from src.tools._mcp_io import tool_log
+
 
 # ============================= ThermoRawFileParser 实现 =============================
 import glob
 
 
-def _run_quiet(cmd: list[str]) -> None:
+def _run_quiet(cmd: list[str], log_path: str | None = None) -> None:
     """
-    以静默方式执行外部命令，避免污染 MCP 的 stdio JSONRPC 通道。
-    如执行失败，抛出包含关键 stderr 的异常信息。
+    执行外部命令并将输出写入日志文件，避免占用 MCP 的 stdio JSON-RPC 管道。
     """
+    if log_path:
+        os.makedirs(os.path.dirname(log_path) or ".", exist_ok=True)
+        with open(log_path, "w", encoding="utf-8") as log:
+            result = subprocess.run(
+                cmd,
+                stdin=subprocess.DEVNULL,
+                stdout=log,
+                stderr=subprocess.STDOUT,
+                text=True,
+            )
+    else:
+        result = subprocess.run(
+            cmd,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            text=True,
+        )
+    if result.returncode != 0:
+        err = ""
+        if log_path and os.path.isfile(log_path):
+            with open(log_path, encoding="utf-8") as f:
+                err = f.read()[-4000:]
+        raise RuntimeError(f"命令执行失败: {' '.join(cmd)}\n{err}")
+
+from src.platform_utils import docker_bind_mount, resolve_thermo_rawfile_parser
+
+
+def convert_raw_to_mzml_ThermoRawFileParser_impl(input_dir: str, output_dir: str):
+    os.makedirs(output_dir, exist_ok=True)
+    parser = resolve_thermo_rawfile_parser()
+    if not parser:
+        raise FileNotFoundError(
+            "未找到 ThermoRawFileParser。请先安装：\n"
+            "  1) 从 https://github.com/compomics/ThermoRawFileParser/releases 下载 Windows 版，解压后将目录加入 PATH；或\n"
+            "  2) conda install -c bioconda thermorawfileparser（Linux 推荐）。\n"
+            "若已有 mzML，可跳过本步，将文件放入 converted_mzml 目录。"
+        )
+
+    raw_files = glob.glob(os.path.join(input_dir, "*.raw"))
+    if not raw_files:
+        raise FileNotFoundError(f"输入目录中未找到 .raw 文件: {input_dir}")
+
+    for raw in raw_files:
+        cmd = [parser, "-i", raw, "-o", output_dir, "-f", "mzML"]
+        _run_quiet(cmd)
+
+
+def _ensure_docker_running() -> None:
+    """确认 Docker 守护进程已启动（Docker Desktop 需在 Windows 上运行）。"""
     result = subprocess.run(
-        cmd,
+        ["docker", "info"],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
     )
     if result.returncode != 0:
-        err = (result.stderr or result.stdout or "").strip()
-        raise RuntimeError(f"命令执行失败: {' '.join(cmd)}\n{err}")
-
-def convert_raw_to_mzml_ThermoRawFileParser_impl(input_dir: str, output_dir: str):
-    os.makedirs(output_dir, exist_ok=True)
-    
-    for raw in glob.glob(os.path.join(input_dir, "*.raw")):
-        cmd = [
-            "ThermoRawFileParser",
-            "-i", raw,
-            "-o", output_dir,
-            "-f", "mzML"
-        ]
-        _run_quiet(cmd)
+        raise RuntimeError(
+            "无法连接 Docker 引擎。请先启动 Docker Desktop，等待左下角显示 Running 后再重试。\n"
+            f"详情: {(result.stderr or result.stdout or '').strip()}"
+        )
 
 
 # ============================= msconvert 实现 =============================
 def convert_raw_to_mzml_msconvert_impl(input_dir: str, output_dir: str):
+    _ensure_docker_running()
     os.makedirs(output_dir, exist_ok=True)
-    input_abs = os.path.abspath(input_dir)
-    output_abs = os.path.abspath(output_dir)
+    input_abs = docker_bind_mount(input_dir)
+    output_abs = docker_bind_mount(output_dir)
     
     for filename in os.listdir(input_dir):
         if filename.lower().endswith(".raw"):
             name = os.path.splitext(filename)[0]  # 去掉后缀
-            
-            # 拼接 Docker 命令
+            log_path = os.path.join(output_abs, f"msconvert_{name}.log")
+
             docker_cmd = [
                 "docker", "run", "--rm",
                 "-v", f"{input_abs}:/data",
@@ -60,7 +102,30 @@ def convert_raw_to_mzml_msconvert_impl(input_dir: str, output_dir: str):
                 "--outfile", f"/output/{name}.mzML"
             ]
 
-            _run_quiet(docker_cmd)
+            tool_log(f"[msconvert] converting {filename}, log: {log_path}")
+            _run_quiet(docker_cmd, log_path=log_path)
+
+    # 修复新版 ProteoWizard 写入的 cvParam，避免下游 mzR/xcms 报错
+    _sanitize_mzml_dir_for_mzr(output_abs)
+
+
+def _sanitize_mzml_dir_for_mzr(output_dir: str) -> None:
+    """将 MS:1002993 等新版 CV 项替换为 mzR 可识别的旧项。"""
+    replacements = {
+        'accession="MS:1002993" name="Q Exactive Focus"': 'accession="MS:1001911" name="Q Exactive"',
+    }
+    for name in os.listdir(output_dir):
+        if not name.lower().endswith(".mzml"):
+            continue
+        path = os.path.join(output_dir, name)
+        with open(path, "r", encoding="utf-8", errors="replace") as f:
+            content = f.read()
+        new_content = content
+        for old, new in replacements.items():
+            new_content = new_content.replace(old, new)
+        if new_content != content:
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(new_content)
 
 
 # ============================= OpenMS FileConverter 实现 =============================

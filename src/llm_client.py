@@ -22,7 +22,13 @@ class LLM_Client:
             temperature=0.0  # default
         )
 
-    def think(self, messages: List[Dict[str, str]], temperature: float = 0):
+    def think(
+        self,
+        messages: List[Dict[str, str]],
+        temperature: float = 0,
+        *,
+        stream_to_stdout: bool = True,
+    ):
         """调用大语言模型进行思考，并返回其响应。"""
         try:
             response = self.llm.stream(
@@ -35,14 +41,17 @@ class LLM_Client:
             for chunk in response:
                 content = chunk.content
                 if content:
-                    print(content, end="", flush=True)
+                    if stream_to_stdout:
+                        print(content, end="", flush=True)
                     collected_content.append(content)
-            print()  # 所有块遍历完成后，打印一个换行符，让最终输出的文本下方有空行，排版更整洁
+            if stream_to_stdout and collected_content:
+                print()
             
             return "".join(collected_content)  # 将列表中存储的所有小块内容拼接成完整字符串并返回
 
         except Exception as e:  # 捕获异常类并绑定为变量
-            print(f"❌ 调用LLM API时发生错误: {e}")
+            if stream_to_stdout:
+                print(f"❌ 调用LLM API时发生错误: {e}")
             return None
 
     def stream_think(self, messages: List[Dict[str, str]], temperature: float = 0):
