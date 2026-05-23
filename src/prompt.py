@@ -50,7 +50,7 @@ class PromptGenerator:
             "role": "You are a helpful assistant for tool selection. You should strictly follow the rules to select the most appropriate tool and generate the most appropriate parameters for the current sub-task.",
             "rules": [
                 "You should only respond in JSON format with my fixed format.",
-                "Your JSON response should only be enclosed in double quotes.",
+                "Output exactly one JSON object, no markdown code fences, no extra trailing braces.",
                 "You should not write anything else except for your JSON response.",
                 "You should generate only necessary and accurate arguments for the tool.",
                 "You should refer to similar sample situations and examples based on the RAG information to generate the appropriate arguments for the selected tool.",
