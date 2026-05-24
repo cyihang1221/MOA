@@ -665,8 +665,8 @@ def statistical_analysis_mixomics_impl(
     vip_threshold: float = 1.0,
     pvalue_threshold: float = 0.05,
     padj_threshold: float = 0.05,
-    log2fc_threshold: float = 1.0,
-    use_fdr: bool = True
+    log2fc_threshold: float = 0.58,
+    use_fdr: bool = False
 ):
     """
     Statistical analysis for metabolomics feature table.

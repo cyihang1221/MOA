@@ -928,6 +928,17 @@ async def feature_filtering_and_missing_value_imputation_knn_tool(
     - input_csv: feature table (feature_id,mz,rt_med,samples...)
     - metadata_csv: Sample/Group mapping file
     - output_dir: result directory
+    Parameters:
+    - ncomp_pca: number of PCA components (default 5)
+    - ncomp_plsda: number of PLS-DA components (default 2)
+    - scale_method: data scaling method (default "autoscale")
+    - top_n_heatmap: number of top features to show in heatmap (default 50)
+    - seed: random seed for reproducibility (default 123)
+    - vip_threshold: VIP score threshold for feature selection (default 1.0)
+    - pvalue_threshold: p-value threshold for differential analysis (default 0.05)
+    - padj_threshold: adjusted p-value threshold (default 0.05)
+    - log2fc_threshold: log2 fold change threshold for differential analysis (default 0.58, which corresponds to 1.5-fold change)
+    - use_fdr: whether to use FDR correction for p-values (default False)
 
     Key outputs:
     - PCA / PLS-DA plots
@@ -949,8 +960,8 @@ async def statistical_analysis_mixomics_tool(
     vip_threshold: float = 1.0,
     pvalue_threshold: float = 0.05,
     padj_threshold: float = 0.05,
-    log2fc_threshold: float = 1.0,
-    use_fdr: bool = True
+    log2fc_threshold: float = 0.58,
+    use_fdr: bool = False
 ):
     statistical_analysis_mixomics_impl(
         input_csv=input_csv,
