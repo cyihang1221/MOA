@@ -10,9 +10,10 @@ from src.mcp_server.server import mcp
 
 
 class Agent:
-    def __init__(self, data_list, database_file_dir, goal_description, workspace=None, PERSIST_DIR=None, SOURCE_DIR=None):
+    def __init__(self, data_list, metadata_csv, database_file_dir, goal_description, workspace=None, PERSIST_DIR=None, SOURCE_DIR=None):
         # 基础配置
         self.data_list = data_list
+        self.metadata_csv = metadata_csv
         self.goal_description = goal_description
         self.database_file_dir = database_file_dir
         self.workspace = workspace
@@ -50,7 +51,7 @@ class Agent:
         """计划生成阶段"""
         print(f"\n===== : 生成分析计划 =====")
         # 生成提示词并调用LLM
-        prompt = self.prompt_generator.plan_prompt(data_list=self.data_list, tools_info=self.tools_info)
+        prompt = self.prompt_generator.plan_prompt(data_list=self.data_list, metadata_csv=self.metadata_csv, tools_info=self.tools_info)
         messages = [{"role": "user", "content": str(prompt)}]
         print("✅ 正在调用 LLM 生成计划")
         resp = self.llm_client.think(messages)

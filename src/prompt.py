@@ -9,7 +9,7 @@ class PromptGenerator:
         self.retriever = preload_retriever(PERSIST_DIR=PERSIST_DIR, SOURCE_DIR=SOURCE_DIR)
             
 
-    def plan_prompt(self, data_list, tools_info):
+    def plan_prompt(self, data_list, metadata_csv, tools_info):
         self.retriever_info1 = retrive(self.retriever, retriever_prompt=f"Global goal is {self.goal_description}.")
         
         prompt = {
@@ -27,8 +27,12 @@ class PromptGenerator:
                 "You should make your answer as detailed as possible."
             ],
             "input": [
-                    "You have the following information in a list with the format 'file path: file description'. I provide those files to you, so you don't need to prepare the data.",
-                    data_list
+                "You have the following information in a list with the format 'file path: file description'. I provide those files to you, so you don't need to prepare the data.",
+                data_list
+            ],
+            "metadata": [
+                "You also have the following sample metadata information with the format 'file path: file description'. I provide those files to you, so you don't need to prepare the data.",
+                metadata_csv
             ],
             "global goal": self.goal_description,
             "available tools information": tools_info,
