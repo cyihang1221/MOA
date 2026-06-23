@@ -7,18 +7,13 @@ from mcp.client.stdio import stdio_client, StdioServerParameters
 from mcp.client.session import ClientSession
 from mcp.server.fastmcp import FastMCP
 from src.mcp_server.server import mcp
-from src.platform_utils import (
-    filter_plan_tasks_to_registered_tools,
-    normalize_plan_tasks_for_platform,
-)
 
 
 class Agent:
-    # 参数部分删除database_file_dir，新增metadata_csv
     def __init__(self, data_list, metadata_csv, goal_description, outputspace=None, PERSIST_DIR=None, SOURCE_DIR=None):
         # 基础配置
         self.data_list = data_list
-        self.metadata_csv = metadata_csv  # 删除database_file_dir，新增metadata_csv
+        self.metadata_csv = metadata_csv
         self.goal_description = goal_description
         self.outputspace = outputspace
 
@@ -56,17 +51,14 @@ class Agent:
         """计划生成阶段"""
         print(f"\n===== : 生成分析计划 =====")
         # 生成提示词并调用LLM
-        prompt = self.prompt_generator.plan_prompt(data_list=self.data_list, metadata_csv=self.metadata_csv, tools_info=self.tools_info)  # 新增metadata_csv=metadata_csv参数
+        prompt = self.prompt_generator.plan_prompt(data_list=self.data_list, metadata_csv=self.metadata_csv, tools_info=self.tools_info)
         messages = [{"role": "user", "content": str(prompt)}]
         print("✅ 正在调用 LLM 生成计划")
         resp = self.llm_client.think(messages)
 
         # 解析计划
         plan_data = self._extract_json(resp)
-        self.tasks = plan_data.get("plan", [])
-        self.tasks = normalize_plan_tasks_for_platform(self.tasks)
-        tool_names = [getattr(t, "name", str(t)) for t in self.tools_info]
-        self.tasks = filter_plan_tasks_to_registered_tools(self.tasks, tool_names)
+        self.tasks = plan_data.get("plan", [])  # 取plan键的值，若plan键不存在，返回指定的默认值[]
         self.history_summary.append({"role":"user","content":f"Your plan for {self.goal_description} is {self.tasks}."})
         print(f"✅ 计划生成完成，共 {len(self.tasks)} 个子任务")
 

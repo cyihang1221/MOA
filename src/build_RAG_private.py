@@ -1,65 +1,88 @@
-import os.path
 import os
+import os.path
+
 from llama_index.core import (
-    VectorStoreIndex,
+    Settings,
     SimpleDirectoryReader,
     StorageContext,
+    VectorStoreIndex,
     load_index_from_storage,
-    Settings
 )
-from llama_index.embeddings.openai import OpenAIEmbedding
-from llama_index.embeddings.dashscope import DashScopeEmbedding
-from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+
+
+def _create_embed_model(local_engine: bool = False):
+    """按配置延迟加载嵌入模型，避免在 DashScope/OpenAI 模式下导入 torch/transformers。"""
+    if local_engine:
+        from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+
+        return HuggingFaceEmbedding(model_name="BAAI/bge-small-en-v1.5")
+
+    model_type = (os.getenv("LLM_MODEL_TYPE") or "").strip().lower()
+    if model_type == "openai":
+        from llama_index.embeddings.openai import OpenAIEmbedding
+
+        return OpenAIEmbedding(api_key=os.getenv("LLM_API_KEY"))
+    if model_type == "dashscope":
+        from llama_index.embeddings.dashscope import DashScopeEmbedding
+
+        return DashScopeEmbedding(api_key=os.getenv("LLM_API_KEY"))
+
+    from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+
+    return HuggingFaceEmbedding(model_name="BAAI/bge-small-en-v1.5")
 
 
 def preload_retriever(local_engine=False, PERSIST_DIR=None, SOURCE_DIR=None):
     """
-    :param local_engine:
-    :param PERSIST_DIR: 该目录保存已构建好的向量索引文件
-    :param SOURCE_DIR: 该目录保存用于构建向量索引的原始文本数据文件
+    :param local_engine: 为 True 时强制使用本地 HuggingFace 嵌入
+    :param PERSIST_DIR: 已构建向量索引目录
+    :param SOURCE_DIR: 原始文本数据目录
     """
-    if not local_engine:
-        if os.getenv("LLM_MODEL_TYPE") == "openai":
-            Settings.embed_model = OpenAIEmbedding(api_key=os.getenv("LLM_API_KEY"))  # 配置全局的 Settings.embed_model 为 OpenAI 的嵌入模型
-        elif os.getenv("LLM_MODEL_TYPE") == "DashScope":
-            Settings.embed_model = DashScopeEmbedding(api_key=os.getenv("LLM_API_KEY"))
-        else:
-            Settings.embed_model = HuggingFaceEmbedding(  
-                model_name="BAAI/bge-small-en-v1.5"  # 使用本地模型时，配置嵌入模型为 HuggingFace 上的开源模型
-            )  # 首次运行时，HuggingFaceEmbedding 会自动从 HuggingFaceHub 下载模型文件保存到本地缓存目录（默认 ~/.cache/huggingface/），后续运行时直接加载本地缓存的模型文件
+    Settings.embed_model = _create_embed_model(local_engine=local_engine)
 
-    if not os.path.exists(PERSIST_DIR):  # 检查索引文件是否存在，避免重复创建索引文件
-        documents = SimpleDirectoryReader(SOURCE_DIR).load_data()  # load the documents and create the index
+    if not os.path.exists(PERSIST_DIR):
+        documents = SimpleDirectoryReader(SOURCE_DIR).load_data()
         index = VectorStoreIndex.from_documents(documents, embeddings=Settings.embed_model)
         index.storage_context.persist(persist_dir=PERSIST_DIR)
     else:
-        storage_context = StorageContext.from_defaults(persist_dir=PERSIST_DIR)  # load the existing index
+        storage_context = StorageContext.from_defaults(persist_dir=PERSIST_DIR)
         index = load_index_from_storage(storage_context)
 
-    retriever = index.as_retriever(similarity_top_k=1)  # 将向量索引转换成「检索器对象」，后续使用 retriever.retrieve("查询语句") 调用；指定检索时只返回「与查询语句最相似的 1 个文档片段」
-    return retriever
+    return index.as_retriever(similarity_top_k=1)
 
 
-# DashScope 等嵌入 API 通常要求单条文本长度在 [1, 2048] 内，过长会报 InvalidParameter
-_MAX_EMBED_QUERY_CHARS = 2000
+def _sanitize_embed_query(text: str, max_len: int = 2000) -> str:
+    """DashScope 嵌入要求长度在 [1, 2048]；过长或为空会导致 API 失败。"""
+    cleaned = (text or "").strip()
+    if not cleaned:
+        cleaned = "metabolomics mass spectrometry data analysis"
+    if len(cleaned) > max_len:
+        cleaned = cleaned[:max_len]
+    return cleaned
+
+
+def format_history_for_rag(history_summary, max_len: int = 1200) -> str:
+    if not history_summary:
+        return "none"
+    import json
+
+    try:
+        text = json.dumps(history_summary, ensure_ascii=False, default=str)
+    except TypeError:
+        text = str(history_summary)
+    if len(text) > max_len:
+        return text[:max_len] + "..."
+    return text
 
 
 def retrive(retriever, retriever_prompt=""):
-    text = retriever_prompt if isinstance(retriever_prompt, str) else str(retriever_prompt)
-    text = text.strip()
-    if not text:
-        return "No context"
-    if len(text) > _MAX_EMBED_QUERY_CHARS:
-        text = text[:_MAX_EMBED_QUERY_CHARS]
+    query = _sanitize_embed_query(retriever_prompt)
 
     try:
-        response = retriever.retrieve(text)
+        response = retriever.retrieve(query)
         if not response:
             return "No relevant information found"
-        chunk = response[0].get_text()
-        if not (chunk or "").strip():
-            return "No relevant information found"
-        return chunk
+        return response[0].get_text()
     except Exception as e:
         print(f"检索失败: {e}")
         return "Retrieval error"

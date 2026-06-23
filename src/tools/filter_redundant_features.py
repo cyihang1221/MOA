@@ -1,243 +1,192 @@
-import tempfile
-import subprocess
 import os
+import tempfile
+
+from src.tools._r_runner import r_path, run_rscript
 
 
-# ============================= CAMERA 实现 =============================
-def filter_redundant_features_camera_impl(
-    input_file: str,    # 可以是：.rds / .featureXML / .csv
-    output_rds: str
-) -> str:
+def filter_redundant_features_camera_impl(input_file: str, output_rds: str) -> str:
     """
-    自动识别输入格式：
-    - .rds: XCMS 对象
-    - .csv: MZmine / PeakOnly
-    - .featureXML: OpenMS
-    不支持：.mzmine
+    冗余特征过滤（兼容 xcms 3+ 的 XCMSnExp 与旧版 xcmsSet）。
+
+    CentWave 峰检测输出为 XCMSnExp，旧版 CAMERA(xsAnnotate) 会卡住或报错；
+    对 XCMSnExp 使用 groupChromPeaks + findChromPeakFeatures(IsotopeParam)。
     """
     ext = os.path.splitext(input_file)[1].lower()
+    if ext != ".rds":
+        raise ValueError(f"CAMERA 过滤当前仅支持 .rds 输入，收到: {ext}")
 
-    # ===================== 自动判断读取逻辑 =====================
-    if ext == ".rds":
-        # XCMS 格式
-        read_code = f'xdata <- readRDS("{input_file}")'
+    out_dir = os.path.dirname(output_rds) or "."
+    os.makedirs(out_dir, exist_ok=True)
+    input_r = r_path(os.path.abspath(input_file))
+    output_r = r_path(os.path.abspath(output_rds))
+    output_csv = r_path(os.path.splitext(output_rds)[0] + ".csv")
 
-    elif ext == ".featurexml":
-        # OpenMS 格式
-        read_code = f'''
-        library(xcms)
-        library(MSnbase)
-        # 读取 OpenMS 特征并转为 XCMS 对象
-        peaks <- read.table("{input_file}", header=TRUE, sep="\\t", check.names=FALSE)
-        xdata <- new("xcmsSet")
-        xdata@peaks <- as.matrix(peaks[, c("mz", "rt", "into", "maxo", "sn", "sample")])
-        '''
-
-    elif ext == ".csv":
-        # MZmine / PeakOnly / 通用 CSV
-        read_code = f'''
-        library(xcms)
-        library(MSnbase)
-        peaks <- read.csv("{input_file}", check.names=FALSE)
-        xdata <- new("xcmsSet")
-        xdata@peaks <- as.matrix(peaks[, c("mz", "rt", "into", "maxo", "sn", "sample")])
-        '''
-
-    elif ext == ".mzmine":
-        # MZmine 项目文件 → 提示使用 CSV
-        raise ValueError("不支持直接读取 .mzmine 文件，请传入 MZmine 导出的 .csv 峰表")
-
-    else:
-        raise ValueError(f"不支持的输入格式：{ext}，请使用 .rds / .csv / .featureXML")
-
-    # ===================== CAMERA 核心流程 =====================
     r_script = f'''
-    library(CAMERA)
-    library(xcms)
+suppressPackageStartupMessages({{
+  library(xcms)
+  library(MSnbase)
+}})
 
-    {read_code}
+input_rds <- "{input_r}"
+output_rds <- "{output_r}"
+output_csv <- "{output_csv}"
 
-    # CAMERA 去冗余
-    an <- xsAnnotate(xdata)
-    an <- groupFWHM(an)
-    an <- findIsotopes(an)
-    an <- groupCorr(an)
+cat("读取:", input_rds, "\\n")
+xdata <- readRDS(input_rds)
+cat("类型:", paste(class(xdata), collapse = ", "), "\\n")
 
-    # 输出完整对象
-    saveRDS(an, "{output_rds}")
-    '''
+if (inherits(xdata, "XCMSnExp")) {{
+  if (length(chromPeaks(xdata)) == 0) stop("XCMSnExp 中无色谱峰")
 
-    # 执行脚本
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.R', delete=False) as f:
+  n_files <- length(fileNames(xdata))
+  cat("样本数:", n_files, " 峰数:", nrow(chromPeaks(xdata)), "\\n")
+
+  # 若尚未分组，先做跨样本峰对齐/分组
+  pd <- chromPeakData(xdata)
+  need_group <- is.null(pd$group) || all(is.na(pd$group))
+  if (need_group && n_files > 1) {{
+    cat("执行 groupChromPeaks (PeakDensityParam)...\\n")
+    sg <- rep(1L, n_files)
+    xdata <- groupChromPeaks(
+      xdata,
+      param = PeakDensityParam(sampleGroups = sg, minFraction = 0.5)
+    )
+    cat("groupChromPeaks 完成\\n")
+  }} else if (need_group) {{
+    cat("单文件数据，跳过 groupChromPeaks\\n")
+  }}
+
+  # xcms3 同位素注释（替代旧版 CAMERA xsAnnotate，避免对 XCMSnExp 卡死）
+  cat("执行 findChromPeakFeatures (IsotopeParam)...\\n")
+  tryCatch(
+    {{ xdata <- findChromPeakFeatures(xdata, param = IsotopeParam()) }},
+    error = function(e) cat("警告 findChromPeakFeatures:", conditionMessage(e), "\\n")
+  )
+  cat("特征注释步骤结束\\n")
+
+  peaks <- chromPeaks(xdata)
+  meta <- as.data.frame(chromPeakData(xdata))
+  export <- cbind(peaks, meta)
+  write.csv(export, output_csv, row.names = FALSE)
+  saveRDS(xdata, output_rds)
+  cat("已保存:", output_rds, "与", output_csv, "\\n")
+
+}} else if (inherits(xdata, "xcmsSet")) {{
+  suppressPackageStartupMessages(library(CAMERA))
+  cat("旧版 xcmsSet，使用 CAMERA xsAnnotate...\\n")
+  an <- xsAnnotate(xdata)
+  an <- groupFWHM(an)
+  an <- findIsotopes(an)
+  an <- groupCorr(an)
+  saveRDS(an, output_rds)
+  cat("CAMERA 完成\\n")
+}} else {{
+  stop("不支持的 RDS 类型: ", paste(class(xdata), collapse = ", "),
+       "（需要 XCMSnExp 或 xcmsSet）")
+}}
+'''
+
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".R", delete=False, encoding="utf-8"
+    ) as f:
         f.write(r_script)
         r_file = f.name
 
     try:
-        subprocess.run(["Rscript", r_file], check=True)
+        log_path = run_rscript(
+            r_file, label="filter_redundant_features_camera", log_dir=out_dir
+        )
+        if not os.path.isfile(output_rds):
+            raise RuntimeError(f"未生成输出: {output_rds}")
+        csv_path = os.path.splitext(output_rds)[0] + ".csv"
+        extra = f", {csv_path}" if os.path.isfile(csv_path) else ""
+        return f"冗余特征过滤完成: {output_rds}{extra}，日志: {log_path}"
     finally:
-        os.unlink(r_file) 
+        os.unlink(r_file)
 
 
-# ============================= RAMClustR 实现 =============================
-def filter_redundant_features_ramclustr_impl(
-    input_file: str,
-    output_rds: str
-) -> str:
-    """
-    自动识别输入格式：
-    - .rds: XCMS 对象
-    - .csv: MZmine / PeakOnly
-    - .featureXML: OpenMS
-    不支持：.mzmine
-    """
+# ============================= RAMClustR 实现（保留原逻辑，改用 run_rscript） =============================
+def filter_redundant_features_ramclustr_impl(input_file: str, output_rds: str) -> str:
     ext = os.path.splitext(input_file)[1].lower()
-
-    # ===================== 自动判断输入格式 =====================
     if ext == ".rds":
-        # 读取 XCMS 输出的 rds
-        read_code = f'''
-        library(xcms)
-        xdata <- readRDS("{input_file}")
-        peak_table <- chromPeaks(xdata)
-        '''
-
+        read_code = f'library(xcms)\nxdata <- readRDS("{r_path(input_file)}")\npeak_table <- chromPeaks(xdata)'
     elif ext == ".csv":
-        # 读取通用 CSV
-        read_code = f'''
-        peak_table <- read.csv("{input_file}", check.names = FALSE)
-        '''
-
+        read_code = f'peak_table <- read.csv("{r_path(input_file)}", check.names=FALSE)'
     elif ext == ".featurexml":
-        # OpenMS featureXML 转为表格
         read_code = f'''
         library(MSnbase)
-        f <- readFeatureXML("{input_file}")
+        f <- readFeatureXML("{r_path(input_file)}")
         peak_table <- as.data.frame(f)
         '''
-
     elif ext == ".mzmine":
-        # MZmine 项目文件 → 提示使用 CSV
-        raise ValueError("不支持直接读取 .mzmine 文件，请传入 MZmine 导出的 .csv 峰表")
-    
+        raise ValueError("不支持 .mzmine，请使用导出的 .csv")
     else:
-        raise ValueError(f"不支持的输入格式：{ext}，请使用 .rds / .csv / .featureXML")
+        raise ValueError(f"不支持的输入格式：{ext}")
 
-    # ===================== RAMClustR 核心流程 =====================
+    out_dir = os.path.dirname(output_rds) or "."
+    os.makedirs(out_dir, exist_ok=True)
     r_script = f'''
     library(RAMClustR)
     library(xcms)
-
     {read_code}
-
-    # 构造 RAMClustR 需要的输入数据
-    # 必须包含：mz, rt, intensity (into)
     df <- data.frame(
       mz = peak_table[,"mz"],
       rt = peak_table[,"rt"],
       into = peak_table[,"into"]
     )
-
-    # 运行 RAMClust 聚类（去同位素/加合物/冗余）
     ramclust <- ramclustR(
       ms = df,
       pheno = data.frame(sample = rep(1, nrow(df))),
-      st = NULL,
-      sampNames = NULL,
-      usePheno = FALSE,
-      rtmax = 1,
-      mzdec = 4,
-      rtdec = 2
+      st = NULL, sampNames = NULL,
+      usePheno = FALSE, rtmax = 1, mzdec = 4, rtdec = 2
     )
-
-    # 保存完整 RAMClust 对象（等价于 XCMS rds）
-    saveRDS(ramclust, "{output_rds}")
+    saveRDS(ramclust, "{r_path(output_rds)}")
     '''
-
-    # 写入并运行 R 脚本
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.R', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".R", delete=False, encoding="utf-8") as f:
         f.write(r_script)
         r_file = f.name
-
     try:
-        subprocess.run(["Rscript", r_file], check=True)
+        log_path = run_rscript(r_file, label="filter_ramclustr", log_dir=out_dir)
+        return f"RAMClustR 完成: {output_rds}，日志: {log_path}"
     finally:
         os.unlink(r_file)
 
 
-# ============================= mzAnnotation 实现 =============================
-def filter_redundant_features_mzannotation_impl(
-    input_file: str,
-    output_rds: str
-) -> str:
-    """
-    自动识别输入格式：
-    - .rds: XCMS 对象
-    - .csv: MZmine / PeakOnly
-    - .featureXML: OpenMS
-    不支持：.mzmine
-    """
+def filter_redundant_features_mzannotation_impl(input_file: str, output_rds: str) -> str:
     ext = os.path.splitext(input_file)[1].lower()
-
-    # ===================== 自动判断输入格式 =====================
     if ext == ".rds":
-        read_code = f'''
-        library(xcms)
-        xdata <- readRDS("{input_file}")
-        peak_table <- chromPeaks(xdata)
-        '''
-
+        read_code = f'library(xcms)\nxdata <- readRDS("{r_path(input_file)}")\npeak_table <- chromPeaks(xdata)'
     elif ext == ".csv":
-        read_code = f'''
-        peak_table <- read.csv("{input_file}", check.names = FALSE)
-        '''
-
+        read_code = f'peak_table <- read.csv("{r_path(input_file)}", check.names=FALSE)'
     elif ext == ".featurexml":
-        read_code = f'''
-        library(MSnbase)
-        f <- readFeatureXML("{input_file}")
-        peak_table <- as.data.frame(f)
-        '''
-
+        read_code = f'library(MSnbase)\nf <- readFeatureXML("{r_path(input_file)}")\npeak_table <- as.data.frame(f)'
     elif ext == ".mzmine":
-        raise ValueError("不支持直接读取 .mzmine 文件，请传入 MZmine 导出的 .csv 峰表")
-
+        raise ValueError("不支持 .mzmine，请使用导出的 .csv")
     else:
-        raise ValueError(f"不支持格式：{ext}，请用 .rds / .csv / .featureXML")
+        raise ValueError(f"不支持的格式：{ext}")
 
-    # ===================== mzAnnotation 冗余过滤 =====================
+    out_dir = os.path.dirname(output_rds) or "."
+    os.makedirs(out_dir, exist_ok=True)
     r_script = f'''
     library(mzAnnotation)
     library(xcms)
-
     {read_code}
-
-    # 构建标准输入
     df <- data.frame(
         mz = peak_table[,"mz"],
         rt = peak_table[,"rt"],
         intensity = peak_table[,"into"]
     )
-
-    # mzAnnotation 过滤冗余特征
     filtered <- filterFeatures(
-        df,
-        ppm = 10,                # 质量偏差
-        rt_window = 0.1,         # 保留时间窗口
-        remove_isotopes = TRUE,  # 去除同位素
-        remove_adducts = TRUE,    # 去除加合物
-        keep_best = TRUE         # 只保留强度最高的代表峰
+        df, ppm = 10, rt_window = 0.1,
+        remove_isotopes = TRUE, remove_adducts = TRUE, keep_best = TRUE
     )
-
-    # 保存完整过滤结果
-    saveRDS(filtered, "{output_rds}")
+    saveRDS(filtered, "{r_path(output_rds)}")
     '''
-
-    # 运行脚本
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.R', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".R", delete=False, encoding="utf-8") as f:
         f.write(r_script)
         r_file = f.name
-
     try:
-        subprocess.run(["Rscript", r_file], check=True)
+        log_path = run_rscript(r_file, label="filter_mzannotation", log_dir=out_dir)
+        return f"mzAnnotation 完成: {output_rds}，日志: {log_path}"
     finally:
         os.unlink(r_file)
