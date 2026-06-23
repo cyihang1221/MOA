@@ -5,6 +5,7 @@ conda install -y r-base=4.4.3 r-devtools=2.4.5 r-biocmanager
 BiocManager::install(version = "3.20", ask = FALSE, update = FALSE)
 
 conda install -c bioconda bioconductor-xcms
+conda install -y -c conda-forge r-mixomics r-pheatmap
 conda install -c bioconda thermorawfileparser  # thermorawfileparser 是命令行工具
 conda install -c bioconda mzmine  # 是 Java 软件，不是 R 包
 conda install -c bioconda openms  # 开源的质谱数据分析软件平台（C++），不是 R 包
@@ -33,8 +34,16 @@ python -m pip install --no-cache-dir \
 
 python -m pip install fastapi uvicorn python-dotenv langchain-openai
 
-###启动前端服务
-python -m uvicorn src.webapp:app --host 127.0.0.1 --port 8010
-
-###浏览器访问
+### 启动前端服务
+python -m uvicorn web_frontend.backend.webapp:app --host 127.0.0.1 --port 8010
+### 浏览器访问
 http://127.0.0.1:8010
+
+
+web_frontend/static/i18n.js
+中英文文案与切换逻辑
+web_frontend/index.html
+语言下拉框 + data-i18n 标记
+web_frontend/static/app.js
+动态文案接入 MassI18n.t()
+web_frontend/static/styles.css
