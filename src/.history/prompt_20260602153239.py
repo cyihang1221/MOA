@@ -1,8 +1,8 @@
-from src.build_RAG_private import format_history_for_rag, preload_retriever, retrive
+from src.build_RAG_private import preload_retriever
+from src.build_RAG_private import retrive
 
 
 class PromptGenerator:
-    # 参数新增outputspace
     def __init__(self, blacklist='', goal_description=None, outputspace=None, PERSIST_DIR=None, SOURCE_DIR=None):
         self.blacklist = blacklist.split(',')
         self.goal_description = goal_description
@@ -10,7 +10,6 @@ class PromptGenerator:
         self.retriever = preload_retriever(PERSIST_DIR=PERSIST_DIR, SOURCE_DIR=SOURCE_DIR)
             
 
-    # 参数新增metadata_csv
     def plan_prompt(self, data_list, metadata_csv, tools_info):
         self.retriever_info1 = retrive(self.retriever, retriever_prompt=f"Global goal is {self.goal_description}.")
         
@@ -51,15 +50,7 @@ class PromptGenerator:
 
 
     def tool_match_prompt(self, task, tools_info, history_summary=None):
-        history_text = format_history_for_rag(history_summary)
-        self.retriever_info2 = retrive(
-            self.retriever,
-            retriever_prompt=(
-                f"Global goal is {self.goal_description}. "
-                f"Current sub-task is {task}. "
-                f"Context: {history_text}."
-            ),
-        )
+        self.retriever_info2 = retrive(self.retriever, retriever_prompt=f'Global goal is {self.goal_description} and current sub-task is {task} and context information is {history_summary}.')
 
         prompt = {
             "role": "You are a helpful assistant for tool selection. You should strictly follow the rules to select the most appropriate tool and generate the most appropriate parameters for the current sub-task.",
