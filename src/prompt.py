@@ -3,9 +3,10 @@ from src.build_RAG_private import retrive
 
 
 class PromptGenerator:
-    def __init__(self, blacklist='', goal_description=None, PERSIST_DIR=None, SOURCE_DIR=None):
+    def __init__(self, blacklist='', goal_description=None, outputspace=None, PERSIST_DIR=None, SOURCE_DIR=None):
         self.blacklist = blacklist.split(',')
         self.goal_description = goal_description
+        self.outputspace = outputspace
         self.retriever = preload_retriever(PERSIST_DIR=PERSIST_DIR, SOURCE_DIR=SOURCE_DIR)
             
 
@@ -34,6 +35,7 @@ class PromptGenerator:
                 "You also have the following sample metadata information with the format 'file path: file description'. I provide those files to you, so you don't need to prepare the data.",
                 metadata_csv
             ],
+            "outputspace": f"All generated files are all in the {self.outputspace}/.",
             "global goal": self.goal_description,
             "available tools information": tools_info,
             "RAG": self.retriever_info1,
@@ -47,7 +49,7 @@ class PromptGenerator:
         return prompt
 
 
-    def tool_match_prompt(self, task, tools_info, workspace=None, history_summary=None):
+    def tool_match_prompt(self, task, tools_info, history_summary=None):
         self.retriever_info2 = retrive(self.retriever, retriever_prompt=f'Global goal is {self.goal_description} and current sub-task is {task} and context information is {history_summary}.')
 
         prompt = {
@@ -64,7 +66,7 @@ class PromptGenerator:
             "context information": history_summary,
             "available tools information": tools_info,
             "RAG information": self.retriever_info2,
-            "workspace": f"All original files and generated files are all in the {workspace}/.",
+            "outputspace": f"All generated files are all in the {self.outputspace}/.",
             "fixed format for JSON response": {
                 "tool_call": {
                     "name": "name of the tool you choose to use",

@@ -16,7 +16,7 @@ def convert_raw_to_mzml_ThermoRawFileParser_impl(input_dir: str, output_dir: str
             "-o", output_dir,
             "-f", "mzML"
         ]
-        subprocess.run(cmd, check=True)
+        subprocess.run(cmd, capture_output=True, check=True)
 
 
 # ============================= msconvert 实现 =============================
@@ -44,7 +44,7 @@ def convert_raw_to_mzml_msconvert_impl(input_dir: str, output_dir: str):
                 "--outfile", f"/output/{name}.mzML"
             ]
 
-            subprocess.run(docker_cmd)
+            subprocess.run(docker_cmd, capture_output=True, check=True)
 
 
 # ============================= OpenMS FileConverter 实现 =============================
@@ -64,6 +64,18 @@ def convert_raw_to_mzml_OpenMS_FileConverter_impl(
         r_file = f.name
 
     try:
-        subprocess.run(["Rscript", r_file], check=True)
+        subprocess.run(
+            ["Rscript", r_file], 
+            capture_output=True, 
+            check=True
+        )
     finally:
         os.unlink(r_file)
+
+
+
+if __name__ == "__main__":
+    convert_raw_to_mzml_ThermoRawFileParser_impl(
+        input_dir="/data2/liuwei/MOA/inputspace/raw",
+        output_dir="/data2/liuwei/MOA/outputspace/mzml"
+    )

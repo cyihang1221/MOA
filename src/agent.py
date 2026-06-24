@@ -10,13 +10,12 @@ from src.mcp_server.server import mcp
 
 
 class Agent:
-    def __init__(self, data_list, metadata_csv, database_file_dir, goal_description, workspace=None, PERSIST_DIR=None, SOURCE_DIR=None):
+    def __init__(self, data_list, metadata_csv, goal_description, outputspace=None, PERSIST_DIR=None, SOURCE_DIR=None):
         # 基础配置
         self.data_list = data_list
         self.metadata_csv = metadata_csv
         self.goal_description = goal_description
-        self.database_file_dir = database_file_dir
-        self.workspace = workspace
+        self.outputspace = outputspace
 
         # 初始化状态变量
         self.tasks = []
@@ -25,13 +24,14 @@ class Agent:
         
         # 初始化核心组件
         self.llm_client = LLM_Client()
-        self.prompt_generator = PromptGenerator(goal_description=self.goal_description, PERSIST_DIR=PERSIST_DIR, SOURCE_DIR=SOURCE_DIR)  # 实例化PromptGenerator类时，会创建RAG检索器
+        self.prompt_generator = PromptGenerator(goal_description=self.goal_description, outputspace=self.outputspace, 
+                                                PERSIST_DIR=PERSIST_DIR, SOURCE_DIR=SOURCE_DIR)  # 实例化PromptGenerator类时，会创建RAG检索器
 
 
     async def get_all_mcp_tools_info(self, mcp_server: FastMCP) -> list:
         """
         自动提取当前 mcp_server 中所有注册的工具信息，包括工具元数据 (name and description) 和参数列表 inputSchema
-        参数列表 inputSchema 由 函数参数解析而来，例如：async def convert_raw_to_mzml_ThermoRawFileParser_tool(input_dir: str, output_dir: str):
+        参数列表 inputSchema 由函数参数解析而来，例如：async def convert_raw_to_mzml_ThermoRawFileParser_tool(input_dir: str, output_dir: str):
         """    
         tools_info = await mcp_server.list_tools()     
         return tools_info
@@ -73,7 +73,7 @@ class Agent:
                 while self.tasks:
                     task = self.tasks.pop(0)
                     print(f"\n===== 执行任务: {task} =====")
-                    prompt = self.prompt_generator.tool_match_prompt(task=task, tools_info=self.tools_info, workspace=self.workspace, history_summary=self.history_summary)
+                    prompt = self.prompt_generator.tool_match_prompt(task=task, tools_info=self.tools_info, history_summary=self.history_summary)
                     messages = [{"role": "user", "content": str(prompt)}]
                     print(f"===== : 工具查询结果 =====")
                     response = self.llm_client.think(messages)

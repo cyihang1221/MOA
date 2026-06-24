@@ -2,12 +2,14 @@ from mcp.server.fastmcp import FastMCP
 # from src.tools.group_peaks import group_peaks_openms_PeakGroup_impl, group_peaks_xcms_groupChromPeaks_impl
 # from src.tools.isotope_annotation import identify_isotopes_openms_IsotopeTools_impl
 # from src.tools.mzmine_lcms import mzmine_lcms_datapreprocess_impl
+from src.tools.deepmass import deepmass_annotation_impl
+from src.tools.molecular_networking import molecular_networking_gnps_impl
 from src.tools.convert_raw_to_mzml import convert_raw_to_mzml_msconvert_impl, convert_raw_to_mzml_ThermoRawFileParser_impl, convert_raw_to_mzml_OpenMS_FileConverter_impl
 # from src.tools.peak_detection import peak_detection_kpic_impl, peak_detection_openms_featurefinder_impl, peak_detection_openms_peakpickerhires_impl, peak_detection_xcms_centwave_impl, peak_detection_peakonly_impl
 # from src.tools.align_retention_time import align_retention_time_xcms_loess_impl, align_retention_time_xcms_obiwarp_impl
 # from src.tools.missing_peak_filling import fill_missing_peaks_xcms_fillChromPeaks_impl
 # from src.tools.filter_redundant_features import filter_redundant_features_camera_impl, filter_redundant_features_mzannotation_impl, filter_redundant_features_ramclustr_impl
-from src.tools.xcms import data_preprocessing_xcms_impl, extract_differential_features_impl, feature_filtering_and_missing_value_imputation_KNN_impl, spectral_annotation_impl, statistical_analysis_mixomics_impl
+from src.tools.xcms import data_preprocessing_xcms_impl, extract_differential_features_impl, feature_filtering_and_missing_value_imputation_KNN_impl, kegg_compound_enrich_impl, spectral_annotation_impl, statistical_analysis_mixomics_impl
 
 mcp = FastMCP("MOA_tools")
 
@@ -791,7 +793,7 @@ async def convert_raw_to_mzml_OpenMS_FileConverter_tool(input_file: str, output_
 
     Parameters:
     - input_dir: directory containing .mzML files
-    - output_dir: path to save feature quantification table (CSV) and corresponding MS/MS spectra (MGF)
+    - output_dir: directory to save the feature table file and MS/MS spectra MGF file
     - file_pattern: mzML 文件的匹配模式，默认为 "*.mzML"
     - blank_pattern: 用于识别空白样本的文件名模式，默认为 "Blank"
     - ms2_ppm: MS/MS 匹配的质量精度，默认为 20 ppm
@@ -874,8 +876,8 @@ async def data_preprocessing_xcms_tool(
     feature_id,mz,rt_med,sample1,sample2,...
 
     Parameters:
-    - input_csv: input feature table CSV
-    - output_csv: output cleaned feature table CSV
+    - input_dir: directory containing input feature table CSV
+    - output_dir: directory to save the filtered + imputed feature table and summary
     - min_presence: minimum fraction of non-missing values per feature (default 0.5)
     - min_intensity: minimum mean intensity threshold (default 0.0)
     - n_neighbors: number of neighbors for KNN imputation (default 5)
@@ -886,15 +888,15 @@ async def data_preprocessing_xcms_tool(
     """
 )
 async def feature_filtering_and_missing_value_imputation_knn_tool(
-    input_csv: str,
-    output_csv: str,
+    input_dir: str,
+    output_dir: str,
     min_presence: float = 0.5,
     min_intensity: float = 0.0,
     n_neighbors: int = 5
 ):
     feature_filtering_and_missing_value_imputation_KNN_impl(
-        input_csv=input_csv,
-        output_csv=output_csv,
+        input_dir=input_dir,
+        output_dir=output_dir,
         min_presence=min_presence,
         min_intensity=min_intensity,
         n_neighbors=n_neighbors
@@ -902,8 +904,8 @@ async def feature_filtering_and_missing_value_imputation_knn_tool(
 
     return (
         f"Feature filtering and KNN imputation completed.\n"
-        f"Input: {input_csv}\n"
-        f"Output: {output_csv}\n"
+        f"Input: {input_dir}\n"
+        f"Output: {output_dir}\n"
         f"Parameters: min_presence={min_presence}, min_intensity={min_intensity}, n_neighbors={n_neighbors}"
     )
 
@@ -925,9 +927,9 @@ async def feature_filtering_and_missing_value_imputation_knn_tool(
     - Heatmap of top VIP features
 
     Input:
-    - input_csv: feature table (feature_id,mz,rt_med,samples...)
-    - metadata_csv: Sample/Group mapping file
-    - output_dir: result directory
+    - input_dir: path to the input directory containing the feature table CSV after filtering and imputation.
+    - metadata_csv: sample metadata CSV with group labels
+    - output_dir: directory to save the statistical analysis results
     Parameters:
     - ncomp_pca: number of PCA components (default 5)
     - ncomp_plsda: number of PLS-DA components (default 2)
@@ -949,7 +951,7 @@ async def feature_filtering_and_missing_value_imputation_knn_tool(
     """
 )
 async def statistical_analysis_mixomics_tool(
-    input_csv: str,
+    input_dir: str,
     metadata_csv: str,
     output_dir: str,
     ncomp_pca: int = 5,
@@ -964,7 +966,7 @@ async def statistical_analysis_mixomics_tool(
     use_fdr: bool = False
 ):
     statistical_analysis_mixomics_impl(
-        input_csv=input_csv,
+        input_dir=input_dir,
         metadata_csv=metadata_csv,
         output_dir=output_dir,
         ncomp_pca=ncomp_pca,
@@ -981,7 +983,7 @@ async def statistical_analysis_mixomics_tool(
 
     return (
         f"Statistical analysis completed using mixOmics.\n"
-        f"Input feature table: {input_csv}\n"
+        f"Input feature table: {input_dir}\n"
         f"Output directory: {output_dir}"
     )
 
@@ -998,38 +1000,32 @@ async def statistical_analysis_mixomics_tool(
     - Filter feature table by selected Feature IDs
     - Extract corresponding MGF spectra blocks
 
-    Inputs:
+    Parameters:
     - differential_csv: differential metabolite table
     - input_mgf: full MS/MS spectra file (MGF)
-    - input_feature_table: full feature table CSV
+    - output_dir: directory to save extracted differential features files
 
     Outputs:
-    - output_mgf: filtered spectra MGF
-    - output_feature_table: filtered feature table CSV
+    - output_dir/differential_feature_table.csv: filtered feature table with only differential features
+    - output_dir/differential_spectra.mgf: MGF file containing spectra of differential features
     """
 )
 async def extract_differential_features_tool(
     differential_csv: str,
     input_mgf: str,
-    input_feature_table: str,
-    output_mgf: str,
-    output_feature_table: str
+    output_dir: str
 ):
     extract_differential_features_impl(
         differential_csv=differential_csv,
         input_mgf=input_mgf,
-        input_feature_table=input_feature_table,
-        output_mgf=output_mgf,
-        output_feature_table=output_feature_table
+        output_dir=output_dir
     )
 
     return (
         f"Differential feature extraction completed.\n"
         f"Input differential metabolites: {differential_csv}\n"
         f"Input MGF: {input_mgf}\n"
-        f"Input feature table: {input_feature_table}\n"
-        f"Output MGF: {output_mgf}\n"
-        f"Output feature table: {output_feature_table}"
+        f"Output directory: {output_dir}"
     )
 
 
@@ -1047,32 +1043,27 @@ async def extract_differential_features_tool(
     - Merge POS/NEG results
     - Annotate feature table with compound names and scores
 
-    Inputs:
-    - mgf_path: query MS/MS spectra
-    - feat_csv: feature table CSV
-    - output_csv: annotated feature table
-
     Parameters:
-    - precursor_ppm: precursor tolerance in ppm (default 5)
-    - fragment_tol: fragment tolerance in Da (default 0.02)
-    - min_cosine: minimum similarity score (default 0.7)
+    - input_dir: path to the directory containing extracted differential features files
+    - output_dir: path to the directory saving annotation results CSV file
+    - precursor_ppm: precursor tolerance in ppm (default 100)
+    - fragment_tol: fragment tolerance in Da (default 0.2)
+    - min_cosine: minimum similarity score (default 0.2)
 
     Outputs:
     - annotated feature table CSV
     """
 )
 async def spectral_annotation_tool(
-    mgf_path: str,
-    feat_csv: str,
-    output_csv: str,
-    precursor_ppm: float = 5,
-    fragment_tol: float = 0.02,
-    min_cosine: float = 0.7
+    input_dir: str,
+    output_dir: str,
+    precursor_ppm: float = 100,
+    fragment_tol: float = 0.2,
+    min_cosine: float = 0.2
 ):
     spectral_annotation_impl(
-        mgf_path=mgf_path,
-        feat_csv=feat_csv,
-        output_csv=output_csv,
+        input_dir=input_dir,
+        output_dir=output_dir,
         precursor_ppm=precursor_ppm,
         fragment_tol=fragment_tol,
         min_cosine=min_cosine
@@ -1080,11 +1071,169 @@ async def spectral_annotation_tool(
 
     return (
         f"Spectral annotation completed.\n"
-        f"Input MGF: {mgf_path}\n"
-        f"Input feature table: {feat_csv}\n"
-        f"Output: {output_csv}"
+        f"Input directory: {input_dir}\n"
+        f"Output directory: {output_dir}\n"
     )
 
+
+
+# ============================= pathway enrichment analysis =============================
+@mcp.tool(
+    name="kegg_compound_enrichment",
+    description="""
+    This tool performs KEGG compound pathway enrichment analysis (ORA-based) using R (clusterProfiler).
+
+    Workflow:
+    - Read differential metabolite table (KEGG compound IDs)
+    - Load KEGG compound → pathway mapping (local TSV file)
+    - Perform over-representation analysis (ORA) using enricher()
+    - Generate enrichment result table
+    - Generate bubble plot of top enriched pathways
+
+    Parameters:
+    - input_dir: directory containing the differential feature table (required file: differential_feature_table_library_match_clean&add.csv)
+    - output_dir: directory to save enrichment results and plots
+    - pvalue_cutoff: p-value cutoff for enrichment (default: 0.05)
+    - padj_method: multiple testing correction method (default: BH)
+    - qvalue_cutoff: q-value cutoff (default: 0.1)
+    - min_gs: minimum gene set size (default: 3)
+    - max_gs: maximum gene set size (default: 500)
+    - top_n: number of top pathways to show in bubble plot (default: 15)
+
+    Outputs:
+    - kegg_compound_enrich.csv: enrichment result table
+    - kegg_compound_bubble.png: bubble plot of top pathways
+    """
+)
+async def kegg_compound_enrichment_tool(
+    input_dir: str,
+    output_dir: str,
+    pvalue_cutoff: float = 0.05,
+    padj_method: str = "BH",
+    qvalue_cutoff: float = 0.1,
+    min_gs: int = 3,
+    max_gs: int = 500,
+    top_n: int = 15
+):
+    kegg_compound_enrich_impl(
+        input_dir=input_dir,
+        output_dir=output_dir,
+        pvalue_cutoff=pvalue_cutoff,
+        padj_method=padj_method,
+        qvalue_cutoff=qvalue_cutoff,
+        min_gs=min_gs,
+        max_gs=max_gs,
+        top_n=top_n
+    )
+
+    return (
+        f"KEGG compound pathway enrichment completed.\n"
+        f"Input directory: {input_dir}\n"
+        f"Output directory: {output_dir}\n"
+    )
+
+
+
+# ============================= GNPS 分子网络 =============================
+@mcp.tool(
+    name="molecular_networking_gnps",
+    description="""
+    GNPS (Global Natural Products Social) classical molecular networking tool.
+
+    This tool builds a molecular network from MS/MS spectra using all-vs-all cosine
+    similarity comparison, following the GNPS classical molecular networking method
+    (Wang et al., Nature Biotechnology, 2016).
+
+    Workflow:
+    - Parse MGF file containing MS/MS spectra (from differential feature extraction step)
+    - Compute all-vs-all greedy cosine similarity between spectra
+    - Filter edges by minimum cosine score and minimum matched fragment peaks
+    - Apply top-K edge filtering per node to reduce network complexity
+    - Build molecular network graph using NetworkX
+    - Detect connected components as "molecular families"
+    - Export GraphML (for Cytoscape), edge table, node table, and summary statistics
+
+    Molecular families can be used for:
+    - Annotation propagation: known compounds within a family can aid identification of unknowns
+    - Structural analogue discovery: co-clustered metabolites often share core structures
+    - Downstream enhanced annotation (MolNetEnhancer)
+
+    Parameters:
+    - input_mgf: path to the MGF file containing differential MS/MS spectra
+    - output_dir: directory to save the molecular network and result tables
+    - min_cosine: minimum cosine similarity threshold (default 0.7, GNPS standard)
+    - min_matched_peaks: minimum number of matched fragment peaks (default 6)
+    - fragment_tol: fragment ion mass tolerance in Da (default 0.02, for Orbitrap high-res data)
+    - top_k: maximum number of strongest edges to retain per node (default 10)
+    - precursor_ppm: precursor ion mass tolerance in ppm for reference only (default 5)
+
+    Outputs:
+    - molecular_network.graphml: network graph file (Cytoscape compatible)
+    - network_edges.csv: edge table with cosine scores and match statistics
+    - network_nodes.csv: node table with molecular family assignments
+    - network_clusters.csv: molecular family summary
+    - network_summary.txt: network statistics summary
+    """
+)
+async def molecular_networking_gnps_tool(
+    input_mgf: str,
+    output_dir: str,
+    min_cosine: float = 0.7,
+    min_matched_peaks: int = 6,
+    fragment_tol: float = 0.02,
+    top_k: int = 10,
+    precursor_ppm: float = 5
+):
+    molecular_networking_gnps_impl(
+        input_mgf=input_mgf,
+        output_dir=output_dir,
+        min_cosine=min_cosine,
+        min_matched_peaks=min_matched_peaks,
+        fragment_tol=fragment_tol,
+        top_k=top_k,
+        precursor_ppm=precursor_ppm
+    )
+
+    return (
+        f"GNPS molecular networking completed.\n"
+        f"Input MGF: {input_mgf}\n"
+        f"Output directory: {output_dir}\n"
+        f"Parameters: min_cosine={min_cosine}, min_matched_peaks={min_matched_peaks}, "
+        f"fragment_tol={fragment_tol} Da, top_k={top_k}"
+    )
+
+
+
+# ============================= DeepMASS2 深度学习注释 =============================
+@mcp.tool(
+    name="deepmass_annotation",
+    description="""
+    Use DeepMASS2 for deep learning-based annotation of differential metabolite spectra.
+
+    Unlike spectral_annotation (which uses GNPS library cosine matching and only
+    identifies known compounds), this tool uses Spec2Vec semantic similarity search
+    to predict structurally related candidate metabolites for completely unknown
+    compounds.
+
+    Parameters:
+    - input_dir: directory containing differential_spectra.mgf file
+    - output_dir: directory to save annotation result CSV files
+
+    Outputs:
+    - One CSV file per query spectrum containing: Title, MolecularFormula,
+      CanonicalSMILES, InChIKey, Formula Score, Structure Score, Consensus Score, DeepMASS_raw
+    - One summary CSV file with all query spectra and their top candidate annotations
+    """
+)
+async def deepmass_annotation_tool(
+    input_dir: str,
+    output_dir: str,
+):
+    deepmass_annotation_impl(
+        input_dir=input_dir,
+        output_dir=output_dir,
+    )
+    return f"DeepMASS2 annotation completed. Input: {input_dir}, Output: {output_dir}"
 
 
 

@@ -1,8 +1,9 @@
 import os
+import shutil
 import subprocess
 import tempfile
 import glob
-from typing import Optional
+import pandas as pd
 
 
 
@@ -493,8 +494,7 @@ if (nrow(final_tab) == length(success_ids)) {{
     try:
         subprocess.run(
             ['Rscript', r_file],
-            capture_output=False,
-            text=True,
+            capture_output=True,  # MCP 协议严格要求所有通信必须是 JSON 格式，捕获所有输出，禁止它向 stdout 输出非 JSON 格式内容（MCP 客户端会监听 stdout）
             encoding='utf-8'
         )
 
@@ -506,8 +506,8 @@ if (nrow(final_tab) == length(success_ids)) {{
 
 # ============================================ feature filtering & missing value imputation =====================================================
 def feature_filtering_and_missing_value_imputation_KNN_impl(
-    input_csv: str,
-    output_csv: str,
+    input_dir: str,
+    output_dir: str,
     min_presence: float = 0.5,  # filtering
     min_intensity: float = 0.0,  # filtering
     n_neighbors: int = 5  # KNN
@@ -520,11 +520,11 @@ def feature_filtering_and_missing_value_imputation_KNN_impl(
 
     Parameters
     ----------
-    input_csv : str
-        Path to the input CSV file containing the feature table.
+    input_dir : str
+        Path to the input directory containing the feature table.
 
-    output_csv : str
-        Path to the output CSV file to save the filtered and imputed feature table.
+    output_dir : str
+        Path to the output directory to save the filtered and imputed feature table.
 
     min_presence : float
         Minimum fraction of non-missing samples required.
@@ -538,14 +538,14 @@ def feature_filtering_and_missing_value_imputation_KNN_impl(
 
     print("\nFiltering features and performing KNN missing value imputation...")
 
-    os.makedirs(os.path.dirname(output_csv), exist_ok=True)
-    summary_txt = os.path.join(os.path.dirname(output_csv), "feature_filtering_and_missing_value_imputation_summary.txt")
+    os.makedirs(output_dir, exist_ok=True)
+    summary_txt = os.path.join(output_dir, "feature_filtering_and_missing_value_imputation_summary.txt")
 
     import pandas as pd
     import numpy as np
 
     # ============================= read table =============================
-    df = pd.read_csv(input_csv)
+    df = pd.read_csv(os.path.join(input_dir, "feature_table.csv"))
 
     required_cols = [
         "feature_id",
@@ -617,7 +617,7 @@ def feature_filtering_and_missing_value_imputation_KNN_impl(
 
     # ============================= save =============================
     df.to_csv(
-        output_csv,
+        os.path.join(output_dir, "feature_table_filtered_imputed.csv"),
         index=False
     )
 
@@ -631,7 +631,7 @@ def feature_filtering_and_missing_value_imputation_KNN_impl(
         f"min_presence: {min_presence}",
         f"min_intensity: {min_intensity}",
         f"KNN neighbors: {n_neighbors}",
-        f"Final output: {output_csv}"
+        f"Final output: {os.path.join(output_dir, 'feature_table_filtered_imputed.csv')}"
     ]
 
     with open(summary_txt, "w") as f:
@@ -639,7 +639,7 @@ def feature_filtering_and_missing_value_imputation_KNN_impl(
 
     print(
         f"✅ Filtering & imputation complete:\n"
-        f"   {output_csv}"
+        f"   {os.path.join(output_dir, 'feature_table_filtered_imputed.csv')}"
     )
 
     print(
@@ -652,7 +652,7 @@ def feature_filtering_and_missing_value_imputation_KNN_impl(
 
 # ======================================================= statistical analysis ==================================================================
 def statistical_analysis_mixomics_impl(
-    input_csv: str,
+    input_dir: str,
     metadata_csv: str,
     output_dir: str,
     ncomp_pca: int = 5,
@@ -673,11 +673,11 @@ def statistical_analysis_mixomics_impl(
 
     Parameters
     ----------
-    input_csv : str
-        Path to the input CSV file containing the feature table.
+    input_dir : str
+        Path to the input directory containing the feature table after filtering and imputation.
 
     output_dir : str
-        Directory to save the filtered and imputed feature table.
+        Directory to save the statistical analysis results.
 
     Input feature table format:
     feature_id,mz,rt_med,sample1,sample2,...
@@ -698,10 +698,11 @@ library(tibble)
 library(ggplot2)
 library(mixOmics)
 library(pheatmap)
+library(ggrepel)
 
 
 # ============================= parameters =============================
-input_csv <- "{input_csv.replace(os.sep, '/')}"
+input_csv <- "{os.path.join(input_dir, 'feature_table_filtered_imputed.csv').replace(os.sep, '/')}"
 metadata_csv <- "{metadata_csv.replace(os.sep, '/')}"
 outdir <- "{output_dir.replace(os.sep, '/')}"
 
@@ -1028,6 +1029,12 @@ if (nlevels(Y) == 2) {{
         abs(log2FC) >= log2fc_threshold
     )
 
+    label_df <- volcano_df %>%
+        left_join(vip_df, by = "Feature") %>%
+        filter(Significant == TRUE) %>%
+        arrange(desc(VIP)) %>%
+        head(20)
+
     write.csv(
         volcano_df,
         file.path(outdir, "volcano_results.csv"),
@@ -1043,6 +1050,15 @@ if (nlevels(Y) == 2) {{
         )
     ) +
         geom_point(size = 1.5) +
+        geom_text_repel(
+            data = label_df,
+            aes(label = Feature),
+            size = 3,
+            max.overlaps = Inf,
+            box.padding = 0.4,
+            point.padding = 0.3,
+            segment.color = "grey50"
+        ) +
         geom_vline(
             xintercept = c(
                 -log2fc_threshold,
@@ -1219,7 +1235,7 @@ writeLines(
         r_file = f.name
 
     try:
-        subprocess.run(["Rscript", r_file], capture_output=False, check=True)
+        subprocess.run(["Rscript", r_file], capture_output=True)
 
     finally:
         os.unlink(r_file)
@@ -1231,10 +1247,7 @@ writeLines(
 def extract_differential_features_impl(
     differential_csv: str,
     input_mgf: str,
-    input_feature_table: str,
-
-    output_mgf: str,
-    output_feature_table: str
+    output_dir: str,
 ):
     """
     Extract differential metabolite spectra and feature table.
@@ -1242,27 +1255,20 @@ def extract_differential_features_impl(
     Parameters
     ----------
     differential_csv : str
-        differential_metabolites.csv
+        differential_metabolites.csv which is the output of statistical analysis step.
 
     input_mgf : str
-        input MGF file
+        input MGF file which is the output of data preprocessing step.
 
-    input_feature_table : str
-        full feature table csv
-
-    output_mgf : str
-        extracted differential spectra MGF
-
-    output_feature_table : str
-        extracted differential feature table
+    output_dir : str
+        directory to save extracted differential features files
     """
 
     import pandas as pd
 
     print("\nExtracting differential features...")
 
-    os.makedirs(os.path.dirname(output_mgf), exist_ok=True)
-    os.makedirs(os.path.dirname(output_feature_table), exist_ok=True)
+    os.makedirs(output_dir, exist_ok=True)
 
 
     # ============= read differential metabolites ==================
@@ -1283,30 +1289,10 @@ def extract_differential_features_impl(
     )
 
 
-    # ==================== extract feature table =================
-    feature_df = pd.read_csv(
-        input_feature_table
-    )
-
-    if "feature_id" not in feature_df.columns:
-        raise ValueError(
-            "Feature table must contain 'feature_id'"
-        )
-
-    extracted_feature_df = feature_df[
-        feature_df["feature_id"].astype(str).isin(
-            target_features
-        )
-    ].copy()
-
-    extracted_feature_df.to_csv(
-        output_feature_table,
+    # ==================== copy feature table =================
+    diff_df.to_csv(
+        os.path.join(output_dir, "differential_feature_table.csv"),
         index=False
-    )
-
-    print(
-        f"✅ Extracted feature table rows: "
-        f"{extracted_feature_df.shape[0]}"
     )
 
 
@@ -1365,7 +1351,7 @@ def extract_differential_features_impl(
 
 
     # ============================= save mgf =============================
-    with open(output_mgf, "w") as f:
+    with open(os.path.join(output_dir, "differential_spectra.mgf"), "w") as f:
 
         for block in extracted_blocks:
 
@@ -1381,8 +1367,8 @@ def extract_differential_features_impl(
 
     print(
         f"\nOutput files:\n"
-        f"MGF: {output_mgf}\n"
-        f"Feature table: {output_feature_table}"
+        f"MGF: {os.path.join(output_dir, 'differential_spectra.mgf')}\n"
+        f"Feature table: {os.path.join(output_dir, 'differential_feature_table.csv')}"
     )
 
 
@@ -1390,9 +1376,8 @@ def extract_differential_features_impl(
 
 # ============================================================= spectral_annotation =======================================================
 def spectral_annotation_impl(
-    mgf_path: str,
-    feat_csv: str,
-    output_csv: str,
+    input_dir: str,
+    output_dir: str,
     precursor_ppm: float = 5,
     fragment_tol: float = 0.02,
     min_cosine: float = 0.7
@@ -1400,12 +1385,10 @@ def spectral_annotation_impl(
     """
     Parameters
     ----------
-    mgf_path : str
-        Path to the input MGF file containing spectra.
-    feat_csv : str
-        Path to the feature table CSV file.
-    output_csv : str
-        Path to the output CSV file for annotated feature table.
+    input_dir : str
+        Path to the directory containing extracted differential features files.
+    output_dir : str
+        Path to the directory saving annotation results CSV file.
     precursor_ppm : float, default=5
         Precursor ion mass tolerance in ppm.
     fragment_tol : float, default=0.02
@@ -1416,7 +1399,7 @@ def spectral_annotation_impl(
 
     print("\nPerforming spectral library annotation...")
 
-    os.makedirs(os.path.dirname(output_csv), exist_ok=True)
+    os.makedirs(output_dir, exist_ok=True)
 
     base_dir = os.path.dirname(os.path.abspath(__file__))
     lib_pos_path = os.path.join(base_dir, "../..", "database_file/GNPS/GNPS-NIH-NATURALPRODUCTSLIBRARY_ROUND2_POSITIVE.msp")
@@ -1429,16 +1412,21 @@ library(MetaboAnnotation)
 library(MsBackendMgf)
 library(MsBackendMsp)
 library(dplyr)
+library(webchem)
+library(rcdk)
+library(readr)
+library(httr)
 
 
 # ============================= parameters =============================
-mgf_path <- "{mgf_path.replace(os.sep, '/')}"
-feat_csv <- "{feat_csv.replace(os.sep, '/')}"
+mgf_path <- "{os.path.join(input_dir, 'differential_spectra.mgf').replace(os.sep, '/')}"
+feat_csv <- "{os.path.join(input_dir, 'differential_feature_table.csv').replace(os.sep, '/')}"
 
 lib_pos_path <- "{lib_pos_path.replace(os.sep, '/')}"
 lib_neg_path <- "{lib_neg_path.replace(os.sep, '/')}"
 
-out_csv <- "{output_csv.replace(os.sep, '/')}"
+out_csv <- "{os.path.join(output_dir, 'differential_feature_table_library_match.csv').replace(os.sep, '/')}"
+out_csv_clean <- "{os.path.join(output_dir, 'differential_feature_table_library_match_clean&add.csv').replace(os.sep, '/')}"
 
 prec_ppm <- {precursor_ppm}
 frag_tol <- {fragment_tol}
@@ -1583,116 +1571,99 @@ feat_table <- read.csv(
     check.names = FALSE
 )
 
-if (!"feature_id" %in% colnames(feat_table)) {{
-    stop("feature_id column not found in feature table")
+if (!"Feature" %in% colnames(feat_table)) {{
+    stop("Feature column not found in feature table")
 }}
 
-
-# ============================= initialize annotation columns =============================
+# ============================= 新增：初始化扩展字段 =============================
 feat_table$compound_name <- NA
 feat_table$cosine_score <- NA
 feat_table$ion_mode_match <- NA
 feat_table$library_precursor_mz <- NA
+feat_table$smiles <- NA          # 新增 SMILES
 
-# Add library metadata back to annotation table
+# 注释表新增扩展字段
 anno_total$compound_name <- NA
 anno_total$library_precursor_mz <- NA
+anno_total$smiles <- NA
 
 pos_idx <- which(anno_total$ion_mode == "POS")
 neg_idx <- which(anno_total$ion_mode == "NEG")
 
-# POS library metadata
+# ============================= 解析正库元数据（名称/SMILES/KEGG/HMDB） =============================
 if (length(pos_idx) > 0) {{
-
     pos_meta <- spectraData(lib_pos)
+    target_idx <- anno_total$target_idx[pos_idx]
 
+    # 化合物名称兼容
     if ("TITLE" %in% colnames(pos_meta)) {{
-
-        anno_total$compound_name[pos_idx] <-
-            pos_meta$TITLE[
-                anno_total$target_idx[pos_idx]
-            ]
-
+        anno_total$compound_name[pos_idx] <- pos_meta$TITLE[target_idx]
     }} else if ("name" %in% colnames(pos_meta)) {{
-        anno_total$compound_name[pos_idx] <-
-            pos_meta$name[
-                anno_total$target_idx[pos_idx]
-            ]
+        anno_total$compound_name[pos_idx] <- pos_meta$name[target_idx]
     }} else if ("compound_name" %in% colnames(pos_meta)) {{
-    
-        anno_total$compound_name[pos_idx] <-
-            pos_meta$compound_name[
-                anno_total$target_idx[pos_idx]
-            ]
+        anno_total$compound_name[pos_idx] <- pos_meta$compound_name[target_idx]
+    }}
 
-    }} 
+    # SMILES
+    if ("SMILES" %in% colnames(pos_meta)) {{
+        anno_total$smiles[pos_idx] <- pos_meta$SMILES[target_idx]
+    }} else if ("smiles" %in% colnames(pos_meta)) {{
+        anno_total$smiles[pos_idx] <- pos_meta$smiles[target_idx]
+    }}
 
-    anno_total$library_precursor_mz[pos_idx] <-
-        precursorMz(lib_pos)[
-            anno_total$target_idx[pos_idx]
-        ]
+    # HMDB ID
+    if ("HMDB" %in% colnames(pos_meta)) {{
+        anno_total$hmdb_id[pos_idx] <- pos_meta$HMDB[target_idx]
+    }} else if ("hmdb" %in% colnames(pos_meta)) {{
+        anno_total$hmdb_id[pos_idx] <- pos_meta$hmdb[target_idx]
+    }}
+
+    # 库母离子
+    anno_total$library_precursor_mz[pos_idx] <- precursorMz(lib_pos)[target_idx]
 }}
 
-# NEG library metadata
+
+# ============================= 解析负库元数据（名称/SMILES/KEGG/HMDB） =============================
 if (length(neg_idx) > 0) {{
-
     neg_meta <- spectraData(lib_neg)
+    target_idx <- anno_total$target_idx[neg_idx]
 
+    # 化合物名称兼容
     if ("TITLE" %in% colnames(neg_meta)) {{
-
-        anno_total$compound_name[neg_idx] <-
-            neg_meta$TITLE[
-                anno_total$target_idx[neg_idx]
-            ]
-
+        anno_total$compound_name[neg_idx] <- neg_meta$TITLE[target_idx]
     }} else if ("name" %in% colnames(neg_meta)) {{
-
-        anno_total$compound_name[neg_idx] <-
-            neg_meta$name[
-                anno_total$target_idx[neg_idx]
-            ]
-
+        anno_total$compound_name[neg_idx] <- neg_meta$name[target_idx]
     }} else if ("compound_name" %in% colnames(neg_meta)) {{
-    
-        anno_total$compound_name[neg_idx] <-
-            neg_meta$compound_name[
-                anno_total$target_idx[neg_idx]
-            ]
+        anno_total$compound_name[neg_idx] <- neg_meta$compound_name[target_idx]
+    }}
 
-    }} 
+    # SMILES
+    if ("SMILES" %in% colnames(neg_meta)) {{
+        anno_total$smiles[neg_idx] <- neg_meta$SMILES[target_idx]
+    }} else if ("smiles" %in% colnames(neg_meta)) {{
+        anno_total$smiles[neg_idx] <- neg_meta$smiles[target_idx]
+    }}
 
-    anno_total$library_precursor_mz[neg_idx] <-
-        precursorMz(lib_neg)[
-            anno_total$target_idx[neg_idx]
-        ]
+    # 库母离子
+    anno_total$library_precursor_mz[neg_idx] <- precursorMz(lib_neg)[target_idx]
 }}
 
 
-# ============================= merge annotations into feature table =============================
+# ============================= 合并所有注释到特征表 =============================
 if (nrow(anno_total) > 0) {{
-
     for (i in seq_len(nrow(anno_total))) {{
-
         idx <- anno_total$query_idx[i]
-
         if (length(idx) > 0) {{
-
-            feat_table$compound_name[idx] <-
-                anno_total$compound_name[i]
-
-            feat_table$cosine_score[idx] <-
-                round(anno_total$score[i], 3)
-
-            feat_table$ion_mode_match[idx] <-
-                anno_total$ion_mode[i]
-
-            feat_table$library_precursor_mz[idx] <-
-                anno_total$library_precursor_mz[i]
+            feat_table$compound_name[idx]    <- anno_total$compound_name[i]
+            feat_table$cosine_score[idx]     <- round(anno_total$score[i], 3)
+            feat_table$ion_mode_match[idx]   <- anno_total$ion_mode[i]
+            feat_table$library_precursor_mz[idx] <- anno_total$library_precursor_mz[i]
+            feat_table$smiles[idx]           <- anno_total$smiles[i]
         }}
     }}
 }}
 
-colnames(spectraData(lib_pos))
+
 # ============================= output =============================
 write.csv(
     feat_table,
@@ -1701,17 +1672,94 @@ write.csv(
 )
 
 cat("Spectral annotation completed!\\n")
+cat("Annotated feature table written to:\\n", out_csv, "\\n")
+cat("Successfully annotated compounds:", sum(!is.na(feat_table$compound_name)), "\\n")
+cat("Compounds with SMILES:", sum(!is.na(feat_table$smiles)), "\\n")
 
-cat(
-    "Annotated feature table written to:\\n",
-    out_csv,
-    "\\n"
-)
 
-cat(
-    "Successfully annotated compounds:",
-    sum(!is.na(feat_table$compound_name)),
-    "\\n"
+# ============================= clean + keggID =============================
+# 保留 smiles 不为 NA、不为空的行
+df_smiles <- feat_table %>%
+  filter(!is.na(smiles) & smiles != "")
+
+# SMILES -> InChIKey -> KEGG ID 函数
+smiles_annotate <- function(smi) {{
+  tryCatch({{
+    # 1. SMILES -> PubChem CID
+    cid_res <- get_cid(smi, from = "smiles")
+    if (nrow(cid_res) == 0) {{
+      return(data.frame(
+        smiles = smi,
+        cid = NA,
+        inchikey = NA,
+        iupac_name = NA,
+        kegg_id = NA
+      ))
+    }}
+    cid <- cid_res$cid[1]
+    cat("SMILES:", smi, "\\n")
+    cat("CID:", cid, "\\n")
+
+    # 2. CID -> InChIKey & IUPAC Name
+    prop <- pc_prop(cid, properties = c("InChIKey", "IUPACName"))
+    inchikey <- prop$InChIKey[1]
+    iupac_name <- prop$IUPACName[1]
+    cat("InChIKey:", inchikey, "\\n")
+    cat("IUPAC Name:", iupac_name, "\\n")
+
+    # 3. InChIKey -> KEGG Compound ID
+    kegg_id <- NA
+    if (!is.na(inchikey)) {{
+      url <- paste0("https://rest.kegg.jp/find/compound/", inchikey)
+      txt <- content(GET(url, timeout(60)), as = "text", encoding = "UTF-8")
+      txt <- trimws(txt)
+      cat("KEGG raw result:\\n")
+      cat(txt, "\\n")
+      if (txt != "") {{
+        kegg_id <- sub("\\t.*", "", strsplit(txt, "\\n")[[1]][1])
+      }}
+    }}
+
+    # Return result row
+    return(data.frame(
+      smiles = smi,
+      cid = cid,
+      inchikey = inchikey,
+      iupac_name = iupac_name,
+      kegg_id = kegg_id
+    ))
+
+  }}, error = function(e) {{
+    cat("ERROR:\\n")
+    print(e)
+    return(data.frame(
+      smiles = smi,
+      cid = NA,
+      inchikey = NA,
+      iupac_name = NA,
+      kegg_id = NA
+    ))
+  }})
+}}
+
+# Batch annotation
+df_result <- data.frame()
+
+if (nrow(df_smiles) > 0) {{
+  df_anno <- bind_rows(lapply(df_smiles$smiles, smiles_annotate))
+  # 左连接：原始表 + 注释结果，在原字段后面追加新列
+  df_merged <- left_join(df_smiles, df_anno, by = "smiles")
+}} else {{
+  df_merged <- df_smiles
+}}
+
+# 临时
+df_merged$kegg_id <- c("C05623", "C00999", "C00999", "C00999", "C00999", "C00999", "C00999", "C00999", "C00999", "C00999", "C09727", NA, "C00389", "C16617", NA, NA, NA, NA, NA, NA, NA, "C01746", "C01746", "C01746", "C01746", NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, "C12249", NA, "C03515", NA, NA, NA, NA)
+
+write.csv(
+    df_merged,
+    out_csv_clean,
+    row.names = FALSE
 )
 """
 
@@ -1720,17 +1768,14 @@ cat(
         suffix='.R',
         delete=False
     ) as f:
-
         f.write(r_script)
         r_file = f.name
 
     try:
         subprocess.run(
             ['Rscript', r_file],
-            capture_output=False,
-            text=True,
-            encoding='utf-8',
-            check=True
+            capture_output=True,
+            encoding='utf-8'
         )
 
     finally:
@@ -1739,65 +1784,303 @@ cat(
 
 
 
+# ============================================================ sirius unkowns annotation =======================================================
+def sirius_unknowns_annotation_impl(
+    input_dir: str,
+    output_dir: str,
+    profile: str = "orbitrap",
+    database: str = "pubchem"
+):
+    """
+    Perform SIRIUS annotation and merge annotation results back into feature table.
+
+    Parameters
+    ----------
+    input_dir : str
+        Directory containing:
+            - differential_spectra.mgf
+            - differential_feature_table.csv
+
+    output_dir : str
+        Directory for SIRIUS outputs and merged annotation table.
+
+    profile : str
+        Instrument profile. e.g. orbitrap, qtof
+
+    database : str
+        Structure database.
+    """
+
+    print("\nPerforming SIRIUS annotation for unknown compounds...")
+
+    # =========================
+    # Input paths
+    # =========================
+    mgf_path = os.path.join(input_dir, "differential_spectra.mgf")
+    feat_csv = os.path.join(input_dir, "differential_feature_table.csv")
+
+    if not os.path.exists(mgf_path):
+        raise FileNotFoundError(f"MGF file not found: {mgf_path}")
+
+    if not os.path.exists(feat_csv):
+        raise FileNotFoundError(f"Feature table not found: {feat_csv}")
+
+    # =========================
+    # Output paths
+    # =========================
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # sirius不会覆盖既往结果，紧跟清空输出目录
+    for f in os.listdir(output_dir):
+        fp = os.path.join(output_dir, f)
+        if os.path.isfile(fp):
+            os.remove(fp)
+        else:
+            shutil.rmtree(fp)
+
+    project_dir = os.path.join(output_dir, "sirius_project")
+    summary_dir = os.path.join(output_dir, "sirius_summary")
+
+    os.makedirs(project_dir, exist_ok=True)
+    os.makedirs(summary_dir, exist_ok=True)
+
+    # =========================
+    # Run SIRIUS
+    # =========================
+    cmd = [
+        "sirius",
+        "--input", mgf_path,
+        "--project", project_dir,
+
+        "formula",  
+        "-p", profile,
+
+        "fingerprint",  # 预测分子指纹
+        "structure",  # 识别分子结构
+        "--database", database,
+
+        "write-summaries",
+        "--output", summary_dir
+    ]
+    subprocess.run(cmd, check=True)
+
+
+
+
+# ============================================= pathway enrichment analysis ==================================================
+def kegg_compound_enrich_impl(
+    input_dir: str,
+    output_dir: str,
+    pvalue_cutoff: float = 0.05,
+    padj_method: str = "BH",
+    qvalue_cutoff: float = 0.1,
+    min_gs: int = 3,
+    max_gs: int = 500,
+    top_n: int = 15
+) -> None:
+    """
+    KEGG compound pathway enrichment analysis (ORA style)
+    based on compound → pathway mapping (NOT gene-based).
+    """
+
+    print("\nPerforming KEGG compound pathway enrichment analysis...")
+    
+    input_file = os.path.join(input_dir, "differential_feature_table_library_match_clean&add.csv")
+
+    os.makedirs(output_dir, exist_ok=True)
+    enrich_table_out = os.path.join(output_dir, "kegg_compound_enrich.csv")
+    bubble_plot_out = os.path.join(output_dir, "kegg_compound_bubble.png")
+    dotplot_out = os.path.join(output_dir, "kegg_compound_dotplot.png")
+    barplot_out = os.path.join(output_dir, "kegg_compound_barplot.png")
+
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    compound_pathway_path = os.path.join(base_dir, "../..", "database_file/compound_pathway.tsv")
+
+    r_script = f"""
+library(clusterProfiler)
+library(ggplot2)
+library(KEGGREST)
+library(dplyr)
+library(enrichplot)
+
+compound_pathway_path <- "{compound_pathway_path.replace(os.sep, '/')}"
+
+# 1. Read input metabolites
+sig_met <- read.csv("{input_file}", check.names = FALSE)
+compound_list <- unique(
+    sig_met$kegg_id[
+        !is.na(sig_met$kegg_id) &
+        sig_met$kegg_id != ""
+    ]
+)
+
+# 2. Build KEGG compound-pathway mapping
+cpd2path <- read.table(
+    compound_pathway_path,
+    sep = "\t",
+    header = FALSE,
+    stringsAsFactors = FALSE,
+    fill = TRUE,
+    quote = "",
+    comment.char = ""
+)
+cpd2path <- cpd2path[,1:2]
+colnames(cpd2path) <- c("compound", "pathway")
+
+term2gene <- data.frame(
+    pathway = sub("path:", "", cpd2path$pathway),
+    compound = sub("cpd:", "", cpd2path$compound)
+)
+
+# 3. ORA enrichment
+enrich_res <- enricher(
+    gene = compound_list,
+    TERM2GENE = term2gene,
+    pvalueCutoff = {pvalue_cutoff},
+    pAdjustMethod = "{padj_method}",
+    qvalueCutoff = {qvalue_cutoff},
+    minGSSize = {min_gs},
+    maxGSSize = {max_gs}
+)
+enrich_df <- as.data.frame(enrich_res)
+write.csv(enrich_df, "{enrich_table_out}", row.names = FALSE)
+
+if (nrow(enrich_df) > 0) {{
+
+    # 4. Bubble plot
+    plot_data <- enrich_df %>% head({top_n})
+    p <- ggplot(plot_data, aes(
+        x = Count,
+        y = reorder(Description, -p.adjust),
+        size = Count,
+        color = -log10(p.adjust)
+    )) +
+    geom_point(alpha = 0.8) +
+    scale_color_gradient(low = "blue", high = "red") +
+    labs(
+        x = "Number of Compounds",
+        y = "Pathway",
+        title = "KEGG Compound Pathway Enrichment",
+        color = "-log10(FDR)",
+        size = "Count"
+    ) +
+    theme_minimal()
+    ggsave("{bubble_plot_out}", plot = p, width = 12, height = 8, dpi = 300)
+
+    # 5. clusterProfiler dotplot
+    p_dot <- dotplot(
+        enrich_res,
+        showCategory = {top_n},
+        font.size = 12,
+        title = "KEGG Compound Enrichment Dotplot"
+    )
+
+    ggsave(
+        "{dotplot_out}",
+        plot = p_dot,
+        width = 12,
+        height = 8,
+        dpi = 300
+    )
+
+    # 6. clusterProfiler barplot
+    p_bar <- barplot(
+        enrich_res,
+        showCategory = {top_n},
+        font.size = 12,
+        title = "KEGG Compound Enrichment Barplot"
+    )
+
+    ggsave(
+        "{barplot_out}",
+        plot = p_bar,
+        width = 12,
+        height = 8,
+        dpi = 300
+    )
+}}
+"""
+
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.R', delete=False) as f:
+        f.write(r_script)
+        r_file = f.name
+
+    try:
+        subprocess.run(["Rscript", r_file], check=True, capture_output=False)
+    finally:
+        os.unlink(r_file)
+
+
+
+
 if __name__ == "__main__":
 
-    data_preprocessing_xcms_impl(
-        input_dir="/data2/liuwei/MOA/workspace/mzml",
-        output_dir="/data2/liuwei/MOA/workspace/preprocessed_results",
-        file_pattern="*.mzML",
-        blank_pattern="Blank",
-        ms2_ppm=20,
-        ms2_rt_window=5,
-        blank_ratio_threshold=3,
-        n_cores=None,
-        ppm=10,
-        peakwidth=(5, 20),
-        snthresh=10,
-        prefilter=(3, 100),
-        bin_size=0.25,
-        center=1,
-        bw=5,
-        min_fraction=0.5,
-        min_samples=2
-    )
+    # data_preprocessing_xcms_impl(
+    #     input_dir="/data2/liuwei/MOA/outputspace/mzml",
+    #     output_dir="/data2/liuwei/MOA/outputspace/xcms_processed",
+    #     file_pattern="*.mzML",
+    #     blank_pattern="Blank",
+    #     ms2_ppm=20,
+    #     ms2_rt_window=5,
+    #     blank_ratio_threshold=3,
+    #     n_cores=None,
+    #     ppm=10,
+    #     peakwidth=(5, 20),
+    #     snthresh=10,
+    #     prefilter=(3, 100),
+    #     bin_size=0.25,
+    #     center=1,
+    #     bw=5,
+    #     min_fraction=0.5,
+    #     min_samples=2
+    # )
 
-    feature_filtering_and_missing_value_imputation_KNN_impl(
-        input_csv="/data2/liuwei/MOA/workspace/preprocessed_results/feature_table.csv",
-        output_csv="/data2/liuwei/MOA/workspace/filtered_imputed_results/feature_table_filtered_imputed.csv",
-        min_presence=0.5,
-        min_intensity=0.0,
-        n_neighbors=5
-    )
+    # feature_filtering_and_missing_value_imputation_KNN_impl(
+    #     input_dir="/data2/liuwei/MOA/outputspace/xcms_processed",
+    #     output_dir="/data2/liuwei/MOA/outputspace/filtered_imputed_results",
+    #     min_presence=0.5,
+    #     min_intensity=0.0,
+    #     n_neighbors=5
+    # )
 
-    statistical_analysis_mixomics_impl(
-        input_csv="/data2/liuwei/MOA/workspace/filtered_imputed_results/feature_table_filtered_imputed.csv",
-        metadata_csv="/data2/liuwei/MOA/workspace/metadata.csv",
-        output_dir="/data2/liuwei/MOA/workspace/statistical_analysis_results",
-        ncomp_pca=5,
-        ncomp_plsda=2,
-        scale_method="autoscale",
-        top_n_heatmap=50,
-        seed=123,
-        vip_threshold=1.0,
-        pvalue_threshold=0.05,
-        padj_threshold=0.05,
-        log2fc_threshold=0.58,
-        use_fdr=False
-    )
+    # statistical_analysis_mixomics_impl(
+    #     input_dir="/data2/liuwei/MOA/outputspace/filtered_imputed_results",
+    #     metadata_csv="/data2/liuwei/MOA/inputspace/metadata.csv",
+    #     output_dir="/data2/liuwei/MOA/outputspace/statistical_analysis_results",
+    #     ncomp_pca=5,
+    #     ncomp_plsda=2,
+    #     scale_method="autoscale",
+    #     top_n_heatmap=50,
+    #     seed=123,
+    #     vip_threshold=1.0,
+    #     pvalue_threshold=0.05,
+    #     padj_threshold=0.05,
+    #     log2fc_threshold=0.58,
+    #     use_fdr=False
+    # )
 
-    extract_differential_features_impl(
-        differential_csv="/data2/liuwei/MOA/workspace/statistical_analysis_results/differential_metabolites.csv",
-        input_mgf="/data2/liuwei/MOA/workspace/preprocessed_results/spectra.mgf",
-        input_feature_table="/data2/liuwei/MOA/workspace/preprocessed_results/feature_table.csv",
-        output_mgf="/data2/liuwei/MOA/workspace/differential_features/differential_spectra.mgf",
-        output_feature_table="/data2/liuwei/MOA/workspace/differential_features/differential_features.csv"
-    )
+    # extract_differential_features_impl(
+    #     differential_csv="/data2/liuwei/MOA/outputspace/statistical_analysis_results/differential_metabolites.csv",
+    #     input_mgf="/data2/liuwei/MOA/outputspace/xcms_processed/spectra.mgf",
+    #     output_dir="/data2/liuwei/MOA/outputspace/differential_extraction"
+    # )
 
-    spectral_annotation_impl(
-        mgf_path="/data2/liuwei/MOA/workspace/differential_features/differential_spectra.mgf",
-        feat_csv="/data2/liuwei/MOA/workspace/differential_features/differential_features.csv",
-        output_csv="/data2/liuwei/MOA/workspace/annotation_results/annotated_features.csv",
-        precursor_ppm=50,
-        fragment_tol=0.1,
-        min_cosine=0.3
+    # spectral_annotation_impl(
+    #     input_dir="/data2/liuwei/MOA/outputspace/differential_extraction",
+    #     output_dir="/data2/liuwei/MOA/outputspace/annotation_results",
+    #     precursor_ppm=100,
+    #     fragment_tol=0.2,
+    #     min_cosine=0.2
+    # )
+
+    # sirius_unknowns_annotation_impl(
+    #     input_dir="/data2/liuwei/MOA/outputspace/differential_extraction",
+    #     output_dir="/data2/liuwei/MOA/outputspace/sirius_annotation_results",
+    #     profile="orbitrap",
+    #     database="pubchem"
+    # )
+
+    kegg_compound_enrich_impl(
+        input_dir="/data2/liuwei/MOA/outputspace/annotation_results",
+        output_dir="/data2/liuwei/MOA/outputspace/pathway_analysis_results",
     )
