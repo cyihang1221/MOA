@@ -1,5 +1,8 @@
+import base64
+import binascii
 import os
 import json
+import re
 import sqlite3
 import sys
 import threading
@@ -416,6 +419,12 @@ class UpdateMessageRequest(BaseModel):
     truncate_following: bool = False  # 编辑后删除该条之后的所有消息
 
 
+class ImageEditSaveRequest(BaseModel):
+    source_rel: str
+    image_data: str
+    filename: Optional[str] = None
+
+
 def parse_models_from_env() -> List[str]:
     configured = os.getenv("LLM_MODEL_CANDIDATES", "")
     values = [item.strip() for item in configured.split(",") if item.strip()]
@@ -708,6 +717,60 @@ def get_workspace_file(session_id: str, rel: str):
     }
     media_type = media_types.get(path.suffix.lower())
     return FileResponse(path, media_type=media_type, filename=path.name)
+
+
+IMAGE_DATA_URL_RE = re.compile(r"^data:image/png;base64,(?P<data>[A-Za-z0-9+/=\s]+)$")
+EDITABLE_IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"}
+
+
+@app.post("/api/sessions/{session_id}/image-edits")
+def save_image_edit(session_id: str, req: ImageEditSaveRequest):
+    sess = db_get_session(session_id)
+    if not sess:
+        raise HTTPException(status_code=404, detail="session not found")
+
+    source = _resolve_workspace_file(session_id, req.source_rel)
+    if source.suffix.lower() not in EDITABLE_IMAGE_SUFFIXES:
+        raise HTTPException(status_code=400, detail="source file is not an editable image")
+
+    slug = resolve_storage_slug(session_id)
+    output_root = session_work_dir(PROJECT_ROOT, slug).resolve()
+    try:
+        source.relative_to(output_root)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="only output images can be edited")
+
+    match = IMAGE_DATA_URL_RE.match(req.image_data.strip())
+    if not match:
+        raise HTTPException(status_code=400, detail="image_data must be a PNG data URL")
+
+    try:
+        png_bytes = base64.b64decode("".join(match.group("data").split()), validate=True)
+    except (binascii.Error, ValueError) as exc:
+        raise HTTPException(status_code=400, detail="invalid image data") from exc
+
+    if not png_bytes.startswith(b"\x89PNG\r\n\x1a\n"):
+        raise HTTPException(status_code=400, detail="image data is not a PNG")
+    if len(png_bytes) > 50 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="edited image is too large")
+
+    requested_name = safe_filename(req.filename or f"{source.stem}_edited.png")
+    if Path(requested_name).suffix.lower() != ".png":
+        requested_name = f"{Path(requested_name).stem}.png"
+    target = source.parent / requested_name
+    if target.exists():
+        target = source.parent / f"{target.stem}_{uuid.uuid4().hex[:8]}.png"
+
+    target.write_bytes(png_bytes)
+    stat = target.stat()
+    return {
+        "file": {
+            "name": target.relative_to(output_root).as_posix(),
+            "path": normalize_display_path(target),
+            "size": stat.st_size,
+            "modified": datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat(timespec="seconds"),
+        }
+    }
 
 
 @app.get("/api/sessions/{session_id}/files")

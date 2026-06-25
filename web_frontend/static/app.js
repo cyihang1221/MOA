@@ -36,6 +36,22 @@ const lightboxBackdrop = document.getElementById("lightboxBackdrop");
 const lightboxImg = document.getElementById("lightboxImg");
 const lightboxTitle = document.getElementById("lightboxTitle");
 const lightboxClose = document.getElementById("lightboxClose");
+const imageEditor = document.getElementById("imageEditor");
+const editorBackdrop = document.getElementById("editorBackdrop");
+const editorClose = document.getElementById("editorClose");
+const editorTitle = document.getElementById("editorTitle");
+const editorStage = document.getElementById("editorStage");
+const editorTextInput = document.getElementById("editorTextInput");
+const editorColorInput = document.getElementById("editorColorInput");
+const editorFontSizeInput = document.getElementById("editorFontSizeInput");
+const editorAddTitle = document.getElementById("editorAddTitle");
+const editorAddText = document.getElementById("editorAddText");
+const editorAddArrow = document.getElementById("editorAddArrow");
+const editorAddColorBlock = document.getElementById("editorAddColorBlock");
+const editorDelete = document.getElementById("editorDelete");
+const editorSave = document.getElementById("editorSave");
+const editorCancel = document.getElementById("editorCancel");
+const editorStatus = document.getElementById("editorStatus");
 
 const IMAGE_EXT_RE = /\.(png|jpe?g|gif|webp|svg)$/i;
 
@@ -73,6 +89,14 @@ let isStreaming = false;
 let activeStreamAbort = null;
 let lastAssistantMessageId = null;
 let appRuntime = null;
+let imageEditorState = {
+  stage: null,
+  layer: null,
+  transformer: null,
+  selectedNode: null,
+  sourceRel: "",
+  sourceTitle: "",
+};
 
 function getUrlParams() {
   return new URLSearchParams(window.location.search);
@@ -221,9 +245,22 @@ function renderOutputImageGallery(files, sessionId) {
     meta.textContent = formatSize(file.size || 0);
     const download = createDownloadLink(sessionId, file.name, t("image.download"));
     if (download) download.classList.add("output-image-download");
+    const editBtn = document.createElement("button");
+    editBtn.type = "button";
+    editBtn.className = "output-image-edit secondary-btn small-btn";
+    editBtn.textContent = t("image.edit");
+    editBtn.addEventListener("click", (event) => {
+      event.stopPropagation();
+      openImageEditor({
+        url,
+        rel: file.name,
+        title: file.name.split("/").pop(),
+      });
+    });
 
     side.appendChild(title);
     side.appendChild(meta);
+    side.appendChild(editBtn);
     if (download) side.appendChild(download);
 
     item.appendChild(thumbBtn);
@@ -484,6 +521,225 @@ function closeImageLightbox() {
   imageLightbox.classList.add("hidden");
   imageLightbox.setAttribute("aria-hidden", "true");
   lightboxImg.removeAttribute("src");
+}
+
+function setEditorStatus(text, kind = "") {
+  if (!editorStatus) return;
+  editorStatus.textContent = text || "";
+  editorStatus.className = kind ? `image-editor-status ${kind}` : "image-editor-status";
+}
+
+function resetImageEditor() {
+  if (imageEditorState.stage) {
+    imageEditorState.stage.destroy();
+  }
+  imageEditorState = {
+    stage: null,
+    layer: null,
+    transformer: null,
+    selectedNode: null,
+    sourceRel: "",
+    sourceTitle: "",
+  };
+  if (editorStage) editorStage.innerHTML = "";
+  if (editorTextInput) editorTextInput.value = "";
+  setEditorStatus("");
+}
+
+function editableFileStem(name) {
+  return String(name || "image").replace(/\.[^.]+$/, "");
+}
+
+function setSelectedEditorNode(node) {
+  const state = imageEditorState;
+  state.selectedNode = node || null;
+  if (state.transformer) {
+    state.transformer.nodes(node ? [node] : []);
+    state.transformer.moveToTop();
+  }
+  if (editorDelete) editorDelete.disabled = !node;
+  if (editorTextInput) {
+    editorTextInput.disabled = !node || typeof node.text !== "function";
+    editorTextInput.value = node && typeof node.text === "function" ? node.text() : "";
+  }
+  if (editorColorInput && node) {
+    const color = typeof node.fill === "function" ? node.fill() : node.stroke?.();
+    if (/^#[0-9a-f]{6}$/i.test(color || "")) editorColorInput.value = color;
+  }
+  if (editorFontSizeInput && node && typeof node.fontSize === "function") {
+    editorFontSizeInput.value = String(node.fontSize());
+  }
+  state.layer?.batchDraw();
+}
+
+function bindEditableNode(node) {
+  node.on("click tap", (event) => {
+    event.cancelBubble = true;
+    setSelectedEditorNode(node);
+  });
+  node.on("dragstart", () => setSelectedEditorNode(node));
+  return node;
+}
+
+function addEditorText(text, options = {}) {
+  const state = imageEditorState;
+  if (!state.layer) return null;
+  const width = state.stage?.width() || 800;
+  const node = new Konva.Text({
+    x: options.x ?? Math.max(24, width * 0.08),
+    y: options.y ?? 24,
+    text,
+    fontSize: Number(editorFontSizeInput?.value || options.fontSize || 28),
+    fontFamily: "Arial",
+    fontStyle: options.fontStyle || "normal",
+    fill: editorColorInput?.value || "#111827",
+    draggable: true,
+    padding: 4,
+  });
+  state.layer.add(bindEditableNode(node));
+  setSelectedEditorNode(node);
+  return node;
+}
+
+function addEditorArrow() {
+  const state = imageEditorState;
+  if (!state.layer || !state.stage) return null;
+  const width = state.stage.width();
+  const height = state.stage.height();
+  const node = new Konva.Arrow({
+    points: [
+      Math.max(40, width * 0.25),
+      Math.max(60, height * 0.35),
+      Math.max(160, width * 0.55),
+      Math.max(100, height * 0.35),
+    ],
+    pointerLength: 14,
+    pointerWidth: 14,
+    fill: editorColorInput?.value || "#ef4444",
+    stroke: editorColorInput?.value || "#ef4444",
+    strokeWidth: 4,
+    draggable: true,
+  });
+  state.layer.add(bindEditableNode(node));
+  setSelectedEditorNode(node);
+  return node;
+}
+
+function addEditorColorBlock() {
+  const state = imageEditorState;
+  if (!state.layer || !state.stage) return null;
+  const node = new Konva.Rect({
+    x: Math.max(24, state.stage.width() * 0.08),
+    y: Math.max(80, state.stage.height() * 0.18),
+    width: 28,
+    height: 18,
+    fill: editorColorInput?.value || "#2563eb",
+    stroke: "#ffffff",
+    strokeWidth: 1,
+    draggable: true,
+  });
+  state.layer.add(bindEditableNode(node));
+  setSelectedEditorNode(node);
+  return node;
+}
+
+function openImageEditor({ url, rel, title }) {
+  if (!url || !rel || !imageEditor || !editorStage) return;
+  if (!window.Konva) {
+    setStatus(t("image.editorUnavailable"));
+    return;
+  }
+  closeImageLightbox();
+  resetImageEditor();
+  imageEditorState.sourceRel = rel;
+  imageEditorState.sourceTitle = title || rel.split("/").pop();
+  editorTitle.textContent = t("image.editorTitle", { name: imageEditorState.sourceTitle });
+  imageEditor.classList.remove("hidden");
+  imageEditor.setAttribute("aria-hidden", "false");
+  setEditorStatus(t("image.loading"));
+
+  const img = new Image();
+  img.onload = () => {
+    const maxWidth = Math.min(960, Math.max(480, window.innerWidth - 420));
+    const maxHeight = Math.min(660, Math.max(360, window.innerHeight - 220));
+    const scale = Math.min(1, maxWidth / img.naturalWidth, maxHeight / img.naturalHeight);
+    const width = Math.max(1, Math.round(img.naturalWidth * scale));
+    const height = Math.max(1, Math.round(img.naturalHeight * scale));
+    const stage = new Konva.Stage({
+      container: editorStage,
+      width,
+      height,
+    });
+    const layer = new Konva.Layer();
+    const imageNode = new Konva.Image({
+      x: 0,
+      y: 0,
+      width,
+      height,
+      image: img,
+      listening: false,
+    });
+    const transformer = new Konva.Transformer({
+      rotateEnabled: true,
+      enabledAnchors: ["top-left", "top-right", "bottom-left", "bottom-right"],
+    });
+
+    layer.add(imageNode);
+    layer.add(transformer);
+    stage.add(layer);
+    stage.on("click tap", (event) => {
+      if (event.target === stage) setSelectedEditorNode(null);
+    });
+    imageEditorState.stage = stage;
+    imageEditorState.layer = layer;
+    imageEditorState.transformer = transformer;
+    addEditorText(editableFileStem(imageEditorState.sourceTitle), {
+      x: Math.max(16, width * 0.08),
+      y: Math.max(12, height * 0.05),
+      fontSize: 30,
+      fontStyle: "bold",
+    });
+    setEditorStatus(t("image.ready"));
+  };
+  img.onerror = () => setEditorStatus(t("image.loadFail"), "error");
+  img.src = `${url}${url.includes("?") ? "&" : "?"}edit=${Date.now()}`;
+}
+
+function closeImageEditor() {
+  if (!imageEditor) return;
+  imageEditor.classList.add("hidden");
+  imageEditor.setAttribute("aria-hidden", "true");
+  resetImageEditor();
+}
+
+async function saveImageEdit() {
+  const state = imageEditorState;
+  if (!currentSessionId || !state.stage || !state.sourceRel) return;
+  try {
+    setEditorStatus(t("image.saving"));
+    if (editorSave) editorSave.disabled = true;
+    setSelectedEditorNode(null);
+    const stem = editableFileStem(state.sourceTitle);
+    const imageData = state.stage.toDataURL({ mimeType: "image/png", pixelRatio: 2 });
+    const res = await fetch(`/api/sessions/${currentSessionId}/image-edits`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        source_rel: state.sourceRel,
+        image_data: imageData,
+        filename: `${stem}_edited.png`,
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.detail || t("image.saveFail"));
+    closeImageEditor();
+    await loadWorkspaceFiles(currentSessionId);
+    setStatus(t("image.saved", { name: data.file?.name || `${stem}_edited.png` }));
+  } catch (err) {
+    setEditorStatus(t("image.saveFailWithMsg", { msg: err.message }), "error");
+  } finally {
+    if (editorSave) editorSave.disabled = false;
+  }
 }
 
 function isMessagesNearBottom(threshold = 96) {
@@ -1122,7 +1378,76 @@ if (lightboxClose) {
 if (lightboxBackdrop) {
   lightboxBackdrop.addEventListener("click", closeImageLightbox);
 }
+if (editorAddTitle) {
+  editorAddTitle.addEventListener("click", () => {
+    addEditorText(editableFileStem(imageEditorState.sourceTitle), { fontStyle: "bold" });
+  });
+}
+if (editorAddText) {
+  editorAddText.addEventListener("click", () => addEditorText(t("image.newText")));
+}
+if (editorAddArrow) {
+  editorAddArrow.addEventListener("click", addEditorArrow);
+}
+if (editorAddColorBlock) {
+  editorAddColorBlock.addEventListener("click", addEditorColorBlock);
+}
+if (editorDelete) {
+  editorDelete.disabled = true;
+  editorDelete.addEventListener("click", () => {
+    const node = imageEditorState.selectedNode;
+    if (!node) return;
+    node.destroy();
+    setSelectedEditorNode(null);
+  });
+}
+if (editorTextInput) {
+  editorTextInput.addEventListener("input", () => {
+    const node = imageEditorState.selectedNode;
+    if (node && typeof node.text === "function") {
+      node.text(editorTextInput.value);
+      imageEditorState.layer?.batchDraw();
+    }
+  });
+}
+if (editorColorInput) {
+  editorColorInput.addEventListener("input", () => {
+    const node = imageEditorState.selectedNode;
+    if (!node) return;
+    if (typeof node.fill === "function") node.fill(editorColorInput.value);
+    if (typeof node.stroke === "function") node.stroke(editorColorInput.value);
+    imageEditorState.layer?.batchDraw();
+  });
+}
+if (editorFontSizeInput) {
+  editorFontSizeInput.addEventListener("input", () => {
+    const node = imageEditorState.selectedNode;
+    if (node && typeof node.fontSize === "function") {
+      node.fontSize(Number(editorFontSizeInput.value || 24));
+      imageEditorState.layer?.batchDraw();
+    }
+  });
+}
+if (editorSave) editorSave.addEventListener("click", saveImageEdit);
+if (editorCancel) editorCancel.addEventListener("click", closeImageEditor);
+if (editorClose) editorClose.addEventListener("click", closeImageEditor);
+if (editorBackdrop) editorBackdrop.addEventListener("click", closeImageEditor);
 document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && imageEditor && !imageEditor.classList.contains("hidden")) {
+    closeImageEditor();
+    return;
+  }
+  if (
+    (event.key === "Delete" || event.key === "Backspace") &&
+    imageEditor &&
+    !imageEditor.classList.contains("hidden") &&
+    imageEditorState.selectedNode &&
+    document.activeElement !== editorTextInput
+  ) {
+    imageEditorState.selectedNode.destroy();
+    setSelectedEditorNode(null);
+    return;
+  }
   if (event.key === "Escape" && imageLightbox && !imageLightbox.classList.contains("hidden")) {
     closeImageLightbox();
   }
