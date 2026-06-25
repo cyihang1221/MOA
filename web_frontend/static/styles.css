@@ -871,6 +871,133 @@ body:has(.shared-banner:not(.hidden)) {
   border-radius: 6px;
 }
 
+.image-editor {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.image-editor-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.78);
+}
+
+.image-editor-panel {
+  position: relative;
+  z-index: 1;
+  width: min(1240px, 98vw);
+  max-height: 94vh;
+  background: var(--white);
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.38);
+}
+
+.image-editor-header,
+.image-editor-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #f8fafc;
+  border-bottom: 1px solid var(--border);
+}
+
+.image-editor-footer {
+  justify-content: flex-end;
+  border-top: 1px solid var(--border);
+  border-bottom: 0;
+}
+
+.image-editor-title {
+  font-size: 14px;
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.image-editor-body {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+}
+
+.image-editor-toolbar {
+  border-right: 1px solid var(--border);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #fff;
+  overflow-y: auto;
+}
+
+.image-editor-toolbar .secondary-btn {
+  width: 100%;
+}
+
+.image-editor-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.image-editor-field input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px;
+  font: inherit;
+}
+
+.image-editor-field input[type="color"] {
+  height: 38px;
+  padding: 3px;
+}
+
+.image-editor-status {
+  min-height: 18px;
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.image-editor-status.error {
+  color: #dc2626;
+}
+
+.image-editor-canvas-wrap {
+  min-width: 0;
+  min-height: 420px;
+  max-height: calc(94vh - 108px);
+  padding: 16px;
+  overflow: auto;
+  background: #0f172a;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.image-editor-stage {
+  background: #fff;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.28);
+}
+
+.output-image-edit {
+  align-self: flex-start;
+  margin-top: 4px;
+}
+
 @media (max-width: 960px) {
   body {
     height: auto;
@@ -903,5 +1030,15 @@ body:has(.shared-banner:not(.hidden)) {
   .share-group {
     margin-left: 0;
     width: 100%;
+  }
+
+  .image-editor-body {
+    grid-template-columns: 1fr;
+  }
+
+  .image-editor-toolbar {
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+    max-height: 230px;
   }
 }

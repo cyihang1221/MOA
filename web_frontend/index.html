@@ -334,6 +334,86 @@
 
 
 
+    <div id="imageEditor" class="image-editor hidden" role="dialog" aria-modal="true" aria-hidden="true">
+
+      <div class="image-editor-backdrop" id="editorBackdrop"></div>
+
+      <div class="image-editor-panel">
+
+        <header class="image-editor-header">
+
+          <span id="editorTitle" class="image-editor-title"></span>
+
+          <button id="editorClose" type="button" class="icon-btn" aria-label="Close">×</button>
+
+        </header>
+
+        <div class="image-editor-body">
+
+          <aside class="image-editor-toolbar">
+
+            <button id="editorAddTitle" type="button" class="secondary-btn" data-i18n="image.addTitle">
+              添加标题
+            </button>
+
+            <button id="editorAddText" type="button" class="secondary-btn" data-i18n="image.addText">
+              添加文字
+            </button>
+
+            <button id="editorAddArrow" type="button" class="secondary-btn" data-i18n="image.addArrow">
+              添加箭头
+            </button>
+
+            <button id="editorAddColorBlock" type="button" class="secondary-btn" data-i18n="image.addColorBlock">
+              添加色块
+            </button>
+
+            <label class="image-editor-field">
+              <span data-i18n="image.text">文字</span>
+              <input id="editorTextInput" type="text" data-i18n-placeholder="image.textPlaceholder" placeholder="选择文字后编辑" />
+            </label>
+
+            <label class="image-editor-field">
+              <span data-i18n="image.color">颜色</span>
+              <input id="editorColorInput" type="color" value="#111827" />
+            </label>
+
+            <label class="image-editor-field">
+              <span data-i18n="image.fontSize">字号</span>
+              <input id="editorFontSizeInput" type="number" min="8" max="96" value="28" />
+            </label>
+
+            <button id="editorDelete" type="button" class="secondary-btn" data-i18n="image.deleteSelected">
+              删除选中
+            </button>
+
+            <p id="editorStatus" class="image-editor-status"></p>
+
+          </aside>
+
+          <div class="image-editor-canvas-wrap">
+
+            <div id="editorStage" class="image-editor-stage"></div>
+
+          </div>
+
+        </div>
+
+        <footer class="image-editor-footer">
+
+          <button id="editorCancel" type="button" class="secondary-btn" data-i18n="msg.cancel">取消</button>
+
+          <button id="editorSave" type="button" data-i18n="image.save">保存为新图</button>
+
+        </footer>
+
+      </div>
+
+    </div>
+
+
+    <script src="https://unpkg.com/konva@latest/konva.min.js"></script>
+
     <script src="/static/i18n.js?v=20260618"></script>
 
     <script src="/static/app.js?v=20260618"></script>
