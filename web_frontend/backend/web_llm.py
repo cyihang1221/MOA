@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import os
-from typing import Dict, List, Optional
+from typing import Dict, Iterator, List, Optional
 
 from langchain_openai import ChatOpenAI
 
@@ -48,6 +48,18 @@ class WebLLMClient:
             if stream_to_stdout:
                 print(f"❌ 调用 LLM API 时发生错误: {exc}")
             return None
+
+    def stream_think(
+        self,
+        messages: List[Dict[str, str]],
+        temperature: float = 0.0,
+    ) -> Iterator[str]:
+        """流式生成，逐块 yield 文本（供非 Agent 聊天 SSE 使用）。"""
+        response = self.llm.stream(input=messages, temperature=temperature)
+        for chunk in response:
+            content = chunk.content
+            if content:
+                yield content
 
     def think_complete(
         self,
