@@ -2001,6 +2001,25 @@ def _plot_family_size_distribution(
     fig.savefig(output_path, dpi=300, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     print(f"    ✅ 家族大小分布图: {output_path}")
+    try:
+        from src.tools.plotly_export import (
+            build_family_size_distribution_figure,
+            maybe_save_plotly,
+        )
+
+        maybe_save_plotly(
+            build_family_size_distribution_figure(
+                labels=labels,
+                sizes=sizes,
+                colors=colors,
+                title=title,
+                n_families=len(sorted_fams),
+                n_singletons=n_singletons,
+            ),
+            output_path,
+        )
+    except Exception:
+        pass
 
 
 # ---------- 余弦相似度分布 ----------
@@ -2051,6 +2070,18 @@ def _plot_cosine_distribution(
     fig.savefig(output_path, dpi=300, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     print(f"    ✅ 余弦相似度分布图: {output_path}")
+    try:
+        from src.tools.plotly_export import (
+            build_cosine_distribution_figure,
+            maybe_save_plotly,
+        )
+
+        maybe_save_plotly(
+            build_cosine_distribution_figure(cosines=cosines, title=title, median=median),
+            output_path,
+        )
+    except Exception:
+        pass
 
 
 # ---------- 节点度数分布 ----------
@@ -2097,6 +2128,25 @@ def _plot_degree_distribution(
     fig.savefig(output_path, dpi=300, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     print(f"    ✅ 度数分布图: {output_path}")
+    try:
+        from src.tools.plotly_export import (
+            build_degree_distribution_figure,
+            maybe_save_plotly,
+        )
+
+        maybe_save_plotly(
+            build_degree_distribution_figure(
+                degrees=degrees,
+                title=title,
+                avg_deg=float(avg_deg),
+                max_deg=max_deg,
+                isolated=degrees.count(0),
+                n_nodes=G.number_of_nodes(),
+            ),
+            output_path,
+        )
+    except Exception:
+        pass
 
 
 # ---------- FBMN 专用：Pearson 相关性 ----------

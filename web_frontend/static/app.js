@@ -44,6 +44,7 @@ const editorStage = document.getElementById("editorStage");
 const editorTextInput = document.getElementById("editorTextInput");
 const editorColorInput = document.getElementById("editorColorInput");
 const editorFontSizeInput = document.getElementById("editorFontSizeInput");
+const editorStageScaler = document.getElementById("editorStageScaler");
 const editorAddTitle = document.getElementById("editorAddTitle");
 const editorAddText = document.getElementById("editorAddText");
 const editorAddArrow = document.getElementById("editorAddArrow");
@@ -52,6 +53,18 @@ const editorDelete = document.getElementById("editorDelete");
 const editorSave = document.getElementById("editorSave");
 const editorCancel = document.getElementById("editorCancel");
 const editorStatus = document.getElementById("editorStatus");
+const plotlyEditor = document.getElementById("plotlyEditor");
+const plotlyEditorBackdrop = document.getElementById("plotlyEditorBackdrop");
+const plotlyEditorClose = document.getElementById("plotlyEditorClose");
+const plotlyEditorTitle = document.getElementById("plotlyEditorTitle");
+const plotlyEditorHint = document.getElementById("plotlyEditorHint");
+const plotlyChart = document.getElementById("plotlyChart");
+const plotlyLegendColorInput = document.getElementById("plotlyLegendColorInput");
+const plotlyLegendColorRow = document.getElementById("plotlyLegendColorRow");
+const plotlyTraceSelect = document.getElementById("plotlyTraceSelect");
+const plotlyEditorSave = document.getElementById("plotlyEditorSave");
+const plotlyEditorCancel = document.getElementById("plotlyEditorCancel");
+const plotlyEditorStatus = document.getElementById("plotlyEditorStatus");
 
 const IMAGE_EXT_RE = /\.(png|jpe?g|gif|webp|svg)$/i;
 
@@ -94,8 +107,14 @@ let imageEditorState = {
   layer: null,
   transformer: null,
   selectedNode: null,
+  displayScale: 1,
   sourceRel: "",
   sourceTitle: "",
+};
+let plotlyEditorState = {
+  sourceRel: "",
+  sourceTitle: "",
+  selectedTrace: null,
 };
 
 function getUrlParams() {
@@ -249,9 +268,9 @@ function renderOutputImageGallery(files, sessionId) {
     editBtn.type = "button";
     editBtn.className = "output-image-edit secondary-btn small-btn";
     editBtn.textContent = t("image.edit");
-    editBtn.addEventListener("click", (event) => {
+    editBtn.addEventListener("click", async (event) => {
       event.stopPropagation();
-      openImageEditor({
+      await openImageEditor({
         url,
         rel: file.name,
         title: file.name.split("/").pop(),
@@ -475,7 +494,7 @@ async function resendFromEditedUser(messageId, content) {
   await runAssistantStream({
     userMessage: content,
     editMessageId: messageId,
-    useAgent: /\[已上传附件\]|\[Attachments uploaded\]/.test(content),
+    useAgent: shouldUseAgent(content),
   });
 }
 
@@ -538,12 +557,41 @@ function resetImageEditor() {
     layer: null,
     transformer: null,
     selectedNode: null,
+    displayScale: 1,
     sourceRel: "",
     sourceTitle: "",
   };
   if (editorStage) editorStage.innerHTML = "";
+  if (editorStageScaler) {
+    editorStageScaler.style.width = "";
+    editorStageScaler.style.height = "";
+  }
   if (editorTextInput) editorTextInput.value = "";
   setEditorStatus("");
+}
+
+function plotlyCompanionRel(imageRel) {
+  return String(imageRel || "").replace(/\.(png|jpe?g|gif|webp|svg)$/i, ".plotly.json");
+}
+
+function fitKonvaStageDisplay(natW, natH) {
+  const maxWidth = Math.min(1100, Math.max(360, window.innerWidth - 300));
+  const maxHeight = Math.min(760, Math.max(280, window.innerHeight - 180));
+  const scale = Math.min(1, maxWidth / natW, maxHeight / natH);
+  const displayW = Math.max(1, Math.ceil(natW * scale));
+  const displayH = Math.max(1, Math.ceil(natH * scale));
+  if (editorStageScaler) {
+    editorStageScaler.style.width = `${displayW}px`;
+    editorStageScaler.style.height = `${displayH}px`;
+  }
+  if (editorStage) {
+    editorStage.style.width = `${natW}px`;
+    editorStage.style.height = `${natH}px`;
+    editorStage.style.transform = `scale(${scale})`;
+    editorStage.style.transformOrigin = "top left";
+  }
+  imageEditorState.displayScale = scale;
+  return scale;
 }
 
 function editableFileStem(name) {
@@ -556,6 +604,21 @@ function setSelectedEditorNode(node) {
   if (state.transformer) {
     state.transformer.nodes(node ? [node] : []);
     state.transformer.moveToTop();
+    state.transformer.keepRatio(false);
+    state.transformer.enabledAnchors(
+      node && node.getClassName && node.getClassName() === "Rect"
+        ? [
+            "top-left",
+            "top-center",
+            "top-right",
+            "middle-left",
+            "middle-right",
+            "bottom-left",
+            "bottom-center",
+            "bottom-right",
+          ]
+        : ["top-left", "top-right", "bottom-left", "bottom-right"]
+    );
   }
   if (editorDelete) editorDelete.disabled = !node;
   if (editorTextInput) {
@@ -643,13 +706,14 @@ function addEditorColorBlock() {
   return node;
 }
 
-function openImageEditor({ url, rel, title }) {
+function openKonvaEditor({ url, rel, title }) {
   if (!url || !rel || !imageEditor || !editorStage) return;
   if (!window.Konva) {
     setStatus(t("image.editorUnavailable"));
     return;
   }
   closeImageLightbox();
+  closePlotlyEditor();
   resetImageEditor();
   imageEditorState.sourceRel = rel;
   imageEditorState.sourceTitle = title || rel.split("/").pop();
@@ -660,28 +724,31 @@ function openImageEditor({ url, rel, title }) {
 
   const img = new Image();
   img.onload = () => {
-    const maxWidth = Math.min(960, Math.max(480, window.innerWidth - 420));
-    const maxHeight = Math.min(660, Math.max(360, window.innerHeight - 220));
-    const scale = Math.min(1, maxWidth / img.naturalWidth, maxHeight / img.naturalHeight);
-    const width = Math.max(1, Math.round(img.naturalWidth * scale));
-    const height = Math.max(1, Math.round(img.naturalHeight * scale));
+    const natW = Math.max(1, img.naturalWidth);
+    const natH = Math.max(1, img.naturalHeight);
+    fitKonvaStageDisplay(natW, natH);
     const stage = new Konva.Stage({
       container: editorStage,
-      width,
-      height,
+      width: natW,
+      height: natH,
     });
     const layer = new Konva.Layer();
     const imageNode = new Konva.Image({
       x: 0,
       y: 0,
-      width,
-      height,
+      width: natW,
+      height: natH,
       image: img,
       listening: false,
     });
     const transformer = new Konva.Transformer({
       rotateEnabled: true,
       enabledAnchors: ["top-left", "top-right", "bottom-left", "bottom-right"],
+      keepRatio: false,
+      boundBoxFunc: (oldBox, newBox) => {
+        if (newBox.width < 6 || newBox.height < 6) return oldBox;
+        return newBox;
+      },
     });
 
     layer.add(imageNode);
@@ -693,16 +760,232 @@ function openImageEditor({ url, rel, title }) {
     imageEditorState.stage = stage;
     imageEditorState.layer = layer;
     imageEditorState.transformer = transformer;
-    addEditorText(editableFileStem(imageEditorState.sourceTitle), {
-      x: Math.max(16, width * 0.08),
-      y: Math.max(12, height * 0.05),
-      fontSize: 30,
-      fontStyle: "bold",
-    });
     setEditorStatus(t("image.ready"));
   };
   img.onerror = () => setEditorStatus(t("image.loadFail"), "error");
   img.src = `${url}${url.includes("?") ? "&" : "?"}edit=${Date.now()}`;
+}
+
+async function openImageEditor({ url, rel, title }) {
+  const plotlyRel = plotlyCompanionRel(rel);
+  if (currentSessionId && plotlyRel && window.Plotly) {
+    const plotlyUrl = workspaceFileUrl(currentSessionId, plotlyRel);
+    if (plotlyUrl) {
+      try {
+        const res = await fetch(plotlyUrl);
+        if (res.ok) {
+          const figure = await res.json();
+          openPlotlyEditor({ rel, title, figure });
+          return;
+        }
+      } catch {
+        /* fall back to overlay editor */
+      }
+    }
+  }
+  openKonvaEditor({ url, rel, title });
+}
+
+function setPlotlyEditorStatus(text, kind = "") {
+  if (!plotlyEditorStatus) return;
+  plotlyEditorStatus.textContent = text || "";
+  plotlyEditorStatus.className = kind ? `plotly-editor-status ${kind}` : "plotly-editor-status";
+}
+
+function traceColorValue(trace) {
+  if (!trace) return "#111827";
+  const markerColor = trace.marker?.color;
+  if (typeof markerColor === "string") return markerColor;
+  if (Array.isArray(markerColor) && markerColor.length) return markerColor[0];
+  if (typeof trace.line?.color === "string") return trace.line.color;
+  if (typeof trace.fillcolor === "string") return trace.fillcolor;
+  return "#111827";
+}
+
+function applyPlotlyTraceColor(traceIndex, color) {
+  if (!plotlyChart || !window.Plotly || traceIndex == null) return;
+  const trace = plotlyChart.data?.[traceIndex];
+  if (!trace) return;
+  const update = {};
+  if (trace.type === "scatter" && trace.mode && String(trace.mode).includes("lines")) {
+    update["line.color"] = color;
+    if (trace.marker) update["marker.color"] = color;
+  } else if (trace.type === "bar" || trace.type === "histogram") {
+    update["marker.color"] = color;
+  } else {
+    update["marker.color"] = color;
+    if (trace.line) update["line.color"] = color;
+  }
+  Plotly.restyle(plotlyChart, update, [traceIndex]);
+  setPlotlyEditorStatus(t("image.plotlyColorApplied", { name: trace.name || traceIndex + 1 }));
+}
+
+function plotlyTraceLabel(trace, index) {
+  return trace?.name || `Series ${index + 1}`;
+}
+
+function selectPlotlyTrace(traceIndex, { openPicker = false } = {}) {
+  if (!plotlyChart || traceIndex == null || traceIndex < 0) return;
+  const trace = plotlyChart.data?.[traceIndex];
+  if (!trace) return;
+
+  plotlyEditorState.selectedTrace = traceIndex;
+  const label = plotlyTraceLabel(trace, traceIndex);
+
+  if (plotlyLegendColorRow) plotlyLegendColorRow.classList.remove("hidden");
+  if (plotlyTraceSelect && plotlyTraceSelect.value !== String(traceIndex)) {
+    plotlyTraceSelect.value = String(traceIndex);
+  }
+  if (plotlyLegendColorInput) {
+    plotlyLegendColorInput.value = traceColorValue(trace);
+    plotlyLegendColorInput.disabled = false;
+    if (openPicker) {
+      requestAnimationFrame(() => {
+        try {
+          if (typeof plotlyLegendColorInput.showPicker === "function") {
+            plotlyLegendColorInput.showPicker();
+          }
+        } catch {
+          /* 浏览器可能禁止自动弹出；用户可点击色块 */
+        }
+      });
+    }
+  }
+  setPlotlyEditorStatus(t("image.plotlyPickLegend", { name: label }));
+}
+
+function populatePlotlyTraceSelect(traces) {
+  if (!plotlyTraceSelect) return;
+  plotlyTraceSelect.innerHTML = "";
+  const items = (traces || []).map((trace, index) => ({ trace, index })).filter(
+    ({ trace }) => trace.showlegend !== false
+  );
+  if (!items.length) {
+    const opt = document.createElement("option");
+    opt.value = "";
+    opt.textContent = t("image.plotlyNoLegend");
+    plotlyTraceSelect.appendChild(opt);
+    plotlyTraceSelect.disabled = true;
+    return;
+  }
+  plotlyTraceSelect.disabled = false;
+  items.forEach(({ trace, index }) => {
+    const opt = document.createElement("option");
+    opt.value = String(index);
+    opt.textContent = plotlyTraceLabel(trace, index);
+    plotlyTraceSelect.appendChild(opt);
+  });
+  plotlyTraceSelect.value = String(items[0].index);
+}
+
+function bindPlotlyLegendColorPicker() {
+  if (!plotlyChart || !window.Plotly) return;
+  if (typeof plotlyChart.removeAllListeners === "function") {
+    plotlyChart.removeAllListeners("plotly_legendclick");
+    plotlyChart.removeAllListeners("plotly_legenddoubleclick");
+  }
+  plotlyChart.on("plotly_legendclick", (event) => {
+    selectPlotlyTrace(event.curveNumber, { openPicker: true });
+    return false;
+  });
+  plotlyChart.on("plotly_legenddoubleclick", () => false);
+}
+
+function openPlotlyEditor({ rel, title, figure }) {
+  if (!plotlyEditor || !plotlyChart || !window.Plotly) {
+    openKonvaEditor({
+      url: workspaceFileUrl(currentSessionId, rel),
+      rel,
+      title,
+    });
+    return;
+  }
+  closeImageLightbox();
+  closeImageEditor();
+  plotlyEditorState.sourceRel = rel;
+  plotlyEditorState.sourceTitle = title || rel.split("/").pop();
+  plotlyEditorState.selectedTrace = null;
+  if (plotlyLegendColorInput) {
+    plotlyLegendColorInput.value = "#111827";
+    plotlyLegendColorInput.disabled = true;
+  }
+  populatePlotlyTraceSelect(figure.data || []);
+  plotlyEditorTitle.textContent = t("image.plotlyEditorTitle", {
+    name: plotlyEditorState.sourceTitle,
+  });
+  if (plotlyEditorHint) plotlyEditorHint.textContent = t("image.plotlyHint");
+  plotlyEditor.classList.remove("hidden");
+  plotlyEditor.setAttribute("aria-hidden", "false");
+  setPlotlyEditorStatus(t("image.loading"));
+
+  const layout = {
+    ...(figure.layout || {}),
+    autosize: true,
+    margin: figure.layout?.margin || { l: 60, r: 30, t: 80, b: 60 },
+  };
+  Plotly.react(plotlyChart, figure.data || [], layout, {
+    responsive: true,
+    editable: true,
+    displayModeBar: false,
+  }).then(() => {
+    bindPlotlyLegendColorPicker();
+    if (plotlyTraceSelect?.value) {
+      selectPlotlyTrace(Number(plotlyTraceSelect.value), { openPicker: false });
+    }
+    setPlotlyEditorStatus(t("image.plotlyReady"));
+  });
+}
+
+function closePlotlyEditor() {
+  if (!plotlyEditor) return;
+  plotlyEditor.classList.add("hidden");
+  plotlyEditor.setAttribute("aria-hidden", "true");
+  if (plotlyChart && window.Plotly) {
+    Plotly.purge(plotlyChart);
+    plotlyChart.innerHTML = "";
+  }
+  plotlyEditorState = { sourceRel: "", sourceTitle: "", selectedTrace: null };
+  setPlotlyEditorStatus("");
+}
+
+async function savePlotlyEdit() {
+  if (!currentSessionId || !plotlyChart || !window.Plotly || !plotlyEditorState.sourceRel) return;
+  try {
+    setPlotlyEditorStatus(t("image.saving"));
+    if (plotlyEditorSave) plotlyEditorSave.disabled = true;
+    const width = Math.max(900, plotlyChart.offsetWidth || 1100);
+    const height = Math.max(540, plotlyChart.offsetHeight || 640);
+    const imageData = await Plotly.toImage(plotlyChart, {
+      format: "png",
+      width,
+      height,
+      scale: 2,
+    });
+    const figureJson = {
+      data: JSON.parse(JSON.stringify(plotlyChart.data || [])),
+      layout: JSON.parse(JSON.stringify(plotlyChart.layout || {})),
+    };
+    const stem = editableFileStem(plotlyEditorState.sourceTitle);
+    const res = await fetch(`/api/sessions/${currentSessionId}/plotly-edits`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        source_rel: plotlyEditorState.sourceRel,
+        figure_json: figureJson,
+        image_data: imageData,
+        filename: `${stem}_edited.png`,
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.detail || t("image.saveFail"));
+    closePlotlyEditor();
+    await loadWorkspaceFiles(currentSessionId);
+    setStatus(t("image.saved", { name: data.file?.name || `${stem}_edited.png` }));
+  } catch (err) {
+    setPlotlyEditorStatus(t("image.saveFailWithMsg", { msg: err.message }), "error");
+  } finally {
+    if (plotlyEditorSave) plotlyEditorSave.disabled = false;
+  }
 }
 
 function closeImageEditor() {
@@ -720,7 +1003,7 @@ async function saveImageEdit() {
     if (editorSave) editorSave.disabled = true;
     setSelectedEditorNode(null);
     const stem = editableFileStem(state.sourceTitle);
-    const imageData = state.stage.toDataURL({ mimeType: "image/png", pixelRatio: 2 });
+    const imageData = state.stage.toDataURL({ mimeType: "image/png", pixelRatio: 1 });
     const res = await fetch(`/api/sessions/${currentSessionId}/image-edits`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -936,6 +1219,17 @@ async function uploadPendingFiles(sessionId) {
   pendingFiles = [];
   renderAttachments();
   return saved;
+}
+
+/** 与 web_frontend/backend/agent_intent.py 语义一致 */
+function shouldUseAgent(message, hasNewUpload = false) {
+  if (hasNewUpload) return true;
+  const text = (message || "").trim();
+  if (!text) return false;
+  if (/\[已上传附件\]|\[Attachments uploaded\]/.test(text)) return true;
+  return /继续|重新(?:运行|进行|分析|做)|执行分析|跑一遍|开始分析|运行工具|分子网(?:络|格)|molecular\s*network|GNPS|DeepMASS|deepmass|XCMS|峰检测|差异代谢|谱库注释|富集分析|converted_mzml|spectra\.mgf|\.mzML|\.mgf|continue|re-?run|run analysis|start agent|execute pipeline/i.test(
+    text
+  );
 }
 
 function buildUserMessage(text, uploadedFiles) {
@@ -1263,14 +1557,10 @@ form.addEventListener("submit", async (event) => {
     promptInput.style.height = "auto";
     toggleWelcomePanel(false);
 
-    const uploadMarker = /\[已上传附件\]|\[Attachments uploaded\]/;
-    const agentIntent =
-      /继续|重新运行|执行分析|跑一遍|开始分析|运行工具|continue|re-?run|run analysis|start agent|execute pipeline/i;
-    const useAgent =
-      uploaded.length > 0 ||
-      uploadMarker.test(finalMessage) ||
-      agentIntent.test(text);
-    await runAssistantStream({ userMessage: finalMessage, useAgent });
+    await runAssistantStream({
+      userMessage: finalMessage,
+      useAgent: shouldUseAgent(finalMessage, uploaded.length > 0),
+    });
     // 从服务端加载消息（含正确 message id，便于后续编辑）
   } catch (err) {
     setStatus(t("status.sendFailed", { msg: err.message }));
@@ -1432,7 +1722,26 @@ if (editorSave) editorSave.addEventListener("click", saveImageEdit);
 if (editorCancel) editorCancel.addEventListener("click", closeImageEditor);
 if (editorClose) editorClose.addEventListener("click", closeImageEditor);
 if (editorBackdrop) editorBackdrop.addEventListener("click", closeImageEditor);
+if (plotlyLegendColorInput) {
+  plotlyLegendColorInput.addEventListener("input", () => {
+    applyPlotlyTraceColor(plotlyEditorState.selectedTrace, plotlyLegendColorInput.value);
+  });
+}
+if (plotlyTraceSelect) {
+  plotlyTraceSelect.addEventListener("change", () => {
+    if (!plotlyTraceSelect.value) return;
+    selectPlotlyTrace(Number(plotlyTraceSelect.value), { openPicker: false });
+  });
+}
+if (plotlyEditorSave) plotlyEditorSave.addEventListener("click", savePlotlyEdit);
+if (plotlyEditorCancel) plotlyEditorCancel.addEventListener("click", closePlotlyEditor);
+if (plotlyEditorClose) plotlyEditorClose.addEventListener("click", closePlotlyEditor);
+if (plotlyEditorBackdrop) plotlyEditorBackdrop.addEventListener("click", closePlotlyEditor);
 document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && plotlyEditor && !plotlyEditor.classList.contains("hidden")) {
+    closePlotlyEditor();
+    return;
+  }
   if (event.key === "Escape" && imageEditor && !imageEditor.classList.contains("hidden")) {
     closeImageEditor();
     return;

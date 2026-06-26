@@ -393,7 +393,9 @@
 
           <div class="image-editor-canvas-wrap">
 
-            <div id="editorStage" class="image-editor-stage"></div>
+            <div id="editorStageScaler" class="image-editor-stage-scaler">
+              <div id="editorStage" class="image-editor-stage"></div>
+            </div>
 
           </div>
 
@@ -412,11 +414,52 @@
     </div>
 
 
+    <div id="plotlyEditor" class="plotly-editor hidden" role="dialog" aria-modal="true" aria-hidden="true">
+
+      <div class="plotly-editor-backdrop" id="plotlyEditorBackdrop"></div>
+
+      <div class="plotly-editor-panel">
+
+        <header class="plotly-editor-header">
+          <span id="plotlyEditorTitle" class="plotly-editor-title"></span>
+          <button id="plotlyEditorClose" type="button" class="icon-btn" aria-label="Close">×</button>
+        </header>
+
+        <div class="plotly-editor-body">
+          <p id="plotlyEditorHint" class="plotly-editor-hint muted" data-i18n="image.plotlyHint">
+            点击图例项，或在下拉框中选择系列，再点击右侧颜色块修改颜色；双击标题可修改标题文字。
+          </p>
+          <div id="plotlyLegendColorRow" class="plotly-legend-color-row">
+            <label class="plotly-legend-color-field">
+              <span data-i18n="image.plotlyLegendColor">图例系列</span>
+              <select id="plotlyTraceSelect" class="plotly-trace-select" aria-label="选择图例系列"></select>
+            </label>
+            <label class="plotly-legend-color-field">
+              <span data-i18n="image.color">颜色</span>
+              <input id="plotlyLegendColorInput" type="color" class="plotly-legend-color-input" title="选择颜色" />
+            </label>
+          </div>
+          <div id="plotlyChart" class="plotly-chart"></div>
+        </div>
+
+        <footer class="plotly-editor-footer">
+          <button id="plotlyEditorCancel" type="button" class="secondary-btn" data-i18n="msg.cancel">取消</button>
+          <button id="plotlyEditorSave" type="button" data-i18n="image.save">保存为新图</button>
+        </footer>
+
+        <p id="plotlyEditorStatus" class="plotly-editor-status"></p>
+
+      </div>
+
+    </div>
+
+
+    <script src="https://cdn.plot.ly/plotly-2.35.3.min.js"></script>
     <script src="https://unpkg.com/konva@latest/konva.min.js"></script>
 
-    <script src="/static/i18n.js?v=20260618"></script>
+    <script src="/static/i18n.js?v=20260624"></script>
 
-    <script src="/static/app.js?v=20260618"></script>
+    <script src="/static/app.js?v=20260624"></script>
 
   </body>
 
