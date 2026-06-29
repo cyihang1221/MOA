@@ -70,6 +70,12 @@ def resolve_thermo_rawfile_parser() -> str | None:
         path = shutil.which(name)
         if path:
             return path
+    conda_prefix = os.environ.get("CONDA_PREFIX")
+    if conda_prefix:
+        for rel in ("bin/ThermoRawFileParser", "Scripts/ThermoRawFileParser.exe"):
+            candidate = os.path.join(conda_prefix, rel.replace("/", os.sep))
+            if os.path.isfile(candidate):
+                return candidate
     return None
 
 
@@ -93,6 +99,24 @@ def resolve_docker() -> str | None:
     return shutil.which("docker")
 
 
+def docker_daemon_accessible() -> bool:
+    """docker 命令存在且 daemon 可连接（非仅 permission denied / 未启动）。"""
+    docker = resolve_docker()
+    if not docker:
+        return False
+    import subprocess
+
+    try:
+        proc = subprocess.run(
+            [docker, "info"],
+            capture_output=True,
+            timeout=8,
+        )
+        return proc.returncode == 0
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+
+
 def preferred_raw_converter() -> dict[str, str | None]:
     """
     按平台选择 .raw → mzML 的推荐工具。
@@ -105,14 +129,25 @@ def preferred_raw_converter() -> dict[str, str | None]:
             "fallback": None,
         }
     if resolve_thermo_rawfile_parser():
+        fb = (
+            "convert_raw_to_mzml_msconvert"
+            if docker_daemon_accessible() or resolve_docker()
+            else None
+        )
         return {
             "tool": "convert_raw_to_mzml_ThermoRawFileParser",
             "reason": "Linux 已检测到 ThermoRawFileParser",
-            "fallback": "convert_raw_to_mzml_msconvert",
+            "fallback": fb,
+        }
+    if docker_daemon_accessible():
+        return {
+            "tool": "convert_raw_to_mzml_msconvert",
+            "reason": "未检测到 ThermoRawFileParser，使用 Docker msconvert",
+            "fallback": None,
         }
     return {
         "tool": "convert_raw_to_mzml_msconvert",
-        "reason": "未检测到 ThermoRawFileParser，改用 Docker msconvert",
+        "reason": "未检测到 ThermoRawFileParser；Docker 已安装但 daemon 不可访问",
         "fallback": None,
     }
 

@@ -110,10 +110,16 @@ def conversion_downstream_blocked(paths: dict[str, str]) -> tuple[bool, str]:
 
 
 def conversion_environment_hint() -> str:
-    from src.platform_utils import preferred_raw_converter, resolve_docker, resolve_thermo_rawfile_parser
+    from src.platform_utils import (
+        docker_daemon_accessible,
+        preferred_raw_converter,
+        resolve_docker,
+        resolve_thermo_rawfile_parser,
+    )
 
     thermo = resolve_thermo_rawfile_parser()
     docker = resolve_docker()
+    docker_ok = docker_daemon_accessible()
     pref = preferred_raw_converter()
     lines = [str(pref.get("reason") or "")]
     if thermo:
@@ -121,7 +127,12 @@ def conversion_environment_hint() -> str:
     else:
         lines.append("ThermoRawFileParser: 未安装")
     if docker:
-        lines.append("Docker: 已安装（需确保 daemon 已启动，如 sudo systemctl start docker）")
+        if docker_ok:
+            lines.append("Docker: daemon 可访问")
+        else:
+            lines.append(
+                "Docker: 已安装但 daemon 不可访问（权限不足或未启动，如 sudo usermod -aG docker $USER 或 sudo systemctl start docker）"
+            )
     else:
         lines.append("Docker: 未安装")
     return " ".join(lines)

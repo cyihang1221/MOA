@@ -5,11 +5,16 @@ from typing import Any, AsyncIterator, Optional
 
 from mcp.client.session import ClientSession
 
-from src.platform_utils import preferred_raw_converter, resolve_docker, resolve_thermo_rawfile_parser
+from src.platform_utils import (
+    docker_daemon_accessible,
+    preferred_raw_converter,
+    resolve_thermo_rawfile_parser,
+)
 
 from web_frontend.backend.constants import ALLOWED_TOOL_NAMES
 from web_frontend.backend.plan_utils import RAW_CONVERTER_NAMES, raw_conversion_complete
 from web_frontend.backend.tool_args_normalizer import format_mcp_tool_result, is_mcp_tool_result_error
+from web_frontend.backend.tool_fallback import tools_in_fallback_group
 from web_frontend.backend.tool_runner import call_tool_with_heartbeat
 
 _CONVERTER_SET = frozenset(RAW_CONVERTER_NAMES)
@@ -29,36 +34,47 @@ def build_conversion_plan_step(paths: dict[str, str], convert_tool: str) -> str:
 
 
 def resolve_initial_raw_converter(tool_name: str) -> str:
-    """执行前解析首选转换工具（ThermoRawFileParser 不可用时静默改用 msconvert）。"""
+    """执行前解析首选转换工具：Docker 不可用时优先 ThermoRawFileParser。"""
     if tool_name not in _CONVERTER_SET:
         return tool_name
     pref = str(preferred_raw_converter()["tool"])
-    if tool_name == "convert_raw_to_mzml_ThermoRawFileParser":
-        if resolve_thermo_rawfile_parser() is None:
-            return "convert_raw_to_mzml_msconvert"
-    if tool_name == "convert_raw_to_mzml_msconvert" and pref == tool_name:
+    thermo = resolve_thermo_rawfile_parser()
+    docker_ok = docker_daemon_accessible()
+
+    if tool_name == "convert_raw_to_mzml_ThermoRawFileParser" and thermo is None:
+        return "convert_raw_to_mzml_msconvert"
+    if tool_name == "convert_raw_to_mzml_msconvert" and not docker_ok and thermo:
+        return "convert_raw_to_mzml_ThermoRawFileParser"
+    if tool_name in ALLOWED_TOOL_NAMES:
         return tool_name
-    return tool_name if tool_name in ALLOWED_TOOL_NAMES else pref
+    return pref
 
 
 def raw_converter_fallback_order(initial: str) -> list[str]:
-    """按平台偏好排列可尝试的转换工具（均在 Web 白名单内）。"""
+    """按平台偏好排列可尝试的转换工具；Docker daemon 不可用时将 msconvert 放到最后。"""
     pref = str(preferred_raw_converter()["tool"])
     ordered: list[str] = []
-    for name in (initial, pref, *RAW_CONVERTER_NAMES):
+    for name in (initial, pref, *tools_in_fallback_group(initial)):
         if name not in ALLOWED_TOOL_NAMES or name not in _CONVERTER_SET:
             continue
         if name not in ordered:
             ordered.append(name)
+
+    if not docker_daemon_accessible():
+        without_docker = [n for n in ordered if n != "convert_raw_to_mzml_msconvert"]
+        docker_tools = [n for n in ordered if n == "convert_raw_to_mzml_msconvert"]
+        ordered = without_docker + docker_tools
+
     return ordered
 
 
-def _converter_likely_available(tool_name: str) -> bool:
-    if tool_name == "convert_raw_to_mzml_ThermoRawFileParser":
-        return resolve_thermo_rawfile_parser() is not None
-    if tool_name == "convert_raw_to_mzml_msconvert":
-        return resolve_docker() is not None
-    return True
+def _short_failure(exc: Optional[BaseException], result_str: str) -> str:
+    text = (result_str or "").strip()
+    if text:
+        return text[:1200]
+    if exc is not None:
+        return str(exc)[:1200]
+    return "未知错误"
 
 
 async def call_raw_converter_with_fallback(
@@ -68,16 +84,16 @@ async def call_raw_converter_with_fallback(
     paths: dict[str, str],
 ) -> AsyncIterator[dict[str, Any]]:
     """
-    依次尝试已注册的 raw 转换工具；仅在切换时 yield delta 事件。
+    依次尝试所有等价格式转换工具；仅在切换时 yield delta 事件。
+    运行时失败才判定不可用，不在调用前过滤候选。
     结束时 yield {"type": "done", "tool_name", "result", "result_str", "failed_tools"}。
     """
-    candidates = [
-        name for name in raw_converter_fallback_order(tool_name) if _converter_likely_available(name)
-    ]
+    candidates = raw_converter_fallback_order(tool_name)
     if not candidates:
-        candidates = raw_converter_fallback_order(tool_name)
+        candidates = list(RAW_CONVERTER_NAMES)
 
     failed: list[str] = []
+    failure_notes: list[str] = []
     last_result = None
     last_result_str = ""
     last_exc: Optional[BaseException] = None
@@ -88,7 +104,9 @@ async def call_raw_converter_with_fallback(
             prev = failed[-1]
             yield {
                 "type": "delta",
-                "text": f"⚠️ **{prev}** 未成功，改用 **{candidate}** 重试格式转换…\n",
+                "text": (
+                    f"⚠️ **{prev}** 未成功，自动改用 **{candidate}** 重试格式转换…\n"
+                ),
             }
 
         final_tool = candidate
@@ -96,7 +114,11 @@ async def call_raw_converter_with_fallback(
             result = None
             async for ev in call_tool_with_heartbeat(session, candidate, tool_args):
                 if ev["type"] == "tick":
-                    yield {"type": "tick", "tool_name": candidate, "elapsed_sec": ev.get("elapsed_sec", 0)}
+                    yield {
+                        "type": "tick",
+                        "tool_name": candidate,
+                        "elapsed_sec": ev.get("elapsed_sec", 0),
+                    }
                 elif ev["type"] == "result":
                     result = ev["result"]
                 elif ev["type"] == "error":
@@ -107,12 +129,17 @@ async def call_raw_converter_with_fallback(
             last_result_str = result_str
             if is_mcp_tool_result_error(result, result_str):
                 failed.append(candidate)
+                failure_notes.append(
+                    f"- **{candidate}**：{_short_failure(None, result_str)}"
+                )
                 continue
             if not raw_conversion_complete(paths):
                 failed.append(candidate)
-                last_result_str = (
+                note = (
                     f"{result_str}\n转换后 converted_mzml 仍缺少与 .raw 对应的 mzML 文件。"
                 ).strip()
+                last_result_str = note
+                failure_notes.append(f"- **{candidate}**：{note[:1200]}")
                 continue
 
             yield {
@@ -127,8 +154,13 @@ async def call_raw_converter_with_fallback(
             last_exc = exc
             failed.append(candidate)
             last_result_str = str(exc)
+            failure_notes.append(f"- **{candidate}**：{_short_failure(exc, '')}")
 
-    err_detail = last_result_str or (str(last_exc) if last_exc else "所有格式转换工具均未成功")
+    if failure_notes:
+        err_detail = "已依次尝试以下格式转换工具，均未成功：\n" + "\n".join(failure_notes)
+    else:
+        err_detail = last_result_str or (str(last_exc) if last_exc else "所有格式转换工具均未成功")
+
     yield {
         "type": "done",
         "tool_name": final_tool,

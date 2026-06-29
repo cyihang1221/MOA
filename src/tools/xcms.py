@@ -5,6 +5,8 @@ import tempfile
 import glob
 import pandas as pd
 
+from src.tools.editable_export import ensure_editable_sidecars, save_editable_metadata
+
 
 
 
@@ -689,6 +691,8 @@ def statistical_analysis_mixomics_impl(
     print("\nPerforming statistical analysis using mixOmics...")
 
     os.makedirs(output_dir, exist_ok=True)
+    _tools_dir = os.path.dirname(os.path.abspath(__file__))
+    _r_plotly_helpers = os.path.join(_tools_dir, "r_plotly_export.R").replace(os.sep, "/")
 
     r_script = f"""
 # ============================= packages =============================
@@ -698,6 +702,8 @@ library(tibble)
 library(ggplot2)
 library(mixOmics)
 library(pheatmap)
+
+try(source("{_r_plotly_helpers}", local = FALSE, encoding = "UTF-8"), silent = TRUE)
 
 
 # ============================= parameters =============================
@@ -865,6 +871,20 @@ plotIndiv(
 
 dev.off()
 
+try(
+try(
+    save_pca_plsda_plotly_sidecar(
+        pca_res$variates$X,
+        Y,
+        file.path(outdir, "pca_plot.png"),
+        "PCA",
+        pca_plot_comps
+    ),
+    silent = TRUE
+),
+    silent = TRUE
+)
+
 
 # ============================= PLS-DA =============================
 plsda_res <- plsda(
@@ -903,6 +923,20 @@ plotIndiv(
 )
 
 dev.off()
+
+try(
+try(
+    save_pca_plsda_plotly_sidecar(
+        plsda_res$variates$X,
+        Y,
+        file.path(outdir, "plsda_plot.png"),
+        "PLS-DA",
+        plsda_plot_comps
+    ),
+    silent = TRUE
+),
+    silent = TRUE
+)
 
 
 # ============================= Cross Validation =============================
@@ -1064,6 +1098,7 @@ if (nlevels(Y) == 2) {{
         height = 5,
         dpi = 300
     )
+    try(save_ggplot_plotly_sidecar(p, file.path(outdir, "volcano_plot.png")), silent = TRUE)
 
 
     # ============================= Differential Metabolites =============================
@@ -1204,6 +1239,15 @@ if (n_top > 0) {{
     )
 
     dev.off()
+
+    try(
+        save_heatmap_plotly_sidecar(
+            heatmap_matrix,
+            file.path(outdir, "heatmap_top_vip.png"),
+            "Top VIP Heatmap"
+        ),
+        silent = TRUE
+    )
 }}
 
 
@@ -1220,6 +1264,16 @@ writeLines(
 
     try:
         subprocess.run(["Rscript", r_file], capture_output=False)
+        ensure_editable_sidecars(
+            output_dir,
+            title_map={
+                "pca_plot.png": "PCA",
+                "plsda_plot.png": "PLS-DA",
+                "volcano_plot.png": "Volcano Plot",
+                "vip_scores.png": "VIP Scores",
+                "heatmap_top_vip.png": "Top VIP Heatmap",
+            },
+        )
 
     finally:
         os.unlink(r_file)
@@ -1874,12 +1928,15 @@ def kegg_compound_enrich_impl(
 
     base_dir = os.path.dirname(os.path.abspath(__file__))
     compound_pathway_path = os.path.join(base_dir, "../..", "database_file/compound_pathway.tsv")
+    _r_plotly_helpers = os.path.join(base_dir, "r_plotly_export.R").replace(os.sep, "/")
 
     r_script = f"""
 library(clusterProfiler)
 library(ggplot2)
 library(KEGGREST)
 library(dplyr)
+
+try(source("{_r_plotly_helpers}", local = FALSE, encoding = "UTF-8"), silent = TRUE)
 
 compound_pathway_path <- "{compound_pathway_path.replace(os.sep, '/')}"
 
@@ -1938,6 +1995,7 @@ if (nrow(enrich_df) > 0) {{
     ) +
     theme_minimal()
     ggsave("{bubble_plot_out}", plot = p, width = 12, height = 8, dpi = 300)
+    try(save_ggplot_plotly_sidecar(p, "{bubble_plot_out}"), silent = TRUE)
 }}
 """
 
@@ -1947,6 +2005,9 @@ if (nrow(enrich_df) > 0) {{
 
     try:
         subprocess.run(["Rscript", r_file], check=True, capture_output=True)
+        from src.tools.editable_export import save_editable_metadata
+
+        save_editable_metadata(bubble_plot_out, title="KEGG Compound Pathway Enrichment")
     finally:
         os.unlink(r_file)
         

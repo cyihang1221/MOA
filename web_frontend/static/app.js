@@ -44,6 +44,7 @@ const editorStage = document.getElementById("editorStage");
 const editorTextInput = document.getElementById("editorTextInput");
 const editorColorInput = document.getElementById("editorColorInput");
 const editorFontSizeInput = document.getElementById("editorFontSizeInput");
+const editorTitlePosition = document.getElementById("editorTitlePosition");
 const editorStageScaler = document.getElementById("editorStageScaler");
 const editorAddTitle = document.getElementById("editorAddTitle");
 const editorAddText = document.getElementById("editorAddText");
@@ -110,6 +111,11 @@ let imageEditorState = {
   displayScale: 1,
   sourceRel: "",
   sourceTitle: "",
+  editMeta: null,
+  imageNode: null,
+  rasterCanvas: null,
+  rasterCtx: null,
+  pickedRasterColor: null,
 };
 let plotlyEditorState = {
   sourceRel: "",
@@ -560,6 +566,11 @@ function resetImageEditor() {
     displayScale: 1,
     sourceRel: "",
     sourceTitle: "",
+    editMeta: null,
+    imageNode: null,
+    rasterCanvas: null,
+    rasterCtx: null,
+    pickedRasterColor: null,
   };
   if (editorStage) editorStage.innerHTML = "";
   if (editorStageScaler) {
@@ -567,11 +578,44 @@ function resetImageEditor() {
     editorStageScaler.style.height = "";
   }
   if (editorTextInput) editorTextInput.value = "";
+  if (editorTitlePosition) editorTitlePosition.value = "top-center";
   setEditorStatus("");
 }
 
 function plotlyCompanionRel(imageRel) {
   return String(imageRel || "").replace(/\.(png|jpe?g|gif|webp|svg)$/i, ".plotly.json");
+}
+
+function editableCompanionRel(imageRel) {
+  return String(imageRel || "").replace(/\.(png|jpe?g|gif|webp|svg)$/i, ".editable.json");
+}
+
+async function fetchEditableMeta(rel) {
+  if (!currentSessionId || !rel) return null;
+  const url = workspaceFileUrl(currentSessionId, editableCompanionRel(rel));
+  if (!url) return null;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+async function fetchPlotlyFigure(rel) {
+  if (!currentSessionId || !rel) return null;
+  const url = workspaceFileUrl(currentSessionId, plotlyCompanionRel(rel));
+  if (!url) return null;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const figure = await res.json();
+    if (!figure || typeof figure !== "object") return null;
+    return figure;
+  } catch {
+    return null;
+  }
 }
 
 function fitKonvaStageDisplay(natW, natH) {
@@ -632,6 +676,9 @@ function setSelectedEditorNode(node) {
   if (editorFontSizeInput && node && typeof node.fontSize === "function") {
     editorFontSizeInput.value = String(node.fontSize());
   }
+  if (editorTitlePosition && node?.name?.() === "editable-title") {
+    editorTitlePosition.value = node.getAttr("titlePosition") || "top-center";
+  }
   state.layer?.batchDraw();
 }
 
@@ -644,20 +691,116 @@ function bindEditableNode(node) {
   return node;
 }
 
+function rgbToHex(r, g, b) {
+  return `#${[r, g, b].map((v) => Math.max(0, Math.min(255, v)).toString(16).padStart(2, "0")).join("")}`;
+}
+
+function hexToRgb(hex) {
+  const m = String(hex || "").match(/^#?([0-9a-f]{6})$/i);
+  if (!m) return null;
+  const n = Number.parseInt(m[1], 16);
+  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+}
+
+function colorDistance(a, b) {
+  return Math.sqrt((a.r - b.r) ** 2 + (a.g - b.g) ** 2 + (a.b - b.b) ** 2);
+}
+
+function prepareRasterCanvas(img, width, height) {
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  ctx.drawImage(img, 0, 0, width, height);
+  imageEditorState.rasterCanvas = canvas;
+  imageEditorState.rasterCtx = ctx;
+  return canvas;
+}
+
+function pickRasterColorAt(x, y) {
+  const { rasterCtx, rasterCanvas } = imageEditorState;
+  if (!rasterCtx || !rasterCanvas) return null;
+  const px = Math.max(0, Math.min(rasterCanvas.width - 1, Math.floor(x)));
+  const py = Math.max(0, Math.min(rasterCanvas.height - 1, Math.floor(y)));
+  const [r, g, b, a] = rasterCtx.getImageData(px, py, 1, 1).data;
+  if (a < 10) return null;
+  const color = { r, g, b };
+  imageEditorState.pickedRasterColor = color;
+  setSelectedEditorNode(null);
+  if (editorColorInput) editorColorInput.value = rgbToHex(r, g, b);
+  setEditorStatus(t("image.rasterColorPicked", { color: rgbToHex(r, g, b) }));
+  return color;
+}
+
+function replaceRasterColor(targetColor, replacementHex, tolerance = 55) {
+  const replacement = hexToRgb(replacementHex);
+  const { rasterCtx, rasterCanvas, imageNode } = imageEditorState;
+  if (!targetColor || !replacement || !rasterCtx || !rasterCanvas || !imageNode) return;
+
+  const imageData = rasterCtx.getImageData(0, 0, rasterCanvas.width, rasterCanvas.height);
+  const data = imageData.data;
+  let changed = 0;
+  for (let i = 0; i < data.length; i += 4) {
+    if (data[i + 3] < 10) continue;
+    const current = { r: data[i], g: data[i + 1], b: data[i + 2] };
+    const dist = colorDistance(current, targetColor);
+    if (dist > tolerance) continue;
+    const weight = Math.max(0.25, 1 - dist / tolerance);
+    data[i] = Math.round(current.r * (1 - weight) + replacement.r * weight);
+    data[i + 1] = Math.round(current.g * (1 - weight) + replacement.g * weight);
+    data[i + 2] = Math.round(current.b * (1 - weight) + replacement.b * weight);
+    changed += 1;
+  }
+  rasterCtx.putImageData(imageData, 0, 0);
+  imageNode.image(rasterCanvas);
+  imageEditorState.layer?.batchDraw();
+  imageEditorState.pickedRasterColor = replacement;
+  setEditorStatus(t("image.rasterColorApplied", { count: changed }));
+}
+
+function titlePositionCoords(position, stage) {
+  const width = stage?.width() || 800;
+  const height = stage?.height() || 600;
+  const textWidth = Math.min(Math.max(width * 0.45, 260), Math.max(280, width - 80));
+  const y = position === "inside" ? Math.max(32, height * 0.08) : 24;
+  if (position === "top-left") return { x: 36, y, width: textWidth, align: "left" };
+  if (position === "top-right") {
+    return { x: Math.max(36, width - textWidth - 36), y, width: textWidth, align: "right" };
+  }
+  return { x: Math.max(36, (width - textWidth) / 2), y, width: textWidth, align: "center" };
+}
+
+function applyTitlePosition(position, node = imageEditorState.selectedNode) {
+  const state = imageEditorState;
+  if (!state.stage || !node || node.getClassName?.() !== "Text") return;
+  node.setAttrs(titlePositionCoords(position, state.stage));
+  node.setAttr("titlePosition", position);
+  state.layer?.batchDraw();
+}
+
 function addEditorText(text, options = {}) {
   const state = imageEditorState;
   if (!state.layer) return null;
   const width = state.stage?.width() || 800;
+  const isTitle = options.role === "title";
+  const titleAttrs = isTitle
+    ? titlePositionCoords(options.titlePosition || editorTitlePosition?.value || "top-center", state.stage)
+    : {};
   const node = new Konva.Text({
-    x: options.x ?? Math.max(24, width * 0.08),
-    y: options.y ?? 24,
+    x: options.x ?? titleAttrs.x ?? Math.max(24, width * 0.08),
+    y: options.y ?? titleAttrs.y ?? 24,
+    width: options.width ?? titleAttrs.width,
+    align: options.align ?? titleAttrs.align,
     text,
     fontSize: Number(editorFontSizeInput?.value || options.fontSize || 28),
     fontFamily: "Arial",
     fontStyle: options.fontStyle || "normal",
-    fill: editorColorInput?.value || "#111827",
+    fill: options.fill || editorColorInput?.value || "#111827",
+    rotation: options.rotation || 0,
     draggable: true,
     padding: 4,
+    name: isTitle ? "editable-title" : "editable-text",
+    titlePosition: options.titlePosition || (isTitle ? editorTitlePosition?.value || "top-center" : undefined),
   });
   state.layer.add(bindEditableNode(node));
   setSelectedEditorNode(node);
@@ -682,6 +825,7 @@ function addEditorArrow() {
     stroke: editorColorInput?.value || "#ef4444",
     strokeWidth: 4,
     draggable: true,
+    name: "editable-arrow",
   });
   state.layer.add(bindEditableNode(node));
   setSelectedEditorNode(node);
@@ -700,13 +844,116 @@ function addEditorColorBlock() {
     stroke: "#ffffff",
     strokeWidth: 1,
     draggable: true,
+    name: "editable-rect",
   });
   state.layer.add(bindEditableNode(node));
   setSelectedEditorNode(node);
   return node;
 }
 
-function openKonvaEditor({ url, rel, title }) {
+function restoreEditableObject(obj) {
+  if (!obj || !imageEditorState.layer) return;
+  if (obj.type === "text" || obj.type === "title") {
+    addEditorText(obj.text || "", {
+      role: obj.type === "title" ? "title" : "text",
+      x: obj.x,
+      y: obj.y,
+      width: obj.width,
+      align: obj.align,
+      fontSize: obj.fontSize,
+      fontStyle: obj.fontStyle,
+      fill: obj.fill,
+      rotation: obj.rotation,
+      titlePosition: obj.titlePosition,
+    });
+    return;
+  }
+  if (obj.type === "arrow") {
+    const node = addEditorArrow();
+    node?.setAttrs({
+      x: obj.x || 0,
+      y: obj.y || 0,
+      points: obj.points || node.points(),
+      fill: obj.fill || node.fill(),
+      stroke: obj.stroke || node.stroke(),
+      strokeWidth: obj.strokeWidth || node.strokeWidth(),
+      rotation: obj.rotation || 0,
+    });
+    return;
+  }
+  if (obj.type === "rect") {
+    const node = addEditorColorBlock();
+    node?.setAttrs({
+      x: obj.x ?? node.x(),
+      y: obj.y ?? node.y(),
+      width: obj.width || node.width(),
+      height: obj.height || node.height(),
+      fill: obj.fill || node.fill(),
+      stroke: obj.stroke || node.stroke(),
+      strokeWidth: obj.strokeWidth ?? node.strokeWidth(),
+      rotation: obj.rotation || 0,
+    });
+  }
+}
+
+function serializeEditableState() {
+  const state = imageEditorState;
+  const objects = [];
+  state.layer?.children?.forEach((node) => {
+    if (!node.name || !String(node.name()).startsWith("editable-")) return;
+    const klass = node.getClassName?.();
+    if (klass === "Text") {
+      const isTitle = node.name() === "editable-title";
+      objects.push({
+        type: isTitle ? "title" : "text",
+        text: node.text(),
+        x: node.x(),
+        y: node.y(),
+        width: node.width(),
+        align: node.align?.(),
+        fontSize: node.fontSize(),
+        fontStyle: node.fontStyle(),
+        fill: node.fill(),
+        rotation: node.rotation(),
+        titlePosition: node.getAttr("titlePosition"),
+      });
+    } else if (klass === "Arrow") {
+      objects.push({
+        type: "arrow",
+        x: node.x(),
+        y: node.y(),
+        points: node.points(),
+        fill: node.fill(),
+        stroke: node.stroke(),
+        strokeWidth: node.strokeWidth(),
+        rotation: node.rotation(),
+      });
+    } else if (klass === "Rect") {
+      objects.push({
+        type: "rect",
+        x: node.x(),
+        y: node.y(),
+        width: node.width(),
+        height: node.height(),
+        fill: node.fill(),
+        stroke: node.stroke(),
+        strokeWidth: node.strokeWidth(),
+        rotation: node.rotation(),
+      });
+    }
+  });
+  return {
+    version: 1,
+    source_rel: state.sourceRel,
+    title: state.editMeta?.title || editableFileStem(state.sourceTitle),
+    title_position: editorTitlePosition?.value || "top-center",
+    width: state.stage?.width(),
+    height: state.stage?.height(),
+    objects,
+  };
+}
+
+function openKonvaEditor({ url, rel, title, editMeta = null }) {
   if (!url || !rel || !imageEditor || !editorStage) return;
   if (!window.Konva) {
     setStatus(t("image.editorUnavailable"));
@@ -717,6 +964,7 @@ function openKonvaEditor({ url, rel, title }) {
   resetImageEditor();
   imageEditorState.sourceRel = rel;
   imageEditorState.sourceTitle = title || rel.split("/").pop();
+  imageEditorState.editMeta = editMeta;
   editorTitle.textContent = t("image.editorTitle", { name: imageEditorState.sourceTitle });
   imageEditor.classList.remove("hidden");
   imageEditor.setAttribute("aria-hidden", "false");
@@ -733,13 +981,19 @@ function openKonvaEditor({ url, rel, title }) {
       height: natH,
     });
     const layer = new Konva.Layer();
+    const rasterCanvas = prepareRasterCanvas(img, natW, natH);
     const imageNode = new Konva.Image({
       x: 0,
       y: 0,
       width: natW,
       height: natH,
-      image: img,
-      listening: false,
+      image: rasterCanvas,
+      listening: true,
+    });
+    imageNode.on("click tap", (event) => {
+      event.cancelBubble = true;
+      const pos = stage.getPointerPosition();
+      if (pos) pickRasterColorAt(pos.x, pos.y);
     });
     const transformer = new Konva.Transformer({
       rotateEnabled: true,
@@ -760,6 +1014,20 @@ function openKonvaEditor({ url, rel, title }) {
     imageEditorState.stage = stage;
     imageEditorState.layer = layer;
     imageEditorState.transformer = transformer;
+    imageEditorState.imageNode = imageNode;
+    if (editorTitlePosition && editMeta?.title_position) {
+      editorTitlePosition.value = editMeta.title_position;
+    }
+    (editMeta?.objects || []).forEach(restoreEditableObject);
+    if (!editMeta?.objects?.length && editMeta?.title) {
+      addEditorText(editMeta.title, {
+        role: "title",
+        fontStyle: "bold",
+        titlePosition: editMeta.title_position || "top-center",
+      });
+    } else {
+      setSelectedEditorNode(null);
+    }
     setEditorStatus(t("image.ready"));
   };
   img.onerror = () => setEditorStatus(t("image.loadFail"), "error");
@@ -767,23 +1035,13 @@ function openKonvaEditor({ url, rel, title }) {
 }
 
 async function openImageEditor({ url, rel, title }) {
-  const plotlyRel = plotlyCompanionRel(rel);
-  if (currentSessionId && plotlyRel && window.Plotly) {
-    const plotlyUrl = workspaceFileUrl(currentSessionId, plotlyRel);
-    if (plotlyUrl) {
-      try {
-        const res = await fetch(plotlyUrl);
-        if (res.ok) {
-          const figure = await res.json();
-          openPlotlyEditor({ rel, title, figure });
-          return;
-        }
-      } catch {
-        /* fall back to overlay editor */
-      }
-    }
+  const plotlyFigure = await fetchPlotlyFigure(rel);
+  if (plotlyFigure) {
+    openPlotlyEditor({ rel, title, figure: plotlyFigure });
+    return;
   }
-  openKonvaEditor({ url, rel, title });
+  const editMeta = await fetchEditableMeta(rel);
+  openKonvaEditor({ url, rel, title, editMeta });
 }
 
 function setPlotlyEditorStatus(text, kind = "") {
@@ -891,6 +1149,44 @@ function bindPlotlyLegendColorPicker() {
   plotlyChart.on("plotly_legenddoubleclick", () => false);
 }
 
+function plotlyTitleText(layout) {
+  const title = layout?.title;
+  if (typeof title === "string") return title;
+  if (title && typeof title.text === "string") return title.text;
+  return "";
+}
+
+function normalizePlotlyLayoutForEditing(layout = {}) {
+  const next = JSON.parse(JSON.stringify(layout || {}));
+  const titleText = plotlyTitleText(next);
+  const annotations = Array.isArray(next.annotations) ? next.annotations : [];
+  const hasEditableTitle = annotations.some((item) => item?.name === "editable-title");
+
+  if (titleText && !hasEditableTitle) {
+    annotations.push({
+      name: "editable-title",
+      text: titleText,
+      x: next.title?.x ?? 0.5,
+      y: next.title?.y ?? 1.08,
+      xref: "paper",
+      yref: "paper",
+      xanchor: next.title?.xanchor || "center",
+      yanchor: next.title?.yanchor || "bottom",
+      showarrow: false,
+      font: next.title?.font || { size: 18, color: "#111827" },
+    });
+    next.title = { ...(typeof next.title === "object" ? next.title : {}), text: "" };
+  }
+
+  next.annotations = annotations;
+  next.legend = {
+    x: 1.02,
+    y: 1,
+    ...(next.legend || {}),
+  };
+  return next;
+}
+
 function openPlotlyEditor({ rel, title, figure }) {
   if (!plotlyEditor || !plotlyChart || !window.Plotly) {
     openKonvaEditor({
@@ -919,13 +1215,21 @@ function openPlotlyEditor({ rel, title, figure }) {
   setPlotlyEditorStatus(t("image.loading"));
 
   const layout = {
-    ...(figure.layout || {}),
+    ...normalizePlotlyLayoutForEditing(figure.layout || {}),
     autosize: true,
     margin: figure.layout?.margin || { l: 60, r: 30, t: 80, b: 60 },
   };
   Plotly.react(plotlyChart, figure.data || [], layout, {
     responsive: true,
     editable: true,
+    edits: {
+      annotationPosition: true,
+      annotationText: true,
+      legendPosition: true,
+      legendText: true,
+      titleText: true,
+      axisTitleText: true,
+    },
     displayModeBar: false,
   }).then(() => {
     bindPlotlyLegendColorPicker();
@@ -1010,6 +1314,7 @@ async function saveImageEdit() {
       body: JSON.stringify({
         source_rel: state.sourceRel,
         image_data: imageData,
+        edit_state: serializeEditableState(),
         filename: `${stem}_edited.png`,
       }),
     });
@@ -1670,7 +1975,11 @@ if (lightboxBackdrop) {
 }
 if (editorAddTitle) {
   editorAddTitle.addEventListener("click", () => {
-    addEditorText(editableFileStem(imageEditorState.sourceTitle), { fontStyle: "bold" });
+    addEditorText(editableFileStem(imageEditorState.sourceTitle), {
+      role: "title",
+      fontStyle: "bold",
+      titlePosition: editorTitlePosition?.value || "top-center",
+    });
   });
 }
 if (editorAddText) {
@@ -1708,6 +2017,10 @@ if (editorColorInput) {
     if (typeof node.stroke === "function") node.stroke(editorColorInput.value);
     imageEditorState.layer?.batchDraw();
   });
+  editorColorInput.addEventListener("change", () => {
+    if (imageEditorState.selectedNode) return;
+    replaceRasterColor(imageEditorState.pickedRasterColor, editorColorInput.value);
+  });
 }
 if (editorFontSizeInput) {
   editorFontSizeInput.addEventListener("input", () => {
@@ -1716,6 +2029,11 @@ if (editorFontSizeInput) {
       node.fontSize(Number(editorFontSizeInput.value || 24));
       imageEditorState.layer?.batchDraw();
     }
+  });
+}
+if (editorTitlePosition) {
+  editorTitlePosition.addEventListener("change", () => {
+    applyTitlePosition(editorTitlePosition.value);
   });
 }
 if (editorSave) editorSave.addEventListener("click", saveImageEdit);

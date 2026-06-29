@@ -5,7 +5,7 @@ conda install -y r-base=4.4.3 r-devtools=2.4.5 r-biocmanager
 BiocManager::install(version = "3.20", ask = FALSE, update = FALSE)
 
 conda install -c bioconda bioconductor-xcms
-conda install -y -c conda-forge r-mixomics r-pheatmap
+conda install -y -c conda-forge r-mixomics r-pheatmap r-plotly
 conda install -c bioconda thermorawfileparser  # thermorawfileparser 是命令行工具
 conda install -c bioconda mzmine  # 是 Java 软件，不是 R 包
 conda install -c bioconda openms  # 开源的质谱数据分析软件平台（C++），不是 R 包
