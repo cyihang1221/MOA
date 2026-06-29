@@ -151,15 +151,13 @@ def build_family_size_distribution_figure(
                 textposition="outside",
             )
         )
-    fig.update_layout(
-        **_base_layout(
-            title=f"{title}<br>({n_families} families, {n_singletons} singletons)",
-            x_title="Molecular Family",
-            y_title="Number of Nodes",
-        ),
-        barmode="group",
-        xaxis=dict(tickangle=-45),
+    layout = _base_layout(
+        title=f"{title}<br>({n_families} families, {n_singletons} singletons)",
+        x_title="Molecular Family",
+        y_title="Number of Nodes",
     )
+    layout["xaxis"] = {**layout["xaxis"], "tickangle": -45}
+    fig.update_layout(**layout, barmode="group")
     return fig
 
 
@@ -169,3 +167,14 @@ def maybe_save_plotly(fig: Any, png_path: str | Path) -> None:
         print(f"    ✅ Plotly JSON: {out}")
     except Exception as exc:
         print(f"    ⚠️ Plotly JSON 未保存 ({png_path}): {exc}")
+
+
+def maybe_save_plotly_from_matplotlib(fig: Any, png_path: str | Path) -> None:
+    """Best-effort Matplotlib → Plotly JSON for the web editor."""
+    try:
+        from plotly.tools import mpl_to_plotly
+
+        pfig = mpl_to_plotly(fig)
+        maybe_save_plotly(pfig, png_path)
+    except Exception as exc:
+        print(f"    ⚠️ Plotly JSON (matplotlib) 未保存 ({png_path}): {exc}")

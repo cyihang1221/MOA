@@ -39,6 +39,27 @@ def _first_existing(*candidates: str) -> Optional[str]:
     return None
 
 
+def _dir_has_raw_files(path: str) -> bool:
+    p = _path_obj(path)
+    if not p.is_dir():
+        return False
+    return bool(list(p.glob("*.raw")) + list(p.glob("*.RAW")))
+
+
+def _use_existing_dir(
+    candidate: Optional[str],
+    fallback: str,
+    *,
+    require_raw: bool = False,
+) -> str:
+    """LLM 可能返回已重命名前的旧 slug 路径；不存在或无 .raw 时回退到 canonical。"""
+    if candidate:
+        p = _path_obj(candidate)
+        if p.is_dir() and (not require_raw or _dir_has_raw_files(candidate)):
+            return normalize_display_path(p)
+    return normalize_display_path(fallback)
+
+
 from web_frontend.backend.session_metadata import resolve_metadata_csv
 
 
@@ -139,9 +160,18 @@ def normalize_tool_args(
         "convert_raw_to_mzml_msconvert",
         "convert_raw_to_mzml_ThermoRawFileParser",
     ):
+        canonical_in = _msconvert_input_dir(paths)
+        canonical_out = paths["converted_mzml"]
         out = {
-            "input_dir": _pick_str(args, "input_dir") or _msconvert_input_dir(paths),
-            "output_dir": _pick_str(args, "output_dir") or paths["converted_mzml"],
+            "input_dir": _use_existing_dir(
+                _pick_str(args, "input_dir"),
+                canonical_in,
+                require_raw=True,
+            ),
+            "output_dir": _use_existing_dir(
+                _pick_str(args, "output_dir"),
+                canonical_out,
+            ),
         }
         return _posix_paths(out)
 

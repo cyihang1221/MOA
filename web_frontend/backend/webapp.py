@@ -424,6 +424,7 @@ class ImageEditSaveRequest(BaseModel):
     source_rel: str
     image_data: str
     filename: Optional[str] = None
+    edit_state: Optional[dict] = None
 
 
 class PlotlyEditSaveRequest(BaseModel):
@@ -771,6 +772,12 @@ def save_image_edit(session_id: str, req: ImageEditSaveRequest):
         target = source.parent / f"{target.stem}_{uuid.uuid4().hex[:8]}.png"
 
     target.write_bytes(png_bytes)
+    edit_state = req.edit_state if isinstance(req.edit_state, dict) else {}
+    edit_state.setdefault("version", 1)
+    edit_state.setdefault("source_rel", req.source_rel)
+    edit_state.setdefault("image", target.name)
+    json_target = target.parent / f"{target.stem}.editable.json"
+    json_target.write_text(json.dumps(edit_state, ensure_ascii=False, indent=2), encoding="utf-8")
     stat = target.stat()
     return {
         "file": {
@@ -778,7 +785,11 @@ def save_image_edit(session_id: str, req: ImageEditSaveRequest):
             "path": normalize_display_path(target),
             "size": stat.st_size,
             "modified": datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat(timespec="seconds"),
-        }
+        },
+        "editable": {
+            "name": json_target.relative_to(output_root).as_posix(),
+            "path": normalize_display_path(json_target),
+        },
     }
 
 

@@ -49,6 +49,7 @@ from web_frontend.backend.raw_converter import (
     build_conversion_plan_step,
     call_raw_converter_with_fallback,
     is_raw_converter,
+    raw_converter_fallback_order,
     resolve_initial_raw_converter,
 )
 from web_frontend.backend.session_storage import session_upload_dir, session_work_dir
@@ -542,6 +543,15 @@ async def stream_agent_pipeline(
 
                     if is_raw_converter(tool_name):
                         tool_name = resolve_initial_raw_converter(tool_name)
+                        fallback_order = raw_converter_fallback_order(tool_name)
+                        if len(fallback_order) > 1:
+                            yield {
+                                "delta": (
+                                    "ℹ️ 格式转换将自动在以下工具间回退："
+                                    + " → ".join(f"`{n}`" for n in fallback_order)
+                                    + "。\n"
+                                )
+                            }
 
                     hint = TOOL_RUNTIME_HINTS.get(tool_name)
                     if hint:
@@ -738,9 +748,12 @@ async def stream_agent_pipeline(
                             {"role": "tool", "content": result_str[:4000]}
                         )
                         if is_mcp_tool_result_error(result, result_str) or conversion_failed:
+                            fail_title = f"❌ **{tool_name}** 失败"
+                            if conversion_failed:
+                                fail_title = "❌ **格式转换** 全部候选工具均失败"
                             yield {
                                 "delta": (
-                                    f"❌ **{tool_name}** 失败：\n{result_str}\n\n"
+                                    f"{fail_title}：\n{result_str}\n\n"
                                     "ℹ️ 后续步骤可能因缺少输入文件而无法继续，请修复后重试。\n\n"
                                 )
                             }

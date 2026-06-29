@@ -1781,6 +1781,7 @@ matplotlib.use("Agg")  # 非交互后端，服务器环境安全
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from collections import Counter
+from src.tools.editable_export import save_editable_figure
 
 # 全局绘图风格
 plt.rcParams.update({
@@ -1934,7 +1935,7 @@ def _plot_network_topology(
     )
     ax.axis("off")
     fig.tight_layout()
-    fig.savefig(output_path, dpi=300, bbox_inches="tight", facecolor="white")
+    save_editable_figure(fig, output_path, title=title, dpi=300, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     print(f"    ✅ 网络拓扑图: {output_path}")
 
@@ -1998,28 +1999,31 @@ def _plot_family_size_distribution(
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
     fig.tight_layout()
-    fig.savefig(output_path, dpi=300, bbox_inches="tight", facecolor="white")
-    plt.close(fig)
-    print(f"    ✅ 家族大小分布图: {output_path}")
-    try:
-        from src.tools.plotly_export import (
-            build_family_size_distribution_figure,
-            maybe_save_plotly,
-        )
+    from src.tools.plotly_export import build_family_size_distribution_figure
 
-        maybe_save_plotly(
-            build_family_size_distribution_figure(
-                labels=labels,
-                sizes=sizes,
-                colors=colors,
-                title=title,
-                n_families=len(sorted_fams),
-                n_singletons=n_singletons,
-            ),
-            output_path,
+    plotly_fig = None
+    try:
+        plotly_fig = build_family_size_distribution_figure(
+            labels=labels,
+            sizes=sizes,
+            colors=colors,
+            title=title,
+            n_families=len(sorted_fams),
+            n_singletons=n_singletons,
         )
     except Exception:
         pass
+    save_editable_figure(
+        fig,
+        output_path,
+        title=title,
+        plotly_fig=plotly_fig,
+        dpi=300,
+        bbox_inches="tight",
+        facecolor="white",
+    )
+    plt.close(fig)
+    print(f"    ✅ 家族大小分布图: {output_path}")
 
 
 # ---------- 余弦相似度分布 ----------
@@ -2067,21 +2071,28 @@ def _plot_cosine_distribution(
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
     fig.tight_layout()
-    fig.savefig(output_path, dpi=300, bbox_inches="tight", facecolor="white")
-    plt.close(fig)
-    print(f"    ✅ 余弦相似度分布图: {output_path}")
-    try:
-        from src.tools.plotly_export import (
-            build_cosine_distribution_figure,
-            maybe_save_plotly,
-        )
+    from src.tools.plotly_export import build_cosine_distribution_figure
 
-        maybe_save_plotly(
-            build_cosine_distribution_figure(cosines=cosines, title=title, median=median),
-            output_path,
+    plotly_fig = None
+    try:
+        plotly_fig = build_cosine_distribution_figure(
+            cosines=cosines,
+            title=title,
+            median=median,
         )
     except Exception:
         pass
+    save_editable_figure(
+        fig,
+        output_path,
+        title=title,
+        plotly_fig=plotly_fig,
+        dpi=300,
+        bbox_inches="tight",
+        facecolor="white",
+    )
+    plt.close(fig)
+    print(f"    ✅ 余弦相似度分布图: {output_path}")
 
 
 # ---------- 节点度数分布 ----------
@@ -2125,28 +2136,31 @@ def _plot_degree_distribution(
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
     fig.tight_layout()
-    fig.savefig(output_path, dpi=300, bbox_inches="tight", facecolor="white")
-    plt.close(fig)
-    print(f"    ✅ 度数分布图: {output_path}")
-    try:
-        from src.tools.plotly_export import (
-            build_degree_distribution_figure,
-            maybe_save_plotly,
-        )
+    from src.tools.plotly_export import build_degree_distribution_figure
 
-        maybe_save_plotly(
-            build_degree_distribution_figure(
-                degrees=degrees,
-                title=title,
-                avg_deg=float(avg_deg),
-                max_deg=max_deg,
-                isolated=degrees.count(0),
-                n_nodes=G.number_of_nodes(),
-            ),
-            output_path,
+    plotly_fig = None
+    try:
+        plotly_fig = build_degree_distribution_figure(
+            degrees=degrees,
+            title=title,
+            avg_deg=float(avg_deg),
+            max_deg=max_deg,
+            isolated=degrees.count(0),
+            n_nodes=G.number_of_nodes(),
         )
     except Exception:
         pass
+    save_editable_figure(
+        fig,
+        output_path,
+        title=title,
+        plotly_fig=plotly_fig,
+        dpi=300,
+        bbox_inches="tight",
+        facecolor="white",
+    )
+    plt.close(fig)
+    print(f"    ✅ 度数分布图: {output_path}")
 
 
 # ---------- FBMN 专用：Pearson 相关性 ----------
@@ -2219,7 +2233,7 @@ def _plot_pearson_r_distribution(
 
     fig.suptitle(title, fontsize=13, fontweight="bold", y=1.02)
     fig.tight_layout()
-    fig.savefig(output_path, dpi=300, bbox_inches="tight", facecolor="white")
+    save_editable_figure(fig, output_path, title=title, dpi=300, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     print(f"    ✅ Pearson 相关性图: {output_path}")
 
@@ -2321,7 +2335,7 @@ def _plot_chemical_class_distribution(
 
     fig.suptitle(title, fontsize=14, fontweight="bold", y=1.02)
     fig.tight_layout()
-    fig.savefig(output_path, dpi=300, bbox_inches="tight", facecolor="white")
+    save_editable_figure(fig, output_path, title=title, dpi=300, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     print(f"    ✅ 化学类别分布图: {output_path}")
 
@@ -2504,7 +2518,7 @@ def _plot_mass2motif_top_fragments(
         fontsize=14, fontweight="bold", y=1.01,
     )
     fig.tight_layout()
-    fig.savefig(output_path, dpi=300, bbox_inches="tight", facecolor="white")
+    save_editable_figure(fig, output_path, title=title, dpi=300, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     print(f"    ✅ Mass2Motif 碎片图 (mirror plot): {output_path}")
 
@@ -2561,7 +2575,7 @@ def _plot_motif_spectrum_association_heatmap(
     cbar = fig.colorbar(im, ax=ax, shrink=0.8)
     cbar.set_label("P(motif | spectrum)", fontsize=9)
     fig.tight_layout()
-    fig.savefig(output_path, dpi=300, bbox_inches="tight", facecolor="white")
+    save_editable_figure(fig, output_path, title=title, dpi=300, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     print(f"    ✅ Motif 关联热图: {output_path}")
 
@@ -2711,7 +2725,7 @@ def _plot_precursor_mass_difference(
 
     fig.suptitle(title, fontsize=13, fontweight="bold", y=1.02)
     fig.tight_layout()
-    fig.savefig(output_path, dpi=300, bbox_inches="tight", facecolor="white")
+    save_editable_figure(fig, output_path, title=title, dpi=300, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     print(f"    ✅ 前体质量差分布图: {output_path}")
 
@@ -2832,7 +2846,7 @@ def _plot_fbmn_group_intensity(
     ax.spines["right"].set_visible(False)
 
     fig.tight_layout()
-    fig.savefig(output_path, dpi=300, bbox_inches="tight", facecolor="white")
+    save_editable_figure(fig, output_path, title=title, dpi=300, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     print(f"    ✅ FBMN 组强度对比图: {output_path}")
 
@@ -2901,7 +2915,7 @@ def _plot_mass2motif_overview(
     cbar.set_label("N associated spectra", fontsize=9)
 
     fig.tight_layout()
-    fig.savefig(output_path, dpi=300, bbox_inches="tight", facecolor="white")
+    save_editable_figure(fig, output_path, title=title, dpi=300, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     print(f"    ✅ Mass2Motif 总览图: {output_path}")
 
@@ -3040,7 +3054,7 @@ def _plot_mass2motif_network(
     ax.axis("equal")
     ax.axis("off")
     fig.tight_layout()
-    fig.savefig(output_path, dpi=300, bbox_inches="tight", facecolor="white")
+    save_editable_figure(fig, output_path, title=title, dpi=300, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     print(f"    ✅ Motif-谱图关联网络图: {output_path}")
 
@@ -3148,7 +3162,7 @@ def _plot_family_chemical_consensus(
     ax.spines["right"].set_visible(False)
 
     fig.tight_layout()
-    fig.savefig(output_path, dpi=300, bbox_inches="tight", facecolor="white")
+    save_editable_figure(fig, output_path, title=title, dpi=300, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     print(f"    ✅ 分子家族化学一致性图: {output_path}")
 
@@ -3277,7 +3291,7 @@ def _plot_annotation_propagation_summary(
 
     fig.suptitle(title, fontsize=13, fontweight="bold", y=1.02)
     fig.tight_layout()
-    fig.savefig(output_path, dpi=300, bbox_inches="tight", facecolor="white")
+    save_editable_figure(fig, output_path, title=title, dpi=300, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     print(f"    ✅ 注释传播总结图: {output_path}")
 
@@ -3458,6 +3472,14 @@ def generate_network_figures(
     print(f"\n✅ 所有图表已生成到: {output_dir}/")
     print(f"{'=' * 60}\n")
 
+    from src.tools.plotly_sidecar_backfill import backfill_molecular_network_plotly_sidecars
+
+    backfill_molecular_network_plotly_sidecars(
+        output_dir,
+        title_prefix=title_prefix or (method.upper() if method else "GNPS"),
+        color_by=color_by,
+    )
+
 
 # ======================== 综合仪表板 ========================
 
@@ -3604,7 +3626,7 @@ def generate_network_dashboard(
         fontsize=15, fontweight="bold", y=1.01,
     )
     fig.tight_layout()
-    fig.savefig(output_path, dpi=300, bbox_inches="tight", facecolor="white")
+    save_editable_figure(fig, output_path, title=title, dpi=300, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     print(f"    ✅ 综合仪表板: {output_path}")
 

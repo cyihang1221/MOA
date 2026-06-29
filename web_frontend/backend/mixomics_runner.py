@@ -9,11 +9,12 @@ import tempfile as _tf
 from pathlib import Path
 
 from src.platform_utils import resolve_rscript
+from src.tools.editable_export import ensure_editable_sidecars
 from web_frontend.backend.session_metadata import resolve_metadata_csv
 
 ROOT = Path(__file__).resolve().parents[2]
 
-_MIXOMICS_R_PACKAGES = ("mixOmics", "pheatmap", "readr", "dplyr", "ggplot2")
+_MIXOMICS_R_PACKAGES = ("mixOmics", "pheatmap", "readr", "dplyr", "ggplot2", "plotly")
 
 
 def _rscript_executable() -> str:
@@ -54,9 +55,9 @@ def _ensure_mixomics_r_packages() -> None:
     if proc.returncode == 0:
         return
     missing_hint = (
-        "MOA 环境缺少 mixOmics R 包。请在 conda activate MOA 后执行：\n"
-        "  conda install -y -c conda-forge r-mixomics r-pheatmap\n"
-        "或 R 控制台： install.packages('mixOmics')"
+        "MOA 环境缺少 mixOmics / plotly 等 R 包。请在 conda activate MOA 后执行：\n"
+        "  conda install -y -c conda-forge r-mixomics r-pheatmap r-plotly\n"
+        "或 R 控制台： install.packages(c('mixOmics','plotly'))"
     )
     if proc.returncode == 2:
         raise RuntimeError(missing_hint)
@@ -320,4 +321,23 @@ def run_statistical_analysis_mixomics(
     from web_frontend.backend.pipeline_utils import ensure_empty_differential_csv
 
     ensure_empty_differential_csv(output_path)
+    ensure_editable_sidecars(
+        output_path,
+        title_map={
+            "pca_plot.png": "PCA",
+            "plsda_plot.png": "PLS-DA",
+            "volcano_plot.png": "Volcano Plot",
+            "vip_scores.png": "VIP Scores",
+            "heatmap_top_vip.png": "Top VIP Heatmap",
+        },
+    )
+    from src.tools.plotly_sidecar_backfill import backfill_statistical_plotly_sidecars
+
+    backfill_statistical_plotly_sidecars(output_path, meta_csv)
+    try:
+        from src.tools.plotly_sidecar_backfill import backfill_statistical_plotly_sidecars
+
+        backfill_statistical_plotly_sidecars(output_path, meta_csv)
+    except Exception as exc:
+        print(f"    ⚠️ Plotly sidecar backfill skipped: {exc}")
     return log_path

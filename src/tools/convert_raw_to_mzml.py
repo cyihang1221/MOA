@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 import subprocess
 
-from src.platform_utils import docker_bind_mount
+from src.platform_utils import docker_bind_mount, resolve_thermo_rawfile_parser
 
 
 def _log(msg: str) -> None:
@@ -15,15 +15,26 @@ import glob
 
 def convert_raw_to_mzml_ThermoRawFileParser_impl(input_dir: str, output_dir: str):
     os.makedirs(output_dir, exist_ok=True)
-    
+    parser = resolve_thermo_rawfile_parser()
+    if not parser:
+        raise FileNotFoundError(
+            "未找到 ThermoRawFileParser。请在 MOA 环境中执行：conda install -c bioconda thermorawfileparser"
+        )
+
     for raw in glob.glob(os.path.join(input_dir, "*.raw")):
         cmd = [
-            "ThermoRawFileParser",
+            parser,
             "-i", raw,
             "-o", output_dir,
             "-f", "mzML"
         ]
-        subprocess.run(cmd, capture_output=True, check=True)
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode != 0:
+            err = (result.stderr or result.stdout or "").strip()
+            raise RuntimeError(
+                f"ThermoRawFileParser 失败 (exit {result.returncode})，文件 {os.path.basename(raw)}。"
+                f" 详情: {err[:2000]}"
+            )
 
 
 # ============================= msconvert 实现 =============================
