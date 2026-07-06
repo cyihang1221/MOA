@@ -1935,7 +1935,15 @@ def _plot_network_topology(
     )
     ax.axis("off")
     fig.tight_layout()
-    save_editable_figure(fig, output_path, title=title, dpi=300, bbox_inches="tight", facecolor="white")
+    save_editable_figure(
+        fig,
+        output_path,
+        title=title,
+        skip_plotly=True,
+        dpi=300,
+        bbox_inches="tight",
+        facecolor="white",
+    )
     plt.close(fig)
     print(f"    ✅ 网络拓扑图: {output_path}")
 
@@ -2639,6 +2647,39 @@ KNOWN_TRANSFORMATIONS = {
 }
 
 
+def _precursor_mass_diff_payload(G):
+    """Collect filtered Δm/z values and top annotated transformations."""
+    mass_diffs = []
+    for u, v in G.edges():
+        mz_u = G.nodes[u].get("precursor_mz")
+        mz_v = G.nodes[v].get("precursor_mz")
+        if mz_u and mz_v and mz_u > 0 and mz_v > 0:
+            mass_diffs.append(abs(float(mz_u) - float(mz_v)))
+
+    if len(mass_diffs) < 5:
+        return None
+
+    mass_diffs = np.array(mass_diffs, dtype=float)
+    mass_diffs = mass_diffs[(mass_diffs >= 0.1) & (mass_diffs <= 600)]
+    if mass_diffs.size < 5:
+        return None
+
+    nearby_transforms: dict[str, tuple[float, int]] = {}
+    for name, delta in KNOWN_TRANSFORMATIONS.items():
+        if 0 <= delta <= mass_diffs.max():
+            count = int(((mass_diffs >= delta - 0.5) & (mass_diffs <= delta + 0.5)).sum())
+            if count > 0:
+                nearby_transforms[name] = (float(delta), count)
+
+    sorted_transforms = sorted(
+        nearby_transforms.items(),
+        key=lambda item: item[1][1],
+        reverse=True,
+    )[:15]
+    annotated = [(name, delta, count) for name, (delta, count) in sorted_transforms]
+    return mass_diffs, annotated
+
+
 def _plot_precursor_mass_difference(
     G,
     output_path,
@@ -2653,20 +2694,12 @@ def _plot_precursor_mass_difference(
 
     标注已知的常见化学变换位置，帮助快速识别数据中的主要代谢转化模式。
     """
-    mass_diffs = []
-    for u, v in G.edges():
-        mz_u = G.nodes[u].get("precursor_mz")
-        mz_v = G.nodes[v].get("precursor_mz")
-        if mz_u and mz_v and mz_u > 0 and mz_v > 0:
-            mass_diffs.append(abs(mz_u - mz_v))
-
-    if len(mass_diffs) < 5:
+    payload = _precursor_mass_diff_payload(G)
+    if payload is None:
         print("    ⚠️ 不足 5 个有效前体质量差，跳过")
         return
 
-    mass_diffs = np.array(mass_diffs)
-    # 仅关注有意义的质量差范围 (0–600 Da)
-    mass_diffs = mass_diffs[(mass_diffs >= 0.1) & (mass_diffs <= 600)]
+    mass_diffs, sorted_transforms = payload
 
     fig, axes = plt.subplots(1, 2, figsize=figsize)
 
@@ -2686,17 +2719,8 @@ def _plot_precursor_mass_difference(
 
     # --- 右图：标注已知化学变换 ---
     ax2 = axes[1]
-    # 找到数据范围内的已知变换
-    nearby_transforms = {}
-    for name, delta in KNOWN_TRANSFORMATIONS.items():
-        if 0 <= delta <= mass_diffs.max():
-            count = ((mass_diffs >= delta - 0.5) & (mass_diffs <= delta + 0.5)).sum()
-            if count > 0:
-                nearby_transforms[name] = (delta, count)
-
-    # 按 Δm/z 排序的 top 转换
-    sorted_transforms = sorted(nearby_transforms.items(),
-                               key=lambda x: x[1][1], reverse=True)[:15]
+    colors_transform = plt.cm.tab10.colors
+    y_max = np.histogram(mass_diffs, bins=80)[0].max()
 
     ax2.hist(mass_diffs, bins=80, color="#888888", edgecolor="white",
              alpha=0.3, linewidth=0.3)
@@ -2707,9 +2731,7 @@ def _plot_precursor_mass_difference(
         fontsize=11, fontweight="bold",
     )
 
-    colors_transform = plt.cm.tab10.colors
-    y_max = np.histogram(mass_diffs, bins=80)[0].max()
-    for i, (name, (delta, count)) in enumerate(sorted_transforms):
+    for i, (name, delta, count) in enumerate(sorted_transforms):
         color = colors_transform[i % len(colors_transform)]
         ax2.axvline(x=delta, color=color, linestyle="--", linewidth=1.2, alpha=0.8)
         ax2.annotate(
@@ -2725,7 +2747,26 @@ def _plot_precursor_mass_difference(
 
     fig.suptitle(title, fontsize=13, fontweight="bold", y=1.02)
     fig.tight_layout()
-    save_editable_figure(fig, output_path, title=title, dpi=300, bbox_inches="tight", facecolor="white")
+    from src.tools.plotly_export import build_precursor_mass_diff_figure
+
+    plotly_fig = None
+    try:
+        plotly_fig = build_precursor_mass_diff_figure(
+            mass_diffs=mass_diffs,
+            title=title,
+            annotated_transforms=sorted_transforms,
+        )
+    except Exception:
+        pass
+    save_editable_figure(
+        fig,
+        output_path,
+        title=title,
+        plotly_fig=plotly_fig,
+        dpi=300,
+        bbox_inches="tight",
+        facecolor="white",
+    )
     plt.close(fig)
     print(f"    ✅ 前体质量差分布图: {output_path}")
 

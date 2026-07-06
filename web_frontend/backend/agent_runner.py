@@ -32,7 +32,6 @@ from web_frontend.backend.plan_utils import (
     guess_tool_name_from_task,
     inject_mgf_standalone_tasks,
     normalize_plan_tasks_for_platform,
-    raw_conversion_complete,
     raw_conversion_needed,
 )
 from web_frontend.backend.pipeline_utils import (
@@ -53,6 +52,10 @@ from web_frontend.backend.raw_converter import (
     resolve_initial_raw_converter,
 )
 from web_frontend.backend.session_storage import session_upload_dir, session_work_dir
+from web_frontend.backend.session_file_resolver import (
+    mzml_ready_for_xcms,
+    summarize_session_files,
+)
 from web_frontend.backend.tool_runner import (
     TOOL_RUNTIME_HINTS,
     call_tool_with_heartbeat,
@@ -120,31 +123,7 @@ def _prune_remaining_differential_tasks(
 
 
 def build_data_list(upload_dir: str, paths: dict[str, str]) -> str:
-    lines = []
-    upload = Path(upload_dir)
-    if upload.is_dir():
-        for item in sorted(upload.iterdir()):
-            if item.is_file():
-                lines.append(
-                    f"{normalize_display_path(item)}: 用户上传的质谱原始/数据文件 ({item.name})"
-                )
-    lines.append(
-        f"{paths['upload']}: 本会话输入目录（metadata.csv 等放于此；.raw 在 raw/ 子目录）"
-    )
-    raw_dir = upload / "raw"
-    if raw_dir.is_dir():
-        for item in sorted(raw_dir.iterdir()):
-            if item.is_file():
-                lines.append(
-                    f"{normalize_display_path(item)}: 质谱 raw 数据 ({item.name})"
-                )
-    meta = upload / "metadata.csv"
-    if meta.is_file():
-        lines.append(
-            f"{normalize_display_path(meta)}: 样本 metadata CSV（含 sample ID 与分组）"
-        )
-    lines.append(f"{paths['outputspace']}: 本会话输出目录（outputspace 下该对话子目录）")
-    return "\n".join(lines)
+    return "\n".join(summarize_session_files(paths, upload_dir))
 
 
 def build_metadata_csv(upload_dir: str) -> str:
@@ -162,11 +141,10 @@ def build_metadata_csv(upload_dir: str) -> str:
 
 
 def _scan_existing_outputs(paths: dict[str, str]) -> list[str]:
-    """列出 outputspace 中已存在的关键产物，供计划阶段跳过重复步骤。"""
+    """列出 inputspace/outputspace 中已存在的关键产物，供计划阶段跳过重复步骤。"""
     found: list[str] = []
-    mzml_dir = Path(paths["converted_mzml"])
-    if raw_conversion_complete(paths) and mzml_dir.is_dir() and list(mzml_dir.glob("*.mzML")):
-        found.append("converted mzML")
+    if mzml_ready_for_xcms(paths, paths["upload"]):
+        found.append("mzML input (inputspace and/or converted_mzml)")
     file_checks: list[tuple[Path, str]] = [
         (Path(paths["peaks"]) / "feature_table.csv", "XCMS feature_table.csv"),
         (Path(paths["peaks"]) / "spectra.mgf", "XCMS spectra.mgf"),
@@ -259,23 +237,24 @@ Platform: {platform_note}
 You MUST call MCP tools to execute; do not only give textual advice.
 
 Allowed tool pipeline (use ONLY these exact tool names):
-1. {convert_tool} — input_dir={raw_in}, output_dir={converted}
-2. data_preprocessing_xcms — input_dir={converted}, output_dir={peaks}
-3. feature_filtering_and_missing_value_imputation_knn — input_dir={peaks}, output_dir={filtered}
+1. {convert_tool} — input_dir={raw_in}, output_dir={converted} (skip if user uploaded .mzML only, or mzML already covers all .raw)
+2. data_preprocessing_xcms — input_dir: mzML from inputspace or {converted} (auto-synced), output_dir={peaks}
+3. feature_filtering_and_missing_value_imputation_knn — input_dir={peaks} (feature_table.csv), output_dir={filtered}
 4. statistical_analysis_mixomics — input_dir={filtered}, metadata_csv under {upload}, output_dir={statistical}
-5. extract_differential_features — differential_csv + input_mgf from prior steps, output_dir under outputspace
+5. extract_differential_features — differential_csv + input_mgf from prior steps or outputspace, output_dir under outputspace
 6. spectral_annotation — input_dir/output_dir under outputspace
 7. kegg_compound_enrichment — input_dir/output_dir under outputspace
-8. molecular_networking_gnps — input_mgf from differential_spectra.mgf, output_dir={paths.get('molecular_network', paths['outputspace'] + '/molecular_network_results')}
+8. molecular_networking_gnps — input_mgf from differential_spectra.mgf, spectra.mgf, or uploaded .mgf; output_dir={paths.get('molecular_network', paths['outputspace'] + '/molecular_network_results')}
 9. deepmass_annotation — input_dir={paths.get('deepmass', paths['outputspace'] + '/deepmass_annotation_results')} (uploaded .mgf auto-copied to differential_spectra.mgf), output_dir={paths.get('deepmass', paths['outputspace'] + '/deepmass_annotation_results')}
 
+If user uploads .mzML only (no .raw), start with data_preprocessing_xcms — do NOT require raw conversion.
 If user uploads .mgf only and asks for DeepMASS, plan ONLY deepmass_annotation (no XCMS). Empty differential_metabolites.csv is OK.
 
 Path roots: upload={upload}, outputspace={paths['outputspace']}
 
 If the user message is casual chat or unrelated to mass spec analysis, return a plan with ZERO steps (empty plan array).
-If outputs already exist, only plan the steps still needed for the user's current request.
-If .raw files exist under {raw_in} but converted_mzml is empty or incomplete, the FIRST step MUST be {convert_tool}.
+If outputs already exist in inputspace or outputspace, only plan the steps still needed for the user's current request.
+If .raw files exist under {raw_in} but no matching mzML in inputspace or {converted}, the FIRST step MUST be {convert_tool}.
 """
 
 

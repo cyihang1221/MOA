@@ -257,11 +257,7 @@ def run_statistical_analysis_mixomics(
     os.environ["MASS_MIXOMICS_METADATA_CSV"] = meta_csv
     os.environ["MASS_MIXOMICS_OUTPUT_DIR"] = out_dir
 
-    src_path = ROOT / "src" / "tools" / "xcms.py"
-    code = _patch_mixomics_source(src_path.read_text(encoding="utf-8"))
-    g: dict = {"__name__": "mixomics_patched_exec", "sys": sys}
-    exec(compile(code, str(src_path), "exec"), g)
-    fn = g["statistical_analysis_mixomics_impl"]
+    from src.tools.xcms import statistical_analysis_mixomics_impl as fn
 
     log_path = output_path / "statistical_analysis_mixomics.log"
     _orig_run = sp.run
@@ -333,10 +329,7 @@ def run_statistical_analysis_mixomics(
     )
     from src.tools.plotly_sidecar_backfill import backfill_statistical_plotly_sidecars
 
-    backfill_statistical_plotly_sidecars(output_path, meta_csv)
     try:
-        from src.tools.plotly_sidecar_backfill import backfill_statistical_plotly_sidecars
-
         backfill_statistical_plotly_sidecars(output_path, meta_csv)
     except Exception as exc:
         print(f"    ⚠️ Plotly sidecar backfill skipped: {exc}")

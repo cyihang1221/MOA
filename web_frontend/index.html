@@ -296,7 +296,14 @@
 
           <p id="outputFilesDir" class="files-dir muted"></p>
 
-          <div id="outputImageGallery" class="output-image-gallery hidden"></div>
+          <div id="outputImageGalleryWrap" class="output-image-gallery-wrap hidden">
+            <div class="output-image-gallery-toolbar">
+              <button id="openImageMergeBtn" type="button" class="secondary-btn small-btn" data-i18n="image.mergeOpen">
+                合并图片
+              </button>
+            </div>
+            <div id="outputImageGallery" class="output-image-gallery"></div>
+          </div>
 
           <ul id="outputFilesList" class="file-tree"></ul>
 
@@ -368,16 +375,32 @@
               添加色块
             </button>
 
-            <label class="image-editor-field">
-              <span data-i18n="image.titlePosition">标题位置</span>
-              <select id="editorTitlePosition">
-                <option value="top-center" data-i18n="image.titleTopCenter">上方居中</option>
-                <option value="top-left" data-i18n="image.titleTopLeft">上方居左</option>
-                <option value="top-right" data-i18n="image.titleTopRight">上方居右</option>
-                <option value="inside" data-i18n="image.titleInside">图内自定义</option>
-              </select>
-            </label>
+            <div class="image-editor-raster-tools">
+              <p class="image-editor-section-title" data-i18n="image.rasterTools">底图换色</p>
+              <button id="editorEyedropper" type="button" class="secondary-btn" data-i18n="image.eyedropper">
+                吸管取色
+              </button>
+              <label class="image-editor-field">
+                <span data-i18n="image.sourceColor">源颜色</span>
+                <span id="editorSourceColorSwatch" class="color-swatch muted">—</span>
+              </label>
+              <label class="image-editor-field">
+                <span data-i18n="image.targetColor">替换为</span>
+                <input id="editorRasterTargetColor" type="color" value="#2563eb" />
+              </label>
+              <label class="image-editor-field image-editor-tolerance-field">
+                <span data-i18n="image.tolerance">容差</span>
+                <input id="editorRasterTolerance" type="range" min="10" max="120" value="55" />
+                <span id="editorRasterToleranceVal" class="muted">55</span>
+              </label>
+              <button id="editorReplaceAllColors" type="button" class="secondary-btn" data-i18n="image.replaceAllColors">
+                全图替换
+              </button>
+            </div>
 
+            <button id="editorUndo" type="button" class="secondary-btn" data-i18n="image.undo" disabled>
+              撤回
+            </button>
             <label class="image-editor-field">
               <span data-i18n="image.text">文字</span>
               <input id="editorTextInput" type="text" data-i18n-placeholder="image.textPlaceholder" placeholder="选择文字后编辑" />
@@ -389,7 +412,7 @@
             </label>
 
             <label class="image-editor-field">
-              <span data-i18n="image.fontSize">字号</span>
+              <span id="editorFontSizeLabel" data-i18n="image.fontSize">字号</span>
               <input id="editorFontSizeInput" type="number" min="8" max="96" value="28" />
             </label>
 
@@ -437,7 +460,7 @@
 
         <div class="plotly-editor-body">
           <p id="plotlyEditorHint" class="plotly-editor-hint muted" data-i18n="image.plotlyHint">
-            点击图例项，或在下拉框中选择系列，再点击右侧颜色块修改颜色；双击标题可修改标题文字。
+            在下拉框中选择图例系列，再用颜色块修改该系列颜色；可拖动标题和图例位置。
           </p>
           <div id="plotlyLegendColorRow" class="plotly-legend-color-row">
             <label class="plotly-legend-color-field">
@@ -448,11 +471,20 @@
               <span data-i18n="image.color">颜色</span>
               <input id="plotlyLegendColorInput" type="color" class="plotly-legend-color-input" title="选择颜色" />
             </label>
+            <label class="plotly-legend-color-field">
+              <span data-i18n="image.titleFontSize">标题字号</span>
+              <input id="plotlyTitleFontSize" type="number" min="8" max="72" value="18" class="plotly-font-size-input" />
+            </label>
+            <label class="plotly-legend-color-field">
+              <span data-i18n="image.axisFontSize">坐标轴字号</span>
+              <input id="plotlyAxisFontSize" type="number" min="8" max="48" value="14" class="plotly-font-size-input" />
+            </label>
           </div>
           <div id="plotlyChart" class="plotly-chart"></div>
         </div>
 
         <footer class="plotly-editor-footer">
+          <button id="plotlyEditorUndo" type="button" class="secondary-btn" data-i18n="image.undo" disabled>撤回</button>
           <button id="plotlyEditorCancel" type="button" class="secondary-btn" data-i18n="msg.cancel">取消</button>
           <button id="plotlyEditorSave" type="button" data-i18n="image.save">保存为新图</button>
         </footer>
@@ -464,12 +496,101 @@
     </div>
 
 
+    <div id="imageMergeEditor" class="image-merge-editor hidden" role="dialog" aria-modal="true" aria-hidden="true">
+      <div class="image-merge-backdrop" id="imageMergeBackdrop"></div>
+      <div class="image-merge-panel">
+        <header class="image-merge-header">
+          <span id="imageMergeTitle" class="image-merge-title" data-i18n="image.mergeTitle">合并图片</span>
+          <button id="imageMergeClose" type="button" class="icon-btn" aria-label="Close">×</button>
+        </header>
+        <div class="image-merge-body">
+          <aside class="image-merge-sidebar">
+            <p class="muted" data-i18n="image.mergeHintPs">点击缩略图选择/取消图片，再点「自动排版」。</p>
+            <div id="imageMergePickList" class="image-merge-pick-list"></div>
+            <p class="muted image-merge-snap-hint" data-i18n="image.mergeSnapHint">Shift 锁定轴向 · Ctrl 吸附 · Alt+滚轮 缩放</p>
+            <button id="imageMergeAutoLayout" type="button" class="secondary-btn" data-i18n="image.mergeAutoLayout">
+              自动排版
+            </button>
+            <label class="image-editor-field">
+              <span data-i18n="image.mergeCols">列数</span>
+              <select id="imageMergeCols">
+                <option value="auto" data-i18n="image.mergeColsAuto">自动</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+              </select>
+            </label>
+            <label class="image-editor-field">
+              <span data-i18n="image.mergeLabels">子图标签</span>
+              <select id="imageMergeLabels">
+                <option value="upper" data-i18n="image.mergeLabelUpper">A, B, C…</option>
+                <option value="lower" data-i18n="image.mergeLabelLower">a, b, c…</option>
+                <option value="num" data-i18n="image.mergeLabelNum">1, 2, 3…</option>
+                <option value="custom" data-i18n="image.mergeLabelCustom">自定义</option>
+                <option value="none" data-i18n="image.mergeLabelNone">无</option>
+              </select>
+            </label>
+            <label class="image-editor-field image-merge-custom-label-field hidden" id="imageMergeCustomLabelRow">
+              <span data-i18n="image.mergeCustomLabel">自定义标签</span>
+              <input id="imageMergeCustomLabel" type="text" placeholder="A" />
+            </label>
+            <label class="image-editor-field">
+              <span data-i18n="image.mergeLabelFontSize">标签字号</span>
+              <input id="imageMergeLabelFontSize" type="number" min="10" max="96" value="28" />
+            </label>
+            <button id="imageMergeAddText" type="button" class="secondary-btn" data-i18n="image.mergeAddText">
+              添加文字
+            </button>
+            <label class="image-editor-field">
+              <span data-i18n="image.text">文字</span>
+              <input id="imageMergeTextInput" type="text" data-i18n-placeholder="image.mergeTextPlaceholder" placeholder="选中文字后编辑" />
+            </label>
+            <label class="image-editor-field">
+              <span data-i18n="image.fontSize">字号</span>
+              <input id="imageMergeFontSize" type="number" min="8" max="120" value="24" />
+            </label>
+            <button id="imageMergeDelete" type="button" class="secondary-btn" data-i18n="image.deleteSelected" disabled>
+              删除选中
+            </button>
+            <button id="imageMergeUndo" type="button" class="secondary-btn" data-i18n="image.undo" disabled>
+              撤回
+            </button>
+            <p id="imageMergeStatus" class="image-merge-status muted"></p>
+          </aside>
+          <div class="image-merge-preview-wrap">
+            <div class="image-merge-zoom-bar">
+              <button id="imageMergeZoomOut" type="button" class="icon-btn" aria-label="Zoom out" title="缩小">−</button>
+              <span id="imageMergeZoomLabel" class="image-merge-zoom-label">100%</span>
+              <button id="imageMergeZoomIn" type="button" class="icon-btn" aria-label="Zoom in" title="放大">+</button>
+              <button id="imageMergeZoomFit" type="button" class="secondary-btn small-btn" data-i18n="image.mergeZoomFit">
+                适应窗口
+              </button>
+              <span id="imageMergeCanvasSize" class="image-merge-canvas-size muted">—</span>
+            </div>
+            <div class="image-merge-canvas-viewport">
+              <div id="imageMergeStageHost" class="image-merge-stage-host">
+                <div id="imageMergeStageScaler" class="image-merge-stage-scaler">
+                  <div id="imageMergeStage" class="image-merge-stage"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <footer class="image-merge-footer">
+          <button id="imageMergeCancel" type="button" class="secondary-btn" data-i18n="msg.cancel">取消</button>
+          <button id="imageMergeSave" type="button" data-i18n="image.mergeSave">保存拼图</button>
+        </footer>
+      </div>
+    </div>
+
+
     <script src="https://cdn.plot.ly/plotly-2.35.3.min.js"></script>
     <script src="https://unpkg.com/konva@latest/konva.min.js"></script>
 
-    <script src="/static/i18n.js?v=20260629-plotly-hybrid"></script>
+    <script src="/static/i18n.js?v=20260629-merge-canvas"></script>
 
-    <script src="/static/app.js?v=20260629-plotly-hybrid"></script>
+    <script src="/static/app.js?v=20260629-merge-canvas"></script>
 
   </body>
 

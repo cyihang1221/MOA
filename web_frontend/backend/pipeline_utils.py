@@ -4,6 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from web_frontend.backend.plan_utils import raw_conversion_needed
+from web_frontend.backend.session_file_resolver import mzml_ready_for_xcms
 
 DIFFERENTIAL_DEPENDENT_TOOLS = frozenset({
     "extract_differential_features",
@@ -100,12 +101,15 @@ def prune_differential_dependent_tasks(tasks: list[str]) -> tuple[list[str], lis
 
 
 def conversion_downstream_blocked(paths: dict[str, str]) -> tuple[bool, str]:
-    """存在 .raw 但 converted_mzml 未就绪时，后续 XCMS 等步骤不可执行。"""
+    """无可用 mzML（inputspace 与 outputspace 均无）且仍需 raw 转换时，阻止 XCMS 等步骤。"""
+    if mzml_ready_for_xcms(paths, paths["upload"]):
+        return False, ""
     if not raw_conversion_needed(paths):
         return False, ""
     return True, (
-        "converted_mzml 目录中没有与 .raw 对应的 mzML 文件。"
-        "请先完成格式转换：Linux 可安装 ThermoRawFileParser，或启动 Docker 后使用 msconvert。"
+        "未在 inputspace 或 converted_mzml 中找到 mzML，且仍有未转换的 .raw。"
+        "请先完成格式转换：Linux 可安装 ThermoRawFileParser，或启动 Docker 后使用 msconvert；"
+        "也可直接上传 .mzML 到 inputspace。"
     )
 
 
