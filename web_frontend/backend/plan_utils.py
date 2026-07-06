@@ -3,8 +3,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from src.platform_utils import normalize_display_path
-from web_frontend.backend.constants import ALLOWED_TOOL_NAMES
+from web_frontend.backend.session_file_resolver import find_session_mgf, mzml_stems
 
 RAW_CONVERTER_NAMES = (
     "convert_raw_to_mzml_msconvert",
@@ -34,16 +33,13 @@ def count_raw_files(paths: dict[str, str]) -> int:
 
 
 def raw_conversion_needed(paths: dict[str, str]) -> bool:
-    """upload 中有 .raw 且 converted_mzml 未覆盖全部 raw 文件名时返回 True。"""
+    """upload 中有 .raw 且 inputspace/outputspace 中未覆盖全部 raw 文件名时返回 True。"""
     raw_files = _collect_raw_files(paths)
     if not raw_files:
         return False
-    mzml_dir = Path(paths["converted_mzml"])
-    if not mzml_dir.is_dir():
-        return True
-    mzml_stems = {p.stem.lower() for p in mzml_dir.glob("*.mzML")}
+    available = mzml_stems(paths, paths["upload"])
     raw_stems = {p.stem.lower() for p in raw_files}
-    return not raw_stems.issubset(mzml_stems)
+    return not raw_stems.issubset(available)
 
 
 def ensure_raw_conversion_step(
@@ -129,10 +125,8 @@ def inject_mgf_standalone_tasks(
     if tasks:
         return tasks
     upload = Path(paths.get("upload") or "")
-    if not upload.is_dir():
-        return tasks
-    has_mgf = bool(list(upload.glob("*.mgf")) + list(upload.glob("*.MGF")))
-    if not has_mgf:
+    mgf_path = find_session_mgf(paths, str(upload))
+    if not mgf_path:
         return tasks
 
     names = set(tool_names or ALLOWED_TOOL_NAMES)
@@ -144,10 +138,7 @@ def inject_mgf_standalone_tasks(
     network_dir = paths.get("molecular_network") or str(
         Path(paths["outputspace"]) / "molecular_network_results"
     )
-    mgf_hint = next(
-        (normalize_display_path(p) for p in sorted(upload.glob("*.mgf")) + sorted(upload.glob("*.MGF"))),
-        None,
-    )
+    mgf_hint = mgf_path
 
     if "deepmass" in lower and "deepmass_annotation" in names:
         out.append(

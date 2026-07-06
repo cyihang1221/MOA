@@ -4,8 +4,18 @@ import subprocess
 import tempfile
 import glob
 import pandas as pd
+from pathlib import Path
 
+from src.platform_utils import PROJECT_ROOT
 from src.tools.editable_export import ensure_editable_sidecars, save_editable_metadata
+
+
+def _xcms_tools_dir() -> str:
+    """Return src/tools directory; safe under normal import and exec()."""
+    mod_file = globals().get("__file__")
+    if mod_file:
+        return str(Path(mod_file).resolve().parent)
+    return str(PROJECT_ROOT / "src" / "tools")
 
 
 
@@ -691,8 +701,13 @@ def statistical_analysis_mixomics_impl(
     print("\nPerforming statistical analysis using mixOmics...")
 
     os.makedirs(output_dir, exist_ok=True)
-    _tools_dir = os.path.dirname(os.path.abspath(__file__))
+    _tools_dir = _xcms_tools_dir()
     _r_plotly_helpers = os.path.join(_tools_dir, "r_plotly_export.R").replace(os.sep, "/")
+
+    imputed_csv = os.path.join(input_dir, "feature_table_filtered_imputed.csv").replace(os.sep, "/")
+    os.environ["MASS_MIXOMICS_INPUT_CSV"] = imputed_csv
+    os.environ["MASS_MIXOMICS_METADATA_CSV"] = metadata_csv.replace(os.sep, "/")
+    os.environ["MASS_MIXOMICS_OUTPUT_DIR"] = output_dir.replace(os.sep, "/")
 
     r_script = f"""
 # ============================= packages =============================
@@ -707,9 +722,12 @@ try(source("{_r_plotly_helpers}", local = FALSE, encoding = "UTF-8"), silent = T
 
 
 # ============================= parameters =============================
-input_csv <- "{os.path.join(input_dir, 'feature_table_filtered_imputed.csv').replace(os.sep, '/')}"
-metadata_csv <- "{metadata_csv.replace(os.sep, '/')}"
-outdir <- "{output_dir.replace(os.sep, '/')}"
+input_csv <- Sys.getenv("MASS_MIXOMICS_INPUT_CSV")
+metadata_csv <- Sys.getenv("MASS_MIXOMICS_METADATA_CSV")
+outdir <- Sys.getenv("MASS_MIXOMICS_OUTPUT_DIR")
+if (!nzchar(input_csv) || !nzchar(metadata_csv) || !nzchar(outdir)) {{
+  stop("Missing MASS_MIXOMICS_* environment variables")
+}}
 
 ncomp_pca <- {ncomp_pca}
 ncomp_plsda <- {ncomp_plsda}
@@ -866,7 +884,8 @@ plotIndiv(
     comp = pca_plot_comps,
     group = Y,
     legend = TRUE,
-    title = "PCA"
+    title = "PCA",
+    style = "graphics"
 )
 
 dev.off()
@@ -887,6 +906,17 @@ try(
 
 
 # ============================= PLS-DA =============================
+if (nlevels(Y) < 2) {{
+    writeLines(
+        paste(
+            "Skipped PLS-DA/CV/VIP/volcano: only",
+            nlevels(Y),
+            "group(s) matched feature table samples.",
+            "PCA was still computed."
+        ),
+        file.path(outdir, "analysis_warning.txt")
+    )
+}} else {{
 plsda_res <- plsda(
     X_tmp,
     Y,
@@ -919,7 +949,8 @@ plotIndiv(
     comp = plsda_plot_comps,
     group = Y,
     legend = TRUE,
-    title = "PLS-DA"
+    title = "PLS-DA",
+    style = "graphics"
 )
 
 dev.off()
@@ -953,8 +984,8 @@ perf_res <- perf(
     plsda_res,
     validation = "Mfold",
     folds = n_folds,
-    nrepeat = 10,
-    progressBar = TRUE
+    nrepeat = 3,
+    progressBar = FALSE
 )
 
 capture.output(
@@ -1251,6 +1282,9 @@ if (n_top > 0) {{
 }}
 
 
+}}
+
+
 # ============================= Session Info =============================
 writeLines(
     capture.output(sessionInfo()),
@@ -1258,9 +1292,14 @@ writeLines(
 )
 """
 
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.R', delete=False) as f:
-        f.write(r_script)
-        r_file = f.name
+    _r_tmp = tempfile.NamedTemporaryFile(
+        mode="w", suffix=".R", delete=False, encoding="utf-8"
+    )
+    try:
+        _r_tmp.write(r_script)
+        r_file = _r_tmp.name
+    finally:
+        _r_tmp.close()
 
     try:
         subprocess.run(["Rscript", r_file], capture_output=False)
@@ -1439,7 +1478,7 @@ def spectral_annotation_impl(
 
     os.makedirs(output_dir, exist_ok=True)
 
-    base_dir = os.path.dirname(os.path.abspath(__file__))
+    base_dir = _xcms_tools_dir()
     lib_pos_path = os.path.join(base_dir, "../..", "database_file/GNPS/GNPS-NIH-NATURALPRODUCTSLIBRARY_ROUND2_POSITIVE.msp")
     lib_neg_path = os.path.join(base_dir, "../..", "database_file/GNPS/GNPS-NIH-NATURALPRODUCTSLIBRARY_ROUND2_NEGATIVE.msp")
 
@@ -1926,7 +1965,7 @@ def kegg_compound_enrich_impl(
     enrich_table_out = os.path.join(output_dir, "kegg_compound_enrich.csv")
     bubble_plot_out = os.path.join(output_dir, "kegg_compound_bubble.png")
 
-    base_dir = os.path.dirname(os.path.abspath(__file__))
+    base_dir = _xcms_tools_dir()
     compound_pathway_path = os.path.join(base_dir, "../..", "database_file/compound_pathway.tsv")
     _r_plotly_helpers = os.path.join(base_dir, "r_plotly_export.R").replace(os.sep, "/")
 

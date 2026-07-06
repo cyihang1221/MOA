@@ -54,6 +54,41 @@ const editorDelete = document.getElementById("editorDelete");
 const editorSave = document.getElementById("editorSave");
 const editorCancel = document.getElementById("editorCancel");
 const editorStatus = document.getElementById("editorStatus");
+const editorEyedropper = document.getElementById("editorEyedropper");
+const editorSourceColorSwatch = document.getElementById("editorSourceColorSwatch");
+const editorRasterTargetColor = document.getElementById("editorRasterTargetColor");
+const editorRasterTolerance = document.getElementById("editorRasterTolerance");
+const editorRasterToleranceVal = document.getElementById("editorRasterToleranceVal");
+const editorReplaceAllColors = document.getElementById("editorReplaceAllColors");
+const editorUndo = document.getElementById("editorUndo");
+const outputImageGalleryWrap = document.getElementById("outputImageGalleryWrap");
+const openImageMergeBtn = document.getElementById("openImageMergeBtn");
+const imageMergeEditor = document.getElementById("imageMergeEditor");
+const imageMergeBackdrop = document.getElementById("imageMergeBackdrop");
+const imageMergeClose = document.getElementById("imageMergeClose");
+const imageMergePickList = document.getElementById("imageMergePickList");
+const imageMergeCols = document.getElementById("imageMergeCols");
+const imageMergeLabels = document.getElementById("imageMergeLabels");
+const imageMergeAutoLayout = document.getElementById("imageMergeAutoLayout");
+const imageMergeUndo = document.getElementById("imageMergeUndo");
+const imageMergeStatus = document.getElementById("imageMergeStatus");
+const imageMergeStageScaler = document.getElementById("imageMergeStageScaler");
+const imageMergeStageHost = document.getElementById("imageMergeStageHost");
+const imageMergeStage = document.getElementById("imageMergeStage");
+const imageMergePreviewWrap = document.querySelector(".image-merge-preview-wrap");
+const imageMergeZoomOut = document.getElementById("imageMergeZoomOut");
+const imageMergeZoomIn = document.getElementById("imageMergeZoomIn");
+const imageMergeZoomFit = document.getElementById("imageMergeZoomFit");
+const imageMergeZoomLabel = document.getElementById("imageMergeZoomLabel");
+const imageMergeCanvasSize = document.getElementById("imageMergeCanvasSize");
+const imageMergeLabelFontSize = document.getElementById("imageMergeLabelFontSize");
+const imageMergeCustomLabel = document.getElementById("imageMergeCustomLabel");
+const imageMergeAddText = document.getElementById("imageMergeAddText");
+const imageMergeTextInput = document.getElementById("imageMergeTextInput");
+const imageMergeFontSize = document.getElementById("imageMergeFontSize");
+const imageMergeDelete = document.getElementById("imageMergeDelete");
+const imageMergeCancel = document.getElementById("imageMergeCancel");
+const imageMergeSave = document.getElementById("imageMergeSave");
 const plotlyEditor = document.getElementById("plotlyEditor");
 const plotlyEditorBackdrop = document.getElementById("plotlyEditorBackdrop");
 const plotlyEditorClose = document.getElementById("plotlyEditorClose");
@@ -66,8 +101,18 @@ const plotlyTraceSelect = document.getElementById("plotlyTraceSelect");
 const plotlyEditorSave = document.getElementById("plotlyEditorSave");
 const plotlyEditorCancel = document.getElementById("plotlyEditorCancel");
 const plotlyEditorStatus = document.getElementById("plotlyEditorStatus");
+const plotlyEditorUndo = document.getElementById("plotlyEditorUndo");
+const plotlyTitleFontSizeInput = document.getElementById("plotlyTitleFontSize");
+const plotlyAxisFontSizeInput = document.getElementById("plotlyAxisFontSize");
+const editorFontSizeLabel = document.getElementById("editorFontSizeLabel");
 
 const IMAGE_EXT_RE = /\.(png|jpe?g|gif|webp|svg)$/i;
+const KONVA_ONLY_IMAGE_STEMS = new Set(["network_topology"]);
+const MERGE_CANVAS_BG = "#ffffff";
+const MERGE_LAYOUT_GAP = 24;
+const MERGE_SNAP_THRESHOLD = 10;
+const KONVA_UNDO_LIMIT = 40;
+const PLOTLY_UNDO_LIMIT = 40;
 
 const t = (key, params) => window.MassI18n.t(key, params);
 
@@ -116,11 +161,34 @@ let imageEditorState = {
   rasterCanvas: null,
   rasterCtx: null,
   pickedRasterColor: null,
+  eyedropperActive: false,
 };
 let plotlyEditorState = {
   sourceRel: "",
   sourceTitle: "",
   selectedTrace: null,
+};
+let workspaceOutputImages = [];
+let konvaHistory = [];
+let konvaHistoryIndex = -1;
+let plotlyHistory = [];
+let plotlyHistoryIndex = -1;
+let mergeHistory = [];
+let mergeHistoryIndex = -1;
+let imageMergeState = {
+  stage: null,
+  layer: null,
+  transformer: null,
+  selectedNode: null,
+  selected: [],
+  customLabels: {},
+  canvasW: 1200,
+  canvasH: 900,
+  displayScale: 1,
+  freeTextCount: 0,
+  mergeDragStart: null,
+  mergeDragAxis: null,
+  viewZoom: 1,
 };
 
 function getUrlParams() {
@@ -237,6 +305,10 @@ function renderOutputImageGallery(files, sessionId) {
   if (!outputImageGallery) return;
   outputImageGallery.innerHTML = "";
   const images = (files || []).filter((file) => isImagePath(file.name));
+  workspaceOutputImages = images;
+  if (outputImageGalleryWrap) {
+    outputImageGalleryWrap.classList.toggle("hidden", images.length === 0);
+  }
   outputImageGallery.classList.toggle("hidden", images.length === 0);
   if (!images.length || !sessionId || isSharedView) return;
 
@@ -571,14 +643,22 @@ function resetImageEditor() {
     rasterCanvas: null,
     rasterCtx: null,
     pickedRasterColor: null,
+    eyedropperActive: false,
   };
+  resetKonvaUndo();
+  setEyedropperActive(false);
   if (editorStage) editorStage.innerHTML = "";
   if (editorStageScaler) {
     editorStageScaler.style.width = "";
     editorStageScaler.style.height = "";
+    editorStageScaler.style.cursor = "";
   }
   if (editorTextInput) editorTextInput.value = "";
   if (editorTitlePosition) editorTitlePosition.value = "top-center";
+  updateSourceColorSwatch(null);
+  if (editorRasterToleranceVal && editorRasterTolerance) {
+    editorRasterToleranceVal.textContent = editorRasterTolerance.value;
+  }
   setEditorStatus("");
 }
 
@@ -642,6 +722,246 @@ function editableFileStem(name) {
   return String(name || "image").replace(/\.[^.]+$/, "");
 }
 
+function shouldUsePlotlyEditor(rel) {
+  const base = String(rel || "").split("/").pop() || "";
+  const stem = editableFileStem(base);
+  return !KONVA_ONLY_IMAGE_STEMS.has(stem);
+}
+
+function updateSourceColorSwatch(color) {
+  if (!editorSourceColorSwatch) return;
+  if (!color) {
+    editorSourceColorSwatch.textContent = "—";
+    editorSourceColorSwatch.style.background = "#fff";
+    editorSourceColorSwatch.style.color = "";
+    return;
+  }
+  const hex = rgbToHex(color.r, color.g, color.b);
+  editorSourceColorSwatch.textContent = hex;
+  editorSourceColorSwatch.style.background = hex;
+  editorSourceColorSwatch.style.color = "#fff";
+}
+
+function rasterToleranceValue() {
+  return Number(editorRasterTolerance?.value || 55);
+}
+
+function cloneImageData(imageData) {
+  if (!imageData) return null;
+  return new ImageData(
+    new Uint8ClampedArray(imageData.data),
+    imageData.width,
+    imageData.height
+  );
+}
+
+function captureKonvaSnapshot() {
+  const { rasterCtx, rasterCanvas } = imageEditorState;
+  const raster =
+    rasterCtx && rasterCanvas
+      ? cloneImageData(rasterCtx.getImageData(0, 0, rasterCanvas.width, rasterCanvas.height))
+      : null;
+  return {
+    raster,
+    objects: JSON.parse(JSON.stringify(serializeEditableState().objects || [])),
+    pickedColor: imageEditorState.pickedRasterColor
+      ? { ...imageEditorState.pickedRasterColor }
+      : null,
+  };
+}
+
+function konvaSnapshotsEqual(a, b) {
+  if (!a || !b) return false;
+  if (JSON.stringify(a.objects) !== JSON.stringify(b.objects)) return false;
+  if (Boolean(a.pickedColor) !== Boolean(b.pickedColor)) return false;
+  if (!a.raster || !b.raster) return !a.raster && !b.raster;
+  if (a.raster.data.length !== b.raster.data.length) return false;
+  for (let i = 0; i < a.raster.data.length; i += 128) {
+    if (a.raster.data[i] !== b.raster.data[i]) return false;
+  }
+  return true;
+}
+
+function refreshKonvaRasterImage() {
+  const { imageNode, rasterCanvas, layer } = imageEditorState;
+  if (!imageNode || !rasterCanvas) return;
+  if (typeof imageNode.clearCache === "function") imageNode.clearCache();
+  imageNode.image(null);
+  imageNode.image(rasterCanvas);
+  layer?.batchDraw();
+}
+
+function commitKonvaState() {
+  if (!imageEditorState.layer) return;
+  const snap = captureKonvaSnapshot();
+  konvaHistory = konvaHistory.slice(0, konvaHistoryIndex + 1);
+  if (konvaHistoryIndex >= 0 && konvaSnapshotsEqual(konvaHistory[konvaHistoryIndex], snap)) {
+    if (editorUndo) editorUndo.disabled = konvaHistoryIndex <= 0;
+    return;
+  }
+  konvaHistory.push(snap);
+  if (konvaHistory.length > KONVA_UNDO_LIMIT) konvaHistory.shift();
+  konvaHistoryIndex = konvaHistory.length - 1;
+  if (editorUndo) editorUndo.disabled = konvaHistoryIndex <= 0;
+}
+
+function restoreKonvaSnapshot(snap) {
+  if (!snap || !imageEditorState.layer) return;
+  const { rasterCtx, rasterCanvas } = imageEditorState;
+  if (snap.raster && rasterCtx && rasterCanvas) {
+    rasterCtx.putImageData(cloneImageData(snap.raster), 0, 0);
+    refreshKonvaRasterImage();
+  }
+  imageEditorState.layer.children.slice().forEach((node) => {
+    const name = node.name?.();
+    if (name && String(name).startsWith("editable-")) node.destroy();
+  });
+  (snap.objects || []).forEach((obj) => restoreEditableObject(obj, { silent: true }));
+  imageEditorState.pickedRasterColor = snap.pickedColor || null;
+  updateSourceColorSwatch(imageEditorState.pickedRasterColor);
+  setSelectedEditorNode(null);
+  imageEditorState.layer.batchDraw();
+}
+
+function undoKonvaEdit() {
+  commitKonvaOverlayIfDirty();
+  if (konvaHistoryIndex <= 0) {
+    setEditorStatus(t("image.undoEmpty"));
+    return;
+  }
+  konvaHistoryIndex -= 1;
+  restoreKonvaSnapshot(konvaHistory[konvaHistoryIndex]);
+  if (editorUndo) editorUndo.disabled = konvaHistoryIndex <= 0;
+  setEditorStatus(t("image.undoDone"));
+}
+
+function resetKonvaUndo() {
+  konvaHistory = [];
+  konvaHistoryIndex = -1;
+  if (editorUndo) editorUndo.disabled = true;
+}
+
+function capturePlotlySnapshot() {
+  if (!plotlyChart) return null;
+  return {
+    data: JSON.parse(JSON.stringify(plotlyChart.data || [])),
+    layout: JSON.parse(JSON.stringify(plotlyChart.layout || {})),
+  };
+}
+
+function commitPlotlyState() {
+  const snap = capturePlotlySnapshot();
+  if (!snap) return;
+  plotlyHistory = plotlyHistory.slice(0, plotlyHistoryIndex + 1);
+  const current = plotlyHistory[plotlyHistoryIndex];
+  if (current && JSON.stringify(current) === JSON.stringify(snap)) {
+    if (plotlyEditorUndo) plotlyEditorUndo.disabled = plotlyHistoryIndex <= 0;
+    return;
+  }
+  plotlyHistory.push(snap);
+  if (plotlyHistory.length > PLOTLY_UNDO_LIMIT) plotlyHistory.shift();
+  plotlyHistoryIndex = plotlyHistory.length - 1;
+  if (plotlyEditorUndo) plotlyEditorUndo.disabled = plotlyHistoryIndex <= 0;
+}
+
+function restorePlotlySnapshot(snap) {
+  if (!plotlyChart || !window.Plotly || !snap) return;
+  Plotly.react(plotlyChart, snap.data || [], snap.layout || {}, {
+    responsive: true,
+    displayModeBar: false,
+    editable: true,
+    edits: {
+      annotationPosition: true,
+      annotationText: true,
+      legendPosition: true,
+      legendText: true,
+      titleText: true,
+      axisTitleText: true,
+    },
+  }).then(() => {
+    bindPlotlyLegendColorPicker();
+    populatePlotlyTraceSelect(snap.data || []);
+    syncPlotlyFontControlsFromLayout();
+  });
+}
+
+function undoPlotlyEdit() {
+  if (plotlyHistoryIndex <= 0) {
+    setPlotlyEditorStatus(t("image.undoEmpty"));
+    return;
+  }
+  plotlyHistoryIndex -= 1;
+  restorePlotlySnapshot(plotlyHistory[plotlyHistoryIndex]);
+  if (plotlyEditorUndo) plotlyEditorUndo.disabled = plotlyHistoryIndex <= 0;
+  setPlotlyEditorStatus(t("image.undoDone"));
+}
+
+function resetPlotlyUndo() {
+  plotlyHistory = [];
+  plotlyHistoryIndex = -1;
+  if (plotlyEditorUndo) plotlyEditorUndo.disabled = true;
+}
+
+function plotlyEditableTitleAnnotationIndex(layout = plotlyChart?.layout) {
+  const annotations = layout?.annotations;
+  if (!Array.isArray(annotations)) return -1;
+  return annotations.findIndex((item) => item?.name === "editable-title");
+}
+
+function syncPlotlyFontControlsFromLayout() {
+  const layout = plotlyChart?.layout || {};
+  const annIdx = plotlyEditableTitleAnnotationIndex(layout);
+  let titleSize = 18;
+  if (annIdx >= 0) {
+    titleSize = layout.annotations[annIdx]?.font?.size || 18;
+  } else if (layout.title?.font?.size != null) {
+    titleSize = layout.title.font.size;
+  } else if (typeof layout.title === "object" && layout.title?.font?.size != null) {
+    titleSize = layout.title.font.size;
+  }
+  const axisSize =
+    layout.xaxis?.title?.font?.size ??
+    layout.yaxis?.title?.font?.size ??
+    14;
+  if (plotlyTitleFontSizeInput) plotlyTitleFontSizeInput.value = String(titleSize);
+  if (plotlyAxisFontSizeInput) plotlyAxisFontSizeInput.value = String(axisSize);
+}
+
+async function applyPlotlyFontSizes({ titleSize, axisSize } = {}) {
+  if (!plotlyChart || !window.Plotly) return;
+  const relayoutPatch = {};
+  if (titleSize != null) {
+    const annIdx = plotlyEditableTitleAnnotationIndex();
+    if (annIdx >= 0) {
+      relayoutPatch[`annotations[${annIdx}].font.size`] = titleSize;
+    } else {
+      relayoutPatch["title.font.size"] = titleSize;
+    }
+  }
+  if (axisSize != null) {
+    relayoutPatch["xaxis.title.font.size"] = axisSize;
+    relayoutPatch["yaxis.title.font.size"] = axisSize;
+  }
+  if (!Object.keys(relayoutPatch).length) return;
+  await Plotly.relayout(plotlyChart, relayoutPatch);
+  commitPlotlyState();
+  syncPlotlyFontControlsFromLayout();
+  setPlotlyEditorStatus(t("image.plotlyFontApplied"));
+}
+
+function setEyedropperActive(active) {
+  imageEditorState.eyedropperActive = Boolean(active);
+  if (editorEyedropper) {
+    editorEyedropper.classList.toggle("active", imageEditorState.eyedropperActive);
+    editorEyedropper.textContent = imageEditorState.eyedropperActive
+      ? t("image.eyedropperActive")
+      : t("image.eyedropperOff");
+  }
+  if (editorStageScaler) {
+    editorStageScaler.style.cursor = imageEditorState.eyedropperActive ? "crosshair" : "";
+  }
+}
+
 function setSelectedEditorNode(node) {
   const state = imageEditorState;
   state.selectedNode = node || null;
@@ -676,6 +996,10 @@ function setSelectedEditorNode(node) {
   if (editorFontSizeInput && node && typeof node.fontSize === "function") {
     editorFontSizeInput.value = String(node.fontSize());
   }
+  if (editorFontSizeLabel) {
+    const isTitle = node?.name?.() === "editable-title";
+    editorFontSizeLabel.textContent = isTitle ? t("image.titleFontSize") : t("image.fontSize");
+  }
   if (editorTitlePosition && node?.name?.() === "editable-title") {
     editorTitlePosition.value = node.getAttr("titlePosition") || "top-center";
   }
@@ -688,6 +1012,7 @@ function bindEditableNode(node) {
     setSelectedEditorNode(node);
   });
   node.on("dragstart", () => setSelectedEditorNode(node));
+  node.on("dragend", () => commitKonvaState());
   return node;
 }
 
@@ -726,16 +1051,17 @@ function pickRasterColorAt(x, y) {
   if (a < 10) return null;
   const color = { r, g, b };
   imageEditorState.pickedRasterColor = color;
+  updateSourceColorSwatch(color);
   setSelectedEditorNode(null);
-  if (editorColorInput) editorColorInput.value = rgbToHex(r, g, b);
+  setEyedropperActive(false);
   setEditorStatus(t("image.rasterColorPicked", { color: rgbToHex(r, g, b) }));
   return color;
 }
 
-function replaceRasterColor(targetColor, replacementHex, tolerance = 55) {
+function replaceRasterColor(targetColor, replacementHex, tolerance = rasterToleranceValue()) {
   const replacement = hexToRgb(replacementHex);
   const { rasterCtx, rasterCanvas, imageNode } = imageEditorState;
-  if (!targetColor || !replacement || !rasterCtx || !rasterCanvas || !imageNode) return;
+  if (!targetColor || !replacement || !rasterCtx || !rasterCanvas || !imageNode) return 0;
 
   const imageData = rasterCtx.getImageData(0, 0, rasterCanvas.width, rasterCanvas.height);
   const data = imageData.data;
@@ -752,10 +1078,12 @@ function replaceRasterColor(targetColor, replacementHex, tolerance = 55) {
     changed += 1;
   }
   rasterCtx.putImageData(imageData, 0, 0);
-  imageNode.image(rasterCanvas);
-  imageEditorState.layer?.batchDraw();
+  refreshKonvaRasterImage();
   imageEditorState.pickedRasterColor = replacement;
+  updateSourceColorSwatch(replacement);
+  commitKonvaState();
   setEditorStatus(t("image.rasterColorApplied", { count: changed }));
+  return changed;
 }
 
 function titlePositionCoords(position, stage) {
@@ -803,11 +1131,14 @@ function addEditorText(text, options = {}) {
     titlePosition: options.titlePosition || (isTitle ? editorTitlePosition?.value || "top-center" : undefined),
   });
   state.layer.add(bindEditableNode(node));
-  setSelectedEditorNode(node);
+  if (!options.silent) {
+    setSelectedEditorNode(node);
+    commitKonvaState();
+  }
   return node;
 }
 
-function addEditorArrow() {
+function addEditorArrow(options = {}) {
   const state = imageEditorState;
   if (!state.layer || !state.stage) return null;
   const width = state.stage.width();
@@ -828,11 +1159,14 @@ function addEditorArrow() {
     name: "editable-arrow",
   });
   state.layer.add(bindEditableNode(node));
-  setSelectedEditorNode(node);
+  if (!options.silent) {
+    setSelectedEditorNode(node);
+    commitKonvaState();
+  }
   return node;
 }
 
-function addEditorColorBlock() {
+function addEditorColorBlock(options = {}) {
   const state = imageEditorState;
   if (!state.layer || !state.stage) return null;
   const node = new Konva.Rect({
@@ -847,14 +1181,18 @@ function addEditorColorBlock() {
     name: "editable-rect",
   });
   state.layer.add(bindEditableNode(node));
-  setSelectedEditorNode(node);
+  if (!options.silent) {
+    setSelectedEditorNode(node);
+    commitKonvaState();
+  }
   return node;
 }
 
-function restoreEditableObject(obj) {
+function restoreEditableObject(obj, options = {}) {
   if (!obj || !imageEditorState.layer) return;
   if (obj.type === "text" || obj.type === "title") {
     addEditorText(obj.text || "", {
+      silent: true,
       role: obj.type === "title" ? "title" : "text",
       x: obj.x,
       y: obj.y,
@@ -869,7 +1207,7 @@ function restoreEditableObject(obj) {
     return;
   }
   if (obj.type === "arrow") {
-    const node = addEditorArrow();
+    const node = addEditorArrow({ silent: true });
     node?.setAttrs({
       x: obj.x || 0,
       y: obj.y || 0,
@@ -882,7 +1220,7 @@ function restoreEditableObject(obj) {
     return;
   }
   if (obj.type === "rect") {
-    const node = addEditorColorBlock();
+    const node = addEditorColorBlock({ silent: true });
     node?.setAttrs({
       x: obj.x ?? node.x(),
       y: obj.y ?? node.y(),
@@ -991,6 +1329,7 @@ function openKonvaEditor({ url, rel, title, editMeta = null }) {
       listening: true,
     });
     imageNode.on("click tap", (event) => {
+      if (!imageEditorState.eyedropperActive) return;
       event.cancelBubble = true;
       const pos = stage.getPointerPosition();
       if (pos) pickRasterColorAt(pos.x, pos.y);
@@ -1028,6 +1367,7 @@ function openKonvaEditor({ url, rel, title, editMeta = null }) {
     } else {
       setSelectedEditorNode(null);
     }
+    commitKonvaState();
     setEditorStatus(t("image.ready"));
   };
   img.onerror = () => setEditorStatus(t("image.loadFail"), "error");
@@ -1035,10 +1375,12 @@ function openKonvaEditor({ url, rel, title, editMeta = null }) {
 }
 
 async function openImageEditor({ url, rel, title }) {
-  const plotlyFigure = await fetchPlotlyFigure(rel);
-  if (plotlyFigure) {
-    openPlotlyEditor({ rel, title, figure: plotlyFigure });
-    return;
+  if (shouldUsePlotlyEditor(rel)) {
+    const plotlyFigure = await fetchPlotlyFigure(rel);
+    if (plotlyFigure) {
+      openPlotlyEditor({ rel, title, figure: plotlyFigure });
+      return;
+    }
   }
   const editMeta = await fetchEditableMeta(rel);
   openKonvaEditor({ url, rel, title, editMeta });
@@ -1074,8 +1416,10 @@ function applyPlotlyTraceColor(traceIndex, color) {
     update["marker.color"] = color;
     if (trace.line) update["line.color"] = color;
   }
-  Plotly.restyle(plotlyChart, update, [traceIndex]);
-  setPlotlyEditorStatus(t("image.plotlyColorApplied", { name: trace.name || traceIndex + 1 }));
+  Plotly.restyle(plotlyChart, update, [traceIndex]).then(() => {
+    commitPlotlyState();
+    setPlotlyEditorStatus(t("image.plotlyColorApplied", { name: trace.name || traceIndex + 1 }));
+  });
 }
 
 function plotlyTraceLabel(trace, index) {
@@ -1142,10 +1486,6 @@ function bindPlotlyLegendColorPicker() {
     plotlyChart.removeAllListeners("plotly_legendclick");
     plotlyChart.removeAllListeners("plotly_legenddoubleclick");
   }
-  plotlyChart.on("plotly_legendclick", (event) => {
-    selectPlotlyTrace(event.curveNumber, { openPicker: true });
-    return false;
-  });
   plotlyChart.on("plotly_legenddoubleclick", () => false);
 }
 
@@ -1154,6 +1494,34 @@ function plotlyTitleText(layout) {
   if (typeof title === "string") return title;
   if (title && typeof title.text === "string") return title.text;
   return "";
+}
+
+function sanitizePlotlyFigure(figure) {
+  const raw = figure && typeof figure === "object" ? figure : {};
+  const data = JSON.parse(JSON.stringify(raw.data || []));
+  const layout = normalizePlotlyLayoutForEditing(raw.layout || {});
+
+  delete layout.width;
+  delete layout.height;
+  delete layout.template;
+  delete layout.autosize;
+  layout.autosize = true;
+  layout.margin = layout.margin || { l: 60, r: 30, t: 80, b: 60 };
+
+  if (Array.isArray(layout.shapes)) {
+    layout.shapes = layout.shapes.filter(
+      (shape) =>
+        !(
+          shape?.type === "rect" &&
+          shape?.xref === "paper" &&
+          shape?.yref === "paper" &&
+          Number(shape?.x0) === 0 &&
+          Number(shape?.x1) === 1
+        )
+    );
+  }
+
+  return { data, layout };
 }
 
 function normalizePlotlyLayoutForEditing(layout = {}) {
@@ -1198,6 +1566,7 @@ function openPlotlyEditor({ rel, title, figure }) {
   }
   closeImageLightbox();
   closeImageEditor();
+  resetPlotlyUndo();
   plotlyEditorState.sourceRel = rel;
   plotlyEditorState.sourceTitle = title || rel.split("/").pop();
   plotlyEditorState.selectedTrace = null;
@@ -1214,12 +1583,13 @@ function openPlotlyEditor({ rel, title, figure }) {
   plotlyEditor.setAttribute("aria-hidden", "false");
   setPlotlyEditorStatus(t("image.loading"));
 
+  const sanitized = sanitizePlotlyFigure(figure);
   const layout = {
-    ...normalizePlotlyLayoutForEditing(figure.layout || {}),
+    ...sanitized.layout,
     autosize: true,
-    margin: figure.layout?.margin || { l: 60, r: 30, t: 80, b: 60 },
+    margin: sanitized.layout?.margin || { l: 60, r: 30, t: 80, b: 60 },
   };
-  Plotly.react(plotlyChart, figure.data || [], layout, {
+  Plotly.react(plotlyChart, sanitized.data || [], layout, {
     responsive: true,
     editable: true,
     edits: {
@@ -1233,6 +1603,8 @@ function openPlotlyEditor({ rel, title, figure }) {
     displayModeBar: false,
   }).then(() => {
     bindPlotlyLegendColorPicker();
+    syncPlotlyFontControlsFromLayout();
+    commitPlotlyState();
     if (plotlyTraceSelect?.value) {
       selectPlotlyTrace(Number(plotlyTraceSelect.value), { openPicker: false });
     }
@@ -1249,6 +1621,7 @@ function closePlotlyEditor() {
     plotlyChart.innerHTML = "";
   }
   plotlyEditorState = { sourceRel: "", sourceTitle: "", selectedTrace: null };
+  resetPlotlyUndo();
   setPlotlyEditorStatus("");
 }
 
@@ -1327,6 +1700,971 @@ async function saveImageEdit() {
     setEditorStatus(t("image.saveFailWithMsg", { msg: err.message }), "error");
   } finally {
     if (editorSave) editorSave.disabled = false;
+  }
+}
+
+function captureMergeConfig() {
+  return {
+    selected: [...imageMergeState.selected],
+    cols: imageMergeCols?.value || "auto",
+    labels: imageMergeLabels?.value || "upper",
+    labelFontSize: Number(imageMergeLabelFontSize?.value || 28),
+    customLabels: { ...imageMergeState.customLabels },
+    nodes: serializeMergeNodes(),
+    canvasW: imageMergeState.canvasW,
+    canvasH: imageMergeState.canvasH,
+  };
+}
+
+function serializeMergeNodes() {
+  const nodes = [];
+  imageMergeState.layer?.children?.forEach((node) => {
+    const name = node.name?.() || "";
+    if (!name || name === "merge-bg" || node.getClassName?.() === "Transformer") return;
+    const base = {
+      name,
+      x: node.x(),
+      y: node.y(),
+      rotation: node.rotation?.() || 0,
+    };
+    if (name.startsWith("merge-panel-")) {
+      nodes.push({
+        ...base,
+        type: "panel",
+        rel: node.getAttr("panelRel") || name.replace("merge-panel-", ""),
+        scaleX: node.scaleX(),
+        scaleY: node.scaleY(),
+      });
+    } else if (name.startsWith("merge-label-")) {
+      nodes.push({
+        ...base,
+        type: "label",
+        rel: node.getAttr("panelRel") || name.replace("merge-label-", ""),
+        text: node.text?.() || "",
+        fontSize: node.fontSize?.() || 28,
+        fill: node.fill?.() || "#111827",
+      });
+    } else if (name.startsWith("merge-text-")) {
+      nodes.push({
+        ...base,
+        type: "text",
+        text: node.text?.() || "",
+        fontSize: node.fontSize?.() || 24,
+        fill: node.fill?.() || "#111827",
+      });
+    }
+  });
+  return nodes;
+}
+
+function commitMergeState() {
+  if (!imageMergeState.layer) return;
+  const snap = captureMergeConfig();
+  mergeHistory = mergeHistory.slice(0, mergeHistoryIndex + 1);
+  const last = mergeHistory[mergeHistoryIndex];
+  if (last && JSON.stringify(last) === JSON.stringify(snap)) {
+    if (imageMergeUndo) imageMergeUndo.disabled = mergeHistoryIndex <= 0;
+    return;
+  }
+  mergeHistory.push(snap);
+  if (mergeHistory.length > 30) mergeHistory.shift();
+  mergeHistoryIndex = mergeHistory.length - 1;
+  if (imageMergeUndo) imageMergeUndo.disabled = mergeHistoryIndex <= 0;
+}
+
+function undoMergeEdit() {
+  if (mergeHistoryIndex <= 0) {
+    if (imageMergeStatus) imageMergeStatus.textContent = t("image.undoEmpty");
+    return;
+  }
+  mergeHistoryIndex -= 1;
+  restoreMergeConfig(mergeHistory[mergeHistoryIndex]).catch((err) => {
+    if (imageMergeStatus) imageMergeStatus.textContent = err.message;
+  });
+  if (imageMergeUndo) imageMergeUndo.disabled = mergeHistoryIndex <= 0;
+  if (imageMergeStatus) imageMergeStatus.textContent = t("image.undoDone");
+}
+
+function resetMergeHistory() {
+  mergeHistory = [];
+  mergeHistoryIndex = -1;
+  if (imageMergeUndo) imageMergeUndo.disabled = true;
+}
+
+function applyMergeConfig(cfg) {
+  if (!cfg || !imageMergePickList) return Promise.resolve();
+  imageMergeState.selected = [...(cfg.selected || [])];
+  renderImageMergePickList();
+  if (imageMergeCols) imageMergeCols.value = cfg.cols || "auto";
+  if (imageMergeLabels) imageMergeLabels.value = cfg.labels || "upper";
+  if (imageMergeLabelFontSize) imageMergeLabelFontSize.value = String(cfg.labelFontSize ?? 28);
+  imageMergeState.customLabels = { ...(cfg.customLabels || {}) };
+  updateMergeCustomLabelRow();
+  return restoreMergeNodes(cfg);
+}
+
+function restoreMergeConfig(cfg) {
+  return applyMergeConfig(cfg);
+}
+
+function mergePanelLabel(index, mode) {
+  if (mode === "none") return "";
+  if (mode === "num") return String(index + 1);
+  if (mode === "lower") return String.fromCharCode(97 + (index % 26));
+  return String.fromCharCode(65 + (index % 26));
+}
+
+function mergeLabelText(index, rel, mode) {
+  if (mode === "none") return "";
+  if (mode === "custom") {
+    return imageMergeState.customLabels[rel] || mergePanelLabel(index, "upper");
+  }
+  return mergePanelLabel(index, mode);
+}
+
+function loadImageElement(url) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("load failed"));
+    img.src = url;
+  });
+}
+
+function updateMergeCanvasSizeLabel() {
+  const w = imageMergeState.canvasW || 0;
+  const h = imageMergeState.canvasH || 0;
+  if (imageMergeCanvasSize) {
+    imageMergeCanvasSize.textContent =
+      w > 0 && h > 0 ? t("image.mergeCanvasSize", { w, h }) : "—";
+  }
+}
+
+function fitMergeStageDisplay(natW, natH) {
+  imageMergeState.canvasW = natW;
+  imageMergeState.canvasH = natH;
+  if (imageMergeStage) {
+    imageMergeStage.style.width = `${natW}px`;
+    imageMergeStage.style.height = `${natH}px`;
+    imageMergeStage.style.transform = "";
+  }
+  applyMergeViewZoom();
+  updateMergeCanvasSizeLabel();
+  return imageMergeState.viewZoom || 1;
+}
+
+function updateMergeZoomLabel() {
+  if (imageMergeZoomLabel) {
+    imageMergeZoomLabel.textContent = `${Math.round((imageMergeState.viewZoom || 1) * 100)}%`;
+  }
+}
+
+function applyMergeViewZoom() {
+  const zoom = imageMergeState.viewZoom || 1;
+  const w = imageMergeState.canvasW || 800;
+  const h = imageMergeState.canvasH || 600;
+  const stage = imageMergeState.stage;
+  if (stage) {
+    stage.scale({ x: 1, y: 1 });
+    stage.width(w);
+    stage.height(h);
+    stage.batchDraw();
+  }
+  if (imageMergeStageHost) {
+    imageMergeStageHost.style.width = `${Math.ceil(w * zoom)}px`;
+    imageMergeStageHost.style.height = `${Math.ceil(h * zoom)}px`;
+  }
+  if (imageMergeStageScaler) {
+    imageMergeStageScaler.style.width = `${w}px`;
+    imageMergeStageScaler.style.height = `${h}px`;
+    imageMergeStageScaler.style.transform = `scale(${zoom})`;
+    imageMergeStageScaler.style.transformOrigin = "top left";
+  }
+  imageMergeState.displayScale = zoom;
+  updateMergeZoomLabel();
+}
+
+function setMergeViewZoom(zoom, { status = true } = {}) {
+  imageMergeState.viewZoom = Math.max(0.05, Math.min(3, zoom));
+  applyMergeViewZoom();
+  if (status && imageMergeStatus) {
+    imageMergeStatus.textContent = t("image.mergeZoomApplied", {
+      pct: Math.round(imageMergeState.viewZoom * 100),
+    });
+  }
+}
+
+function fitMergeViewToPanel() {
+  const wrap = imageMergePreviewWrap;
+  const w = imageMergeState.canvasW || 800;
+  const h = imageMergeState.canvasH || 600;
+  if (!wrap || !w || !h) return;
+  const pad = 28;
+  const toolbar = 44;
+  const maxW = Math.max(120, wrap.clientWidth - pad);
+  const maxH = Math.max(120, wrap.clientHeight - pad - toolbar);
+  const zoom = Math.min(1, maxW / w, maxH / h);
+  setMergeViewZoom(Math.max(0.05, zoom), { status: false });
+}
+
+function getMergeContentBounds(padding = 24) {
+  const layer = imageMergeState.layer;
+  if (!layer) {
+    return { minX: 0, minY: 0, maxX: imageMergeState.canvasW || 800, maxY: imageMergeState.canvasH || 600 };
+  }
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  let hasContent = false;
+  layer.children?.forEach((node) => {
+    const name = node.name?.() || "";
+    if (!name || name === "merge-bg" || node.getClassName?.() === "Transformer") return;
+    const rect = node.getClientRect({ skipTransform: false });
+    if (!rect.width && !rect.height) return;
+    hasContent = true;
+    minX = Math.min(minX, rect.x);
+    minY = Math.min(minY, rect.y);
+    maxX = Math.max(maxX, rect.x + rect.width);
+    maxY = Math.max(maxY, rect.y + rect.height);
+  });
+  if (!hasContent) {
+    return { minX: 0, minY: 0, maxX: imageMergeState.canvasW || 800, maxY: imageMergeState.canvasH || 600 };
+  }
+  return {
+    minX: minX - padding,
+    minY: minY - padding,
+    maxX: maxX + padding,
+    maxY: maxY + padding,
+  };
+}
+
+function resizeMergeCanvas(width, height) {
+  const w = Math.max(100, Math.ceil(width));
+  const h = Math.max(100, Math.ceil(height));
+  imageMergeState.canvasW = w;
+  imageMergeState.canvasH = h;
+  if (imageMergeState.stage) {
+    imageMergeState.stage.scale({ x: 1, y: 1 });
+    imageMergeState.stage.width(w);
+    imageMergeState.stage.height(h);
+  }
+  const bg = imageMergeState.layer?.findOne((node) => node.name() === "merge-bg");
+  if (bg) {
+    bg.width(w);
+    bg.height(h);
+    bg.fill(MERGE_CANVAS_BG);
+    bg.moveToBottom();
+  }
+  fitMergeStageDisplay(w, h);
+  imageMergeState.layer?.batchDraw();
+  return { w, h };
+}
+
+function fitMergeCanvasToContent(padding = 32) {
+  const bounds = getMergeContentBounds(padding);
+  const shiftX = bounds.minX < 0 ? -bounds.minX : 0;
+  const shiftY = bounds.minY < 0 ? -bounds.minY : 0;
+  if (shiftX || shiftY) {
+    imageMergeState.layer?.children?.forEach((node) => {
+      const name = node.name?.() || "";
+      if (!name || name === "merge-bg" || node.getClassName?.() === "Transformer") return;
+      node.position({ x: node.x() + shiftX, y: node.y() + shiftY });
+    });
+  }
+  const width = Math.ceil(bounds.maxX + shiftX);
+  const height = Math.ceil(bounds.maxY + shiftY);
+  resizeMergeCanvas(width, height);
+}
+
+function exportMergeStagePng() {
+  const layer = imageMergeState.layer;
+  if (!layer) return "";
+  setSelectedMergeNode(null);
+  clearMergeSnapGuides();
+  fitMergeCanvasToContent(32);
+  const w = imageMergeState.canvasW;
+  const h = imageMergeState.canvasH;
+  const bgColor = MERGE_CANVAS_BG;
+  const bg = layer.findOne((node) => node.name() === "merge-bg");
+  if (bg) {
+    bg.width(w);
+    bg.height(h);
+    bg.fill(bgColor);
+    bg.moveToBottom();
+  }
+  const transformer = imageMergeState.transformer;
+  const transformerVisible = transformer?.visible() !== false;
+  if (transformer) transformer.visible(false);
+  layer.batchDraw();
+  const konvaCanvas = layer.toCanvas({
+    x: 0,
+    y: 0,
+    width: w,
+    height: h,
+    pixelRatio: 1,
+  });
+  if (transformer) transformer.visible(transformerVisible);
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, w, h);
+  ctx.imageSmoothingEnabled = true;
+  if (ctx.imageSmoothingQuality) ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(konvaCanvas, 0, 0);
+  return canvas.toDataURL("image/png");
+}
+
+function destroyMergeStage() {
+  if (imageMergeState.stage) {
+    imageMergeState.stage.destroy();
+  }
+  imageMergeState.stage = null;
+  imageMergeState.layer = null;
+  imageMergeState.transformer = null;
+  imageMergeState.selectedNode = null;
+  imageMergeState.viewZoom = 1;
+  if (imageMergeStage) imageMergeStage.innerHTML = "";
+  if (imageMergeStageScaler) {
+    imageMergeStageScaler.style.width = "";
+    imageMergeStageScaler.style.height = "";
+    imageMergeStageScaler.style.transform = "";
+  }
+  if (imageMergeStageHost) {
+    imageMergeStageHost.style.width = "";
+    imageMergeStageHost.style.height = "";
+  }
+}
+
+function getSelectedPanelRel() {
+  const node = imageMergeState.selectedNode;
+  if (!node) return null;
+  const name = node.name?.() || "";
+  if (node.getAttr?.("panelRel")) return node.getAttr("panelRel");
+  if (name.startsWith("merge-panel-")) return name.replace("merge-panel-", "");
+  if (name.startsWith("merge-label-")) return name.replace("merge-label-", "");
+  return null;
+}
+
+function setSelectedMergeNode(node) {
+  imageMergeState.selectedNode = node || null;
+  if (imageMergeState.transformer) {
+    const canTransform =
+      node &&
+      (String(node.name?.() || "").startsWith("merge-panel-") ||
+        String(node.name?.() || "").startsWith("merge-text-") ||
+        String(node.name?.() || "").startsWith("merge-label-"));
+    imageMergeState.transformer.nodes(canTransform ? [node] : []);
+    if (canTransform) imageMergeState.transformer.moveToTop();
+  }
+  if (imageMergeDelete) {
+    const name = node?.name?.() || "";
+    imageMergeDelete.disabled = !node || name.startsWith("merge-panel-");
+  }
+  const name = node?.name?.() || "";
+  const isText = name.startsWith("merge-text-") || name.startsWith("merge-label-");
+  if (imageMergeTextInput) {
+    imageMergeTextInput.disabled = !isText;
+    imageMergeTextInput.value = isText && typeof node.text === "function" ? node.text() : "";
+  }
+  if (imageMergeFontSize && node && typeof node.fontSize === "function") {
+    imageMergeFontSize.value = String(node.fontSize());
+  }
+  const rel = getSelectedPanelRel();
+  const customMode = imageMergeLabels?.value === "custom";
+  const customRow = document.getElementById("imageMergeCustomLabelRow");
+  if (customRow) customRow.classList.toggle("hidden", !customMode);
+  if (imageMergeCustomLabel) {
+    imageMergeCustomLabel.disabled = !customMode || !rel;
+    if (rel && customMode) {
+      const panels =
+        imageMergeState.layer?.find((n) => String(n.name?.() || "").startsWith("merge-panel-")) || [];
+      const index = panels.findIndex((panel) => {
+        const panelRel = panel.getAttr("panelRel") || panel.name().replace("merge-panel-", "");
+        return panelRel === rel;
+      });
+      const defaultText = mergePanelLabel(Math.max(0, index), "upper");
+      imageMergeCustomLabel.value = imageMergeState.customLabels[rel] || defaultText;
+    } else {
+      imageMergeCustomLabel.value = "";
+    }
+  }
+  imageMergeState.layer?.batchDraw();
+}
+
+function getMergeNodeBounds(node) {
+  const rect = node.getClientRect({ skipTransform: false });
+  return {
+    left: rect.x,
+    top: rect.y,
+    right: rect.x + rect.width,
+    bottom: rect.y + rect.height,
+    centerX: rect.x + rect.width / 2,
+    centerY: rect.y + rect.height / 2,
+  };
+}
+
+function clearMergeSnapGuides() {
+  const guides = imageMergeState.layer?.findOne((node) => node.name() === "merge-snap-guides");
+  if (guides) guides.destroy();
+}
+
+function showMergeSnapGuides(verticalX, horizontalY) {
+  clearMergeSnapGuides();
+  const layer = imageMergeState.layer;
+  if (!layer) return;
+  const w = imageMergeState.canvasW || imageMergeState.stage?.width() || 800;
+  const h = imageMergeState.canvasH || imageMergeState.stage?.height() || 600;
+  const group = new Konva.Group({ name: "merge-snap-guides", listening: false });
+  if (verticalX != null) {
+    group.add(
+      new Konva.Line({
+        points: [verticalX, 0, verticalX, h],
+        stroke: "#f43f5e",
+        strokeWidth: 1,
+        dash: [6, 4],
+        listening: false,
+      })
+    );
+  }
+  if (horizontalY != null) {
+    group.add(
+      new Konva.Line({
+        points: [0, horizontalY, w, horizontalY],
+        stroke: "#f43f5e",
+        strokeWidth: 1,
+        dash: [6, 4],
+        listening: false,
+      })
+    );
+  }
+  if (group.children.length) {
+    layer.add(group);
+    group.moveToTop();
+    imageMergeState.transformer?.moveToTop();
+  }
+}
+
+function collectMergeSnapLines(excludeNode) {
+  const vertical = new Set([0, (imageMergeState.canvasW || 0) / 2, imageMergeState.canvasW || 0]);
+  const horizontal = new Set([0, (imageMergeState.canvasH || 0) / 2, imageMergeState.canvasH || 0]);
+  const nodes =
+    imageMergeState.layer?.find((node) => {
+      const name = node.name?.() || "";
+      return (
+        name.startsWith("merge-panel-") ||
+        name.startsWith("merge-label-") ||
+        name.startsWith("merge-text-")
+      );
+    }) || [];
+  nodes.forEach((node) => {
+    if (node === excludeNode) return;
+    const b = getMergeNodeBounds(node);
+    vertical.add(b.left, b.centerX, b.right);
+    horizontal.add(b.top, b.centerY, b.bottom);
+  });
+  return {
+    vertical: [...vertical].filter((v) => Number.isFinite(v)),
+    horizontal: [...horizontal].filter((v) => Number.isFinite(v)),
+  };
+}
+
+function applyMergeSnap(node) {
+  const bounds = getMergeNodeBounds(node);
+  const lines = collectMergeSnapLines(node);
+  const verticalRefs = [
+    { edge: bounds.left, offset: 0 },
+    { edge: bounds.centerX, offset: bounds.centerX - bounds.left },
+    { edge: bounds.right, offset: bounds.right - bounds.left },
+  ];
+  const horizontalRefs = [
+    { edge: bounds.top, offset: 0 },
+    { edge: bounds.centerY, offset: bounds.centerY - bounds.top },
+    { edge: bounds.bottom, offset: bounds.bottom - bounds.top },
+  ];
+
+  let bestDx = null;
+  let bestDy = null;
+  let guideX = null;
+  let guideY = null;
+
+  lines.vertical.forEach((line) => {
+    verticalRefs.forEach(({ edge, offset }) => {
+      const delta = line - edge;
+      if (Math.abs(delta) <= MERGE_SNAP_THRESHOLD && (bestDx === null || Math.abs(delta) < Math.abs(bestDx))) {
+        bestDx = delta;
+        guideX = line;
+      }
+    });
+  });
+  lines.horizontal.forEach((line) => {
+    horizontalRefs.forEach(({ edge, offset }) => {
+      const delta = line - edge;
+      if (Math.abs(delta) <= MERGE_SNAP_THRESHOLD && (bestDy === null || Math.abs(delta) < Math.abs(bestDy))) {
+        bestDy = delta;
+        guideY = line;
+      }
+    });
+  });
+
+  const pos = node.position();
+  if (bestDx !== null) node.x(pos.x + bestDx);
+  if (bestDy !== null) node.y(pos.y + bestDy);
+  if (bestDx !== null || bestDy !== null) {
+    showMergeSnapGuides(guideX, guideY);
+  } else {
+    clearMergeSnapGuides();
+  }
+}
+
+function syncMergeLabelToPanel(node) {
+  const name = node.name?.() || "";
+  if (!name.startsWith("merge-panel-")) return;
+  const rel = node.getAttr("panelRel") || name.replace("merge-panel-", "");
+  const label = findMergeLabelNode(rel);
+  if (!label) return;
+  const fontSize = label.fontSize?.() || 28;
+  label.position({ x: node.x() + 6, y: node.y() - fontSize - 6 });
+}
+
+function bindMergeNode(node) {
+  node.on("click tap", (event) => {
+    event.cancelBubble = true;
+    setSelectedMergeNode(node);
+  });
+  node.on("dragstart", () => {
+    setSelectedMergeNode(node);
+    const pos = node.position();
+    imageMergeState.mergeDragStart = { x: pos.x, y: pos.y };
+    imageMergeState.mergeDragAxis = null;
+    clearMergeSnapGuides();
+  });
+  node.on("dragmove", (event) => {
+    const evt = event.evt;
+    const start = imageMergeState.mergeDragStart;
+    if (evt?.shiftKey && start) {
+      if (!imageMergeState.mergeDragAxis) {
+        const dx = Math.abs(node.x() - start.x);
+        const dy = Math.abs(node.y() - start.y);
+        if (dx > 2 || dy > 2) {
+          imageMergeState.mergeDragAxis = dx >= dy ? "y" : "x";
+        }
+      }
+      if (imageMergeState.mergeDragAxis === "x") node.x(start.x);
+      else if (imageMergeState.mergeDragAxis === "y") node.y(start.y);
+    } else if (!evt?.ctrlKey && !evt?.metaKey) {
+      imageMergeState.mergeDragAxis = null;
+    }
+
+    if (evt?.ctrlKey || evt?.metaKey) {
+      applyMergeSnap(node);
+    } else {
+      clearMergeSnapGuides();
+    }
+    syncMergeLabelToPanel(node);
+  });
+  node.on("dragend", () => {
+    imageMergeState.mergeDragStart = null;
+    imageMergeState.mergeDragAxis = null;
+    clearMergeSnapGuides();
+    fitMergeCanvasToContent(24);
+    commitMergeState();
+  });
+  return node;
+}
+
+function updateMergeCustomLabelRow() {
+  const custom = imageMergeLabels?.value === "custom";
+  const rel = getSelectedPanelRel();
+  const row = document.getElementById("imageMergeCustomLabelRow");
+  row?.classList.toggle("hidden", !custom);
+  if (imageMergeCustomLabel) imageMergeCustomLabel.disabled = !custom || !rel;
+}
+
+function findMergeLabelNode(rel) {
+  return imageMergeState.layer?.findOne((node) => node.name() === `merge-label-${rel}`);
+}
+
+function syncMergePanelLabels() {
+  const mode = imageMergeLabels?.value || "upper";
+  const fontSize = Number(imageMergeLabelFontSize?.value || 28);
+  const panels = imageMergeState.layer?.find((node) =>
+    String(node.name?.() || "").startsWith("merge-panel-")
+  ) || [];
+  panels.forEach((panel, index) => {
+    const rel = panel.getAttr("panelRel") || panel.name().replace("merge-panel-", "");
+    let label = findMergeLabelNode(rel);
+    const text = mergeLabelText(index, rel, mode);
+    if (mode !== "none" && text && !label) {
+      label = new Konva.Text({
+        x: panel.x() + 6,
+        y: panel.y() - fontSize - 6,
+        text,
+        fontSize,
+        fontStyle: "bold",
+        fontFamily: "Arial",
+        fill: "#111827",
+        draggable: true,
+        name: `merge-label-${rel}`,
+        panelRel: rel,
+      });
+      imageMergeState.layer.add(bindMergeNode(label));
+    }
+    if (label) {
+      label.text(text);
+      label.fontSize(fontSize);
+      label.visible(mode !== "none" && Boolean(text));
+      label.position({ x: panel.x() + 6, y: panel.y() - fontSize - 6 });
+    }
+  });
+  imageMergeState.layer?.batchDraw();
+}
+
+function ensureMergeStage(w, h) {
+  if (!window.Konva || !imageMergeStage) throw new Error(t("image.editorUnavailable"));
+  destroyMergeStage();
+  imageMergeState.canvasW = w;
+  imageMergeState.canvasH = h;
+  fitMergeStageDisplay(w, h);
+  const stage = new Konva.Stage({
+    container: imageMergeStage,
+    width: w,
+    height: h,
+  });
+  const layer = new Konva.Layer();
+  const bgColor = MERGE_CANVAS_BG;
+  const bg = new Konva.Rect({
+    x: 0,
+    y: 0,
+    width: w,
+    height: h,
+    fill: bgColor,
+    listening: false,
+    name: "merge-bg",
+  });
+  const transformer = new Konva.Transformer({
+    rotateEnabled: true,
+    enabledAnchors: ["top-left", "top-right", "bottom-left", "bottom-right"],
+    keepRatio: true,
+    boundBoxFunc: (oldBox, newBox) => {
+      if (newBox.width < 20 || newBox.height < 20) return oldBox;
+      return newBox;
+    },
+  });
+  layer.add(bg);
+  layer.add(transformer);
+  transformer.on("transformend", () => {
+    fitMergeCanvasToContent(24);
+    commitMergeState();
+  });
+  stage.add(layer);
+  stage.on("click tap", (event) => {
+    if (event.target === stage) setSelectedMergeNode(null);
+  });
+  imageMergeState.stage = stage;
+  imageMergeState.layer = layer;
+  imageMergeState.transformer = transformer;
+  if (imageMergeStage) imageMergeStage.style.backgroundColor = bgColor;
+  applyMergeViewZoom();
+  updateMergeCanvasSizeLabel();
+  return { stage, layer, transformer };
+}
+
+async function buildMergeAutoLayout(statusKey = "image.mergeLayoutReady") {
+  if (!currentSessionId) return;
+  const cfg = captureMergeConfig();
+  if (cfg.selected.length < 1) {
+    ensureMergeStage(800, 600);
+    resetMergeHistory();
+    commitMergeState();
+    if (imageMergeStatus) imageMergeStatus.textContent = t("image.mergeSelectHint");
+    return;
+  }
+  const gap = MERGE_LAYOUT_GAP;
+  const labelMode = cfg.labels;
+  const labelFontSize = Number(imageMergeLabelFontSize?.value || 28);
+  const labelPad = labelMode === "none" ? 0 : labelFontSize + 10;
+  const cols =
+    cfg.cols === "auto"
+      ? Math.max(1, Math.ceil(Math.sqrt(cfg.selected.length)))
+      : Math.max(1, Number(cfg.cols) || 2);
+
+  const images = await Promise.all(
+    cfg.selected.map(async (rel, index) => {
+      const url = workspaceFileUrl(currentSessionId, rel);
+      const img = await loadImageElement(`${url}${url.includes("?") ? "&" : "?"}merge=${Date.now()}`);
+      const iw = img.naturalWidth || img.width || 1;
+      const ih = img.naturalHeight || img.height || 1;
+      return { rel, img, index, w: iw, h: ih, scale: 1 };
+    })
+  );
+
+  const cellW = Math.max(...images.map((item) => item.w), 120);
+  const cellH = Math.max(...images.map((item) => item.h), 80);
+  const rows = Math.ceil(images.length / cols);
+  const placements = images.map(({ w, h }, index) => {
+    const col = index % cols;
+    const row = Math.floor(index / cols);
+    const x = gap + col * (cellW + gap) + Math.round((cellW - w) / 2);
+    const y = gap + labelPad + row * (cellH + labelPad + gap);
+    return { x, y, w, h };
+  });
+  const rightEdge = Math.max(...placements.map((p) => p.x + p.w), 0) + gap;
+  const bottomEdge = Math.max(...placements.map((p) => p.y + p.h), 0) + gap;
+  const canvasW = Math.max(rightEdge, 200);
+  const canvasH = Math.max(bottomEdge, 150);
+
+  const { layer } = ensureMergeStage(canvasW, canvasH);
+
+  images.forEach(({ rel, img, index, w, h, scale }, i) => {
+    const { x, y } = placements[i];
+    const panel = new Konva.Image({
+      x,
+      y,
+      image: img,
+      width: img.naturalWidth || img.width,
+      height: img.naturalHeight || img.height,
+      scaleX: scale,
+      scaleY: scale,
+      draggable: true,
+      name: `merge-panel-${rel}`,
+      panelRel: rel,
+    });
+    layer.add(bindMergeNode(panel));
+
+    const labelText = mergeLabelText(index, rel, labelMode);
+    if (labelMode !== "none" && labelText) {
+      const label = new Konva.Text({
+        x: x + 6,
+        y: y - labelFontSize - 6,
+        text: labelText,
+        fontSize: labelFontSize,
+        fontStyle: "bold",
+        fontFamily: "Arial",
+        fill: "#111827",
+        draggable: true,
+        name: `merge-label-${rel}`,
+        panelRel: rel,
+      });
+      layer.add(bindMergeNode(label));
+    }
+  });
+
+  fitMergeCanvasToContent(32);
+  layer.batchDraw();
+  commitMergeState();
+  fitMergeViewToPanel();
+  if (imageMergeStatus && statusKey) imageMergeStatus.textContent = t(statusKey);
+}
+
+async function restoreMergeNodes(cfg) {
+  if (!cfg?.nodes?.length) {
+    return buildMergeAutoLayout();
+  }
+  const { layer } = ensureMergeStage(cfg.canvasW || 1200, cfg.canvasH || 900);
+  const bg = layer.findOne((node) => node.name() === "merge-bg");
+  if (bg) bg.fill(MERGE_CANVAS_BG);
+
+  for (const item of cfg.nodes) {
+    if (item.type === "panel") {
+      const url = workspaceFileUrl(currentSessionId, item.rel);
+      const img = await loadImageElement(`${url}${url.includes("?") ? "&" : "?"}merge=${Date.now()}`);
+      const panel = new Konva.Image({
+        x: item.x,
+        y: item.y,
+        image: img,
+        width: img.naturalWidth || img.width,
+        height: img.naturalHeight || img.height,
+        scaleX: item.scaleX ?? 1,
+        scaleY: item.scaleY ?? 1,
+        rotation: item.rotation || 0,
+        draggable: true,
+        name: `merge-panel-${item.rel}`,
+        panelRel: item.rel,
+      });
+      layer.add(bindMergeNode(panel));
+    } else if (item.type === "label") {
+      const label = new Konva.Text({
+        x: item.x,
+        y: item.y,
+        text: item.text || "",
+        fontSize: item.fontSize || 28,
+        fontStyle: "bold",
+        fontFamily: "Arial",
+        fill: item.fill || "#111827",
+        rotation: item.rotation || 0,
+        draggable: true,
+        name: `merge-label-${item.rel}`,
+        panelRel: item.rel,
+      });
+      layer.add(bindMergeNode(label));
+    } else if (item.type === "text") {
+      const textNode = new Konva.Text({
+        x: item.x,
+        y: item.y,
+        text: item.text || t("image.newText"),
+        fontSize: item.fontSize || 24,
+        fontFamily: "Arial",
+        fill: item.fill || "#111827",
+        rotation: item.rotation || 0,
+        draggable: true,
+        name: item.name || `merge-text-${Date.now()}`,
+      });
+      layer.add(bindMergeNode(textNode));
+    }
+  }
+  fitMergeCanvasToContent(32);
+  layer.batchDraw();
+  fitMergeViewToPanel();
+}
+
+function addMergeFreeText() {
+  if (!imageMergeState.layer) return;
+  imageMergeState.freeTextCount += 1;
+  const node = new Konva.Text({
+    x: 48,
+    y: 48 + imageMergeState.freeTextCount * 36,
+    text: t("image.newText"),
+    fontSize: Number(imageMergeFontSize?.value || 24),
+    fontFamily: "Arial",
+    fill: "#111827",
+    draggable: true,
+    name: `merge-text-${Date.now()}`,
+  });
+  imageMergeState.layer.add(bindMergeNode(node));
+  setSelectedMergeNode(node);
+  if (imageMergeTextInput) imageMergeTextInput.value = node.text();
+  if (imageMergeStatus) imageMergeStatus.textContent = t("image.mergeTextAdded");
+  commitMergeState();
+}
+
+function renderImageMergePickList() {
+  if (!imageMergePickList) return;
+  imageMergePickList.innerHTML = "";
+  if (!workspaceOutputImages.length) {
+    const empty = document.createElement("p");
+    empty.className = "image-merge-pick-empty muted";
+    empty.textContent = t("image.mergeNoImages");
+    imageMergePickList.appendChild(empty);
+    return;
+  }
+  workspaceOutputImages.forEach((file) => {
+    const url = workspaceFileUrl(currentSessionId, file.name);
+    if (!url) return;
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = "image-merge-pick-card";
+    if (imageMergeState.selected.includes(file.name)) {
+      card.classList.add("selected");
+    }
+    card.title = file.name;
+
+    const thumb = document.createElement("span");
+    thumb.className = "image-merge-pick-thumb";
+    const img = document.createElement("img");
+    img.loading = "lazy";
+    img.alt = "";
+    img.src = url;
+    thumb.appendChild(img);
+
+    const title = document.createElement("span");
+    title.className = "image-merge-pick-title";
+    title.textContent = file.name.split("/").pop();
+
+    card.appendChild(thumb);
+    card.appendChild(title);
+    card.addEventListener("click", () => toggleMergeImageSelection(file.name));
+    imageMergePickList.appendChild(card);
+  });
+}
+
+function toggleMergeImageSelection(rel) {
+  if (imageMergeState.layer) commitMergeState();
+  const index = imageMergeState.selected.indexOf(rel);
+  if (index >= 0) {
+    imageMergeState.selected.splice(index, 1);
+  } else {
+    imageMergeState.selected.push(rel);
+  }
+  renderImageMergePickList();
+  buildMergeAutoLayout("image.mergeImageToggled").catch((err) => {
+    if (imageMergeStatus) imageMergeStatus.textContent = err.message;
+  });
+}
+
+function openImageMergeEditor() {
+  if (!imageMergeEditor || !currentSessionId || isSharedView) return;
+  if (!window.Konva) {
+    setStatus(t("image.editorUnavailable"));
+    return;
+  }
+  closeImageLightbox();
+  closeImageEditor();
+  closePlotlyEditor();
+  resetMergeHistory();
+  destroyMergeStage();
+  imageMergeState.selected = [];
+  imageMergeState.customLabels = {};
+  imageMergeState.freeTextCount = 0;
+  imageMergeState.viewZoom = 1;
+  renderImageMergePickList();
+  updateMergeCustomLabelRow();
+  if (imageMergeUndo) imageMergeUndo.disabled = true;
+  if (imageMergeStatus) imageMergeStatus.textContent = t("image.mergeSelectHint");
+  imageMergeEditor.classList.remove("hidden");
+  imageMergeEditor.setAttribute("aria-hidden", "false");
+  buildMergeAutoLayout().catch((err) => {
+    if (imageMergeStatus) imageMergeStatus.textContent = err.message;
+  });
+}
+
+function closeImageMergeEditor() {
+  if (!imageMergeEditor) return;
+  imageMergeEditor.classList.add("hidden");
+  imageMergeEditor.setAttribute("aria-hidden", "true");
+  destroyMergeStage();
+  resetMergeHistory();
+}
+
+async function saveImageMerge() {
+  if (!currentSessionId || !imageMergeState.stage) return;
+  const cfg = captureMergeConfig();
+  if (cfg.selected.length < 1) {
+    if (imageMergeStatus) imageMergeStatus.textContent = t("image.mergeNeedOne");
+    return;
+  }
+  try {
+    if (imageMergeStatus) imageMergeStatus.textContent = t("image.mergeSaving");
+    if (imageMergeSave) imageMergeSave.disabled = true;
+    setSelectedMergeNode(null);
+    const imageData = exportMergeStagePng();
+    const sourceRel = cfg.selected[0];
+    const res = await fetch(`/api/sessions/${currentSessionId}/image-edits`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        source_rel: sourceRel,
+        image_data: imageData,
+        edit_state: {
+          version: 2,
+          type: "merged_figure",
+          ...cfg,
+        },
+        filename: "merged_figure.png",
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.detail || t("image.saveFail"));
+    closeImageMergeEditor();
+    await loadWorkspaceFiles(currentSessionId);
+    setStatus(t("image.saved", { name: data.file?.name || "merged_figure.png" }));
+  } catch (err) {
+    if (imageMergeStatus) imageMergeStatus.textContent = t("image.saveFailWithMsg", { msg: err.message });
+  } finally {
+    if (imageMergeSave) imageMergeSave.disabled = false;
   }
 }
 
@@ -1412,14 +2750,14 @@ async function initTools() {
     const data = await res.json();
     // if (toolsCount) toolsCount.textContent = data.total ? `(${data.total})` : "";
     if (toolsPanel) {
-      renderToolsCatalog(data.categories || [], toolsPanel, false);
+    renderToolsCatalog(data.categories || [], toolsPanel, false);
     }
     // if (toolsSidebar) {
     //   renderToolsCatalog(data.categories || [], toolsSidebar, true);
     // }
   } catch {
     if (toolsPanel) {
-      toolsPanel.innerHTML = `<p class='muted'>${t("tools.loadFail")}</p>`;
+    toolsPanel.innerHTML = `<p class='muted'>${t("tools.loadFail")}</p>`;
     }
   }
 }
@@ -1509,8 +2847,8 @@ async function uploadPendingFiles(sessionId) {
   if (pendingFiles.length === 0) return [];
   const queue = pendingFiles.filter((file) => file && file.size > 0);
   if (!queue.length) {
-    pendingFiles = [];
-    renderAttachments();
+  pendingFiles = [];
+  renderAttachments();
     throw new Error(t("err.uploadEmpty"));
   }
 
@@ -1998,7 +3336,17 @@ if (editorDelete) {
     if (!node) return;
     node.destroy();
     setSelectedEditorNode(null);
+    commitKonvaState();
   });
+}
+let konvaOverlayDirty = false;
+function markKonvaOverlayDirty() {
+  konvaOverlayDirty = true;
+}
+function commitKonvaOverlayIfDirty() {
+  if (!konvaOverlayDirty) return;
+  commitKonvaState();
+  konvaOverlayDirty = false;
 }
 if (editorTextInput) {
   editorTextInput.addEventListener("input", () => {
@@ -2006,8 +3354,10 @@ if (editorTextInput) {
     if (node && typeof node.text === "function") {
       node.text(editorTextInput.value);
       imageEditorState.layer?.batchDraw();
+      markKonvaOverlayDirty();
     }
   });
+  editorTextInput.addEventListener("blur", commitKonvaOverlayIfDirty);
 }
 if (editorColorInput) {
   editorColorInput.addEventListener("input", () => {
@@ -2016,11 +3366,37 @@ if (editorColorInput) {
     if (typeof node.fill === "function") node.fill(editorColorInput.value);
     if (typeof node.stroke === "function") node.stroke(editorColorInput.value);
     imageEditorState.layer?.batchDraw();
+    markKonvaOverlayDirty();
   });
-  editorColorInput.addEventListener("change", () => {
-    if (imageEditorState.selectedNode) return;
-    replaceRasterColor(imageEditorState.pickedRasterColor, editorColorInput.value);
+  editorColorInput.addEventListener("blur", commitKonvaOverlayIfDirty);
+}
+if (editorRasterTolerance) {
+  editorRasterTolerance.addEventListener("input", () => {
+    if (editorRasterToleranceVal) editorRasterToleranceVal.textContent = editorRasterTolerance.value;
   });
+}
+if (editorEyedropper) {
+  editorEyedropper.addEventListener("click", () => {
+    setEyedropperActive(!imageEditorState.eyedropperActive);
+    if (imageEditorState.eyedropperActive) {
+      setEditorStatus(t("image.eyedropperActive"));
+    }
+  });
+}
+if (editorReplaceAllColors) {
+  editorReplaceAllColors.addEventListener("click", () => {
+    if (!imageEditorState.pickedRasterColor) {
+      setEditorStatus(t("image.rasterPickFirst"), "error");
+      return;
+    }
+    replaceRasterColor(
+      imageEditorState.pickedRasterColor,
+      editorRasterTargetColor?.value || "#2563eb"
+    );
+  });
+}
+if (editorUndo) {
+  editorUndo.addEventListener("click", undoKonvaEdit);
 }
 if (editorFontSizeInput) {
   editorFontSizeInput.addEventListener("input", () => {
@@ -2028,22 +3404,190 @@ if (editorFontSizeInput) {
     if (node && typeof node.fontSize === "function") {
       node.fontSize(Number(editorFontSizeInput.value || 24));
       imageEditorState.layer?.batchDraw();
+      markKonvaOverlayDirty();
     }
+  });
+  editorFontSizeInput.addEventListener("blur", commitKonvaOverlayIfDirty);
+}
+function rebuildMergeLayoutWithFeedback(statusKey = "image.mergeLayoutReady") {
+  if (imageMergeState.selected.length < 1) {
+    if (imageMergeStatus) imageMergeStatus.textContent = t("image.mergeSelectHint");
+    return Promise.resolve();
+  }
+  return buildMergeAutoLayout(statusKey);
+}
+
+function bindMergeConfigUndo() {
+  const commitBefore = () => commitMergeState();
+  imageMergeCols?.addEventListener("focus", commitBefore);
+  imageMergeLabels?.addEventListener("focus", commitBefore);
+  imageMergeLabelFontSize?.addEventListener("focus", commitBefore);
+}
+bindMergeConfigUndo();
+if (openImageMergeBtn) {
+  openImageMergeBtn.addEventListener("click", openImageMergeEditor);
+}
+if (imageMergeZoomOut) {
+  imageMergeZoomOut.addEventListener("click", () => {
+    setMergeViewZoom((imageMergeState.viewZoom || 1) / 1.15);
+  });
+}
+if (imageMergeZoomIn) {
+  imageMergeZoomIn.addEventListener("click", () => {
+    setMergeViewZoom((imageMergeState.viewZoom || 1) * 1.15);
+  });
+}
+if (imageMergeZoomFit) {
+  imageMergeZoomFit.addEventListener("click", () => {
+    fitMergeViewToPanel();
+    if (imageMergeStatus) {
+      imageMergeStatus.textContent = t("image.mergeZoomApplied", {
+        pct: Math.round((imageMergeState.viewZoom || 1) * 100),
+      });
+    }
+  });
+}
+if (imageMergePreviewWrap) {
+  imageMergePreviewWrap.addEventListener(
+    "wheel",
+    (event) => {
+      if (!imageMergeEditor || imageMergeEditor.classList.contains("hidden")) return;
+      if (!event.altKey) return;
+      event.preventDefault();
+      const factor = event.deltaY > 0 ? 0.9 : 1.1;
+      setMergeViewZoom((imageMergeState.viewZoom || 1) * factor);
+    },
+    { passive: false }
+  );
+}
+if (imageMergeAutoLayout) {
+  imageMergeAutoLayout.addEventListener("click", () => {
+    commitMergeState();
+    rebuildMergeLayoutWithFeedback("image.mergeLayoutReady").catch((err) => {
+      if (imageMergeStatus) imageMergeStatus.textContent = err.message;
+    });
+  });
+}
+if (imageMergeCols) {
+  imageMergeCols.addEventListener("change", () => {
+    rebuildMergeLayoutWithFeedback("image.mergeColsApplied").catch((err) => {
+      if (imageMergeStatus) imageMergeStatus.textContent = err.message;
+    });
+  });
+}
+if (imageMergeLabels) {
+  imageMergeLabels.addEventListener("change", () => {
+    updateMergeCustomLabelRow();
+    syncMergePanelLabels();
+    if (imageMergeStatus) imageMergeStatus.textContent = t("image.mergeLabelsApplied");
+    commitMergeState();
+  });
+}
+if (imageMergeLabelFontSize) {
+  imageMergeLabelFontSize.addEventListener("input", () => {
+    syncMergePanelLabels();
+    if (imageMergeStatus) imageMergeStatus.textContent = t("image.mergeLabelSizeApplied");
+  });
+  imageMergeLabelFontSize.addEventListener("change", () => commitMergeState());
+}
+if (imageMergeCustomLabel) {
+  imageMergeCustomLabel.addEventListener("input", () => {
+    const rel = getSelectedPanelRel();
+    if (!rel) return;
+    imageMergeState.customLabels[rel] = imageMergeCustomLabel.value;
+    const label = findMergeLabelNode(rel);
+    if (label) {
+      label.text(imageMergeCustomLabel.value);
+      label.visible(Boolean(imageMergeCustomLabel.value));
+      imageMergeState.layer?.batchDraw();
+      if (imageMergeStatus) imageMergeStatus.textContent = t("image.mergeCustomLabelApplied");
+    }
+  });
+  imageMergeCustomLabel.addEventListener("change", () => commitMergeState());
+}
+if (imageMergeAddText) {
+  imageMergeAddText.addEventListener("click", addMergeFreeText);
+}
+if (imageMergeTextInput) {
+  imageMergeTextInput.addEventListener("input", () => {
+    const node = imageMergeState.selectedNode;
+    if (node && typeof node.text === "function") {
+      node.text(imageMergeTextInput.value);
+      imageMergeState.layer?.batchDraw();
+      if (imageMergeStatus) imageMergeStatus.textContent = t("image.mergeTextApplied");
+    }
+  });
+  imageMergeTextInput.addEventListener("change", () => commitMergeState());
+}
+if (imageMergeFontSize) {
+  imageMergeFontSize.addEventListener("input", () => {
+    const node = imageMergeState.selectedNode;
+    if (node && typeof node.fontSize === "function") {
+      node.fontSize(Number(imageMergeFontSize.value || 24));
+      imageMergeState.layer?.batchDraw();
+      if (imageMergeStatus) imageMergeStatus.textContent = t("image.mergeTextSizeApplied");
+    }
+  });
+  imageMergeFontSize.addEventListener("change", () => commitMergeState());
+}
+if (imageMergeDelete) {
+  imageMergeDelete.addEventListener("click", () => {
+    const node = imageMergeState.selectedNode;
+    if (!node) return;
+    const name = node.name?.() || "";
+    if (name.startsWith("merge-panel-")) return;
+    node.destroy();
+    setSelectedMergeNode(null);
+    if (imageMergeStatus) imageMergeStatus.textContent = t("image.mergeDeleted");
+    commitMergeState();
   });
 }
 if (editorTitlePosition) {
   editorTitlePosition.addEventListener("change", () => {
     applyTitlePosition(editorTitlePosition.value);
+    commitKonvaState();
   });
 }
 if (editorSave) editorSave.addEventListener("click", saveImageEdit);
 if (editorCancel) editorCancel.addEventListener("click", closeImageEditor);
 if (editorClose) editorClose.addEventListener("click", closeImageEditor);
 if (editorBackdrop) editorBackdrop.addEventListener("click", closeImageEditor);
+if (imageMergeUndo) {
+  imageMergeUndo.addEventListener("click", undoMergeEdit);
+}
+if (imageMergeSave) {
+  imageMergeSave.addEventListener("click", saveImageMerge);
+}
+if (imageMergeCancel) {
+  imageMergeCancel.addEventListener("click", closeImageMergeEditor);
+}
+if (imageMergeClose) {
+  imageMergeClose.addEventListener("click", closeImageMergeEditor);
+}
+if (imageMergeBackdrop) {
+  imageMergeBackdrop.addEventListener("click", closeImageMergeEditor);
+}
 if (plotlyLegendColorInput) {
-  plotlyLegendColorInput.addEventListener("input", () => {
+  plotlyLegendColorInput.addEventListener("change", () => {
     applyPlotlyTraceColor(plotlyEditorState.selectedTrace, plotlyLegendColorInput.value);
   });
+}
+let plotlyFontEditTimer = null;
+function schedulePlotlyFontApply() {
+  if (plotlyFontEditTimer) clearTimeout(plotlyFontEditTimer);
+  plotlyFontEditTimer = setTimeout(() => {
+    plotlyFontEditTimer = null;
+    applyPlotlyFontSizes({
+      titleSize: Number(plotlyTitleFontSizeInput?.value || 18),
+      axisSize: Number(plotlyAxisFontSizeInput?.value || 14),
+    });
+  }, 280);
+}
+if (plotlyTitleFontSizeInput) {
+  plotlyTitleFontSizeInput.addEventListener("input", schedulePlotlyFontApply);
+}
+if (plotlyAxisFontSizeInput) {
+  plotlyAxisFontSizeInput.addEventListener("input", schedulePlotlyFontApply);
 }
 if (plotlyTraceSelect) {
   plotlyTraceSelect.addEventListener("change", () => {
@@ -2051,11 +3595,35 @@ if (plotlyTraceSelect) {
     selectPlotlyTrace(Number(plotlyTraceSelect.value), { openPicker: false });
   });
 }
+if (plotlyEditorUndo) {
+  plotlyEditorUndo.addEventListener("click", undoPlotlyEdit);
+}
 if (plotlyEditorSave) plotlyEditorSave.addEventListener("click", savePlotlyEdit);
 if (plotlyEditorCancel) plotlyEditorCancel.addEventListener("click", closePlotlyEditor);
 if (plotlyEditorClose) plotlyEditorClose.addEventListener("click", closePlotlyEditor);
 if (plotlyEditorBackdrop) plotlyEditorBackdrop.addEventListener("click", closePlotlyEditor);
 document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && imageMergeEditor && !imageMergeEditor.classList.contains("hidden")) {
+    closeImageMergeEditor();
+    return;
+  }
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") {
+    if (imageEditor && !imageEditor.classList.contains("hidden")) {
+      event.preventDefault();
+      undoKonvaEdit();
+      return;
+    }
+    if (plotlyEditor && !plotlyEditor.classList.contains("hidden")) {
+      event.preventDefault();
+      undoPlotlyEdit();
+      return;
+    }
+    if (imageMergeEditor && !imageMergeEditor.classList.contains("hidden")) {
+      event.preventDefault();
+      undoMergeEdit();
+      return;
+    }
+  }
   if (event.key === "Escape" && plotlyEditor && !plotlyEditor.classList.contains("hidden")) {
     closePlotlyEditor();
     return;
