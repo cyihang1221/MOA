@@ -1781,7 +1781,7 @@ matplotlib.use("Agg")  # 非交互后端，服务器环境安全
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from collections import Counter
-from src.tools.editable_export import save_editable_figure
+from web_frontend.backend.export.editable_export import save_editable_figure
 
 # 全局绘图风格
 plt.rcParams.update({
@@ -2007,7 +2007,7 @@ def _plot_family_size_distribution(
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
     fig.tight_layout()
-    from src.tools.plotly_export import build_family_size_distribution_figure
+    from web_frontend.backend.export.plotly_export import build_family_size_distribution_figure
 
     plotly_fig = None
     try:
@@ -2079,7 +2079,7 @@ def _plot_cosine_distribution(
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
     fig.tight_layout()
-    from src.tools.plotly_export import build_cosine_distribution_figure
+    from web_frontend.backend.export.plotly_export import build_cosine_distribution_figure
 
     plotly_fig = None
     try:
@@ -2144,7 +2144,7 @@ def _plot_degree_distribution(
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
     fig.tight_layout()
-    from src.tools.plotly_export import build_degree_distribution_figure
+    from web_frontend.backend.export.plotly_export import build_degree_distribution_figure
 
     plotly_fig = None
     try:
@@ -2747,7 +2747,7 @@ def _plot_precursor_mass_difference(
 
     fig.suptitle(title, fontsize=13, fontweight="bold", y=1.02)
     fig.tight_layout()
-    from src.tools.plotly_export import build_precursor_mass_diff_figure
+    from web_frontend.backend.export.plotly_export import build_precursor_mass_diff_figure
 
     plotly_fig = None
     try:
@@ -3513,7 +3513,7 @@ def generate_network_figures(
     print(f"\n✅ 所有图表已生成到: {output_dir}/")
     print(f"{'=' * 60}\n")
 
-    from src.tools.plotly_sidecar_backfill import backfill_molecular_network_plotly_sidecars
+    from web_frontend.backend.export.plotly_sidecar_backfill import backfill_molecular_network_plotly_sidecars
 
     backfill_molecular_network_plotly_sidecars(
         output_dir,

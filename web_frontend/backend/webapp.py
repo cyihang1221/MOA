@@ -28,6 +28,8 @@ from web_frontend.backend.session_storage import (
     rename_workspace_dirs,
     session_upload_dir as storage_upload_dir,
     session_work_dir,
+    edited_plots_dir,
+    merged_figures_dir,
     upload_target_dir,
 )
 
@@ -434,6 +436,17 @@ class PlotlyEditSaveRequest(BaseModel):
     filename: Optional[str] = None
 
 
+class PlotEditAgentRequest(BaseModel):
+    source_rel: str
+    instruction: str
+    filename: Optional[str] = None
+
+
+class ImageMergeEditRequest(BaseModel):
+    source_rel: str
+    instruction: str
+
+
 def parse_models_from_env() -> List[str]:
     configured = os.getenv("LLM_MODEL_CANDIDATES", "")
     values = [item.strip() for item in configured.split(",") if item.strip()]
@@ -578,17 +591,31 @@ def app_info():
 
 @app.get("/api/tools")
 async def get_tools():
-    tools = await mcp.list_tools()
-    # 仅保留白名单中的工具（msconvert + xcms）
-    tools = [t for t in tools if t.name in ALLOWED_TOOL_NAMES]  # frozenset
+    from web_frontend.backend.tool_registry import LOCAL_TOOL_SPECS, load_all_tools
+
+    tools = await load_all_tools()
     grouped: dict[str, list[dict]] = {}
     for tool in tools:
-        cat_id = categorize_tool(tool.name)
-        desc = (tool.description or "").strip().split("\n")[0][:120]
+        name = getattr(tool, "name", "") or ""
+        cat_id = categorize_tool(name)
+        if name in LOCAL_TOOL_SPECS:
+            cat_id = "visual"
+        desc = (getattr(tool, "description", None) or "").strip().split("\n")[0][:120]
         grouped.setdefault(cat_id, []).append(
-            {"name": tool.name, "description": desc}
+            {"name": name, "description": desc}
         )
-    order = ["convert", "xcms", "networking", "deeplearn", "peaks", "processing", "library", "workflow", "other"]
+    order = [
+        "convert",
+        "xcms",
+        "networking",
+        "deeplearn",
+        "peaks",
+        "processing",
+        "library",
+        "workflow",
+        "visual",
+        "other",
+    ]
     categories = [
         {"category": cat_id, "category_id": cat_id, "tools": grouped[cat_id]}
         for cat_id in order
@@ -733,6 +760,18 @@ IMAGE_DATA_URL_RE = re.compile(r"^data:image/png;base64,(?P<data>[A-Za-z0-9+/=\s
 EDITABLE_IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"}
 
 
+def _resolve_edited_image_target(output_root: Path, filename: str, *, merged: bool = False) -> Path:
+    """改图产物写入 edited_plots/；拼图写入 merged_figures/。"""
+    edit_dir = merged_figures_dir(output_root) if merged else edited_plots_dir(output_root)
+    requested_name = safe_filename(filename)
+    if Path(requested_name).suffix.lower() != ".png":
+        requested_name = f"{Path(requested_name).stem}.png"
+    target = edit_dir / requested_name
+    if target.exists():
+        target = edit_dir / f"{target.stem}_{uuid.uuid4().hex[:8]}.png"
+    return target
+
+
 @app.post("/api/sessions/{session_id}/image-edits")
 def save_image_edit(session_id: str, req: ImageEditSaveRequest):
     sess = db_get_session(session_id)
@@ -765,18 +804,16 @@ def save_image_edit(session_id: str, req: ImageEditSaveRequest):
         raise HTTPException(status_code=413, detail="edited image is too large")
 
     requested_name = safe_filename(req.filename or f"{source.stem}_edited.png")
-    if Path(requested_name).suffix.lower() != ".png":
-        requested_name = f"{Path(requested_name).stem}.png"
-    target = source.parent / requested_name
-    if target.exists():
-        target = source.parent / f"{target.stem}_{uuid.uuid4().hex[:8]}.png"
+    edit_state = req.edit_state if isinstance(req.edit_state, dict) else {}
+    is_merged = edit_state.get("type") == "merged_figure"
+    target = _resolve_edited_image_target(output_root, requested_name, merged=is_merged)
 
     target.write_bytes(png_bytes)
-    edit_state = req.edit_state if isinstance(req.edit_state, dict) else {}
     edit_state.setdefault("version", 1)
     edit_state.setdefault("source_rel", req.source_rel)
     edit_state.setdefault("image", target.name)
-    json_target = target.parent / f"{target.stem}.editable.json"
+    json_suffix = ".merge.json" if is_merged else ".editable.json"
+    json_target = target.parent / f"{target.stem}{json_suffix}"
     json_target.write_text(json.dumps(edit_state, ensure_ascii=False, indent=2), encoding="utf-8")
     stat = target.stat()
     return {
@@ -828,12 +865,8 @@ def save_plotly_edit(session_id: str, req: PlotlyEditSaveRequest):
         raise HTTPException(status_code=400, detail="figure_json must be an object")
 
     stem = Path(safe_filename(req.filename or f"{source.stem}_edited.png")).stem
-    png_target = source.parent / f"{stem}.png"
-    json_target = source.parent / f"{stem}.plotly.json"
-    if png_target.exists():
-        suffix = uuid.uuid4().hex[:8]
-        png_target = source.parent / f"{stem}_{suffix}.png"
-        json_target = source.parent / f"{stem}_{suffix}.plotly.json"
+    png_target = _resolve_edited_image_target(output_root, f"{stem}.png")
+    json_target = png_target.parent / f"{png_target.stem}.plotly.json"
 
     png_target.write_bytes(png_bytes)
     json_target.write_text(json.dumps(req.figure_json, ensure_ascii=False), encoding="utf-8")
@@ -850,6 +883,71 @@ def save_plotly_edit(session_id: str, req: PlotlyEditSaveRequest):
             "path": normalize_display_path(json_target),
         },
     }
+
+
+@app.post("/api/sessions/{session_id}/plot-edits/agent")
+def agent_plot_edit(session_id: str, req: PlotEditAgentRequest):
+    """Agent 解析自然语言改图要求，用 matplotlib 重绘并写入 plot_config / echarts sidecar。"""
+    from web_frontend.backend.plot_edit_service import PlotEditError, agent_apply_plot_edit
+
+    sess = db_get_session(session_id)
+    if not sess:
+        raise HTTPException(status_code=404, detail="session not found")
+    if not req.instruction.strip():
+        raise HTTPException(status_code=400, detail="instruction is required")
+
+    slug = resolve_storage_slug(session_id)
+    model = (sess.get("model") or "").strip() or None
+    try:
+        result = agent_apply_plot_edit(
+            project_root=PROJECT_ROOT,
+            session_id=session_id,
+            storage_slug=slug,
+            source_rel=req.source_rel,
+            instruction=req.instruction.strip(),
+            model=model,
+            filename=req.filename,
+        )
+    except PlotEditError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"plot edit failed: {exc}") from exc
+    return result
+
+
+@app.post("/api/sessions/{session_id}/image-merge/edit")
+def agent_image_merge_edit(session_id: str, req: ImageMergeEditRequest):
+    """Agent 调整已拼合 figure 的标签、字号、列数等，从原图重排并覆盖 merged_figures/ 中 PNG。"""
+    from web_frontend.backend.image_merge_service import ImageMergeError, agent_edit_merged_figure
+
+    sess = db_get_session(session_id)
+    if not sess:
+        raise HTTPException(status_code=404, detail="session not found")
+    if not req.instruction.strip():
+        raise HTTPException(status_code=400, detail="instruction is required")
+
+    slug = resolve_storage_slug(session_id)
+    model = (sess.get("model") or "").strip() or None
+    try:
+        result = agent_edit_merged_figure(
+            project_root=PROJECT_ROOT,
+            session_id=session_id,
+            storage_slug=slug,
+            message=req.instruction.strip(),
+            target_rel=req.source_rel,
+            model=model,
+        )
+    except ImageMergeError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"merge edit failed: {exc}") from exc
+    return result
 
 
 @app.get("/api/sessions/{session_id}/files")
@@ -1000,7 +1098,15 @@ async def chat_stream(req: ChatStreamRequest, request: Request):
         "X-Accel-Buffering": "no",
     }
 
+    # 改图 / 拼图 / 分析 统一走 Agent loop（LLM 选 plot_edit / image_merge / merge_edit / MCP）
+    # 正则旁路仅作兼容兜底：当前默认关闭，避免与统一 Agent 双路径冲突
+    # if should_route_plot_edit(stream_user_message):
+    #     ...
+    # if should_route_image_merge(stream_user_message):
+    #     ...
+
     if use_agent:
+        print(f"[agent] route analysis agent: {stream_user_message[:120]!r}", flush=True)
         return StreamingResponse(
             _stream_agent_sse_async(req, request),
             media_type="text/event-stream",
@@ -1014,7 +1120,17 @@ async def chat_stream(req: ChatStreamRequest, request: Request):
 
     history = db_get_messages(req.session_id)
     context = [{"role": m["role"], "content": m["content"]} for m in history]
-    payload = context + [{"role": "user", "content": stream_user_message}]
+    # 纯对话模式：禁止声称已写文件 / 已跑分析（防幻觉）
+    system_guard = {
+        "role": "system",
+        "content": (
+            "你当前处于「纯对话模式」，没有工具执行权限。"
+            "不要声称已经合并图片、改图、保存文件、运行 XCMS/GNPS 或给出虚构的 outputspace 路径。"
+            "若用户需要改图/拼图/分析，请明确告知需要触发 Agent 工具，并建议其用具体指令重试"
+            "（例如「合并 A.png 和 B.png」「把 PCA 标题改成…」「开始分析」）。"
+        ),
+    }
+    payload = [system_guard] + context + [{"role": "user", "content": stream_user_message}]
 
     async def gen_llm():
         assistant_text_parts: list[str] = []
@@ -1056,6 +1172,7 @@ async def _stream_agent_sse_async(req: ChatStreamRequest, request: Request):
     parts: list[str] = []
     final_error = None
     was_cancelled = False
+    visual_results: list = []
     storage_slug = resolve_storage_slug(req.session_id)
     cancel_event = await register_job(req.session_id)
     recent_messages = db_get_messages(req.session_id)[-12:]
@@ -1090,6 +1207,8 @@ async def _stream_agent_sse_async(req: ChatStreamRequest, request: Request):
                 yield _sse_pack({"delta": f"\n❌ {final_error}\n"})
             elif event.get("cancelled"):
                 was_cancelled = True
+            if event.get("visual_results"):
+                visual_results = event["visual_results"]
 
         if is_cancelled(cancel_event) or was_cancelled:
             if not any("已终止" in p or "已执行完毕" in p for p in parts[-3:]):
@@ -1098,15 +1217,16 @@ async def _stream_agent_sse_async(req: ChatStreamRequest, request: Request):
 
         text = "".join(parts) or (final_error or "Agent 未产生输出")
         time_str = db_append_message(req.session_id, "assistant", text)
-        yield _sse_pack(
-            {
-                "done": True,
-                "time": time_str,
-                "error": final_error,
-                "finished": not bool(final_error),
-                "cancelled": was_cancelled or is_cancelled(cancel_event),
-            }
-        )
+        done_payload = {
+            "done": True,
+            "time": time_str,
+            "error": final_error,
+            "finished": not bool(final_error),
+            "cancelled": was_cancelled or is_cancelled(cancel_event),
+        }
+        if visual_results:
+            done_payload["visual_results"] = visual_results
+        yield _sse_pack(done_payload)
     except asyncio.CancelledError:
         partial = "".join(parts).strip()
         if partial:
@@ -1121,6 +1241,107 @@ async def _stream_agent_sse_async(req: ChatStreamRequest, request: Request):
         yield _sse_pack({"done": True, "error": err_msg, "finished": False})
     finally:
         await clear_job(req.session_id)
+
+
+async def _stream_plot_edit_sse_async(req: ChatStreamRequest, request: Request):
+    """聊天内 Agent 改图，SSE 流式返回进度。"""
+    from web_frontend.backend.plot_edit_chat import stream_chat_plot_edit_deltas
+
+    parts: list[str] = []
+    final_error = None
+    plot_edit_ok = False
+    storage_slug = resolve_storage_slug(req.session_id)
+    model = (req.model or "").strip() or None
+    sess = db_get_session(req.session_id)
+    if sess and not model:
+        model = (sess.get("model") or "").strip() or None
+
+    try:
+        yield _sse_pack({"delta": ""})
+        for event in stream_chat_plot_edit_deltas(
+            project_root=PROJECT_ROOT,
+            session_id=req.session_id,
+            storage_slug=storage_slug,
+            message=req.user_message,
+            model=model,
+        ):
+            if "delta" in event:
+                parts.append(event["delta"])
+                yield _sse_pack({"delta": event["delta"]})
+            elif event.get("plot_edit_done"):
+                plot_edit_ok = True
+            elif "error" in event:
+                final_error = event["error"]
+
+        text = "".join(parts) or (final_error or "改图未产生输出")
+        time_str = db_append_message(req.session_id, "assistant", text)
+        yield _sse_pack(
+            {
+                "done": True,
+                "time": time_str,
+                "error": final_error,
+                "finished": plot_edit_ok and not final_error,
+                "plot_edit": True,
+            }
+        )
+    except Exception as exc:
+        err_msg = f"改图失败: {exc}"
+        parts.append(f"\n❌ {err_msg}\n")
+        yield _sse_pack({"delta": f"\n❌ {err_msg}\n"})
+        if parts:
+            db_append_message(req.session_id, "assistant", "".join(parts))
+        yield _sse_pack({"done": True, "error": err_msg, "finished": False, "plot_edit": True})
+
+
+async def _stream_image_merge_sse_async(req: ChatStreamRequest, request: Request):
+    """聊天内 Agent 合并图片，SSE 流式返回进度。"""
+    from web_frontend.backend.image_merge_chat import stream_chat_image_merge_deltas
+
+    parts: list[str] = []
+    final_error = None
+    merge_ok = False
+    storage_slug = resolve_storage_slug(req.session_id)
+
+    model = (req.model or "").strip() or None
+    sess = db_get_session(req.session_id)
+    if sess and not model:
+        model = (sess.get("model") or "").strip() or None
+
+    try:
+        yield _sse_pack({"delta": ""})
+        for event in stream_chat_image_merge_deltas(
+            project_root=PROJECT_ROOT,
+            session_id=req.session_id,
+            storage_slug=storage_slug,
+            message=req.user_message,
+            model=model,
+        ):
+            if "delta" in event:
+                parts.append(event["delta"])
+                yield _sse_pack({"delta": event["delta"]})
+            elif event.get("image_merge_done"):
+                merge_ok = True
+            elif "error" in event:
+                final_error = event["error"]
+
+        text = "".join(parts) or (final_error or "拼图未产生输出")
+        time_str = db_append_message(req.session_id, "assistant", text)
+        yield _sse_pack(
+            {
+                "done": True,
+                "time": time_str,
+                "error": final_error,
+                "finished": merge_ok and not final_error,
+                "image_merge": True,
+            }
+        )
+    except Exception as exc:
+        err_msg = f"拼图失败: {exc}"
+        parts.append(f"\n❌ {err_msg}\n")
+        yield _sse_pack({"delta": f"\n❌ {err_msg}\n"})
+        if parts:
+            db_append_message(req.session_id, "assistant", "".join(parts))
+        yield _sse_pack({"done": True, "error": err_msg, "finished": False, "image_merge": True})
 
 
 def _methods_from_form(methods_json: str | None) -> list[dict]:

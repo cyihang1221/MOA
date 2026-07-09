@@ -1,7 +1,13 @@
-"""判断用户消息是否应走 Agent（MCP 工具）而非纯 LLM 对话。"""
+"""判断用户消息是否应走 Agent（工具执行）而非纯 LLM 对话。"""
 from __future__ import annotations
 
 import re
+
+from web_frontend.backend.image_merge_registry import (
+    looks_like_image_merge_request,
+    looks_like_merged_figure_edit_request,
+)
+from web_frontend.backend.plot_edit_registry import looks_like_plot_edit_request
 
 ATTACHMENT_MARKERS = ("[已上传附件]", "[Attachments uploaded]")
 
@@ -19,9 +25,15 @@ ANALYSIS_INTENT_RE = re.compile(
 
 
 def looks_like_agent_request(user_message: str) -> bool:
+    """分析 / 改图 / 拼图 均走统一 Agent loop（由 LLM 选工具）。"""
     text = (user_message or "").strip()
     if not text:
         return False
+    # 改图、拼图、改拼图：统一进 Agent，由 plot_edit / image_merge / merge_edit 执行
+    if looks_like_plot_edit_request(text):
+        return True
+    if looks_like_image_merge_request(text) or looks_like_merged_figure_edit_request(text):
+        return True
     if any(marker in text for marker in ATTACHMENT_MARKERS):
         return True
     return bool(ANALYSIS_INTENT_RE.search(text))

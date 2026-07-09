@@ -4,6 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from web_frontend.backend.session_file_resolver import find_session_mgf, mzml_stems
+from web_frontend.backend.tool_registry import ALL_AGENT_TOOL_NAMES
 
 RAW_CONVERTER_NAMES = (
     "convert_raw_to_mzml_msconvert",
@@ -84,7 +85,7 @@ def filter_plan_tasks_to_registered_tools(
     tasks: list,
     tool_names: list[str] | None = None,
 ) -> list[str]:
-    names = list(tool_names or ALLOWED_TOOL_NAMES)
+    names = list(tool_names or ALL_AGENT_TOOL_NAMES)
     if not names:
         return [str(t) for t in tasks]
 
@@ -129,7 +130,7 @@ def inject_mgf_standalone_tasks(
     if not mgf_path:
         return tasks
 
-    names = set(tool_names or ALLOWED_TOOL_NAMES)
+    names = set(tool_names or ALL_AGENT_TOOL_NAMES)
     lower = (user_message or "").lower()
     out: list[str] = []
     deepmass_dir = paths.get("deepmass") or str(
@@ -154,3 +155,48 @@ def inject_mgf_standalone_tasks(
             f"input_mgf {mgf_path} and output_dir {network_dir}."
         )
     return out or tasks
+
+
+def inject_visual_standalone_tasks(
+    tasks: list[str],
+    user_message: str,
+    tool_names: list[str] | None = None,
+) -> list[str]:
+    """计划被裁空或未含 visual 工具时，按用户意图补 plot_edit / image_merge / merge_edit。"""
+    from web_frontend.backend.image_merge_registry import (
+        looks_like_image_merge_request,
+        looks_like_merged_figure_edit_request,
+    )
+    from web_frontend.backend.plot_edit_registry import looks_like_plot_edit_request
+
+    names = set(tool_names or ALL_AGENT_TOOL_NAMES)
+    text = (user_message or "").strip()
+    if not text:
+        return tasks
+
+    lower_tasks = " ".join(tasks).lower()
+    out = list(tasks)
+
+    # 改拼图优先于新建拼图
+    if looks_like_merged_figure_edit_request(text) and "merge_edit" in names:
+        if "merge_edit" not in lower_tasks:
+            out.append(
+                f"Use merge_edit to adjust the merged figure layout/labels per: {text[:200]}"
+            )
+        return out
+
+    if looks_like_image_merge_request(text) and "image_merge" in names:
+        if "image_merge" not in lower_tasks and "merge_edit" not in lower_tasks:
+            out.append(
+                f"Use image_merge to merge session plots into one figure per: {text[:200]}"
+            )
+        return out
+
+    if looks_like_plot_edit_request(text) and "plot_edit" in names:
+        if "plot_edit" not in lower_tasks:
+            out.append(
+                f"Use plot_edit to re-render the plot with style changes per: {text[:200]}"
+            )
+        return out
+
+    return out

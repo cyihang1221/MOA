@@ -84,11 +84,11 @@ def save_editable_figure(
     save_editable_metadata(image_path, title=title, title_position=title_position)
     if not skip_plotly:
         if plotly_fig is not None:
-            from src.tools.plotly_export import maybe_save_plotly
+            from web_frontend.backend.export.plotly_export import maybe_save_plotly
 
             maybe_save_plotly(plotly_fig, image_path)
         else:
-            from src.tools.plotly_export import maybe_save_plotly_from_matplotlib
+            from web_frontend.backend.export.plotly_export import maybe_save_plotly_from_matplotlib
 
             maybe_save_plotly_from_matplotlib(fig, image_path)
     return Path(image_path)

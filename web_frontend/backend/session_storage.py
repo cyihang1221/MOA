@@ -114,6 +114,24 @@ def session_work_dir(project_root: Path, storage_slug: str) -> Path:
     return path
 
 
+EDITED_PLOTS_SUBDIR = "edited_plots"
+MERGED_FIGURES_SUBDIR = "merged_figures"
+
+
+def edited_plots_dir(session_output_root: Path) -> Path:
+    """会话内 Agent / 手动改图输出目录，与原始分析产物区分。"""
+    path = session_output_root / EDITED_PLOTS_SUBDIR
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def merged_figures_dir(session_output_root: Path) -> Path:
+    """会话内 Agent / 手动拼图输出目录。"""
+    path = session_output_root / MERGED_FIGURES_SUBDIR
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
 def _merge_tree_into(src: Path, dest: Path) -> None:
     if not src.is_dir():
         return

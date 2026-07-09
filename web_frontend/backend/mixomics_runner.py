@@ -9,7 +9,7 @@ import tempfile as _tf
 from pathlib import Path
 
 from src.platform_utils import resolve_rscript
-from src.tools.editable_export import ensure_editable_sidecars
+from web_frontend.backend.export.editable_export import ensure_editable_sidecars
 from web_frontend.backend.session_metadata import resolve_metadata_csv
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -327,7 +327,7 @@ def run_statistical_analysis_mixomics(
             "heatmap_top_vip.png": "Top VIP Heatmap",
         },
     )
-    from src.tools.plotly_sidecar_backfill import backfill_statistical_plotly_sidecars
+    from web_frontend.backend.export.plotly_sidecar_backfill import backfill_statistical_plotly_sidecars
 
     try:
         backfill_statistical_plotly_sidecars(output_path, meta_csv)

@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 from src.platform_utils import resolve_rscript
-from src.tools.plotly_export import (
+from web_frontend.backend.export.plotly_export import (
     build_pca_plsda_scatter_figure,
     build_precursor_mass_diff_figure,
     maybe_save_plotly,

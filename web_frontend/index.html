@@ -198,15 +198,44 @@
 
           <form id="chatForm" class="chat-input-row">
 
-            <textarea
+            <div class="chat-input-main">
+              <div class="chat-input-wrap">
+                <textarea
+                  id="promptInput"
+                  data-i18n-placeholder="composer.placeholder"
+                  placeholder="描述分析需求；上传 .raw 等文件后将自动调用 MCP 工具执行（Enter 发送）"
+                ></textarea>
+                <button
+                  id="chatColorBtn"
+                  type="button"
+                  class="chat-color-btn"
+                  data-i18n-title="composer.colorPick"
+                  title="插入颜色色号"
+                  aria-label="Insert color"
+                >
+                  <span id="chatColorBtnSwatch" class="chat-color-btn-swatch"></span>
+                </button>
+              </div>
 
-              id="promptInput"
-
-              data-i18n-placeholder="composer.placeholder"
-
-              placeholder="描述分析需求；上传 .raw 等文件后将自动调用 MCP 工具执行（Enter 发送）"
-
-            ></textarea>
+              <div id="chatColorPopover" class="chat-color-popover hidden" role="dialog" aria-hidden="true">
+                <div class="chat-color-popover-header">
+                  <span data-i18n="composer.colorPickTitle">选择颜色</span>
+                  <button id="chatColorClose" type="button" class="icon-btn chat-color-close" aria-label="Close">×</button>
+                </div>
+                <div class="chat-color-popover-body">
+                  <label class="chat-color-native-field">
+                    <span data-i18n="composer.colorCustom">自定义</span>
+                    <input id="chatColorNative" type="color" value="#4DBBD5" />
+                    <code id="chatColorHexPreview">#4DBBD5</code>
+                  </label>
+                  <div id="chatColorPresets" class="chat-color-presets"></div>
+                </div>
+                <div class="chat-color-popover-footer">
+                  <button id="chatColorCancel" type="button" class="secondary-btn small-btn" data-i18n="msg.cancel">取消</button>
+                  <button id="chatColorConfirm" type="button" class="small-btn chat-color-confirm" data-i18n="composer.colorConfirm">插入色号</button>
+                </div>
+              </div>
+            </div>
 
             <div class="composer-actions">
 
@@ -496,6 +525,63 @@
     </div>
 
 
+    <div id="plotAgentEditor" class="plot-agent-editor hidden" role="dialog" aria-modal="true" aria-hidden="true">
+      <div class="plot-agent-editor-backdrop" id="plotAgentEditorBackdrop"></div>
+      <div class="plot-agent-editor-panel">
+        <header class="plot-agent-editor-header">
+          <span id="plotAgentEditorTitle" class="plot-agent-editor-title"></span>
+          <button id="plotAgentEditorClose" type="button" class="icon-btn" aria-label="Close">×</button>
+        </header>
+        <div class="plot-agent-editor-body">
+          <p id="plotAgentEditorHint" class="plot-agent-editor-hint muted" data-i18n="image.plotAgentHint">
+            描述你想修改的内容，例如：标题改为「PCA 分组比较」，Control 用 #4DBBD5，Case 用 #E64B35，标题字号 20。
+          </p>
+          <label class="plot-agent-editor-field">
+            <span data-i18n="image.plotAgentInstruction">改图要求</span>
+            <textarea id="plotAgentInstruction" rows="4" class="plot-agent-instruction" data-i18n-placeholder="image.plotAgentPlaceholder" placeholder="例如：把标题改成 PCA Score Plot，A 组红色 #E64B35"></textarea>
+          </label>
+          <div id="plotAgentPreviewWrap" class="plot-agent-preview-wrap hidden">
+            <div id="plotAgentEcharts" class="plot-agent-echarts"></div>
+            <img id="plotAgentPreviewImg" class="plot-agent-preview-img hidden" alt="" />
+          </div>
+        </div>
+        <footer class="plot-agent-editor-footer">
+          <button id="plotAgentEditorCancel" type="button" class="secondary-btn" data-i18n="msg.cancel">取消</button>
+          <button id="plotAgentEditorApply" type="button" data-i18n="image.plotAgentApply">Agent 重绘</button>
+        </footer>
+        <p id="plotAgentEditorStatus" class="plot-agent-editor-status"></p>
+      </div>
+    </div>
+
+
+    <div id="mergeAgentEditor" class="plot-agent-editor hidden" role="dialog" aria-modal="true" aria-hidden="true">
+      <div class="plot-agent-editor-backdrop" id="mergeAgentEditorBackdrop"></div>
+      <div class="plot-agent-editor-panel">
+        <header class="plot-agent-editor-header">
+          <span id="mergeAgentEditorTitle" class="plot-agent-editor-title"></span>
+          <button id="mergeAgentEditorClose" type="button" class="icon-btn" aria-label="Close">×</button>
+        </header>
+        <div class="plot-agent-editor-body">
+          <p id="mergeAgentEditorHint" class="plot-agent-editor-hint muted" data-i18n="image.mergeAgentHint">
+            描述要调整的拼图样式，例如：标签改成小写、标签字号 36、不要标签、改成 3 列。
+          </p>
+          <label class="plot-agent-editor-field">
+            <span data-i18n="image.mergeAgentInstruction">改拼图要求</span>
+            <textarea id="mergeAgentInstruction" rows="4" class="plot-agent-instruction" data-i18n-placeholder="image.mergeAgentPlaceholder" placeholder="例如：标签字号改成 32，第一个标签改为 Panel A"></textarea>
+          </label>
+          <div id="mergeAgentPreviewWrap" class="plot-agent-preview-wrap">
+            <img id="mergeAgentPreviewImg" class="plot-agent-preview-img" alt="" />
+          </div>
+        </div>
+        <footer class="plot-agent-editor-footer">
+          <button id="mergeAgentEditorCancel" type="button" class="secondary-btn" data-i18n="msg.cancel">取消</button>
+          <button id="mergeAgentEditorApply" type="button" data-i18n="image.mergeAgentApply">Agent 重排</button>
+        </footer>
+        <p id="mergeAgentEditorStatus" class="plot-agent-editor-status"></p>
+      </div>
+    </div>
+
+
     <div id="imageMergeEditor" class="image-merge-editor hidden" role="dialog" aria-modal="true" aria-hidden="true">
       <div class="image-merge-backdrop" id="imageMergeBackdrop"></div>
       <div class="image-merge-panel">
@@ -586,11 +672,12 @@
 
 
     <script src="https://cdn.plot.ly/plotly-2.35.3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
     <script src="https://unpkg.com/konva@latest/konva.min.js"></script>
 
-    <script src="/static/i18n.js?v=20260629-merge-canvas"></script>
+    <script src="/static/i18n.js?v=20260709-unified-agent"></script>
 
-    <script src="/static/app.js?v=20260629-merge-canvas"></script>
+    <script src="/static/app.js?v=20260709-unified-agent"></script>
 
   </body>
 
