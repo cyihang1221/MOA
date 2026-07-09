@@ -3,6 +3,15 @@ const tempInput = document.getElementById("tempInput");
 const messagesEl = document.getElementById("messages");
 const form = document.getElementById("chatForm");
 const promptInput = document.getElementById("promptInput");
+const chatColorBtn = document.getElementById("chatColorBtn");
+const chatColorBtnSwatch = document.getElementById("chatColorBtnSwatch");
+const chatColorPopover = document.getElementById("chatColorPopover");
+const chatColorNative = document.getElementById("chatColorNative");
+const chatColorHexPreview = document.getElementById("chatColorHexPreview");
+const chatColorPresets = document.getElementById("chatColorPresets");
+const chatColorConfirm = document.getElementById("chatColorConfirm");
+const chatColorCancel = document.getElementById("chatColorCancel");
+const chatColorClose = document.getElementById("chatColorClose");
 const sendButton = document.getElementById("sendButton");
 const stopButton = document.getElementById("stopButton");
 const newSessionBtn = document.getElementById("newSessionBtn");
@@ -105,12 +114,64 @@ const plotlyEditorUndo = document.getElementById("plotlyEditorUndo");
 const plotlyTitleFontSizeInput = document.getElementById("plotlyTitleFontSize");
 const plotlyAxisFontSizeInput = document.getElementById("plotlyAxisFontSize");
 const editorFontSizeLabel = document.getElementById("editorFontSizeLabel");
+const plotAgentEditor = document.getElementById("plotAgentEditor");
+const plotAgentEditorBackdrop = document.getElementById("plotAgentEditorBackdrop");
+const plotAgentEditorClose = document.getElementById("plotAgentEditorClose");
+const plotAgentEditorTitle = document.getElementById("plotAgentEditorTitle");
+const plotAgentEditorHint = document.getElementById("plotAgentEditorHint");
+const plotAgentInstruction = document.getElementById("plotAgentInstruction");
+const plotAgentPreviewWrap = document.getElementById("plotAgentPreviewWrap");
+const plotAgentEcharts = document.getElementById("plotAgentEcharts");
+const plotAgentPreviewImg = document.getElementById("plotAgentPreviewImg");
+const plotAgentEditorCancel = document.getElementById("plotAgentEditorCancel");
+const plotAgentEditorApply = document.getElementById("plotAgentEditorApply");
+const plotAgentEditorStatus = document.getElementById("plotAgentEditorStatus");
+const mergeAgentEditor = document.getElementById("mergeAgentEditor");
+const mergeAgentEditorBackdrop = document.getElementById("mergeAgentEditorBackdrop");
+const mergeAgentEditorClose = document.getElementById("mergeAgentEditorClose");
+const mergeAgentEditorTitle = document.getElementById("mergeAgentEditorTitle");
+const mergeAgentEditorHint = document.getElementById("mergeAgentEditorHint");
+const mergeAgentInstruction = document.getElementById("mergeAgentInstruction");
+const mergeAgentPreviewWrap = document.getElementById("mergeAgentPreviewWrap");
+const mergeAgentPreviewImg = document.getElementById("mergeAgentPreviewImg");
+const mergeAgentEditorCancel = document.getElementById("mergeAgentEditorCancel");
+const mergeAgentEditorApply = document.getElementById("mergeAgentEditorApply");
+const mergeAgentEditorStatus = document.getElementById("mergeAgentEditorStatus");
 
 const IMAGE_EXT_RE = /\.(png|jpe?g|gif|webp|svg)$/i;
 const KONVA_ONLY_IMAGE_STEMS = new Set(["network_topology"]);
+const AGENT_PLOT_STEM_PREFIXES = [
+  "pca_plot",
+  "plsda_plot",
+  "volcano_plot",
+  "family_size_distribution",
+  "degree_distribution",
+  "cosine_distribution",
+];
+const AGENT_PLOT_UNSUPPORTED_STEMS = new Set(["network_topology", "heatmap_top_vip"]);
 const MERGE_CANVAS_BG = "#ffffff";
 const MERGE_LAYOUT_GAP = 24;
 const MERGE_SNAP_THRESHOLD = 10;
+const CHAT_COLOR_PRESETS = [
+  "#E64B35",
+  "#4DBBD5",
+  "#00A087",
+  "#3C5488",
+  "#F39B7F",
+  "#8491B4",
+  "#D62728",
+  "#2CA02C",
+  "#FF7F0E",
+  "#9467BD",
+  "#111827",
+  "#B0B0B0",
+];
+let chatColorState = {
+  open: false,
+  replaceHash: false,
+  hashIndex: -1,
+  selected: "#4DBBD5",
+};
 const KONVA_UNDO_LIMIT = 40;
 const PLOTLY_UNDO_LIMIT = 40;
 
@@ -173,6 +234,15 @@ let konvaHistory = [];
 let konvaHistoryIndex = -1;
 let plotlyHistory = [];
 let plotlyHistoryIndex = -1;
+let plotAgentState = {
+  sourceRel: "",
+  sourceTitle: "",
+  echartsInstance: null,
+};
+let mergeAgentState = {
+  sourceRel: "",
+  sourceTitle: "",
+};
 let mergeHistory = [];
 let mergeHistoryIndex = -1;
 let imageMergeState = {
@@ -304,7 +374,14 @@ function renderFileTree(listEl, files, emptyMsg, { sessionId = null, excludeImag
 function renderOutputImageGallery(files, sessionId) {
   if (!outputImageGallery) return;
   outputImageGallery.innerHTML = "";
-  const images = (files || []).filter((file) => isImagePath(file.name));
+  const images = (files || [])
+    .filter((file) => isImagePath(file.name))
+    .sort((a, b) => {
+      const aMerged = String(a.name || "").startsWith("merged_figures/");
+      const bMerged = String(b.name || "").startsWith("merged_figures/");
+      if (aMerged !== bMerged) return aMerged ? -1 : 1;
+      return 0;
+    });
   workspaceOutputImages = images;
   if (outputImageGalleryWrap) {
     outputImageGalleryWrap.classList.toggle("hidden", images.length === 0);
@@ -335,8 +412,15 @@ function renderOutputImageGallery(files, sessionId) {
     side.className = "output-image-side";
     const title = document.createElement("div");
     title.className = "output-image-name";
-    title.textContent = file.name.split("/").pop();
+    const baseName = file.name.split("/").pop();
+    title.textContent = baseName;
     title.title = file.name;
+    if (String(file.name || "").startsWith("merged_figures/")) {
+      const badge = document.createElement("span");
+      badge.className = "output-image-merge-badge";
+      badge.textContent = t("image.mergeBadge");
+      title.prepend(badge, " ");
+    }
     const meta = document.createElement("div");
     meta.className = "output-image-meta";
     meta.textContent = formatSize(file.size || 0);
@@ -358,6 +442,37 @@ function renderOutputImageGallery(files, sessionId) {
     side.appendChild(title);
     side.appendChild(meta);
     side.appendChild(editBtn);
+
+    if (isAgentPlotEditable(file.name)) {
+      const agentBtn = document.createElement("button");
+      agentBtn.type = "button";
+      agentBtn.className = "output-image-agent-edit secondary-btn small-btn";
+      agentBtn.textContent = t("image.agentEdit");
+      agentBtn.addEventListener("click", (event) => {
+        event.stopPropagation();
+        openPlotAgentEditor({
+          rel: file.name,
+          title: file.name.split("/").pop(),
+        });
+      });
+      side.appendChild(agentBtn);
+    }
+
+    if (isMergedFigureRel(file.name)) {
+      const mergeAgentBtn = document.createElement("button");
+      mergeAgentBtn.type = "button";
+      mergeAgentBtn.className = "output-image-merge-agent secondary-btn small-btn";
+      mergeAgentBtn.textContent = t("image.mergeAgentEdit");
+      mergeAgentBtn.addEventListener("click", (event) => {
+        event.stopPropagation();
+        openMergeAgentEditor({
+          rel: file.name,
+          title: file.name.split("/").pop(),
+        });
+      });
+      side.appendChild(mergeAgentBtn);
+    }
+
     if (download) side.appendChild(download);
 
     item.appendChild(thumbBtn);
@@ -726,6 +841,103 @@ function shouldUsePlotlyEditor(rel) {
   const base = String(rel || "").split("/").pop() || "";
   const stem = editableFileStem(base);
   return !KONVA_ONLY_IMAGE_STEMS.has(stem);
+}
+
+function isMergedFigureRel(rel) {
+  return String(rel || "").startsWith("merged_figures/");
+}
+
+function hasMergeSidecar(rel) {
+  return isMergedFigureRel(rel);
+}
+
+function isAgentPlotEditable(rel) {
+  const base = String(rel || "").split("/").pop() || "";
+  const stem = editableFileStem(base);
+  if (AGENT_PLOT_UNSUPPORTED_STEMS.has(stem)) return false;
+  return AGENT_PLOT_STEM_PREFIXES.some(
+    (prefix) => stem === prefix || stem.startsWith(`${prefix}_`)
+  );
+}
+
+/** 与 image_merge_registry.py 语义一致 — 拼图编辑 */
+function shouldUseMergeFigureEdit(message) {
+  const text = (message || "").trim();
+  if (!text) return false;
+  if (
+    /改(?:一下)?拼图|调整(?:一下)?拼图|编辑拼图|修改拼图|更新拼图|拼图.{0,24}(?:标签|字号|字大小|列|间距|legend|label|font)|合并(?:后的|好的|完的)?图.{0,24}(?:标签|字号|列|间距)|merged_figures\/|merged_[\w-]+\.png|edit(?:ing)?\s+(?:the\s+)?(?:merged|composite)\s+(?:figure|image|plot)/i.test(
+      text
+    )
+  ) {
+    return true;
+  }
+  if (/拼图|合并图|merged\s+figure|composite\s+figure/i.test(text)) {
+    if (/标签|字号|字大小|列|间距|legend|label|font\s*size|gap/i.test(text)) {
+      if (
+        !/合并.{0,80}(?:和|与|、|,|\+|以及|and).{0,80}(?:\.(?:png|jpe?g)|distribution|plot|figure|图)/i.test(
+          text
+        )
+      ) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/** 与 image_merge_registry.py 语义一致 */
+function shouldUseImageMerge(message) {
+  const text = (message || "").trim();
+  if (!text) return false;
+  if (shouldUseMergeFigureEdit(text)) return true;
+  if (
+    /标题|颜色|色号|配色|#|改成|改为|改图|recolor|change\s+(?:the\s+)?title/i.test(text)
+  ) {
+    return false;
+  }
+  if (
+    /合并(?:一下)?(?:图片|图|照片|子图|结果图|分析图|figure|figures|images?)|合并.{0,120}(?:和|与|、|,|\+|以及|and).{0,120}(?:\.(?:png|jpe?g|webp|gif)|图|plot|figure|image|distribution|diagram)|合并\s+[\w./-]+\.(?:png|jpe?g|webp|gif)|拼图|拼在一起|一键合并|merge\s+(?:the\s+)?(?:images?|figures?|plots?)|merge.{0,120}(?:and|&|,).{0,120}(?:\.(?:png|jpe?g|webp)|plot|figure|image|distribution)|combine\s+(?:the\s+)?(?:images?|figures?|plots?)/i.test(
+      text
+    )
+  ) {
+    return true;
+  }
+  if (/合并/.test(text) && /(?:和|与|、|,|\+|以及|and)/.test(text)) {
+    if (/\.(?:png|jpe?g|webp|gif)\b/i.test(text)) return true;
+    if (/cosine|degree|pca|volcano|distribution|heatmap|network|plot|figure|图/i.test(text)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/** 与 plot_edit_registry.py 语义一致 */
+function shouldUsePlotEdit(message) {
+  const text = (message || "").trim();
+  if (!text) return false;
+  if (/(?:进行|执行|跑|开始|继续).{0,12}分析/.test(text)) {
+    if (!/标题|颜色|色号|配色|#|改成|改为|改图|字号|字体|直方图|分布图/.test(text)) {
+      return false;
+    }
+  }
+  if (
+    /改图|修改(?:一下)?图|调整(?:一下)?图|更改?图|美化图|标题改|标题改为|标题改成|标题修改为|标题为|改(?:一下)?标题|修改.*标题|更换标题|颜色|色号|配色|调色|字体|字号|图例|用\s*#|#[0-9a-fA-F]{3,8}\b|改成|改为|换成|用.{0,8}色|直方图|分布图|重新绘|重绘|重新作图|edit\s+(?:the\s+)?plot|change\s+(?:the\s+)?title|recolor|font\s+size|plot\s+style/i.test(
+      text
+    )
+  ) {
+    return true;
+  }
+  const hasPlotRef =
+    /pca|plsda|pls-da|主成分|火山|volcano|余弦|cosine|相似度|度数|分布图|pca_plot|volcano_plot|cosine_distribution/i.test(
+      text
+    );
+  const hasStyle =
+    /标题|字号|字体|颜色|色号|配色|图例|改成|改为|换成|用\s*#|#[0-9a-fA-F]{3,8}/i.test(text);
+  return hasPlotRef && hasStyle;
+}
+
+function echartsCompanionRel(imageRel) {
+  return String(imageRel || "").replace(/\.(png|jpe?g|gif|webp|svg)$/i, ".echarts.json");
 }
 
 function updateSourceColorSwatch(color) {
@@ -1623,6 +1835,195 @@ function closePlotlyEditor() {
   plotlyEditorState = { sourceRel: "", sourceTitle: "", selectedTrace: null };
   resetPlotlyUndo();
   setPlotlyEditorStatus("");
+}
+
+function setPlotAgentEditorStatus(text, kind = "") {
+  if (!plotAgentEditorStatus) return;
+  plotAgentEditorStatus.textContent = text || "";
+  plotAgentEditorStatus.classList.toggle("error", kind === "error");
+}
+
+function disposePlotAgentEcharts() {
+  if (plotAgentState.echartsInstance) {
+    plotAgentState.echartsInstance.dispose();
+    plotAgentState.echartsInstance = null;
+  }
+  if (plotAgentEcharts) plotAgentEcharts.innerHTML = "";
+}
+
+function openPlotAgentEditor({ rel, title }) {
+  if (!plotAgentEditor) return;
+  closeImageLightbox();
+  closeImageEditor();
+  closePlotlyEditor();
+  disposePlotAgentEcharts();
+  plotAgentState.sourceRel = rel;
+  plotAgentState.sourceTitle = title || rel.split("/").pop();
+  if (plotAgentInstruction) plotAgentInstruction.value = "";
+  if (plotAgentPreviewWrap) plotAgentPreviewWrap.classList.add("hidden");
+  if (plotAgentPreviewImg) {
+    plotAgentPreviewImg.classList.add("hidden");
+    plotAgentPreviewImg.removeAttribute("src");
+  }
+  if (plotAgentEditorTitle) {
+    plotAgentEditorTitle.textContent = t("image.plotAgentTitle", {
+      name: plotAgentState.sourceTitle,
+    });
+  }
+  if (plotAgentEditorHint) plotAgentEditorHint.textContent = t("image.plotAgentHint");
+  plotAgentEditor.classList.remove("hidden");
+  plotAgentEditor.setAttribute("aria-hidden", "false");
+  setPlotAgentEditorStatus("");
+}
+
+function closePlotAgentEditor() {
+  if (!plotAgentEditor) return;
+  plotAgentEditor.classList.add("hidden");
+  plotAgentEditor.setAttribute("aria-hidden", "true");
+  disposePlotAgentEcharts();
+  plotAgentState = { sourceRel: "", sourceTitle: "", echartsInstance: null };
+  setPlotAgentEditorStatus("");
+}
+
+async function renderPlotAgentPreview(result) {
+  if (!plotAgentPreviewWrap) return;
+  plotAgentPreviewWrap.classList.remove("hidden");
+  disposePlotAgentEcharts();
+
+  const fileRel = result?.file?.name;
+  const echartsRel = result?.echarts?.name;
+  if (echartsRel && currentSessionId && window.echarts && plotAgentEcharts) {
+    try {
+      const url = workspaceFileUrl(currentSessionId, echartsRel);
+      const res = await fetch(url);
+      if (res.ok) {
+        const option = await res.json();
+        plotAgentState.echartsInstance = window.echarts.init(plotAgentEcharts);
+        plotAgentState.echartsInstance.setOption(option, true);
+        if (plotAgentPreviewImg) plotAgentPreviewImg.classList.add("hidden");
+        return;
+      }
+    } catch {
+      /* fallback to PNG */
+    }
+  }
+
+  if (fileRel && currentSessionId && plotAgentPreviewImg) {
+    const url = workspaceFileUrl(currentSessionId, fileRel);
+    if (url) {
+      plotAgentPreviewImg.src = `${url}&_=${Date.now()}`;
+      plotAgentPreviewImg.classList.remove("hidden");
+    }
+  }
+}
+
+async function submitPlotAgentEdit() {
+  if (!currentSessionId || !plotAgentState.sourceRel) return;
+  const instruction = (plotAgentInstruction?.value || "").trim();
+  if (!instruction) {
+    setPlotAgentEditorStatus(t("image.plotAgentFail", { msg: "请先输入改图要求" }), "error");
+    return;
+  }
+  try {
+    setPlotAgentEditorStatus(t("image.plotAgentWorking"));
+    if (plotAgentEditorApply) plotAgentEditorApply.disabled = true;
+    const res = await fetch(`/api/sessions/${currentSessionId}/plot-edits/agent`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        source_rel: plotAgentState.sourceRel,
+        instruction,
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.detail || t("image.plotAgentFail", { msg: "request failed" }));
+    await renderPlotAgentPreview(data);
+    await loadWorkspaceFiles(currentSessionId);
+    const name = data.file?.name?.split("/").pop() || "";
+    setPlotAgentEditorStatus(t("image.plotAgentDone", { name }));
+    setStatus(t("image.plotAgentDone", { name }));
+  } catch (err) {
+    setPlotAgentEditorStatus(t("image.plotAgentFail", { msg: err.message }), "error");
+  } finally {
+    if (plotAgentEditorApply) plotAgentEditorApply.disabled = false;
+  }
+}
+
+function setMergeAgentEditorStatus(text, kind = "") {
+  if (!mergeAgentEditorStatus) return;
+  mergeAgentEditorStatus.textContent = text || "";
+  mergeAgentEditorStatus.classList.toggle("error", kind === "error");
+}
+
+function openMergeAgentEditor({ rel, title }) {
+  if (!mergeAgentEditor) return;
+  if (!isMergedFigureRel(rel)) {
+    setStatus(t("image.mergeAgentNeedSidecar"));
+    return;
+  }
+  mergeAgentState.sourceRel = rel;
+  mergeAgentState.sourceTitle = title || rel.split("/").pop();
+  if (mergeAgentInstruction) mergeAgentInstruction.value = "";
+  if (mergeAgentEditorTitle) {
+    mergeAgentEditorTitle.textContent = t("image.mergeAgentTitle", {
+      name: mergeAgentState.sourceTitle,
+    });
+  }
+  if (mergeAgentEditorHint) mergeAgentEditorHint.textContent = t("image.mergeAgentHint");
+  if (mergeAgentPreviewImg && currentSessionId) {
+    const url = workspaceFileUrl(currentSessionId, rel);
+    if (url) {
+      mergeAgentPreviewImg.src = `${url}&_=${Date.now()}`;
+      mergeAgentPreviewImg.classList.remove("hidden");
+    }
+  }
+  if (mergeAgentPreviewWrap) mergeAgentPreviewWrap.classList.remove("hidden");
+  mergeAgentEditor.classList.remove("hidden");
+  mergeAgentEditor.setAttribute("aria-hidden", "false");
+  setMergeAgentEditorStatus("");
+}
+
+function closeMergeAgentEditor() {
+  if (!mergeAgentEditor) return;
+  mergeAgentEditor.classList.add("hidden");
+  mergeAgentEditor.setAttribute("aria-hidden", "true");
+  mergeAgentState = { sourceRel: "", sourceTitle: "" };
+  setMergeAgentEditorStatus("");
+}
+
+async function submitMergeAgentEdit() {
+  if (!currentSessionId || !mergeAgentState.sourceRel) return;
+  const instruction = (mergeAgentInstruction?.value || "").trim();
+  if (!instruction) {
+    setMergeAgentEditorStatus(t("image.mergeAgentFail", { msg: "请先输入改拼图要求" }), "error");
+    return;
+  }
+  try {
+    setMergeAgentEditorStatus(t("image.mergeAgentWorking"));
+    if (mergeAgentEditorApply) mergeAgentEditorApply.disabled = true;
+    const res = await fetch(`/api/sessions/${currentSessionId}/image-merge/edit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        source_rel: mergeAgentState.sourceRel,
+        instruction,
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.detail || t("image.mergeAgentFail", { msg: "request failed" }));
+    if (mergeAgentPreviewImg && data.file?.name && currentSessionId) {
+      const url = workspaceFileUrl(currentSessionId, data.file.name);
+      if (url) mergeAgentPreviewImg.src = `${url}&_=${Date.now()}`;
+    }
+    await loadWorkspaceFiles(currentSessionId);
+    const name = data.file?.name?.split("/").pop() || "";
+    setMergeAgentEditorStatus(t("image.mergeAgentDone", { name }));
+    setStatus(t("image.mergeAgentDone", { name }));
+  } catch (err) {
+    setMergeAgentEditorStatus(t("image.mergeAgentFail", { msg: err.message }), "error");
+  } finally {
+    if (mergeAgentEditorApply) mergeAgentEditorApply.disabled = false;
+  }
 }
 
 async function savePlotlyEdit() {
@@ -2864,11 +3265,14 @@ async function uploadPendingFiles(sessionId) {
   return saved;
 }
 
-/** 与 web_frontend/backend/agent_intent.py 语义一致 */
+/** 与 web_frontend/backend/agent_intent.py 语义一致：分析/改图/拼图均走统一 Agent */
 function shouldUseAgent(message, hasNewUpload = false) {
-  if (hasNewUpload) return true;
   const text = (message || "").trim();
   if (!text) return false;
+  if (shouldUsePlotEdit(text)) return true;
+  if (shouldUseImageMerge(text)) return true;
+  if (shouldUseMergeFigureEdit(text)) return true;
+  if (hasNewUpload) return true;
   if (/\[已上传附件\]|\[Attachments uploaded\]/.test(text)) return true;
   return /继续|重新(?:运行|进行|分析|做)|执行分析|跑一遍|开始分析|运行工具|分子网(?:络|格)|molecular\s*network|GNPS|DeepMASS|deepmass|XCMS|峰检测|差异代谢|谱库注释|富集分析|converted_mzml|spectra\.mgf|\.mzML|\.mgf|continue|re-?run|run analysis|start agent|execute pipeline/i.test(
     text
@@ -3140,10 +3544,21 @@ async function runAssistantStream({
           assistantEl.contentEl.textContent = assistantText || payload.error;
         }
         if (payload?.finished && !payload?.cancelled) {
-          const tail = "\n\n---\n✅ **分析已完成**";
-          if (!assistantText.includes("分析已完成")) {
-            assistantText += tail;
-            assistantEl.contentEl.textContent = assistantText;
+          if (payload?.visual_results?.length) {
+            statusText.className = "status-text status-ok";
+            setStatus(t("status.visualDone"));
+          } else if (payload?.plot_edit) {
+            statusText.className = "status-text status-ok";
+            setStatus(t("status.plotEditDone"));
+          } else if (payload?.image_merge) {
+            statusText.className = "status-text status-ok";
+            setStatus(t("status.imageMergeDone"));
+          } else {
+            const tail = "\n\n---\n✅ **分析已完成**";
+            if (!assistantText.includes("分析已完成")) {
+              assistantText += tail;
+              assistantEl.contentEl.textContent = assistantText;
+            }
           }
         }
         scrollMessagesIfPinned();
@@ -3229,14 +3644,163 @@ stopButton.addEventListener("click", async () => {
 promptInput.addEventListener("input", () => {
   promptInput.style.height = "auto";
   promptInput.style.height = `${Math.min(promptInput.scrollHeight, 260)}px`;
+  syncChatColorPickerFromInput();
 });
 
+function normalizeHexColor(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "#4DBBD5";
+  const withHash = raw.startsWith("#") ? raw : `#${raw}`;
+  if (/^#[0-9a-fA-F]{3}$/.test(withHash)) {
+    const r = withHash[1];
+    const g = withHash[2];
+    const b = withHash[3];
+    return `#${r}${r}${g}${g}${b}${b}`.toUpperCase();
+  }
+  if (/^#[0-9a-fA-F]{6}$/.test(withHash)) return withHash.toUpperCase();
+  return "#4DBBD5";
+}
+
+function insertTextAtCursor(textarea, text) {
+  if (!textarea) return;
+  const start = textarea.selectionStart ?? textarea.value.length;
+  const end = textarea.selectionEnd ?? start;
+  const before = textarea.value.slice(0, start);
+  const after = textarea.value.slice(end);
+  textarea.value = `${before}${text}${after}`;
+  const pos = start + text.length;
+  textarea.setSelectionRange(pos, pos);
+  textarea.focus();
+  textarea.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+function setChatColorSelection(hex) {
+  const color = normalizeHexColor(hex);
+  chatColorState.selected = color;
+  if (chatColorNative) chatColorNative.value = color;
+  if (chatColorHexPreview) chatColorHexPreview.textContent = color;
+  if (chatColorBtnSwatch) chatColorBtnSwatch.style.background = color;
+  if (chatColorPresets) {
+    chatColorPresets.querySelectorAll(".chat-color-preset").forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.color?.toUpperCase() === color);
+    });
+  }
+}
+
+function renderChatColorPresets() {
+  if (!chatColorPresets) return;
+  chatColorPresets.innerHTML = "";
+  CHAT_COLOR_PRESETS.forEach((hex) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "chat-color-preset";
+    btn.dataset.color = hex.toUpperCase();
+    btn.style.background = hex;
+    btn.title = hex;
+    btn.addEventListener("click", () => setChatColorSelection(hex));
+    chatColorPresets.appendChild(btn);
+  });
+}
+
+function openChatColorPicker({ replaceHash = false, hashIndex = -1 } = {}) {
+  if (!chatColorPopover) return;
+  chatColorState.open = true;
+  chatColorState.replaceHash = replaceHash;
+  chatColorState.hashIndex = hashIndex;
+  chatColorPopover.classList.remove("hidden");
+  chatColorPopover.setAttribute("aria-hidden", "false");
+  setChatColorSelection(chatColorState.selected);
+}
+
+function closeChatColorPicker() {
+  if (!chatColorPopover) return;
+  chatColorState.open = false;
+  chatColorState.replaceHash = false;
+  chatColorState.hashIndex = -1;
+  chatColorPopover.classList.add("hidden");
+  chatColorPopover.setAttribute("aria-hidden", "true");
+}
+
+function applyChatColorSelection() {
+  const color = normalizeHexColor(chatColorState.selected);
+  if (!promptInput) {
+    closeChatColorPicker();
+    return;
+  }
+  if (chatColorState.replaceHash && chatColorState.hashIndex >= 0) {
+    const value = promptInput.value;
+    const index = chatColorState.hashIndex;
+    if (value[index] === "#") {
+      promptInput.value = `${value.slice(0, index)}${color}${value.slice(index + 1)}`;
+      const pos = index + color.length;
+      promptInput.setSelectionRange(pos, pos);
+      promptInput.dispatchEvent(new Event("input", { bubbles: true }));
+    } else {
+      insertTextAtCursor(promptInput, color);
+    }
+  } else {
+    insertTextAtCursor(promptInput, color);
+  }
+  closeChatColorPicker();
+}
+
+function syncChatColorPickerFromInput() {
+  if (!promptInput || chatColorState.open) return;
+  const value = promptInput.value;
+  const cursor = promptInput.selectionStart ?? value.length;
+  const tail = value.slice(0, cursor);
+  const match = tail.match(/#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/);
+  if (match) {
+    setChatColorSelection(`#${match[1]}`);
+  }
+}
+
 promptInput.addEventListener("keydown", (event) => {
+  if (event.key === "#" && !event.ctrlKey && !event.metaKey && !event.altKey) {
+    chatColorState.pendingHash = true;
+    chatColorState.pendingHashIndex = promptInput.selectionStart;
+  }
+  if (event.key === "Escape" && chatColorState.open) {
+    event.preventDefault();
+    closeChatColorPicker();
+    return;
+  }
   if (event.key === "Enter" && !event.shiftKey) {
     event.preventDefault();
     form.requestSubmit();
   }
 });
+
+promptInput.addEventListener("keyup", () => {
+  if (!chatColorState.pendingHash) return;
+  chatColorState.pendingHash = false;
+  const index = chatColorState.pendingHashIndex ?? -1;
+  if (index >= 0 && promptInput.value[index] === "#") {
+    openChatColorPicker({ replaceHash: true, hashIndex: index });
+  }
+});
+
+if (chatColorBtn) {
+  chatColorBtn.addEventListener("click", () => {
+    if (chatColorState.open) {
+      closeChatColorPicker();
+      return;
+    }
+    openChatColorPicker({ replaceHash: false });
+  });
+}
+if (chatColorNative) {
+  chatColorNative.addEventListener("input", () => setChatColorSelection(chatColorNative.value));
+}
+if (chatColorConfirm) chatColorConfirm.addEventListener("click", applyChatColorSelection);
+if (chatColorCancel) {
+  chatColorCancel.addEventListener("click", () => closeChatColorPicker());
+}
+if (chatColorClose) {
+  chatColorClose.addEventListener("click", () => closeChatColorPicker());
+}
+renderChatColorPresets();
+setChatColorSelection(chatColorState.selected);
 
 attachBtn.addEventListener("click", () => fileInput.click());
 fileInput.addEventListener("change", () => {
@@ -3602,7 +4166,23 @@ if (plotlyEditorSave) plotlyEditorSave.addEventListener("click", savePlotlyEdit)
 if (plotlyEditorCancel) plotlyEditorCancel.addEventListener("click", closePlotlyEditor);
 if (plotlyEditorClose) plotlyEditorClose.addEventListener("click", closePlotlyEditor);
 if (plotlyEditorBackdrop) plotlyEditorBackdrop.addEventListener("click", closePlotlyEditor);
+if (plotAgentEditorApply) plotAgentEditorApply.addEventListener("click", submitPlotAgentEdit);
+if (plotAgentEditorCancel) plotAgentEditorCancel.addEventListener("click", closePlotAgentEditor);
+if (plotAgentEditorClose) plotAgentEditorClose.addEventListener("click", closePlotAgentEditor);
+if (plotAgentEditorBackdrop) plotAgentEditorBackdrop.addEventListener("click", closePlotAgentEditor);
+if (mergeAgentEditorApply) mergeAgentEditorApply.addEventListener("click", submitMergeAgentEdit);
+if (mergeAgentEditorCancel) mergeAgentEditorCancel.addEventListener("click", closeMergeAgentEditor);
+if (mergeAgentEditorClose) mergeAgentEditorClose.addEventListener("click", closeMergeAgentEditor);
+if (mergeAgentEditorBackdrop) mergeAgentEditorBackdrop.addEventListener("click", closeMergeAgentEditor);
 document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && mergeAgentEditor && !mergeAgentEditor.classList.contains("hidden")) {
+    closeMergeAgentEditor();
+    return;
+  }
+  if (event.key === "Escape" && plotAgentEditor && !plotAgentEditor.classList.contains("hidden")) {
+    closePlotAgentEditor();
+    return;
+  }
   if (event.key === "Escape" && imageMergeEditor && !imageMergeEditor.classList.contains("hidden")) {
     closeImageMergeEditor();
     return;

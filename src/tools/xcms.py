@@ -7,7 +7,7 @@ import pandas as pd
 from pathlib import Path
 
 from src.platform_utils import PROJECT_ROOT
-from src.tools.editable_export import ensure_editable_sidecars, save_editable_metadata
+from web_frontend.backend.export.editable_export import ensure_editable_sidecars, save_editable_metadata
 
 
 def _xcms_tools_dir() -> str:
@@ -16,6 +16,11 @@ def _xcms_tools_dir() -> str:
     if mod_file:
         return str(Path(mod_file).resolve().parent)
     return str(PROJECT_ROOT / "src" / "tools")
+
+
+def _r_plotly_export_path() -> str:
+    """Return path to r_plotly_export.R (lives under web_frontend/backend/export)."""
+    return str(PROJECT_ROOT / "web_frontend" / "backend" / "export" / "r_plotly_export.R")
 
 
 
@@ -701,8 +706,7 @@ def statistical_analysis_mixomics_impl(
     print("\nPerforming statistical analysis using mixOmics...")
 
     os.makedirs(output_dir, exist_ok=True)
-    _tools_dir = _xcms_tools_dir()
-    _r_plotly_helpers = os.path.join(_tools_dir, "r_plotly_export.R").replace(os.sep, "/")
+    _r_plotly_helpers = _r_plotly_export_path().replace(os.sep, "/")
 
     imputed_csv = os.path.join(input_dir, "feature_table_filtered_imputed.csv").replace(os.sep, "/")
     os.environ["MASS_MIXOMICS_INPUT_CSV"] = imputed_csv
@@ -1967,7 +1971,7 @@ def kegg_compound_enrich_impl(
 
     base_dir = _xcms_tools_dir()
     compound_pathway_path = os.path.join(base_dir, "../..", "database_file/compound_pathway.tsv")
-    _r_plotly_helpers = os.path.join(base_dir, "r_plotly_export.R").replace(os.sep, "/")
+    _r_plotly_helpers = _r_plotly_export_path().replace(os.sep, "/")
 
     r_script = f"""
 library(clusterProfiler)
@@ -2044,7 +2048,7 @@ if (nrow(enrich_df) > 0) {{
 
     try:
         subprocess.run(["Rscript", r_file], check=True, capture_output=True)
-        from src.tools.editable_export import save_editable_metadata
+        from web_frontend.backend.export.editable_export import save_editable_metadata
 
         save_editable_metadata(bubble_plot_out, title="KEGG Compound Pathway Enrichment")
     finally:

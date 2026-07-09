@@ -525,10 +525,174 @@ body:has(.shared-banner:not(.hidden)) {
   align-items: flex-end;
 }
 
+.chat-input-main {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.chat-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+}
+
+.chat-color-btn {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #fff;
+  cursor: pointer;
+  padding: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.chat-color-btn:hover {
+  border-color: #94a3b8;
+}
+
+.chat-color-btn-swatch {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 5px;
+  background: linear-gradient(135deg, #e64b35 0%, #4dbbd5 50%, #00a087 100%);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+}
+
+.chat-color-popover {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 8px);
+  z-index: 40;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.14);
+  padding: 10px 12px;
+}
+
+.chat-color-popover.hidden {
+  display: none;
+}
+
+.chat-color-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.chat-color-close {
+  width: 28px;
+  height: 28px;
+  font-size: 16px;
+}
+
+.chat-color-native-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-size: 12px;
+}
+
+.chat-color-native-field input[type="color"] {
+  width: 42px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  background: transparent;
+}
+
+.chat-color-native-field code {
+  font-size: 12px;
+  color: #334155;
+}
+
+.chat-color-presets {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.chat-color-preset {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.chat-color-preset:hover {
+  transform: scale(1.05);
+}
+
+.chat-color-preset.active {
+  border-color: #0f172a;
+  box-shadow: 0 0 0 1px #fff inset;
+}
+
+.chat-color-popover-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.chat-color-confirm {
+  border: 0;
+  border-radius: 10px;
+  height: 34px;
+  padding: 0 14px;
+  background: #0f172a;
+  color: #fff;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+#promptInput {
+  flex: 1;
+  resize: none;
+  min-height: 64px;
+  max-height: 260px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  padding: 12px 48px 12px 14px;
+  font-size: 15px;
+  line-height: 1.5;
+  width: 100%;
+}
+
 .composer-actions {
   display: flex;
   align-items: flex-end;
   gap: 8px;
+  flex-shrink: 0;
+}
+
+#sendButton {
+  border: 0;
+  border-radius: 12px;
+  height: 46px;
+  padding: 0 22px;
+  background: #0f172a;
+  color: #fff;
+  font-size: 15px;
+  cursor: pointer;
   flex-shrink: 0;
 }
 
@@ -561,30 +725,6 @@ body:has(.shared-banner:not(.hidden)) {
 
 #fileInput {
   display: none;
-}
-
-#promptInput {
-  flex: 1;
-  resize: none;
-  min-height: 64px;
-  max-height: 260px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  padding: 12px 14px;
-  font-size: 15px;
-  line-height: 1.5;
-}
-
-#sendButton {
-  border: 0;
-  border-radius: 12px;
-  height: 46px;
-  padding: 0 22px;
-  background: #0f172a;
-  color: #fff;
-  font-size: 15px;
-  cursor: pointer;
-  flex-shrink: 0;
 }
 
 #sendButton[disabled] {
@@ -767,6 +907,17 @@ body:has(.shared-banner:not(.hidden)) {
   font-weight: 600;
   color: var(--text);
   word-break: break-all;
+}
+
+.output-image-merge-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 10px;
+  font-weight: 700;
+  vertical-align: middle;
 }
 
 .output-image-meta {
@@ -1154,6 +1305,120 @@ body:has(.shared-banner:not(.hidden)) {
 
 .plotly-editor-status.error {
   color: #dc2626;
+}
+
+.plot-agent-editor {
+  position: fixed;
+  inset: 0;
+  z-index: 1210;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+}
+
+.plot-agent-editor.hidden {
+  display: none;
+}
+
+.plot-agent-editor-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.72);
+}
+
+.plot-agent-editor-panel {
+  position: relative;
+  z-index: 1;
+  width: min(960px, 98vw);
+  max-height: 94vh;
+  background: var(--white);
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.plot-agent-editor-header,
+.plot-agent-editor-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.plot-agent-editor-footer {
+  border-bottom: none;
+  border-top: 1px solid var(--border);
+}
+
+.plot-agent-editor-title {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.plot-agent-editor-body {
+  padding: 16px 18px;
+  overflow: auto;
+  flex: 1;
+}
+
+.plot-agent-editor-hint {
+  margin: 0 0 12px;
+  font-size: 0.9rem;
+}
+
+.plot-agent-editor-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.plot-agent-instruction {
+  width: 100%;
+  min-height: 96px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font: inherit;
+  resize: vertical;
+}
+
+.plot-agent-preview-wrap {
+  margin-top: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px;
+  background: #fafafa;
+}
+
+.plot-agent-echarts {
+  width: 100%;
+  height: 420px;
+}
+
+.plot-agent-preview-img {
+  display: block;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.plot-agent-editor-status {
+  margin: 0;
+  padding: 8px 14px 12px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.plot-agent-editor-status.error {
+  color: #dc2626;
+}
+
+.output-image-agent-edit {
+  align-self: flex-start;
 }
 
 .output-image-gallery-wrap {
