@@ -120,6 +120,60 @@ def _png_stem(name: str) -> str:
     return Path(name).stem
 
 
+def resolve_plot_source_rel(
+    output_root: Path,
+    source_rel: str | None = None,
+    *,
+    hint_message: str | None = None,
+) -> str:
+    """将 Agent/用户给出的路径规范化为 outputspace 内真实 PNG 相对路径。
+
+    LLM 常只传 ``cosine_distribution.png``，实际文件可能在
+    ``molecular_network_results/cosine_distribution.png``。
+    """
+    plots = list_editable_plots(output_root)
+    if not plots:
+        raise ValueError(
+            "未找到可 Agent 重绘的图。请先完成统计分析或分子网络分析。"
+        )
+
+    rel = str(source_rel or "").strip().lstrip("/")
+    if rel:
+        candidate = (output_root / rel).resolve()
+        try:
+            candidate.relative_to(output_root.resolve())
+            if candidate.is_file() and candidate.suffix.lower() == ".png":
+                return Path(rel).as_posix()
+        except ValueError:
+            pass
+
+        basename = Path(rel).name
+        by_name = [item for item in plots if item["name"] == basename]
+        if by_name:
+            return by_name[0]["rel"]
+
+        stem = _png_stem(basename)
+        by_stem = [
+            item
+            for item in plots
+            if item["stem"] == stem or item["stem"].startswith(f"{stem}_")
+        ]
+        if by_stem:
+            return by_stem[0]["rel"]
+
+        if rel in {item["rel"] for item in plots}:
+            return rel
+
+    hint = " ".join(part for part in (hint_message, source_rel) if part and str(part).strip())
+    if hint.strip():
+        target = resolve_plot_target(hint, plots)
+        if target:
+            return target
+
+    label = rel or hint_message or "?"
+    raise ValueError(f"无法在 output 目录中定位 PNG：{label}")
+
+
 def list_editable_plots(output_root: Path) -> list[dict[str, Any]]:
     """扫描 outputspace 中可 Agent 重绘的 PNG。"""
     if not output_root.is_dir():

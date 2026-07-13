@@ -48,7 +48,8 @@ LOCAL_TOOL_SPECS: dict[str, ToolSpec] = {
         name="plot_edit",
         description=(
             "Agent 改图：按自然语言修改 PCA/PLS-DA/火山图/网络分布图等的标题、颜色、字号，"
-            "用 matplotlib 重绘并写入 edited_plots/。需会话中已有对应 PNG 与数据 CSV。"
+            "从原始数据生成 Vega-Lite、SVG 与 PNG 并写入 edited_plots/。"
+            "需会话中已有对应 PNG 与数据 CSV。"
         ),
         input_schema=_schema(
             {
@@ -58,7 +59,7 @@ LOCAL_TOOL_SPECS: dict[str, ToolSpec] = {
                 },
                 "source_rel": {
                     "type": "string",
-                    "description": "可选，outputspace 内 PNG 相对路径；省略则从 instruction 自动解析",
+                    "description": "可选。outputspace 内 PNG 相对路径，或仅文件名如 cosine_distribution.png；省略则从 instruction 自动解析",
                 },
             },
             ["instruction"],

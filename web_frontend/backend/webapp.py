@@ -1,5 +1,6 @@
 import base64
 import binascii
+import logging
 import os
 import json
 import re
@@ -63,6 +64,20 @@ BASE_DIR = PROJECT_ROOT
 
 app = FastAPI(title="MassAgent Web UI")
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+_logger = logging.getLogger(__name__)
+try:
+    from web_frontend.backend.semantic_plot_renderer import is_vl_convert_available
+
+    if is_vl_convert_available():
+        _logger.info("vl-convert-python 可用 (python=%s)", sys.executable)
+    else:
+        _logger.warning(
+            "vl-convert-python 未安装 (python=%s)，plot_edit 将回退 matplotlib 导出 PNG",
+            sys.executable,
+        )
+except Exception as exc:
+    _logger.warning("语义图表导出自检失败: %s", exc)
 
 
 def utc_now_iso() -> str:
@@ -433,6 +448,12 @@ class PlotlyEditSaveRequest(BaseModel):
     source_rel: str
     figure_json: dict
     image_data: str
+    filename: Optional[str] = None
+
+
+class SemanticPlotSaveRequest(BaseModel):
+    source_rel: str
+    plot_config: dict
     filename: Optional[str] = None
 
 
@@ -885,9 +906,67 @@ def save_plotly_edit(session_id: str, req: PlotlyEditSaveRequest):
     }
 
 
+@app.get("/api/sessions/{session_id}/semantic-plot")
+def get_semantic_plot(session_id: str, source_rel: str):
+    """Build an editable Vega-Lite preview from source data without writing files."""
+    from web_frontend.backend.plot_edit_service import PlotEditError, get_semantic_plot_payload
+
+    sess = db_get_session(session_id)
+    if not sess:
+        raise HTTPException(status_code=404, detail="session not found")
+    try:
+        return get_semantic_plot_payload(
+            project_root=PROJECT_ROOT,
+            storage_slug=resolve_storage_slug(session_id),
+            source_rel=source_rel,
+        )
+    except (PlotEditError, ValueError, FileNotFoundError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/api/sessions/{session_id}/semantic-plot-edits")
+def save_semantic_plot_edit(session_id: str, req: SemanticPlotSaveRequest):
+    """Validate semantic controls and export matching Vega-Lite, SVG and PNG files."""
+    from web_frontend.backend.plot_edit_service import PlotEditError, apply_plot_config
+
+    sess = db_get_session(session_id)
+    if not sess:
+        raise HTTPException(status_code=404, detail="session not found")
+    try:
+        return apply_plot_config(
+            project_root=PROJECT_ROOT,
+            session_id=session_id,
+            storage_slug=resolve_storage_slug(session_id),
+            source_rel=req.source_rel,
+            plot_config_patch=req.plot_config,
+            filename=req.filename,
+        )
+    except (PlotEditError, ValueError, FileNotFoundError, RuntimeError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/api/sessions/{session_id}/semantic-plot/preview")
+def preview_semantic_plot(session_id: str, req: SemanticPlotSaveRequest):
+    """Return a validated Vega-Lite preview without creating output files."""
+    from web_frontend.backend.plot_edit_service import PlotEditError, get_semantic_plot_payload
+
+    sess = db_get_session(session_id)
+    if not sess:
+        raise HTTPException(status_code=404, detail="session not found")
+    try:
+        return get_semantic_plot_payload(
+            project_root=PROJECT_ROOT,
+            storage_slug=resolve_storage_slug(session_id),
+            source_rel=req.source_rel,
+            plot_config_patch=req.plot_config,
+        )
+    except (PlotEditError, ValueError, FileNotFoundError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
 @app.post("/api/sessions/{session_id}/plot-edits/agent")
 def agent_plot_edit(session_id: str, req: PlotEditAgentRequest):
-    """Agent 解析自然语言改图要求，用 matplotlib 重绘并写入 plot_config / echarts sidecar。"""
+    """Agent 解析自然语言改图要求，并导出语义一致的 Vega-Lite/SVG/PNG。"""
     from web_frontend.backend.plot_edit_service import PlotEditError, agent_apply_plot_edit
 
     sess = db_get_session(session_id)

@@ -98,6 +98,30 @@ const imageMergeFontSize = document.getElementById("imageMergeFontSize");
 const imageMergeDelete = document.getElementById("imageMergeDelete");
 const imageMergeCancel = document.getElementById("imageMergeCancel");
 const imageMergeSave = document.getElementById("imageMergeSave");
+const semanticEditor = document.getElementById("semanticEditor");
+const semanticEditorBackdrop = document.getElementById("semanticEditorBackdrop");
+const semanticEditorClose = document.getElementById("semanticEditorClose");
+const semanticEditorTitle = document.getElementById("semanticEditorTitle");
+const semanticChart = document.getElementById("semanticChart");
+const semanticTitleInput = document.getElementById("semanticTitleInput");
+const semanticXTitle = document.getElementById("semanticXTitle");
+const semanticYTitle = document.getElementById("semanticYTitle");
+const semanticXMin = document.getElementById("semanticXMin");
+const semanticXMax = document.getElementById("semanticXMax");
+const semanticYMin = document.getElementById("semanticYMin");
+const semanticYMax = document.getElementById("semanticYMax");
+const semanticTitleSize = document.getElementById("semanticTitleSize");
+const semanticAxisSize = document.getElementById("semanticAxisSize");
+const semanticMarkSize = document.getElementById("semanticMarkSize");
+const semanticOpacity = document.getElementById("semanticOpacity");
+const semanticLegendPosition = document.getElementById("semanticLegendPosition");
+const semanticBins = document.getElementById("semanticBins");
+const semanticLegendShow = document.getElementById("semanticLegendShow");
+const semanticLabelsShow = document.getElementById("semanticLabelsShow");
+const semanticPalette = document.getElementById("semanticPalette");
+const semanticEditorSave = document.getElementById("semanticEditorSave");
+const semanticEditorCancel = document.getElementById("semanticEditorCancel");
+const semanticEditorStatus = document.getElementById("semanticEditorStatus");
 const plotlyEditor = document.getElementById("plotlyEditor");
 const plotlyEditorBackdrop = document.getElementById("plotlyEditorBackdrop");
 const plotlyEditorClose = document.getElementById("plotlyEditorClose");
@@ -229,6 +253,14 @@ let plotlyEditorState = {
   sourceTitle: "",
   selectedTrace: null,
 };
+let semanticEditorState = {
+  sourceRel: "",
+  sourceTitle: "",
+  plotType: "",
+  config: null,
+  previewTimer: null,
+  previewRequest: 0,
+};
 let workspaceOutputImages = [];
 let konvaHistory = [];
 let konvaHistoryIndex = -1;
@@ -238,6 +270,7 @@ let plotAgentState = {
   sourceRel: "",
   sourceTitle: "",
   echartsInstance: null,
+  vegaView: null,
 };
 let mergeAgentState = {
   sourceRel: "",
@@ -374,8 +407,14 @@ function renderFileTree(listEl, files, emptyMsg, { sessionId = null, excludeImag
 function renderOutputImageGallery(files, sessionId) {
   if (!outputImageGallery) return;
   outputImageGallery.innerHTML = "";
+  const fileNames = new Set((files || []).map((file) => String(file.name || "")));
   const images = (files || [])
-    .filter((file) => isImagePath(file.name))
+    .filter((file) => {
+      if (!isImagePath(file.name)) return false;
+      if (!String(file.name || "").toLowerCase().endsWith(".svg")) return true;
+      const pngName = String(file.name).replace(/\.svg$/i, ".png");
+      return !fileNames.has(pngName);
+    })
     .sort((a, b) => {
       const aMerged = String(a.name || "").startsWith("merged_figures/");
       const bMerged = String(b.name || "").startsWith("merged_figures/");
@@ -426,6 +465,11 @@ function renderOutputImageGallery(files, sessionId) {
     meta.textContent = formatSize(file.size || 0);
     const download = createDownloadLink(sessionId, file.name, t("image.download"));
     if (download) download.classList.add("output-image-download");
+    const svgRel = String(file.name || "").replace(/\.(png|jpe?g|gif|webp)$/i, ".svg");
+    const svgDownload = fileNames.has(svgRel)
+      ? createDownloadLink(sessionId, svgRel, "SVG")
+      : null;
+    if (svgDownload) svgDownload.classList.add("output-image-download");
     const editBtn = document.createElement("button");
     editBtn.type = "button";
     editBtn.className = "output-image-edit secondary-btn small-btn";
@@ -474,6 +518,7 @@ function renderOutputImageGallery(files, sessionId) {
     }
 
     if (download) side.appendChild(download);
+    if (svgDownload) side.appendChild(svgDownload);
 
     item.appendChild(thumbBtn);
     item.appendChild(side);
@@ -810,6 +855,266 @@ async function fetchPlotlyFigure(rel) {
     return figure;
   } catch {
     return null;
+  }
+}
+
+function isSemanticEditableRel(rel) {
+  const base = String(rel || "").split("/").pop() || "";
+  const stem = editableFileStem(base);
+  return AGENT_PLOT_STEM_PREFIXES.some(
+    (prefix) => stem === prefix || stem.startsWith(`${prefix}_`)
+  );
+}
+
+function setSemanticEditorStatus(text, kind = "") {
+  if (!semanticEditorStatus) return;
+  semanticEditorStatus.textContent = text || "";
+  semanticEditorStatus.className = kind
+    ? `semantic-editor-status ${kind}`
+    : "semantic-editor-status";
+}
+
+function semanticNumber(input) {
+  const text = String(input?.value ?? "").trim();
+  if (!text) return null;
+  const value = Number(text);
+  return Number.isFinite(value) ? value : null;
+}
+
+function semanticSetNumber(input, value) {
+  if (input) input.value = value == null ? "" : String(value);
+}
+
+function semanticColorSection(plotType, key) {
+  if (plotType === "volcano" || plotType === "degree_hist" || plotType === "cosine_hist") {
+    return "colors";
+  }
+  return "palette";
+}
+
+function populateSemanticPalette(config, colorKeys, plotType) {
+  if (!semanticPalette) return;
+  semanticPalette.innerHTML = "";
+  const keys = [...(colorKeys || [])];
+  if (plotType === "volcano") {
+    keys.splice(0, keys.length, "significant", "nonsignificant");
+  } else if (plotType === "degree_hist") {
+    keys.splice(0, keys.length, "histogram_color", "threshold_color");
+  } else if (plotType === "cosine_hist") {
+    keys.splice(0, keys.length, "histogram_color", "threshold_color", "median_color");
+  }
+  keys.forEach((key) => {
+    const section = semanticColorSection(plotType, key);
+    const value = config?.[section]?.[key] || "#4c72b0";
+    const row = document.createElement("label");
+    row.className = "semantic-palette-row";
+    const name = document.createElement("span");
+    name.textContent = key;
+    name.title = key;
+    const input = document.createElement("input");
+    input.type = "color";
+    input.value = value;
+    input.dataset.key = key;
+    input.dataset.section = section;
+    input.addEventListener("input", scheduleSemanticPreview);
+    row.append(name, input);
+    semanticPalette.appendChild(row);
+  });
+}
+
+function populateSemanticControls(payload) {
+  const config = payload.plot_config || {};
+  const axes = config.axes || {};
+  const font = config.font_size || {};
+  const marks = config.marks || {};
+  const legend = config.legend || {};
+  if (semanticTitleInput) semanticTitleInput.value = config.title || "";
+  if (semanticXTitle) semanticXTitle.value = axes.x_title || "";
+  if (semanticYTitle) semanticYTitle.value = axes.y_title || "";
+  semanticSetNumber(semanticXMin, axes.x_min);
+  semanticSetNumber(semanticXMax, axes.x_max);
+  semanticSetNumber(semanticYMin, axes.y_min);
+  semanticSetNumber(semanticYMax, axes.y_max);
+  semanticSetNumber(semanticTitleSize, font.title || 16);
+  semanticSetNumber(semanticAxisSize, font.axis || 12);
+  semanticSetNumber(semanticMarkSize, marks.size || 70);
+  semanticSetNumber(semanticOpacity, marks.opacity ?? 0.85);
+  semanticSetNumber(semanticBins, config.histogram?.bins || 40);
+  if (semanticLegendPosition) semanticLegendPosition.value = legend.position || "right";
+  if (semanticLegendShow) semanticLegendShow.checked = legend.show !== false;
+  if (semanticLabelsShow) semanticLabelsShow.checked = config.show_sample_labels !== false;
+
+  const isScores = payload.plot_type === "pca" || payload.plot_type === "plsda";
+  const isHistogram = payload.plot_type === "degree_hist" || payload.plot_type === "cosine_hist";
+  if (semanticLabelsShow?.closest(".semantic-check-field")) {
+    semanticLabelsShow.closest(".semantic-check-field").classList.toggle("hidden", !isScores);
+  }
+  if (semanticBins?.closest(".image-editor-field")) {
+    semanticBins.closest(".image-editor-field").classList.toggle("hidden", !isHistogram);
+  }
+  populateSemanticPalette(config, payload.color_keys, payload.plot_type);
+}
+
+function collectSemanticConfig() {
+  const base = JSON.parse(JSON.stringify(semanticEditorState.config || {}));
+  base.title = (semanticTitleInput?.value || "").trim();
+  base.axes = {
+    ...(base.axes || {}),
+    x_title: (semanticXTitle?.value || "").trim(),
+    y_title: (semanticYTitle?.value || "").trim(),
+    x_min: semanticNumber(semanticXMin),
+    x_max: semanticNumber(semanticXMax),
+    y_min: semanticNumber(semanticYMin),
+    y_max: semanticNumber(semanticYMax),
+  };
+  base.font_size = {
+    ...(base.font_size || {}),
+    title: semanticNumber(semanticTitleSize) || 16,
+    axis: semanticNumber(semanticAxisSize) || 12,
+  };
+  base.marks = {
+    ...(base.marks || {}),
+    size: semanticNumber(semanticMarkSize) || 70,
+    opacity: semanticNumber(semanticOpacity) ?? 0.85,
+  };
+  base.legend = {
+    ...(base.legend || {}),
+    show: Boolean(semanticLegendShow?.checked),
+    position: semanticLegendPosition?.value || "right",
+  };
+  base.histogram = {
+    ...(base.histogram || {}),
+    bins: semanticNumber(semanticBins) || 40,
+  };
+  base.show_sample_labels = Boolean(semanticLabelsShow?.checked);
+  semanticPalette?.querySelectorAll("input[type=color]").forEach((input) => {
+    const section = input.dataset.section;
+    const key = input.dataset.key;
+    if (!section || !key) return;
+    base[section] = { ...(base[section] || {}), [key]: input.value };
+  });
+  return base;
+}
+
+async function renderSemanticSpec(spec) {
+  if (!semanticChart || !window.vegaEmbed) {
+    throw new Error("Vega 编辑器未加载");
+  }
+  if (semanticEditorState.view?.finalize) semanticEditorState.view.finalize();
+  const result = await window.vegaEmbed(semanticChart, spec, {
+    actions: { export: true, source: false, compiled: false, editor: false },
+    renderer: "svg",
+  });
+  semanticEditorState.view = result.view;
+}
+
+async function refreshSemanticPreview() {
+  if (!currentSessionId || !semanticEditorState.sourceRel) return;
+  const requestId = ++semanticEditorState.previewRequest;
+  try {
+    setSemanticEditorStatus(t("image.semanticPreviewing"));
+    const res = await fetch(`/api/sessions/${currentSessionId}/semantic-plot/preview`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        source_rel: semanticEditorState.sourceRel,
+        plot_config: collectSemanticConfig(),
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.detail || "preview failed");
+    if (requestId !== semanticEditorState.previewRequest) return;
+    semanticEditorState.config = data.plot_config;
+    await renderSemanticSpec(data.vega_spec);
+    setSemanticEditorStatus(t("image.semanticReady"));
+  } catch (err) {
+    if (requestId === semanticEditorState.previewRequest) {
+      setSemanticEditorStatus(t("image.semanticFail", { msg: err.message }), "error");
+    }
+  }
+}
+
+function scheduleSemanticPreview() {
+  clearTimeout(semanticEditorState.previewTimer);
+  semanticEditorState.previewTimer = setTimeout(refreshSemanticPreview, 250);
+}
+
+async function tryOpenSemanticEditor({ rel, title }) {
+  if (!isSemanticEditableRel(rel) || !currentSessionId || !window.vegaEmbed || !semanticEditor) {
+    return false;
+  }
+  try {
+    const res = await fetch(
+      `/api/sessions/${currentSessionId}/semantic-plot?source_rel=${encodeURIComponent(rel)}`
+    );
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok) return false;
+    closeImageLightbox();
+    closeImageEditor();
+    closePlotlyEditor();
+    semanticEditorState.sourceRel = rel;
+    semanticEditorState.sourceTitle = title || rel.split("/").pop();
+    semanticEditorState.plotType = payload.plot_type;
+    semanticEditorState.config = payload.plot_config;
+    semanticEditorState.previewRequest = 0;
+    if (semanticEditorTitle) {
+      semanticEditorTitle.textContent = t("image.semanticEditorTitle", {
+        name: semanticEditorState.sourceTitle,
+      });
+    }
+    populateSemanticControls(payload);
+    semanticEditor.classList.remove("hidden");
+    semanticEditor.setAttribute("aria-hidden", "false");
+    await renderSemanticSpec(payload.vega_spec);
+    setSemanticEditorStatus(t("image.semanticReady"));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function closeSemanticEditor() {
+  if (!semanticEditor) return;
+  clearTimeout(semanticEditorState.previewTimer);
+  if (semanticEditorState.view?.finalize) semanticEditorState.view.finalize();
+  semanticEditor.classList.add("hidden");
+  semanticEditor.setAttribute("aria-hidden", "true");
+  if (semanticChart) semanticChart.innerHTML = "";
+  semanticEditorState = {
+    sourceRel: "",
+    sourceTitle: "",
+    plotType: "",
+    config: null,
+    previewTimer: null,
+    previewRequest: 0,
+  };
+  setSemanticEditorStatus("");
+}
+
+async function saveSemanticEdit() {
+  if (!currentSessionId || !semanticEditorState.sourceRel) return;
+  try {
+    setSemanticEditorStatus(t("image.saving"));
+    if (semanticEditorSave) semanticEditorSave.disabled = true;
+    const stem = editableFileStem(semanticEditorState.sourceTitle);
+    const res = await fetch(`/api/sessions/${currentSessionId}/semantic-plot-edits`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        source_rel: semanticEditorState.sourceRel,
+        plot_config: collectSemanticConfig(),
+        filename: `${stem}_edited.png`,
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.detail || t("image.saveFail"));
+    closeSemanticEditor();
+    await loadWorkspaceFiles(currentSessionId);
+    setStatus(t("image.semanticSaved", { name: data.file?.name || `${stem}_edited.png` }));
+  } catch (err) {
+    setSemanticEditorStatus(t("image.semanticFail", { msg: err.message }), "error");
+  } finally {
+    if (semanticEditorSave) semanticEditorSave.disabled = false;
   }
 }
 
@@ -1587,6 +1892,9 @@ function openKonvaEditor({ url, rel, title, editMeta = null }) {
 }
 
 async function openImageEditor({ url, rel, title }) {
+  if (await tryOpenSemanticEditor({ rel, title })) {
+    return;
+  }
   if (shouldUsePlotlyEditor(rel)) {
     const plotlyFigure = await fetchPlotlyFigure(rel);
     if (plotlyFigure) {
@@ -1778,6 +2086,7 @@ function openPlotlyEditor({ rel, title, figure }) {
   }
   closeImageLightbox();
   closeImageEditor();
+  closeSemanticEditor();
   resetPlotlyUndo();
   plotlyEditorState.sourceRel = rel;
   plotlyEditorState.sourceTitle = title || rel.split("/").pop();
@@ -1844,6 +2153,10 @@ function setPlotAgentEditorStatus(text, kind = "") {
 }
 
 function disposePlotAgentEcharts() {
+  if (plotAgentState.vegaView?.finalize) {
+    plotAgentState.vegaView.finalize();
+    plotAgentState.vegaView = null;
+  }
   if (plotAgentState.echartsInstance) {
     plotAgentState.echartsInstance.dispose();
     plotAgentState.echartsInstance = null;
@@ -1855,6 +2168,7 @@ function openPlotAgentEditor({ rel, title }) {
   if (!plotAgentEditor) return;
   closeImageLightbox();
   closeImageEditor();
+  closeSemanticEditor();
   closePlotlyEditor();
   disposePlotAgentEcharts();
   plotAgentState.sourceRel = rel;
@@ -1881,7 +2195,7 @@ function closePlotAgentEditor() {
   plotAgentEditor.classList.add("hidden");
   plotAgentEditor.setAttribute("aria-hidden", "true");
   disposePlotAgentEcharts();
-  plotAgentState = { sourceRel: "", sourceTitle: "", echartsInstance: null };
+  plotAgentState = { sourceRel: "", sourceTitle: "", echartsInstance: null, vegaView: null };
   setPlotAgentEditorStatus("");
 }
 
@@ -1891,7 +2205,26 @@ async function renderPlotAgentPreview(result) {
   disposePlotAgentEcharts();
 
   const fileRel = result?.file?.name;
+  const vegaRel = result?.vega?.name;
   const echartsRel = result?.echarts?.name;
+  if (vegaRel && currentSessionId && window.vegaEmbed && plotAgentEcharts) {
+    try {
+      const url = workspaceFileUrl(currentSessionId, vegaRel);
+      const res = await fetch(url);
+      if (res.ok) {
+        const spec = await res.json();
+        const embedded = await window.vegaEmbed(plotAgentEcharts, spec, {
+          actions: false,
+          renderer: "svg",
+        });
+        plotAgentState.vegaView = embedded.view;
+        if (plotAgentPreviewImg) plotAgentPreviewImg.classList.add("hidden");
+        return;
+      }
+    } catch {
+      /* fallback to ECharts or PNG */
+    }
+  }
   if (echartsRel && currentSessionId && window.echarts && plotAgentEcharts) {
     try {
       const url = workspaceFileUrl(currentSessionId, echartsRel);
@@ -4131,6 +4464,27 @@ if (imageMergeClose) {
 if (imageMergeBackdrop) {
   imageMergeBackdrop.addEventListener("click", closeImageMergeEditor);
 }
+[
+  semanticTitleInput,
+  semanticXTitle,
+  semanticYTitle,
+  semanticXMin,
+  semanticXMax,
+  semanticYMin,
+  semanticYMax,
+  semanticTitleSize,
+  semanticAxisSize,
+  semanticMarkSize,
+  semanticOpacity,
+  semanticBins,
+].forEach((control) => control?.addEventListener("input", scheduleSemanticPreview));
+[semanticLegendPosition, semanticLegendShow, semanticLabelsShow].forEach((control) =>
+  control?.addEventListener("change", scheduleSemanticPreview)
+);
+if (semanticEditorSave) semanticEditorSave.addEventListener("click", saveSemanticEdit);
+if (semanticEditorCancel) semanticEditorCancel.addEventListener("click", closeSemanticEditor);
+if (semanticEditorClose) semanticEditorClose.addEventListener("click", closeSemanticEditor);
+if (semanticEditorBackdrop) semanticEditorBackdrop.addEventListener("click", closeSemanticEditor);
 if (plotlyLegendColorInput) {
   plotlyLegendColorInput.addEventListener("change", () => {
     applyPlotlyTraceColor(plotlyEditorState.selectedTrace, plotlyLegendColorInput.value);
@@ -4175,6 +4529,10 @@ if (mergeAgentEditorCancel) mergeAgentEditorCancel.addEventListener("click", clo
 if (mergeAgentEditorClose) mergeAgentEditorClose.addEventListener("click", closeMergeAgentEditor);
 if (mergeAgentEditorBackdrop) mergeAgentEditorBackdrop.addEventListener("click", closeMergeAgentEditor);
 document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && semanticEditor && !semanticEditor.classList.contains("hidden")) {
+    closeSemanticEditor();
+    return;
+  }
   if (event.key === "Escape" && mergeAgentEditor && !mergeAgentEditor.classList.contains("hidden")) {
     closeMergeAgentEditor();
     return;

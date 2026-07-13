@@ -1158,6 +1158,159 @@ body:has(.shared-banner:not(.hidden)) {
   margin-top: 4px;
 }
 
+.semantic-editor {
+  position: fixed;
+  inset: 0;
+  z-index: 1220;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+}
+
+.semantic-editor.hidden {
+  display: none;
+}
+
+.semantic-editor-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.72);
+}
+
+.semantic-editor-panel {
+  position: relative;
+  z-index: 1;
+  width: min(1380px, 98vw);
+  max-height: 96vh;
+  background: var(--white);
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.3);
+}
+
+.semantic-editor-header,
+.semantic-editor-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #f8fafc;
+  border-bottom: 1px solid var(--border);
+}
+
+.semantic-editor-footer {
+  justify-content: flex-end;
+  border-top: 1px solid var(--border);
+  border-bottom: 0;
+}
+
+.semantic-editor-title {
+  font-size: 14px;
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.semantic-editor-body {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.semantic-editor-controls {
+  padding: 14px;
+  overflow-y: auto;
+  border-right: 1px solid var(--border);
+  background: #f8fafc;
+}
+
+.semantic-control-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.semantic-check-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0;
+  font-size: 13px;
+}
+
+.semantic-palette-section {
+  margin-top: 14px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.semantic-palette {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.semantic-palette-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: 8px;
+  font-weight: 400;
+}
+
+.semantic-palette-row span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.semantic-palette-row input {
+  width: 44px;
+  height: 30px;
+  padding: 2px;
+}
+
+.semantic-chart-wrap {
+  min-height: 520px;
+  overflow: auto;
+  padding: 12px;
+  background: #fff;
+}
+
+.semantic-chart {
+  min-height: 500px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.semantic-editor-status {
+  margin: 0;
+  padding: 8px 14px 12px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.semantic-editor-status.error {
+  color: #dc2626;
+}
+
+@media (max-width: 850px) {
+  .semantic-editor-body {
+    grid-template-columns: 1fr;
+    overflow-y: auto;
+  }
+
+  .semantic-editor-controls {
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+}
+
 .plotly-editor {
   position: fixed;
   inset: 0;

@@ -17,6 +17,7 @@ from web_frontend.backend.plot_edit_registry import (
     is_agent_plot_editable_stem,
     list_editable_plots,
     plot_type_from_stem,
+    resolve_plot_source_rel,
 )
 from web_frontend.backend.plot_renderer import (
     build_echarts_bar,
@@ -39,6 +40,11 @@ from web_frontend.backend.plot_theme import (
 )
 from web_frontend.backend.session_metadata import resolve_metadata_csv
 from web_frontend.backend.session_storage import edited_plots_dir, session_upload_dir, session_work_dir
+from web_frontend.backend.semantic_plot_renderer import (
+    build_vegalite_spec,
+    is_vl_convert_available,
+    write_semantic_outputs,
+)
 
 
 class PlotEditError(Exception):
@@ -63,6 +69,93 @@ def _resolve_output_png(output_root: Path, source: Path, filename: str | None) -
     if target.exists():
         target = edit_dir / f"{stem}_{uuid.uuid4().hex[:8]}.png"
     return target
+
+
+def _validated_source(
+    output_root: Path,
+    source_rel: str,
+    *,
+    hint_message: str | None = None,
+) -> Path:
+    try:
+        canonical = resolve_plot_source_rel(
+            output_root,
+            source_rel,
+            hint_message=hint_message,
+        )
+    except ValueError as exc:
+        raise PlotEditError(str(exc)) from exc
+    source = (output_root / canonical).resolve()
+    try:
+        source.relative_to(output_root.resolve())
+    except ValueError as exc:
+        raise PlotEditError("只能编辑 outputspace 中的图片") from exc
+    if not source.is_file() or source.suffix.lower() != ".png":
+        raise PlotEditError("source_rel 必须是 output 目录下的 PNG 文件")
+    return source
+
+
+def _resolve_source_and_data_dir(
+    output_root: Path,
+    source_rel: str,
+    existing_config: dict[str, Any] | None = None,
+) -> tuple[Path, Path]:
+    source = _validated_source(output_root, source_rel, hint_message=None)
+
+    original_rel = (existing_config or {}).get("source_rel")
+    if isinstance(original_rel, str) and original_rel.strip():
+        original = (output_root / original_rel.strip().lstrip("/")).resolve()
+        try:
+            original.relative_to(output_root)
+        except ValueError:
+            original = source
+        if original.is_file():
+            return source, original.parent
+    return source, source.parent
+
+
+def get_semantic_plot_payload(
+    *,
+    project_root: Path,
+    storage_slug: str,
+    source_rel: str,
+    plot_config_patch: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Load normalized semantic config and a self-contained Vega-Lite spec."""
+    output_root = session_work_dir(project_root, storage_slug).resolve()
+    canonical_rel = resolve_plot_source_rel(output_root, source_rel)
+    initial_source = _validated_source(output_root, canonical_rel)
+    existing = _load_existing_config(initial_source)
+    source, data_dir = _resolve_source_and_data_dir(output_root, canonical_rel, existing)
+    plot_type = plot_type_from_stem(source.stem)
+    if plot_type is None and existing:
+        plot_type = str(existing.get("plot_type") or "") or None
+    if plot_type is None or not get_plot_spec(plot_type):
+        raise PlotEditError(f"暂不支持语义编辑：{source.name}")
+
+    upload_dir = session_upload_dir(project_root, storage_slug)
+    color_keys = _color_keys_for_plot(plot_type, data_dir, upload_dir)
+    config = normalize_plot_config(existing, plot_type=plot_type, color_keys=color_keys)
+    if plot_config_patch:
+        config = normalize_plot_config(
+            merge_plot_config(config, plot_config_patch),
+            plot_type=plot_type,
+            color_keys=color_keys,
+        )
+    metadata_csv = resolve_metadata_csv(upload_dir) if plot_type in {"pca", "plsda"} else None
+    vega_spec = build_vegalite_spec(
+        plot_type=plot_type,
+        data_dir=data_dir,
+        metadata_csv=metadata_csv,
+        plot_config=config,
+    )
+    return {
+        "source_rel": canonical_rel,
+        "plot_type": plot_type,
+        "color_keys": color_keys,
+        "plot_config": config,
+        "vega_spec": vega_spec,
+    }
 
 
 def _color_keys_for_plot(plot_type: str, data_dir: Path, upload_dir: Path) -> list[str]:
@@ -183,50 +276,57 @@ def apply_plot_config(
     filename: str | None = None,
 ) -> dict[str, Any]:
     output_root = session_work_dir(project_root, storage_slug).resolve()
-    source = (output_root / source_rel.strip().lstrip("/")).resolve()
-    try:
-        source.relative_to(output_root)
-    except ValueError as exc:
-        raise PlotEditError("只能编辑 outputspace 中的图片") from exc
-    if not source.is_file() or source.suffix.lower() != ".png":
-        raise PlotEditError("source_rel 必须是 output 目录下的 PNG 文件")
+    canonical_rel = resolve_plot_source_rel(output_root, source_rel, hint_message=instruction)
+    initial_source = _validated_source(output_root, canonical_rel, hint_message=instruction)
+    base_existing = _load_existing_config(initial_source)
+    source, data_dir = _resolve_source_and_data_dir(output_root, canonical_rel, base_existing)
 
     stem = source.stem
-    if not is_agent_plot_editable_stem(stem):
+    existing_plot_type = str((base_existing or {}).get("plot_type") or "")
+    if not is_agent_plot_editable_stem(stem) and not get_plot_spec(existing_plot_type):
         raise PlotEditError(f"暂不支持 Agent 重绘该图：{source.name}")
 
-    plot_type = plot_type_from_stem(stem)
-    if plot_type is None:
+    plot_type = plot_type_from_stem(stem) or existing_plot_type
+    if not plot_type:
         raise PlotEditError(f"无法识别图类型：{source.name}")
 
     upload_dir = session_upload_dir(project_root, storage_slug)
-    data_dir = source.parent
     color_keys = _color_keys_for_plot(plot_type, data_dir, upload_dir)
 
-    base_existing = _load_existing_config(source)
     base = normalize_plot_config(base_existing, plot_type=plot_type, color_keys=color_keys)
     merged = merge_plot_config(base, plot_config_patch)
     merged = normalize_plot_config(merged, plot_type=plot_type, color_keys=color_keys)
 
     target_png = _resolve_output_png(output_root, source, filename)
-    echarts_option = _render_and_build_echarts(
+    metadata_csv = resolve_metadata_csv(upload_dir) if plot_type in {"pca", "plsda"} else None
+    vega_spec = build_vegalite_spec(
         plot_type=plot_type,
         data_dir=data_dir,
-        upload_dir=upload_dir,
+        metadata_csv=metadata_csv,
         plot_config=merged,
-        output_path=target_png,
     )
-    config_path, echarts_path = save_plot_sidecars(
+
+    def _render_png_fallback(path: Path) -> None:
+        _render_and_build_echarts(
+            plot_type=plot_type,
+            data_dir=data_dir,
+            upload_dir=upload_dir,
+            plot_config=merged,
+            output_path=path,
+        )
+
+    config_path, vega_path, svg_path, _ = write_semantic_outputs(
         png_path=target_png,
         plot_config=merged,
-        echarts_option=echarts_option,
+        vega_spec=vega_spec,
         instruction=instruction,
-        source_rel=source_rel,
+        source_rel=str((base_existing or {}).get("source_rel") or canonical_rel),
+        png_renderer=_render_png_fallback,
     )
 
     stat = target_png.stat()
     rel_png = target_png.relative_to(output_root).as_posix()
-    return {
+    result = {
         "file": {
             "name": rel_png,
             "path": normalize_display_path(target_png),
@@ -237,13 +337,19 @@ def apply_plot_config(
             "path": normalize_display_path(config_path),
             "data": merged,
         },
-        "echarts": {
-            "name": echarts_path.relative_to(output_root).as_posix(),
-            "path": normalize_display_path(echarts_path),
+        "vega": {
+            "name": vega_path.relative_to(output_root).as_posix(),
+            "path": normalize_display_path(vega_path),
         },
-        "source_rel": source_rel,
+        "source_rel": canonical_rel,
         "plot_type": plot_type,
     }
+    if svg_path is not None:
+        result["svg"] = {
+            "name": svg_path.relative_to(output_root).as_posix(),
+            "path": normalize_display_path(svg_path),
+        }
+    return result
 
 
 def agent_apply_plot_edit(
@@ -257,14 +363,20 @@ def agent_apply_plot_edit(
     filename: str | None = None,
 ) -> dict[str, Any]:
     output_root = session_work_dir(project_root, storage_slug).resolve()
-    source = (output_root / source_rel.strip().lstrip("/")).resolve()
-    plot_type = plot_type_from_stem(source.stem)
-    if plot_type is None:
+    canonical_rel = resolve_plot_source_rel(
+        output_root,
+        source_rel,
+        hint_message=instruction,
+    )
+    source = _validated_source(output_root, canonical_rel, hint_message=instruction)
+    existing = _load_existing_config(source)
+    plot_type = plot_type_from_stem(source.stem) or str((existing or {}).get("plot_type") or "")
+    if not plot_type:
         raise PlotEditError(f"暂不支持 Agent 改图：{source.name}")
 
     upload_dir = session_upload_dir(project_root, storage_slug)
-    color_keys = _color_keys_for_plot(plot_type, source.parent, upload_dir)
-    existing = _load_existing_config(source)
+    _, data_dir = _resolve_source_and_data_dir(output_root, canonical_rel, existing)
+    color_keys = _color_keys_for_plot(plot_type, data_dir, upload_dir)
     current = normalize_plot_config(existing, plot_type=plot_type, color_keys=color_keys)
     patch = parse_plot_edit_instruction(
         instruction=instruction,
@@ -277,7 +389,7 @@ def agent_apply_plot_edit(
         project_root=project_root,
         session_id=session_id,
         storage_slug=storage_slug,
-        source_rel=source_rel,
+        source_rel=canonical_rel,
         plot_config_patch=patch,
         instruction=instruction,
         filename=filename,

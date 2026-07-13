@@ -16,25 +16,40 @@ _SCHEMA_BY_CATEGORY = {
   "font_size": {{"title": 18, "axis": 12, "legend": 11, "label": 10}},
   "figure_size": [10, 8],
   "components": [1, 2],
-  "show_sample_labels": true
+  "show_sample_labels": true,
+  "axes": {{"x_title": "", "y_title": "", "x_min": null, "x_max": null, "y_min": null, "y_max": null}},
+  "legend": {{"show": true, "position": "right"}},
+  "marks": {{"size": 70, "opacity": 0.85}},
+  "title_align": "left|center|right"
 }}""",
     "volcano": """{{
   "title": "新标题（可选）",
   "colors": {{"significant": "#E64B35", "nonsignificant": "#B0B0B0"}},
   "font_size": {{"title": 18, "axis": 12, "legend": 11}},
-  "figure_size": [8, 6]
+  "figure_size": [8, 6],
+  "axes": {{"x_title": "", "y_title": "", "x_min": null, "x_max": null, "y_min": null, "y_max": null}},
+  "legend": {{"show": true, "position": "right"}},
+  "marks": {{"size": 70, "opacity": 0.85}},
+  "title_align": "left|center|right"
 }}""",
     "bar": """{{
   "title": "新标题（可选）",
   "palette": {{"类别名": "#RRGGBB"}},
   "font_size": {{"title": 16, "axis": 12, "label": 9}},
-  "figure_size": [10, 5]
+  "figure_size": [10, 5],
+  "axes": {{"x_title": "", "y_title": "", "y_min": null, "y_max": null}},
+  "marks": {{"opacity": 0.85}},
+  "title_align": "left|center|right"
 }}""",
     "hist": """{{
   "title": "新标题（可选）",
   "colors": {{"histogram_color": "#4c72b0", "threshold_color": "#d62728", "median_color": "#ff7f0e"}},
   "font_size": {{"title": 16, "axis": 12, "legend": 10}},
-  "figure_size": [8, 5]
+  "figure_size": [8, 5],
+  "axes": {{"x_title": "", "y_title": "", "x_min": null, "x_max": null, "y_min": null, "y_max": null}},
+  "marks": {{"opacity": 0.85}},
+  "histogram": {{"bins": 40}},
+  "title_align": "left|center|right"
 }}""",
 }
 
@@ -78,6 +93,8 @@ def _build_prompt(
 规则：
 - 颜色用十六进制 #RRGGBB
 - palette / colors 的键使用英文或数据中已有的类别名
+- 标题靠左/居中/靠右分别用 title_align: left / center / right
+- 减小或增大标题字号时修改 font_size.title
 - 不要输出 markdown 或解释文字
 """
 

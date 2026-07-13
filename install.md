@@ -32,7 +32,7 @@ python -m pip install --no-cache-dir \
   "matchms==0.27.0" \
   "ms2deepscore"
 
-python -m pip install fastapi uvicorn python-dotenv langchain-openai
+python -m pip install fastapi uvicorn python-dotenv langchain-openai vl-convert-python
 
 ### 启动前端服务
 python -m uvicorn web_frontend.backend.webapp:app --host 127.0.0.1 --port 8010
