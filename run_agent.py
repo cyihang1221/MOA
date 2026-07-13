@@ -10,10 +10,29 @@ SOURCE_DIR = os.path.join(base_dir, "softwares_database")
 
 # 输入信息
 workspace = os.path.join(base_dir, "workspace")
-data_list = f"{os.path.join(workspace, 'raw')}: These files are mass spectrometry data in raw format."
+raw_dir = os.path.join(workspace, "raw")
+mzml_dir = os.path.join(workspace, "converted_mzml")
+peak_dir = os.path.join(workspace, "peak_detection_results")
+
+data_list = f"""
+{raw_dir}: 原始 .raw 质谱数据
+{mzml_dir}: mzML 输出目录（msconvert 转换结果）
+{peak_dir}: 峰检测结果输出目录
+"""
 database_file_dir = os.path.join(base_dir, "database_file")
 
-goal_description = "使用 Bruker 仪器获取了从湄公血吸虫成虫感染的实验小鼠提取的代谢物样本的 raw 格式数据，请进行数据格式转换和峰提取，不要做其他的。"
+goal_description = f"""
+任务：将 raw 转为 mzML 并进行峰检测。
+
+严格要求：
+1. 必须使用工具 convert_raw_to_mzml_msconvert（Docker msconvert），不要用 ThermoRawFileParser。
+   - input_dir = {raw_dir}
+   - output_dir = {mzml_dir}
+2. 转换完成后，使用 peak_detection_xcms_centwave 对 {mzml_dir} 下所有 mzML 做峰检测，
+   结果保存到 {peak_dir}（file_pattern=*.mzML）。
+
+注意：运行前请确保 Docker Desktop 已启动。
+"""
 
 
 # 加载 .env 文件中的环境变量

@@ -6,11 +6,11 @@ class PromptGenerator:
     def __init__(self, blacklist='', goal_description=None, PERSIST_DIR=None, SOURCE_DIR=None):
         self.blacklist = blacklist.split(',')
         self.goal_description = goal_description
-        self.retriever = preload_retriever(local_engine=True, PERSIST_DIR=PERSIST_DIR, SOURCE_DIR=SOURCE_DIR)
+        self.retriever = preload_retriever(PERSIST_DIR=PERSIST_DIR, SOURCE_DIR=SOURCE_DIR)
             
 
-    def plan_prompt(self, data_list, tools_prompt):
-        self.retriever_info1 = retrive(self.retriever, retriever_prompt=f'Global goal is {self.goal_description} and available tools information is {tools_prompt}.')
+    def plan_prompt(self, data_list, tools_info):
+        self.retriever_info1 = retrive(self.retriever, retriever_prompt=f"Global goal is {self.goal_description}.")
         
         prompt = {
             "role": "Act as a Metabolomics Expert, the rules must be strictly followed!",
@@ -31,7 +31,7 @@ class PromptGenerator:
                     data_list
             ],
             "global goal": self.goal_description,
-            "available tools information": tools_prompt,
+            "available tools information": tools_info,
             "RAG": self.retriever_info1,
             "fixed format for JSON response": {
                 "plan": [
@@ -43,14 +43,14 @@ class PromptGenerator:
         return prompt
 
 
-    def tool_match_prompt(self, task, tools_prompt, workspace=None, history_summary=None):
+    def tool_match_prompt(self, task, tools_info, workspace=None, history_summary=None):
         self.retriever_info2 = retrive(self.retriever, retriever_prompt=f'Global goal is {self.goal_description} and current sub-task is {task} and context information is {history_summary}.')
 
         prompt = {
             "role": "You are a helpful assistant for tool selection. You should strictly follow the rules to select the most appropriate tool and generate the most appropriate parameters for the current sub-task.",
             "rules": [
                 "You should only respond in JSON format with my fixed format.",
-                "Your JSON response should only be enclosed in double quotes.",
+                "Output exactly one JSON object, no markdown code fences, no extra trailing braces.",
                 "You should not write anything else except for your JSON response.",
                 "You should generate only necessary and accurate arguments for the tool.",
                 "You should refer to similar sample situations and examples based on the RAG information to generate the appropriate arguments for the selected tool.",
@@ -58,7 +58,7 @@ class PromptGenerator:
             ],
             "current sub-task": task,
             "context information": history_summary,
-            "available tools information": tools_prompt,
+            "available tools information": tools_info,
             "RAG information": self.retriever_info2,
             "workspace": f"All original files and generated files are all in the {workspace}/.",
             "fixed format for JSON response": {

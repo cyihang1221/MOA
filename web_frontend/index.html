@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="MassAgent - 质谱数据分析智能 Agent" />
+    <title>MassAgent · 质谱 Agent</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div id="sharedBanner" class="shared-banner hidden">
+      <span>只读分享视图 · 他人可查看此会话，无法发送消息</span>
+      <button id="exitShareViewBtn" type="button" class="secondary-btn">返回我的会话</button>
+    </div>
+
+    <div class="app">
+      <aside class="session-sidebar">
+        <div class="sidebar-header">
+          <div class="brand">
+            <h1>MassAgent</h1>
+            <p class="brand-sub">质谱数据分析 Agent</p>
+          </div>
+          <button id="newSessionBtn" type="button">+ 新会话</button>
+        </div>
+
+        <section class="sidebar-card" id="runtimeCard">
+          <h2>运行环境</h2>
+          <div id="runtimeInfo" class="runtime-info muted">正在检测…</div>
+        </section>
+
+        <section class="sidebar-card">
+          <h2>使用方式</h2>
+          <ol class="workflow-list">
+            <li>在发送按钮左侧上传一个或多个文件</li>
+            <li>用自然语言描述分析目标</li>
+            <li>Agent 自动选择合适工具执行</li>
+          </ol>
+        </section>
+
+        <section class="sidebar-card tools-sidebar">
+          <h2>可用工具 <span id="toolsCount" class="tools-count"></span></h2>
+          <div id="toolsSidebar" class="tools-sidebar-list"></div>
+        </section>
+
+        <div id="sessionList" class="session-list"></div>
+      </aside>
+
+      <main class="chat-panel">
+        <header class="chat-toolbar">
+          <div class="toolbar-group">
+            <label for="modelSelect">模型</label>
+            <select id="modelSelect"></select>
+          </div>
+          <div class="toolbar-group">
+            <label for="tempInput">Temperature</label>
+            <input id="tempInput" type="number" min="0" max="2" step="0.1" value="0" />
+          </div>
+          <button id="clearSessionBtn" type="button" class="secondary-btn">清空会话</button>
+          <div class="toolbar-group share-group">
+            <button id="shareBtn" type="button" class="secondary-btn">复制分享链接</button>
+            <span id="shareStatus" class="share-status"></span>
+          </div>
+        </header>
+
+        <section id="welcomePanel" class="welcome-panel">
+          <h2>MassAgent 能做什么？</h2>
+          <p>
+            上传 raw / mzML / mgf / rds 等质谱相关文件，用对话驱动完整分析流程。
+            Agent 会根据你的描述，从下方工具库中自动选择合适步骤。
+          </p>
+          <div id="toolsPanel" class="tools-panel"></div>
+        </section>
+
+        <div id="messages" class="messages"></div>
+
+        <div id="composer" class="composer">
+          <div id="attachmentBar" class="attachment-bar hidden">
+            <div id="attachmentList" class="attachment-list"></div>
+          </div>
+          <form id="chatForm" class="chat-input-row">
+            <textarea
+              id="promptInput"
+              placeholder="描述分析需求；上传 .raw 等文件后将自动调用 MCP 工具执行（Enter 发送）"
+            ></textarea>
+            <div class="composer-actions">
+              <button id="attachBtn" type="button" class="icon-btn" title="添加附件">📎</button>
+              <input id="fileInput" type="file" multiple />
+              <button type="button" id="stopButton" class="stop-btn hidden" title="终止生成">终止</button>
+              <button type="submit" id="sendButton">发送</button>
+            </div>
+          </form>
+        </div>
+        <p id="statusText" class="status-text"></p>
+      </main>
+    </div>
+    <script src="/static/app.js?v=20260522"></script>
+  </body>
+</html>
