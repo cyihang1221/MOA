@@ -128,5 +128,5 @@ def configure_matplotlib_cjk() -> str:
     current = list(plt.rcParams.get("font.sans-serif", []))
     plt.rcParams["font.sans-serif"] = [family, *[f for f in current if f != family]]
     plt.rcParams["axes.unicode_minus"] = False
-    logger.info("matplotlib CJK font file: %s (family=%s)", regular, family)
+    #logger.info("matplotlib CJK font file: %s (family=%s)", regular, family)
     return family

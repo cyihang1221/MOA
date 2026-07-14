@@ -5,6 +5,7 @@ import tempfile
 import glob
 import pandas as pd
 from pathlib import Path
+from typing import Optional, List, Tuple
 
 from src.platform_utils import PROJECT_ROOT
 from web_frontend.backend.export.editable_export import ensure_editable_sidecars, save_editable_metadata
@@ -26,6 +27,7 @@ def _r_plotly_export_path() -> str:
 
 
 # ===================================================== data_preprocessing ================================================================
+# XCMS-Centwave, XCMS-Obiwarp
 def data_preprocessing_xcms_impl(
     input_dir: str,
     output_dir: str,
@@ -90,6 +92,13 @@ def data_preprocessing_xcms_impl(
 
     output_csv = os.path.join(output_dir, "feature_table.csv")
     output_mgf = os.path.join(output_dir, "spectra.mgf")
+
+    # 如果结果文件已存在，跳过 XCMS 处理
+    if os.path.exists(output_csv) and os.path.exists(output_mgf):
+        print(f"  XCMS results already exist, skipping...")
+        print(f"    feature_table: {output_csv}")
+        print(f"    spectra:       {output_mgf}")
+        return
 
     if n_cores is None:
         n_cores = max(1, os.cpu_count() - 1)
@@ -509,11 +518,16 @@ if (nrow(final_tab) == length(success_ids)) {{
 
     # 运行 R 脚本
     try:
-        subprocess.run(
+        result = subprocess.run(
             ['Rscript', r_file],
-            capture_output=True,  # MCP 协议严格要求所有通信必须是 JSON 格式，捕获所有输出，禁止它向 stdout 输出非 JSON 格式内容（MCP 客户端会监听 stdout）
+            capture_output=True,
             encoding='utf-8'
         )
+        if result.returncode != 0:
+            print(f"\n[R ERROR] XCMS processing failed (exit code {result.returncode}):")
+            print(result.stderr)
+            print(result.stdout)
+            raise subprocess.CalledProcessError(result.returncode, result.args, result.stdout, result.stderr)
 
     finally:
         os.unlink(r_file)
@@ -522,6 +536,12 @@ if (nrow(final_tab) == length(success_ids)) {{
 
 
 # ============================================ feature filtering & missing value imputation =====================================================
+# kNN
+
+
+
+# ============================================ feature filtering & missing value imputation =====================================================
+# kNN
 def feature_filtering_and_missing_value_imputation_KNN_impl(
     input_dir: str,
     output_dir: str,
@@ -664,6 +684,11 @@ def feature_filtering_and_missing_value_imputation_KNN_impl(
         f"{n_after_intensity}/{n_before}"
     )
 
+
+
+
+# ======================================================= statistical analysis ==================================================================
+# mixOmics
 
 
 
@@ -1325,6 +1350,10 @@ writeLines(
 
 
 # ========================================================= extract differential features =======================================================
+
+
+
+# ========================================================= extract differential features =======================================================
 def extract_differential_features_impl(
     differential_csv: str,
     input_mgf: str,
@@ -1456,12 +1485,21 @@ def extract_differential_features_impl(
 
 
 # ============================================================= spectral_annotation =======================================================
+# Cosine
+
+
+
+# ============================================================= spectral_annotation =======================================================
+# Cosine
 def spectral_annotation_impl(
     input_dir: str,
     output_dir: str,
     precursor_ppm: float = 5,
-    fragment_tol: float = 0.02,
-    min_cosine: float = 0.7
+    fragment_tol: float = 0.05,
+    min_cosine: float = 0.5,
+    include_precursor: bool = False,
+    use_mona: bool = True,
+    use_spectraverse: bool = True
 ):
     """
     Parameters
@@ -1472,19 +1510,38 @@ def spectral_annotation_impl(
         Path to the directory saving annotation results CSV file.
     precursor_ppm : float, default=5
         Precursor ion mass tolerance in ppm.
-    fragment_tol : float, default=0.02
+    fragment_tol : float, default=0.05
         Fragment ion mass tolerance in Da.
-    min_cosine : float, default=0.7
+    min_cosine : float, default=0.5
         Minimum cosine similarity score required for annotation.
+    include_precursor : bool, default=False
+        If True, require precursor m/z match (requirePrecursor=TRUE).
+        If False, skip precursor requirement for broader matching.
+    use_mona : bool, default=True
+        If True, also search the MoNA spectral libraries (much larger coverage).
+    use_spectraverse : bool, default=True
+        If True, also search the spectraverse spectral library (1.3 GB, broad coverage).
     """
 
     print("\nPerforming spectral library annotation...")
 
     os.makedirs(output_dir, exist_ok=True)
 
-    base_dir = _xcms_tools_dir()
-    lib_pos_path = os.path.join(base_dir, "../..", "database_file/GNPS/GNPS-NIH-NATURALPRODUCTSLIBRARY_ROUND2_POSITIVE.msp")
-    lib_neg_path = os.path.join(base_dir, "../..", "database_file/GNPS/GNPS-NIH-NATURALPRODUCTSLIBRARY_ROUND2_NEGATIVE.msp")
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    gnps_pos_path = os.path.join(base_dir, "../..", "database_file/GNPS/GNPS-NIH-NATURALPRODUCTSLIBRARY_ROUND2_POSITIVE.msp")
+    gnps_neg_path = os.path.join(base_dir, "../..", "database_file/GNPS/GNPS-NIH-NATURALPRODUCTSLIBRARY_ROUND2_NEGATIVE.msp")
+    mona_pos_path = os.path.join(base_dir, "../..", "database_file/MoNA/LC-MS-MS_Positive_Mode.msp")
+    mona_neg_path = os.path.join(base_dir, "../..", "database_file/MoNA/LC-MS-MS_Negative_Mode.msp")
+    spectraverse_path = os.path.join(base_dir, "../..", "database_file/spectraverse-1.0.1.mgf")
+
+    req_precursor_str = "TRUE" if include_precursor else "FALSE"
+    use_mona_str = "TRUE" if use_mona else "FALSE"
+    use_spectraverse_str = "TRUE" if use_spectraverse else "FALSE"
+    gnps_pos_path_r = gnps_pos_path.replace(os.sep, '/')
+    gnps_neg_path_r = gnps_neg_path.replace(os.sep, '/')
+    mona_pos_path_r = mona_pos_path.replace(os.sep, '/')
+    mona_neg_path_r = mona_neg_path.replace(os.sep, '/')
+    spectraverse_path_r = spectraverse_path.replace(os.sep, '/')
 
     r_script = f"""
 # ============================= packages =============================
@@ -1493,18 +1550,19 @@ library(MetaboAnnotation)
 library(MsBackendMgf)
 library(MsBackendMsp)
 library(dplyr)
-library(webchem)
-library(rcdk)
+library(KEGGREST)
 library(readr)
-library(httr)
 
 
 # ============================= parameters =============================
 mgf_path <- "{os.path.join(input_dir, 'differential_spectra.mgf').replace(os.sep, '/')}"
 feat_csv <- "{os.path.join(input_dir, 'differential_feature_table.csv').replace(os.sep, '/')}"
 
-lib_pos_path <- "{lib_pos_path.replace(os.sep, '/')}"
-lib_neg_path <- "{lib_neg_path.replace(os.sep, '/')}"
+gnps_pos_path <- "{gnps_pos_path_r}"
+gnps_neg_path <- "{gnps_neg_path_r}"
+mona_pos_path <- "{mona_pos_path_r}"
+mona_neg_path <- "{mona_neg_path_r}"
+spectraverse_path <- "{spectraverse_path_r}"
 
 out_csv <- "{os.path.join(output_dir, 'differential_feature_table_library_match.csv').replace(os.sep, '/')}"
 out_csv_clean <- "{os.path.join(output_dir, 'differential_feature_table_library_match_clean&add.csv').replace(os.sep, '/')}"
@@ -1512,6 +1570,9 @@ out_csv_clean <- "{os.path.join(output_dir, 'differential_feature_table_library_
 prec_ppm <- {precursor_ppm}
 frag_tol <- {fragment_tol}
 min_cosine <- {min_cosine}
+include_precursor <- {req_precursor_str}
+use_mona <- {use_mona_str}
+use_spectraverse <- {use_spectraverse_str}
 
 
 # ============================= input validation =============================
@@ -1523,12 +1584,12 @@ if (!file.exists(feat_csv)) {{
     stop("Feature table CSV not found")
 }}
 
-if (!file.exists(lib_pos_path)) {{
-    stop("Positive MSP library not found")
+if (!file.exists(gnps_pos_path)) {{
+    cat("WARNING: GNPS positive library not found, skipping\\n")
 }}
 
-if (!file.exists(lib_neg_path)) {{
-    stop("Negative MSP library not found")
+if (!file.exists(gnps_neg_path)) {{
+    cat("WARNING: GNPS negative library not found, skipping\\n")
 }}
 
 
@@ -1544,105 +1605,210 @@ if (length(query_spectra) == 0) {{
     stop("No spectra found in MGF file")
 }}
 
-cat("Query spectra loaded:",
-    length(query_spectra), "\\n")
-
-
-# ============================= read spectral libraries =============================
-cat("Reading positive library...\\n")
-
-lib_pos <- Spectra(
-    lib_pos_path,
-    source = MsBackendMsp()
-)
-
-cat("Positive library spectra:",
-    length(lib_pos), "\\n")
-
-
-cat("Reading negative library...\\n")
-
-lib_neg <- Spectra(
-    lib_neg_path,
-    source = MsBackendMsp()
-)
-
-cat("Negative library spectra:",
-    length(lib_neg), "\\n")
+cat("Query spectra loaded:", length(query_spectra), "\\n")
 
 
 # ============================= define matching parameters =============================
 match_param <- CompareSpectraParam(
     ppm = prec_ppm,
     tolerance = frag_tol,
-    requirePrecursor = TRUE,
+    requirePrecursor = include_precursor,
     FUN = MsCoreUtils::ndotproduct
 )
 
 
-# ============================= spectral matching =============================
-cat("Matching positive ion library...\\n")
+# ============================= helper: extract metadata from a library =============================
+extract_lib_metadata <- function(lib_spectra, target_idx, lib_name) {{
+    meta <- spectraData(lib_spectra)
+    colnames_avail <- colnames(meta)
 
-res_pos <- matchSpectra(
-    query_spectra,
-    lib_pos,
-    match_param
-)
+    # --- compound name ---
+    name <- rep(NA_character_, length(target_idx))
+    if ("TITLE" %in% colnames_avail) {{
+        name <- meta$TITLE[target_idx]
+    }} else if ("name" %in% colnames_avail) {{
+        name <- meta$name[target_idx]
+    }} else if ("Name" %in% colnames_avail) {{
+        name <- meta$Name[target_idx]
+    }} else if ("COMPOUND_NAME" %in% colnames_avail) {{
+        name <- meta$COMPOUND_NAME[target_idx]
+    }}
 
-cat("Matching negative ion library...\\n")
+    # --- SMILES ---
+    smiles <- rep(NA_character_, length(target_idx))
+    if ("SMILES" %in% colnames_avail) {{
+        smiles <- meta$SMILES[target_idx]
+    }} else if ("smiles" %in% colnames_avail) {{
+        smiles <- meta$smiles[target_idx]
+    }}
 
-res_neg <- matchSpectra(
-    query_spectra,
-    lib_neg,
-    match_param
-)
+    # MoNA: SMILES is embedded in Comments field like "SMILES=O=C(...)"
+    if (all(is.na(smiles)) && "Comments" %in% colnames_avail) {{
+        comments <- as.character(meta$Comments[target_idx])
+        has_smiles <- grepl('SMILES=', comments, fixed = TRUE)
+        if (any(has_smiles)) {{
+            extracted <- rep(NA_character_, length(comments))
+            extracted[has_smiles] <- sub('.*SMILES=([^"]+).*', '\\\\1', comments[has_smiles], perl = TRUE)
+            extracted[extracted == "" | extracted == "NA"] <- NA_character_
+            smiles <- extracted
+        }}
+    }}
+
+    # --- precursor mz ---
+    prec_mz <- rep(NA_real_, length(target_idx))
+    tryCatch({{
+        prec_mz <- precursorMz(lib_spectra)[target_idx]
+    }}, error = function(e) {{
+        # Try PRECURSOR_MZ / PrecursorMZ column
+        if ("PRECURSOR_MZ" %in% colnames_avail) {{
+            prec_mz <<- as.numeric(meta$PRECURSOR_MZ[target_idx])
+        }} else if ("PrecursorMZ" %in% colnames_avail) {{
+            prec_mz <<- as.numeric(meta$PrecursorMZ[target_idx])
+        }}
+    }})
+
+    # --- molecular formula ---
+    formula <- rep(NA_character_, length(target_idx))
+    if ("formula" %in% colnames_avail) {{
+        formula <- meta$formula[target_idx]
+    }} else if ("FORMULA" %in% colnames_avail) {{
+        formula <- meta$FORMULA[target_idx]
+    }} else if ("Formula" %in% colnames_avail) {{
+        formula <- meta$Formula[target_idx]
+    }}
+
+    list(name = name, smiles = smiles, prec_mz = prec_mz, formula = formula)
+}}
 
 
-# ============================= merge annotations =============================
-merge_annotation <- function(
-    pos_res,
-    neg_res,
-    min_score
-) {{
-
-    pos_df <- MetaboAnnotation::matches(pos_res)
-    neg_df <- MetaboAnnotation::matches(neg_res)
-
-    # Remove low-confidence matches
-    pos_df <- pos_df[pos_df$score >= min_score, ]
-    neg_df <- neg_df[neg_df$score >= min_score, ]
-
-    # Add ion mode labels
-    if (nrow(pos_df) > 0) {{pos_df$ion_mode <- "POS"}}
-    if (nrow(neg_df) > 0) {{neg_df$ion_mode <- "NEG"}}
-
-    # Merge results
-    all_anno <- rbind(pos_df, neg_df)
-
-    if (nrow(all_anno) == 0) {{
+# ============================= search one library =============================
+search_library <- function(lib_path, backend_type, lib_name) {{
+    if (!file.exists(lib_path)) {{
+        cat("  Library not found, skipping:", lib_path, "\\n")
         return(data.frame())
     }}
 
-    # Keep highest-scoring annotation for each query
-    all_anno <- all_anno[
-        order(all_anno$query_id, -all_anno$score),
-    ]
+    cat("  Loading:", lib_name, "(", lib_path, ")\\n")
 
-    all_anno <- all_anno[
-        !duplicated(all_anno$query_id),
-    ]
+    backend <- if (backend_type == "msp") MsBackendMsp() else MsBackendMgf()
+    lib_spectra <- Spectra(lib_path, source = backend)
 
-    return(all_anno)
+    cat("    Spectra count:", length(lib_spectra), "\\n")
+
+    if (length(lib_spectra) == 0) {{
+        cat("    WARNING: 0 spectra loaded, skipping\\n")
+        return(data.frame())
+    }}
+
+    res <- matchSpectra(query_spectra, lib_spectra, match_param)
+    matches <- MetaboAnnotation::matches(res)
+
+    if (nrow(matches) == 0) {{
+        cat("    No matches found\\n")
+        return(data.frame())
+    }}
+
+    cat("    Matches found:", nrow(matches), "\\n")
+
+    # Extract metadata
+    meta_info <- extract_lib_metadata(lib_spectra, matches$target_idx, lib_name)
+
+    matches$compound_name <- meta_info$name
+    matches$smiles <- meta_info$smiles
+    matches$library_precursor_mz <- meta_info$prec_mz
+    matches$formula <- meta_info$formula
+    matches$library_source <- lib_name
+
+    return(matches)
 }}
 
-anno_total <- merge_annotation(
-    res_pos,
-    res_neg,
-    min_cosine
-)
 
-cat("Matched spectra:",
-    nrow(anno_total), "\\n")
+# ============================= search all libraries =============================
+all_matches <- list()
+
+# 1. GNPS
+cat("\\n--- Searching GNPS libraries ---\\n")
+if (file.exists(gnps_pos_path)) {{
+    gnps_pos <- search_library(gnps_pos_path, "msp", "GNPS_POS")
+    if (nrow(gnps_pos) > 0) {{
+        gnps_pos$ion_mode <- "POS"
+        gnps_pos$target_idx_orig <- gnps_pos$target_idx
+        all_matches[[length(all_matches) + 1]] <- gnps_pos
+    }}
+}}
+
+if (file.exists(gnps_neg_path)) {{
+    gnps_neg <- search_library(gnps_neg_path, "msp", "GNPS_NEG")
+    if (nrow(gnps_neg) > 0) {{
+        gnps_neg$ion_mode <- "NEG"
+        gnps_neg$target_idx_orig <- gnps_neg$target_idx
+        all_matches[[length(all_matches) + 1]] <- gnps_neg
+    }}
+}}
+
+# 2. MoNA
+if (use_mona) {{
+    cat("\\n--- Searching MoNA libraries ---\\n")
+    if (file.exists(mona_pos_path)) {{
+        mona_pos <- search_library(mona_pos_path, "msp", "MoNA_POS")
+        if (nrow(mona_pos) > 0) {{
+            mona_pos$ion_mode <- "POS"
+            mona_pos$target_idx_orig <- mona_pos$target_idx
+            all_matches[[length(all_matches) + 1]] <- mona_pos
+        }}
+    }}
+    if (file.exists(mona_neg_path)) {{
+        mona_neg <- search_library(mona_neg_path, "msp", "MoNA_NEG")
+        if (nrow(mona_neg) > 0) {{
+            mona_neg$ion_mode <- "NEG"
+            mona_neg$target_idx_orig <- mona_neg$target_idx
+            all_matches[[length(all_matches) + 1]] <- mona_neg
+        }}
+    }}
+}}
+
+# 3. Spectraverse (MGF format)
+if (use_spectraverse) {{
+    cat("\\n--- Searching Spectraverse library ---\\n")
+    if (file.exists(spectraverse_path)) {{
+        sv <- search_library(spectraverse_path, "mgf", "Spectraverse")
+        if (nrow(sv) > 0) {{
+            # Spectraverse ion mode detection: check IONMODE in metadata
+            sv$ion_mode <- "POS"  # default; could check metadata for "POS"/"NEG"
+            sv$target_idx_orig <- sv$target_idx
+            all_matches[[length(all_matches) + 1]] <- sv
+        }}
+    }}
+}}
+
+
+# ============================= merge all library results =============================
+cat("\\n--- Merging results from all libraries ---\\n")
+
+if (length(all_matches) == 0) {{
+    anno_total <- data.frame()
+    cat("WARNING: No matches found in any library!\\n")
+}} else {{
+    # Combine all matches
+    anno_total <- bind_rows(all_matches)
+
+    # Filter by min_cosine
+    anno_total <- anno_total[anno_total$score >= min_cosine, ]
+
+    cat("Total raw matches (all libraries, min_cosine >=", min_cosine, "):", nrow(anno_total), "\\n")
+
+    if (nrow(anno_total) > 0) {{
+        # Keep best match per query (highest cosine score)
+        anno_total <- anno_total[
+            order(anno_total$query_id, -anno_total$score),
+        ]
+        anno_total <- anno_total[!duplicated(anno_total$query_id), ]
+
+        cat("Best matches per query (deduplicated):", nrow(anno_total), "\\n")
+    }} else {{
+        anno_total <- data.frame()
+    }}
+}}
 
 
 # ============================= read feature table =============================
@@ -1656,81 +1822,17 @@ if (!"Feature" %in% colnames(feat_table)) {{
     stop("Feature column not found in feature table")
 }}
 
-# ============================= 新增：初始化扩展字段 =============================
+# Initialize annotation fields
 feat_table$compound_name <- NA
 feat_table$cosine_score <- NA
 feat_table$ion_mode_match <- NA
 feat_table$library_precursor_mz <- NA
-feat_table$smiles <- NA          # 新增 SMILES
-
-# 注释表新增扩展字段
-anno_total$compound_name <- NA
-anno_total$library_precursor_mz <- NA
-anno_total$smiles <- NA
-
-pos_idx <- which(anno_total$ion_mode == "POS")
-neg_idx <- which(anno_total$ion_mode == "NEG")
-
-# ============================= 解析正库元数据（名称/SMILES/KEGG/HMDB） =============================
-if (length(pos_idx) > 0) {{
-    pos_meta <- spectraData(lib_pos)
-    target_idx <- anno_total$target_idx[pos_idx]
-
-    # 化合物名称兼容
-    if ("TITLE" %in% colnames(pos_meta)) {{
-        anno_total$compound_name[pos_idx] <- pos_meta$TITLE[target_idx]
-    }} else if ("name" %in% colnames(pos_meta)) {{
-        anno_total$compound_name[pos_idx] <- pos_meta$name[target_idx]
-    }} else if ("compound_name" %in% colnames(pos_meta)) {{
-        anno_total$compound_name[pos_idx] <- pos_meta$compound_name[target_idx]
-    }}
-
-    # SMILES
-    if ("SMILES" %in% colnames(pos_meta)) {{
-        anno_total$smiles[pos_idx] <- pos_meta$SMILES[target_idx]
-    }} else if ("smiles" %in% colnames(pos_meta)) {{
-        anno_total$smiles[pos_idx] <- pos_meta$smiles[target_idx]
-    }}
-
-    # HMDB ID
-    if ("HMDB" %in% colnames(pos_meta)) {{
-        anno_total$hmdb_id[pos_idx] <- pos_meta$HMDB[target_idx]
-    }} else if ("hmdb" %in% colnames(pos_meta)) {{
-        anno_total$hmdb_id[pos_idx] <- pos_meta$hmdb[target_idx]
-    }}
-
-    # 库母离子
-    anno_total$library_precursor_mz[pos_idx] <- precursorMz(lib_pos)[target_idx]
-}}
+feat_table$smiles <- NA
+feat_table$formula <- NA
+feat_table$library_source <- NA
 
 
-# ============================= 解析负库元数据（名称/SMILES/KEGG/HMDB） =============================
-if (length(neg_idx) > 0) {{
-    neg_meta <- spectraData(lib_neg)
-    target_idx <- anno_total$target_idx[neg_idx]
-
-    # 化合物名称兼容
-    if ("TITLE" %in% colnames(neg_meta)) {{
-        anno_total$compound_name[neg_idx] <- neg_meta$TITLE[target_idx]
-    }} else if ("name" %in% colnames(neg_meta)) {{
-        anno_total$compound_name[neg_idx] <- neg_meta$name[target_idx]
-    }} else if ("compound_name" %in% colnames(neg_meta)) {{
-        anno_total$compound_name[neg_idx] <- neg_meta$compound_name[target_idx]
-    }}
-
-    # SMILES
-    if ("SMILES" %in% colnames(neg_meta)) {{
-        anno_total$smiles[neg_idx] <- neg_meta$SMILES[target_idx]
-    }} else if ("smiles" %in% colnames(neg_meta)) {{
-        anno_total$smiles[neg_idx] <- neg_meta$smiles[target_idx]
-    }}
-
-    # 库母离子
-    anno_total$library_precursor_mz[neg_idx] <- precursorMz(lib_neg)[target_idx]
-}}
-
-
-# ============================= 合并所有注释到特征表 =============================
+# ============================= merge annotations into feature table =============================
 if (nrow(anno_total) > 0) {{
     for (i in seq_len(nrow(anno_total))) {{
         idx <- anno_total$query_idx[i]
@@ -1740,105 +1842,161 @@ if (nrow(anno_total) > 0) {{
             feat_table$ion_mode_match[idx]   <- anno_total$ion_mode[i]
             feat_table$library_precursor_mz[idx] <- anno_total$library_precursor_mz[i]
             feat_table$smiles[idx]           <- anno_total$smiles[i]
+            feat_table$formula[idx]          <- anno_total$formula[i]
+            feat_table$library_source[idx]   <- anno_total$library_source[i]
         }}
     }}
 }}
 
 
-# ============================= output =============================
+# ============================= output raw match table =============================
 write.csv(
     feat_table,
     out_csv,
     row.names = FALSE
 )
 
-cat("Spectral annotation completed!\\n")
-cat("Annotated feature table written to:\\n", out_csv, "\\n")
-cat("Successfully annotated compounds:", sum(!is.na(feat_table$compound_name)), "\\n")
-cat("Compounds with SMILES:", sum(!is.na(feat_table$smiles)), "\\n")
+n_annotated <- sum(!is.na(feat_table$compound_name))
+n_smiles <- sum(!is.na(feat_table$smiles))
+cat("\\nSpectral annotation completed!\\n")
+cat("Annotated feature table written to:", out_csv, "\\n")
+cat("Successfully annotated compounds:", n_annotated, "of", nrow(feat_table), "\\n")
+cat("Compounds with SMILES:", n_smiles, "\\n")
 
-
-# ============================= clean + keggID =============================
-# 保留 smiles 不为 NA、不为空的行
-df_smiles <- feat_table %>%
-  filter(!is.na(smiles) & smiles != "")
-
-# SMILES -> InChIKey -> KEGG ID 函数
-smiles_annotate <- function(smi) {{
-  tryCatch({{
-    # 1. SMILES -> PubChem CID
-    cid_res <- get_cid(smi, from = "smiles")
-    if (nrow(cid_res) == 0) {{
-      return(data.frame(
-        smiles = smi,
-        cid = NA,
-        inchikey = NA,
-        iupac_name = NA,
-        kegg_id = NA
-      ))
+if (n_annotated > 0) {{
+    lib_counts <- table(feat_table$library_source[!is.na(feat_table$compound_name)])
+    cat("Matches by library:\\n")
+    for (lib_name in names(lib_counts)) {{
+        cat("  ", lib_name, ":", lib_counts[lib_name], "\\n")
     }}
-    cid <- cid_res$cid[1]
-    cat("SMILES:", smi, "\\n")
-    cat("CID:", cid, "\\n")
-
-    # 2. CID -> InChIKey & IUPAC Name
-    prop <- pc_prop(cid, properties = c("InChIKey", "IUPACName"))
-    inchikey <- prop$InChIKey[1]
-    iupac_name <- prop$IUPACName[1]
-    cat("InChIKey:", inchikey, "\\n")
-    cat("IUPAC Name:", iupac_name, "\\n")
-
-    # 3. InChIKey -> KEGG Compound ID
-    kegg_id <- NA
-    if (!is.na(inchikey)) {{
-      url <- paste0("https://rest.kegg.jp/find/compound/", inchikey)
-      txt <- content(GET(url, timeout(60)), as = "text", encoding = "UTF-8")
-      txt <- trimws(txt)
-      cat("KEGG raw result:\\n")
-      cat(txt, "\\n")
-      if (txt != "") {{
-        kegg_id <- sub("\\t.*", "", strsplit(txt, "\\n")[[1]][1])
-      }}
-    }}
-
-    # Return result row
-    return(data.frame(
-      smiles = smi,
-      cid = cid,
-      inchikey = inchikey,
-      iupac_name = iupac_name,
-      kegg_id = kegg_id
-    ))
-
-  }}, error = function(e) {{
-    cat("ERROR:\\n")
-    print(e)
-    return(data.frame(
-      smiles = smi,
-      cid = NA,
-      inchikey = NA,
-      iupac_name = NA,
-      kegg_id = NA
-    ))
-  }})
 }}
 
-# Batch annotation
-df_result <- data.frame()
 
-if (nrow(df_smiles) > 0) {{
-  df_anno <- bind_rows(lapply(df_smiles$smiles, smiles_annotate))
-  # 左连接：原始表 + 注释结果，在原字段后面追加新列
-  df_merged <- left_join(df_smiles, df_anno, by = "smiles")
-}} else {{
-  df_merged <- df_smiles
-}}
+# ============================= KEGG ID annotation via KEGGREST =============================
+# Include ALL features in the clean output (not just spectrally matched ones),
+# so downstream tools can supplement KEGG IDs for unmatched features via mass lookup.
+feat_table$cid <- NA
+feat_table$inchikey <- NA
+feat_table$iupac_name <- NA
+feat_table$kegg_id <- NA
 
-write.csv(
-    df_merged,
-    out_csv_clean,
-    row.names = FALSE
-)
+df_annotated <- feat_table %>% filter(!is.na(compound_name))
+
+if (nrow(df_annotated) > 0) {{
+    cat("\\n--- KEGG ID lookup via KEGG REST API ---\\n")
+
+    for (i in seq_len(nrow(df_annotated))) {{
+        comp_name <- df_annotated$compound_name[i]
+        smi <- df_annotated$smiles[i]
+        formula <- df_annotated$formula[i]
+
+        kegg_id <- NA_character_
+
+        # Try 1: molecular formula search (most reliable)
+        if (is.na(kegg_id) && !is.na(formula) && nchar(formula) >= 2) {{
+            tryCatch({{
+                kegg_result <- keggFind("compound", formula, "formula")
+                if (length(kegg_result) > 0) {{
+                    kegg_id <<- names(kegg_result)[1]
+                    cat("  KEGG match (formula):", formula, "->", kegg_id, "\\n")
+                }}
+            }}, error = function(e) {{ }})
+        }}
+
+        # Try 2: name search
+        if (is.na(kegg_id) && !is.na(comp_name)) {{
+            # Extract short name from GNPS "DB_ID!chemical_name" format
+            short_name <- comp_name
+            if (grepl("!", comp_name, fixed=TRUE)) {{
+                short_name <- strsplit(comp_name, "!")[[1]][2]
+            }}
+
+            # Remove bracketed notes
+            clean_name <- gsub("\\\\[IIN-based on:.*?\\\\]", "", short_name)
+            clean_name <- gsub("\\\\[.*?\\\\]", "", clean_name)
+            clean_name <- trimws(clean_name)
+
+            tryCatch({{
+                kegg_result <- keggFind("compound", clean_name)
+                if (length(kegg_result) > 0) {{
+                    kegg_id <<- names(kegg_result)[1]
+                    cat("  KEGG match (full name):", clean_name, "->", kegg_id, "\\n")
+                }}
+            }}, error = function(e) {{ }})
+
+            # Try 2b: first part of name (before first '(' or '[')
+            if (is.na(kegg_id)) {{
+                short_fragment <- trimws(strsplit(clean_name, "[\\\\(\\\\[]")[[1]][1])
+                if (nchar(short_fragment) >= 5) {{
+                    tryCatch({{
+                        kegg_result <- keggFind("compound", short_fragment)
+                        if (length(kegg_result) > 0) {{
+                            kegg_id <<- names(kegg_result)[1]
+                            cat("  KEGG match (short name):", short_fragment, "->", kegg_id, "\\n")
+                        }}
+                    }}, error = function(e) {{ }})
+                }}
+            }}
+
+            if (is.na(kegg_id)) {{
+                cat("  KEGG NOT FOUND:", clean_name, "\\n")
+            }}
+        }}
+
+        # Store results
+        df_annotated$kegg_id[i] <- kegg_id
+    }}
+
+    # Merge KEGG annotations back into full feat_table
+    if (nrow(df_annotated) > 0) {{
+        for (i in seq_len(nrow(df_annotated))) {{
+            match_name <- df_annotated$compound_name[i]
+            if (!is.na(match_name)) {{
+                feat_rows <- which(feat_table$compound_name == match_name)
+                if (length(feat_rows) > 0) {{
+                    feat_table$kegg_id[feat_rows[1]] <- df_annotated$kegg_id[i]
+                }}
+            }}
+        }}
+    }}
+}}  # end if(nrow(df_annotated) > 0)
+
+# ============================ Mass-based KEGG lookup for unmatched features ============================
+    cat("\\n--- Mass-based KEGG lookup for unmatched features ---\\n")
+    n_mass_found <- 0
+    for (i in seq_len(nrow(feat_table))) {{
+        if (is.na(feat_table$kegg_id[i])) {{
+            mz_val <- feat_table$mz[i]
+            if (!is.na(mz_val) && is.numeric(mz_val) && mz_val > 50) {{
+                # Assume [M+H]+ adduct, calculate neutral mass
+                neutral_mass <- mz_val - 1.0078
+                tryCatch({{
+                    mass_str <- as.character(round(neutral_mass, 4))
+                    kegg_result <- keggFind("compound", mass_str, "exact_mass")
+                    if (length(kegg_result) > 0) {{
+                        feat_table$kegg_id[i] <- names(kegg_result)[1]
+                        n_mass_found <- n_mass_found + 1
+                    }}
+                }}, error = function(e) {{ }})
+            }}
+        }}
+    }}
+    cat("  Mass-based KEGG IDs found:", n_mass_found, "\\n")
+
+    # Build output table (ALL features, not just matched ones)
+    df_merged <- feat_table
+
+    write.csv(
+        df_merged,
+        out_csv_clean,
+        row.names = FALSE
+    )
+
+    n_kegg <- sum(!is.na(df_merged$kegg_id))
+    n_matched <- sum(!is.na(df_merged$compound_name))
+    cat("\\nTotal KEGG ID annotated:", n_kegg, "of", nrow(df_merged), "features (", n_matched, "spectrally matched)\\n")
+
+    cat("Clean annotated table written to:", out_csv_clean, "\\n")
 """
 
     with tempfile.NamedTemporaryFile(
@@ -1850,11 +2008,21 @@ write.csv(
         r_file = f.name
 
     try:
-        subprocess.run(
+        result = subprocess.run(
             ['Rscript', r_file],
             capture_output=True,
             encoding='utf-8'
         )
+        if result.returncode != 0:
+            print(f"\n[R ERROR] Spectral annotation failed (exit code {result.returncode}):")
+            print(result.stderr)
+            print(result.stdout)
+            raise subprocess.CalledProcessError(result.returncode, result.args, result.stdout, result.stderr)
+        # Print R stdout for diagnostics
+        if result.stdout:
+            for line in result.stdout.strip().split('\n'):
+                if line.strip():
+                    print(f"  [R] {line.strip()}")
 
     finally:
         os.unlink(r_file)
@@ -1863,6 +2031,12 @@ write.csv(
 
 
 # ============================================================ sirius unkowns annotation =======================================================
+# SIRIUS
+
+
+
+# ============================================================ sirius unkowns annotation =======================================================
+# SIRIUS
 def sirius_unknowns_annotation_impl(
     input_dir: str,
     output_dir: str,
@@ -1944,40 +2118,275 @@ def sirius_unknowns_annotation_impl(
 
 
 
+# ============================================= KEGG ID lookup helpers ==================================================
+
+
+
+# ============================================= KEGG ID lookup helpers ==================================================
+
+def _lookup_kegg_by_name(compound_name: str, timeout: float = 10.0) -> Optional[str]:
+    """
+    Look up a KEGG compound ID by chemical name via the KEGG REST API.
+
+    Parameters
+    ----------
+    compound_name : str
+        Chemical name to search for.
+    timeout : float
+        HTTP request timeout in seconds.
+
+    Returns
+    -------
+    str or None
+        KEGG compound ID (e.g. "C00031") if found, else None.
+    """
+    import urllib.request
+    import urllib.error
+
+    # Clean the name for URL
+    encoded = urllib.parse.quote(compound_name.strip())
+    url = f"https://rest.kegg.jp/find/compound/{encoded}"
+
+    try:
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            text = resp.read().decode('utf-8').strip()
+    except (urllib.error.URLError, urllib.error.HTTPError, OSError) as e:
+        print(f"    [KEGG API] Connection error for '{compound_name[:60]}': {e}")
+        return None
+
+    if not text:
+        return None
+
+    # Response format: "C00031\tD-Glucose; ..."
+    first_line = text.split('\n')[0]
+    parts = first_line.split('\t')
+    if len(parts) >= 1:
+        cpd_id = parts[0].strip()
+        if cpd_id.startswith('C') and cpd_id[1:].isdigit():
+            return cpd_id
+    return None
+
+
+def _lookup_kegg_by_mass(neutral_mass: float, ppm: float = 10.0, timeout: float = 10.0) -> List[str]:
+    """
+    Look up KEGG compound IDs by exact neutral mass via KEGG REST API.
+
+    Parameters
+    ----------
+    neutral_mass : float
+        Neutral monoisotopic mass to search for.
+    ppm : float
+        Mass tolerance in ppm.
+    timeout : float
+        HTTP request timeout in seconds.
+
+    Returns
+    -------
+    List[str]
+        KEGG compound IDs matching the mass within tolerance.
+    """
+    import urllib.request
+    import urllib.error
+
+    url = f"https://rest.kegg.jp/find/compound/{neutral_mass}/exact_mass"
+
+    try:
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            text = resp.read().decode('utf-8').strip()
+    except (urllib.error.URLError, urllib.error.HTTPError, OSError) as e:
+        print(f"    [KEGG API] Connection error for mass {neutral_mass:.4f}: {e}")
+        return []
+
+    if not text:
+        return []
+
+    # Response format: "C00031\tC6H12O6" (one per line)
+    results = []
+    for line in text.split('\n'):
+        parts = line.strip().split('\t')
+        if len(parts) >= 1 and parts[0].startswith('C') and parts[0][1:].isdigit():
+            results.append(parts[0])
+    return results
+
+
+def _supplement_kegg_ids(input_csv: str, mzannotation_dir: str = None) -> str:
+    """
+    Supplement KEGG compound IDs in the spectral annotation clean output CSV.
+
+    For rows where kegg_id is NA, attempts to look up KEGG IDs via:
+    1. Molecular formula search (if formula column is available)
+    2. Compound name search on KEGG REST API
+    3. m/z → neutral mass → KEGG exact mass lookup (for all unmatched features)
+
+    Parameters
+    ----------
+    input_csv : str
+        Path to differential_feature_table_library_match_clean&add.csv
+    mzannotation_dir : str, optional
+        Path to mzAnnotation output directory for supplementary annotations.
+
+    Returns
+    -------
+    str
+        Path to the (possibly updated) CSV file. If no changes were needed,
+        returns the original path. If changes were made, writes a temp file.
+    """
+    import re
+    import urllib.request
+    import urllib.error
+
+    if not os.path.exists(input_csv):
+        print(f"  [KEGG supplement] Input CSV not found: {input_csv}")
+        return input_csv
+
+    df = pd.read_csv(input_csv)
+    if 'kegg_id' not in df.columns:
+        print("  [KEGG supplement] No 'kegg_id' column in input CSV, skipping")
+        return input_csv
+
+    # Count rows needing supplementation
+    na_mask = df['kegg_id'].isna() | (df['kegg_id'].astype(str).str.strip() == '')
+    n_na = na_mask.sum()
+    if n_na == 0:
+        print("  [KEGG supplement] All rows already have KEGG IDs, skipping")
+        return input_csv
+
+    print(f"  [KEGG supplement] {n_na} rows need KEGG ID. Looking up via KEGG REST API...")
+
+    n_found = 0
+    for idx in df[na_mask].index:
+        row = df.loc[idx]
+        kegg_id = None
+
+        # --- Strategy 1: molecular formula search ---
+        formula = row.get('formula', None)
+        if kegg_id is None and not pd.isna(formula) and str(formula).strip() not in ('', 'NA'):
+            formula_str = str(formula).strip()
+            try:
+                encoded = urllib.parse.quote(formula_str)
+                url = f"https://rest.kegg.jp/find/compound/{encoded}/formula"
+                req = urllib.request.Request(url)
+                with urllib.request.urlopen(req, timeout=10) as resp:
+                    text = resp.read().decode('utf-8').strip()
+                if text:
+                    first_line = text.split('\n')[0]
+                    parts = first_line.split('\t')
+                    if len(parts) >= 1 and parts[0].startswith('C') and parts[0][1:].isdigit():
+                        kegg_id = parts[0]
+                        print(f"    [formula] {formula_str} → {kegg_id}")
+            except Exception:
+                pass
+
+        # --- Strategy 2: compound name search ---
+        if kegg_id is None:
+            compound_name = row.get('compound_name', None)
+            if not pd.isna(compound_name) and str(compound_name).strip() not in ('', 'NA'):
+                name = str(compound_name).strip()
+                if '!' in name:
+                    name = name.split('!', 1)[1]
+                name = re.sub(r'\[.*?\]', '', name).strip()
+                name = re.sub(r'^[A-Za-z -]+based on:\s*', '', name).strip()
+
+                if len(name) >= 3:
+                    kegg_id = _lookup_kegg_by_name(name)
+                    if kegg_id is None:
+                        short = name.split('(')[0].split('[')[0].strip()
+                        if short != name and len(short) >= 5:
+                            kegg_id = _lookup_kegg_by_name(short)
+                    if kegg_id:
+                        print(f"    [name] {name[:50]}... → {kegg_id}")
+
+        # --- Strategy 3: m/z → neutral mass → KEGG exact mass lookup ---
+        if kegg_id is None:
+            mz_val = row.get('mz', None)
+            if not pd.isna(mz_val) and mz_val is not None:
+                try:
+                    mz_f = float(mz_val)
+                    neutral_mass = mz_f - 1.0078
+                    if neutral_mass > 50:
+                        candidates = _lookup_kegg_by_mass(neutral_mass, ppm=20)
+                        if candidates:
+                            kegg_id = candidates[0]
+                            print(f"    [mass] m/z={mz_f:.4f} → {kegg_id}")
+                except (ValueError, TypeError):
+                    pass
+                except Exception:
+                    pass  # network errors are expected, handled silently
+
+        if kegg_id is not None:
+            df.at[idx, 'kegg_id'] = kegg_id
+            n_found += 1
+
+    print(f"  [KEGG supplement] Found KEGG IDs for {n_found}/{n_na} unannotated rows")
+
+    if n_found > 0:
+        # Write to a temp file so the original is preserved
+        import tempfile as _tempfile
+        with _tempfile.NamedTemporaryFile(
+            mode='w', suffix='.csv', delete=False, prefix='kegg_supplemented_'
+        ) as f:
+            df.to_csv(f.name, index=False)
+            supplemented_path = f.name
+        print(f"  [KEGG supplement] Supplemented CSV written to: {supplemented_path}")
+        return supplemented_path
+
+    return input_csv
+
 
 # ============================================= pathway enrichment analysis ==================================================
+# KEGG
+
+
+
+# ============================================= pathway enrichment analysis ==================================================
+# KEGG
 def kegg_compound_enrich_impl(
-        input_dir: str,
-        output_dir: str,
-        pvalue_cutoff: float = 0.05,
-        padj_method: str = "BH",
-        qvalue_cutoff: float = 0.1,
-        min_gs: int = 3,
-        max_gs: int = 500,
-        top_n: int = 15
+    input_dir: str,
+    output_dir: str,
+    pvalue_cutoff: float = 0.05,
+    padj_method: str = "BH",
+    qvalue_cutoff: float = 0.1,
+    min_gs: int = 3,
+    max_gs: int = 500,
+    top_n: int = 15,
+    mzannotation_dir: str = None
 ) -> None:
     """
     KEGG compound pathway enrichment analysis (ORA style)
     based on compound → pathway mapping (NOT gene-based).
+
+    Parameters
+    ----------
+    mzannotation_dir : str, optional
+        Path to mzAnnotation output directory. If provided, mzAnnotation
+        annotation hypotheses are used as a supplementary source of KEGG
+        compound IDs when spectral library matches have no KEGG IDs.
     """
 
     print("\nPerforming KEGG compound pathway enrichment analysis...")
 
     input_file = os.path.join(input_dir, "differential_feature_table_library_match_clean&add.csv")
 
+    # --- Supplement KEGG IDs from Python level ---
+    input_file = _supplement_kegg_ids(input_file, mzannotation_dir)
+
     os.makedirs(output_dir, exist_ok=True)
+    _r_plotly_helpers = _r_plotly_export_path().replace(os.sep, "/")
     enrich_table_out = os.path.join(output_dir, "kegg_compound_enrich.csv")
     bubble_plot_out = os.path.join(output_dir, "kegg_compound_bubble.png")
+    dotplot_out = os.path.join(output_dir, "kegg_compound_dotplot.png")
+    barplot_out = os.path.join(output_dir, "kegg_compound_barplot.png")
 
-    base_dir = _xcms_tools_dir()
-    compound_pathway_path = os.path.join(base_dir, "../..", "database_file/compound_pathway.tsv")
-    _r_plotly_helpers = _r_plotly_export_path().replace(os.sep, "/")
+    compound_pathway_path = str(PROJECT_ROOT / "database_file" / "compound_pathway.tsv")
 
     r_script = f"""
 library(clusterProfiler)
 library(ggplot2)
 library(KEGGREST)
 library(dplyr)
+library(enrichplot)
 
 try(source("{_r_plotly_helpers}", local = FALSE, encoding = "UTF-8"), silent = TRUE)
 
@@ -1985,7 +2394,12 @@ compound_pathway_path <- "{compound_pathway_path.replace(os.sep, '/')}"
 
 # 1. Read input metabolites
 sig_met <- read.csv("{input_file}", check.names = FALSE)
-compound_list <- unique(sig_met$kegg_id)
+compound_list <- unique(
+    sig_met$kegg_id[
+        !is.na(sig_met$kegg_id) &
+        sig_met$kegg_id != ""
+    ]
+)
 
 # 2. Build KEGG compound-pathway mapping
 cpd2path <- read.table(
@@ -2018,8 +2432,9 @@ enrich_res <- enricher(
 enrich_df <- as.data.frame(enrich_res)
 write.csv(enrich_df, "{enrich_table_out}", row.names = FALSE)
 
-# 4. Bubble plot
 if (nrow(enrich_df) > 0) {{
+
+    # 4. Bubble plot
     plot_data <- enrich_df %>% head({top_n})
     p <- ggplot(plot_data, aes(
         x = Count,
@@ -2039,6 +2454,40 @@ if (nrow(enrich_df) > 0) {{
     theme_minimal()
     ggsave("{bubble_plot_out}", plot = p, width = 12, height = 8, dpi = 300)
     try(save_ggplot_plotly_sidecar(p, "{bubble_plot_out}"), silent = TRUE)
+
+    # 5. clusterProfiler dotplot
+    p_dot <- dotplot(
+        enrich_res,
+        showCategory = {top_n},
+        font.size = 12,
+        title = "KEGG Compound Enrichment Dotplot"
+    )
+
+    ggsave(
+        "{dotplot_out}",
+        plot = p_dot,
+        width = 12,
+        height = 8,
+        dpi = 300
+    )
+    try(save_ggplot_plotly_sidecar(p_dot, "{dotplot_out}"), silent = TRUE)
+
+    # 6. clusterProfiler barplot
+    p_bar <- barplot(
+        enrich_res,
+        showCategory = {top_n},
+        font.size = 12,
+        title = "KEGG Compound Enrichment Barplot"
+    )
+
+    ggsave(
+        "{barplot_out}",
+        plot = p_bar,
+        width = 12,
+        height = 8,
+        dpi = 300
+    )
+    try(save_ggplot_plotly_sidecar(p_bar, "{barplot_out}"), silent = TRUE)
 }}
 """
 
@@ -2048,9 +2497,23 @@ if (nrow(enrich_df) > 0) {{
 
     try:
         subprocess.run(["Rscript", r_file], check=True, capture_output=True)
-        from web_frontend.backend.export.editable_export import save_editable_metadata
-
-        save_editable_metadata(bubble_plot_out, title="KEGG Compound Pathway Enrichment")
     finally:
         os.unlink(r_file)
-        
+
+    # Frontend editable / plotly sidecars for KEGG plots (incl. new dot/bar plots)
+    for png_path, title in (
+        (bubble_plot_out, "KEGG Compound Pathway Enrichment"),
+        (dotplot_out, "KEGG Compound Enrichment Dotplot"),
+        (barplot_out, "KEGG Compound Enrichment Barplot"),
+    ):
+        if os.path.isfile(png_path):
+            save_editable_metadata(png_path, title=title)
+    ensure_editable_sidecars(
+        output_dir,
+        title_map={
+            "kegg_compound_bubble.png": "KEGG Compound Pathway Enrichment",
+            "kegg_compound_dotplot.png": "KEGG Compound Enrichment Dotplot",
+            "kegg_compound_barplot.png": "KEGG Compound Enrichment Barplot",
+        },
+    )
+

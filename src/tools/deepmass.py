@@ -3,14 +3,15 @@
 # Spec2Vec 语义相似度注释，预测结构相关的代谢物候选化合物。
 
 import os
+import csv
 import subprocess
 import logging
 
 logger = logging.getLogger(__name__)
 
 DEEPMASS_IMAGE = "deepmass2:test"
-MODEL_DIR = "/data2/liuwei/MOA/softwares/DeepMASS/model"
-DATA_DIR = "/data2/liuwei/MOA/softwares/DeepMASS/data"
+MODEL_DIR = os.environ.get("DEEPMASS_MODEL_DIR", "/data2/liuwei/MOA/softwares/DeepMASS/model")
+DATA_DIR = os.environ.get("DEEPMASS_DATA_DIR", "/data2/liuwei/MOA/softwares/DeepMASS/data")
 
 
 # DeepMASS
@@ -34,6 +35,9 @@ def deepmass_annotation_impl(input_dir: str, output_dir: str):
     每题谱图生成一个 CSV 文件，包含以下列：
         Title, MolecularFormula, CanonicalSMILES, InChIKey,
         Formula Score, Structure Score, Consensus Score, DeepMASS_raw
+
+    最终还会生成一个 deepmass_summary.csv 汇总文件，收集每个特征排名第一
+    （index=0）的候选化合物。
     """
     input_abs = os.path.abspath(input_dir)
     output_abs = os.path.abspath(output_dir)
@@ -88,41 +92,62 @@ def deepmass_annotation_impl(input_dir: str, output_dir: str):
     print(f"  Generated {len(csv_files)} annotation CSV(s): {', '.join(csv_files)}")
     logger.info(f"DeepMASS2 completed, {len(csv_files)} CSV(s) generated")
 
-    # Extract the first data record (second line) from each CSV
-    # and merge them into a single file with a common header
-    merged_path = os.path.join(output_abs, "top1_annotations.csv")
-    records = []
-    common_header = None
+    # Aggregate top-ranked candidate from each feature CSV into a summary file
+    _aggregate_top_results(output_abs)
 
-    for csv_file in sorted(csv_files):
-        csv_path = os.path.join(output_abs, csv_file)
-        with open(csv_path, "r") as f:
-            header = f.readline().strip()
-            first_record = f.readline().strip()
-        if first_record:
-            if common_header is None:
-                common_header = header
-            # Replace first column (0) with feature name (filename without .csv)
-            feature_name = os.path.splitext(csv_file)[0]
-            parts = first_record.split(",", 1)
-            parts[0] = feature_name
-            first_record = ",".join(parts)
-            records.append(first_record)
-            print(f"  {csv_file}: extracted top-1 record")
-        else:
-            print(f"  {csv_file}: no data records found")
 
-    if common_header and records:
-        with open(merged_path, "w") as f:
-            f.write(common_header + "\n")
-            for record in records:
-                f.write(record + "\n")
-        print(f"  Merged {len(records)} top-1 records into: {merged_path}")
-        logger.info(f"Merged {len(records)} top-1 records into {merged_path}")
+def _aggregate_top_results(output_dir: str):
+    """
+    汇总每个特征的排名第一（index=0）候选化合物到 deepmass_summary.csv。
+
+    从 output_dir 下每个 CSV 文件中读取 index=0 行（排名最高的候选），
+    合并写入 deepmass_summary.csv，列为 Feature_ID + 原有各列。
+    """
+    output_abs = os.path.abspath(output_dir)
+    csv_files = sorted(
+        f for f in os.listdir(output_abs)
+        if f.endswith(".csv") and f != "deepmass_summary.csv"
+    )
+
+    summary_header = [
+        "Feature_ID", "Title", "MolecularFormula", "CanonicalSMILES",
+        "InChIKey", "Database_IDs", "Formula_Score", "Structure_Score",
+        "Consensus_Score", "DeepMASS_raw",
+    ]
+    summary_rows = []
+    skipped = 0
+
+    for fname in csv_files:
+        fpath = os.path.join(output_abs, fname)
+        with open(fpath, "r", newline="") as fh:
+            reader = list(csv.reader(fh))
+        if len(reader) < 2:
+            skipped += 1
+            continue
+        top_row = reader[1]  # index=0，排名最高的候选
+        feature_id = os.path.splitext(fname)[0]
+        summary_rows.append([feature_id] + top_row[1:])
+
+    summary_path = os.path.join(output_abs, "deepmass_summary.csv")
+    with open(summary_path, "w", newline="") as fh:
+        writer = csv.writer(fh)
+        writer.writerow(summary_header)
+        writer.writerows(summary_rows)
+
+    print(
+        f"  Summary → {summary_path} "
+        f"({len(summary_rows)} features, {skipped} empty skipped)"
+    )
+    logger.info(
+        f"deepmass_summary.csv written: {len(summary_rows)} features, "
+        f"{skipped} empty files skipped"
+    )
 
 
 if __name__ == "__main__":
+    base = "/data2/luxiang/MOA/outputspace"
+
     deepmass_annotation_impl(
-        input_dir="/data2/liuwei/MOA/outputspace/differential_features",
-        output_dir="/data2/liuwei/MOA/outputspace/unknown_identification",
+        input_dir=f"{base}/statistical_analysis/differential_feature_extraction",
+        output_dir=f"{base}/unknown_identification/deepmass_results",
     )

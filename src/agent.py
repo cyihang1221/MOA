@@ -73,6 +73,10 @@ class Agent:
 
     async def execution_phase(self):
         """执行阶段"""
+        # 预提取所有已注册的工具名，用于校验 LLM 输出的 tool_call
+        valid_tool_names = {t.name for t in self.tools_info}
+        max_retries = 3
+
         params = StdioServerParameters(command="python", args=["-m", "src.mcp_server.server"])
         async with stdio_client(params) as (read, write):
             async with ClientSession(read, write) as session:
@@ -81,19 +85,48 @@ class Agent:
                 while self.tasks:
                     task = self.tasks.pop(0)
                     print(f"\n===== 执行任务: {task} =====")
-                    prompt = self.prompt_generator.tool_match_prompt(task=task, tools_info=self.tools_info, history_summary=self.history_summary)
-                    messages = [{"role": "user", "content": str(prompt)}]
-                    print(f"===== : 工具查询结果 =====")
-                    response = self.llm_client.think(messages)
-                    response = json.loads(response)
-                    
-                    if "tool_call" in response:
-                        tool_name = response["tool_call"]["name"]
-                        tool_args = response["tool_call"]["arguments"]
-                        result = await session.call_tool(tool_name, tool_args)
 
-                        self.history_summary.append({"role":"tool","content":str(result)})
-                        print(f"\nExecuted {tool_name}, result: {result}")
+                    retry_count = 0
+                    while retry_count < max_retries:
+                        prompt = self.prompt_generator.tool_match_prompt(task=task, tools_info=self.tools_info, history_summary=self.history_summary)
+                        messages = [{"role": "user", "content": str(prompt)}]
+                        print(f"===== : 工具查询结果 =====")
+                        response = self.llm_client.think(messages)
+                        response = json.loads(response)
+
+                        # 兼容两种 LLM 返回格式：
+                        # 格式A: {"tool_call": {"name": "...", "arguments": {...}}}
+                        # 格式B: {"name": "...", "arguments": {...}}
+                        if "tool_call" not in response and "name" in response:
+                            response = {"tool_call": response}
+
+                        if "tool_call" in response:
+                            tool_name = response["tool_call"]["name"]
+
+                            # 校验工具名是否在已注册工具的列表中
+                            if tool_name not in valid_tool_names:
+                                print(f"⚠️ 工具 '{tool_name}' 未在 MCP server 中注册，尝试重新匹配... (重试 {retry_count + 1}/{max_retries})")
+                                # 将校验失败信息注入历史，让 LLM 在重试时避开不存在的工具
+                                self.history_summary.append({
+                                    "role": "tool",
+                                    "content": f"Error: Tool '{tool_name}' is not available. Please select ONLY from the available tools list."
+                                })
+                                retry_count += 1
+                                continue
+
+                            tool_args = response["tool_call"]["arguments"]
+                            result = await session.call_tool(tool_name, tool_args)
+
+                            self.history_summary.append({"role":"tool","content":str(result)})
+                            print(f"\nExecuted {tool_name}, result: {result}")
+                            break  # 成功执行，跳出重试循环
+                        else:
+                            print(f"⚠️ LLM 未返回有效 tool_call，重试... ({retry_count + 1}/{max_retries})")
+                            retry_count += 1
+                    else:
+                        # 重试次数耗尽
+                        print(f"❌ 任务 '{task}' 在 {max_retries} 次重试后仍无法匹配到有效工具，跳过此任务。")
+                        self.history_summary.append({"role":"tool","content":f"Task skipped: no valid tool found after {max_retries} retries."})
 
 
     def run(self):
