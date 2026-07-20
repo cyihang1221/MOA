@@ -1158,6 +1158,60 @@ body:has(.shared-banner:not(.hidden)) {
   margin-top: 4px;
 }
 
+.output-image-menu {
+  position: relative;
+  align-self: flex-start;
+  margin-top: 4px;
+}
+
+.output-image-menu-toggle {
+  min-width: 4.5rem;
+}
+
+.output-image-menu-panel {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 40;
+  min-width: 9.5rem;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+}
+
+.output-image-menu.open .output-image-menu-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.output-image-menu-item {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 7px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--text, #111827);
+  cursor: pointer;
+}
+
+.output-image-menu-item:hover {
+  background: #f3f4f6;
+}
+
+.output-image-menu-item.danger {
+  color: #b91c1c;
+}
+
+.output-image-menu-item.danger:hover {
+  background: #fef2f2;
+}
+
 .semantic-editor {
   position: fixed;
   inset: 0;

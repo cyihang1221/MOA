@@ -31,6 +31,20 @@ PLOT_SPECS: tuple[PlotSpec, ...] = (
         "significant / nonsignificant",
     ),
     PlotSpec(
+        "vip_bar",
+        "vip_scores",
+        "VIP Scores",
+        ("vip_scores.csv",),
+        "bar 主色 bar_color",
+    ),
+    PlotSpec(
+        "heatmap_vip",
+        "heatmap_top_vip",
+        "Top VIP Heatmap",
+        ("heatmap_top_vip_matrix.csv",),
+        "热图色标",
+    ),
+    PlotSpec(
         "family_size",
         "family_size_distribution",
         "Molecular Family Size Distribution",
@@ -51,6 +65,20 @@ PLOT_SPECS: tuple[PlotSpec, ...] = (
         ("network_edges.csv",),
         "直方图主色 histogram_color",
     ),
+    PlotSpec(
+        "network_topology",
+        "network_topology",
+        "Molecular Network Topology",
+        ("network_layout.csv",),
+        "分子家族调色板",
+    ),
+    PlotSpec(
+        "precursor_mass_diff",
+        "precursor_mass_diff",
+        "Precursor Mass Difference",
+        ("network_nodes.csv", "network_edges.csv"),
+        "histogram_color",
+    ),
 )
 
 # 最长前缀优先匹配
@@ -63,6 +91,9 @@ PLOT_ALIASES: dict[str, str] = {
     "pls-da": "plsda_plot",
     "火山": "volcano_plot",
     "volcano": "volcano_plot",
+    "vip": "vip_scores",
+    "vip得分": "vip_scores",
+    "vip分数": "vip_scores",
     "vip热图": "heatmap_top_vip",
     "heatmap": "heatmap_top_vip",
     "热图": "heatmap_top_vip",
@@ -80,9 +111,66 @@ PLOT_ALIASES: dict[str, str] = {
     "网络拓扑": "network_topology",
     "topology": "network_topology",
     "network topology": "network_topology",
+    "pearson": "pearson_distribution",
+    "皮尔逊": "pearson_distribution",
+    "precursor": "precursor_mass_diff",
+    "质量差": "precursor_mass_diff",
+    "fbmn": "fbmn_group_intensity",
+    "组强度": "fbmn_group_intensity",
+    "mass2motif": "mass2motif_overview",
+    "motif overview": "mass2motif_overview",
+    "motif fragments": "mass2motif_fragments",
+    "碎片": "mass2motif_fragments",
+    "motif heatmap": "motif_spectrum_heatmap",
+    "motif network": "mass2motif_network",
+    "化学类别": "chemical_class_distribution",
+    "chemical class": "chemical_class_distribution",
+    "化学共识": "family_chemical_consensus",
+    "注释传播": "annotation_propagation_summary",
+    "annotation": "annotation_propagation_summary",
+    "kegg": "kegg_compound_bubble",
+    "气泡图": "kegg_compound_bubble",
 }
 
-UNSUPPORTED_EDIT_STEMS = frozenset({"network_topology", "heatmap_top_vip"})
+# 已全部纳入语义 SVG；保留空集合便于兼容旧判断
+UNSUPPORTED_EDIT_STEMS = frozenset()
+
+# FBMN 子目录使用 fbmn_*.csv，与 GNPS 的 network_*.csv 同构
+_NETWORK_DATA_ALIASES: dict[str, tuple[str, ...]] = {
+    "network_nodes.csv": ("network_nodes.csv", "fbmn_nodes.csv"),
+    "network_edges.csv": ("network_edges.csv", "fbmn_edges.csv"),
+}
+
+
+def resolve_plot_data_file(data_dir: Path, filename: str) -> Path | None:
+    """在 data_dir 中解析语义数据文件（含 FBMN 别名）。"""
+    root = Path(data_dir)
+    for candidate in _NETWORK_DATA_ALIASES.get(filename, (filename,)):
+        path = root / candidate
+        if path.is_file():
+            return path
+    return None
+
+
+def plot_data_files_ready(data_dir: Path, data_files: tuple[str, ...]) -> bool:
+    return all(resolve_plot_data_file(data_dir, name) is not None for name in data_files)
+
+
+# 常见分析结果图（即使暂无语义 CSV，也可走通用 Agent 改图）
+GENERIC_AGENT_PLOT_STEMS = frozenset({
+    "pearson_distribution",
+    "fbmn_group_intensity",
+    "mass2motif_overview",
+    "mass2motif_fragments",
+    "motif_spectrum_heatmap",
+    "mass2motif_network",
+    "chemical_class_distribution",
+    "family_chemical_consensus",
+    "annotation_propagation_summary",
+    "kegg_compound_bubble",
+    "kegg_compound_dotplot",
+    "kegg_compound_barplot",
+})
 
 
 def plot_type_from_stem(stem: str) -> str | None:
@@ -111,7 +199,10 @@ def agent_editable_stems() -> frozenset[str]:
 
 
 def is_agent_plot_editable_stem(stem: str) -> bool:
-    if stem in UNSUPPORTED_EDIT_STEMS or stem.startswith(tuple(UNSUPPORTED_EDIT_STEMS)):
+    """是否具备语义重绘能力（有 PlotSpec）。通用 PNG 改图不依赖此判断。"""
+    if UNSUPPORTED_EDIT_STEMS and (
+        stem in UNSUPPORTED_EDIT_STEMS or stem.startswith(tuple(UNSUPPORTED_EDIT_STEMS))
+    ):
         return False
     return plot_type_from_stem(stem) is not None
 
@@ -134,7 +225,7 @@ def resolve_plot_source_rel(
     plots = list_editable_plots(output_root)
     if not plots:
         raise ValueError(
-            "未找到可 Agent 重绘的图。请先完成统计分析或分子网络分析。"
+            "未找到可 Agent 改图的图片。请先完成分析生成结果图。"
         )
 
     rel = str(source_rel or "").strip().lstrip("/")
@@ -175,36 +266,57 @@ def resolve_plot_source_rel(
 
 
 def list_editable_plots(output_root: Path) -> list[dict[str, Any]]:
-    """扫描 outputspace 中可 Agent 重绘的 PNG。"""
+    """扫描 outputspace 中可 Agent 改图的 PNG。
+
+    - 语义图（有 PlotSpec + 数据 CSV）：edit_mode=semantic
+    - 其余结果 PNG（含分子网络附加图）：edit_mode=generic
+    同 stem 多目录只保留最新一份。
+    """
+    from web_frontend.backend.session_storage import MERGED_FIGURES_SUBDIR
+
     if not output_root.is_dir():
         return []
     found: list[dict[str, Any]] = []
     for png in sorted(output_root.rglob("*.png")):
         rel_parts = png.relative_to(output_root).parts
-        if rel_parts and rel_parts[0] == EDITED_PLOTS_SUBDIR:
+        if rel_parts and rel_parts[0] in {EDITED_PLOTS_SUBDIR, MERGED_FIGURES_SUBDIR}:
             continue
         stem = png.stem
-        if not is_agent_plot_editable_stem(stem):
-            continue
-        plot_type = plot_type_from_stem(stem)
-        spec = get_plot_spec(plot_type or "")
-        if not spec:
-            continue
-        if not all((png.parent / df).is_file() for df in spec.data_files):
+        # 跳过明显中间产物命名
+        if stem.endswith("_edited") or stem.startswith("tmp_"):
             continue
         rel = png.relative_to(output_root).as_posix()
+        plot_type = plot_type_from_stem(stem)
+        spec = get_plot_spec(plot_type or "") if plot_type else None
+        edit_mode = "generic"
+        title = stem.replace("_", " ")
+        if spec and plot_data_files_ready(png.parent, spec.data_files):
+            edit_mode = "semantic"
+            title = spec.default_title
+            plot_type = spec.plot_type
+        elif plot_type:
+            # 已注册但缺数据文件：仍可通用改标题
+            edit_mode = "generic"
+            title = spec.default_title if spec else title
         found.append(
             {
                 "rel": rel,
                 "name": png.name,
                 "stem": stem,
-                "plot_type": plot_type,
-                "title": spec.default_title,
+                "plot_type": plot_type or "generic",
+                "title": title,
+                "edit_mode": edit_mode,
                 "modified": png.stat().st_mtime,
             }
         )
-    found.sort(key=lambda item: item["modified"], reverse=True)
-    return found
+    by_stem: dict[str, dict[str, Any]] = {}
+    for item in found:
+        prev = by_stem.get(item["stem"])
+        if prev is None or item["modified"] >= prev["modified"]:
+            by_stem[item["stem"]] = item
+    deduped = list(by_stem.values())
+    deduped.sort(key=lambda item: item["modified"], reverse=True)
+    return deduped
 
 
 _PLOT_EDIT_INTENT_RE = re.compile(
@@ -214,7 +326,7 @@ _PLOT_EDIT_INTENT_RE = re.compile(
     r"颜色|色号|配色|调色|字体|字号|图例|"
     r"用\s*#|#[0-9a-fA-F]{3,8}\b|"
     r"改成|改为|换成|用.{0,8}色|"
-    r"直方图|分布图|"
+    r"直方图|分布图|拓扑图|热图|气泡图|"
     r"重新绘|重绘|重新作图|重新生成图|"
     r"edit\s+(?:the\s+)?plot|change\s+(?:the\s+)?title|recolor|font\s+size|plot\s+style"
     r")",
@@ -223,9 +335,12 @@ _PLOT_EDIT_INTENT_RE = re.compile(
 
 _PLOT_REFERENCE_RE = re.compile(
     r"(?:"
-    r"pca|plsda|pls-da|主成分|火山|volcano|"
-    r"余弦|cosine|相似度|度数|分布图|"
-    r"pca_plot|volcano_plot|cosine_distribution|degree_distribution|family_size"
+    r"pca|plsda|pls-da|主成分|火山|volcano|vip|热图|heatmap|"
+    r"余弦|cosine|相似度|度数|分布图|拓扑|topology|"
+    r"pearson|皮尔逊|fbmn|mass2motif|motif|化学类别|注释传播|kegg|气泡|"
+    r"pca_plot|volcano_plot|cosine_distribution|degree_distribution|family_size|"
+    r"network_topology|chemical_class|annotation_propagation|precursor_mass|"
+    r"[\w.-]+\.png"
     r")",
     re.IGNORECASE,
 )

@@ -10,6 +10,31 @@ from web_frontend.backend.constants import ALLOWED_TOOL_NAMES
 LOCAL_TOOL_NAMES = frozenset({"plot_edit", "image_merge", "merge_edit"})
 ALL_AGENT_TOOL_NAMES = frozenset(ALLOWED_TOOL_NAMES | LOCAL_TOOL_NAMES)
 
+# LLM 常编造的别名 → 真实本地工具名
+LOCAL_TOOL_ALIASES: dict[str, str] = {
+    "plot_merge": "image_merge",
+    "merge_plots": "image_merge",
+    "merge_images": "image_merge",
+    "merge_figure": "image_merge",
+    "merge_figures": "image_merge",
+    "panel_merge": "image_merge",
+    "figure_merge": "image_merge",
+    "edit_plot": "plot_edit",
+    "plot_edit_agent": "plot_edit",
+    "edit_merge": "merge_edit",
+    "merged_edit": "merge_edit",
+}
+
+
+def normalize_agent_tool_name(name: str | None) -> str | None:
+    if not name:
+        return None
+    key = str(name).strip()
+    if not key:
+        return None
+    mapped = LOCAL_TOOL_ALIASES.get(key) or LOCAL_TOOL_ALIASES.get(key.lower())
+    return mapped or key
+
 
 @dataclass
 class AgentContext:
@@ -47,9 +72,10 @@ LOCAL_TOOL_SPECS: dict[str, ToolSpec] = {
     "plot_edit": ToolSpec(
         name="plot_edit",
         description=(
-            "Agent 改图：按自然语言修改 PCA/PLS-DA/火山图/网络分布图等的标题、颜色、字号，"
-            "从原始数据生成 Vega-Lite、SVG 与 PNG 并写入 edited_plots/。"
-            "需会话中已有对应 PNG 与数据 CSV。"
+            "Agent 改图：按自然语言修改结果图标题、颜色、字号等。"
+            "对 PCA/PLS-DA/火山图/网络分布图等有数据源的图，从原始数据生成可编辑 Vega-Lite/SVG/PNG；"
+            "对其余分析结果图（如 FBMN、Mass2Motif、化学类别图等）做通用标题/样式改图。"
+            "写入 edited_plots/。可传 source_rel（相对路径或文件名）；省略则从 instruction 自动解析。"
         ),
         input_schema=_schema(
             {
@@ -135,11 +161,11 @@ async def load_all_tools() -> list[Any]:
 
 
 def is_local_tool(name: str) -> bool:
-    return name in LOCAL_TOOL_NAMES
+    return normalize_agent_tool_name(name) in LOCAL_TOOL_NAMES
 
 
 def get_local_spec(name: str) -> ToolSpec | None:
-    return LOCAL_TOOL_SPECS.get(name)
+    return LOCAL_TOOL_SPECS.get(normalize_agent_tool_name(name) or "")
 
 
 def normalize_local_tool_args(tool_name: str, tool_args: dict[str, Any], ctx: AgentContext) -> dict[str, Any]:
@@ -169,6 +195,7 @@ def normalize_local_tool_args(tool_name: str, tool_args: dict[str, Any], ctx: Ag
 
 def run_local_tool(tool_name: str, tool_args: dict[str, Any], ctx: AgentContext) -> dict[str, Any]:
     """同步执行本地 visual 工具，返回结构化结果。"""
+    tool_name = normalize_agent_tool_name(tool_name) or tool_name
     args = normalize_local_tool_args(tool_name, tool_args, ctx)
 
     if tool_name == "plot_edit":
@@ -235,22 +262,36 @@ def _run_plot_edit(args: dict[str, Any], ctx: AgentContext) -> dict[str, Any]:
 def _run_image_merge(args: dict[str, Any], ctx: AgentContext) -> dict[str, Any]:
     from web_frontend.backend.image_merge_service import ImageMergeError, agent_merge_images
 
+    # 始终附带原始用户消息，避免 LLM 英文计划丢掉「两列/ABCD/字号」等中文约束
+    instruction = str(args.get("instruction") or "").strip()
+    user_msg = (ctx.user_message or "").strip()
+    if user_msg and user_msg not in instruction:
+        instruction = f"{user_msg}\n{instruction}".strip()
+
     try:
         result = agent_merge_images(
             project_root=ctx.project_root,
             session_id=ctx.session_id,
             storage_slug=ctx.storage_slug,
-            message=args["instruction"],
+            message=instruction,
         )
     except ImageMergeError as exc:
         raise RuntimeError(str(exc)) from exc
 
     name = result["file"]["name"]
+    opts = result.get("options") or {}
+    mode = opts.get("label_mode") or "upper"
+    font = opts.get("label_font_size") or 28
+    cols = result.get("cols_used") or opts.get("cols") or "?"
     return {
         "kind": "image_merge",
         "ok": True,
         "files": [name],
-        "message": f"拼图完成：{name}",
+        "message": (
+            f"拼图完成：{name}\n"
+            f"- 列数：{cols}；标签模式：{mode}；标签字号：{font}\n"
+            f"- 目录：merged_figures/（不是 merged_plots/）"
+        ),
         "result": result,
     }
 
@@ -292,6 +333,7 @@ def format_local_tool_result(payload: dict[str, Any]) -> str:
 
 __all__ = [
     "LOCAL_TOOL_NAMES",
+    "LOCAL_TOOL_ALIASES",
     "ALL_AGENT_TOOL_NAMES",
     "AgentContext",
     "ToolSpec",
@@ -299,6 +341,7 @@ __all__ = [
     "load_all_tools",
     "is_local_tool",
     "get_local_spec",
+    "normalize_agent_tool_name",
     "normalize_local_tool_args",
     "run_local_tool",
     "format_local_tool_result",

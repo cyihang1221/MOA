@@ -15,11 +15,39 @@ DIFFERENTIAL_DEPENDENT_TOOLS = frozenset({
 # 可直接用 upload 下 .mgf 或 peaks/spectra.mgf，不依赖差异代谢物列表
 MGF_STANDALONE_TOOLS = frozenset({
     "molecular_networking_gnps",
+    "molecular_networking_fbmn",
+    "molecular_networking_ms2lda",
+    "molecular_networking_molnetenhancer",
     "deepmass_annotation",
+    "library_match_cosine",
+    "library_match_jaccard",
+    "library_match_spectral_entropy",
+    "library_match_spec2vec",
+    "library_match_ms2deepscore",
+    "library_match_blink",
+    "library_match_msbert",
+    "library_match_pair_from_mgf",
+    "library_match_full_workflow",
 })
 
 MZML_DEPENDENT_TOOLS = frozenset({
     "data_preprocessing_xcms",
+    "data_preprocessing_openms",
+    "data_preprocessing_mzmine",
+    "data_preprocessing_kpic",
+    "data_preprocessing_pitracer",
+    "data_preprocessing_tracmass",
+    "data_preprocessing_peakonly",
+    "mzmine_lcms_datapreprocess",
+    "peak_detection_xcms_centwave",
+    "peak_detection_openms_peakpickerhires",
+    "peak_detection_openms_featurefinder",
+    "peak_detection_kpic",
+    "peak_detection_peakonly",
+    "peak_detection_mzmine_gridmass",
+    "peak_detection_mzmine_adap",
+    "peak_picking_openms",
+    "feature_detection_openms",
     "feature_filtering_and_missing_value_imputation_knn",
     "statistical_analysis_mixomics",
     *DIFFERENTIAL_DEPENDENT_TOOLS,
@@ -28,6 +56,7 @@ MZML_DEPENDENT_TOOLS = frozenset({
 _RAW_CONVERTERS = frozenset({
     "convert_raw_to_mzml_msconvert",
     "convert_raw_to_mzml_ThermoRawFileParser",
+    "convert_raw_to_mzml_OpenMS_FileConverter",
 })
 
 _DIFF_CSV = "differential_metabolites.csv"

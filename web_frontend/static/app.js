@@ -163,16 +163,20 @@ const mergeAgentEditorApply = document.getElementById("mergeAgentEditorApply");
 const mergeAgentEditorStatus = document.getElementById("mergeAgentEditorStatus");
 
 const IMAGE_EXT_RE = /\.(png|jpe?g|gif|webp|svg)$/i;
-const KONVA_ONLY_IMAGE_STEMS = new Set(["network_topology"]);
+const KONVA_ONLY_IMAGE_STEMS = new Set([]);
 const AGENT_PLOT_STEM_PREFIXES = [
   "pca_plot",
   "plsda_plot",
   "volcano_plot",
+  "vip_scores",
+  "heatmap_top_vip",
   "family_size_distribution",
   "degree_distribution",
   "cosine_distribution",
+  "network_topology",
+  "precursor_mass_diff",
 ];
-const AGENT_PLOT_UNSUPPORTED_STEMS = new Set(["network_topology", "heatmap_top_vip"]);
+const AGENT_PLOT_UNSUPPORTED_STEMS = new Set([]);
 const MERGE_CANVAS_BG = "#ffffff";
 const MERGE_LAYOUT_GAP = 24;
 const MERGE_SNAP_THRESHOLD = 10;
@@ -208,6 +212,48 @@ function normalizePath(path) {
 
 function isImagePath(path) {
   return IMAGE_EXT_RE.test(normalizePath(path));
+}
+
+/** 图库同名图优先：edited_plots > merged_figures > 更新时间更晚 > 更短路径 */
+function preferOutputGalleryImage(a, b) {
+  const aName = String(a?.name || "");
+  const bName = String(b?.name || "");
+  const aEdited = aName.startsWith("edited_plots/");
+  const bEdited = bName.startsWith("edited_plots/");
+  if (aEdited !== bEdited) return aEdited ? a : b;
+  const aMerged = aName.startsWith("merged_figures/");
+  const bMerged = bName.startsWith("merged_figures/");
+  if (aMerged !== bMerged) return aMerged ? a : b;
+  const aM = Date.parse(a?.modified || "") || 0;
+  const bM = Date.parse(b?.modified || "") || 0;
+  if (aM !== bM) return aM >= bM ? a : b;
+  return aName.length <= bName.length ? a : b;
+}
+
+/**
+ * 不同工具目录常产出同名 PNG（如 cosine_distribution.png）。
+ * 图库只显示 basename，按文件名去重；merged_figures 内互不去重。
+ */
+function dedupeOutputImagesByBasename(files) {
+  const chosen = new Map();
+  (files || []).forEach((file) => {
+    const rel = String(file?.name || "");
+    if (!rel) return;
+    if (rel.startsWith("merged_figures/")) {
+      chosen.set(`merged:${rel}`, file);
+      return;
+    }
+    const base = rel.split("/").pop().toLowerCase();
+    const prev = chosen.get(base);
+    chosen.set(base, prev ? preferOutputGalleryImage(file, prev) : file);
+  });
+  return Array.from(chosen.values());
+}
+
+function outputImageParentDir(rel) {
+  const parts = String(rel || "").split("/");
+  if (parts.length <= 1) return "";
+  return parts.slice(0, -1).join("/");
 }
 
 function toWorkspaceRel(path) {
@@ -408,19 +454,32 @@ function renderOutputImageGallery(files, sessionId) {
   if (!outputImageGallery) return;
   outputImageGallery.innerHTML = "";
   const fileNames = new Set((files || []).map((file) => String(file.name || "")));
-  const images = (files || [])
-    .filter((file) => {
+  const images = dedupeOutputImagesByBasename(
+    (files || []).filter((file) => {
       if (!isImagePath(file.name)) return false;
-      if (!String(file.name || "").toLowerCase().endsWith(".svg")) return true;
-      const pngName = String(file.name).replace(/\.svg$/i, ".png");
-      return !fileNames.has(pngName);
+      const name = String(file.name || "");
+      if (!name.toLowerCase().endsWith(".svg")) return true;
+      const pngSamePath = name.replace(/\.svg$/i, ".png");
+      if (fileNames.has(pngSamePath)) return false;
+      // 任一目录已有同名 PNG 时，不再单独展示 SVG
+      const svgBasePng = name.split("/").pop().replace(/\.svg$/i, ".png").toLowerCase();
+      return !(files || []).some((other) => {
+        const otherName = String(other.name || "");
+        return (
+          otherName.toLowerCase().endsWith(".png") &&
+          otherName.split("/").pop().toLowerCase() === svgBasePng
+        );
+      });
     })
-    .sort((a, b) => {
-      const aMerged = String(a.name || "").startsWith("merged_figures/");
-      const bMerged = String(b.name || "").startsWith("merged_figures/");
-      if (aMerged !== bMerged) return aMerged ? -1 : 1;
-      return 0;
-    });
+  ).sort((a, b) => {
+    const aMerged = String(a.name || "").startsWith("merged_figures/");
+    const bMerged = String(b.name || "").startsWith("merged_figures/");
+    if (aMerged !== bMerged) return aMerged ? -1 : 1;
+    const aM = Date.parse(a.modified || "") || 0;
+    const bM = Date.parse(b.modified || "") || 0;
+    if (aM !== bM) return bM - aM;
+    return String(a.name || "").localeCompare(String(b.name || ""));
+  });
   workspaceOutputImages = images;
   if (outputImageGalleryWrap) {
     outputImageGalleryWrap.classList.toggle("hidden", images.length === 0);
@@ -462,7 +521,10 @@ function renderOutputImageGallery(files, sessionId) {
     }
     const meta = document.createElement("div");
     meta.className = "output-image-meta";
-    meta.textContent = formatSize(file.size || 0);
+    const parentDir = outputImageParentDir(file.name);
+    meta.textContent = parentDir
+      ? `${parentDir} · ${formatSize(file.size || 0)}`
+      : formatSize(file.size || 0);
     const download = createDownloadLink(sessionId, file.name, t("image.download"));
     if (download) download.classList.add("output-image-download");
     const svgRel = String(file.name || "").replace(/\.(png|jpe?g|gif|webp)$/i, ".svg");
@@ -470,60 +532,148 @@ function renderOutputImageGallery(files, sessionId) {
       ? createDownloadLink(sessionId, svgRel, "SVG")
       : null;
     if (svgDownload) svgDownload.classList.add("output-image-download");
-    const editBtn = document.createElement("button");
-    editBtn.type = "button";
-    editBtn.className = "output-image-edit secondary-btn small-btn";
-    editBtn.textContent = t("image.edit");
-    editBtn.addEventListener("click", async (event) => {
-      event.stopPropagation();
-      await openImageEditor({
-        url,
-        rel: file.name,
-        title: file.name.split("/").pop(),
-      });
-    });
 
     side.appendChild(title);
     side.appendChild(meta);
-    side.appendChild(editBtn);
-
-    if (isAgentPlotEditable(file.name)) {
-      const agentBtn = document.createElement("button");
-      agentBtn.type = "button";
-      agentBtn.className = "output-image-agent-edit secondary-btn small-btn";
-      agentBtn.textContent = t("image.agentEdit");
-      agentBtn.addEventListener("click", (event) => {
-        event.stopPropagation();
-        openPlotAgentEditor({
-          rel: file.name,
-          title: file.name.split("/").pop(),
-        });
-      });
-      side.appendChild(agentBtn);
-    }
-
-    if (isMergedFigureRel(file.name)) {
-      const mergeAgentBtn = document.createElement("button");
-      mergeAgentBtn.type = "button";
-      mergeAgentBtn.className = "output-image-merge-agent secondary-btn small-btn";
-      mergeAgentBtn.textContent = t("image.mergeAgentEdit");
-      mergeAgentBtn.addEventListener("click", (event) => {
-        event.stopPropagation();
-        openMergeAgentEditor({
-          rel: file.name,
-          title: file.name.split("/").pop(),
-        });
-      });
-      side.appendChild(mergeAgentBtn);
-    }
-
-    if (download) side.appendChild(download);
-    if (svgDownload) side.appendChild(svgDownload);
+    side.appendChild(
+      buildOutputImageActionsMenu({
+        sessionId,
+        file,
+        url,
+        download,
+        svgDownload,
+      })
+    );
 
     item.appendChild(thumbBtn);
     item.appendChild(side);
     outputImageGallery.appendChild(item);
   });
+}
+
+function closeAllOutputImageMenus(except = null) {
+  document.querySelectorAll(".output-image-menu.open").forEach((menu) => {
+    if (except && menu === except) return;
+    menu.classList.remove("open");
+    const btn = menu.querySelector(".output-image-menu-toggle");
+    if (btn) btn.setAttribute("aria-expanded", "false");
+  });
+}
+
+function buildOutputImageActionsMenu({ sessionId, file, url, download, svgDownload }) {
+  const wrap = document.createElement("div");
+  wrap.className = "output-image-menu";
+
+  const toggle = document.createElement("button");
+  toggle.type = "button";
+  toggle.className = "output-image-menu-toggle secondary-btn small-btn";
+  toggle.setAttribute("aria-expanded", "false");
+  toggle.setAttribute("aria-haspopup", "true");
+  toggle.textContent = t("image.actions");
+  toggle.addEventListener("click", (event) => {
+    event.stopPropagation();
+    const willOpen = !wrap.classList.contains("open");
+    closeAllOutputImageMenus(wrap);
+    wrap.classList.toggle("open", willOpen);
+    toggle.setAttribute("aria-expanded", willOpen ? "true" : "false");
+  });
+
+  const panel = document.createElement("div");
+  panel.className = "output-image-menu-panel";
+  panel.setAttribute("role", "menu");
+
+  const addItem = (label, onClick, { danger = false } = {}) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = danger ? "output-image-menu-item danger" : "output-image-menu-item";
+    btn.setAttribute("role", "menuitem");
+    btn.textContent = label;
+    btn.addEventListener("click", async (event) => {
+      event.stopPropagation();
+      closeAllOutputImageMenus();
+      await onClick();
+    });
+    panel.appendChild(btn);
+    return btn;
+  };
+
+  addItem(t("image.edit"), async () => {
+    await openImageEditor({
+      url,
+      rel: file.name,
+      title: file.name.split("/").pop(),
+    });
+  });
+
+  if (isAgentPlotEditable(file.name)) {
+    addItem(t("image.agentEdit"), () => {
+      openPlotAgentEditor({
+        rel: file.name,
+        title: file.name.split("/").pop(),
+      });
+    });
+  }
+
+  if (isMergedFigureRel(file.name)) {
+    addItem(t("image.mergeAgentEdit"), () => {
+      openMergeAgentEditor({
+        rel: file.name,
+        title: file.name.split("/").pop(),
+      });
+    });
+  }
+
+  if (download?.href) {
+    addItem(t("image.download"), () => {
+      const a = document.createElement("a");
+      a.href = download.href;
+      a.download = download.download || String(file.name).split("/").pop() || "download";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    });
+  }
+
+  if (svgDownload?.href) {
+    addItem(t("image.downloadSvg"), () => {
+      const a = document.createElement("a");
+      a.href = svgDownload.href;
+      a.download =
+        svgDownload.download ||
+        String(file.name).split("/").pop().replace(/\.\w+$/i, ".svg") ||
+        "download.svg";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    });
+  }
+
+  if (!isSharedView) {
+    addItem(t("image.delete"), async () => {
+      await deleteWorkspaceOutputImage(sessionId, file.name);
+    }, { danger: true });
+  }
+
+  wrap.append(toggle, panel);
+  return wrap;
+}
+
+async function deleteWorkspaceOutputImage(sessionId, rel) {
+  if (!sessionId || !rel) return;
+  const name = String(rel).split("/").pop();
+  if (!window.confirm(t("image.deleteConfirm", { name }))) return;
+  try {
+    const res = await fetch(
+      `/api/sessions/${sessionId}/workspace-file?rel=${encodeURIComponent(rel)}`,
+      { method: "DELETE" }
+    );
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.detail || t("image.deleteFail"));
+    setStatus(t("image.deleteDone", { name }));
+    await loadWorkspaceFiles(sessionId);
+  } catch (err) {
+    setStatus(t("image.deleteFailDetail", { msg: err.message || String(err) }));
+  }
 }
 
 async function loadWorkspaceFiles(sessionId) {
@@ -886,7 +1036,13 @@ function semanticSetNumber(input, value) {
 }
 
 function semanticColorSection(plotType, key) {
-  if (plotType === "volcano" || plotType === "degree_hist" || plotType === "cosine_hist") {
+  if (
+    plotType === "volcano" ||
+    plotType === "degree_hist" ||
+    plotType === "cosine_hist" ||
+    plotType === "precursor_mass_diff" ||
+    plotType === "vip_bar"
+  ) {
     return "colors";
   }
   return "palette";
@@ -900,8 +1056,10 @@ function populateSemanticPalette(config, colorKeys, plotType) {
     keys.splice(0, keys.length, "significant", "nonsignificant");
   } else if (plotType === "degree_hist") {
     keys.splice(0, keys.length, "histogram_color", "threshold_color");
-  } else if (plotType === "cosine_hist") {
+  } else if (plotType === "cosine_hist" || plotType === "precursor_mass_diff") {
     keys.splice(0, keys.length, "histogram_color", "threshold_color", "median_color");
+  } else if (plotType === "vip_bar") {
+    keys.splice(0, keys.length, "bar_color");
   }
   keys.forEach((key) => {
     const section = semanticColorSection(plotType, key);
@@ -945,7 +1103,10 @@ function populateSemanticControls(payload) {
   if (semanticLabelsShow) semanticLabelsShow.checked = config.show_sample_labels !== false;
 
   const isScores = payload.plot_type === "pca" || payload.plot_type === "plsda";
-  const isHistogram = payload.plot_type === "degree_hist" || payload.plot_type === "cosine_hist";
+  const isHistogram =
+    payload.plot_type === "degree_hist" ||
+    payload.plot_type === "cosine_hist" ||
+    payload.plot_type === "precursor_mass_diff";
   if (semanticLabelsShow?.closest(".semantic-check-field")) {
     semanticLabelsShow.closest(".semantic-check-field").classList.toggle("hidden", !isScores);
   }
@@ -1048,7 +1209,11 @@ async function tryOpenSemanticEditor({ rel, title }) {
       `/api/sessions/${currentSessionId}/semantic-plot?source_rel=${encodeURIComponent(rel)}`
     );
     const payload = await res.json().catch(() => ({}));
-    if (!res.ok) return false;
+    if (!res.ok) {
+      const detail = payload.detail || res.statusText || "semantic plot unavailable";
+      setStatus(t("image.semanticFail", { msg: detail }));
+      return false;
+    }
     closeImageLightbox();
     closeImageEditor();
     closePlotlyEditor();
@@ -1068,7 +1233,8 @@ async function tryOpenSemanticEditor({ rel, title }) {
     await renderSemanticSpec(payload.vega_spec);
     setSemanticEditorStatus(t("image.semanticReady"));
     return true;
-  } catch {
+  } catch (err) {
+    setStatus(t("image.semanticFail", { msg: err.message || String(err) }));
     return false;
   }
 }
@@ -1157,12 +1323,12 @@ function hasMergeSidecar(rel) {
 }
 
 function isAgentPlotEditable(rel) {
-  const base = String(rel || "").split("/").pop() || "";
-  const stem = editableFileStem(base);
-  if (AGENT_PLOT_UNSUPPORTED_STEMS.has(stem)) return false;
-  return AGENT_PLOT_STEM_PREFIXES.some(
-    (prefix) => stem === prefix || stem.startsWith(`${prefix}_`)
-  );
+  const name = String(rel || "");
+  if (!name || isMergedFigureRel(name)) return false;
+  if (!isImagePath(name)) return false;
+  if (name.toLowerCase().endsWith(".svg")) return false;
+  // 输出图库中的结果图均可 Agent 改图（语义图走 SVG 重绘，其余走通用标题/样式改图）
+  return true;
 }
 
 /** 与 image_merge_registry.py 语义一致 — 拼图编辑 */
@@ -1221,19 +1387,19 @@ function shouldUsePlotEdit(message) {
   const text = (message || "").trim();
   if (!text) return false;
   if (/(?:进行|执行|跑|开始|继续).{0,12}分析/.test(text)) {
-    if (!/标题|颜色|色号|配色|#|改成|改为|改图|字号|字体|直方图|分布图/.test(text)) {
+    if (!/标题|颜色|色号|配色|#|改成|改为|改图|字号|字体|直方图|分布图|拓扑|热图/.test(text)) {
       return false;
     }
   }
   if (
-    /改图|修改(?:一下)?图|调整(?:一下)?图|更改?图|美化图|标题改|标题改为|标题改成|标题修改为|标题为|改(?:一下)?标题|修改.*标题|更换标题|颜色|色号|配色|调色|字体|字号|图例|用\s*#|#[0-9a-fA-F]{3,8}\b|改成|改为|换成|用.{0,8}色|直方图|分布图|重新绘|重绘|重新作图|edit\s+(?:the\s+)?plot|change\s+(?:the\s+)?title|recolor|font\s+size|plot\s+style/i.test(
+    /改图|修改(?:一下)?图|调整(?:一下)?图|更改?图|美化图|标题改|标题改为|标题改成|标题修改为|标题为|改(?:一下)?标题|修改.*标题|更换标题|颜色|色号|配色|调色|字体|字号|图例|用\s*#|#[0-9a-fA-F]{3,8}\b|改成|改为|换成|用.{0,8}色|直方图|分布图|拓扑图|热图|气泡图|重新绘|重绘|重新作图|edit\s+(?:the\s+)?plot|change\s+(?:the\s+)?title|recolor|font\s+size|plot\s+style/i.test(
       text
     )
   ) {
     return true;
   }
   const hasPlotRef =
-    /pca|plsda|pls-da|主成分|火山|volcano|余弦|cosine|相似度|度数|分布图|pca_plot|volcano_plot|cosine_distribution/i.test(
+    /pca|plsda|pls-da|主成分|火山|volcano|vip|热图|heatmap|余弦|cosine|相似度|度数|分布图|拓扑|topology|pearson|皮尔逊|fbmn|mass2motif|motif|化学类别|注释传播|kegg|气泡|pca_plot|volcano_plot|cosine_distribution|network_topology|chemical_class|[\w.-]+\.png/i.test(
       text
     );
   const hasStyle =
@@ -3477,22 +3643,22 @@ async function initRuntime() {
 }
 
 async function initTools() {
-  // 暂时隐藏左侧可用工具栏，跳过 /api/tools 请求
+  // 暂时隐藏工具面板，跳过 /api/tools 请求
   return;
   try {
     const res = await fetch("/api/tools", { signal: fetchTimeoutSignal(60000) });
     const data = await res.json();
-    // if (toolsCount) toolsCount.textContent = data.total ? `(${data.total})` : "";
+    if (toolsCount) toolsCount.textContent = data.total ? `(${data.total})` : "";
     if (toolsPanel) {
-    renderToolsCatalog(data.categories || [], toolsPanel, false);
+      renderToolsCatalog(data.categories || [], toolsPanel, false);
     }
-    // if (toolsSidebar) {
-    //   renderToolsCatalog(data.categories || [], toolsSidebar, true);
-    // }
+    if (toolsSidebar) {
+      renderToolsCatalog(data.categories || [], toolsSidebar, true);
+    }
   } catch {
-    if (toolsPanel) {
-    toolsPanel.innerHTML = `<p class='muted'>${t("tools.loadFail")}</p>`;
-    }
+    const failHtml = `<p class='muted'>${t("tools.loadFail")}</p>`;
+    if (toolsPanel) toolsPanel.innerHTML = failHtml;
+    if (toolsSidebar) toolsSidebar.innerHTML = failHtml;
   }
 }
 
@@ -4484,6 +4650,7 @@ if (imageMergeBackdrop) {
 if (semanticEditorSave) semanticEditorSave.addEventListener("click", saveSemanticEdit);
 if (semanticEditorCancel) semanticEditorCancel.addEventListener("click", closeSemanticEditor);
 if (semanticEditorClose) semanticEditorClose.addEventListener("click", closeSemanticEditor);
+document.addEventListener("click", () => closeAllOutputImageMenus());
 if (semanticEditorBackdrop) semanticEditorBackdrop.addEventListener("click", closeSemanticEditor);
 if (plotlyLegendColorInput) {
   plotlyLegendColorInput.addEventListener("change", () => {

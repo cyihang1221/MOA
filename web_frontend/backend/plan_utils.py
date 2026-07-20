@@ -81,35 +81,63 @@ def raw_conversion_complete(paths: dict[str, str]) -> bool:
     return not raw_conversion_needed(paths)
 
 
+def _rewrite_plan_tool_aliases(task: str) -> str:
+    """把 LLM 编造的 plot_merge 等改写成已注册工具名。"""
+    import re
+
+    from web_frontend.backend.tool_registry import LOCAL_TOOL_ALIASES
+
+    text = str(task)
+    for alias, real in sorted(LOCAL_TOOL_ALIASES.items(), key=lambda x: len(x[0]), reverse=True):
+        text = re.sub(rf"\b{re.escape(alias)}\b", real, text, flags=re.IGNORECASE)
+    # 幻觉输出目录
+    text = re.sub(r"\bmerged_plots\b", "merged_figures", text, flags=re.IGNORECASE)
+    return text
+
+
 def filter_plan_tasks_to_registered_tools(
     tasks: list,
     tool_names: list[str] | None = None,
 ) -> list[str]:
+    from web_frontend.backend.tool_registry import LOCAL_TOOL_ALIASES
+
     names = list(tool_names or ALL_AGENT_TOOL_NAMES)
+    alias_names = set(LOCAL_TOOL_ALIASES.keys())
     if not names:
-        return [str(t) for t in tasks]
+        return [_rewrite_plan_tool_aliases(t) for t in tasks]
 
     kept: list[str] = []
     for task in tasks:
-        text = str(task).strip()
+        text = _rewrite_plan_tool_aliases(str(task).strip())
         if not text.lower().startswith("use "):
             continue
         lower = text.lower()
-        if any(name.lower() in lower for name in names):
+        if any(name.lower() in lower for name in names) or any(
+            alias.lower() in lower for alias in alias_names
+        ):
             kept.append(text)
-    return kept if kept else [str(t) for t in tasks if str(t).strip().lower().startswith("use ")]
+    if kept:
+        return kept
+    return [
+        _rewrite_plan_tool_aliases(t)
+        for t in tasks
+        if str(t).strip().lower().startswith("use ")
+    ]
 
 
 def guess_tool_name_from_task(task: str, allowed: frozenset[str] | set[str]) -> str | None:
     """从计划步骤文本中猜测工具名（LLM 匹配失败时的兜底）。"""
     import re
 
-    m = re.search(r"Use\s+([a-zA-Z0-9_]+)", task, re.IGNORECASE)
+    from web_frontend.backend.tool_registry import normalize_agent_tool_name
+
+    text = _rewrite_plan_tool_aliases(task)
+    m = re.search(r"Use\s+([a-zA-Z0-9_]+)", text, re.IGNORECASE)
     if m:
-        name = m.group(1)
+        name = normalize_agent_tool_name(m.group(1))
         if name in allowed:
             return name
-    lower = task.lower()
+    lower = text.lower()
     for name in sorted(allowed, key=len, reverse=True):
         if name.lower() in lower:
             return name
@@ -146,14 +174,39 @@ def inject_mgf_standalone_tasks(
             f"Use deepmass_annotation to perform deep learning annotation with "
             f"input_dir {deepmass_dir} and output_dir {deepmass_dir}."
         )
-    if any(k in lower for k in ("分子网络", "molecular network", "networking", "gnps")) and (
-        "molecular_networking_gnps" in names
-    ):
-        mgf_path = mgf_hint or f"{paths['outputspace']}/peak_detection_results/spectra.mgf"
-        out.append(
-            f"Use molecular_networking_gnps to build molecular network from "
-            f"input_mgf {mgf_path} and output_dir {network_dir}."
+    if any(
+        k in lower
+        for k in (
+            "分子网络",
+            "molecular network",
+            "networking",
+            "gnps",
+            "fbmn",
+            "ms2lda",
+            "molnetenhancer",
         )
+    ):
+        preferred = "molecular_networking_gnps"
+        if "fbmn" in lower and "molecular_networking_fbmn" in names:
+            preferred = "molecular_networking_fbmn"
+        elif "ms2lda" in lower and "molecular_networking_ms2lda" in names:
+            preferred = "molecular_networking_ms2lda"
+        elif ("molnetenhancer" in lower or "molnet" in lower) and (
+            "molecular_networking_molnetenhancer" in names
+        ):
+            preferred = "molecular_networking_molnetenhancer"
+        if preferred in names:
+            method = preferred.replace("molecular_networking_", "")
+            out_dir = (
+                network_dir
+                if preferred == "molecular_networking_gnps"
+                else f"{paths['outputspace']}/molecular_network_{method}_results"
+            )
+            mgf_path = mgf_hint or f"{paths['outputspace']}/peak_detection_results/spectra.mgf"
+            out.append(
+                f"Use {preferred} to build molecular network from "
+                f"input_mgf {mgf_path} and output_dir {out_dir}."
+            )
     return out or tasks
 
 

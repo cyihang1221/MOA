@@ -9,6 +9,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from web_frontend.backend.plot_edit_registry import resolve_plot_data_file
 from web_frontend.backend.plot_renderer import _family_size_payload, load_scores_and_groups
 from web_frontend.backend.plot_theme import DEFAULT_PALETTE, plot_config_path_for_png
 
@@ -259,7 +260,10 @@ def _volcano_spec(data_dir: Path, plot_config: dict[str, Any]) -> dict[str, Any]
 
 
 def _family_size_spec(data_dir: Path, plot_config: dict[str, Any]) -> dict[str, Any]:
-    labels, sizes, defaults = _family_size_payload(data_dir / "network_nodes.csv")
+    nodes = resolve_plot_data_file(data_dir, "network_nodes.csv")
+    if nodes is None:
+        raise ValueError("缺少 network_nodes.csv / fbmn_nodes.csv")
+    labels, sizes, defaults = _family_size_payload(nodes)
     palette = plot_config.get("palette") or {}
     values = [
         {"family": label, "count": int(size), "color": palette.get(label, defaults[i]), "order": i}
@@ -305,21 +309,63 @@ def _family_size_spec(data_dir: Path, plot_config: dict[str, Any]) -> dict[str, 
     return spec
 
 
+def _precursor_mass_diff_values(data_dir: Path) -> list[float]:
+    nodes_path = resolve_plot_data_file(data_dir, "network_nodes.csv")
+    edges_path = resolve_plot_data_file(data_dir, "network_edges.csv")
+    if nodes_path is None or edges_path is None:
+        raise ValueError("缺少 network/fbmn nodes 或 edges CSV，无法计算前体质量差")
+    nodes = pd.read_csv(nodes_path)
+    edges = pd.read_csv(edges_path)
+    if "feature_id" not in nodes.columns or "precursor_mz" not in nodes.columns:
+        raise ValueError("nodes CSV 缺少 feature_id / precursor_mz")
+    if "source" not in edges.columns or "target" not in edges.columns:
+        raise ValueError("edges CSV 缺少 source / target")
+    mz_map = {
+        str(row["feature_id"]): float(row["precursor_mz"])
+        for _, row in nodes.iterrows()
+        if pd.notna(row.get("precursor_mz")) and float(row["precursor_mz"]) > 0
+    }
+    diffs: list[float] = []
+    for _, row in edges.iterrows():
+        a = mz_map.get(str(row["source"]))
+        b = mz_map.get(str(row["target"]))
+        if a is None or b is None:
+            continue
+        delta = abs(a - b)
+        if 0.1 <= delta <= 600:
+            diffs.append(delta)
+    if len(diffs) < 5:
+        raise ValueError("有效前体质量差不足 5 个，无法语义编辑")
+    return diffs
+
+
 def _histogram_spec(
     plot_type: str,
     data_dir: Path,
     plot_config: dict[str, Any],
 ) -> dict[str, Any]:
     if plot_type == "degree_hist":
-        frame = pd.read_csv(data_dir / "network_nodes.csv")
+        nodes = resolve_plot_data_file(data_dir, "network_nodes.csv")
+        if nodes is None:
+            raise ValueError("缺少 network_nodes.csv / fbmn_nodes.csv")
+        frame = pd.read_csv(nodes)
         raw = frame["degree"] if "degree" in frame.columns else pd.Series([1] * len(frame))
         values_array = raw.dropna().astype(float).tolist()
         x_title, y_title = "Degree", "Number of Nodes"
         rules = [("Mean", float(np.mean(values_array)) if values_array else 0.0, "threshold_color")]
+    elif plot_type == "precursor_mass_diff":
+        values_array = _precursor_mass_diff_values(data_dir)
+        x_title, y_title = "Δm/z (Da)", "Frequency"
+        rules = [
+            ("Median", float(np.median(values_array)) if values_array else 0.0, "median_color"),
+        ]
     else:
-        frame = pd.read_csv(data_dir / "network_edges.csv")
+        edges = resolve_plot_data_file(data_dir, "network_edges.csv")
+        if edges is None:
+            raise ValueError("缺少 network_edges.csv / fbmn_edges.csv")
+        frame = pd.read_csv(edges)
         if "cosine" not in frame.columns:
-            raise ValueError("network_edges.csv 缺少 cosine 列")
+            raise ValueError("edges CSV 缺少 cosine 列")
         values_array = frame["cosine"].dropna().astype(float).tolist()
         x_title, y_title = "Cosine Similarity", "Number of Edges"
         rules = [
@@ -371,6 +417,204 @@ def _histogram_spec(
     return spec
 
 
+def _vip_bar_spec(data_dir: Path, plot_config: dict[str, Any]) -> dict[str, Any]:
+    frame = pd.read_csv(data_dir / "vip_scores.csv")
+    if "Feature" not in frame.columns or "VIP" not in frame.columns:
+        raise ValueError("vip_scores.csv 缺少 Feature / VIP 列")
+    top_n = int((plot_config.get("marks") or {}).get("top_n") or 30)
+    top = frame.dropna(subset=["VIP"]).sort_values("VIP", ascending=False).head(max(5, top_n))
+    values = [
+        {"feature": str(row["Feature"]), "vip": float(row["VIP"]), "order": index}
+        for index, (_, row) in enumerate(top.iterrows())
+    ]
+    colors = plot_config.get("colors") or {}
+    bar_color = colors.get("bar_color", "#3C5488")
+    spec = _base_spec(plot_config, values)
+    spec["mark"] = {
+        "type": "bar",
+        "color": bar_color,
+        "opacity": (plot_config.get("marks") or {}).get("opacity", 0.85),
+    }
+    spec["encoding"] = {
+        "y": {
+            "field": "feature",
+            **_axis(plot_config, "y", "Feature", axis_type="nominal"),
+            "sort": {"field": "order", "order": "ascending"},
+        },
+        "x": {"field": "vip", **_axis(plot_config, "x", "VIP", zero=True)},
+        "tooltip": [
+            {"field": "feature", "type": "nominal"},
+            {"field": "vip", "type": "quantitative", "format": ".3f"},
+        ],
+    }
+    return spec
+
+
+def _heatmap_vip_spec(data_dir: Path, plot_config: dict[str, Any]) -> dict[str, Any]:
+    matrix_path = data_dir / "heatmap_top_vip_matrix.csv"
+    if not matrix_path.is_file():
+        raise ValueError("缺少 heatmap_top_vip_matrix.csv，无法语义渲染热图")
+    frame = pd.read_csv(matrix_path, index_col=0)
+    if frame.empty:
+        raise ValueError("heatmap_top_vip_matrix.csv 为空")
+    values: list[dict[str, Any]] = []
+    for feature, row in frame.iterrows():
+        for sample, value in row.items():
+            number = _finite(value)
+            if number is None:
+                continue
+            values.append(
+                {
+                    "feature": str(feature),
+                    "sample": str(sample),
+                    "value": number,
+                }
+            )
+    if not values:
+        raise ValueError("热图矩阵无有效数值")
+    spec = _base_spec(plot_config, values)
+    width, height = _dimensions(plot_config)
+    spec["width"] = max(width, min(1400, 24 * max(8, frame.shape[1])))
+    spec["height"] = max(height, min(1200, 18 * max(8, frame.shape[0])))
+    spec["mark"] = "rect"
+    spec["encoding"] = {
+        "x": {
+            "field": "sample",
+            **_axis(plot_config, "x", "Sample", axis_type="nominal"),
+            "axis": {
+                "titleFontSize": (plot_config.get("font_size") or {}).get("axis", 12),
+                "labelFontSize": (plot_config.get("font_size") or {}).get("label", 9),
+                "labelAngle": -45,
+            },
+        },
+        "y": {
+            "field": "feature",
+            **_axis(plot_config, "y", "Feature", axis_type="nominal"),
+            "axis": {
+                "titleFontSize": (plot_config.get("font_size") or {}).get("axis", 12),
+                "labelFontSize": (plot_config.get("font_size") or {}).get("label", 9),
+            },
+        },
+        "color": {
+            "field": "value",
+            "type": "quantitative",
+            "scale": {"scheme": "viridis"},
+            "legend": _legend(plot_config, title="Intensity"),
+        },
+        "tooltip": [
+            {"field": "feature", "type": "nominal"},
+            {"field": "sample", "type": "nominal"},
+            {"field": "value", "type": "quantitative", "format": ".4g"},
+        ],
+    }
+    return spec
+
+
+def _network_topology_spec(data_dir: Path, plot_config: dict[str, Any]) -> dict[str, Any]:
+    layout_path = data_dir / "network_layout.csv"
+    if not layout_path.is_file():
+        raise ValueError("缺少 network_layout.csv，无法语义渲染拓扑图")
+    layout = pd.read_csv(layout_path)
+    required = {"node_id", "x", "y"}
+    if not required.issubset(layout.columns):
+        raise ValueError("network_layout.csv 缺少 node_id / x / y 列")
+    family_col = "family" if "family" in layout.columns else None
+    degree_col = "degree" if "degree" in layout.columns else None
+    palette = plot_config.get("palette") or {}
+    families = (
+        list(dict.fromkeys(str(v) for v in layout[family_col].fillna("singleton").tolist()))
+        if family_col
+        else ["all"]
+    )
+    colors = [palette.get(fam, DEFAULT_PALETTE[i % len(DEFAULT_PALETTE)]) for i, fam in enumerate(families)]
+    pos = {
+        str(row["node_id"]): (_finite(row["x"]), _finite(row["y"]))
+        for _, row in layout.iterrows()
+    }
+    edge_values: list[dict[str, Any]] = []
+    edges_path = resolve_plot_data_file(data_dir, "network_edges.csv")
+    if edges_path is not None:
+        edges = pd.read_csv(edges_path)
+        for _, row in edges.iterrows():
+            source = str(row.get("source", ""))
+            target = str(row.get("target", ""))
+            p1 = pos.get(source)
+            p2 = pos.get(target)
+            if not p1 or not p2 or p1[0] is None or p1[1] is None or p2[0] is None or p2[1] is None:
+                continue
+            edge_values.append({"x": p1[0], "y": p1[1], "x2": p2[0], "y2": p2[1]})
+    node_values = []
+    for _, row in layout.iterrows():
+        x = _finite(row["x"])
+        y = _finite(row["y"])
+        if x is None or y is None:
+            continue
+        fam = str(row[family_col]) if family_col else "all"
+        degree = _finite(row[degree_col]) if degree_col else 1.0
+        size = max(20, min(220, (degree or 1.0) * 25 + 15))
+        node_values.append(
+            {
+                "x": x,
+                "y": y,
+                "family": fam,
+                "degree": degree or 1.0,
+                "size": size,
+                "node_id": str(row["node_id"]),
+            }
+        )
+    marks = plot_config.get("marks") or {}
+    layers: list[dict[str, Any]] = []
+    if edge_values:
+        layers.append(
+            {
+                "data": {"values": edge_values},
+                "mark": {
+                    "type": "rule",
+                    "color": "#9ca3af",
+                    "opacity": 0.35,
+                    "strokeWidth": 0.6,
+                },
+                "encoding": {
+                    "x": {"field": "x", "type": "quantitative", "axis": None},
+                    "y": {"field": "y", "type": "quantitative", "axis": None},
+                    "x2": {"field": "x2"},
+                    "y2": {"field": "y2"},
+                },
+            }
+        )
+    layers.append(
+        {
+            "data": {"values": node_values},
+            "mark": {
+                "type": "point",
+                "filled": True,
+                "opacity": marks.get("opacity", 0.85),
+                "stroke": "white",
+                "strokeWidth": 0.4,
+            },
+            "encoding": {
+                "x": {"field": "x", "type": "quantitative", "axis": None},
+                "y": {"field": "y", "type": "quantitative", "axis": None},
+                "size": {"field": "size", "type": "quantitative", "legend": None},
+                "color": {
+                    "field": "family",
+                    "type": "nominal",
+                    "scale": {"domain": families, "range": colors},
+                    "legend": _legend(plot_config, title="Family"),
+                },
+                "tooltip": [
+                    {"field": "node_id", "type": "nominal"},
+                    {"field": "family", "type": "nominal"},
+                    {"field": "degree", "type": "quantitative"},
+                ],
+            },
+        }
+    )
+    spec = _base_spec(plot_config, node_values)
+    spec["layer"] = layers
+    return spec
+
+
 def build_vegalite_spec(
     *,
     plot_type: str,
@@ -386,11 +630,33 @@ def build_vegalite_spec(
         return _score_spec(plot_type, data_path, Path(metadata_csv), plot_config)
     if plot_type == "volcano":
         return _volcano_spec(data_path, plot_config)
+    if plot_type == "vip_bar":
+        return _vip_bar_spec(data_path, plot_config)
+    if plot_type == "heatmap_vip":
+        return _heatmap_vip_spec(data_path, plot_config)
     if plot_type == "family_size":
         return _family_size_spec(data_path, plot_config)
-    if plot_type in {"degree_hist", "cosine_hist"}:
+    if plot_type in {"degree_hist", "cosine_hist", "precursor_mass_diff"}:
         return _histogram_spec(plot_type, data_path, plot_config)
+    if plot_type == "network_topology":
+        return _network_topology_spec(data_path, plot_config)
     raise ValueError(f"暂不支持语义渲染: {plot_type}")
+
+
+def write_svg_sidecar(vega_spec: dict[str, Any], png_path: str | Path) -> Path | None:
+    """仅写出与 PNG 同名的 .svg / .vl.json，不覆盖 PNG。"""
+    png = Path(png_path)
+    svg_path = svg_path_for_png(png)
+    vega_path = vega_config_path_for_png(png)
+    vega_path.write_text(json.dumps(vega_spec, ensure_ascii=False, indent=2), encoding="utf-8")
+    try:
+        import vl_convert as vlc
+
+        svg_text = vlc.vegalite_to_svg(json.dumps(vega_spec, ensure_ascii=False, allow_nan=False))
+        svg_path.write_text(svg_text, encoding="utf-8")
+        return svg_path
+    except Exception:
+        return None
 
 
 def write_semantic_metadata_files(
