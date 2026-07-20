@@ -16,7 +16,9 @@ from web_frontend.backend.plot_edit_registry import (
     get_plot_spec,
     is_agent_plot_editable_stem,
     list_editable_plots,
+    plot_data_files_ready,
     plot_type_from_stem,
+    resolve_plot_data_file,
     resolve_plot_source_rel,
 )
 from web_frontend.backend.plot_renderer import (
@@ -43,12 +45,123 @@ from web_frontend.backend.session_storage import edited_plots_dir, session_uploa
 from web_frontend.backend.semantic_plot_renderer import (
     build_vegalite_spec,
     is_vl_convert_available,
+    write_semantic_metadata_files,
     write_semantic_outputs,
+    write_svg_sidecar,
 )
 
 
 class PlotEditError(Exception):
     pass
+
+
+def ensure_default_plot_configs(
+    directory: str | Path,
+    *,
+    upload_dir: str | Path | None = None,
+) -> list[Path]:
+    """为可语义编辑的 PNG 补写 plot_config / Vega-Lite / SVG sidecar。"""
+    root = Path(directory)
+    if not root.is_dir():
+        return []
+    written: list[Path] = []
+    upload = Path(upload_dir) if upload_dir else None
+    metadata_csv = None
+    if upload is not None:
+        try:
+            metadata_csv = resolve_metadata_csv(upload)
+        except Exception:
+            metadata_csv = None
+
+    for png in sorted(root.glob("*.png")):
+        stem = png.stem
+        if not is_agent_plot_editable_stem(stem):
+            continue
+        plot_type = plot_type_from_stem(stem)
+        if not plot_type:
+            continue
+        spec = get_plot_spec(plot_type)
+        if not spec:
+            continue
+        if not plot_data_files_ready(root, spec.data_files):
+            continue
+
+        config_path = Path(plot_config_path_for_png(str(png)))
+        color_keys: list[str] = []
+        try:
+            if upload is not None:
+                color_keys = _color_keys_for_plot(plot_type, root, upload)
+            elif plot_type == "volcano":
+                color_keys = ["significant", "nonsignificant"]
+            elif plot_type == "family_size":
+                nodes = resolve_plot_data_file(root, "network_nodes.csv")
+                labels, _, _ = _family_size_payload(nodes) if nodes else ([], [], [])
+                color_keys = labels
+            elif plot_type in ("degree_hist", "cosine_hist", "precursor_mass_diff"):
+                color_keys = ["histogram_color", "threshold_color", "median_color"]
+            elif plot_type == "vip_bar":
+                color_keys = ["bar_color"]
+            elif plot_type == "network_topology":
+                layout = pd.read_csv(root / "network_layout.csv")
+                if "family" in layout.columns:
+                    color_keys = list(dict.fromkeys(str(v) for v in layout["family"].fillna("singleton")))
+        except Exception:
+            color_keys = []
+
+        existing = None
+        if config_path.is_file():
+            try:
+                existing = json.loads(config_path.read_text(encoding="utf-8"))
+            except json.JSONDecodeError:
+                existing = None
+        config = normalize_plot_config(existing if isinstance(existing, dict) else None, plot_type=plot_type, color_keys=color_keys)
+        config["source_rel"] = png.name
+        try:
+            vega_spec = build_vegalite_spec(
+                plot_type=plot_type,
+                data_dir=root,
+                metadata_csv=metadata_csv if plot_type in {"pca", "plsda"} else None,
+                plot_config=config,
+            )
+        except Exception:
+            # 数据不齐时至少写 plot_config，便于前端打开后再报错
+            if not config_path.is_file():
+                config_path.write_text(json.dumps(config, ensure_ascii=False, indent=2), encoding="utf-8")
+                written.append(config_path)
+            continue
+
+        write_semantic_metadata_files(
+            png_path=png,
+            plot_config=config,
+            vega_spec=vega_spec,
+            source_rel=png.name,
+        )
+        write_svg_sidecar(vega_spec, png)
+        written.append(config_path)
+
+    # vip_scores.csv 存在但无 PNG 时，生成可 SVG 编辑的 VIP 柱状图
+    vip_csv = root / "vip_scores.csv"
+    vip_png = root / "vip_scores.png"
+    if vip_csv.is_file() and not vip_png.is_file():
+        try:
+            config = normalize_plot_config(None, plot_type="vip_bar", color_keys=["bar_color"])
+            config["source_rel"] = vip_png.name
+            vega_spec = build_vegalite_spec(
+                plot_type="vip_bar",
+                data_dir=root,
+                metadata_csv=None,
+                plot_config=config,
+            )
+            write_semantic_outputs(
+                png_path=vip_png,
+                plot_config=config,
+                vega_spec=vega_spec,
+                source_rel=vip_png.name,
+            )
+            written.append(Path(plot_config_path_for_png(str(vip_png))))
+        except Exception:
+            pass
+    return written
 
 
 def _load_existing_config(png_path: Path) -> dict[str, Any] | None:
@@ -177,10 +290,22 @@ def _color_keys_for_plot(plot_type: str, data_dir: Path, upload_dir: Path) -> li
     if plot_type == "volcano":
         return ["significant", "nonsignificant"]
     if plot_type == "family_size":
-        labels, _, _ = _family_size_payload(data_dir / "network_nodes.csv")
+        nodes = resolve_plot_data_file(data_dir, "network_nodes.csv")
+        if nodes is None:
+            return []
+        labels, _, _ = _family_size_payload(nodes)
         return labels
-    if plot_type in ("degree_hist", "cosine_hist"):
+    if plot_type in ("degree_hist", "cosine_hist", "precursor_mass_diff"):
         return ["histogram_color", "threshold_color", "median_color"]
+    if plot_type == "vip_bar":
+        return ["bar_color"]
+    if plot_type == "network_topology":
+        layout = data_dir / "network_layout.csv"
+        if layout.is_file():
+            frame = pd.read_csv(layout)
+            if "family" in frame.columns:
+                return list(dict.fromkeys(str(v) for v in frame["family"].fillna("singleton")))
+        return []
     return []
 
 
@@ -222,7 +347,9 @@ def _render_and_build_echarts(
         return build_echarts_volcano(volcano_csv, plot_config)
 
     if plot_type == "family_size":
-        nodes_csv = data_dir / spec.data_files[0]
+        nodes_csv = resolve_plot_data_file(data_dir, "network_nodes.csv")
+        if nodes_csv is None:
+            raise PlotEditError("缺少 network_nodes.csv / fbmn_nodes.csv")
         labels, sizes, colors = _family_size_payload(nodes_csv)
         palette = plot_config.get("palette") or {}
         for i, label in enumerate(labels):
@@ -232,7 +359,9 @@ def _render_and_build_echarts(
         return build_echarts_bar(labels, sizes, colors, plot_config)
 
     if plot_type == "degree_hist":
-        nodes_csv = data_dir / spec.data_files[0]
+        nodes_csv = resolve_plot_data_file(data_dir, "network_nodes.csv")
+        if nodes_csv is None:
+            raise PlotEditError("缺少 network_nodes.csv / fbmn_nodes.csv")
         render_degree_hist_png(nodes_csv, plot_config, output_path)
         df = pd.read_csv(nodes_csv)
         degrees = df["degree"].dropna().astype(float).tolist() if "degree" in df.columns else [1.0] * len(df)
@@ -245,7 +374,9 @@ def _render_and_build_echarts(
         )
 
     if plot_type == "cosine_hist":
-        edges_csv = data_dir / spec.data_files[0]
+        edges_csv = resolve_plot_data_file(data_dir, "network_edges.csv")
+        if edges_csv is None:
+            raise PlotEditError("缺少 network_edges.csv / fbmn_edges.csv")
         render_cosine_hist_png(edges_csv, plot_config, output_path)
         df = pd.read_csv(edges_csv)
         cosines = df["cosine"].dropna().astype(float).tolist()
@@ -261,6 +392,29 @@ def _render_and_build_echarts(
                 (median, "Median", plot_config.get("colors", {}).get("median_color", "#ff7f0e")),
             ],
         )
+
+    if plot_type == "precursor_mass_diff":
+        # PNG 由 vl-convert / 原图回退；此处仅返回空 echarts（语义预览走 Vega）
+        import shutil
+
+        source_png = data_dir / "precursor_mass_diff.png"
+        if source_png.is_file() and source_png.resolve() != output_path.resolve():
+            shutil.copy2(source_png, output_path)
+        elif not output_path.is_file():
+            raise PlotEditError("缺少 vl-convert 且无法回退渲染: precursor_mass_diff")
+        return {}
+
+    # vip / heatmap / topology：matplotlib 回退缺失时复制原图
+    if plot_type in {"vip_bar", "heatmap_vip", "network_topology"}:
+        import shutil
+
+        source_name = spec.stem_prefix + ".png"
+        source_png = data_dir / source_name
+        if source_png.is_file() and source_png.resolve() != output_path.resolve():
+            shutil.copy2(source_png, output_path)
+        elif not output_path.is_file():
+            raise PlotEditError(f"缺少 vl-convert 且无法回退渲染: {plot_type}")
+        return {}
 
     raise PlotEditError(f"暂不支持重绘: {plot_type}")
 
@@ -283,12 +437,13 @@ def apply_plot_config(
 
     stem = source.stem
     existing_plot_type = str((base_existing or {}).get("plot_type") or "")
-    if not is_agent_plot_editable_stem(stem) and not get_plot_spec(existing_plot_type):
-        raise PlotEditError(f"暂不支持 Agent 重绘该图：{source.name}")
-
     plot_type = plot_type_from_stem(stem) or existing_plot_type
-    if not plot_type:
-        raise PlotEditError(f"无法识别图类型：{source.name}")
+    # 语义重绘仅服务于有 PlotSpec 的图；其余应走 agent_apply → generic
+    if not get_plot_spec(plot_type or ""):
+        raise PlotEditError(
+            f"暂不支持语义重绘：{source.name}。"
+            "请使用 Agent 通用改图（标题/字号/颜色）。"
+        )
 
     upload_dir = session_upload_dir(project_root, storage_slug)
     color_keys = _color_keys_for_plot(plot_type, data_dir, upload_dir)
@@ -363,38 +518,81 @@ def agent_apply_plot_edit(
     filename: str | None = None,
 ) -> dict[str, Any]:
     output_root = session_work_dir(project_root, storage_slug).resolve()
-    canonical_rel = resolve_plot_source_rel(
-        output_root,
-        source_rel,
-        hint_message=instruction,
-    )
+    try:
+        canonical_rel = resolve_plot_source_rel(
+            output_root,
+            source_rel,
+            hint_message=instruction,
+        )
+    except ValueError:
+        # 允许任意输出 PNG（通用改图）
+        candidate = (output_root / source_rel).resolve()
+        try:
+            candidate.relative_to(output_root)
+        except ValueError as exc:
+            raise PlotEditError(f"无法定位图片：{source_rel}") from exc
+        if not candidate.is_file():
+            # bare filename search
+            matches = list(output_root.rglob(Path(source_rel).name))
+            matches = [m for m in matches if m.suffix.lower() == ".png"]
+            if not matches:
+                raise PlotEditError(f"无法定位图片：{source_rel}")
+            matches.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+            canonical_rel = matches[0].relative_to(output_root).as_posix()
+        else:
+            canonical_rel = candidate.relative_to(output_root).as_posix()
+
     source = _validated_source(output_root, canonical_rel, hint_message=instruction)
     existing = _load_existing_config(source)
     plot_type = plot_type_from_stem(source.stem) or str((existing or {}).get("plot_type") or "")
-    if not plot_type:
-        raise PlotEditError(f"暂不支持 Agent 改图：{source.name}")
-
     upload_dir = session_upload_dir(project_root, storage_slug)
     _, data_dir = _resolve_source_and_data_dir(output_root, canonical_rel, existing)
-    color_keys = _color_keys_for_plot(plot_type, data_dir, upload_dir)
-    current = normalize_plot_config(existing, plot_type=plot_type, color_keys=color_keys)
-    patch = parse_plot_edit_instruction(
-        instruction=instruction,
-        plot_type=plot_type,
-        color_keys=color_keys,
-        current_config=current,
-        model=model,
+
+    # 语义改图：有 PlotSpec 且数据齐全
+    spec = get_plot_spec(plot_type) if plot_type else None
+    can_semantic = bool(spec and plot_data_files_ready(data_dir, spec.data_files))
+    if can_semantic:
+        color_keys = _color_keys_for_plot(plot_type, data_dir, upload_dir)
+        current = normalize_plot_config(existing, plot_type=plot_type, color_keys=color_keys)
+        patch = parse_plot_edit_instruction(
+            instruction=instruction,
+            plot_type=plot_type,
+            color_keys=color_keys,
+            current_config=current,
+            model=model,
+        )
+        result = apply_plot_config(
+            project_root=project_root,
+            session_id=session_id,
+            storage_slug=storage_slug,
+            source_rel=canonical_rel,
+            plot_config_patch=patch,
+            instruction=instruction,
+            filename=filename,
+        )
+        result["agent_patch"] = patch
+        result["edit_mode"] = "semantic"
+        return result
+
+    # 通用改图：任意结果 PNG（标题/字号/颜色）
+    from web_frontend.backend.generic_plot_edit import (
+        GenericPlotEditError,
+        apply_generic_plot_edit,
     )
-    result = apply_plot_config(
-        project_root=project_root,
-        session_id=session_id,
-        storage_slug=storage_slug,
-        source_rel=canonical_rel,
-        plot_config_patch=patch,
-        instruction=instruction,
-        filename=filename,
-    )
-    result["agent_patch"] = patch
+
+    try:
+        result = apply_generic_plot_edit(
+            project_root=project_root,
+            storage_slug=storage_slug,
+            source_rel=canonical_rel,
+            instruction=instruction,
+            model=model,
+            filename=filename,
+        )
+    except GenericPlotEditError as exc:
+        raise PlotEditError(str(exc)) from exc
+    except ValueError as exc:
+        raise PlotEditError(str(exc)) from exc
     return result
 
 
@@ -409,7 +607,7 @@ def resolve_chat_plot_edit_tasks(
     tasks = extract_plot_edit_tasks(message, plots)
     if not tasks:
         raise PlotEditError(
-            "未找到可 Agent 重绘的图。请先完成统计分析或分子网络分析，"
-            "或在消息中指明图名（如 PCA、火山图、余弦分布）。"
+            "未找到可 Agent 改图的图片。请先完成分析生成结果图，"
+            "或在消息中指明图名/文件名（如 PCA、余弦分布、chemical_class_distribution.png）。"
         )
     return tasks, plots

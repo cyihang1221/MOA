@@ -64,6 +64,7 @@ DEFAULT_COLORS = {
     "median_color": "#ff7f0e",
     "significant": "#E64B35",
     "nonsignificant": "#B0B0B0",
+    "bar_color": "#3C5488",
 }
 
 _HEX_COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}(?:[0-9a-fA-F]{2})?$")

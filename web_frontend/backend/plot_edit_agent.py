@@ -59,7 +59,9 @@ def _category_for_plot_type(plot_type: str) -> str:
         return "scores"
     if plot_type == "volcano":
         return "volcano"
-    if plot_type == "family_size":
+    if plot_type in ("family_size", "vip_bar"):
+        return "bar"
+    if plot_type in ("heatmap_vip", "network_topology"):
         return "bar"
     return "hist"
 

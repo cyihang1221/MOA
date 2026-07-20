@@ -193,7 +193,7 @@ def normalize_tool_args(
         }
         return _posix_paths(out)
 
-    if tool_name == "data_preprocessing_xcms":
+    if tool_name.startswith("data_preprocessing_") or tool_name == "mzmine_lcms_datapreprocess":
         candidate = _pick_str(args, "input_dir")
         input_dir = None
         if candidate and _dir_has_mzml(candidate):
@@ -202,16 +202,26 @@ def normalize_tool_args(
             input_dir = ensure_mzml_input_dir(paths, upload_dir)
         if not input_dir:
             raise FileNotFoundError(
-                "无法执行 XCMS：未找到 mzML 文件。"
+                "无法执行预处理：未找到 mzML 文件。"
                 " 请上传 .mzML 到 inputspace，或将 .raw 放入 raw/ 并完成格式转换。"
             )
+        default_out = peaks
+        if tool_name != "data_preprocessing_xcms":
+            # 非 XCMS 预处理写入独立子目录，避免覆盖 XCMS 产物
+            stem = tool_name.replace("data_preprocessing_", "").replace("mzmine_lcms_", "mzmine_")
+            default_out = str(Path(paths["outputspace"]) / f"{stem}_results")
         out = {
             "input_dir": input_dir,
-            "output_dir": _pick_str(args, "output_dir") or peaks,
+            "output_dir": _pick_str(args, "output_dir") or default_out,
         }
-        for opt in ("blank_pattern", "file_pattern", "ppm", "n_cores"):
-            if opt in args:
-                out[opt] = args[opt]
+        if tool_name == "data_preprocessing_xcms":
+            for opt in ("blank_pattern", "file_pattern", "ppm", "n_cores"):
+                if opt in args:
+                    out[opt] = args[opt]
+        else:
+            for key, value in args.items():
+                if key not in out:
+                    out[key] = value
         return _posix_paths(out)
 
     if tool_name == "feature_filtering_and_missing_value_imputation_knn":
@@ -408,7 +418,7 @@ def normalize_tool_args(
                 result[opt] = args[opt]
         return _posix_paths(result)
 
-    if tool_name == "molecular_networking_gnps":
+    if tool_name.startswith("molecular_networking_"):
         mgf = _pick_str(args, "input_mgf", "input_msp", "mgf", "spectra_mgf")
         if not mgf or not _path_obj(mgf).is_file():
             upload_root = _path_obj(upload_dir)
@@ -419,22 +429,20 @@ def normalize_tool_args(
             ) or find_session_mgf(paths, upload_dir)
         if not mgf or not _path_obj(mgf).is_file():
             raise FileNotFoundError(
-                "无法执行 GNPS 分子网络：缺少 differential_spectra.mgf 或 spectra.mgf。"
-                " 请先完成差异物提取或 XCMS MS2 导出。"
+                "无法执行分子网络：缺少 differential_spectra.mgf 或 spectra.mgf。"
+                " 请先完成差异物提取、峰检测 MS2 导出，或直接上传 .mgf。"
             )
+        default_out = molecular_network
+        if tool_name != "molecular_networking_gnps":
+            method = tool_name.replace("molecular_networking_", "")
+            default_out = str(Path(paths["outputspace"]) / f"molecular_network_{method}_results")
         out = {
             "input_mgf": mgf,
-            "output_dir": _dir_of(_pick_str(args, "output_dir", "output_path") or molecular_network),
+            "output_dir": _dir_of(_pick_str(args, "output_dir", "output_path") or default_out),
         }
-        for opt in (
-            "min_cosine",
-            "min_matched_peaks",
-            "fragment_tol",
-            "top_k",
-            "precursor_ppm",
-        ):
-            if opt in args:
-                out[opt] = args[opt]
+        for key, value in args.items():
+            if key not in out and key not in ("input_msp", "mgf", "spectra_mgf", "output_path"):
+                out[key] = value
         return _posix_paths(out)
 
     if tool_name == "deepmass_annotation":

@@ -1935,6 +1935,28 @@ def _plot_network_topology(
     )
     ax.axis("off")
     fig.tight_layout()
+
+    # 落盘布局坐标，供前端 SVG 语义编辑重绘
+    try:
+        import pandas as _pd
+
+        layout_rows = []
+        for node_id, (px, py) in pos.items():
+            attrs = G.nodes[node_id]
+            layout_rows.append(
+                {
+                    "node_id": node_id,
+                    "x": float(px),
+                    "y": float(py),
+                    "family": attrs.get(color_by, "singleton"),
+                    "degree": int(G.degree(node_id)),
+                }
+            )
+        layout_csv = os.path.join(os.path.dirname(output_path), "network_layout.csv")
+        _pd.DataFrame(layout_rows).to_csv(layout_csv, index=False)
+    except Exception as exc:
+        print(f"    ⚠️ network_layout.csv 写出失败: {exc}")
+
     save_editable_figure(
         fig,
         output_path,
@@ -3520,6 +3542,12 @@ def generate_network_figures(
         title_prefix=title_prefix or (method.upper() if method else "GNPS"),
         color_by=color_by,
     )
+    try:
+        from web_frontend.backend.plot_edit_service import ensure_default_plot_configs
+
+        ensure_default_plot_configs(output_dir)
+    except Exception as exc:
+        print(f"    ⚠️ Default plot_config backfill skipped: {exc}")
 
 
 # ======================== 综合仪表板 ========================

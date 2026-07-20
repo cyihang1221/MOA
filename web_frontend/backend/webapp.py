@@ -479,31 +479,47 @@ def parse_models_from_env() -> List[str]:
 
 def categorize_tool(name: str) -> str:
     """返回稳定分类 ID，前端用 i18n 显示中英文名称。"""
-    if name.startswith("convert_") or name.startswith("mzml_"):
+    if name in {"plot_edit", "image_merge", "merge_edit"}:
+        return "visual"
+    if (
+        name.startswith("convert_")
+        or name.startswith("mzml_")
+        or name.startswith("data_transformation_")
+    ):
         return "convert"
     if name.startswith("molecular_networking"):
         return "networking"
     if name.startswith("deepmass"):
         return "deeplearn"
-    if name in ALLOWED_TOOL_NAMES or name.startswith(
-        ("data_preprocessing", "feature_filtering", "statistical_analysis", "extract_differential", "spectral_annotation", "kegg_compound")
-    ):
-        return "xcms"
-    if name.startswith("peak_detection"):
+    if name.startswith("library_match") or name == "spectral_annotation":
+        return "library"
+    if name.startswith(("peak_detection_", "peak_picking_", "feature_detection_")):
         return "peaks"
     if any(
         key in name
         for key in (
             "filter_redundant",
+            "redundant_feature",
             "align_retention",
+            "align_features",
             "group_peaks",
+            "peak_group",
             "fill_missing",
             "identify_isotopes",
+            "isotope_analysis",
         )
     ):
         return "processing"
-    if name.startswith("library_match"):
-        return "library"
+    if name.startswith(
+        (
+            "data_preprocessing",
+            "feature_filtering",
+            "statistical_analysis",
+            "extract_differential",
+            "kegg_compound",
+        )
+    ):
+        return "xcms"
     if "mzmine" in name:
         return "workflow"
     return "other"
@@ -775,6 +791,48 @@ def get_workspace_file(session_id: str, rel: str):
     }
     media_type = media_types.get(path.suffix.lower())
     return FileResponse(path, media_type=media_type, filename=path.name)
+
+
+_OUTPUT_IMAGE_SIDECAR_SUFFIXES = (
+    ".editable.json",
+    ".plotly.json",
+    ".plot_config.json",
+    ".vl.json",
+    ".echarts.json",
+    ".merge.json",
+    ".svg",
+)
+
+
+@app.delete("/api/sessions/{session_id}/workspace-file")
+def delete_workspace_file(session_id: str, rel: str):
+    """删除 outputspace 中的结果文件（及同名 sidecar）。仅允许 output 目录。"""
+    sess = db_get_session(session_id)
+    if not sess:
+        raise HTTPException(status_code=404, detail="session not found")
+    rel_path = rel.strip().lstrip("/").replace("\\", "/")
+    if not rel_path or ".." in rel_path.split("/"):
+        raise HTTPException(status_code=400, detail="invalid file path")
+    slug = resolve_storage_slug(session_id)
+    output_root = session_work_dir(PROJECT_ROOT, slug).resolve()
+    target = (output_root / rel_path).resolve()
+    try:
+        target.relative_to(output_root)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="只能删除会话输出目录中的文件") from exc
+    if not target.is_file():
+        raise HTTPException(status_code=404, detail="file not found")
+
+    removed = [rel_path]
+    target.unlink()
+    stem = target.stem
+    parent = target.parent
+    for suffix in _OUTPUT_IMAGE_SIDECAR_SUFFIXES:
+        side = parent / f"{stem}{suffix}"
+        if side.is_file():
+            side.unlink()
+            removed.append(side.relative_to(output_root).as_posix())
+    return {"ok": True, "removed": removed}
 
 
 IMAGE_DATA_URL_RE = re.compile(r"^data:image/png;base64,(?P<data>[A-Za-z0-9+/=\s]+)$")

@@ -95,10 +95,11 @@ def looks_like_image_merge_request(message: str) -> bool:
         return False
     if looks_like_merged_figure_edit_request(text):
         return True
-    if _MERGE_EXCLUDE_STYLE_RE.search(text):
-        return False
+    # 明确「合并/拼图」意图优先，避免「标签字号」等词误伤
     if _IMAGE_MERGE_INTENT_RE.search(text):
         return True
+    if _MERGE_EXCLUDE_STYLE_RE.search(text):
+        return False
     # 合并 A 和 B（含 .png 文件名或 distribution 等 stem）
     if "合并" in text and re.search(r"(?:和|与|、|,|\+|以及|and)", text):
         if re.search(r"\.(?:png|jpe?g|webp|gif)\b", text, re.IGNORECASE):
@@ -189,7 +190,10 @@ def apply_merge_options(base: dict[str, Any], patch: dict[str, Any]) -> dict[str
 
 
 def list_mergeable_images(output_root: Path, *, limit: int = 40) -> list[dict[str, Any]]:
-    """扫描 outputspace 中可用于拼图的 PNG/JPG（排除 merged_figures 目录自身）。"""
+    """扫描 outputspace 中可用于拼图的 PNG/JPG（排除 merged_figures 目录自身）。
+
+    同 basename 只保留一份（优先 edited_plots，其次最新修改），避免多工具目录重复入选。
+    """
     if not output_root.is_dir():
         return []
     found: list[dict[str, Any]] = []
@@ -215,12 +219,27 @@ def list_mergeable_images(output_root: Path, *, limit: int = 40) -> list[dict[st
                 "plot_type": plot_type_from_stem(stem),
                 "modified": stat.st_mtime,
                 "size": stat.st_size,
+                "in_edited": bool(rel_parts and rel_parts[0] == EDITED_PLOTS_SUBDIR),
             }
         )
-        if len(found) >= limit * 3:
+        if len(found) >= limit * 5:
             break
-    found.sort(key=lambda item: item["modified"], reverse=True)
-    return found[:limit]
+
+    by_base: dict[str, dict[str, Any]] = {}
+    for item in found:
+        base = str(item["name"]).lower()
+        prev = by_base.get(base)
+        if prev is None:
+            by_base[base] = item
+            continue
+        if item.get("in_edited") and not prev.get("in_edited"):
+            by_base[base] = item
+        elif item.get("in_edited") == prev.get("in_edited") and item["modified"] >= prev["modified"]:
+            by_base[base] = item
+
+    deduped = list(by_base.values())
+    deduped.sort(key=lambda item: item["modified"], reverse=True)
+    return deduped[:limit]
 
 
 def _alias_stems_from_message(message: str) -> list[str]:
@@ -335,22 +354,67 @@ def parse_merge_options(message: str) -> dict[str, Any]:
     lower = text.lower()
     opts: dict[str, Any] = {}
 
+    # 标签大小写：用原文大小写判断；禁止裸匹配 abc（会误伤 ABCD.lower()）
     if re.search(r"不要标签|无标签|no\s+labels?", lower):
         opts["label_mode"] = "none"
-    elif re.search(r"小写标签|标签(?:改成|改为|换成|用)?小写|abc|a,\s*b|lower\s+labels?", lower):
-        opts["label_mode"] = "lower"
-    elif re.search(r"大写标签|标签(?:改成|改为|换成|用)?大写|upper\s+labels?", lower):
-        opts["label_mode"] = "upper"
-    elif re.search(r"数字标签|\d+\s*[、,]\s*\d+|numeric\s+labels?", lower):
-        opts["label_mode"] = "num"
-    elif re.search(r"自定义标签|custom\s+labels?", lower):
-        opts["label_mode"] = "custom"
+    else:
+        has_upper_panel = bool(
+            re.search(r"ABCD", text)  # 勿用 \\b：中文「标签为ABCD」无 ASCII 词界
+            or re.search(r"(?<![A-Za-z])A\s*[,，、/]\s*B(?![A-Za-z])", text)
+            or re.search(r"['\"]A['\"]\s*[,，、]\s*['\"]B['\"]", text)
+            or re.search(r"大写标签|标签(?:改成|改为|换成|用)?大写|upper(?:\s*case)?\s*labels?", lower)
+        )
+        has_lower_panel = bool(
+            (re.search(r"abcd", text) and not re.search(r"ABCD", text))
+            or re.search(r"(?<![A-Za-z])a\s*[,，、/]\s*b(?![A-Za-z])", text)
+            or re.search(r"小写标签|标签(?:改成|改为|换成|用)?小写|lower(?:\s*case)?\s*labels?", lower)
+        )
+        if has_upper_panel:
+            opts["label_mode"] = "upper"
+        elif has_lower_panel:
+            opts["label_mode"] = "lower"
+        elif re.search(r"数字标签|numeric\s+labels?", lower):
+            opts["label_mode"] = "num"
+        elif re.search(r"自定义标签|custom\s+labels?", lower):
+            opts["label_mode"] = "custom"
 
-    m = re.search(r"(?:标签|子图标签)(?:字号|大小|字体)?\s*(\d+)", text)
-    if not m:
-        m = re.search(r"(?:label|legend)\s*(?:font\s*)?size\s*(\d+)", lower)
+    # 标签字号：支持「标签大小为150」「字号350」「label font size 350」
+    # 注意：勿把 figure size / 150×150 mm 当成标签字号
+    font_size = None
+    m = re.search(
+        r"(?:子图)?标签.{0,24}?(?:字号|大小|字体)\s*(?:为|是|=|:|：)?\s*(\d+)",
+        text,
+    )
     if m:
-        opts["label_font_size"] = max(8, min(72, int(m.group(1))))
+        font_size = int(m.group(1))
+    if font_size is None:
+        m = re.search(
+            r"(?:字号|字体大小)\s*(?:为|是|=|:|：)?\s*(\d+)",
+            text,
+        )
+        if m and re.search(r"(?:标签|子图|label|legend)", lower):
+            font_size = int(m.group(1))
+    if font_size is None:
+        m = re.search(
+            r"(?:label|legend|subplot)\s*(?:font\s*)?size\s*(?:of\s*)?(\d+)",
+            lower,
+        )
+        if m:
+            font_size = int(m.group(1))
+    if font_size is not None and not re.search(
+        r"(?:figure|画布|整图|输出)\s*size|"
+        r"\d+\s*[×xX]\s*\d+\s*mm|"
+        r"\d+\s*mm\b",
+        lower,
+    ):
+        opts["label_font_size"] = max(8, min(400, font_size))
+    elif font_size is not None and re.search(
+        r"(?:标签|子图标签|label|legend).{0,40}" + re.escape(str(font_size)),
+        text,
+        re.IGNORECASE,
+    ):
+        # 「标签…350」即使同句有 mm，也以标签字号为准
+        opts["label_font_size"] = max(8, min(400, font_size))
 
     m = re.search(r"(\d+)\s*列", text)
     if m:
@@ -361,18 +425,23 @@ def parse_merge_options(message: str) -> dict[str, Any]:
             token = m.group(1)
             if token in _CN_COLS:
                 opts["cols"] = _CN_COLS[token]
-        elif re.search(r"(\d+)\s*columns?", lower):
-            m = re.search(r"(\d+)\s*columns?", lower)
+        else:
+            m = re.search(r"(\d+)\s*[-–]?\s*columns?", lower)
             if m:
                 opts["cols"] = max(1, int(m.group(1)))
-        elif re.search(r"一行|一排|single\s+row|one\s+row", lower):
-            opts["cols"] = 99
-        elif re.search(r"一列|single\s+column|one\s+column", lower):
-            opts["cols"] = 1
-        elif re.search(r"两列|二列", text):
-            opts["cols"] = 2
-        elif re.search(r"三列", text):
-            opts["cols"] = 3
+            else:
+                m = re.search(r"(\d+)\s*[×xX]\s*(\d+)", text)
+                if m:
+                    # 2×2 / 2x2 → 取列数（通常两维相同；否则取较小值作列）
+                    opts["cols"] = max(1, min(int(m.group(1)), int(m.group(2))))
+                elif re.search(r"一行|一排|single\s+row|one\s+row", lower):
+                    opts["cols"] = 99
+                elif re.search(r"一列|single\s+column|one\s+column", lower):
+                    opts["cols"] = 1
+                elif re.search(r"两列|二列", text):
+                    opts["cols"] = 2
+                elif re.search(r"三列", text):
+                    opts["cols"] = 3
 
     m = re.search(r"间距\s*(\d+)", text)
     if m:

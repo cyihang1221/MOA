@@ -1,14 +1,70 @@
-"""Web 端 Agent 允许调用的 MCP 工具白名单（与 server.py 注册、前端展示一致）。"""
+"""Web 端 Agent 允许调用的 MCP 工具白名单（与 server.py 活跃注册一致）。"""
 
+# 与 src/mcp_server/server.py 中当前活跃 @mcp.tool 一一对应（不含本地 visual）。
 ALLOWED_TOOL_NAMES = frozenset({
+    # 数据转换
     "convert_raw_to_mzml_msconvert",
     "convert_raw_to_mzml_ThermoRawFileParser",
+    "convert_raw_to_mzml_OpenMS_FileConverter",
+    "mzml_directory_to_mgf",
+    "data_transformation_proteowizard",
+    "data_transformation_proteowizard_batch",
+    # 端到端 / 主流预处理与统计
     "data_preprocessing_xcms",
+    "data_preprocessing_openms",
+    "data_preprocessing_mzmine",
+    "data_preprocessing_kpic",
+    "data_preprocessing_pitracer",
+    "data_preprocessing_tracmass",
+    "data_preprocessing_peakonly",
     "feature_filtering_and_missing_value_imputation_knn",
     "statistical_analysis_mixomics",
     "extract_differential_features",
     "spectral_annotation",
     "kegg_compound_enrichment",
-    "molecular_networking_gnps",
     "deepmass_annotation",
+    # 分子网络
+    "molecular_networking_gnps",
+    "molecular_networking_fbmn",
+    "molecular_networking_ms2lda",
+    "molecular_networking_molnetenhancer",
+    # 峰检测
+    "peak_detection_xcms_centwave",
+    "peak_detection_openms_peakpickerhires",
+    "peak_detection_openms_featurefinder",
+    "peak_detection_kpic",
+    "peak_detection_peakonly",
+    "peak_detection_mzmine_gridmass",
+    "peak_detection_mzmine_adap",
+    "peak_picking_openms",
+    "feature_detection_openms",
+    # 峰处理 / 对齐 / 冗余过滤 / 同位素
+    "isotope_analysis_openms",
+    "identify_isotopes_openms_IsotopeTools",
+    "peak_group_alignment_openms",
+    "align_features_mzmine_joint_aligner",
+    "align_retention_time_xcms_obiwarp",
+    "align_retention_time_xcms_loess",
+    "group_peaks_xcms_groupChromPeaks",
+    "group_peaks_openms_PeakGroup",
+    "fill_missing_peaks_xcms_fillChromPeaks",
+    "filter_redundant_features_camera",
+    "filter_redundant_features_ramclustr",
+    "filter_redundant_features_mzannotation",
+    "redundant_feature_filtering_camera",
+    "redundant_feature_filtering_ramclust",
+    "redundant_feature_filtering_mzannotation",
+    "redundant_feature_filtering_pipeline",
+    # 谱库匹配
+    "library_match_cosine",
+    "library_match_jaccard",
+    "library_match_spectral_entropy",
+    "library_match_spec2vec",
+    "library_match_ms2deepscore",
+    "library_match_blink",
+    "library_match_msbert",
+    "library_match_pair_from_mgf",
+    "library_match_full_workflow",
+    # 流程编排
+    "mzmine_lcms_datapreprocess",
 })

@@ -1300,6 +1300,15 @@ if (n_top > 0) {{
 
     dev.off()
 
+    tryCatch(
+        write.csv(
+            as.data.frame(heatmap_matrix),
+            file.path(outdir, "heatmap_top_vip_matrix.csv"),
+            quote = TRUE
+        ),
+        error = function(e) invisible(NULL)
+    )
+
     try(
         save_heatmap_plotly_sidecar(
             heatmap_matrix,
@@ -1342,6 +1351,12 @@ writeLines(
                 "heatmap_top_vip.png": "Top VIP Heatmap",
             },
         )
+        try:
+            from web_frontend.backend.plot_edit_service import ensure_default_plot_configs
+
+            ensure_default_plot_configs(output_dir)
+        except Exception:
+            pass
 
     finally:
         os.unlink(r_file)

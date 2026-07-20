@@ -333,4 +333,10 @@ def run_statistical_analysis_mixomics(
         backfill_statistical_plotly_sidecars(output_path, meta_csv)
     except Exception as exc:
         print(f"    ⚠️ Plotly sidecar backfill skipped: {exc}")
+    try:
+        from web_frontend.backend.plot_edit_service import ensure_default_plot_configs
+
+        ensure_default_plot_configs(output_path, upload_dir=Path(meta_csv).parent if meta_csv else None)
+    except Exception as exc:
+        print(f"    ⚠️ Default plot_config backfill skipped: {exc}")
     return log_path

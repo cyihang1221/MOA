@@ -26,10 +26,12 @@ from web_frontend.backend.json_parse import (
 )
 from web_frontend.backend.tool_registry import (
     ALL_AGENT_TOOL_NAMES,
+    LOCAL_TOOL_ALIASES,
     AgentContext,
     format_local_tool_result,
     is_local_tool,
     load_all_tools,
+    normalize_agent_tool_name,
     run_local_tool,
 )
 from web_frontend.backend.plan_utils import (
@@ -244,7 +246,9 @@ Platform: {platform_note}
 You MUST call tools to execute when the user asks for analysis, plot editing, or figure merging; do not only give textual advice.
 Do NOT claim files were created unless a tool actually returned a file path.
 
-Allowed tool pipeline (use ONLY these exact tool names):
+Allowed tools: use ONLY exact names from available_tools (MCP whitelist + local visual).
+
+Default recommended pipeline (when user does not ask for alternatives):
 1. {convert_tool} — input_dir={raw_in}, output_dir={converted} (skip if user uploaded .mzML only, or mzML already covers all .raw)
 2. data_preprocessing_xcms — input_dir: mzML from inputspace or {converted} (auto-synced), output_dir={peaks}
 3. feature_filtering_and_missing_value_imputation_knn — input_dir={peaks} (feature_table.csv), output_dir={filtered}
@@ -254,15 +258,25 @@ Allowed tool pipeline (use ONLY these exact tool names):
 7. kegg_compound_enrichment — input_dir/output_dir under outputspace
 8. molecular_networking_gnps — input_mgf from differential_spectra.mgf, spectra.mgf, or uploaded .mgf; output_dir={paths.get('molecular_network', paths['outputspace'] + '/molecular_network_results')}
 9. deepmass_annotation — input_dir={paths.get('deepmass', paths['outputspace'] + '/deepmass_annotation_results')} (uploaded .mgf auto-copied to differential_spectra.mgf), output_dir={paths.get('deepmass', paths['outputspace'] + '/deepmass_annotation_results')}
-10. plot_edit — edit existing analysis plots (title/colors/fonts); writes edited_plots/; needs PNG+CSV already present
+10. plot_edit — edit ANY existing result PNG via natural language (title/colors/fonts); semantic SVG re-render when data CSV exists, otherwise generic title/style edit; writes edited_plots/
 11. image_merge — merge multiple PNGs into one composite under merged_figures/
 12. merge_edit — re-layout an existing merged figure (labels/font size/cols) using its .merge.json
 
-If user uploads .mzML only (no .raw), start with data_preprocessing_xcms — do NOT require raw conversion.
+Alternatives (pick when user explicitly asks, or when default tool is unsuitable):
+- Conversion: convert_raw_to_mzml_OpenMS_FileConverter, data_transformation_proteowizard(_batch), mzml_directory_to_mgf
+- Preprocessing: data_preprocessing_openms / mzmine / kpic / pitracer / tracmass / peakonly, mzmine_lcms_datapreprocess
+- Peak steps: peak_detection_*, peak_picking_openms, feature_detection_openms, align_*, group_peaks_*, fill_missing_peaks_*, filter_redundant_*, redundant_feature_filtering_*, isotope_analysis_openms, identify_isotopes_openms_IsotopeTools, peak_group_alignment_openms, align_features_mzmine_joint_aligner
+- Networking: molecular_networking_fbmn / ms2lda / molnetenhancer
+- Library match: library_match_* (cosine/jaccard/spectral_entropy/spec2vec/ms2deepscore/blink/msbert/pair_from_mgf/full_workflow)
+
+If user uploads .mzML only (no .raw), start with data_preprocessing_xcms (or an alternative preprocessing tool if requested) — do NOT require raw conversion.
 If user uploads .mgf only and asks for DeepMASS, plan ONLY deepmass_annotation (no XCMS). Empty differential_metabolites.csv is OK.
-If the user asks to edit plot style (title/color/font) without re-running analysis, plan plot_edit only.
+If the user asks to edit plot style (title/color/font/align) without re-running analysis, plan plot_edit only — never invent PNG paths. Mention the figure by filename or alias (e.g. chemical_class_distribution / FBMN / topology).
 If the user asks to merge images / make a panel figure, plan image_merge (and merge_edit for adjusting an existing merge).
+Never invent tool names like plot_merge; the only merge tools are image_merge and merge_edit.
+Merged outputs go under merged_figures/ (never merged_plots/).
 Visual tools (plot_edit / image_merge / merge_edit) can be planned alone or AFTER analysis steps that produce the needed PNGs.
+Figures from statistical_analysis_mixomics / molecular_networking_* are frontend-editable; subsequent style changes use plot_edit.
 
 Path roots: upload={upload}, outputspace={paths['outputspace']}
 
@@ -280,12 +294,21 @@ def _needs_mcp_session(tasks: list[str]) -> bool:
     """计划中是否包含需要 MCP stdio 的工具（非本地 visual）。"""
     for task in tasks:
         name = guess_tool_name_from_task(task, ALL_AGENT_TOOL_NAMES)
+        name = normalize_agent_tool_name(name)
         if name and not is_local_tool(name):
             return True
         # 未猜到工具名时保守打开 MCP
         if not name:
             lower = task.lower()
-            if any(is_local_tool(n) and n in lower for n in ("plot_edit", "image_merge", "merge_edit")):
+            if any(
+                alias in lower
+                for alias in (
+                    "plot_edit",
+                    "image_merge",
+                    "merge_edit",
+                    *LOCAL_TOOL_ALIASES.keys(),
+                )
+            ):
                 continue
             return True
     return False
@@ -486,8 +509,10 @@ async def stream_agent_pipeline(
                 yield {"delta": f"⚠️ LLM 匹配异常: {exc}，尝试从任务文本推断工具…\n"}
 
             tool_name, tool_args = parse_tool_call(raw_match or "")
+            tool_name = normalize_agent_tool_name(tool_name)
             if not tool_name:
                 tool_name = guess_tool_name_from_task(task, allowed_set)
+                tool_name = normalize_agent_tool_name(tool_name)
                 if tool_name:
                     yield {"delta": f"ℹ️ 已从任务描述推断工具：**{tool_name}**，正在再次请求参数…\n"}
                     retry_prompt = build_tool_match_prompt(
@@ -509,6 +534,7 @@ async def stream_agent_pipeline(
                             ),
                         )
                         tool_name, tool_args = parse_tool_call(raw2 or "")
+                        tool_name = normalize_agent_tool_name(tool_name)
                     except Exception:
                         pass
 
@@ -522,9 +548,11 @@ async def stream_agent_pipeline(
             if is_local_tool(tool_name):
                 if not tool_args or not isinstance(tool_args, dict):
                     tool_args = {}
-                # 把计划步骤文本并入 instruction，便于解析文件名/列数
-                if not str(tool_args.get("instruction") or "").strip():
-                    tool_args["instruction"] = f"{user_message}\n{task}".strip()
+                # 始终带上用户原文 + 计划步骤，避免丢掉中文约束（两列/ABCD/字号）
+                existing_instruction = str(tool_args.get("instruction") or "").strip()
+                tool_args["instruction"] = "\n".join(
+                    part for part in (user_message, task, existing_instruction) if part and str(part).strip()
+                ).strip()
                 yield {"delta": f"🛠 调用本地工具 **{tool_name}** …\n"}
                 try:
                     payload = await loop.run_in_executor(
