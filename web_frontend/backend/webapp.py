@@ -430,6 +430,15 @@ class ChatStreamRequest(BaseModel):
     use_agent: bool = False  # True 时走 MCP 工具执行，而非纯 LLM 对话
     edit_message_id: Optional[int] = None  # 编辑用户消息后重发：更新该条并截断其后
     regenerate_assistant: bool = False  # 基于最后一条用户消息重新生成回答
+    # 用户自备 OpenAI 兼容 API（仅本次请求生效，不落库）
+    llm_api_key: Optional[str] = None
+    llm_base_url: Optional[str] = None
+
+
+class LlmProbeRequest(BaseModel):
+    model: Optional[str] = None
+    llm_api_key: Optional[str] = None
+    llm_base_url: Optional[str] = None
 
 
 class UpdateMessageRequest(BaseModel):
@@ -461,11 +470,20 @@ class PlotEditAgentRequest(BaseModel):
     source_rel: str
     instruction: str
     filename: Optional[str] = None
+    model: Optional[str] = None
+    llm_api_key: Optional[str] = None
+    llm_base_url: Optional[str] = None
+    model: Optional[str] = None
+    llm_api_key: Optional[str] = None
+    llm_base_url: Optional[str] = None
 
 
 class ImageMergeEditRequest(BaseModel):
     source_rel: str
     instruction: str
+    model: Optional[str] = None
+    llm_api_key: Optional[str] = None
+    llm_base_url: Optional[str] = None
 
 
 def parse_models_from_env() -> List[str]:
@@ -475,6 +493,70 @@ def parse_models_from_env() -> List[str]:
     if default_model and default_model not in values:
         values.insert(0, default_model)
     return values
+
+
+# 常见 OpenAI 兼容供应商预设（前端弹窗下拉）
+LLM_PROVIDER_PRESETS: list[dict[str, str]] = [
+    {
+        "id": "server",
+        "label": "使用服务端默认 (.env)",
+        "base_url": "",
+        "model_hint": "",
+    },
+    {
+        "id": "dashscope",
+        "label": "阿里云百炼 DashScope",
+        "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "model_hint": "qwen-plus",
+    },
+    {
+        "id": "deepseek",
+        "label": "DeepSeek",
+        "base_url": "https://api.deepseek.com/v1",
+        "model_hint": "deepseek-chat",
+    },
+    {
+        "id": "openai",
+        "label": "OpenAI",
+        "base_url": "https://api.openai.com/v1",
+        "model_hint": "gpt-4o-mini",
+    },
+    {
+        "id": "siliconflow",
+        "label": "硅基流动 SiliconFlow",
+        "base_url": "https://api.siliconflow.cn/v1",
+        "model_hint": "Qwen/Qwen2.5-7B-Instruct",
+    },
+    {
+        "id": "moonshot",
+        "label": "月之暗面 Kimi",
+        "base_url": "https://api.moonshot.cn/v1",
+        "model_hint": "moonshot-v1-8k",
+    },
+    {
+        "id": "zhipu",
+        "label": "智谱 GLM",
+        "base_url": "https://open.bigmodel.cn/api/paas/v4",
+        "model_hint": "glm-4-flash",
+    },
+    {
+        "id": "custom",
+        "label": "自定义 OpenAI 兼容接口",
+        "base_url": "",
+        "model_hint": "",
+    },
+]
+
+
+def _apply_request_llm_override(req: ChatStreamRequest | LlmProbeRequest):
+    """启用本次请求的用户 API 覆盖，返回 reset token。"""
+    from web_frontend.backend.web_llm import set_llm_override
+
+    return set_llm_override(
+        api_key=getattr(req, "llm_api_key", None),
+        base_url=getattr(req, "llm_base_url", None),
+        model=getattr(req, "model", None),
+    )
 
 
 def categorize_tool(name: str) -> str:
@@ -666,8 +748,42 @@ def get_models():
     models = parse_models_from_env()
     return {
         "default_model": os.getenv("LLM_MODEL_ID"),
+        "default_base_url": (os.getenv("LLM_BASE_URL") or "").strip().rstrip("/"),
         "models": models,
+        "providers": LLM_PROVIDER_PRESETS,
+        "has_server_key": bool((os.getenv("LLM_API_KEY") or "").strip()),
     }
+
+
+@app.post("/api/llm/probe")
+def probe_llm(req: LlmProbeRequest):
+    """用当前表单配置试连一次（不落库、不写会话）。"""
+    from web_frontend.backend.llm_security import redact_secrets
+    from web_frontend.backend.web_llm import WebLLMClient, reset_llm_override
+
+    try:
+        token = _apply_request_llm_override(req)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    try:
+        client = WebLLMClient(model=req.model)
+        reply = client.think_complete(
+            [{"role": "user", "content": "Reply with exactly: ok"}],
+            temperature=0.0,
+            max_tokens=16,
+        )
+        text = (reply or "").strip()
+        if not text:
+            raise HTTPException(status_code=502, detail="LLM 返回为空")
+        return {"ok": True, "model": client.model, "preview": text[:80]}
+    except HTTPException:
+        raise
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=redact_secrets(str(exc))) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=redact_secrets(str(exc))) from exc
+    finally:
+        reset_llm_override(token)
 
 
 @app.post("/api/chat")
@@ -1034,17 +1150,24 @@ def agent_plot_edit(session_id: str, req: PlotEditAgentRequest):
         raise HTTPException(status_code=400, detail="instruction is required")
 
     slug = resolve_storage_slug(session_id)
-    model = (sess.get("model") or "").strip() or None
+    model = (req.model or "").strip() or (sess.get("model") or "").strip() or None
+    from web_frontend.backend.web_llm import llm_override_context
+
     try:
-        result = agent_apply_plot_edit(
-            project_root=PROJECT_ROOT,
-            session_id=session_id,
-            storage_slug=slug,
-            source_rel=req.source_rel,
-            instruction=req.instruction.strip(),
+        with llm_override_context(
+            api_key=req.llm_api_key,
+            base_url=req.llm_base_url,
             model=model,
-            filename=req.filename,
-        )
+        ):
+            result = agent_apply_plot_edit(
+                project_root=PROJECT_ROOT,
+                session_id=session_id,
+                storage_slug=slug,
+                source_rel=req.source_rel,
+                instruction=req.instruction.strip(),
+                model=model,
+                filename=req.filename,
+            )
     except PlotEditError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except FileNotFoundError as exc:
@@ -1250,9 +1373,13 @@ async def chat_stream(req: ChatStreamRequest, request: Request):
             headers=headers,
         )
 
+    from web_frontend.backend.web_llm import reset_llm_override
+
+    llm_token = _apply_request_llm_override(req)
     try:
         client = LLM_Client(model=req.model)
     except ValueError as exc:
+        reset_llm_override(llm_token)
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     history = db_get_messages(req.session_id)
@@ -1291,6 +1418,8 @@ async def chat_stream(req: ChatStreamRequest, request: Request):
             err_msg = f"LLM streaming failed: {exc}"
             db_append_message(req.session_id, "assistant", err_msg)
             yield _sse_pack({"done": True, "error": err_msg})
+        finally:
+            reset_llm_override(llm_token)
 
     return StreamingResponse(gen_llm(), media_type="text/event-stream", headers=headers)
 
@@ -1305,6 +1434,7 @@ async def cancel_session_agent(session_id: str):
 async def _stream_agent_sse_async(req: ChatStreamRequest, request: Request):
     """Agent + MCP 工具执行，SSE 流式返回进度。"""
     from web_frontend.backend.agent_runner import stream_agent_pipeline
+    from web_frontend.backend.web_llm import reset_llm_override
 
     parts: list[str] = []
     final_error = None
@@ -1313,6 +1443,7 @@ async def _stream_agent_sse_async(req: ChatStreamRequest, request: Request):
     storage_slug = resolve_storage_slug(req.session_id)
     cancel_event = await register_job(req.session_id)
     recent_messages = db_get_messages(req.session_id)[-12:]
+    llm_token = _apply_request_llm_override(req)
 
     async def _client_gone() -> bool:
         try:
@@ -1331,6 +1462,8 @@ async def _stream_agent_sse_async(req: ChatStreamRequest, request: Request):
             source_dir=str(BASE_DIR / "softwares_database"),
             model=req.model,
             temperature=req.temperature,
+            llm_api_key=req.llm_api_key,
+            llm_base_url=req.llm_base_url,
             cancel_event=cancel_event,
             is_disconnected=_client_gone,
             recent_messages=recent_messages,
@@ -1377,6 +1510,7 @@ async def _stream_agent_sse_async(req: ChatStreamRequest, request: Request):
             db_append_message(req.session_id, "assistant", "".join(parts))
         yield _sse_pack({"done": True, "error": err_msg, "finished": False})
     finally:
+        reset_llm_override(llm_token)
         await clear_job(req.session_id)
 
 

@@ -56,15 +56,21 @@ DEFAULT_HISTOGRAM = {
 
 DEFAULT_TITLE_ALIGN = "center"
 
-DEFAULT_TITLE_ALIGN = "center"
-
 DEFAULT_COLORS = {
     "histogram_color": "#4c72b0",
     "threshold_color": "#d62728",
     "median_color": "#ff7f0e",
+    "scatter_color": "#4c72b0",
     "significant": "#E64B35",
     "nonsignificant": "#B0B0B0",
     "bar_color": "#3C5488",
+    "fragment_color": "#c0392b",
+    "loss_color": "#27ae60",
+    "direct": "#2CA02C",
+    "propagated": "#FF7F0E",
+    "edge_color": "#aaaaaa",
+    "motif_color": "#E64B35",
+    "spectrum_color": "#4c72b0",
 }
 
 _HEX_COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}(?:[0-9a-fA-F]{2})?$")
@@ -209,6 +215,47 @@ def normalize_plot_config(
     if isinstance(raw, dict) and raw.get("title_align") in {"left", "center", "right"}:
         title_align = raw["title_align"]
 
+    color_by = "Group"
+    if isinstance(raw, dict) and isinstance(raw.get("color_by"), str) and raw["color_by"].strip():
+        color_by = raw["color_by"].strip()
+
+    color_type = "nominal"
+    if isinstance(raw, dict) and raw.get("color_type") in {"nominal", "quantitative"}:
+        color_type = raw["color_type"]
+
+    cluster = None
+    if isinstance(raw, dict) and isinstance(raw.get("cluster"), dict):
+        method = str(raw["cluster"].get("method") or "").lower()
+        if method in {"kmeans", "k-means", "cluster"}:
+            n_val = raw["cluster"].get("n", raw["cluster"].get("k", 3))
+            try:
+                n_clusters = max(2, min(12, int(n_val)))
+            except (TypeError, ValueError):
+                n_clusters = 3
+            cluster = {"method": "kmeans", "n": n_clusters}
+            color_by = "Cluster"
+            color_type = "nominal"
+
+    thresholds = None
+    if isinstance(raw, dict) and isinstance(raw.get("thresholds"), dict):
+        thr: dict[str, float] = {}
+        for key in ("p", "log2fc", "padj"):
+            val = raw["thresholds"].get(key)
+            if isinstance(val, (int, float)):
+                thr[key] = float(val)
+        thresholds = thr or None
+
+    color_channel = None
+    if isinstance(raw, dict) and isinstance(raw.get("color_channel"), str) and raw["color_channel"].strip():
+        color_channel = raw["color_channel"].strip()
+
+    # marks.top_n 等扩展字段
+    if isinstance(marks_in, dict):
+        for extra in ("top_n", "top_frags", "top_motifs", "top_spectra"):
+            val = marks_in.get(extra)
+            if isinstance(val, (int, float)) and val > 0:
+                marks[extra] = int(val)
+
     return {
         "version": 2,
         "plot_type": plot_type,
@@ -224,6 +271,11 @@ def normalize_plot_config(
         "legend": legend,
         "marks": marks,
         "histogram": histogram,
+        "color_by": color_by,
+        "color_type": color_type,
+        "cluster": cluster,
+        "thresholds": thresholds,
+        "color_channel": color_channel,
     }
 
 
@@ -260,6 +312,43 @@ def merge_plot_config(base: dict[str, Any], patch: dict[str, Any]) -> dict[str, 
         merged["show_sample_labels"] = bool(patch["show_sample_labels"])
     if patch.get("title_align") in {"left", "center", "right"}:
         merged["title_align"] = patch["title_align"]
+    if isinstance(patch.get("color_by"), str) and patch["color_by"].strip():
+        merged["color_by"] = patch["color_by"].strip()
+        # 换字段时清空旧 palette 键，避免残留 Group 色干扰
+        if "palette" not in patch:
+            merged["palette"] = {}
+        # 切回 metadata 列时清除聚类配置（除非 patch 同时带了 cluster）
+        if "cluster" not in patch:
+            merged["cluster"] = None
+    if patch.get("color_type") in {"nominal", "quantitative"}:
+        merged["color_type"] = patch["color_type"]
+    if "cluster" in patch:
+        if patch["cluster"] is None:
+            merged["cluster"] = None
+        elif isinstance(patch["cluster"], dict):
+            method = str(patch["cluster"].get("method") or "").lower()
+            if method in {"kmeans", "k-means", "cluster"}:
+                n_val = patch["cluster"].get("n", patch["cluster"].get("k", 3))
+                try:
+                    n_clusters = max(2, min(12, int(n_val)))
+                except (TypeError, ValueError):
+                    n_clusters = 3
+                merged["cluster"] = {"method": "kmeans", "n": n_clusters}
+                merged["color_by"] = "Cluster"
+                merged["color_type"] = "nominal"
+                if "palette" not in patch:
+                    merged["palette"] = {}
+            else:
+                merged["cluster"] = None
+    if isinstance(patch.get("thresholds"), dict):
+        base_thr = merged.get("thresholds") if isinstance(merged.get("thresholds"), dict) else {}
+        thr = dict(base_thr)
+        for key, val in patch["thresholds"].items():
+            if isinstance(val, (int, float)):
+                thr[str(key)] = float(val)
+        merged["thresholds"] = thr
+    if isinstance(patch.get("color_channel"), str) and patch["color_channel"].strip():
+        merged["color_channel"] = patch["color_channel"].strip()
     for section in ("axes", "legend", "marks", "histogram"):
         if isinstance(patch.get(section), dict):
             merged.setdefault(section, {})

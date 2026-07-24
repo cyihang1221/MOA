@@ -233,6 +233,12 @@ body:has(.shared-banner:not(.hidden)) {
   color: var(--text);
 }
 
+.secondary-btn.active {
+  border-color: #2563eb;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
 .session-action-btn {
   border-color: #475569;
   background: #0f172a;
@@ -1102,6 +1108,16 @@ body:has(.shared-banner:not(.hidden)) {
   color: var(--muted);
 }
 
+.image-editor-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.image-editor-field-row.hidden {
+  display: none;
+}
+
 .image-editor-field input,
 .image-editor-field select {
   width: 100%;
@@ -1622,6 +1638,49 @@ body:has(.shared-banner:not(.hidden)) {
 
 .plot-agent-editor-status.error {
   color: #dc2626;
+}
+
+.llm-settings-panel {
+  width: min(560px, 96vw);
+  max-height: 90vh;
+}
+
+.llm-settings-panel .plot-agent-editor-field input,
+.llm-settings-panel .plot-agent-editor-field select {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font: inherit;
+  background: #fff;
+  color: var(--text);
+  min-height: 38px;
+  box-sizing: border-box;
+}
+
+.llm-settings-mode {
+  margin: 0 0 12px;
+  font-size: 12px;
+}
+
+.llm-key-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.llm-key-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.llm-key-row .secondary-btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.plot-agent-editor-status.ok {
+  color: #15803d;
 }
 
 .output-image-agent-edit {

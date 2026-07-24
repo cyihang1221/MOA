@@ -44,6 +44,8 @@ class AgentContext:
     paths: dict[str, str]
     model: str | None = None
     user_message: str = ""
+    llm_api_key: str | None = None
+    llm_base_url: str | None = None
 
 
 @dataclass
@@ -195,15 +197,22 @@ def normalize_local_tool_args(tool_name: str, tool_args: dict[str, Any], ctx: Ag
 
 def run_local_tool(tool_name: str, tool_args: dict[str, Any], ctx: AgentContext) -> dict[str, Any]:
     """同步执行本地 visual 工具，返回结构化结果。"""
+    from web_frontend.backend.web_llm import llm_override_context
+
     tool_name = normalize_agent_tool_name(tool_name) or tool_name
     args = normalize_local_tool_args(tool_name, tool_args, ctx)
 
-    if tool_name == "plot_edit":
-        return _run_plot_edit(args, ctx)
-    if tool_name == "image_merge":
-        return _run_image_merge(args, ctx)
-    if tool_name == "merge_edit":
-        return _run_merge_edit(args, ctx)
+    with llm_override_context(
+        api_key=ctx.llm_api_key,
+        base_url=ctx.llm_base_url,
+        model=ctx.model,
+    ):
+        if tool_name == "plot_edit":
+            return _run_plot_edit(args, ctx)
+        if tool_name == "image_merge":
+            return _run_image_merge(args, ctx)
+        if tool_name == "merge_edit":
+            return _run_merge_edit(args, ctx)
     raise ValueError(f"未知本地工具: {tool_name}")
 
 

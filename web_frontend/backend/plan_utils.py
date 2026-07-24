@@ -187,10 +187,30 @@ def inject_mgf_standalone_tasks(
         )
     ):
         preferred = "molecular_networking_gnps"
+        # 化学类/拓扑着色通常需要 MolNetEnhancer 节点类别
+        chem_color = any(
+            k in lower
+            for k in (
+                "化学类",
+                "化学类别",
+                "chemical_category",
+                "chemical class",
+                "按化学",
+                "molnetenhancer",
+                "molnet",
+            )
+        )
+        topology_color = ("拓扑" in lower or "topology" in lower) and (
+            "着色" in lower or "color" in lower or chem_color
+        )
         if "fbmn" in lower and "molecular_networking_fbmn" in names:
             preferred = "molecular_networking_fbmn"
         elif "ms2lda" in lower and "molecular_networking_ms2lda" in names:
             preferred = "molecular_networking_ms2lda"
+        elif (chem_color or topology_color) and (
+            "molecular_networking_molnetenhancer" in names
+        ):
+            preferred = "molecular_networking_molnetenhancer"
         elif ("molnetenhancer" in lower or "molnet" in lower) and (
             "molecular_networking_molnetenhancer" in names
         ):
@@ -198,9 +218,7 @@ def inject_mgf_standalone_tasks(
         if preferred in names:
             method = preferred.replace("molecular_networking_", "")
             out_dir = (
-                network_dir
-                if preferred == "molecular_networking_gnps"
-                else f"{paths['outputspace']}/molecular_network_{method}_results"
+                f"{paths['outputspace']}/molecular_network_results/{method}"
             )
             mgf_path = mgf_hint or f"{paths['outputspace']}/peak_detection_results/spectra.mgf"
             out.append(
@@ -243,6 +261,20 @@ def inject_visual_standalone_tasks(
             out.append(
                 f"Use image_merge to merge session plots into one figure per: {text[:200]}"
             )
+        # 分析+拼图：不要再补分析意图类 plot_edit
+        return out
+
+    # 仅当计划里还没有分析出图工具时，才把「改图/着色」补成独立 plot_edit
+    has_analysis_plot_tool = any(
+        key in lower_tasks or key in " ".join(out).lower()
+        for key in (
+            "statistical_analysis_mixomics",
+            "mixomics",
+            "molecular_networking",
+            "kegg_compound_enrichment",
+        )
+    )
+    if has_analysis_plot_tool:
         return out
 
     if looks_like_plot_edit_request(text) and "plot_edit" in names:
@@ -253,3 +285,102 @@ def inject_visual_standalone_tasks(
         return out
 
     return out
+
+
+def _is_analysis_intent_plot_edit_task(task: str) -> bool:
+    """判断是否为「分析意图着色/阈值/通道」类 plot_edit（应交给运行时确定性重绘）。"""
+    text = str(task)
+    lower = text.lower()
+    if "plot_edit" not in lower:
+        return False
+    # 拼图相关不是这类
+    if "image_merge" in lower or "merge_edit" in lower:
+        return False
+    intent_markers = (
+        "color_by",
+        "cluster",
+        "recolor",
+        "thresholds",
+        "color_channel",
+        "top_n",
+        "着色",
+        "chemical_category",
+        "chemical class",
+        "化学类",
+        "log2fc",
+        "|fc|",
+        "p<",
+        "p <",
+        "by count",
+        "按 count",
+        "neglog10",
+        "kmeans",
+        "k-means",
+        "按 group",
+        "按 batch",
+        "按时间",
+    )
+    return any(m in lower or m in text for m in intent_markers)
+
+
+def inject_analysis_coloring_tasks(
+    tasks: list[str],
+    user_message: str,
+    tool_names: list[str] | None = None,
+    *,
+    metadata_csv: str | None = None,
+    metadata_columns: list[str] | None = None,
+) -> tuple[list[str], dict]:
+    """裁掉分析意图类 plot_edit，并按结构化意图裁剪旁支分析步骤。
+
+    返回 (tasks, info)，info 含：
+      intent / removed_plot_edits / removed_by_intent
+    """
+    del tool_names  # 兼容旧调用签名
+    info: dict = {
+        "intent": {},
+        "removed_plot_edits": [],
+        "removed_by_intent": [],
+    }
+    if not tasks:
+        return tasks, info
+
+    from web_frontend.backend.analysis_intent import (
+        build_analysis_intent,
+        prune_plan_tasks_by_intent,
+    )
+
+    intent = build_analysis_intent(
+        user_message or "",
+        metadata_columns=metadata_columns,
+        metadata_csv=metadata_csv,
+    )
+    info["intent"] = intent or {}
+
+    lower_joined = " ".join(str(t) for t in tasks).lower()
+    has_plot_tool = any(
+        key in lower_joined
+        for key in (
+            "statistical_analysis_mixomics",
+            "mixomics",
+            "molecular_networking",
+            "kegg_compound_enrichment",
+        )
+    )
+    working = list(tasks)
+    if has_plot_tool:
+        kept_plots: list[str] = []
+        removed_plots: list[str] = []
+        for t in working:
+            if _is_analysis_intent_plot_edit_task(t):
+                removed_plots.append(t)
+            else:
+                kept_plots.append(t)
+        working = kept_plots
+        info["removed_plot_edits"] = removed_plots
+
+    if intent:
+        working, removed_intent = prune_plan_tasks_by_intent(working, intent)
+        info["removed_by_intent"] = removed_intent
+
+    return working, info

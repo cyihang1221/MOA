@@ -79,6 +79,90 @@ PLOT_SPECS: tuple[PlotSpec, ...] = (
         ("network_nodes.csv", "network_edges.csv"),
         "histogram_color",
     ),
+    PlotSpec(
+        "pearson_hist",
+        "pearson_distribution",
+        "Pearson Correlation Distribution",
+        ("network_edges.csv",),
+        "histogram_color / scatter",
+    ),
+    PlotSpec(
+        "mass2motif_overview",
+        "mass2motif_overview",
+        "Mass2Motif Overview",
+        ("mass2motifs.csv",),
+        "bar 主色 / n_top_spectra 色标",
+    ),
+    PlotSpec(
+        "mass2motif_fragments",
+        "mass2motif_fragments",
+        "Mass2Motif Top Fragments",
+        ("mass2motifs.csv",),
+        "fragment_color / loss_color",
+    ),
+    PlotSpec(
+        "motif_spectrum_heatmap",
+        "motif_spectrum_heatmap",
+        "Spectrum–Mass2Motif Association",
+        ("spectra_motif_scores.csv",),
+        "热图色标",
+    ),
+    PlotSpec(
+        "chemical_class_distribution",
+        "chemical_class_distribution",
+        "Chemical Class Distribution",
+        ("chemical_class_distribution.csv",),
+        "化学类别调色板",
+    ),
+    PlotSpec(
+        "family_chemical_consensus",
+        "family_chemical_consensus",
+        "Family Chemical Consensus",
+        ("chemical_class_distribution.csv",),
+        "化学类别调色板",
+    ),
+    PlotSpec(
+        "annotation_propagation",
+        "annotation_propagation_summary",
+        "Annotation Propagation Summary",
+        ("enhanced_nodes.csv",),
+        "direct / propagated",
+    ),
+    PlotSpec(
+        "kegg_bubble",
+        "kegg_compound_bubble",
+        "KEGG Compound Pathway Enrichment",
+        ("kegg_compound_enrich.csv",),
+        "点大小 Count / 颜色 -log10(FDR)",
+    ),
+    PlotSpec(
+        "kegg_dotplot",
+        "kegg_compound_dotplot",
+        "KEGG Compound Enrichment Dotplot",
+        ("kegg_compound_enrich.csv",),
+        "点大小 / 颜色",
+    ),
+    PlotSpec(
+        "kegg_barplot",
+        "kegg_compound_barplot",
+        "KEGG Compound Enrichment Barplot",
+        ("kegg_compound_enrich.csv",),
+        "bar_color",
+    ),
+    PlotSpec(
+        "fbmn_group_intensity",
+        "fbmn_group_intensity",
+        "FBMN Group Intensity Comparison",
+        ("fbmn_group_intensity.csv",),
+        "分组调色板",
+    ),
+    PlotSpec(
+        "mass2motif_network",
+        "mass2motif_network",
+        "Mass2Motif–Spectrum Network",
+        ("mass2motif_network_nodes.csv", "mass2motif_network_edges.csv"),
+        "motif / spectrum",
+    ),
 )
 
 # 最长前缀优先匹配
@@ -130,15 +214,30 @@ PLOT_ALIASES: dict[str, str] = {
     "annotation": "annotation_propagation_summary",
     "kegg": "kegg_compound_bubble",
     "气泡图": "kegg_compound_bubble",
+    "kegg dot": "kegg_compound_dotplot",
+    "kegg bar": "kegg_compound_barplot",
+    "富集气泡": "kegg_compound_bubble",
+    "富集柱状": "kegg_compound_barplot",
 }
 
 # 已全部纳入语义 SVG；保留空集合便于兼容旧判断
 UNSUPPORTED_EDIT_STEMS = frozenset()
 
-# FBMN 子目录使用 fbmn_*.csv，与 GNPS 的 network_*.csv 同构
+# FBMN / MolNetEnhancer / KEGG 数据文件别名
 _NETWORK_DATA_ALIASES: dict[str, tuple[str, ...]] = {
-    "network_nodes.csv": ("network_nodes.csv", "fbmn_nodes.csv"),
+    "network_nodes.csv": ("network_nodes.csv", "fbmn_nodes.csv", "enhanced_nodes.csv"),
     "network_edges.csv": ("network_edges.csv", "fbmn_edges.csv"),
+    "chemical_class_distribution.csv": (
+        "chemical_class_distribution.csv",
+        "enhanced_nodes.csv",
+    ),
+    "enhanced_nodes.csv": ("enhanced_nodes.csv",),
+    "kegg_compound_enrich.csv": ("kegg_compound_enrich.csv",),
+    "mass2motifs.csv": ("mass2motifs.csv",),
+    "spectra_motif_scores.csv": ("spectra_motif_scores.csv",),
+    "fbmn_group_intensity.csv": ("fbmn_group_intensity.csv",),
+    "mass2motif_network_nodes.csv": ("mass2motif_network_nodes.csv",),
+    "mass2motif_network_edges.csv": ("mass2motif_network_edges.csv",),
 }
 
 
@@ -156,21 +255,8 @@ def plot_data_files_ready(data_dir: Path, data_files: tuple[str, ...]) -> bool:
     return all(resolve_plot_data_file(data_dir, name) is not None for name in data_files)
 
 
-# 常见分析结果图（即使暂无语义 CSV，也可走通用 Agent 改图）
-GENERIC_AGENT_PLOT_STEMS = frozenset({
-    "pearson_distribution",
-    "fbmn_group_intensity",
-    "mass2motif_overview",
-    "mass2motif_fragments",
-    "motif_spectrum_heatmap",
-    "mass2motif_network",
-    "chemical_class_distribution",
-    "family_chemical_consensus",
-    "annotation_propagation_summary",
-    "kegg_compound_bubble",
-    "kegg_compound_dotplot",
-    "kegg_compound_barplot",
-})
+# 仍走通用 Agent 改图（暂无稳定语义数据或布局过复杂）
+GENERIC_AGENT_PLOT_STEMS = frozenset()
 
 
 def plot_type_from_stem(stem: str) -> str | None:
@@ -310,9 +396,27 @@ def list_editable_plots(output_root: Path) -> list[dict[str, Any]]:
             }
         )
     by_stem: dict[str, dict[str, Any]] = {}
+
+    def _network_method_rank(rel: str) -> int:
+        parts = Path(rel).parts
+        lower = {p.lower() for p in parts}
+        if lower & {"gnps", "fbmn", "ms2lda", "molnetenhancer"}:
+            return 2
+        if len(parts) == 2 and parts[0] == "molecular_network_results":
+            return 0
+        return 1
+
     for item in found:
         prev = by_stem.get(item["stem"])
-        if prev is None or item["modified"] >= prev["modified"]:
+        if prev is None:
+            by_stem[item["stem"]] = item
+            continue
+        # 同 stem：优先方法子目录，其次较新 mtime
+        prev_rank = _network_method_rank(prev["rel"])
+        cur_rank = _network_method_rank(item["rel"])
+        if cur_rank > prev_rank:
+            by_stem[item["stem"]] = item
+        elif cur_rank == prev_rank and item["modified"] >= prev["modified"]:
             by_stem[item["stem"]] = item
     deduped = list(by_stem.values())
     deduped.sort(key=lambda item: item["modified"], reverse=True)
@@ -323,12 +427,13 @@ _PLOT_EDIT_INTENT_RE = re.compile(
     r"(?:"
     r"改图|修改(?:一下)?图|调整(?:一下)?图|更改?图|美化图|"
     r"标题改|标题改为|标题改成|标题修改为|标题为|改(?:一下)?标题|修改.*标题|更换标题|"
-    r"颜色|色号|配色|调色|字体|字号|图例|"
+    r"颜色|色号|配色|调色|着色|上色|字体|字号|图例|"
     r"用\s*#|#[0-9a-fA-F]{3,8}\b|"
     r"改成|改为|换成|用.{0,8}色|"
+    r"按.{0,12}(?:着色|上色)|聚类|k[\s-]*means|"
     r"直方图|分布图|拓扑图|热图|气泡图|"
     r"重新绘|重绘|重新作图|重新生成图|"
-    r"edit\s+(?:the\s+)?plot|change\s+(?:the\s+)?title|recolor|font\s+size|plot\s+style"
+    r"edit\s+(?:the\s+)?plot|change\s+(?:the\s+)?title|recolor|color\s+by|font\s+size|plot\s+style"
     r")",
     re.IGNORECASE,
 )
@@ -345,7 +450,7 @@ _PLOT_REFERENCE_RE = re.compile(
     re.IGNORECASE,
 )
 _PLOT_STYLE_RE = re.compile(
-    r"(?:标题|字号|字体|颜色|色号|配色|图例|改成|改为|换成|用\s*#|#[0-9a-fA-F]{3,8})",
+    r"(?:标题|字号|字体|颜色|色号|配色|着色|上色|图例|聚类|改成|改为|换成|用\s*#|#[0-9a-fA-F]{3,8}|color\s+by)",
     re.IGNORECASE,
 )
 

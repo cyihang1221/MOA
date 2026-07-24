@@ -48,6 +48,7 @@ def build_echarts_option(
         y_idx = 1
 
     palette = plot_config.get("palette") or {}
+    legend_title, color_type = score_color_meta(plot_config)
     ordered_groups: list[str] = []
     seen: set[str] = set()
     for group in groups:
@@ -57,30 +58,52 @@ def build_echarts_option(
             ordered_groups.append(g)
 
     series = []
-    for i, group in enumerate(ordered_groups):
-        mask = np.array([str(g) == group for g in groups], dtype=bool)
-        points = [
-            {
-                "name": sample_names[j].replace(".mzML", "").replace(".mzml", ""),
-                "value": [float(scores[j, x_idx]), float(scores[j, y_idx])],
-            }
-            for j, m in enumerate(mask)
-            if m
-        ]
+    if color_type == "quantitative":
+        points = []
+        for j, group in enumerate(groups):
+            try:
+                val = float(group)
+            except (TypeError, ValueError):
+                val = None
+            points.append(
+                {
+                    "name": sample_names[j].replace(".mzML", "").replace(".mzml", ""),
+                    "value": [float(scores[j, x_idx]), float(scores[j, y_idx]), val],
+                }
+            )
         series.append(
             {
-                "name": group,
+                "name": legend_title,
                 "type": "scatter",
                 "symbolSize": 11,
-                "itemStyle": {"color": _group_color(palette, group, i)},
-                "label": {
-                    "show": bool(plot_config.get("show_sample_labels", True)),
-                    "position": "top",
-                    "fontSize": plot_config.get("font_size", {}).get("label", 10),
-                },
                 "data": points,
             }
         )
+    else:
+        for i, group in enumerate(ordered_groups):
+            mask = np.array([str(g) == group for g in groups], dtype=bool)
+            points = [
+                {
+                    "name": sample_names[j].replace(".mzML", "").replace(".mzml", ""),
+                    "value": [float(scores[j, x_idx]), float(scores[j, y_idx])],
+                }
+                for j, m in enumerate(mask)
+                if m
+            ]
+            series.append(
+                {
+                    "name": group,
+                    "type": "scatter",
+                    "symbolSize": 11,
+                    "itemStyle": {"color": _group_color(palette, group, i)},
+                    "label": {
+                        "show": bool(plot_config.get("show_sample_labels", True)),
+                        "position": "top",
+                        "fontSize": plot_config.get("font_size", {}).get("label", 10),
+                    },
+                    "data": points,
+                }
+            )
 
     fs = plot_config.get("font_size") or {}
     return {
@@ -135,34 +158,28 @@ def render_score_plot_png(
     fs = plot_config.get("font_size") or {}
     fig_w, fig_h = plot_config.get("figure_size") or [10.0, 8.0]
 
-    ordered_groups: list[str] = []
-    seen: set[str] = set()
-    for group in groups:
-        g = str(group)
-        if g not in seen:
-            seen.add(g)
-            ordered_groups.append(g)
-
+    legend_title, color_type = score_color_meta(plot_config)
     fig, ax = plt.subplots(figsize=(float(fig_w), float(fig_h)), facecolor="white")
-    for i, group in enumerate(ordered_groups):
-        mask = np.array([str(g) == group for g in groups], dtype=bool)
-        xs = scores[mask, x_idx]
-        ys = scores[mask, y_idx]
-        color = _group_color(palette, group, i)
-        ax.scatter(
-            xs,
-            ys,
+
+    if color_type == "quantitative":
+        try:
+            nums = np.array([float(g) if g == g else np.nan for g in groups], dtype=float)
+        except (TypeError, ValueError):
+            nums = np.full(len(groups), np.nan)
+        sc = ax.scatter(
+            scores[:, x_idx],
+            scores[:, y_idx],
+            c=nums,
             s=70,
-            c=color,
+            cmap="viridis",
             alpha=0.9,
             edgecolors="white",
             linewidths=0.8,
-            label=group,
         )
+        cbar = fig.colorbar(sc, ax=ax)
+        cbar.set_label(legend_title, fontproperties=_cjk(fs.get("legend", 11)))
         if plot_config.get("show_sample_labels", True):
-            for j, m in enumerate(mask):
-                if not m:
-                    continue
+            for j in range(len(groups)):
                 label = sample_names[j].replace(".mzML", "").replace(".mzml", "")
                 ax.annotate(
                     label,
@@ -173,6 +190,47 @@ def render_score_plot_png(
                     fontproperties=_cjk(fs.get("label", 10)),
                     color="#111827",
                 )
+    else:
+        ordered_groups: list[str] = []
+        seen: set[str] = set()
+        for group in groups:
+            g = str(group)
+            if g not in seen:
+                seen.add(g)
+                ordered_groups.append(g)
+
+        for i, group in enumerate(ordered_groups):
+            mask = np.array([str(g) == group for g in groups], dtype=bool)
+            xs = scores[mask, x_idx]
+            ys = scores[mask, y_idx]
+            color = _group_color(palette, group, i)
+            ax.scatter(
+                xs,
+                ys,
+                s=70,
+                c=color,
+                alpha=0.9,
+                edgecolors="white",
+                linewidths=0.8,
+                label=group,
+            )
+            if plot_config.get("show_sample_labels", True):
+                for j, m in enumerate(mask):
+                    if not m:
+                        continue
+                    label = sample_names[j].replace(".mzML", "").replace(".mzml", "")
+                    ax.annotate(
+                        label,
+                        (scores[j, x_idx], scores[j, y_idx]),
+                        textcoords="offset points",
+                        xytext=(0, 6),
+                        ha="center",
+                        fontproperties=_cjk(fs.get("label", 10)),
+                        color="#111827",
+                    )
+        legend = ax.legend(title=legend_title, prop=_cjk(fs.get("legend", 11)), framealpha=0.9)
+        if legend and legend.get_title():
+            legend.get_title().set_fontproperties(_cjk(fs.get("legend", 11), bold=True))
 
     ax.set_title(
         plot_config.get("title", ""),
@@ -183,14 +241,10 @@ def render_score_plot_png(
     ax.tick_params(labelsize=fs.get("axis", 12))
     ax.grid(True, color="#ebebeb", linewidth=0.8)
     ax.set_axisbelow(True)
-    legend = ax.legend(title="Group", prop=_cjk(fs.get("legend", 11)), framealpha=0.9)
-    if legend and legend.get_title():
-        legend.get_title().set_fontproperties(_cjk(fs.get("legend", 11), bold=True))
     fig.tight_layout()
     fig.savefig(out, dpi=300, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     return out
-
 
 def save_plot_sidecars(
     *,
@@ -218,21 +272,65 @@ def save_plot_sidecars(
 def load_scores_and_groups(
     scores_csv: str | Path,
     metadata_csv: str | Path,
-) -> tuple[np.ndarray, list[str], list[str], list[str]]:
+    *,
+    plot_config: dict[str, Any] | None = None,
+) -> tuple[np.ndarray, list[Any], list[str], list[str]]:
+    """加载得分矩阵与着色标签。
+
+    着色字段来自 plot_config.color_by（默认 Group）；
+    plot_config.cluster = {method: kmeans, n: 3} 时在得分上聚类着色。
+    """
+    from web_frontend.backend.session_metadata import resolve_color_labels
+
     df = pd.read_csv(scores_csv, index_col=0)
     if df.empty:
         raise ValueError("scores CSV 为空")
 
-    meta_df = pd.read_csv(metadata_csv)
-    if "Sample" not in meta_df.columns or "Group" not in meta_df.columns:
-        raise ValueError("metadata.csv 需包含 Sample 与 Group 列")
-
-    group_map = meta_df.set_index("Sample")["Group"].astype(str).to_dict()
     samples = df.index.astype(str).tolist()
-    groups = [group_map.get(sample, "Unknown") for sample in samples]
     axis_names = df.columns.astype(str).tolist()
-    return df.to_numpy(dtype=float), groups, samples, axis_names
+    scores = df.to_numpy(dtype=float)
+    cfg = plot_config if isinstance(plot_config, dict) else {}
+    cluster = cfg.get("cluster") if isinstance(cfg.get("cluster"), dict) else None
 
+    if cluster and str(cluster.get("method") or "").lower() in {"kmeans", "k-means", "cluster"}:
+        n_clusters = int(cluster.get("n") or cluster.get("k") or 3)
+        n_clusters = max(2, min(12, n_clusters))
+        n_features = min(scores.shape[1], max(2, n_clusters))
+        try:
+            from sklearn.cluster import KMeans
+
+            model = KMeans(n_clusters=n_clusters, n_init=10, random_state=42)
+            labels = model.fit_predict(scores[:, :n_features])
+            groups = [f"Cluster_{int(i) + 1}" for i in labels]
+            if isinstance(plot_config, dict):
+                plot_config["color_by"] = "Cluster"
+                plot_config["color_type"] = "nominal"
+                plot_config["cluster"] = {"method": "kmeans", "n": n_clusters}
+            return scores, groups, samples, axis_names
+        except Exception:
+            # sklearn 不可用时退回 metadata 列
+            pass
+
+    color_by = str(cfg.get("color_by") or "Group")
+    groups, resolved_col, ctype = resolve_color_labels(samples, metadata_csv, color_by=color_by)
+    if isinstance(plot_config, dict):
+        plot_config["color_by"] = resolved_col
+        plot_config["color_type"] = ctype
+        plot_config["cluster"] = None
+    return scores, groups, samples, axis_names
+
+
+def score_color_meta(plot_config: dict[str, Any] | None) -> tuple[str, str]:
+    """返回 (legend_title, color_type)。"""
+    cfg = plot_config if isinstance(plot_config, dict) else {}
+    cluster = cfg.get("cluster") if isinstance(cfg.get("cluster"), dict) else None
+    if cluster and str(cluster.get("method") or "").lower() in {"kmeans", "k-means", "cluster"}:
+        return "Cluster", "nominal"
+    color_by = str(cfg.get("color_by") or "Group")
+    color_type = str(cfg.get("color_type") or "nominal")
+    if color_type not in {"nominal", "quantitative"}:
+        color_type = "nominal"
+    return color_by, color_type
 
 def _color_from_config(plot_config: dict[str, Any], key: str, fallback: str) -> str:
     colors = plot_config.get("colors") or {}

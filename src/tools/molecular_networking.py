@@ -344,6 +344,7 @@ def molecular_networking_gnps_impl(
             f"生成 differential_spectra.mgf。"
         )
 
+    output_dir = resolve_network_method_output_dir(output_dir, "gnps")
     os.makedirs(output_dir, exist_ok=True)
 
     # ========== 1. 解析 MGF ==========
@@ -689,6 +690,7 @@ def molecular_networking_fbmn_impl(
     if not os.path.isfile(input_feature_table):
         raise FileNotFoundError(f"特征表未找到: {input_feature_table}")
 
+    output_dir = resolve_network_method_output_dir(output_dir, "fbmn")
     os.makedirs(output_dir, exist_ok=True)
 
     # ========== 1. 解析输入 ==========
@@ -801,17 +803,35 @@ def molecular_networking_fbmn_impl(
                 info["rt"] = round(float(row[col]), 2)
                 break
 
-        # 组均值
+        # 组均值（兼容 Sample 名带/不带 .mzML 后缀）
         group_means = {}
-        if group_map and info["mz"] is not None:
+        if group_map:
+            col_lookup = {str(c): str(c) for c in feat_df.columns}
+            for c in list(feat_df.columns):
+                stem = str(c)
+                for suf in (".mzML", ".mzml", ".MZML", ".raw", ".RAW"):
+                    if stem.endswith(suf):
+                        stem = stem[: -len(suf)]
+                        break
+                col_lookup.setdefault(stem, str(c))
             for sample_name, group in group_map.items():
-                if sample_name in feat_df.columns:
-                    try:
-                        val = float(row[sample_name])
-                        if pd.notna(val):
-                            group_means.setdefault(group, []).append(val)
-                    except (ValueError, TypeError):
-                        pass
+                sample_key = str(sample_name)
+                col = col_lookup.get(sample_key)
+                if col is None:
+                    stem = sample_key
+                    for suf in (".mzML", ".mzml", ".MZML", ".raw", ".RAW"):
+                        if stem.endswith(suf):
+                            stem = stem[: -len(suf)]
+                            break
+                    col = col_lookup.get(stem)
+                if col is None:
+                    continue
+                try:
+                    val = float(row[col])
+                    if pd.notna(val):
+                        group_means.setdefault(group, []).append(val)
+                except (ValueError, TypeError, KeyError):
+                    pass
         group_avg = {g: round(np.mean(vals), 2) for g, vals in group_means.items()} if group_means else {}
 
         feat_info[fid] = {
@@ -881,6 +901,16 @@ def molecular_networking_fbmn_impl(
 
     # ========== 6. 导出 ==========
     print(f"\n  [Step 6/6] 导出 FBMN 文件...")
+
+    # GraphML 不支持 None；导出前清理节点/边属性
+    for _n, attrs in G.nodes(data=True):
+        for key in list(attrs.keys()):
+            if attrs[key] is None:
+                del attrs[key]
+    for _u, _v, attrs in G.edges(data=True):
+        for key in list(attrs.keys()):
+            if attrs[key] is None:
+                del attrs[key]
 
     # GraphML
     graphml_path = os.path.join(output_dir, "fbmn_network.graphml")
@@ -1170,6 +1200,7 @@ def molecular_networking_ms2lda_impl(
     if not os.path.isfile(input_mgf):
         raise FileNotFoundError(f"MGF 文件未找到: {input_mgf}")
 
+    output_dir = resolve_network_method_output_dir(output_dir, "ms2lda")
     os.makedirs(output_dir, exist_ok=True)
 
     # ========== 1. 解析 MGF ==========
@@ -1177,10 +1208,12 @@ def molecular_networking_ms2lda_impl(
     spectra = _parse_mgf(input_mgf)
     n_spectra = len(spectra)
 
-    if n_spectra < 10:
+    if n_spectra < 20:
         raise ValueError(
             f"仅 {n_spectra} 个谱图，MS2LDA 建议至少 20 个谱图。"
             f"当前数据量不足以发现可靠的 Mass2Motif。"
+            f"若仅使用了 differential_spectra.mgf，请改用 "
+            f"peak_detection_results/spectra.mgf（XCMS 全量特征谱）。"
         )
 
     # 自动调整 n_motifs
@@ -1532,6 +1565,7 @@ def molecular_networking_molnetenhancer_impl(
         if not os.path.isfile(path):
             raise FileNotFoundError(f"{desc}未找到: {path}")
 
+    output_dir = resolve_network_method_output_dir(output_dir, "molnetenhancer")
     os.makedirs(output_dir, exist_ok=True)
 
     # ========== 1. 加载网络数据 ==========
@@ -2807,6 +2841,8 @@ def _plot_fbmn_group_intensity(
 
     使用分组柱状图（grouped bar chart），展示各家族在实验组和对照组的
     mean ± 范围，帮助识别在特定条件下共调控的代谢物家族。
+
+    同时写出 fbmn_group_intensity.csv（长表）供前端语义重绘。
     """
     # 提取组信息
     group_keys = set()
@@ -2862,6 +2898,35 @@ def _plot_fbmn_group_intensity(
     sorted_fams = sorted(family_stats.items(),
                          key=lambda x: x[1]["fold_change"], reverse=True)
     show_fams = sorted_fams[:top_families]
+
+    # ---- sidecar CSV（语义编辑）----
+    try:
+        rows = []
+        g0, g1 = group_keys[0], group_keys[1]
+        for rank, (fam, fs) in enumerate(show_fams, start=1):
+            m0 = fs["stats"][g0]["mean"]
+            m1 = fs["stats"][g1]["mean"]
+            log2fc = float(np.log2((m1 + 1) / (m0 + 1))) if (m0 > 0 or m1 > 0) else 0.0
+            for g in group_keys[:2]:
+                st = fs["stats"][g]
+                rows.append(
+                    {
+                        "molecular_family": fam,
+                        "family_size": int(family_sizes.get(fam, 0)),
+                        "group": g,
+                        "mean_intensity": float(st["mean"]),
+                        "std_intensity": float(st["std"]),
+                        "n_nodes": int(st["n"]),
+                        "abs_mean_diff": float(fs["fold_change"]),
+                        "log2fc": log2fc,
+                        "rank": rank,
+                    }
+                )
+        csv_path = os.path.join(os.path.dirname(output_path), "fbmn_group_intensity.csv")
+        pd.DataFrame(rows).to_csv(csv_path, index=False)
+        print(f"    ✅ FBMN 组强度 sidecar: {csv_path}")
+    except Exception as exc:
+        print(f"    ⚠️ fbmn_group_intensity.csv 写出失败: {exc}")
 
     fig, ax = plt.subplots(figsize=figsize)
     n_fams = len(show_fams)
@@ -3062,8 +3127,6 @@ def _plot_mass2motif_network(
         spectrum_nodes.append(node_id)
         pos[node_id] = (radius_s * np.cos(angle), radius_s * np.sin(angle))
 
-    fig, ax = plt.subplots(figsize=figsize)
-
     # 计算 motif 节点大小
     motif_loads = {}
     for mcol in valid_motif_cols:
@@ -3075,19 +3138,77 @@ def _plot_mass2motif_network(
             motif_loads[motif_id] = 1
     max_load = max(motif_loads.values()) if motif_loads else 1
 
+    # 边表（同时用于画图与 sidecar）
+    edge_rows = []
+    for spec_id in active_spectra.index:
+        for mcol in valid_motif_cols:
+            score = float(active_spectra.loc[spec_id, mcol])
+            if score >= score_threshold:
+                edge_rows.append(
+                    {
+                        "spectrum_id": str(spec_id),
+                        "motif_id": str(mcol),
+                        "score": score,
+                    }
+                )
+
+    # ---- sidecar CSV（语义编辑）----
+    try:
+        out_dir = os.path.dirname(output_path)
+        node_rows = []
+        for mcol in valid_motif_cols:
+            node_id = f"motif:{mcol}"
+            px, py = pos[node_id]
+            node_rows.append(
+                {
+                    "node_id": node_id,
+                    "node_type": "motif",
+                    "label": mcol.replace("Motif_", "M"),
+                    "motif_id": mcol,
+                    "spectrum_id": "",
+                    "total_load": float(motif_loads.get(mcol, 1)),
+                    "max_score": "",
+                    "x": float(px),
+                    "y": float(py),
+                }
+            )
+        for spec_id in active_spectra.index:
+            node_id = f"spec:{spec_id}"
+            px, py = pos[node_id]
+            node_rows.append(
+                {
+                    "node_id": node_id,
+                    "node_type": "spectrum",
+                    "label": str(spec_id),
+                    "motif_id": "",
+                    "spectrum_id": str(spec_id),
+                    "total_load": "",
+                    "max_score": float(active_spectra.loc[spec_id, "_max_score"]),
+                    "x": float(px),
+                    "y": float(py),
+                }
+            )
+        nodes_csv = os.path.join(out_dir, "mass2motif_network_nodes.csv")
+        edges_csv = os.path.join(out_dir, "mass2motif_network_edges.csv")
+        pd.DataFrame(node_rows).to_csv(nodes_csv, index=False)
+        pd.DataFrame(edge_rows).to_csv(edges_csv, index=False)
+        print(f"    ✅ Motif 网络 sidecar: {nodes_csv}, {edges_csv}")
+    except Exception as exc:
+        print(f"    ⚠️ mass2motif_network sidecar 写出失败: {exc}")
+
+    fig, ax = plt.subplots(figsize=figsize)
+
     # 绘制边（从谱图到 motif）
     edge_count = 0
-    for spec_idx, spec_id in enumerate(active_spectra.index):
-        spec_node = f"spec:{spec_id}"
-        for mcol in valid_motif_cols:
-            score = active_spectra.loc[spec_id, mcol]
-            if score >= score_threshold:
-                motif_node = f"motif:{mcol}"
-                alpha = max(0.1, min(0.6, score * 0.8))
-                ax.plot([pos[spec_node][0], pos[motif_node][0]],
-                        [pos[spec_node][1], pos[motif_node][1]],
-                        color="#aaaaaa", alpha=alpha, linewidth=0.3, zorder=1)
-                edge_count += 1
+    for row in edge_rows:
+        spec_node = f"spec:{row['spectrum_id']}"
+        motif_node = f"motif:{row['motif_id']}"
+        score = row["score"]
+        alpha = max(0.1, min(0.6, score * 0.8))
+        ax.plot([pos[spec_node][0], pos[motif_node][0]],
+                [pos[spec_node][1], pos[motif_node][1]],
+                color="#aaaaaa", alpha=alpha, linewidth=0.3, zorder=1)
+        edge_count += 1
 
     # 绘制谱图节点（小方块）
     spec_x = [pos[n][0] for n in spectrum_nodes]
@@ -3363,6 +3484,91 @@ def _plot_annotation_propagation_summary(
 # 统一入口函数
 # ═══════════════════════════════════════════════════════════════════════════════
 
+_SHARED_NETWORK_PLOT_STEMS = (
+    "network_topology",
+    "family_size_distribution",
+    "degree_distribution",
+    "precursor_mass_diff",
+    "cosine_distribution",
+)
+
+_NETWORK_SIDECAR_SUFFIXES = (
+    ".png",
+    ".svg",
+    ".vl.json",
+    ".plot_config.json",
+    ".plotly.json",
+    ".editable.json",
+    ".echarts.json",
+)
+
+
+def resolve_network_method_output_dir(base_network_dir: str, method: str) -> str:
+    """将各分子网络方法落到 molecular_network_results/<method>/，避免根目录与子目录重复。"""
+    method = (method or "gnps").strip().lower()
+    base = os.path.abspath(base_network_dir)
+    # 已是方法子目录则不再嵌套
+    if os.path.basename(base).lower() == method:
+        return base
+    parent_name = os.path.basename(base).lower()
+    # 旧独立目录 molecular_network_fbmn_results → molecular_network_results/fbmn
+    if (
+        parent_name.startswith("molecular_network_")
+        and parent_name.endswith("_results")
+        and parent_name != "molecular_network_results"
+    ):
+        session_out = os.path.dirname(base)
+        return os.path.join(session_out, "molecular_network_results", method)
+    # 传入 molecular_network_results 根目录
+    if parent_name == "molecular_network_results":
+        return os.path.join(base, method)
+    # 其它路径：在其下建 method 子目录
+    return os.path.join(base, method)
+
+
+def dedupe_flat_network_plot_copies(network_root: str, method: str) -> list[str]:
+    """删除 molecular_network_results/ 根目录下与方法子目录同名的共享图副本。
+
+    XCMS/统计图在 statistical_results/，stem 不同，不受影响。
+    GNPS 与 FBMN 共享 cosine/topology 等 stem 时：保留方法子目录，去掉根目录扁平副本。
+    """
+    root = os.path.abspath(network_root)
+    method = (method or "").strip().lower()
+    if not method or not os.path.isdir(root):
+        return []
+    if os.path.basename(root) != "molecular_network_results":
+        return []
+    method_dir = os.path.join(root, method)
+    if not os.path.isdir(method_dir):
+        return []
+
+    removed: list[str] = []
+    for stem in _SHARED_NETWORK_PLOT_STEMS:
+        method_png = os.path.join(method_dir, f"{stem}.png")
+        if not os.path.isfile(method_png):
+            continue
+        for suffix in _NETWORK_SIDECAR_SUFFIXES:
+            flat = os.path.join(root, f"{stem}{suffix}")
+            if os.path.isfile(flat):
+                try:
+                    os.remove(flat)
+                    removed.append(flat)
+                except OSError:
+                    pass
+        if stem == "network_topology":
+            flat_layout = os.path.join(root, "network_layout.csv")
+            method_layout = os.path.join(method_dir, "network_layout.csv")
+            if os.path.isfile(flat_layout) and os.path.isfile(method_layout):
+                try:
+                    os.remove(flat_layout)
+                    removed.append(flat_layout)
+                except OSError:
+                    pass
+    if removed:
+        print(f"    🧹 已清理根目录重复网络图 {len(removed)} 个文件（保留 {method}/）")
+    return removed
+
+
 def generate_network_figures(
     method,
     output_dir,
@@ -3534,6 +3740,17 @@ def generate_network_figures(
 
     print(f"\n✅ 所有图表已生成到: {output_dir}/")
     print(f"{'=' * 60}\n")
+
+    # 清理根目录与方法子目录的同名重复图（GNPS/FBMN 共用 stem）
+    try:
+        method_dir = os.path.abspath(output_dir)
+        parent = os.path.dirname(method_dir)
+        if os.path.basename(method_dir).lower() == str(method or "").lower():
+            dedupe_flat_network_plot_copies(parent, method)
+        else:
+            dedupe_flat_network_plot_copies(method_dir, method)
+    except Exception as exc:
+        print(f"    ⚠️ 网络图去重跳过: {exc}")
 
     from web_frontend.backend.export.plotly_sidecar_backfill import backfill_molecular_network_plotly_sidecars
 

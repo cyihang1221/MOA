@@ -80,14 +80,21 @@ def build_plan_prompt(
         "If .raw files exist but no mzML in inputspace or converted_mzml, raw conversion MUST be plan step 1 — never start with data_preprocessing_xcms.",
         "If intermediate outputs already exist (feature_table.csv, imputed table, etc.), skip upstream steps and continue from the latest missing step.",
         "If the user message is casual chat (greetings, unrelated questions), return {\"plan\": []} with zero steps.",
-        "For plot style edits (title/color/font/align) on existing figures, use plot_edit (local tool) — do NOT invent image paths or re-run analysis just to change style.",
-        "plot_edit works on ALL session result PNGs: semantic re-render when CSV data exists (PCA/volcano/distributions/topology/VIP/heatmap); otherwise generic title/style edit.",
-        "Analysis tools that produce PNGs (statistical_analysis_mixomics, molecular_networking_*, kegg_compound_enrichment) write editable sidecars; subsequent style edits MUST use plot_edit.",
+        "For plot style edits (title/color/font/align) on EXISTING figures ONLY (no new analysis), use plot_edit — do NOT invent image paths or re-run analysis just to change style.",
+        "Do NOT plan plot_edit for analysis mapping intents (color_by Group/Batch/化学类, volcano thresholds, KEGG color_channel, motif channel) when the plan already includes statistical_analysis_mixomics / molecular_networking_* / kegg_compound_enrichment — runtime deterministically re-renders after those tools succeed.",
+        "When the user says 只要/仅 + figure names (e.g. volcano+VIP) or 不要分子网络/KEGG, prefer those tools only; runtime also prunes excluded analysis kinds from the plan.",
+        "If the user asks to color by a metadata column that is missing (e.g. Time), do not invent the column — surface the available columns.",
+        "Plan shape when user asks analysis + mapping + optional panel: "
+        "(1) analysis tools only (trim by existing outputs / dependencies); "
+        "(2) if user wants a panel/拼图, add image_merge (then merge_edit only if adjusting an existing merge); "
+        "(3) NEVER append a chain of plot_edit recolor/threshold/channel steps.",
+        "plot_edit is still valid alone for pure style/recolor on already-finished PNGs; never fake a new mapping by only editing palette keys.",
+        "When the user mentions FBMN/MS2LDA/KEGG/拓扑着色, prefer the matching registered analysis tool; do not invent tool names.",
+        "Analysis tools that produce PNGs write editable sidecars; later gallery/chat style edits use plot_edit.",
         "For merging multiple PNGs into one panel figure, use image_merge; to adjust an existing merge use merge_edit.",
         "Never invent tool names (no plot_merge) or folders (no merged_plots/); only image_merge/merge_edit → merged_figures/.",
         "When merging, honor user label case (ABCD vs abcd) and label font size (e.g. 150/350) exactly.",
         "plot_edit / image_merge / merge_edit write real files under edited_plots/ or merged_figures/; never invent file paths.",
-        "Visual tools may be planned alone when the user only asks to edit/merge plots; place them after analysis steps if new PNGs are needed first.",
         "After analysis that generates plots, remind that figures are editable in the web gallery (Agent 改图 / semantic editor) or via chat with plot_edit.",
         "Use ONLY exact tool names from available_tools. Default pipeline prefers XCMS + GNPS; choose OpenMS/MZmine/KPIC/PeakOnly/FBMN/library_match_* when the user asks for those methods.",
         "For raw conversion: input_dir is the session raw/ folder (or upload root if .raw are there); output_dir is converted_mzml under outputspace.",
@@ -95,8 +102,18 @@ def build_plan_prompt(
         "Never use converted_mzml as raw conversion input_dir.",
         "All tools use input_dir and output_dir (directories), NOT input_csv/output_csv, except extract_differential_features uses differential_csv + input_mgf + output_dir.",
         "feature_filtering: input_dir must contain feature_table.csv (usually peak_detection_results/).",
-        "statistical_analysis_mixomics: input_dir has feature_table_filtered_imputed.csv; metadata_csv is upload/metadata.csv.",
-        "molecular_networking_gnps / fbmn / ms2lda / molnetenhancer: input_mgf is differential_features/differential_spectra.mgf OR peak_detection_results/spectra.mgf OR any uploaded .mgf; output_dir is molecular_network_results/ (or a method-specific subfolder).",
+        "statistical_analysis_mixomics: input_dir has feature_table_filtered_imputed.csv; metadata_csv is upload/metadata.csv "
+        "(runtime auto-aligns Sample names to the feature table; mismatched stale metadata is regenerated from filenames).",
+        "After XCMS: NEVER plan peak_group_alignment_openms unless *.featureXML already exists; "
+        "FBMN must use XCMS feature_table.csv / filtered imputed table + spectra.mgf, not openms_aligned_features/.",
+        "molecular_networking_ms2lda: ALWAYS use peak_detection_results/spectra.mgf "
+        "(feature-aligned full MS2 corpus for Mass2Motif discovery). "
+        "Do NOT use differential_spectra.mgf (often only a few VIP hits) or raw per-file MS2 dumps.",
+        "spectral_annotation input_dir MUST be differential_features/ (needs differential_spectra.mgf + differential_feature_table.csv), "
+        "never peak_detection_results/ or statistical_results/.",
+        "kegg_compound_enrichment needs annotation_results/...library_match_clean&add.csv from spectral_annotation — not statistical_results/.",
+        "molecular_networking_gnps / fbmn: input_mgf may be differential_spectra.mgf OR peak_detection_results/spectra.mgf; "
+        "ms2lda must use peak_detection_results/spectra.mgf; output_dir is molecular_network_results/<method>/.",
         "If the user uploads .mgf and asks for molecular networking and/or DeepMASS, plan molecular_networking_* and/or deepmass_annotation (skip XCMS unless they also uploaded raw/mzML).",
         "deepmass_annotation: input_dir is deepmass_annotation_results/ under outputspace; output_dir is the same or a sibling deepmass folder. Uploaded .mgf is auto-copied to differential_spectra.mgf — do NOT skip DeepMASS when differential_metabolites.csv is empty.",
         "library_match_* / spectral_annotation: prefer when user asks for library matching or annotation against spectral libraries.",
