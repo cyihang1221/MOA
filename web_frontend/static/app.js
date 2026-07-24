@@ -1,4 +1,20 @@
 const modelSelect = document.getElementById("modelSelect");
+const llmSettingsBtn = document.getElementById("llmSettingsBtn");
+const llmSettingsModal = document.getElementById("llmSettingsModal");
+const llmSettingsBackdrop = document.getElementById("llmSettingsBackdrop");
+const llmSettingsClose = document.getElementById("llmSettingsClose");
+const llmSettingsCancel = document.getElementById("llmSettingsCancel");
+const llmSettingsSave = document.getElementById("llmSettingsSave");
+const llmSettingsReset = document.getElementById("llmSettingsReset");
+const llmSettingsProbe = document.getElementById("llmSettingsProbe");
+const llmSettingsStatus = document.getElementById("llmSettingsStatus");
+const llmSettingsMode = document.getElementById("llmSettingsMode");
+const llmProviderSelect = document.getElementById("llmProviderSelect");
+const llmBaseUrlInput = document.getElementById("llmBaseUrlInput");
+const llmApiKeyInput = document.getElementById("llmApiKeyInput");
+const llmApiKeyToggle = document.getElementById("llmApiKeyToggle");
+const llmModelInput = document.getElementById("llmModelInput");
+const llmModelSuggestions = document.getElementById("llmModelSuggestions");
 const tempInput = document.getElementById("tempInput");
 const messagesEl = document.getElementById("messages");
 const form = document.getElementById("chatForm");
@@ -116,6 +132,13 @@ const semanticMarkSize = document.getElementById("semanticMarkSize");
 const semanticOpacity = document.getElementById("semanticOpacity");
 const semanticLegendPosition = document.getElementById("semanticLegendPosition");
 const semanticBins = document.getElementById("semanticBins");
+const semanticColorBy = document.getElementById("semanticColorBy");
+const semanticColorByField = document.getElementById("semanticColorByField");
+const semanticClusterN = document.getElementById("semanticClusterN");
+const semanticClusterNField = document.getElementById("semanticClusterNField");
+const semanticVolcanoThresholds = document.getElementById("semanticVolcanoThresholds");
+const semanticThreshP = document.getElementById("semanticThreshP");
+const semanticThreshFc = document.getElementById("semanticThreshFc");
 const semanticLegendShow = document.getElementById("semanticLegendShow");
 const semanticLabelsShow = document.getElementById("semanticLabelsShow");
 const semanticPalette = document.getElementById("semanticPalette");
@@ -175,6 +198,18 @@ const AGENT_PLOT_STEM_PREFIXES = [
   "cosine_distribution",
   "network_topology",
   "precursor_mass_diff",
+  "pearson_distribution",
+  "mass2motif_overview",
+  "mass2motif_fragments",
+  "motif_spectrum_heatmap",
+  "chemical_class_distribution",
+  "family_chemical_consensus",
+  "annotation_propagation_summary",
+  "kegg_compound_bubble",
+  "kegg_compound_dotplot",
+  "kegg_compound_barplot",
+  "fbmn_group_intensity",
+  "mass2motif_network",
 ];
 const AGENT_PLOT_UNSUPPORTED_STEMS = new Set([]);
 const MERGE_CANVAS_BG = "#ffffff";
@@ -224,6 +259,15 @@ function preferOutputGalleryImage(a, b) {
   const aMerged = aName.startsWith("merged_figures/");
   const bMerged = bName.startsWith("merged_figures/");
   if (aMerged !== bMerged) return aMerged ? a : b;
+  // 分子网络：优先方法子目录（gnps/fbmn/...），避免根目录扁平副本抢显示
+  const methodDirScore = (name) => {
+    if (/\/(gnps|fbmn|ms2lda|molnetenhancer)\//i.test(name)) return 2;
+    if (/^molecular_network_results\//i.test(name) && name.split("/").length === 2) return 0;
+    return 1;
+  };
+  const aMethod = methodDirScore(aName);
+  const bMethod = methodDirScore(bName);
+  if (aMethod !== bMethod) return aMethod > bMethod ? a : b;
   const aM = Date.parse(a?.modified || "") || 0;
   const bM = Date.parse(b?.modified || "") || 0;
   if (aM !== bM) return aM >= bM ? a : b;
@@ -279,6 +323,408 @@ let isStreaming = false;
 let activeStreamAbort = null;
 let lastAssistantMessageId = null;
 let appRuntime = null;
+let serverLlmDefaults = {
+  model: "",
+  base_url: "",
+  providers: [],
+  has_server_key: false,
+};
+const LLM_CONFIG_STORAGE_KEY = "massagent_llm_config_v1";
+
+/** 前端兜底预设：即使旧后端 /api/models 不返回 providers，下拉也不会空白 */
+const FALLBACK_LLM_PROVIDERS = [
+  {
+    id: "server",
+    label: "使用服务端默认 (.env)",
+    base_url: "",
+    model_hint: "",
+    models: [],
+  },
+  {
+    id: "dashscope",
+    label: "阿里云百炼 DashScope",
+    base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    model_hint: "qwen-plus",
+    models: ["qwen-plus", "qwen-turbo", "qwen-max", "qwen3-coder-plus"],
+  },
+  {
+    id: "deepseek",
+    label: "DeepSeek",
+    base_url: "https://api.deepseek.com/v1",
+    model_hint: "deepseek-chat",
+    models: ["deepseek-chat", "deepseek-reasoner"],
+  },
+  {
+    id: "openai",
+    label: "OpenAI",
+    base_url: "https://api.openai.com/v1",
+    model_hint: "gpt-4o-mini",
+    models: ["gpt-4o-mini", "gpt-4o", "gpt-4.1-mini"],
+  },
+  {
+    id: "siliconflow",
+    label: "硅基流动 SiliconFlow",
+    base_url: "https://api.siliconflow.cn/v1",
+    model_hint: "Qwen/Qwen2.5-7B-Instruct",
+    models: ["Qwen/Qwen2.5-7B-Instruct", "deepseek-ai/DeepSeek-V3"],
+  },
+  {
+    id: "moonshot",
+    label: "月之暗面 Kimi",
+    base_url: "https://api.moonshot.cn/v1",
+    model_hint: "moonshot-v1-8k",
+    models: ["moonshot-v1-8k", "moonshot-v1-32k", "moonshot-v1-128k"],
+  },
+  {
+    id: "zhipu",
+    label: "智谱 GLM",
+    base_url: "https://open.bigmodel.cn/api/paas/v4",
+    model_hint: "glm-4-flash",
+    models: ["glm-4-flash", "glm-4-air", "glm-4"],
+  },
+  {
+    id: "custom",
+    label: "自定义 OpenAI 兼容接口",
+    base_url: "",
+    model_hint: "",
+    models: [],
+  },
+];
+
+function getLlmProviders() {
+  const fromServer = serverLlmDefaults.providers;
+  if (Array.isArray(fromServer) && fromServer.length) {
+    // 合并兜底里多出来的供应商（如 moonshot/zhipu）
+    const ids = new Set(fromServer.map((p) => p.id));
+    const extra = FALLBACK_LLM_PROVIDERS.filter((p) => !ids.has(p.id));
+    return [...fromServer, ...extra];
+  }
+  return FALLBACK_LLM_PROVIDERS;
+}
+
+function maskApiKey(key) {
+  const raw = String(key || "").trim();
+  if (!raw) return "";
+  if (raw.length <= 8) return "***";
+  return `${raw.slice(0, 4)}…${raw.slice(-4)}`;
+}
+
+function isProbablySafeBaseUrl(url) {
+  const raw = String(url || "").trim();
+  if (!raw) return true;
+  try {
+    const u = new URL(raw);
+    if (!["http:", "https:"].includes(u.protocol)) return false;
+    const host = (u.hostname || "").toLowerCase();
+    if (!host) return false;
+    if (u.username || u.password) return false;
+    if (
+      host === "localhost" ||
+      host === "127.0.0.1" ||
+      host === "0.0.0.0" ||
+      host === "metadata" ||
+      host === "metadata.google.internal" ||
+      host === "169.254.169.254"
+    ) {
+      return host === "localhost" || host === "127.0.0.1";
+    }
+    if (/^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[0-1])\.)/.test(host)) return false;
+    if (u.protocol === "http:" && host !== "localhost" && host !== "127.0.0.1") return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function loadClientLlmConfig() {
+  try {
+    const raw = localStorage.getItem(LLM_CONFIG_STORAGE_KEY);
+    if (!raw) return { provider: "server", base_url: "", api_key: "", model: "" };
+    const parsed = JSON.parse(raw);
+    return {
+      provider: String(parsed.provider || "server"),
+      base_url: String(parsed.base_url || "").trim(),
+      api_key: String(parsed.api_key || "").trim(),
+      model: String(parsed.model || "").trim(),
+    };
+  } catch {
+    return { provider: "server", base_url: "", api_key: "", model: "" };
+  }
+}
+
+function saveClientLlmConfig(cfg) {
+  localStorage.setItem(
+    LLM_CONFIG_STORAGE_KEY,
+    JSON.stringify({
+      provider: cfg.provider || "server",
+      base_url: (cfg.base_url || "").trim(),
+      api_key: (cfg.api_key || "").trim(),
+      model: (cfg.model || "").trim(),
+    })
+  );
+}
+
+function clearClientLlmConfig() {
+  localStorage.removeItem(LLM_CONFIG_STORAGE_KEY);
+}
+
+/** 请求体里附带的自定义 LLM 字段（无自定义时为空对象） */
+function getClientLlmPayload() {
+  const cfg = loadClientLlmConfig();
+  if (cfg.provider === "server" || !cfg.api_key) {
+    return {};
+  }
+  if (cfg.base_url && !isProbablySafeBaseUrl(cfg.base_url)) {
+    console.warn("[llm] skipped unsafe base_url from localStorage");
+    return {};
+  }
+  const payload = { llm_api_key: cfg.api_key };
+  if (cfg.base_url) payload.llm_base_url = cfg.base_url;
+  return payload;
+}
+
+function getEffectiveModelId() {
+  const cfg = loadClientLlmConfig();
+  return (modelSelect?.value || cfg.model || serverLlmDefaults.model || "").trim() || null;
+}
+
+function updateLlmSettingsButton() {
+  if (!llmSettingsBtn) return;
+  const cfg = loadClientLlmConfig();
+  const custom = cfg.provider !== "server" && Boolean(cfg.api_key);
+  llmSettingsBtn.classList.toggle("active", custom);
+  llmSettingsBtn.title = custom
+    ? t("llmSettings.usingCustom")
+    : t("llmSettings.usingServer");
+  if (llmSettingsMode) {
+    if (custom) {
+      llmSettingsMode.textContent = t("llmSettings.modeCustom", {
+        provider: cfg.provider,
+        key: maskApiKey(cfg.api_key),
+        model: cfg.model || "-",
+      });
+    } else {
+      llmSettingsMode.textContent = t("llmSettings.modeServer", {
+        model: serverLlmDefaults.model || modelSelect?.value || "-",
+      });
+    }
+  }
+}
+
+function setLlmSettingsStatus(text, kind) {
+  if (!llmSettingsStatus) return;
+  llmSettingsStatus.textContent = text || "";
+  llmSettingsStatus.className = "plot-agent-editor-status";
+  if (kind === "error") llmSettingsStatus.classList.add("error");
+  if (kind === "ok") llmSettingsStatus.classList.add("ok");
+}
+
+function fillModelSuggestions(providerId) {
+  if (!llmModelSuggestions) return;
+  llmModelSuggestions.innerHTML = "";
+  const hit = getLlmProviders().find((p) => p.id === providerId);
+  const models = hit?.models || [];
+  models.forEach((name) => {
+    const opt = document.createElement("option");
+    opt.value = name;
+    llmModelSuggestions.appendChild(opt);
+  });
+}
+
+function fillLlmProviderSelect(providers) {
+  if (!llmProviderSelect) return;
+  const list = providers?.length ? providers : getLlmProviders();
+  const prev = llmProviderSelect.value;
+  llmProviderSelect.innerHTML = "";
+  list.forEach((p) => {
+    const opt = document.createElement("option");
+    opt.value = p.id;
+    opt.textContent = p.label || p.id;
+    opt.dataset.baseUrl = p.base_url || "";
+    opt.dataset.modelHint = p.model_hint || "";
+    llmProviderSelect.appendChild(opt);
+  });
+  if (prev && [...llmProviderSelect.options].some((o) => o.value === prev)) {
+    llmProviderSelect.value = prev;
+  }
+}
+
+function applyProviderPreset(providerId, { forceFields = false } = {}) {
+  const providers = getLlmProviders();
+  const hit = providers.find((p) => p.id === providerId) || providers[0];
+  if (!hit || !llmProviderSelect) return;
+  llmProviderSelect.value = hit.id;
+  fillModelSuggestions(hit.id);
+  const isServer = hit.id === "server";
+  if (llmBaseUrlInput) {
+    llmBaseUrlInput.disabled = isServer;
+    llmBaseUrlInput.placeholder = isServer
+      ? serverLlmDefaults.base_url || "server default"
+      : hit.base_url || "https://...";
+  }
+  if (llmApiKeyInput) {
+    llmApiKeyInput.disabled = isServer;
+    if (isServer && forceFields) llmApiKeyInput.value = "";
+  }
+  if (isServer) {
+    if (forceFields || !(llmBaseUrlInput?.value || "").trim()) {
+      if (llmBaseUrlInput) llmBaseUrlInput.value = serverLlmDefaults.base_url || "";
+    }
+    if (forceFields || !(llmModelInput?.value || "").trim()) {
+      if (llmModelInput) llmModelInput.value = serverLlmDefaults.model || "";
+    }
+    return;
+  }
+  if (forceFields || !(llmBaseUrlInput?.value || "").trim()) {
+    if (llmBaseUrlInput) llmBaseUrlInput.value = hit.base_url || "";
+  }
+  if (forceFields || !(llmModelInput?.value || "").trim()) {
+    if (llmModelInput) {
+      llmModelInput.value = hit.model_hint || serverLlmDefaults.model || "";
+    }
+  }
+}
+
+function openLlmSettingsModal() {
+  if (!llmSettingsModal) return;
+  fillLlmProviderSelect(getLlmProviders());
+  const cfg = loadClientLlmConfig();
+  const provider = cfg.provider || "server";
+  if (llmProviderSelect) llmProviderSelect.value = provider;
+  applyProviderPreset(provider, { forceFields: false });
+  if (llmBaseUrlInput) {
+    llmBaseUrlInput.value =
+      cfg.base_url ||
+      (provider === "server" ? serverLlmDefaults.base_url : "") ||
+      llmBaseUrlInput.value ||
+      "";
+  }
+  if (llmApiKeyInput) {
+    llmApiKeyInput.value = cfg.api_key || "";
+    llmApiKeyInput.type = "password";
+  }
+  if (llmApiKeyToggle) llmApiKeyToggle.textContent = t("llmSettings.showKey");
+  if (llmModelInput) {
+    llmModelInput.value = cfg.model || modelSelect?.value || serverLlmDefaults.model || "";
+  }
+  updateLlmSettingsButton();
+  setLlmSettingsStatus("");
+  llmSettingsModal.classList.remove("hidden");
+  llmSettingsModal.setAttribute("aria-hidden", "false");
+}
+
+function closeLlmSettingsModal() {
+  if (!llmSettingsModal) return;
+  llmSettingsModal.classList.add("hidden");
+  llmSettingsModal.setAttribute("aria-hidden", "true");
+  if (llmApiKeyInput) llmApiKeyInput.type = "password";
+}
+
+function syncModelSelectFromSettings(modelId) {
+  if (!modelSelect || !modelId) return;
+  const exists = [...modelSelect.options].some((o) => o.value === modelId);
+  if (!exists) {
+    const opt = document.createElement("option");
+    opt.value = modelId;
+    opt.textContent = modelId;
+    modelSelect.insertBefore(opt, modelSelect.firstChild);
+  }
+  modelSelect.value = modelId;
+}
+
+function validateLlmForm({ requireKey = true } = {}) {
+  const provider = llmProviderSelect?.value || "server";
+  if (provider === "server") return { ok: true };
+  const baseUrl = (llmBaseUrlInput?.value || "").trim();
+  const apiKey = (llmApiKeyInput?.value || "").trim();
+  const model = (llmModelInput?.value || "").trim();
+  if (!baseUrl) {
+    return { ok: false, msg: t("llmSettings.needBaseUrl") };
+  }
+  if (!isProbablySafeBaseUrl(baseUrl)) {
+    return { ok: false, msg: t("llmSettings.unsafeBaseUrl") };
+  }
+  if (requireKey && !apiKey) {
+    return { ok: false, msg: t("llmSettings.needApiKey") };
+  }
+  if (!model) {
+    return { ok: false, msg: t("llmSettings.needModel") };
+  }
+  return { ok: true, provider, baseUrl, apiKey, model };
+}
+
+async function probeLlmSettings() {
+  setLlmSettingsStatus(t("llmSettings.probing"));
+  try {
+    const provider = llmProviderSelect?.value || "server";
+    let body;
+    if (provider === "server") {
+      body = {
+        model: (llmModelInput?.value || "").trim() || serverLlmDefaults.model || null,
+        llm_api_key: null,
+        llm_base_url: null,
+      };
+    } else {
+      const checked = validateLlmForm({ requireKey: true });
+      if (!checked.ok) throw new Error(checked.msg);
+      body = {
+        model: checked.model,
+        llm_api_key: checked.apiKey,
+        llm_base_url: checked.baseUrl,
+      };
+    }
+    const res = await fetch("/api/llm/probe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const detail = data.detail;
+      throw new Error(
+        typeof detail === "string"
+          ? detail
+          : Array.isArray(detail)
+            ? detail.map((d) => d.msg || d).join("; ")
+            : res.statusText || "probe failed"
+      );
+    }
+    setLlmSettingsStatus(
+      t("llmSettings.probeOk", { preview: data.preview || data.model || "ok" }),
+      "ok"
+    );
+  } catch (err) {
+    setLlmSettingsStatus(t("llmSettings.probeFail", { msg: err.message || String(err) }), "error");
+  }
+}
+
+function saveLlmSettingsFromModal() {
+  const provider = llmProviderSelect?.value || "server";
+  if (provider === "server") {
+    clearClientLlmConfig();
+    if (serverLlmDefaults.model) syncModelSelectFromSettings(serverLlmDefaults.model);
+    updateLlmSettingsButton();
+    setLlmSettingsStatus(t("llmSettings.resetDone"), "ok");
+    setTimeout(closeLlmSettingsModal, 350);
+    return;
+  }
+  const checked = validateLlmForm({ requireKey: true });
+  if (!checked.ok) {
+    setLlmSettingsStatus(t("llmSettings.probeFail", { msg: checked.msg }), "error");
+    return;
+  }
+  saveClientLlmConfig({
+    provider: checked.provider,
+    base_url: checked.baseUrl,
+    api_key: checked.apiKey,
+    model: checked.model,
+  });
+  syncModelSelectFromSettings(checked.model);
+  updateLlmSettingsButton();
+  setLlmSettingsStatus(t("llmSettings.saved"), "ok");
+  setTimeout(closeLlmSettingsModal, 400);
+}
+
 let imageEditorState = {
   stage: null,
   layer: null,
@@ -304,6 +750,7 @@ let semanticEditorState = {
   sourceTitle: "",
   plotType: "",
   config: null,
+  metadataColumns: [],
   previewTimer: null,
   previewRequest: 0,
 };
@@ -1080,6 +1527,85 @@ function populateSemanticPalette(config, colorKeys, plotType) {
   });
 }
 
+function populateSemanticColorBy(payload) {
+  if (!semanticColorBy) return;
+  const plotType = payload.plot_type;
+  const isScores = plotType === "pca" || plotType === "plsda";
+  const isTopology = plotType === "network_topology";
+  if (semanticColorByField) {
+    semanticColorByField.classList.toggle("hidden", !(isScores || isTopology));
+  }
+  if (!isScores && !isTopology) {
+    if (semanticClusterNField) semanticClusterNField.classList.add("hidden");
+    return;
+  }
+
+  const config = payload.plot_config || {};
+  const kmeansValue = "__kmeans__";
+  semanticColorBy.innerHTML = "";
+
+  if (isTopology) {
+    const columns = payload.color_by_columns || ["family"];
+    columns.forEach((name) => {
+      if (!name) return;
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name;
+      semanticColorBy.appendChild(opt);
+    });
+    const colorBy = config.color_by || "family";
+    const hasOption = [...semanticColorBy.options].some((o) => o.value === colorBy);
+    if (!hasOption && colorBy) {
+      const opt = document.createElement("option");
+      opt.value = colorBy;
+      opt.textContent = colorBy;
+      semanticColorBy.appendChild(opt);
+    }
+    semanticColorBy.value = colorBy || semanticColorBy.options[0]?.value || "family";
+    if (semanticClusterNField) semanticClusterNField.classList.add("hidden");
+    return;
+  }
+
+  const columns = payload.metadata_columns || [];
+  columns.forEach((col) => {
+    const name = typeof col === "string" ? col : col.name;
+    if (!name) return;
+    const opt = document.createElement("option");
+    opt.value = name;
+    const ctype = typeof col === "object" && col.color_type ? ` (${col.color_type})` : "";
+    opt.textContent = `${name}${ctype}`;
+    semanticColorBy.appendChild(opt);
+  });
+
+  const kmeansOpt = document.createElement("option");
+  kmeansOpt.value = kmeansValue;
+  kmeansOpt.textContent = t("image.semanticKmeans");
+  semanticColorBy.appendChild(kmeansOpt);
+
+  const cluster = config.cluster;
+  const usingKmeans =
+    cluster &&
+    typeof cluster === "object" &&
+    String(cluster.method || "").toLowerCase().includes("kmeans");
+  if (usingKmeans) {
+    semanticColorBy.value = kmeansValue;
+    if (semanticClusterN) semanticClusterN.value = String(cluster.n || 3);
+  } else {
+    const colorBy = config.color_by || "Group";
+    const hasOption = [...semanticColorBy.options].some((o) => o.value === colorBy);
+    if (!hasOption && colorBy) {
+      const opt = document.createElement("option");
+      opt.value = colorBy;
+      opt.textContent = colorBy;
+      semanticColorBy.insertBefore(opt, kmeansOpt);
+    }
+    semanticColorBy.value = colorBy || semanticColorBy.options[0]?.value || "";
+  }
+  if (semanticClusterNField) {
+    semanticClusterNField.classList.toggle("hidden", semanticColorBy.value !== kmeansValue);
+  }
+}
+
 function populateSemanticControls(payload) {
   const config = payload.plot_config || {};
   const axes = config.axes || {};
@@ -1107,12 +1633,22 @@ function populateSemanticControls(payload) {
     payload.plot_type === "degree_hist" ||
     payload.plot_type === "cosine_hist" ||
     payload.plot_type === "precursor_mass_diff";
+  const isVolcano = payload.plot_type === "volcano";
   if (semanticLabelsShow?.closest(".semantic-check-field")) {
     semanticLabelsShow.closest(".semantic-check-field").classList.toggle("hidden", !isScores);
   }
   if (semanticBins?.closest(".image-editor-field")) {
     semanticBins.closest(".image-editor-field").classList.toggle("hidden", !isHistogram);
   }
+  if (semanticVolcanoThresholds) {
+    semanticVolcanoThresholds.classList.toggle("hidden", !isVolcano);
+  }
+  if (isVolcano) {
+    const thr = config.thresholds || {};
+    semanticSetNumber(semanticThreshP, thr.p ?? 0.05);
+    semanticSetNumber(semanticThreshFc, thr.log2fc ?? 1);
+  }
+  populateSemanticColorBy(payload);
   populateSemanticPalette(config, payload.color_keys, payload.plot_type);
 }
 
@@ -1148,6 +1684,54 @@ function collectSemanticConfig() {
     bins: semanticNumber(semanticBins) || 40,
   };
   base.show_sample_labels = Boolean(semanticLabelsShow?.checked);
+
+  const isScores =
+    semanticEditorState.plotType === "pca" || semanticEditorState.plotType === "plsda";
+  const isTopology = semanticEditorState.plotType === "network_topology";
+  if ((isScores || isTopology) && semanticColorBy) {
+    const selected = semanticColorBy.value;
+    if (isScores && selected === "__kmeans__") {
+      base.color_by = "Cluster";
+      base.color_type = "nominal";
+      base.cluster = {
+        method: "kmeans",
+        n: Math.max(2, Math.min(12, semanticNumber(semanticClusterN) || 3)),
+      };
+      base.palette = {};
+    } else if (selected) {
+      base.color_by = selected;
+      base.cluster = null;
+      if (isScores) {
+        const metaCols = semanticEditorState.metadataColumns || [];
+        const matched = metaCols.find((c) => (typeof c === "string" ? c : c.name) === selected);
+        if (matched && typeof matched === "object" && matched.color_type) {
+          base.color_type = matched.color_type;
+        }
+        if ((semanticEditorState.config || {}).color_by !== selected) {
+          base.palette = {};
+        }
+      } else if (selected === "degree" || selected === "log2FC") {
+        base.color_type = "quantitative";
+        if ((semanticEditorState.config || {}).color_by !== selected) {
+          base.palette = {};
+        }
+      } else {
+        base.color_type = "nominal";
+        if ((semanticEditorState.config || {}).color_by !== selected) {
+          base.palette = {};
+        }
+      }
+    }
+  }
+  if (semanticEditorState.plotType === "volcano") {
+    const thr = { ...(base.thresholds || {}) };
+    const p = semanticNumber(semanticThreshP);
+    const fc = semanticNumber(semanticThreshFc);
+    if (p != null) thr.p = p;
+    if (fc != null) thr.log2fc = fc;
+    base.thresholds = thr;
+  }
+
   semanticPalette?.querySelectorAll("input[type=color]").forEach((input) => {
     const section = input.dataset.section;
     const key = input.dataset.key;
@@ -1186,6 +1770,14 @@ async function refreshSemanticPreview() {
     if (!res.ok) throw new Error(data.detail || "preview failed");
     if (requestId !== semanticEditorState.previewRequest) return;
     semanticEditorState.config = data.plot_config;
+    if (Array.isArray(data.metadata_columns)) {
+      semanticEditorState.metadataColumns = data.metadata_columns;
+    }
+    populateSemanticPalette(
+      data.plot_config || {},
+      data.color_keys || [],
+      data.plot_type || semanticEditorState.plotType
+    );
     await renderSemanticSpec(data.vega_spec);
     setSemanticEditorStatus(t("image.semanticReady"));
   } catch (err) {
@@ -1221,6 +1813,7 @@ async function tryOpenSemanticEditor({ rel, title }) {
     semanticEditorState.sourceTitle = title || rel.split("/").pop();
     semanticEditorState.plotType = payload.plot_type;
     semanticEditorState.config = payload.plot_config;
+    semanticEditorState.metadataColumns = payload.metadata_columns || [];
     semanticEditorState.previewRequest = 0;
     if (semanticEditorTitle) {
       semanticEditorTitle.textContent = t("image.semanticEditorTitle", {
@@ -1251,6 +1844,7 @@ function closeSemanticEditor() {
     sourceTitle: "",
     plotType: "",
     config: null,
+    metadataColumns: [],
     previewTimer: null,
     previewRequest: 0,
   };
@@ -2432,6 +3026,8 @@ async function submitPlotAgentEdit() {
       body: JSON.stringify({
         source_rel: plotAgentState.sourceRel,
         instruction,
+        model: getEffectiveModelId(),
+        ...getClientLlmPayload(),
       }),
     });
     const data = await res.json().catch(() => ({}));
@@ -3666,18 +4262,32 @@ async function initModels() {
   try {
     const res = await fetch("/api/models");
     const data = await res.json();
+    serverLlmDefaults = {
+      model: data.default_model || "",
+      base_url: data.default_base_url || "",
+      providers: data.providers || [],
+      has_server_key: Boolean(data.has_server_key),
+    };
     const models = data.models || [];
     if (models.length === 0 && data.default_model) models.push(data.default_model);
+    const saved = loadClientLlmConfig();
+    if (saved.model && !models.includes(saved.model)) {
+      models.unshift(saved.model);
+    }
     modelSelect.innerHTML = "";
     models.forEach((model) => {
       const option = document.createElement("option");
       option.value = model;
       option.textContent = model;
-      if (data.default_model && model === data.default_model) option.selected = true;
       modelSelect.appendChild(option);
     });
+    const preferred = saved.model || data.default_model || models[0] || "";
+    if (preferred) modelSelect.value = preferred;
+    fillLlmProviderSelect(getLlmProviders());
+    updateLlmSettingsButton();
   } catch {
     modelSelect.innerHTML = `<option value=''>${t("models.loadFail")}</option>`;
+    fillLlmProviderSelect(getLlmProviders());
   }
 }
 
@@ -3899,7 +4509,7 @@ async function bootSessionsAndLoad() {
   await fetchSessions();
   if (!sessions.length) {
     currentSessionId = await createSession({
-      model: modelSelect.value || null,
+      model: getEffectiveModelId(),
       temperature: Number(tempInput.value || 0),
     });
     await fetchSessions();
@@ -3984,6 +4594,7 @@ async function streamChat({
         edit_message_id:
           editMessageId != null ? Number(editMessageId) : null,
         regenerate_assistant: false,
+        ...getClientLlmPayload(),
       }),
     });
   } catch (err) {
@@ -4025,7 +4636,7 @@ async function runAssistantStream({
     await streamChat({
       sessionId: currentSessionId,
       userMessage,
-      model: modelSelect.value || null,
+      model: getEffectiveModelId(),
       temperature: Number(tempInput.value || 0),
       useAgent,
       editMessageId,
@@ -4324,7 +4935,7 @@ newSessionBtn.addEventListener("click", async () => {
     forceStopStreamingUI();
     setStatus(t("status.creatingSession"));
     currentSessionId = await createSession({
-      model: modelSelect.value || null,
+      model: getEffectiveModelId(),
       temperature: Number(tempInput.value || 0),
     });
     pendingFiles = [];
@@ -4643,10 +5254,26 @@ if (imageMergeBackdrop) {
   semanticMarkSize,
   semanticOpacity,
   semanticBins,
+  semanticClusterN,
+  semanticThreshP,
+  semanticThreshFc,
 ].forEach((control) => control?.addEventListener("input", scheduleSemanticPreview));
-[semanticLegendPosition, semanticLegendShow, semanticLabelsShow].forEach((control) =>
+[semanticLegendPosition, semanticLegendShow, semanticLabelsShow, semanticColorBy].forEach((control) =>
   control?.addEventListener("change", scheduleSemanticPreview)
 );
+if (semanticColorBy) {
+  semanticColorBy.addEventListener("change", () => {
+    if (semanticClusterNField) {
+      semanticClusterNField.classList.toggle(
+        "hidden",
+        semanticEditorState.plotType !== "pca" &&
+          semanticEditorState.plotType !== "plsda"
+          ? true
+          : semanticColorBy.value !== "__kmeans__"
+      );
+    }
+  });
+}
 if (semanticEditorSave) semanticEditorSave.addEventListener("click", saveSemanticEdit);
 if (semanticEditorCancel) semanticEditorCancel.addEventListener("click", closeSemanticEditor);
 if (semanticEditorClose) semanticEditorClose.addEventListener("click", closeSemanticEditor);
@@ -4691,11 +5318,50 @@ if (plotAgentEditorApply) plotAgentEditorApply.addEventListener("click", submitP
 if (plotAgentEditorCancel) plotAgentEditorCancel.addEventListener("click", closePlotAgentEditor);
 if (plotAgentEditorClose) plotAgentEditorClose.addEventListener("click", closePlotAgentEditor);
 if (plotAgentEditorBackdrop) plotAgentEditorBackdrop.addEventListener("click", closePlotAgentEditor);
+if (llmSettingsBtn) llmSettingsBtn.addEventListener("click", openLlmSettingsModal);
+if (llmSettingsClose) llmSettingsClose.addEventListener("click", closeLlmSettingsModal);
+if (llmSettingsCancel) llmSettingsCancel.addEventListener("click", closeLlmSettingsModal);
+if (llmSettingsBackdrop) llmSettingsBackdrop.addEventListener("click", closeLlmSettingsModal);
+if (llmSettingsSave) llmSettingsSave.addEventListener("click", saveLlmSettingsFromModal);
+if (llmSettingsProbe) llmSettingsProbe.addEventListener("click", probeLlmSettings);
+if (llmApiKeyToggle && llmApiKeyInput) {
+  llmApiKeyToggle.addEventListener("click", () => {
+    const show = llmApiKeyInput.type === "password";
+    llmApiKeyInput.type = show ? "text" : "password";
+    llmApiKeyToggle.textContent = show ? t("llmSettings.hideKey") : t("llmSettings.showKey");
+  });
+}
+if (llmSettingsReset) {
+  llmSettingsReset.addEventListener("click", () => {
+    clearClientLlmConfig();
+    if (llmProviderSelect) llmProviderSelect.value = "server";
+    applyProviderPreset("server", { forceFields: true });
+    if (llmApiKeyInput) llmApiKeyInput.value = "";
+    updateLlmSettingsButton();
+    setLlmSettingsStatus(t("llmSettings.resetDone"), "ok");
+  });
+}
+if (llmProviderSelect) {
+  llmProviderSelect.addEventListener("change", () => {
+    applyProviderPreset(llmProviderSelect.value, { forceFields: true });
+  });
+}
+if (llmApiKeyToggle && llmApiKeyInput) {
+  llmApiKeyToggle.addEventListener("click", () => {
+    const show = llmApiKeyInput.type === "password";
+    llmApiKeyInput.type = show ? "text" : "password";
+    llmApiKeyToggle.textContent = show ? t("llmSettings.hideKey") : t("llmSettings.showKey");
+  });
+}
 if (mergeAgentEditorApply) mergeAgentEditorApply.addEventListener("click", submitMergeAgentEdit);
 if (mergeAgentEditorCancel) mergeAgentEditorCancel.addEventListener("click", closeMergeAgentEditor);
 if (mergeAgentEditorClose) mergeAgentEditorClose.addEventListener("click", closeMergeAgentEditor);
 if (mergeAgentEditorBackdrop) mergeAgentEditorBackdrop.addEventListener("click", closeMergeAgentEditor);
 document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && llmSettingsModal && !llmSettingsModal.classList.contains("hidden")) {
+    closeLlmSettingsModal();
+    return;
+  }
   if (event.key === "Escape" && semanticEditor && !semanticEditor.classList.contains("hidden")) {
     closeSemanticEditor();
     return;

@@ -38,6 +38,7 @@ from web_frontend.backend.plan_utils import (
     ensure_raw_conversion_step,
     filter_plan_tasks_to_registered_tools,
     guess_tool_name_from_task,
+    inject_analysis_coloring_tasks,
     inject_mgf_standalone_tasks,
     inject_visual_standalone_tasks,
     normalize_plan_tasks_for_platform,
@@ -50,6 +51,8 @@ from web_frontend.backend.pipeline_utils import (
     differential_downstream_blocked,
     ensure_empty_differential_csv,
     MZML_DEPENDENT_TOOLS,
+    OPENMS_FEATUREXML_TOOLS,
+    openms_featurexml_blocked,
     prune_differential_dependent_tasks,
     prune_mzml_dependent_tasks,
 )
@@ -253,12 +256,13 @@ Default recommended pipeline (when user does not ask for alternatives):
 2. data_preprocessing_xcms — input_dir: mzML from inputspace or {converted} (auto-synced), output_dir={peaks}
 3. feature_filtering_and_missing_value_imputation_knn — input_dir={peaks} (feature_table.csv), output_dir={filtered}
 4. statistical_analysis_mixomics — input_dir={filtered}, metadata_csv under {upload}, output_dir={statistical}
+   (runtime auto-aligns metadata.csv Sample names to the feature table; stale DY-* rows are regenerated)
 5. extract_differential_features — differential_csv + input_mgf from prior steps or outputspace, output_dir under outputspace
 6. spectral_annotation — input_dir/output_dir under outputspace
 7. kegg_compound_enrichment — input_dir/output_dir under outputspace
 8. molecular_networking_gnps — input_mgf from differential_spectra.mgf, spectra.mgf, or uploaded .mgf; output_dir={paths.get('molecular_network', paths['outputspace'] + '/molecular_network_results')}
 9. deepmass_annotation — input_dir={paths.get('deepmass', paths['outputspace'] + '/deepmass_annotation_results')} (uploaded .mgf auto-copied to differential_spectra.mgf), output_dir={paths.get('deepmass', paths['outputspace'] + '/deepmass_annotation_results')}
-10. plot_edit — edit ANY existing result PNG via natural language (title/colors/fonts); semantic SVG re-render when data CSV exists, otherwise generic title/style edit; writes edited_plots/
+10. plot_edit — edit ANY existing result PNG via natural language (title/colors/fonts); for PCA/PLS-DA also supports color_by metadata column or k-means cluster coloring on existing scores (no mixOmics re-run); semantic SVG re-render when data CSV exists, otherwise generic title/style edit; writes edited_plots/
 11. image_merge — merge multiple PNGs into one composite under merged_figures/
 12. merge_edit — re-layout an existing merged figure (labels/font size/cols) using its .merge.json
 
@@ -269,14 +273,21 @@ Alternatives (pick when user explicitly asks, or when default tool is unsuitable
 - Networking: molecular_networking_fbmn / ms2lda / molnetenhancer
 - Library match: library_match_* (cosine/jaccard/spectral_entropy/spec2vec/ms2deepscore/blink/msbert/pair_from_mgf/full_workflow)
 
+CRITICAL path rules after XCMS (default pipeline):
+- Do NOT call peak_group_alignment_openms unless *.featureXML already exists under openms_feature_detection_results.
+- For molecular_networking_fbmn after XCMS: use peak_detection_results/spectra.mgf (or differential_spectra.mgf) + feature_table.csv / feature_table_filtered_imputed.csv — NEVER require openms_aligned_features/.
+- For molecular_networking_ms2lda: use peak_detection_results/spectra.mgf (feature-aligned full MS2 corpus). Do NOT use differential_spectra.mgf for Motif discovery.
+- metadata.csv Sample must match feature-table column names; runtime will auto-align/regenerate if mismatched.
+
 If user uploads .mzML only (no .raw), start with data_preprocessing_xcms (or an alternative preprocessing tool if requested) — do NOT require raw conversion.
 If user uploads .mgf only and asks for DeepMASS, plan ONLY deepmass_annotation (no XCMS). Empty differential_metabolites.csv is OK.
-If the user asks to edit plot style (title/color/font/align) without re-running analysis, plan plot_edit only — never invent PNG paths. Mention the figure by filename or alias (e.g. chemical_class_distribution / FBMN / topology).
-If the user asks to merge images / make a panel figure, plan image_merge (and merge_edit for adjusting an existing merge).
+If the user asks to edit plot style (title/color/font/align) or recolor existing PCA/PLS WITHOUT re-running analysis, plan plot_edit only — never invent PNG paths.
+If user asks analysis AND mapping together (做PCA并按Batch着色 / FBMN按化学类看拓扑 / 火山p<0.01 / KEGG按Count着色): plan analysis tools ONLY; runtime auto-recolors/rethresholds afterward. Do NOT plan a chain of plot_edit recolor/threshold/channel steps.
+If the user asks to merge images / make a panel figure, plan image_merge AFTER the analysis steps that produce those PNGs (and merge_edit only to adjust an existing merge).
 Never invent tool names like plot_merge; the only merge tools are image_merge and merge_edit.
 Merged outputs go under merged_figures/ (never merged_plots/).
-Visual tools (plot_edit / image_merge / merge_edit) can be planned alone or AFTER analysis steps that produce the needed PNGs.
-Figures from statistical_analysis_mixomics / molecular_networking_* are frontend-editable; subsequent style changes use plot_edit.
+Preferred plan shape: [analysis tools…] → optional image_merge → optional merge_edit. Keep plot_edit out of analysis+mapping plans.
+Figures from statistical_analysis_mixomics / molecular_networking_* / kegg are frontend-editable afterward.
 
 Path roots: upload={upload}, outputspace={paths['outputspace']}
 
@@ -324,6 +335,8 @@ async def stream_agent_pipeline(
     source_dir: str,
     model: Optional[str] = None,
     temperature: float = 0.0,
+    llm_api_key: Optional[str] = None,
+    llm_base_url: Optional[str] = None,
     cancel_event: Optional[asyncio.Event] = None,
     is_disconnected: Optional[Callable[[], Awaitable[bool]]] = None,
     recent_messages: Optional[list[dict]] = None,
@@ -364,7 +377,11 @@ async def stream_agent_pipeline(
     # yield {"delta": f"已注册 **{len(tools_info)}** 个 MCP 工具（Web 白名单）。\n\n"}
 
     loop = asyncio.get_event_loop()
-    llm = WebLLMClient(model=model)
+    llm = WebLLMClient(
+        model=model,
+        api_key=llm_api_key,
+        base_url=llm_base_url,
+    )
 
     convert_tool = str(preferred_raw_converter()["tool"])
     mandatory_first_step = None
@@ -401,7 +418,13 @@ async def stream_agent_pipeline(
         return
 
     if not plan_resp:
-        yield {"error": "计划生成失败：LLM 返回为空，请检查 API 密钥与网络。"}
+        yield {
+            "error": (
+                "计划生成失败：LLM 返回为空。"
+                "若刚看到欠费/鉴权报错，请先处理阿里云账户；"
+                "否则请检查模型名、API 密钥与网络。"
+            )
+        }
         return
 
     tasks = extract_plan_list(plan_resp)
@@ -437,6 +460,52 @@ async def stream_agent_pipeline(
 
     tasks = inject_mgf_standalone_tasks(tasks, user_message, paths, tool_names)
     tasks = inject_visual_standalone_tasks(tasks, user_message, tool_names)
+    try:
+        from web_frontend.backend.session_metadata import (
+            list_metadata_columns,
+            resolve_metadata_csv,
+        )
+
+        meta_for_intent = resolve_metadata_csv(paths["upload"])
+        meta_cols = [str(c["name"]) for c in list_metadata_columns(meta_for_intent)]
+    except Exception:
+        meta_for_intent = None
+        meta_cols = []
+    before_prune = list(tasks)
+    tasks, intent_info = inject_analysis_coloring_tasks(
+        tasks,
+        user_message,
+        tool_names,
+        metadata_csv=str(meta_for_intent) if meta_for_intent else None,
+        metadata_columns=meta_cols,
+    )
+    intent_obj = intent_info.get("intent") or {}
+    removed_plot_edits = intent_info.get("removed_plot_edits") or [
+        t for t in before_prune if t not in tasks
+    ]
+    if removed_plot_edits:
+        yield {
+            "delta": (
+                "ℹ️ 已从计划中去掉分析意图类 plot_edit（着色/阈值/通道）；"
+                "将在对应分析工具成功后自动按意图重绘。"
+                f"已去掉 {len(removed_plot_edits)} 步。\n\n"
+            )
+        }
+    removed_by_intent = intent_info.get("removed_by_intent") or []
+    if removed_by_intent:
+        from web_frontend.backend.analysis_intent import describe_intent
+
+        label = describe_intent(intent_obj) or "分析意图"
+        yield {
+            "delta": (
+                f"ℹ️ 已按意图裁剪计划（{label}）：去掉 {len(removed_by_intent)} 步旁支分析"
+                f"（如不要网络 / 只要指定图）。\n\n"
+            )
+        }
+    for err in intent_obj.get("errors") or []:
+        yield {"delta": f"⚠️ 分析意图校验：{err}\n\n"}
+    for warn in intent_obj.get("warnings") or []:
+        yield {"delta": f"ℹ️ {warn}\n\n"}
 
     if not tasks:
         parsed = extract_first_json_object(plan_resp or "")
@@ -470,6 +539,8 @@ async def stream_agent_pipeline(
         paths=paths,
         model=model,
         user_message=user_message,
+        llm_api_key=llm_api_key,
+        llm_base_url=llm_base_url,
     )
     visual_results: list[dict[str, Any]] = []
     open_mcp = _needs_mcp_session(tasks)
@@ -597,12 +668,41 @@ async def stream_agent_pipeline(
                 }
                 continue
 
+            openms_blocked, openms_reason = openms_featurexml_blocked(paths)
+            if openms_blocked and tool_name in OPENMS_FEATUREXML_TOOLS:
+                yield {
+                    "delta": (
+                        f"⏭️ 跳过 **{tool_name}**：{openms_reason}\n\n"
+                    )
+                }
+                continue
+
             if not tool_args or not isinstance(tool_args, dict):
                 tool_args = {}
 
-            normalized = normalize_tool_args(
-                tool_name, tool_args, paths, paths["upload"]
-            )
+            try:
+                normalized = normalize_tool_args(
+                    tool_name, tool_args, paths, paths["upload"]
+                )
+            except FileNotFoundError as exc:
+                # 缺输入时给出可继续的提示，避免整条流水线硬崩
+                if tool_name in OPENMS_FEATUREXML_TOOLS or tool_name in {
+                    "molecular_networking_fbmn",
+                    "molecular_networking_ms2lda",
+                    "feature_detection_openms",
+                    "peak_picking_openms",
+                    "peak_detection_openms_peakpickerhires",
+                    "peak_detection_openms_featurefinder",
+                    "spectral_annotation",
+                    "kegg_compound_enrichment",
+                }:
+                    yield {
+                        "delta": (
+                            f"⏭️ 跳过 **{tool_name}**：{exc}\n\n"
+                        )
+                    }
+                    continue
+                raise
             if normalized != tool_args:
                 yield {
                     "delta": (
@@ -841,6 +941,123 @@ async def stream_agent_pipeline(
                             tasks[:] = pruned
                 else:
                     yield {"delta": f"✅ **{tool_name}** 完成：\n{result_str}\n\n"}
+                    # 出图工具成功后补写语义 sidecar，并按分析意图确定性重绘
+                    if tool_name in {
+                        "statistical_analysis_mixomics",
+                        "molecular_networking_gnps",
+                        "molecular_networking_fbmn",
+                        "molecular_networking_ms2lda",
+                        "molecular_networking_molnetenhancer",
+                        "kegg_compound_enrichment",
+                    }:
+                        try:
+                            from web_frontend.backend.plot_edit_service import (
+                                ensure_default_plot_configs,
+                            )
+
+                            out_dir = tool_args.get("output_dir") or paths.get("outputspace")
+                            written = await loop.run_in_executor(
+                                None,
+                                lambda: ensure_default_plot_configs(
+                                    out_dir or paths["outputspace"],
+                                    upload_dir=paths.get("upload"),
+                                ),
+                            )
+                            # 再扫一遍会话 output 根，覆盖嵌套目录
+                            if paths.get("outputspace") and Path(str(out_dir or "")).resolve() != Path(
+                                paths["outputspace"]
+                            ).resolve():
+                                written2 = await loop.run_in_executor(
+                                    None,
+                                    lambda: ensure_default_plot_configs(
+                                        paths["outputspace"],
+                                        upload_dir=paths.get("upload"),
+                                    ),
+                                )
+                                written = list(written) + list(written2)
+                            if written:
+                                yield {
+                                    "delta": (
+                                        f"📎 已为 {len(written)} 张结果图生成/更新语义编辑 sidecar。\n"
+                                    )
+                                }
+                        except Exception as sidecar_exc:
+                            yield {
+                                "delta": f"⚠️ 语义 sidecar 生成跳过：{sidecar_exc}\n"
+                            }
+                        try:
+                            from web_frontend.backend.analysis_intent import (
+                                describe_intent,
+                                has_analysis_plot_intent,
+                                parse_analysis_intent,
+                            )
+                            from web_frontend.backend.plot_edit_service import (
+                                apply_analysis_intent_after_tool,
+                            )
+
+                            if has_analysis_plot_intent(user_message):
+                                intent_preview = parse_analysis_intent(user_message)
+                                label = describe_intent(intent_preview) or "分析意图"
+                                yield {
+                                    "delta": (
+                                        f"🎨 检测到分析意图（{label}），"
+                                        "正在按意图重绘相关结果图…\n"
+                                    )
+                                }
+                                out_for_intent = tool_args.get("output_dir") or paths.get(
+                                    "outputspace"
+                                )
+                                coloring_results = await loop.run_in_executor(
+                                    None,
+                                    lambda: apply_analysis_intent_after_tool(
+                                        project_root=project_root,
+                                        session_id=session_id,
+                                        storage_slug=storage_slug or session_id,
+                                        user_message=user_message,
+                                        tool_name=tool_name,
+                                        output_dir=out_for_intent,
+                                    ),
+                                )
+                                for item in coloring_results:
+                                    if item.get("error"):
+                                        yield {
+                                            "delta": (
+                                                f"⚠️ 意图重绘失败（{item.get('stem')}）："
+                                                f"{item['error']}\n"
+                                            )
+                                        }
+                                        continue
+                                    fname = (item.get("file") or {}).get("name")
+                                    if fname:
+                                        visual_results.append(
+                                            {"kind": "plot_edit", "file": fname}
+                                        )
+                                        yield {
+                                            "delta": (
+                                                f"✅ 已按意图重绘：`{fname}`"
+                                                f"（{item.get('analysis_intent') or label}）\n"
+                                            )
+                                        }
+                                if any(not r.get("error") for r in coloring_results):
+                                    tasks[:] = [
+                                        t
+                                        for t in tasks
+                                        if not (
+                                            "plot_edit" in str(t).lower()
+                                            and (
+                                                "recolor" in str(t).lower()
+                                                or "color_by" in str(t).lower()
+                                                or "cluster" in str(t).lower()
+                                                or "thresholds" in str(t).lower()
+                                                or "color_channel" in str(t).lower()
+                                                or "着色" in str(t)
+                                            )
+                                        )
+                                    ]
+                        except Exception as coloring_exc:
+                            yield {
+                                "delta": f"⚠️ 分析意图重绘跳过：{coloring_exc}\n"
+                            }
             except Exception as exc:
                 err_msg = (
                     f"工具 {tool_name} 失败: {exc}\n{traceback.format_exc()}"

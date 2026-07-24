@@ -53,6 +53,13 @@ MZML_DEPENDENT_TOOLS = frozenset({
     *DIFFERENTIAL_DEPENDENT_TOOLS,
 })
 
+OPENMS_FEATUREXML_TOOLS = frozenset({
+    "peak_group_alignment_openms",
+    "group_peaks_openms_PeakGroup",
+    "isotope_analysis_openms",
+    "identify_isotopes_openms_IsotopeTools",
+})
+
 _RAW_CONVERTERS = frozenset({
     "convert_raw_to_mzml_msconvert",
     "convert_raw_to_mzml_ThermoRawFileParser",
@@ -139,6 +146,42 @@ def conversion_downstream_blocked(paths: dict[str, str]) -> tuple[bool, str]:
         "未在 inputspace 或 converted_mzml 中找到 mzML，且仍有未转换的 .raw。"
         "请先完成格式转换：Linux 可安装 ThermoRawFileParser，或启动 Docker 后使用 msconvert；"
         "也可直接上传 .mzML 到 inputspace。"
+    )
+
+
+def _has_featurexml(directory: str | Path) -> bool:
+    root = Path(directory)
+    if not root.is_dir():
+        return False
+    return bool(list(root.glob("*.featureXML")) + list(root.glob("*.featurexml")))
+
+
+def openms_featurexml_blocked(paths: dict[str, str]) -> tuple[bool, str]:
+    """无 OpenMS featureXML 时跳过对齐/分组；若已有 XCMS 产物则提示改用 XCMS 路径。"""
+    out = Path(paths["outputspace"])
+    candidates = [
+        out / "openms_feature_detection_results",
+        out / "data_preprocessing_openms_results",
+        out / "feature_detection_openms_results",
+    ]
+    if any(_has_featurexml(d) for d in candidates):
+        return False, ""
+    # 任意 output 子目录若已有 featureXML 也不阻断
+    if out.is_dir():
+        for child in out.iterdir():
+            if child.is_dir() and _has_featurexml(child):
+                return False, ""
+    xcms_table = Path(paths["peaks"]) / "feature_table.csv"
+    if xcms_table.is_file():
+        return True, (
+            "未找到 OpenMS *.featureXML，且已有 XCMS 特征表。"
+            "请跳过 peak_group_alignment_openms，继续使用 peak_detection_results "
+            "做过滤/统计/FBMN。"
+        )
+    return True, (
+        "未找到 OpenMS *.featureXML。"
+        "请先运行 feature_detection_openms / data_preprocessing_openms，"
+        "或改用默认 XCMS 预处理流程。"
     )
 
 

@@ -257,8 +257,10 @@ def _alias_stems_from_message(message: str) -> list[str]:
 def _match_images_by_stems(stems: list[str], images: list[dict[str, Any]]) -> list[str]:
     selected: list[str] = []
     used: set[str] = set()
+    # 同 stem 优先选 edited_plots 中的版本
+    ordered = sorted(images, key=lambda item: (not item.get("in_edited"), -float(item.get("modified") or 0)))
     for stem in stems:
-        for item in images:
+        for item in ordered:
             rel = item["rel"]
             if rel in used:
                 continue
@@ -268,7 +270,7 @@ def _match_images_by_stems(stems: list[str], images: list[dict[str, Any]]) -> li
                 used.add(rel)
                 break
         if stem not in {Path(r).stem.split("_")[0] for r in selected}:
-            for item in images:
+            for item in ordered:
                 rel = item["rel"]
                 if rel in used:
                     continue

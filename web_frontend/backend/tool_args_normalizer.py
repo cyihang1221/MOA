@@ -68,7 +68,11 @@ def _use_existing_dir(
     return normalize_display_path(fallback)
 
 
-from web_frontend.backend.session_metadata import resolve_metadata_csv
+from web_frontend.backend.session_metadata import (
+    ensure_aligned_metadata_csv,
+    resolve_metadata_csv,
+    sample_ids_from_feature_table,
+)
 
 
 def _metadata_path(upload_dir: str) -> str:
@@ -77,6 +81,187 @@ def _metadata_path(upload_dir: str) -> str:
     except FileNotFoundError:
         meta = _path_obj(upload_dir) / "metadata.csv"
         return normalize_display_path(meta)
+
+
+def _aligned_metadata_for_feature_dir(upload_dir: str, feature_dir: str) -> str:
+    """按特征表样本自动对齐 metadata；失败时回退到 resolve_metadata_csv。"""
+    table = _path_obj(feature_dir) / "feature_table_filtered_imputed.csv"
+    if not table.is_file():
+        table = _path_obj(feature_dir) / "feature_table.csv"
+    samples = sample_ids_from_feature_table(table) if table.is_file() else []
+    if not samples:
+        return _metadata_path(upload_dir)
+    try:
+        resolve_metadata_csv(upload_dir)
+    except FileNotFoundError:
+        pass
+    meta, _report = ensure_aligned_metadata_csv(upload_dir, samples)
+    return meta
+
+
+def _resolve_fbmn_feature_table(
+    args: dict,
+    paths: dict[str, str],
+    search_roots: list[str],
+) -> str:
+    """FBMN 特征表：优先差异表 → 过滤表 → XCMS 峰表 → OpenMS 对齐表。"""
+    picked = _pick_str(
+        args,
+        "input_feature_table",
+        "feature_table",
+        "input_csv",
+    )
+    if picked and _path_obj(picked).is_file():
+        return normalize_display_path(picked)
+
+    peaks = paths["peaks"]
+    filtered = paths.get("filtered") or str(_path_obj(paths["outputspace"]) / "filtered_features")
+    differential = paths.get("differential") or str(
+        _path_obj(paths["outputspace"]) / "differential_features"
+    )
+    openms_aligned = str(_path_obj(paths["outputspace"]) / "openms_aligned_features")
+    candidates = [
+        str(_path_obj(differential) / "differential_feature_table.csv"),
+        str(_path_obj(filtered) / "feature_table_filtered_imputed.csv"),
+        str(_path_obj(peaks) / "feature_table.csv"),
+        str(_path_obj(openms_aligned) / "feature_table.csv"),
+    ]
+    found = _first_existing(*candidates)
+    if found:
+        return found
+    # 会话内兜底搜索
+    for root in search_roots:
+        hit = find_first_file(
+            str(_path_obj(root) / "feature_table.csv"),
+            search_roots=[root],
+            patterns=(
+                "differential_feature_table.csv",
+                "feature_table_filtered_imputed.csv",
+                "feature_table.csv",
+            ),
+        )
+        if hit:
+            return hit
+    raise FileNotFoundError(
+        "无法执行 FBMN：缺少特征定量表。"
+        " 请先完成 XCMS/过滤（peak_detection_results/feature_table.csv），"
+        "或提供 differential_feature_table.csv。"
+        " 不要依赖尚未生成的 openms_aligned_features/。"
+    )
+
+
+def _dir_has_featurexml(path: str) -> bool:
+    p = _path_obj(path)
+    if not p.is_dir():
+        return False
+    return bool(list(p.glob("*.featureXML")) + list(p.glob("*.featurexml")))
+
+
+def _dir_has_mzml(path: str) -> bool:
+    p = _path_obj(path)
+    if not p.is_dir():
+        return False
+    return bool(list(p.glob("*.mzML")) + list(p.glob("*.mzml")))
+
+
+def _count_mgf_spectra(path: str) -> int:
+    """快速统计 MGF 中 BEGIN IONS 数量；文件不存在返回 0。"""
+    p = _path_obj(path)
+    if not p.is_file():
+        return 0
+    count = 0
+    try:
+        with open(p, "r", encoding="utf-8", errors="ignore") as fh:
+            for line in fh:
+                if line.startswith("BEGIN IONS"):
+                    count += 1
+    except OSError:
+        return 0
+    return count
+
+
+def _resolve_networking_mgf(
+    args: dict,
+    paths: dict[str, str],
+    upload_dir: str,
+    *,
+    prefer_feature_corpus: bool = False,
+) -> str:
+    """
+    选择分子网络用的 MGF。
+
+    - GNPS / FBMN：优先用户指定 → 差异谱 → XCMS 特征谱
+    - MS2LDA（Mass2Motif 发现）：优先 XCMS 特征对齐全量谱
+      peak_detection_results/spectra.mgf（语料发现需要足够谱图；
+      不要用仅含数条差异代谢物的 differential_spectra.mgf，
+      也不要用未对齐的逐文件原始 MS2 dump）
+    """
+    peaks = paths["peaks"]
+    differential = paths.get("differential") or str(
+        _path_obj(paths["outputspace"]) / "differential_features"
+    )
+    upload_root = _path_obj(upload_dir)
+
+    picked = _pick_str(args, "input_mgf", "input_msp", "mgf", "spectra_mgf")
+    feature_mgf = str(_path_obj(peaks) / "spectra.mgf")
+    diff_mgf = str(_path_obj(differential) / "differential_spectra.mgf")
+    upload_mgf = str(upload_root / "spectra.mgf")
+
+    if prefer_feature_corpus:
+        # Motif 发现：特征级全量语料优先于用户误传的 differential_spectra.mgf
+        candidates = [feature_mgf, upload_mgf, picked, diff_mgf]
+    else:
+        candidates = [picked, diff_mgf, feature_mgf, upload_mgf]
+
+    for c in candidates:
+        if c and _path_obj(c).is_file():
+            return normalize_display_path(c)
+
+    fallback = find_session_mgf(paths, upload_dir)
+    if fallback and _path_obj(fallback).is_file():
+        return normalize_display_path(fallback)
+    raise FileNotFoundError(
+        "无法执行分子网络：缺少 differential_spectra.mgf 或 spectra.mgf。"
+        " 请先完成差异物提取、峰检测 MS2 导出，或直接上传 .mgf。"
+    )
+
+def _resolve_spectral_annotation_dir(
+    args: dict,
+    differential: str,
+    search_roots: list,
+) -> str:
+    """spectral_annotation 必须使用含 differential_spectra.mgf + feature table 的目录。"""
+    required = ("differential_spectra.mgf", "differential_feature_table.csv")
+
+    def _ok(directory: str) -> bool:
+        root = _path_obj(directory)
+        return all((root / name).is_file() for name in required)
+
+    inp = _pick_str(args, "input_dir", "input_msp", "input_path")
+    candidates: list[str] = []
+    if inp:
+        p = _path_obj(inp)
+        candidates.append(normalize_display_path(p.parent if p.suffix else p))
+    candidates.append(differential)
+    resolved = resolve_dir_with_file(
+        differential,
+        "differential_spectra.mgf",
+        differential,
+        search_roots=search_roots,
+    )
+    if resolved:
+        candidates.append(resolved)
+
+    for c in candidates:
+        if c and _ok(c):
+            return normalize_display_path(_path_obj(c))
+
+    raise FileNotFoundError(
+        "spectral_annotation 需要目录内同时存在 "
+        "differential_spectra.mgf 与 differential_feature_table.csv。"
+        f" 请先运行 extract_differential_features（输出通常在 {differential}）。"
+        " 不要把 peak_detection_results 当作 annotation 输入目录。"
+    )
 
 
 def format_mcp_tool_result(result: Any) -> str:
@@ -132,13 +317,6 @@ def _find_session_mgf(upload_dir: str, paths: dict[str, str] | None = None) -> s
     return None
 
 
-def _dir_has_mzml(path: str) -> bool:
-    p = _path_obj(path)
-    if not p.is_dir():
-        return False
-    return bool(list(p.glob("*.mzML")) + list(p.glob("*.mzml")))
-
-
 def normalize_tool_args(
     tool_name: str,
     tool_args: Optional[dict],
@@ -171,7 +349,6 @@ def normalize_tool_args(
     deepmass_out = paths.get("deepmass") or _ensure_dir(
         str(_path_obj(base) / "deepmass_annotation_results")
     )
-    meta = _metadata_path(upload_dir)
     search_roots = session_search_roots(paths, upload_dir)
 
     if tool_name in (
@@ -287,11 +464,12 @@ def normalize_tool_args(
             )
             or filtered
         )
+        # 与特征表样本自动对齐；显式传入的 metadata 若位于会话目录也会被对齐覆盖写回
+        meta_aligned = _aligned_metadata_for_feature_dir(upload_dir, input_dir)
 
         out = {
             "input_dir": input_dir,
-            "metadata_csv": _pick_str(args, "metadata_csv", "metadata", "metadata_path")
-            or meta,
+            "metadata_csv": meta_aligned,
             "output_dir": _dir_of(_pick_str(args, "output_dir", "output_path") or statistical),
         }
         for opt in (
@@ -354,50 +532,49 @@ def normalize_tool_args(
         )
 
     if tool_name == "spectral_annotation":
-        inp = _pick_str(args, "input_dir", "input_msp", "input_path")
-        if inp and _path_obj(inp).suffix.lower() in (".msp", ".mgf"):
-            input_dir = _dir_of(inp)
-        elif inp:
-            input_dir = _dir_of(inp)
-        else:
-            input_dir = (
-                resolve_dir_with_file(
-                    differential,
-                    "differential_spectra.mgf",
-                    differential,
-                    search_roots=search_roots,
-                )
-                or differential
-            )
-
+        input_dir = _resolve_spectral_annotation_dir(args, differential, search_roots)
         out = _pick_str(args, "output_dir", "output_csv", "output_path")
-        return _posix_paths(
-            {
-                "input_dir": input_dir,
-                "output_dir": _dir_of(out) if out else annotated,
-                **{
-                    k: args[k]
-                    for k in ("precursor_ppm", "fragment_tol", "min_cosine")
-                    if k in args
-                },
-            }
-        )
+        result = {
+            "input_dir": input_dir,
+            "output_dir": _dir_of(out) if out else annotated,
+        }
+        for opt in (
+            "precursor_ppm",
+            "fragment_tol",
+            "min_cosine",
+            "include_precursor",
+            "use_mona",
+            "use_spectraverse",
+        ):
+            if opt in args:
+                result[opt] = args[opt]
+        return _posix_paths(result)
 
     if tool_name == "kegg_compound_enrichment":
         inp = _pick_str(args, "input_dir", "input_csv", "input_path")
+        annot_name = "differential_feature_table_library_match_clean&add.csv"
         if inp and _path_obj(inp).suffix.lower() == ".csv":
-            input_dir = _dir_of(inp)
+            candidate = _dir_of(inp)
         elif inp:
-            input_dir = _dir_of(inp)
+            candidate = _dir_of(inp)
         else:
-            input_dir = (
-                resolve_dir_with_file(
-                    annotated,
-                    "differential_feature_table_library_match_clean&add.csv",
-                    annotated,
-                    search_roots=search_roots,
-                )
-                or annotated
+            candidate = annotated
+        input_dir = (
+            resolve_dir_with_file(
+                candidate,
+                annot_name,
+                annotated,
+                search_roots=search_roots,
+            )
+            or candidate
+        )
+        if not (_path_obj(input_dir) / annot_name).is_file():
+            raise FileNotFoundError(
+                "kegg_compound_enrichment 需要谱库注释结果 "
+                f"{annot_name}。"
+                " 请先成功运行 spectral_annotation"
+                f"（输出通常在 {annotated}），"
+                "不要把 statistical_results 当作 KEGG 输入。"
             )
 
         out = _pick_str(args, "output_dir", "output_path") or kegg_out
@@ -419,29 +596,133 @@ def normalize_tool_args(
         return _posix_paths(result)
 
     if tool_name.startswith("molecular_networking_"):
-        mgf = _pick_str(args, "input_mgf", "input_msp", "mgf", "spectra_mgf")
-        if not mgf or not _path_obj(mgf).is_file():
-            upload_root = _path_obj(upload_dir)
-            mgf = _first_existing(
-                str(_path_obj(differential) / "differential_spectra.mgf"),
-                str(_path_obj(peaks) / "spectra.mgf"),
-                str(upload_root / "spectra.mgf"),
-            ) or find_session_mgf(paths, upload_dir)
+        # MS2LDA：Mass2Motif 发现必须用特征对齐全量 MS2 语料，而非差异谱子集
+        is_ms2lda = tool_name == "molecular_networking_ms2lda"
+        mgf = _resolve_networking_mgf(
+            args,
+            paths,
+            upload_dir,
+            prefer_feature_corpus=is_ms2lda,
+        )
         if not mgf or not _path_obj(mgf).is_file():
             raise FileNotFoundError(
                 "无法执行分子网络：缺少 differential_spectra.mgf 或 spectra.mgf。"
                 " 请先完成差异物提取、峰检测 MS2 导出，或直接上传 .mgf。"
             )
-        default_out = molecular_network
-        if tool_name != "molecular_networking_gnps":
-            method = tool_name.replace("molecular_networking_", "")
-            default_out = str(Path(paths["outputspace"]) / f"molecular_network_{method}_results")
+        if is_ms2lda:
+            n_spec = _count_mgf_spectra(mgf)
+            if n_spec < 20:
+                raise FileNotFoundError(
+                    f"MS2LDA 需要至少约 20 个特征级谱图，当前 {n_spec} 个（{mgf}）。"
+                    "请先完成 data_preprocessing_xcms 生成 peak_detection_results/spectra.mgf；"
+                    "不要仅用 differential_spectra.mgf 做 Mass2Motif 发现。"
+                )
+        method = tool_name.replace("molecular_networking_", "")
+        # 统一到 molecular_network_results/<method>/，避免 GNPS 根目录与 FBMN 子目录同名图重复
+        default_out = str(Path(molecular_network) / method)
         out = {
             "input_mgf": mgf,
             "output_dir": _dir_of(_pick_str(args, "output_dir", "output_path") or default_out),
         }
+        if tool_name == "molecular_networking_fbmn":
+            feat = _resolve_fbmn_feature_table(args, paths, search_roots)
+            out["input_feature_table"] = feat
+            out["metadata_csv"] = _aligned_metadata_for_feature_dir(
+                upload_dir,
+                _dir_of(feat),
+            )
         for key, value in args.items():
-            if key not in out and key not in ("input_msp", "mgf", "spectra_mgf", "output_path"):
+            if key in out:
+                continue
+            if key in (
+                "input_msp",
+                "mgf",
+                "spectra_mgf",
+                "output_path",
+                "input_feature_table",
+                "feature_table",
+                "input_csv",
+                "metadata_csv",
+                "metadata",
+                "metadata_path",
+                "input_mgf",
+            ):
+                continue
+            out[key] = value
+        return _posix_paths(out)
+
+    if tool_name in (
+        "feature_detection_openms",
+        "peak_picking_openms",
+        "peak_detection_openms_peakpickerhires",
+        "peak_detection_openms_featurefinder",
+    ):
+        candidate = _pick_str(args, "input_dir")
+        converted = paths.get("converted_mzml") or str(
+            _path_obj(base) / "converted_mzml"
+        )
+        input_dir = None
+        for d in (candidate, converted):
+            if d and _dir_has_mzml(d):
+                input_dir = normalize_display_path(_path_obj(d))
+                break
+        if not input_dir:
+            raise FileNotFoundError(
+                f"{tool_name} 需要含 *.mzML 的输入目录。"
+                f" 候选目录为空：{candidate or '(未指定)'}；"
+                f"请先完成 raw→mzML 转换到 {converted}，"
+                "或先运行 peak_picking_openms。"
+            )
+        default_out = {
+            "peak_picking_openms": str(_path_obj(base) / "peak_detection_openms_peakpickerhires"),
+            "peak_detection_openms_peakpickerhires": str(
+                _path_obj(base) / "peak_detection_openms_peakpickerhires"
+            ),
+            "feature_detection_openms": str(_path_obj(base) / "feature_detection_openms"),
+            "peak_detection_openms_featurefinder": str(
+                _path_obj(base) / "feature_detection_openms"
+            ),
+        }.get(tool_name, str(_path_obj(base) / tool_name))
+        out = {
+            "input_dir": input_dir,
+            "output_dir": _dir_of(
+                _pick_str(args, "output_dir", "output_path") or default_out
+            ),
+        }
+        for key, value in args.items():
+            if key not in out and key not in ("output_path",):
+                out[key] = value
+        return _posix_paths(out)
+
+    if tool_name == "peak_group_alignment_openms":
+        candidate = _pick_str(args, "input_dir")
+        openms_feat = str(_path_obj(base) / "openms_feature_detection_results")
+        input_dir = None
+        for d in (candidate, openms_feat):
+            if d and _dir_has_featurexml(d):
+                input_dir = normalize_display_path(_path_obj(d))
+                break
+        if not input_dir:
+            xcms_table = _path_obj(peaks) / "feature_table.csv"
+            hint = (
+                "当前会话已有 XCMS 特征表，可跳过 OpenMS 对齐，"
+                "直接用 peak_detection_results 做过滤/统计/FBMN。"
+                if xcms_table.is_file()
+                else "请先运行 feature_detection_openms / data_preprocessing_openms。"
+            )
+            raise FileNotFoundError(
+                "peak_group_alignment_openms 需要 *.featureXML，"
+                f"但未在 openms_feature_detection_results 中找到。{hint}"
+            )
+        out = {
+            "input_dir": input_dir,
+            "output_dir": _dir_of(
+                _pick_str(args, "output_dir", "output_path")
+                or str(_path_obj(base) / "openms_aligned_features")
+            ),
+        }
+        for key, value in args.items():
+            if key not in out and key not in ("output_path",):
                 out[key] = value
         return _posix_paths(out)
 

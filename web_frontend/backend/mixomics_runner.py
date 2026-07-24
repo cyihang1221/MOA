@@ -10,7 +10,11 @@ from pathlib import Path
 
 from src.platform_utils import resolve_rscript
 from web_frontend.backend.export.editable_export import ensure_editable_sidecars
-from web_frontend.backend.session_metadata import resolve_metadata_csv
+from web_frontend.backend.session_metadata import (
+    ensure_aligned_metadata_csv,
+    resolve_metadata_csv,
+    sample_ids_from_feature_table,
+)
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -239,12 +243,34 @@ def run_statistical_analysis_mixomics(
         if meta_candidate.suffix.lower() == ".csv"
         else meta_candidate
     )
-    metadata_csv = resolve_metadata_csv(upload_for_meta)
+    # 先保证有会话 metadata 文件，再按特征表样本自动对齐（避免旧实验 Sample 残留）
+    resolve_metadata_csv(upload_for_meta)
+    sample_ids = sample_ids_from_feature_table(imputed)
+    if not sample_ids:
+        raise ValueError(f"特征表中未找到样本列: {imputed}")
+    metadata_csv, align_report = ensure_aligned_metadata_csv(
+        upload_for_meta,
+        sample_ids,
+    )
     _ensure_mixomics_r_packages()
 
     imputed_csv = imputed.resolve().as_posix()
     meta_csv = Path(metadata_csv).resolve().as_posix()
     out_dir = output_path.as_posix()
+    align_note = output_path / "metadata_alignment_report.txt"
+    align_note.write_text(
+        "\n".join(
+            [
+                f"action={align_report.get('action')}",
+                f"source={align_report.get('source')}",
+                f"matched={align_report.get('n_matched')}/{align_report.get('n_samples')}",
+                f"inferred={align_report.get('n_inferred')}",
+                f"groups={','.join(align_report.get('groups') or [])}",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     env_backup = {
         key: os.environ.get(key)
         for key in (

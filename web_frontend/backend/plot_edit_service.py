@@ -40,7 +40,7 @@ from web_frontend.backend.plot_theme import (
     normalize_plot_config,
     plot_config_path_for_png,
 )
-from web_frontend.backend.session_metadata import resolve_metadata_csv
+from web_frontend.backend.session_metadata import list_metadata_columns, resolve_metadata_csv
 from web_frontend.backend.session_storage import edited_plots_dir, session_upload_dir, session_work_dir
 from web_frontend.backend.semantic_plot_renderer import (
     build_vegalite_spec,
@@ -60,7 +60,12 @@ def ensure_default_plot_configs(
     *,
     upload_dir: str | Path | None = None,
 ) -> list[Path]:
-    """为可语义编辑的 PNG 补写 plot_config / Vega-Lite / SVG sidecar。"""
+    """为可语义编辑的 PNG 补写 plot_config / Vega-Lite / SVG sidecar。
+
+    递归扫描子目录（如 fbmn/、ms2lda_results/），跳过 edited_plots / merged_figures。
+    """
+    from web_frontend.backend.session_storage import EDITED_PLOTS_SUBDIR, MERGED_FIGURES_SUBDIR
+
     root = Path(directory)
     if not root.is_dir():
         return []
@@ -73,7 +78,19 @@ def ensure_default_plot_configs(
         except Exception:
             metadata_csv = None
 
-    for png in sorted(root.glob("*.png")):
+    png_files = []
+    for png in sorted(root.rglob("*.png")):
+        try:
+            rel_parts = png.relative_to(root).parts
+        except ValueError:
+            continue
+        if rel_parts and rel_parts[0] in {EDITED_PLOTS_SUBDIR, MERGED_FIGURES_SUBDIR}:
+            continue
+        if png.stem.endswith("_edited") or png.stem.startswith("tmp_"):
+            continue
+        png_files.append(png)
+
+    for png in png_files:
         stem = png.stem
         if not is_agent_plot_editable_stem(stem):
             continue
@@ -83,28 +100,39 @@ def ensure_default_plot_configs(
         spec = get_plot_spec(plot_type)
         if not spec:
             continue
-        if not plot_data_files_ready(root, spec.data_files):
+        data_root = png.parent
+        if not plot_data_files_ready(data_root, spec.data_files):
             continue
 
         config_path = Path(plot_config_path_for_png(str(png)))
         color_keys: list[str] = []
         try:
             if upload is not None:
-                color_keys = _color_keys_for_plot(plot_type, root, upload)
+                color_keys = _color_keys_for_plot(plot_type, data_root, upload)
             elif plot_type == "volcano":
                 color_keys = ["significant", "nonsignificant"]
             elif plot_type == "family_size":
-                nodes = resolve_plot_data_file(root, "network_nodes.csv")
+                nodes = resolve_plot_data_file(data_root, "network_nodes.csv")
                 labels, _, _ = _family_size_payload(nodes) if nodes else ([], [], [])
                 color_keys = labels
-            elif plot_type in ("degree_hist", "cosine_hist", "precursor_mass_diff"):
-                color_keys = ["histogram_color", "threshold_color", "median_color"]
+            elif plot_type in ("degree_hist", "cosine_hist", "precursor_mass_diff", "pearson_hist"):
+                color_keys = ["histogram_color", "threshold_color", "median_color", "scatter_color"]
             elif plot_type == "vip_bar":
                 color_keys = ["bar_color"]
+            elif plot_type == "mass2motif_fragments":
+                color_keys = ["fragment_color"]
+            elif plot_type == "annotation_propagation":
+                color_keys = ["direct", "propagated", "unknown"]
+            elif plot_type == "kegg_barplot":
+                color_keys = ["bar_color"]
             elif plot_type == "network_topology":
-                layout = pd.read_csv(root / "network_layout.csv")
-                if "family" in layout.columns:
-                    color_keys = list(dict.fromkeys(str(v) for v in layout["family"].fillna("singleton")))
+                layout = data_root / "network_layout.csv"
+                if layout.is_file():
+                    layout_df = pd.read_csv(layout)
+                    if "family" in layout_df.columns:
+                        color_keys = list(
+                            dict.fromkeys(str(v) for v in layout_df["family"].fillna("singleton"))
+                        )
         except Exception:
             color_keys = []
 
@@ -114,12 +142,19 @@ def ensure_default_plot_configs(
                 existing = json.loads(config_path.read_text(encoding="utf-8"))
             except json.JSONDecodeError:
                 existing = None
-        config = normalize_plot_config(existing if isinstance(existing, dict) else None, plot_type=plot_type, color_keys=color_keys)
-        config["source_rel"] = png.name
+        config = normalize_plot_config(
+            existing if isinstance(existing, dict) else None,
+            plot_type=plot_type,
+            color_keys=color_keys,
+        )
+        try:
+            config["source_rel"] = png.relative_to(root).as_posix()
+        except ValueError:
+            config["source_rel"] = png.name
         try:
             vega_spec = build_vegalite_spec(
                 plot_type=plot_type,
-                data_dir=root,
+                data_dir=data_root,
                 metadata_csv=metadata_csv if plot_type in {"pca", "plsda"} else None,
                 plot_config=config,
             )
@@ -134,33 +169,35 @@ def ensure_default_plot_configs(
             png_path=png,
             plot_config=config,
             vega_spec=vega_spec,
-            source_rel=png.name,
+            source_rel=config.get("source_rel"),
         )
         write_svg_sidecar(vega_spec, png)
         written.append(config_path)
 
     # vip_scores.csv 存在但无 PNG 时，生成可 SVG 编辑的 VIP 柱状图
-    vip_csv = root / "vip_scores.csv"
-    vip_png = root / "vip_scores.png"
-    if vip_csv.is_file() and not vip_png.is_file():
-        try:
-            config = normalize_plot_config(None, plot_type="vip_bar", color_keys=["bar_color"])
-            config["source_rel"] = vip_png.name
-            vega_spec = build_vegalite_spec(
-                plot_type="vip_bar",
-                data_dir=root,
-                metadata_csv=None,
-                plot_config=config,
-            )
-            write_semantic_outputs(
-                png_path=vip_png,
-                plot_config=config,
-                vega_spec=vega_spec,
-                source_rel=vip_png.name,
-            )
-            written.append(Path(plot_config_path_for_png(str(vip_png))))
-        except Exception:
-            pass
+    for vip_csv in root.rglob("vip_scores.csv"):
+        if any(part in {EDITED_PLOTS_SUBDIR, MERGED_FIGURES_SUBDIR} for part in vip_csv.parts):
+            continue
+        vip_png = vip_csv.with_name("vip_scores.png")
+        if vip_csv.is_file() and not vip_png.is_file():
+            try:
+                config = normalize_plot_config(None, plot_type="vip_bar", color_keys=["bar_color"])
+                config["source_rel"] = vip_png.name
+                vega_spec = build_vegalite_spec(
+                    plot_type="vip_bar",
+                    data_dir=vip_csv.parent,
+                    metadata_csv=None,
+                    plot_config=config,
+                )
+                write_semantic_outputs(
+                    png_path=vip_png,
+                    plot_config=config,
+                    vega_spec=vega_spec,
+                    source_rel=vip_png.name,
+                )
+                written.append(Path(plot_config_path_for_png(str(vip_png))))
+            except Exception:
+                pass
     return written
 
 
@@ -247,15 +284,27 @@ def get_semantic_plot_payload(
         raise PlotEditError(f"暂不支持语义编辑：{source.name}")
 
     upload_dir = session_upload_dir(project_root, storage_slug)
-    color_keys = _color_keys_for_plot(plot_type, data_dir, upload_dir)
+    color_keys = _color_keys_for_plot(plot_type, data_dir, upload_dir, existing if isinstance(existing, dict) else None)
     config = normalize_plot_config(existing, plot_type=plot_type, color_keys=color_keys)
     if plot_config_patch:
-        config = normalize_plot_config(
-            merge_plot_config(config, plot_config_patch),
-            plot_type=plot_type,
-            color_keys=color_keys,
-        )
-    metadata_csv = resolve_metadata_csv(upload_dir) if plot_type in {"pca", "plsda"} else None
+        config = merge_plot_config(config, plot_config_patch)
+        color_keys = _color_keys_for_plot(plot_type, data_dir, upload_dir, config)
+        config = normalize_plot_config(config, plot_type=plot_type, color_keys=color_keys)
+    else:
+        color_keys = _color_keys_for_plot(plot_type, data_dir, upload_dir, config)
+        config = normalize_plot_config(config, plot_type=plot_type, color_keys=color_keys)
+
+    metadata_csv = None
+    metadata_columns: list[dict[str, Any]] = []
+    color_by_columns: list[str] = []
+    if plot_type in {"pca", "plsda"}:
+        metadata_csv = resolve_metadata_csv(upload_dir)
+        try:
+            metadata_columns = list_metadata_columns(metadata_csv)
+        except Exception:
+            metadata_columns = []
+    elif plot_type == "network_topology":
+        color_by_columns = _topology_color_by_columns(data_dir)
     vega_spec = build_vegalite_spec(
         plot_type=plot_type,
         data_dir=data_dir,
@@ -268,17 +317,71 @@ def get_semantic_plot_payload(
         "color_keys": color_keys,
         "plot_config": config,
         "vega_spec": vega_spec,
+        "metadata_columns": metadata_columns,
+        "color_by_columns": color_by_columns,
     }
 
 
-def _color_keys_for_plot(plot_type: str, data_dir: Path, upload_dir: Path) -> list[str]:
+def _topology_color_by_columns(data_dir: Path) -> list[str]:
+    """拓扑图可选着色列（layout + 可 join 的节点属性）。"""
+    from web_frontend.backend.semantic_plot_renderer import _join_topology_node_attrs
+
+    layout_path = data_dir / "network_layout.csv"
+    if not layout_path.is_file():
+        return ["family"]
+    try:
+        layout = pd.read_csv(layout_path)
+        layout = _join_topology_node_attrs(data_dir, layout)
+    except Exception:
+        return ["family"]
+    preferred = (
+        "family",
+        "chemical_category",
+        "degree",
+        "log2FC",
+        "molecular_family",
+        "category_confidence",
+    )
+    skip = {"node_id", "x", "y", "_join_id"}
+    found: list[str] = []
+    for col in preferred:
+        if col in layout.columns and col not in found:
+            found.append(col)
+    for col in layout.columns:
+        name = str(col)
+        if name in skip or name in found:
+            continue
+        # 跳过坐标/过多唯一值的纯数值 id
+        if name.lower().endswith("_id"):
+            continue
+        found.append(name)
+    return found or ["family"]
+
+
+def _color_keys_for_plot(
+    plot_type: str,
+    data_dir: Path,
+    upload_dir: Path,
+    plot_config: dict[str, Any] | None = None,
+) -> list[str]:
     if plot_type in ("pca", "plsda"):
+        from web_frontend.backend.plot_renderer import score_color_meta
+
         spec = get_plot_spec(plot_type)
         if not spec:
             return []
         scores_path = data_dir / spec.data_files[0]
         metadata_csv = resolve_metadata_csv(upload_dir)
-        _, groups, _, _ = load_scores_and_groups(scores_path, metadata_csv)
+        cfg = dict(plot_config) if isinstance(plot_config, dict) else {}
+        _, groups, _, _ = load_scores_and_groups(scores_path, metadata_csv, plot_config=cfg)
+        # 回写解析后的 color_by / color_type
+        if isinstance(plot_config, dict):
+            plot_config["color_by"] = cfg.get("color_by", plot_config.get("color_by"))
+            plot_config["color_type"] = cfg.get("color_type", plot_config.get("color_type"))
+            plot_config["cluster"] = cfg.get("cluster")
+        _legend, color_type = score_color_meta(cfg)
+        if color_type == "quantitative":
+            return []
         seen: set[str] = set()
         ordered: list[str] = []
         for g in groups:
@@ -295,10 +398,52 @@ def _color_keys_for_plot(plot_type: str, data_dir: Path, upload_dir: Path) -> li
             return []
         labels, _, _ = _family_size_payload(nodes)
         return labels
-    if plot_type in ("degree_hist", "cosine_hist", "precursor_mass_diff"):
-        return ["histogram_color", "threshold_color", "median_color"]
+    if plot_type in ("degree_hist", "cosine_hist", "precursor_mass_diff", "pearson_hist"):
+        return ["histogram_color", "threshold_color", "median_color", "scatter_color"]
     if plot_type == "vip_bar":
         return ["bar_color"]
+    if plot_type == "mass2motif_overview":
+        return []
+    if plot_type == "mass2motif_fragments":
+        return ["fragment_color", "loss_color"]
+    if plot_type in ("motif_spectrum_heatmap", "heatmap_vip"):
+        return []
+    if plot_type in ("chemical_class_distribution", "family_chemical_consensus"):
+        try:
+            counts = None
+            from web_frontend.backend.semantic_plot_renderer import _chemical_category_counts
+
+            if plot_type == "chemical_class_distribution":
+                counts = _chemical_category_counts(data_dir)
+                return [str(v) for v in counts["chemical_category"].tolist()]
+            path = resolve_plot_data_file(data_dir, "chemical_class_distribution.csv")
+            if path is None:
+                return []
+            frame = pd.read_csv(path)
+            if "chemical_category" in frame.columns:
+                return list(dict.fromkeys(str(v) for v in frame["chemical_category"].fillna("unknown")))
+        except Exception:
+            return []
+        return []
+    if plot_type == "annotation_propagation":
+        return ["direct", "propagated", "unknown"]
+    if plot_type in ("kegg_bubble", "kegg_dotplot"):
+        return []
+    if plot_type == "kegg_barplot":
+        return ["bar_color"]
+    if plot_type == "fbmn_group_intensity":
+        try:
+            path = resolve_plot_data_file(data_dir, "fbmn_group_intensity.csv")
+            if path is None:
+                return []
+            frame = pd.read_csv(path)
+            if "group" in frame.columns:
+                return list(dict.fromkeys(str(v) for v in frame["group"].tolist()))
+        except Exception:
+            return []
+        return []
+    if plot_type == "mass2motif_network":
+        return ["motif_color", "spectrum_color", "edge_color"]
     if plot_type == "network_topology":
         layout = data_dir / "network_layout.csv"
         if layout.is_file():
@@ -324,7 +469,9 @@ def _render_and_build_echarts(
     if plot_type in ("pca", "plsda"):
         scores_path = data_dir / spec.data_files[0]
         metadata_csv = resolve_metadata_csv(upload_dir)
-        scores, groups, samples, axis_names = load_scores_and_groups(scores_path, metadata_csv)
+        scores, groups, samples, axis_names = load_scores_and_groups(
+            scores_path, metadata_csv, plot_config=plot_config
+        )
         render_score_plot_png(
             scores=scores,
             groups=groups,
@@ -446,10 +593,13 @@ def apply_plot_config(
         )
 
     upload_dir = session_upload_dir(project_root, storage_slug)
-    color_keys = _color_keys_for_plot(plot_type, data_dir, upload_dir)
+    color_keys = _color_keys_for_plot(
+        plot_type, data_dir, upload_dir, base_existing if isinstance(base_existing, dict) else None
+    )
 
     base = normalize_plot_config(base_existing, plot_type=plot_type, color_keys=color_keys)
     merged = merge_plot_config(base, plot_config_patch)
+    color_keys = _color_keys_for_plot(plot_type, data_dir, upload_dir, merged)
     merged = normalize_plot_config(merged, plot_type=plot_type, color_keys=color_keys)
 
     target_png = _resolve_output_png(output_root, source, filename)
@@ -552,14 +702,25 @@ def agent_apply_plot_edit(
     spec = get_plot_spec(plot_type) if plot_type else None
     can_semantic = bool(spec and plot_data_files_ready(data_dir, spec.data_files))
     if can_semantic:
-        color_keys = _color_keys_for_plot(plot_type, data_dir, upload_dir)
+        color_keys = _color_keys_for_plot(
+            plot_type, data_dir, upload_dir, existing if isinstance(existing, dict) else None
+        )
         current = normalize_plot_config(existing, plot_type=plot_type, color_keys=color_keys)
+        metadata_columns: list[str] = []
+        if plot_type in {"pca", "plsda"}:
+            try:
+                metadata_columns = [
+                    str(c["name"]) for c in list_metadata_columns(resolve_metadata_csv(upload_dir))
+                ]
+            except Exception:
+                metadata_columns = []
         patch = parse_plot_edit_instruction(
             instruction=instruction,
             plot_type=plot_type,
             color_keys=color_keys,
             current_config=current,
             model=model,
+            metadata_columns=metadata_columns,
         )
         result = apply_plot_config(
             project_root=project_root,
@@ -611,3 +772,189 @@ def resolve_chat_plot_edit_tasks(
             "或在消息中指明图名/文件名（如 PCA、余弦分布、chemical_class_distribution.png）。"
         )
     return tasks, plots
+
+
+def apply_analysis_intent_after_tool(
+    *,
+    project_root: Path,
+    session_id: str,
+    storage_slug: str,
+    user_message: str,
+    tool_name: str | None = None,
+    output_dir: str | Path | None = None,
+) -> list[dict[str, Any]]:
+    """任意出图工具成功后，按用户分析意图确定性重绘相关图（不依赖二次 LLM）。"""
+    from web_frontend.backend.analysis_intent import (
+        DEFAULT_COLORING_STEMS,
+        default_stems_for_tool,
+        describe_intent,
+        has_analysis_plot_intent,
+        parse_analysis_intent,
+    )
+
+    text = (user_message or "").strip()
+    if not text or not has_analysis_plot_intent(text):
+        return []
+
+    upload_dir = session_upload_dir(project_root, storage_slug)
+    try:
+        metadata_csv = resolve_metadata_csv(upload_dir)
+        metadata_columns = [str(c["name"]) for c in list_metadata_columns(metadata_csv)]
+    except Exception:
+        metadata_csv = None
+        metadata_columns = []
+
+    intent = parse_analysis_intent(
+        text,
+        metadata_columns=metadata_columns,
+        metadata_csv=str(metadata_csv) if metadata_csv else None,
+    )
+    if not intent:
+        return []
+
+    # 缺列等硬错误：直接返回引导，不落盘半成品
+    if intent.get("errors"):
+        return [
+            {
+                "error": err,
+                "stem": "color_by",
+                "analysis_intent": describe_intent(intent),
+            }
+            for err in intent["errors"]
+        ]
+
+    # scores 类：再次确认 metadata 列（与 build 校验双保险）
+    topology_keys = {"family", "degree", "chemical_category", "log2FC", "Cluster"}
+    wanted = str(intent.get("color_by") or "").strip()
+    if (
+        not intent.get("cluster")
+        and wanted
+        and wanted not in topology_keys
+        and metadata_columns
+        and any(
+            s in (intent.get("targets") or intent.get("target_stems") or DEFAULT_COLORING_STEMS)
+            for s in ("pca_plot", "plsda_plot")
+        )
+    ):
+        from web_frontend.backend.session_metadata import match_color_by_column
+
+        matched = match_color_by_column(
+            wanted,
+            metadata_csv,
+            columns=metadata_columns,
+            fallback=False,
+        )
+        if not matched:
+            available = ", ".join(metadata_columns)
+            return [
+                {
+                    "error": (
+                        f"metadata 中不存在「{wanted}」列，无法按该字段着色。"
+                        f"可用列：{available}"
+                    ),
+                    "stem": "color_by",
+                    "analysis_intent": describe_intent(intent),
+                }
+            ]
+        intent["color_by"] = matched
+
+    output_root = session_work_dir(project_root, storage_slug).resolve()
+    search_roots: list[Path] = []
+    if output_dir:
+        search_roots.append(Path(output_dir))
+    tool = tool_name or ""
+    if "mixomics" in tool or tool == "statistical_analysis_mixomics":
+        search_roots.extend(
+            [output_root / "statistical_results", output_root / "mixomics_results"]
+        )
+    if "molecular_networking" in tool or "network" in tool:
+        search_roots.append(output_root / "molecular_network_results")
+    if "kegg" in tool:
+        search_roots.append(output_root / "kegg_enrichment_results")
+    if "ms2lda" in tool:
+        search_roots.extend(
+            [
+                output_root / "ms2lda_results",
+                output_root / "molecular_network_results" / "ms2lda",
+            ]
+        )
+    search_roots.append(output_root)
+
+    stems = (
+        intent.get("targets")
+        or intent.get("target_stems")
+        or default_stems_for_tool(tool)
+        or list(DEFAULT_COLORING_STEMS)
+    )
+    patch_keys = {
+        "color_by",
+        "color_type",
+        "cluster",
+        "thresholds",
+        "color_channel",
+        "marks",
+        "facet",
+        "size_by",
+    }
+    patch = {k: v for k, v in intent.items() if k in patch_keys and v is not None}
+
+    results: list[dict[str, Any]] = []
+    for stem in stems:
+        rel_candidates: list[str] = []
+        for root in search_roots:
+            if not root.is_dir():
+                continue
+            png = root / f"{stem}.png"
+            if png.is_file():
+                try:
+                    rel_candidates.append(png.relative_to(output_root).as_posix())
+                    break
+                except ValueError:
+                    pass
+            matches = list(root.rglob(f"{stem}.png"))
+            matches = [p for p in matches if "edited_plots" not in p.parts]
+            matches.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+            for png in matches[:1]:
+                try:
+                    rel_candidates.append(png.relative_to(output_root).as_posix())
+                    break
+                except ValueError:
+                    pass
+            if rel_candidates:
+                break
+        for rel in rel_candidates:
+            try:
+                result = apply_plot_config(
+                    project_root=project_root,
+                    session_id=session_id,
+                    storage_slug=storage_slug,
+                    source_rel=rel,
+                    plot_config_patch=patch,
+                    instruction=text,
+                    filename=f"{stem}_intent.png",
+                )
+                result["edit_mode"] = "semantic"
+                result["analysis_intent"] = describe_intent(intent)
+                results.append(result)
+            except Exception as exc:
+                results.append({"error": str(exc), "source_rel": rel, "stem": stem})
+    return results
+
+
+def apply_analysis_coloring_after_stats(
+    *,
+    project_root: Path,
+    session_id: str,
+    storage_slug: str,
+    user_message: str,
+    statistical_dir: str | Path | None = None,
+) -> list[dict[str, Any]]:
+    """兼容旧调用：统计后意图重绘。"""
+    return apply_analysis_intent_after_tool(
+        project_root=project_root,
+        session_id=session_id,
+        storage_slug=storage_slug,
+        user_message=user_message,
+        tool_name="statistical_analysis_mixomics",
+        output_dir=statistical_dir,
+    )
