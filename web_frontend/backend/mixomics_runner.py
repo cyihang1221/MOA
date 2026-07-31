@@ -226,9 +226,22 @@ def run_statistical_analysis_mixomics(
     input_dir: str,
     metadata_csv: str,
     output_dir: str,
+    *,
+    session_id: str | None = None,
+    cancel_flag: object | None = None,
     **kwargs,
 ) -> Path:
-    """执行 patch 后的 mixOmics 流程，返回日志路径。"""
+    """执行 patch 后的 mixOmics 流程，返回日志路径。
+
+    cancel_flag: 可选 threading.Event，set 后杀掉 Rscript。
+    session_id: 用于登记 PID，供 /cancel 杀掉。
+    """
+    import time
+    from web_frontend.backend.agent_jobs import (
+        register_process,
+        unregister_process,
+    )
+
     input_path = Path(input_dir).resolve()
     output_path = Path(output_dir).resolve()
     output_path.mkdir(parents=True, exist_ok=True)
@@ -277,6 +290,9 @@ def run_statistical_analysis_mixomics(
             "MASS_MIXOMICS_INPUT_CSV",
             "MASS_MIXOMICS_METADATA_CSV",
             "MASS_MIXOMICS_OUTPUT_DIR",
+            "MASS_MIXOMICS_GROUP_COLUMN",
+            "MASS_MIXOMICS_CONTRAST_G1",
+            "MASS_MIXOMICS_CONTRAST_G2",
         )
     }
     os.environ["MASS_MIXOMICS_INPUT_CSV"] = imputed_csv
@@ -286,9 +302,18 @@ def run_statistical_analysis_mixomics(
     from src.tools.xcms import statistical_analysis_mixomics_impl as fn
 
     log_path = output_path / "statistical_analysis_mixomics.log"
+    started = time.time()
     _orig_run = sp.run
 
-    def _logged_run(cmd, **kwargs):
+    def _cancelled() -> bool:
+        if cancel_flag is None:
+            return False
+        try:
+            return bool(cancel_flag.is_set())  # type: ignore[attr-defined]
+        except Exception:
+            return False
+
+    def _logged_run(cmd, **run_kwargs):
         for key in (
             "capture_output",
             "encoding",
@@ -299,10 +324,12 @@ def run_statistical_analysis_mixomics(
             "errors",
             "check",
         ):
-            kwargs.pop(key, None)
+            run_kwargs.pop(key, None)
         cmd = _normalize_rscript_cmd(list(cmd))
+        if _cancelled():
+            raise RuntimeError("已终止：mixOmics 在启动前被取消")
         with open(log_path, "w", encoding="utf-8") as log_f:
-            proc = _orig_run(
+            proc = sp.Popen(
                 cmd,
                 stdin=sp.DEVNULL,
                 stdout=log_f,
@@ -311,14 +338,47 @@ def run_statistical_analysis_mixomics(
                 encoding="utf-8",
                 errors="replace",
                 env=_r_subprocess_env(),
-                **kwargs,
+                start_new_session=True,
+                **run_kwargs,
             )
-        if proc.returncode != 0:
+            register_process(session_id, proc.pid)
+            try:
+                while True:
+                    try:
+                        ret = proc.wait(timeout=0.4)
+                        break
+                    except sp.TimeoutExpired:
+                        if _cancelled():
+                            try:
+                                os.killpg(proc.pid, 15)
+                            except Exception:
+                                try:
+                                    proc.terminate()
+                                except Exception:
+                                    pass
+                            try:
+                                proc.wait(timeout=2)
+                            except Exception:
+                                try:
+                                    os.killpg(proc.pid, 9)
+                                except Exception:
+                                    try:
+                                        proc.kill()
+                                    except Exception:
+                                        pass
+                            raise RuntimeError("已终止：用户取消，已停止 mixOmics/Rscript")
+            finally:
+                unregister_process(session_id, proc.pid)
+
+        class _ProcResult:
+            returncode = ret
+
+        if ret != 0:
             tail = log_path.read_text(encoding="utf-8", errors="replace")[-8000:]
             raise RuntimeError(
-                f"Rscript exit {proc.returncode}, see {log_path}\n{tail}"
+                f"Rscript exit {ret}, see {log_path}\n{tail}"
             )
-        return proc
+        return _ProcResult()
 
     sp.run = _logged_run
     try:
@@ -336,9 +396,19 @@ def run_statistical_analysis_mixomics(
             else:
                 os.environ[key] = value
 
+    if _cancelled():
+        raise RuntimeError("已终止：mixOmics 已被用户取消")
+
+    pca_png = output_path / "pca_plot.png"
     if not (output_path / "pca_scores.csv").is_file():
         tail = log_path.read_text(encoding="utf-8", errors="replace")[-8000:] if log_path.is_file() else ""
         raise RuntimeError(f"未生成 pca_scores.csv，见 {log_path}\n{tail}")
+    # 防止「宣称成功但实际没重跑」：主产物必须是本轮新写的
+    if pca_png.is_file() and pca_png.stat().st_mtime < started - 2:
+        raise RuntimeError(
+            "mixOmics 宣称完成，但 pca_plot.png 未被本轮更新。"
+            "请检查 Rscript 是否真正执行，或查看 statistical_analysis_mixomics.log。"
+        )
 
     from web_frontend.backend.pipeline_utils import ensure_empty_differential_csv
 

@@ -259,11 +259,21 @@ def _run_plot_edit(args: dict[str, Any], ctx: AgentContext) -> dict[str, Any]:
         raise RuntimeError(str(exc)) from exc
 
     files = [r["file"]["name"] for r in results if r.get("file")]
+    diff_bits = []
+    for r in results:
+        diff = r.get("config_diff") or {}
+        summary = str(diff.get("summary") or "").strip()
+        if summary and summary != "无字段变化":
+            fname = (r.get("file") or {}).get("name") or "?"
+            diff_bits.append(f"- `{fname}`：{summary}")
+    msg = f"改图完成，共 {len(files)} 张：{', '.join(files)}"
+    if diff_bits:
+        msg += "\n字段变更：\n" + "\n".join(diff_bits)
     return {
         "kind": "plot_edit",
         "ok": True,
         "files": files,
-        "message": f"改图完成，共 {len(files)} 张：{', '.join(files)}",
+        "message": msg,
         "results": results,
     }
 

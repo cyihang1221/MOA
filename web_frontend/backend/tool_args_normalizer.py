@@ -483,8 +483,11 @@ def normalize_tool_args(
             "padj_threshold",
             "log2fc_threshold",
             "use_fdr",
+            "group_column",
+            "contrast_group1",
+            "contrast_group2",
         ):
-            if opt in args:
+            if opt in args and args[opt] is not None and str(args[opt]).strip() != "":
                 out[opt] = args[opt]
         return _posix_paths(out)
 

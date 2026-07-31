@@ -36,12 +36,20 @@ from web_frontend.backend.plot_renderer import (
     _family_size_payload,
 )
 from web_frontend.backend.plot_theme import (
+    diff_plot_config,
     merge_plot_config,
     normalize_plot_config,
     plot_config_path_for_png,
 )
 from web_frontend.backend.session_metadata import list_metadata_columns, resolve_metadata_csv
 from web_frontend.backend.session_storage import edited_plots_dir, session_upload_dir, session_work_dir
+from web_frontend.backend.plot_versioning import (
+    canonical_plot_base,
+    find_effective_plot_rel,
+    find_original_plot_rel,
+    stable_intent_filename,
+    write_current_pointer,
+)
 from web_frontend.backend.semantic_plot_renderer import (
     build_vegalite_spec,
     is_vl_convert_available,
@@ -110,7 +118,12 @@ def ensure_default_plot_configs(
             if upload is not None:
                 color_keys = _color_keys_for_plot(plot_type, data_root, upload)
             elif plot_type == "volcano":
-                color_keys = ["significant", "nonsignificant"]
+                color_keys = [
+                    "upregulated",
+                    "downregulated",
+                    "nonsignificant",
+                    "threshold_color",
+                ]
             elif plot_type == "family_size":
                 nodes = resolve_plot_data_file(data_root, "network_nodes.csv")
                 labels, _, _ = _family_size_payload(nodes) if nodes else ([], [], [])
@@ -212,11 +225,17 @@ def _load_existing_config(png_path: Path) -> dict[str, Any] | None:
         return None
 
 
-def _resolve_output_png(output_root: Path, source: Path, filename: str | None) -> Path:
+def _resolve_output_png(
+    output_root: Path,
+    source: Path,
+    filename: str | None,
+    *,
+    overwrite: bool = False,
+) -> Path:
     edit_dir = edited_plots_dir(output_root)
     stem = Path(filename or f"{source.stem}_edited.png").stem
     target = edit_dir / f"{stem}.png"
-    if target.exists():
+    if target.exists() and not overwrite:
         target = edit_dir / f"{stem}_{uuid.uuid4().hex[:8]}.png"
     return target
 
@@ -227,11 +246,21 @@ def _validated_source(
     *,
     hint_message: str | None = None,
 ) -> Path:
+    rel = str(source_rel or "").strip().lstrip("/")
+    if rel:
+        direct = (output_root / rel).resolve()
+        try:
+            direct.relative_to(output_root.resolve())
+            if direct.is_file() and direct.suffix.lower() == ".png":
+                return direct
+        except ValueError:
+            pass
     try:
+        # 已定位到具体文件时不要再用 instruction 别名重解析，避免跳回分析原图
         canonical = resolve_plot_source_rel(
             output_root,
             source_rel,
-            hint_message=hint_message,
+            hint_message=None if rel else hint_message,
         )
     except ValueError as exc:
         raise PlotEditError(str(exc)) from exc
@@ -391,7 +420,12 @@ def _color_keys_for_plot(
                 ordered.append(gs)
         return ordered
     if plot_type == "volcano":
-        return ["significant", "nonsignificant"]
+        return [
+            "upregulated",
+            "downregulated",
+            "nonsignificant",
+            "threshold_color",
+        ]
     if plot_type == "family_size":
         nodes = resolve_plot_data_file(data_dir, "network_nodes.csv")
         if nodes is None:
@@ -575,20 +609,47 @@ def apply_plot_config(
     plot_config_patch: dict[str, Any],
     instruction: str | None = None,
     filename: str | None = None,
+    overwrite_intent: bool = True,
 ) -> dict[str, Any]:
+    """语义重绘。默认写入稳定的 ``{base}_intent.png`` 并更新 current 指针，支持连续改图。"""
     output_root = session_work_dir(project_root, storage_slug).resolve()
-    canonical_rel = resolve_plot_source_rel(output_root, source_rel, hint_message=instruction)
-    initial_source = _validated_source(output_root, canonical_rel, hint_message=instruction)
-    base_existing = _load_existing_config(initial_source)
-    source, data_dir = _resolve_source_and_data_dir(output_root, canonical_rel, base_existing)
+    # 1) 先按用户/LLM 提示定位「逻辑图」，并升到当前生效版
+    try:
+        requested_rel = resolve_plot_source_rel(
+            output_root, source_rel, hint_message=instruction
+        )
+    except ValueError:
+        requested_rel = str(source_rel or "").strip().lstrip("/")
 
-    stem = source.stem
+    info = find_effective_plot_rel(output_root, requested_rel)
+    base = info.get("base") or canonical_plot_base(requested_rel)
+    effective_rel = info.get("effective_rel") or requested_rel
+    original_rel = info.get("original_rel") or find_original_plot_rel(output_root, base)
+
+    # 连续改图：从 effective（intent/edited）读 config；数据目录仍回原始分析图
+    edit_source_rel = effective_rel or requested_rel
+    initial_source = _validated_source(
+        output_root, edit_source_rel, hint_message=None
+    )
+    base_existing = _load_existing_config(initial_source)
+
+    # data_dir：优先 config.source_rel / original_rel
+    data_anchor = (
+        str((base_existing or {}).get("source_rel") or "").strip()
+        or original_rel
+        or edit_source_rel
+    )
+    source, data_dir = _resolve_source_and_data_dir(
+        output_root, data_anchor, base_existing
+    )
+
+    stem_for_type = Path(original_rel or edit_source_rel).stem
+    stem_for_type = canonical_plot_base(stem_for_type) or stem_for_type
     existing_plot_type = str((base_existing or {}).get("plot_type") or "")
-    plot_type = plot_type_from_stem(stem) or existing_plot_type
-    # 语义重绘仅服务于有 PlotSpec 的图；其余应走 agent_apply → generic
+    plot_type = plot_type_from_stem(stem_for_type) or existing_plot_type
     if not get_plot_spec(plot_type or ""):
         raise PlotEditError(
-            f"暂不支持语义重绘：{source.name}。"
+            f"暂不支持语义重绘：{initial_source.name}。"
             "请使用 Agent 通用改图（标题/字号/颜色）。"
         )
 
@@ -597,12 +658,20 @@ def apply_plot_config(
         plot_type, data_dir, upload_dir, base_existing if isinstance(base_existing, dict) else None
     )
 
-    base = normalize_plot_config(base_existing, plot_type=plot_type, color_keys=color_keys)
-    merged = merge_plot_config(base, plot_config_patch)
+    before_cfg = normalize_plot_config(base_existing, plot_type=plot_type, color_keys=color_keys)
+    merged = merge_plot_config(before_cfg, plot_config_patch)
     color_keys = _color_keys_for_plot(plot_type, data_dir, upload_dir, merged)
     merged = normalize_plot_config(merged, plot_type=plot_type, color_keys=color_keys)
+    config_diff = diff_plot_config(before_cfg, merged)
 
-    target_png = _resolve_output_png(output_root, source, filename)
+    out_name = filename or stable_intent_filename(base or stem_for_type)
+    # 稳定 intent 名默认覆盖，避免 hash 分叉
+    overwrite = bool(overwrite_intent) and (
+        out_name.endswith("_intent.png") or "intent" in Path(out_name).stem
+    )
+    target_png = _resolve_output_png(
+        output_root, initial_source, out_name, overwrite=overwrite
+    )
     metadata_csv = resolve_metadata_csv(upload_dir) if plot_type in {"pca", "plsda"} else None
     vega_spec = build_vegalite_spec(
         plot_type=plot_type,
@@ -620,17 +689,25 @@ def apply_plot_config(
             output_path=path,
         )
 
+    preserved_source = str(
+        (base_existing or {}).get("source_rel")
+        or original_rel
+        or data_anchor
+    )
     config_path, vega_path, svg_path, _ = write_semantic_outputs(
         png_path=target_png,
         plot_config=merged,
         vega_spec=vega_spec,
         instruction=instruction,
-        source_rel=str((base_existing or {}).get("source_rel") or canonical_rel),
+        source_rel=preserved_source,
         png_renderer=_render_png_fallback,
     )
 
     stat = target_png.stat()
     rel_png = target_png.relative_to(output_root).as_posix()
+    if base:
+        write_current_pointer(output_root, base, rel_png)
+
     result = {
         "file": {
             "name": rel_png,
@@ -646,8 +723,11 @@ def apply_plot_config(
             "name": vega_path.relative_to(output_root).as_posix(),
             "path": normalize_display_path(vega_path),
         },
-        "source_rel": canonical_rel,
+        "source_rel": preserved_source,
+        "effective_rel": rel_png,
+        "plot_base": base,
         "plot_type": plot_type,
+        "config_diff": config_diff,
     }
     if svg_path is not None:
         result["svg"] = {
@@ -655,6 +735,7 @@ def apply_plot_config(
             "path": normalize_display_path(svg_path),
         }
     return result
+
 
 
 def agent_apply_plot_edit(
@@ -692,11 +773,25 @@ def agent_apply_plot_edit(
         else:
             canonical_rel = candidate.relative_to(output_root).as_posix()
 
+    # 连续改图：解析当前生效版（intent/edited），而非总是原图
+    eff = find_effective_plot_rel(output_root, canonical_rel)
+    if eff.get("effective_rel"):
+        canonical_rel = eff["effective_rel"]
+    base = eff.get("base") or canonical_plot_base(canonical_rel)
+
     source = _validated_source(output_root, canonical_rel, hint_message=instruction)
     existing = _load_existing_config(source)
-    plot_type = plot_type_from_stem(source.stem) or str((existing or {}).get("plot_type") or "")
+    type_stem = canonical_plot_base(Path(eff.get("original_rel") or canonical_rel).stem)
+    plot_type = (
+        plot_type_from_stem(type_stem)
+        or plot_type_from_stem(source.stem)
+        or str((existing or {}).get("plot_type") or "")
+    )
     upload_dir = session_upload_dir(project_root, storage_slug)
-    _, data_dir = _resolve_source_and_data_dir(output_root, canonical_rel, existing)
+    data_anchor = str((existing or {}).get("source_rel") or "").strip() or (
+        eff.get("original_rel") or canonical_rel
+    )
+    _, data_dir = _resolve_source_and_data_dir(output_root, data_anchor, existing)
 
     # 语义改图：有 PlotSpec 且数据齐全
     spec = get_plot_spec(plot_type) if plot_type else None
@@ -722,6 +817,7 @@ def agent_apply_plot_edit(
             model=model,
             metadata_columns=metadata_columns,
         )
+        out_name = filename or stable_intent_filename(base or type_stem or source.stem)
         result = apply_plot_config(
             project_root=project_root,
             session_id=session_id,
@@ -729,7 +825,8 @@ def agent_apply_plot_edit(
             source_rel=canonical_rel,
             plot_config_patch=patch,
             instruction=instruction,
-            filename=filename,
+            filename=out_name,
+            overwrite_intent=True,
         )
         result["agent_patch"] = patch
         result["edit_mode"] = "semantic"
@@ -900,6 +997,41 @@ def apply_analysis_intent_after_tool(
 
     results: list[dict[str, Any]] = []
     for stem in stems:
+        # 按图类型裁剪 patch：PCA/PLS 才吃 color_by；火山才吃 thresholds
+        stem_patch = dict(patch)
+        if stem == "volcano_plot":
+            for k in ("color_by", "color_type", "cluster", "facet", "size_by"):
+                stem_patch.pop(k, None)
+            # 显式只要火山 / 指定对比时：即使只有默认阈值也重绘，避免被 color_by 裁空后跳过
+            if not stem_patch and (
+                intent.get("thresholds")
+                or intent.get("contrast")
+                or stem in (intent.get("targets") or intent.get("target_stems") or [])
+            ):
+                thr = intent.get("thresholds") if isinstance(intent.get("thresholds"), dict) else {}
+                stem_patch = {
+                    "thresholds": {
+                        "p": float(thr["p"]) if thr.get("p") is not None else 0.05,
+                        "log2fc": float(thr["log2fc"]) if thr.get("log2fc") is not None else 1.0,
+                    }
+                }
+        elif stem in ("pca_plot", "plsda_plot"):
+            stem_patch.pop("thresholds", None)
+            stem_patch.pop("color_channel", None)
+        else:
+            # 其它图族：保留通道/阈值，去掉 scores 专用字段
+            if "color_by" in stem_patch and stem_patch.get("color_by") not in {
+                "family",
+                "degree",
+                "chemical_category",
+                "log2FC",
+                "Cluster",
+            }:
+                # metadata 列着色主要对 scores 有意义
+                pass
+        if not stem_patch:
+            continue
+
         rel_candidates: list[str] = []
         for root in search_roots:
             if not root.is_dir():
@@ -929,12 +1061,19 @@ def apply_analysis_intent_after_tool(
                     session_id=session_id,
                     storage_slug=storage_slug,
                     source_rel=rel,
-                    plot_config_patch=patch,
+                    plot_config_patch=stem_patch,
                     instruction=text,
                     filename=f"{stem}_intent.png",
                 )
                 result["edit_mode"] = "semantic"
                 result["analysis_intent"] = describe_intent(intent)
+                result["stem"] = stem
+                if result.get("file", {}).get("name") and stem:
+                    write_current_pointer(
+                        output_root,
+                        canonical_plot_base(stem) or stem,
+                        result["file"]["name"],
+                    )
                 results.append(result)
             except Exception as exc:
                 results.append({"error": str(exc), "source_rel": rel, "stem": stem})

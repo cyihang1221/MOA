@@ -297,6 +297,52 @@ def _png_stem(name: str) -> str:
     return Path(name).stem
 
 
+def _resolve_edited_plots_match(output_root: Path, basename: str) -> str | None:
+    """在 edited_plots 中按文件名/逻辑底图解析，优先当前生效版本。
+
+    用户常传 ``cosine_distribution_edited.png``：该文件只在 edited_plots，
+    若此处缺失会误落到分析原图，连续改图会丢掉上一版标题等配置。
+    """
+    from web_frontend.backend.plot_versioning import find_effective_plot_rel
+    from web_frontend.backend.session_storage import MERGED_FIGURES_SUBDIR, edited_plots_dir
+
+    name = Path(str(basename or "").strip()).name
+    if not name or not name.lower().endswith(".png"):
+        return None
+
+    # 1) 版本指针 / 最新 intent|edited
+    eff = find_effective_plot_rel(output_root, name)
+    effective = eff.get("effective_rel")
+    if effective and (output_root / effective).is_file():
+        return str(effective)
+
+    # 2) edited_plots 精确文件名
+    edit_dir = edited_plots_dir(output_root)
+    exact = edit_dir / name
+    if exact.is_file():
+        return exact.relative_to(output_root).as_posix()
+
+    # 3) 全树同名（跳过 merged），优先 edited_plots、较新 mtime
+    matches: list[Path] = []
+    for png in output_root.rglob(name):
+        if png.suffix.lower() != ".png":
+            continue
+        parts = png.relative_to(output_root).parts
+        if parts and parts[0] == MERGED_FIGURES_SUBDIR:
+            continue
+        matches.append(png)
+    if not matches:
+        return None
+
+    def _rank(path: Path) -> tuple[int, float]:
+        parts = path.relative_to(output_root).parts
+        in_edited = 1 if parts and parts[0] == EDITED_PLOTS_SUBDIR else 0
+        return (in_edited, path.stat().st_mtime)
+
+    matches.sort(key=_rank, reverse=True)
+    return matches[0].relative_to(output_root).as_posix()
+
+
 def resolve_plot_source_rel(
     output_root: Path,
     source_rel: str | None = None,
@@ -307,45 +353,76 @@ def resolve_plot_source_rel(
 
     LLM 常只传 ``cosine_distribution.png``，实际文件可能在
     ``molecular_network_results/cosine_distribution.png``。
+    若存在 edited_plots 中的 intent/edited 版，优先返回当前生效版本。
     """
     plots = list_editable_plots(output_root)
-    if not plots:
-        raise ValueError(
-            "未找到可 Agent 改图的图片。请先完成分析生成结果图。"
-        )
-
     rel = str(source_rel or "").strip().lstrip("/")
     if rel:
         candidate = (output_root / rel).resolve()
         try:
             candidate.relative_to(output_root.resolve())
             if candidate.is_file() and candidate.suffix.lower() == ".png":
+                # 明确路径也升到同底图当前生效版，保证连续改图继承上一版 config
+                from web_frontend.backend.plot_versioning import find_effective_plot_rel
+
+                info = find_effective_plot_rel(output_root, rel)
+                effective = info.get("effective_rel")
+                if effective and (output_root / effective).is_file():
+                    return str(effective)
                 return Path(rel).as_posix()
         except ValueError:
             pass
 
         basename = Path(rel).name
-        by_name = [item for item in plots if item["name"] == basename]
-        if by_name:
-            return by_name[0]["rel"]
+        edited_hit = _resolve_edited_plots_match(output_root, basename)
+        if edited_hit:
+            return edited_hit
 
-        stem = _png_stem(basename)
-        by_stem = [
-            item
-            for item in plots
-            if item["stem"] == stem or item["stem"].startswith(f"{stem}_")
-        ]
-        if by_stem:
-            return by_stem[0]["rel"]
+        if plots:
+            by_name = [item for item in plots if item["name"] == basename]
+            if by_name:
+                # 分析原图命中后仍尝试升级到生效版
+                from web_frontend.backend.plot_versioning import find_effective_plot_rel
 
-        if rel in {item["rel"] for item in plots}:
-            return rel
+                info = find_effective_plot_rel(output_root, by_name[0]["rel"])
+                return str(info.get("effective_rel") or by_name[0]["rel"])
+
+            stem = _png_stem(basename)
+            by_stem = [
+                item
+                for item in plots
+                if item["stem"] == stem or item["stem"].startswith(f"{stem}_")
+            ]
+            if by_stem:
+                from web_frontend.backend.plot_versioning import find_effective_plot_rel
+
+                info = find_effective_plot_rel(output_root, by_stem[0]["rel"])
+                return str(info.get("effective_rel") or by_stem[0]["rel"])
+
+            if rel in {item["rel"] for item in plots}:
+                from web_frontend.backend.plot_versioning import find_effective_plot_rel
+
+                info = find_effective_plot_rel(output_root, rel)
+                return str(info.get("effective_rel") or rel)
+
+    if not plots:
+        # 仅有 edited_plots 产物时也允许改图
+        if rel:
+            edited_hit = _resolve_edited_plots_match(output_root, Path(rel).name)
+            if edited_hit:
+                return edited_hit
+        raise ValueError(
+            "未找到可 Agent 改图的图片。请先完成分析生成结果图。"
+        )
 
     hint = " ".join(part for part in (hint_message, source_rel) if part and str(part).strip())
     if hint.strip():
         target = resolve_plot_target(hint, plots)
         if target:
-            return target
+            from web_frontend.backend.plot_versioning import find_effective_plot_rel
+
+            info = find_effective_plot_rel(output_root, target)
+            return str(info.get("effective_rel") or target)
 
     label = rel or hint_message or "?"
     raise ValueError(f"无法在 output 目录中定位 PNG：{label}")
@@ -573,8 +650,12 @@ def extract_plot_edit_tasks(
         lines = [message]
 
     tasks: list[tuple[str, str]] = []
+    seen_rels: set[str] = set()
     for line in lines:
         rel = resolve_plot_target(line, plots)
-        if rel:
-            tasks.append((rel, line))
+        if not rel or rel in seen_rels:
+            continue
+        # 同一 source 只改一次：Agent 常把「用户原话 + 计划英文步骤」用换行拼进 instruction
+        seen_rels.add(rel)
+        tasks.append((rel, line))
     return tasks

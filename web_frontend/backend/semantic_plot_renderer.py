@@ -255,15 +255,16 @@ def _volcano_spec(data_dir: Path, plot_config: dict[str, Any]) -> dict[str, Any]
         y = _finite(row["neglog10p"])
         if x is None or y is None:
             continue
-        # 按阈值重算显著性（优先 pvalue/padj，否则用 neglog10p）
+        # 按阈值重算显著性。用户指定的是 p 值时应优先使用原始
+        # pvalue；此前优先 padj 会把部分下调点错误归为不显著。
         if p_cut is not None or fc_cut is not None:
             p_ok = True
             fc_ok = True
             if p_cut is not None:
-                if "padj" in frame.columns and pd.notna(row.get("padj")):
-                    p_ok = float(row["padj"]) < p_cut
-                elif "pvalue" in frame.columns and pd.notna(row.get("pvalue")):
+                if "pvalue" in frame.columns and pd.notna(row.get("pvalue")):
                     p_ok = float(row["pvalue"]) < p_cut
+                elif "padj" in frame.columns and pd.notna(row.get("padj")):
+                    p_ok = float(row["padj"]) < p_cut
                 else:
                     p_ok = y >= -np.log10(max(p_cut, 1e-300))
             if fc_cut is not None:
@@ -273,10 +274,14 @@ def _volcano_spec(data_dir: Path, plot_config: dict[str, Any]) -> dict[str, Any]
             is_sig = bool(row["Significant"])
         else:
             is_sig = True
+        if is_sig:
+            status = "Upregulated" if x > 0 else "Downregulated"
+        else:
+            status = "Not significant"
         item: dict[str, Any] = {
             "x": x,
             "y": y,
-            "status": "Significant" if is_sig else "Non-significant",
+            "status": status,
             "log2FC": x,
             "neglog10p": y,
         }
@@ -285,7 +290,7 @@ def _volcano_spec(data_dir: Path, plot_config: dict[str, Any]) -> dict[str, Any]
     colors = plot_config.get("colors") or {}
     marks = plot_config.get("marks") or {}
     spec = _base_spec(plot_config, values)
-    spec["mark"] = {
+    point_mark = {
         "type": "point",
         "filled": True,
         "size": marks.get("size", 70),
@@ -298,7 +303,7 @@ def _volcano_spec(data_dir: Path, plot_config: dict[str, Any]) -> dict[str, Any]
             field = "log2FC"
         elif channel in {"neglog10p", "neglog10"}:
             field = "neglog10p"
-        spec["encoding"] = {
+        point_encoding = {
             "x": {"field": "x", **_axis(plot_config, "x", "log2 Fold Change")},
             "y": {"field": "y", **_axis(plot_config, "y", "-log10(p-value)")},
             "color": {
@@ -314,16 +319,17 @@ def _volcano_spec(data_dir: Path, plot_config: dict[str, Any]) -> dict[str, Any]
             ],
         }
     else:
-        spec["encoding"] = {
+        point_encoding = {
             "x": {"field": "x", **_axis(plot_config, "x", "log2 Fold Change")},
             "y": {"field": "y", **_axis(plot_config, "y", "-log10(p-value)")},
             "color": {
                 "field": "status",
                 "type": "nominal",
                 "scale": {
-                    "domain": ["Significant", "Non-significant"],
+                    "domain": ["Upregulated", "Downregulated", "Not significant"],
                     "range": [
-                        colors.get("significant", "#E64B35"),
+                        colors.get("upregulated", colors.get("significant", "#E64B35")),
+                        colors.get("downregulated", "#4DBBD5"),
                         colors.get("nonsignificant", "#B0B0B0"),
                     ],
                 },
@@ -335,6 +341,36 @@ def _volcano_spec(data_dir: Path, plot_config: dict[str, Any]) -> dict[str, Any]
                 {"field": "status", "type": "nominal"},
             ],
         }
+    layers: list[dict[str, Any]] = []
+    threshold_color = colors.get("threshold_color", "#d62728")
+    if fc_cut is not None:
+        layers.append(
+            {
+                "data": {"values": [{"threshold": -fc_cut}, {"threshold": fc_cut}]},
+                "mark": {
+                    "type": "rule",
+                    "strokeDash": [6, 4],
+                    "strokeWidth": 1.5,
+                    "color": threshold_color,
+                },
+                "encoding": {"x": {"field": "threshold", "type": "quantitative"}},
+            }
+        )
+    if p_cut is not None:
+        layers.append(
+            {
+                "data": {"values": [{"threshold": -np.log10(max(p_cut, 1e-300))}]},
+                "mark": {
+                    "type": "rule",
+                    "strokeDash": [6, 4],
+                    "strokeWidth": 1.5,
+                    "color": threshold_color,
+                },
+                "encoding": {"y": {"field": "threshold", "type": "quantitative"}},
+            }
+        )
+    layers.append({"mark": point_mark, "encoding": point_encoding})
+    spec["layer"] = layers
     return spec
 
 

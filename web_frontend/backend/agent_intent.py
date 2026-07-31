@@ -17,6 +17,13 @@ ANALYSIS_INTENT_RE = re.compile(
     r"继续|重新(?:运行|进行|分析|做)|执行分析|跑一遍|开始分析|运行工具|"
     r"分子网(?:络|格)|molecular\s*network|GNPS|DeepMASS|deepmass|"
     r"XCMS|峰检测|差异代谢|谱库注释|富集分析|"
+    # 统计 / 火山 / mixOmics（避免「做统计，火山图对比…」落入纯对话幻觉）
+    r"统计(?:分析)?|做统计|跑统计|统计作图|mixOmics|mixomics|"
+    r"火山图|volcano\s*plot|volcano|"
+    r"PLS-?DA|做\s*PCA|跑\s*PCA|"
+    r"组间对比|两组对比|显著性分析|差异分析|"
+    r"Treatment\s*vs\.?\s*Control|Control\s*vs\.?\s*Treatment|"
+    r"(?:Treatment|Control|Group).{0,20}(?:vs|VS|对比|比较)|"
     r"converted_mzml|spectra\.mgf|\.mzML|\.mgf|"
     r"continue|re-?run|run analysis|start agent|execute pipeline"
     r")",

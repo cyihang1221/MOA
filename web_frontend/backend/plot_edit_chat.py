@@ -86,12 +86,25 @@ def stream_chat_plot_edit_deltas(
                 summary_parts.append(f"颜色 {len(patch['colors'])} 项")
             if patch.get("font_size"):
                 summary_parts.append("字号已调整")
-            summary = "；".join(summary_parts) if summary_parts else "已应用修改"
+            if patch.get("color_by"):
+                summary_parts.append(f"着色 → {patch['color_by']}")
+            diff_summary = str((result.get("config_diff") or {}).get("summary") or "").strip()
+            summary = "；".join(summary_parts) if summary_parts else (
+                diff_summary if diff_summary and diff_summary != "无字段变化" else "已应用修改"
+            )
+            extra = ""
+            if diff_summary and diff_summary != "无字段变化" and summary_parts:
+                extra = f"\n- 字段 diff：{diff_summary}"
             yield {
                 "delta": (
                     f"✅ {prefix}完成：**{new_name}**（`{new_rel}`）\n"
-                    f"- {summary}\n"
-                    f"- 参数：`{result['plot_config']['name']}`\n\n"
+                    f"- {summary}{extra}\n"
+                    f"- 已设为当前生效版本（连续改图将基于此图）\n"
+                    + (
+                        f"- 参数：`{result['plot_config']['name']}`\n\n"
+                        if result.get("plot_config")
+                        else "\n"
+                    )
                 )
             }
 

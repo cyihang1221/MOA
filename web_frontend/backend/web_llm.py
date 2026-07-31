@@ -71,8 +71,24 @@ def set_llm_override(
     return _llm_override.set(payload or None)
 
 
-def reset_llm_override(token: object) -> None:
-    _llm_override.reset(token)  # type: ignore[arg-type]
+def reset_llm_override(token: object | None = None) -> None:
+    """结束请求时清理 LLM 覆盖。
+
+    StreamingResponse 的 generator finally 常落在不同 Context，
+    ContextVar.reset(token) 会抛 ValueError —— 因此优先 set(None)，reset 失败则忽略。
+    """
+    try:
+        _llm_override.set(None)
+    except Exception:
+        pass
+    if token is None:
+        return
+    try:
+        _llm_override.reset(token)  # type: ignore[arg-type]
+    except ValueError:
+        pass
+    except Exception:
+        pass
 
 
 @contextmanager

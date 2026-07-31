@@ -708,7 +708,12 @@ def statistical_analysis_mixomics_impl(
     pvalue_threshold: float = 0.05,
     padj_threshold: float = 0.05,
     log2fc_threshold: float = 0.58,
-    use_fdr: bool = False
+    use_fdr: bool = False,
+
+    # analysis goal parameterization
+    group_column: str = "Group",
+    contrast_group1: str | None = None,
+    contrast_group2: str | None = None,
 ):
     """
     Statistical analysis for metabolomics feature table.
@@ -721,11 +726,19 @@ def statistical_analysis_mixomics_impl(
     output_dir : str
         Directory to save the statistical analysis results.
 
+    group_column : str, default "Group"
+        Metadata column used as PLS-DA Y (and PCA/PLS plotIndiv group).
+
+    contrast_group1, contrast_group2 : str, optional
+        Volcano contrast levels within ``group_column``. When both set, volcano
+        uses those two levels even if there are more groups overall.
+        When omitted and exactly 2 levels exist, uses alphabetical factor order.
+
     Input feature table format:
     feature_id,mz,rt_med,sample1,sample2,...
 
     metadata.csv format:
-    Sample,Group
+    Sample,<group_column>,...
     """
 
     print("\nPerforming statistical analysis using mixOmics...")
@@ -737,6 +750,9 @@ def statistical_analysis_mixomics_impl(
     os.environ["MASS_MIXOMICS_INPUT_CSV"] = imputed_csv
     os.environ["MASS_MIXOMICS_METADATA_CSV"] = metadata_csv.replace(os.sep, "/")
     os.environ["MASS_MIXOMICS_OUTPUT_DIR"] = output_dir.replace(os.sep, "/")
+    os.environ["MASS_MIXOMICS_GROUP_COLUMN"] = str(group_column or "Group").strip() or "Group"
+    os.environ["MASS_MIXOMICS_CONTRAST_G1"] = str(contrast_group1 or "").strip()
+    os.environ["MASS_MIXOMICS_CONTRAST_G2"] = str(contrast_group2 or "").strip()
 
     r_script = f"""
 # ============================= packages =============================
@@ -772,6 +788,11 @@ padj_threshold <- {padj_threshold}
 log2fc_threshold <- {log2fc_threshold}
 use_fdr <- {str(use_fdr).upper()}
 
+group_column_req <- Sys.getenv("MASS_MIXOMICS_GROUP_COLUMN", unset = "Group")
+if (!nzchar(group_column_req)) group_column_req <- "Group"
+contrast_g1_req <- Sys.getenv("MASS_MIXOMICS_CONTRAST_G1")
+contrast_g2_req <- Sys.getenv("MASS_MIXOMICS_CONTRAST_G2")
+
 dir.create(outdir, showWarnings = FALSE, recursive = TRUE)
 
 
@@ -792,8 +813,23 @@ if (!scale_method %in% c("autoscale", "none")) {{
     stop("scale_method must be 'autoscale' or 'none'")
 }}
 
-if (!all(c("Sample", "Group") %in% colnames(metadata))) {{
-    stop("metadata must contain Sample and Group columns")
+if (!("Sample" %in% colnames(metadata))) {{
+    stop("metadata must contain a Sample column")
+}}
+
+resolve_meta_column <- function(requested, available) {{
+    if (requested %in% available) return(requested)
+    hit <- available[tolower(available) == tolower(requested)]
+    if (length(hit) >= 1) return(hit[[1]])
+    NULL
+}}
+
+group_column <- resolve_meta_column(group_column_req, colnames(metadata))
+if (is.null(group_column)) {{
+    stop(paste0(
+        "metadata missing group_column '", group_column_req,
+        "'. Available: ", paste(colnames(metadata), collapse = ", ")
+    ))
 }}
 
 
@@ -865,7 +901,7 @@ if (scale_method == "autoscale") {{
 
 
 # ============================= prepare matrix =============================
-Y <- factor(metadata$Group)
+Y <- factor(metadata[[group_column]])
 
 feature_matrix <- as.matrix(
     X[, sample_cols, drop = FALSE]
@@ -880,6 +916,22 @@ X_tmp <- X_tmp[
     ,
     drop = FALSE
 ]
+
+writeLines(
+    c(
+        paste0("group_column=", group_column),
+        paste0("n_levels=", nlevels(Y)),
+        paste0("levels=", paste(levels(Y), collapse = ",")),
+        paste0("contrast_group1_req=", contrast_g1_req),
+        paste0("contrast_group2_req=", contrast_g2_req),
+        paste0("n_samples=", nrow(X_tmp)),
+        paste0("group_sizes=", paste(names(table(Y)), as.integer(table(Y)), sep = "=", collapse = "; "))
+    ),
+    file.path(outdir, "analysis_params.txt")
+)
+# 每轮重写警告文件，避免旧 run 的「only 1 group」残留误导
+warning_file <- file.path(outdir, "analysis_warning.txt")
+if (file.exists(warning_file)) file.remove(warning_file)
 
 
 # ============================= PCA =============================
@@ -1000,30 +1052,72 @@ try(
 
 
 # ============================= Cross Validation =============================
+# 小样本时 mixOmics::perf() 的 Mfold 极易在 solve(Sr) 上奇异崩溃；
+# CV 失败不应阻断 VIP / 火山图 / 差异代谢物输出。
 set.seed(seed)
 
-min_group_size <- min(table(Y))
+min_group_size <- min(as.integer(table(Y)))
+n_samples <- nrow(X_tmp)
+n_folds <- min(5L, max(2L, min_group_size))
 
-n_folds <- min(
-    5,
-    max(2, min_group_size)
-)
+# 经验阈值：每组 <3 或总样本 <6 时跳过 CV（仍保留 PLS-DA 得分图）
+skip_perf <- (min_group_size < 3L) || (n_samples < 6L) || (n_folds < 2L)
 
-perf_res <- perf(
-    plsda_res,
-    validation = "Mfold",
-    folds = n_folds,
-    nrepeat = 3,
-    progressBar = FALSE
-)
-
-capture.output(
-    print(perf_res$error.rate),
-    file = file.path(
-        outdir,
-        "plsda_cv_results.txt"
+if (skip_perf) {{
+    write(
+        paste0(
+            "Skipped PLS-DA cross-validation (perf): too few samples for stable Mfold ",
+            "(n=", n_samples, ", min_group_size=", min_group_size,
+            ", folds=", n_folds, "). VIP/volcano still computed from plsda model."
+        ),
+        file = file.path(outdir, "analysis_warning.txt"),
+        append = file.exists(file.path(outdir, "analysis_warning.txt"))
     )
-)
+    writeLines(
+        paste0(
+            "CV skipped: n=", n_samples,
+            ", min_group_size=", min_group_size,
+            ", folds=", n_folds
+        ),
+        file.path(outdir, "plsda_cv_results.txt")
+    )
+}} else {{
+    perf_ok <- FALSE
+    tryCatch(
+        {{
+            perf_res <- perf(
+                plsda_res,
+                validation = "Mfold",
+                folds = n_folds,
+                nrepeat = 3,
+                progressBar = FALSE
+            )
+            capture.output(
+                print(perf_res$error.rate),
+                file = file.path(outdir, "plsda_cv_results.txt")
+            )
+            perf_ok <- TRUE
+        }},
+        error = function(e) {{
+            write(
+                paste0(
+                    "PLS-DA cross-validation (perf) failed: ",
+                    conditionMessage(e),
+                    ". Continuing with VIP/volcano from the fitted plsda model."
+                ),
+                file = file.path(outdir, "analysis_warning.txt"),
+                append = file.exists(file.path(outdir, "analysis_warning.txt"))
+            )
+            writeLines(
+                paste0("CV failed: ", conditionMessage(e)),
+                file.path(outdir, "plsda_cv_results.txt")
+            )
+        }}
+    )
+    if (!perf_ok) {{
+        message("perf() failed; continuing without CV metrics")
+    }}
+}}
 
 
 # ============================= VIP =============================
@@ -1072,10 +1166,67 @@ write.csv(
 # ============================= Volcano =============================
 volcano_df <- NULL
 
-if (nlevels(Y) == 2) {{
+resolve_level <- function(requested, lev) {{
+    if (!nzchar(requested)) return(NULL)
+    if (requested %in% lev) return(requested)
+    hit <- lev[tolower(lev) == tolower(requested)]
+    if (length(hit) >= 1) return(hit[[1]])
+    NULL
+}}
 
-    idx1 <- which(Y == levels(Y)[1])
-    idx2 <- which(Y == levels(Y)[2])
+vol_g1 <- NULL
+vol_g2 <- NULL
+volcano_skip_reason <- NULL
+
+if (nzchar(contrast_g1_req) && nzchar(contrast_g2_req)) {{
+    vol_g1 <- resolve_level(contrast_g1_req, levels(Y))
+    vol_g2 <- resolve_level(contrast_g2_req, levels(Y))
+    if (is.null(vol_g1) || is.null(vol_g2)) {{
+        volcano_skip_reason <- paste0(
+            "contrast levels not found in ", group_column, ": requested ",
+            contrast_g1_req, " vs ", contrast_g2_req,
+            "; available=", paste(levels(Y), collapse = ",")
+        )
+    }} else if (identical(vol_g1, vol_g2)) {{
+        volcano_skip_reason <- paste0(
+            "contrast groups must differ; got ", vol_g1, " vs ", vol_g2
+        )
+        vol_g1 <- NULL
+        vol_g2 <- NULL
+    }}
+}} else if (nlevels(Y) == 2) {{
+    vol_g1 <- levels(Y)[1]
+    vol_g2 <- levels(Y)[2]
+}} else if (nlevels(Y) > 2) {{
+    volcano_skip_reason <- paste0(
+        "Skipped volcano: ", nlevels(Y), " levels in ", group_column,
+        ". Pass contrast_group1/contrast_group2 to compare two groups."
+    )
+}} else {{
+    volcano_skip_reason <- paste0(
+        "Skipped volcano: fewer than 2 levels in ", group_column
+    )
+}}
+
+if (!is.null(volcano_skip_reason)) {{
+    write(
+        volcano_skip_reason,
+        file = file.path(outdir, "analysis_warning.txt"),
+        append = file.exists(file.path(outdir, "analysis_warning.txt"))
+    )
+}}
+
+if (!is.null(vol_g1) && !is.null(vol_g2)) {{
+
+    idx1 <- which(as.character(Y) == vol_g1)
+    idx2 <- which(as.character(Y) == vol_g2)
+
+    write(
+        paste0("volcano_contrast=", vol_g1, " vs ", vol_g2,
+               " (log2FC = mean(", vol_g2, ") - mean(", vol_g1, "))"),
+        file = file.path(outdir, "analysis_params.txt"),
+        append = TRUE
+    )
 
     mean1 <- colMeans(
         X_tmp[idx1, , drop = FALSE],
@@ -1149,7 +1300,7 @@ if (nlevels(Y) == 2) {{
             linetype = 2
         ) +
         theme_bw() +
-        ggtitle("Volcano Plot")
+        ggtitle(paste0("Volcano: ", vol_g2, " vs ", vol_g1))
 
     ggsave(
         file.path(outdir, "volcano_plot.png"),
@@ -1273,49 +1424,63 @@ if (n_top > 0) {{
 
     heatmap_matrix <- t(heatmap_matrix)
 
+    # 空 data.frame 再 [[<- 赋值会因行数不匹配报错；按样本数一次性建表
     annotation_col <- data.frame(
-        Group = Y
+        setNames(list(Y), group_column),
+        check.names = FALSE,
+        stringsAsFactors = FALSE
     )
-
     rownames(annotation_col) <- rownames(X_tmp)
 
-    png(
-        file.path(
-            outdir,
-            "heatmap_top_vip.png"
-        ),
-        width = 2400,
-        height = 1800,
-        res = 300
-    )
-
-    pheatmap(
-        heatmap_matrix,
-        annotation_col = annotation_col,
-        scale = "none",
-        show_rownames = TRUE,
-        show_colnames = FALSE,
-        fontsize_row = 8
-    )
-
-    dev.off()
-
     tryCatch(
-        write.csv(
-            as.data.frame(heatmap_matrix),
-            file.path(outdir, "heatmap_top_vip_matrix.csv"),
-            quote = TRUE
-        ),
-        error = function(e) invisible(NULL)
-    )
+        {{
+            png(
+                file.path(
+                    outdir,
+                    "heatmap_top_vip.png"
+                ),
+                width = 2400,
+                height = 1800,
+                res = 300
+            )
 
-    try(
-        save_heatmap_plotly_sidecar(
-            heatmap_matrix,
-            file.path(outdir, "heatmap_top_vip.png"),
-            "Top VIP Heatmap"
-        ),
-        silent = TRUE
+            pheatmap(
+                heatmap_matrix,
+                annotation_col = annotation_col,
+                scale = "none",
+                show_rownames = TRUE,
+                show_colnames = FALSE,
+                fontsize_row = 8
+            )
+
+            dev.off()
+
+            tryCatch(
+                write.csv(
+                    as.data.frame(heatmap_matrix),
+                    file.path(outdir, "heatmap_top_vip_matrix.csv"),
+                    quote = TRUE
+                ),
+                error = function(e) invisible(NULL)
+            )
+
+            try(
+                save_heatmap_plotly_sidecar(
+                    heatmap_matrix,
+                    file.path(outdir, "heatmap_top_vip.png"),
+                    "Top VIP Heatmap"
+                ),
+                silent = TRUE
+            )
+        }},
+        error = function(e) {{
+            if (dev.cur() > 1) try(dev.off(), silent = TRUE)
+            write(
+                paste0("Heatmap skipped: ", conditionMessage(e)),
+                file = file.path(outdir, "analysis_warning.txt"),
+                append = TRUE
+            )
+        }}
     )
 }}
 
