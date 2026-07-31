@@ -5,6 +5,7 @@ Web 端 Agent 执行：计划 → 工具匹配 → 执行（MCP 分析工具 + �
 from __future__ import annotations
 
 import asyncio
+import re
 import traceback
 from pathlib import Path
 from typing import Any, AsyncIterator, Awaitable, Callable, Optional
@@ -18,7 +19,11 @@ from src.platform_utils import (
     normalize_display_path,
     preferred_raw_converter,
 )
-from web_frontend.backend.agent_jobs import is_cancelled
+from web_frontend.backend.agent_jobs import (
+    get_thread_cancel_flag,
+    is_cancelled,
+    kill_session_processes,
+)
 from web_frontend.backend.json_parse import (
     extract_first_json_object,
     extract_plan_list,
@@ -78,6 +83,11 @@ from web_frontend.backend.tool_args_normalizer import (
     format_mcp_tool_result,
     is_mcp_tool_result_error,
     normalize_tool_args,
+)
+from web_frontend.backend.anti_hallucination import (
+    PLAN_SYSTEM_GUARD,
+    TOOL_MATCH_SYSTEM_GUARD,
+    messages_with_system,
 )
 from web_frontend.backend.web_prompts import build_plan_prompt, build_tool_match_prompt
 
@@ -248,6 +258,7 @@ Platform: {platform_note}
 
 You MUST call tools to execute when the user asks for analysis, plot editing, or figure merging; do not only give textual advice.
 Do NOT claim files were created unless a tool actually returned a file path.
+ANTI-HALLUCINATION: emit a plan of Use <tool> steps only — never fake progress logs, success reports, or invented paths.
 
 Allowed tools: use ONLY exact names from available_tools (MCP whitelist + local visual).
 
@@ -257,6 +268,7 @@ Default recommended pipeline (when user does not ask for alternatives):
 3. feature_filtering_and_missing_value_imputation_knn — input_dir={peaks} (feature_table.csv), output_dir={filtered}
 4. statistical_analysis_mixomics — input_dir={filtered}, metadata_csv under {upload}, output_dir={statistical}
    (runtime auto-aligns metadata.csv Sample names to the feature table; stale DY-* rows are regenerated)
+   Optional args from user intent: group_column (PLS-DA Y, default Group), contrast_group1/contrast_group2 (volcano A vs B)
 5. extract_differential_features — differential_csv + input_mgf from prior steps or outputspace, output_dir under outputspace
 6. spectral_annotation — input_dir/output_dir under outputspace
 7. kegg_compound_enrichment — input_dir/output_dir under outputspace
@@ -299,6 +311,48 @@ If .raw files exist under {raw_in} but no matching mzML in inputspace or {conver
 
 async def _load_allowed_tools():
     return await load_all_tools()
+
+
+def _append_output_png_visuals(
+    visual_results: list[dict[str, Any]],
+    out_dir: str | Path | None,
+    root: Path,
+    *,
+    kind: str,
+    limit: int = 24,
+) -> int:
+    """把工具输出目录下的 PNG 记入 visual_results（供聊天预览 / 图库刷新）。"""
+    if not out_dir:
+        return 0
+    base = Path(str(out_dir))
+    if not base.is_dir():
+        return 0
+    existing = {
+        str(item.get("file") or "").strip()
+        for item in visual_results
+        if isinstance(item, dict)
+    }
+    pngs = [
+        p
+        for p in base.rglob("*.png")
+        if p.is_file() and "edited_plots" not in p.parts
+    ]
+    pngs.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+    added = 0
+    root_res = root.resolve()
+    for png in pngs:
+        if added >= limit:
+            break
+        try:
+            rel = png.resolve().relative_to(root_res).as_posix()
+        except Exception:
+            continue
+        if rel in existing:
+            continue
+        visual_results.append({"kind": kind, "file": rel})
+        existing.add(rel)
+        added += 1
+    return added
 
 
 def _needs_mcp_session(tasks: list[str]) -> bool:
@@ -354,6 +408,7 @@ async def stream_agent_pipeline(
         recent_messages=recent_messages,
     )
     history_summary: list[dict] = []
+    loop = asyncio.get_event_loop()
 
     async def _should_stop() -> bool:
         if is_cancelled(cancel_event):
@@ -361,6 +416,38 @@ async def stream_agent_pipeline(
         if is_disconnected is not None and await is_disconnected():
             return True
         return False
+
+    async def _run_cancellable(fn, *, label: str = "任务"):
+        """在线程池跑阻塞任务；取消时杀子进程并尽快返回。"""
+        flag = get_thread_cancel_flag(session_id) if session_id else None
+        task = loop.run_in_executor(None, fn)
+
+        def _cancelled_payload(exc: BaseException | None = None):
+            extra = f"（{exc}）" if exc and "已终止" not in str(exc) else ""
+            return ("__cancelled__", f"\n\n**已终止**：已停止{label}{extra}。\n")
+
+        while True:
+            if await _should_stop():
+                if flag is not None:
+                    flag.set()
+                kill_session_processes(session_id)
+                try:
+                    result = await asyncio.wait_for(asyncio.shield(task), timeout=3.0)
+                    if isinstance(result, BaseException):
+                        return _cancelled_payload(result)
+                    return result
+                except asyncio.TimeoutError:
+                    return _cancelled_payload()
+                except Exception as exc:
+                    return _cancelled_payload(exc)
+            done, _ = await asyncio.wait({task}, timeout=0.4)
+            if done:
+                try:
+                    return task.result()
+                except Exception as exc:
+                    if await _should_stop() or "已终止" in str(exc):
+                        return _cancelled_payload(exc)
+                    raise
 
     yield {"delta": "🔧 **Agent 模式**：正在加载工具列表并生成执行计划…\n\n"}
 
@@ -376,7 +463,6 @@ async def stream_agent_pipeline(
 
     # yield {"delta": f"已注册 **{len(tools_info)}** 个 MCP 工具（Web 白名单）。\n\n"}
 
-    loop = asyncio.get_event_loop()
     llm = WebLLMClient(
         model=model,
         api_key=llm_api_key,
@@ -400,20 +486,29 @@ async def stream_agent_pipeline(
             mandatory_first_step=mandatory_first_step,
         )
         return llm.think_complete(
-            [{"role": "user", "content": str(prompt)}],
+            messages_with_system(PLAN_SYSTEM_GUARD, str(prompt)),
             temperature=temperature,
             max_tokens=8192,
         )
 
-    yield {"delta": "📋 正在调用 LLM 生成计划…\n"}
+    yield {"delta": " 正在调用 LLM 生成计划…\n"}
     try:
-        plan_resp = await loop.run_in_executor(None, _plan)
+        plan_resp = await _run_cancellable(_plan, label="计划生成")
     except Exception as exc:
         yield {"error": f"计划生成失败: {exc}"}
         return
 
+    if (
+        isinstance(plan_resp, tuple)
+        and len(plan_resp) == 2
+        and plan_resp[0] == "__cancelled__"
+    ):
+        yield {"delta": plan_resp[1]}
+        yield {"cancelled": True}
+        return
+
     if await _should_stop():
-        yield {"delta": "\n\n⚠️ **已终止**（计划阶段）\n"}
+        yield {"delta": "\n\n**已终止**（计划阶段）\n"}
         yield {"cancelled": True}
         return
 
@@ -543,10 +638,11 @@ async def stream_agent_pipeline(
         llm_base_url=llm_base_url,
     )
     visual_results: list[dict[str, Any]] = []
+    had_tool_failure = False
     open_mcp = _needs_mcp_session(tasks)
 
     async def _run_task_loop(session: Optional[ClientSession]):
-        nonlocal visual_results
+        nonlocal visual_results, had_tool_failure
         while tasks:
             if await _should_stop():
                 yield {
@@ -568,7 +664,7 @@ async def stream_agent_pipeline(
                     history_summary=history_summary,
                 )
                 return llm.think(
-                    [{"role": "user", "content": str(prompt)}],
+                    messages_with_system(TOOL_MATCH_SYSTEM_GUARD, str(prompt)),
                     temperature=temperature,
                     stream_to_stdout=False,
                 )
@@ -599,7 +695,9 @@ async def stream_agent_pipeline(
                         raw2 = await loop.run_in_executor(
                             None,
                             lambda: llm.think(
-                                [{"role": "user", "content": str(retry_prompt)}],
+                                messages_with_system(
+                                    TOOL_MATCH_SYSTEM_GUARD, str(retry_prompt)
+                                ),
                                 temperature=temperature,
                                 stream_to_stdout=False,
                             ),
@@ -621,9 +719,19 @@ async def stream_agent_pipeline(
                     tool_args = {}
                 # 始终带上用户原文 + 计划步骤，避免丢掉中文约束（两列/ABCD/字号）
                 existing_instruction = str(tool_args.get("instruction") or "").strip()
-                tool_args["instruction"] = "\n".join(
-                    part for part in (user_message, task, existing_instruction) if part and str(part).strip()
-                ).strip()
+                if tool_name == "plot_edit":
+                    # 改图：优先用户自然语言；勿用换行拼接计划英文（会被拆成两次改同一张图）
+                    tool_args["instruction"] = (
+                        (user_message or "").strip()
+                        or existing_instruction
+                        or str(task).strip()
+                    )
+                else:
+                    tool_args["instruction"] = "\n".join(
+                        part
+                        for part in (user_message, task, existing_instruction)
+                        if part and str(part).strip()
+                    ).strip()
                 yield {"delta": f"🛠 调用本地工具 **{tool_name}** …\n"}
                 try:
                     payload = await loop.run_in_executor(
@@ -633,14 +741,18 @@ async def stream_agent_pipeline(
                     result_str = format_local_tool_result(payload)
                     history_summary.append({"role": "tool", "content": result_str[:4000]})
                     for fpath in payload.get("files") or []:
-                        visual_results.append(
-                            {
-                                "kind": payload.get("kind") or tool_name,
+                        kind = payload.get("kind") or tool_name
+                        visual_results.append({"kind": kind, "file": fpath})
+                        # 仅改图/拼图推送到聊天栏；分析工具出图不推 chat_image
+                        yield {
+                            "chat_image": {
                                 "file": fpath,
+                                "kind": kind,
                             }
-                        )
-                    yield {"delta": f"✅ **{tool_name}** 完成：\n{result_str}\n\n"}
+                        }
+                    yield {"delta": f"**{tool_name}** 完成：\n{result_str}\n\n"}
                 except Exception as exc:
+                    had_tool_failure = True
                     err_msg = f"工具 {tool_name} 失败: {exc}"
                     history_summary.append({"role": "tool", "content": err_msg})
                     yield {"delta": f"❌ {err_msg}\n\n"}
@@ -814,27 +926,236 @@ async def stream_agent_pipeline(
                     from web_frontend.backend.mixomics_runner import (
                         run_statistical_analysis_mixomics,
                     )
+                    from web_frontend.backend.analysis_intent import (
+                        build_analysis_intent,
+                        describe_intent,
+                        intent_to_mixomics_kwargs,
+                        validate_mixomics_kwargs,
+                    )
+
+                    try:
+                        from web_frontend.backend.session_metadata import (
+                            list_metadata_columns,
+                            resolve_metadata_csv,
+                        )
+
+                        _meta = resolve_metadata_csv(paths["upload"])
+                        _cols = [str(c["name"]) for c in list_metadata_columns(_meta)]
+                    except Exception:
+                        _meta = None
+                        _cols = []
+                    intent_for_stats = build_analysis_intent(
+                        user_message,
+                        metadata_columns=_cols,
+                        metadata_csv=str(_meta) if _meta else None,
+                    )
+                    for key, value in intent_to_mixomics_kwargs(intent_for_stats).items():
+                        if not tool_args.get(key):
+                            tool_args[key] = value
+                    for warn in intent_for_stats.get("warnings") or []:
+                        yield {"delta": f"{warn}\n"}
+                    for err in intent_for_stats.get("errors") or []:
+                        yield {"delta": f"分析意图校验：{err}\n"}
+
+                    # 读实际 Group 水平做跑前硬校验
+                    _levels: list[str] = []
+                    try:
+                        import pandas as pd
+
+                        if _meta:
+                            _mdf = pd.read_csv(_meta)
+                            _gc = str(tool_args.get("group_column") or "Group")
+                            _cmap = {str(c).lower(): c for c in _mdf.columns}
+                            _real = _cmap.get(_gc.lower())
+                            if _real is not None:
+                                _levels = [
+                                    str(v).strip()
+                                    for v in _mdf[_real].dropna().unique().tolist()
+                                    if str(v).strip()
+                                ]
+                    except Exception:
+                        _levels = []
+
+                    preflight_errs = validate_mixomics_kwargs(
+                        {
+                            "group_column": tool_args.get("group_column") or "Group",
+                            "contrast_group1": tool_args.get("contrast_group1"),
+                            "contrast_group2": tool_args.get("contrast_group2"),
+                        },
+                        metadata_columns=_cols,
+                        group_levels=_levels,
+                    )
+                    # 无效 group_column / contrast 时去掉，避免 R 硬崩；并明确告知
+                    if any("group_column" in e for e in preflight_errs):
+                        tool_args.pop("group_column", None)
+                    if any("火山对比" in e or "只有 1 个水平" in e for e in preflight_errs):
+                        tool_args.pop("contrast_group1", None)
+                        tool_args.pop("contrast_group2", None)
+                    for err in preflight_errs:
+                        yield {"delta": f" {err}\n"}
+                    if preflight_errs and any("只有 1 个水平" in e for e in preflight_errs):
+                        yield {
+                            "delta": (
+                                "当前 metadata 无法支撑计划中的 PLS/火山对比；"
+                                "仍将运行 mixOmics（通常仅 PCA）。"
+                                "请修正 metadata 的 Group（至少 2 个水平）后重试对比请求。\n"
+                            )
+                        }
+
+                    if intent_for_stats and (
+                        tool_args.get("group_column")
+                        or (
+                            tool_args.get("contrast_group1")
+                            and tool_args.get("contrast_group2")
+                        )
+                    ):
+                        label = describe_intent(intent_for_stats) or "统计参数"
+                        yield {
+                            "delta": (
+                                f"已将分析意图注入 mixOmics（{label}）："
+                                f"group_column={tool_args.get('group_column') or 'Group'}"
+                                + (
+                                    f", contrast={tool_args.get('contrast_group1')} vs "
+                                    f"{tool_args.get('contrast_group2')}"
+                                    if tool_args.get("contrast_group1")
+                                    and tool_args.get("contrast_group2")
+                                    else ""
+                                )
+                                + "\n"
+                            )
+                        }
 
                     def _run_mixomics():
+                        kw: dict[str, Any] = {
+                            "ncomp_pca": int(tool_args.get("ncomp_pca", 5)),
+                            "ncomp_plsda": int(tool_args.get("ncomp_plsda", 2)),
+                            "scale_method": str(
+                                tool_args.get("scale_method", "autoscale")
+                            ),
+                            "top_n_heatmap": int(
+                                tool_args.get("top_n_heatmap", 50)
+                            ),
+                            "seed": int(tool_args.get("seed", 123)),
+                        }
+                        for opt in (
+                            "vip_threshold",
+                            "pvalue_threshold",
+                            "padj_threshold",
+                            "log2fc_threshold",
+                            "use_fdr",
+                            "group_column",
+                            "contrast_group1",
+                            "contrast_group2",
+                        ):
+                            if tool_args.get(opt) is not None and str(
+                                tool_args.get(opt)
+                            ).strip() != "":
+                                kw[opt] = tool_args[opt]
                         return run_statistical_analysis_mixomics(
                             tool_args.get("input_dir", paths["filtered"]),
                             tool_args.get("metadata_csv", paths["upload"]),
                             tool_args.get("output_dir", paths["statistical"]),
-                            ncomp_pca=int(tool_args.get("ncomp_pca", 5)),
-                            ncomp_plsda=int(tool_args.get("ncomp_plsda", 2)),
-                            scale_method=str(
-                                tool_args.get("scale_method", "autoscale")
-                            ),
-                            top_n_heatmap=int(
-                                tool_args.get("top_n_heatmap", 50)
-                            ),
-                            seed=int(tool_args.get("seed", 123)),
+                            session_id=session_id,
+                            cancel_flag=get_thread_cancel_flag(session_id),
+                            **kw,
                         )
 
                     yield {
-                        "delta": "ℹ️ 使用**日志重定向**运行 mixOmics（避免 MCP 管道死锁）…\n"
+                        "delta": "使用**日志重定向**运行 mixOmics（避免 MCP 管道死锁）…\n"
                     }
-                    log_path = await loop.run_in_executor(None, _run_mixomics)
+                    mix_out = await _run_cancellable(_run_mixomics, label="mixOmics")
+                    if (
+                        isinstance(mix_out, tuple)
+                        and len(mix_out) == 2
+                        and mix_out[0] == "__cancelled__"
+                    ):
+                        yield {"delta": mix_out[1]}
+                        yield {"cancelled": True}
+                        return
+                    log_path = mix_out
+                    if await _should_stop():
+                        yield {"delta": "\n\n**已终止**\n"}
+                        yield {"cancelled": True}
+                        return
+                    # 如实汇报产物（避免「计划写了火山但实际只有 PCA」看起来像假对话）
+                    try:
+                        from pathlib import Path as _P
+
+                        _out = _P(
+                            str(
+                                tool_args.get("output_dir")
+                                or paths.get("statistical")
+                                or ""
+                            )
+                        )
+                        _root = _P(str(paths.get("outputspace") or ""))
+                        _warn = _out / "analysis_warning.txt"
+                        _params = _out / "analysis_params.txt"
+                        _volcano = _out / "volcano_plot.png"
+                        _pls = _out / "plsda_plot.png"
+                        _pca = _out / "pca_plot.png"
+                        if _params.is_file():
+                            yield {
+                                "delta": " 统计参数：\n"
+                                + _params.read_text(encoding="utf-8", errors="replace")
+                                + "\n"
+                            }
+                        if _warn.is_file():
+                            yield {
+                                "delta": "统计警告：\n"
+                                + _warn.read_text(encoding="utf-8", errors="replace")
+                                + "\n"
+                            }
+                        bits = []
+                        bits.append("PCA✅" if _pca.is_file() else "PCA❌")
+                        bits.append("PLS-DA✅" if _pls.is_file() else "PLS-DA❌")
+                        bits.append("火山✅" if _volcano.is_file() else "火山❌")
+                        yield {"delta": " 本次实际产出：" + " / ".join(bits) + "\n"}
+                        # 记入 visual_results；聊天栏由 webapp 合并后预览（默认 3 张，… 展开）
+                        # 注意：产物路径统一用 _out（output_dir），勿用未定义的 _stat_dir
+                        _heatmap = _out / "heatmap_top_vip.png"
+                        _vip = _out / "vip_scores.png"
+                        _wanted_stems = {
+                            str(s).strip()
+                            for s in (
+                                (intent_for_stats or {}).get("targets")
+                                or (intent_for_stats or {}).get("target_stems")
+                                or []
+                            )
+                            if str(s).strip()
+                        }
+                        _only_figs = bool((intent_for_stats or {}).get("only_figures"))
+                        for _png, _kind in (
+                            (_volcano, "volcano"),
+                            (_pls, "plsda"),
+                            (_pca, "pca"),
+                            (_heatmap, "heatmap"),
+                            (_vip, "vip"),
+                        ):
+                            if not _png.is_file():
+                                continue
+                            _stem = _png.stem  # e.g. volcano_plot / pca_plot
+                            if _only_figs and _wanted_stems and _stem not in _wanted_stems:
+                                continue
+                            try:
+                                _rel = _png.resolve().relative_to(_root.resolve()).as_posix()
+                            except Exception:
+                                _rel = _png.name
+                            visual_results.append({"kind": _kind, "file": _rel})
+                        wanted_volcano = bool(
+                            tool_args.get("contrast_group1")
+                            and tool_args.get("contrast_group2")
+                        ) or ("火山" in str(user_message) or "volcano" in str(user_message).lower())
+                        if wanted_volcano and not _volcano.is_file():
+                            yield {
+                                "delta": (
+                                    " 本次未生成火山图。常见原因：metadata 只有 1 个 Group，"
+                                    "或对比组名与 Group 列不一致。请检查 "
+                                    "`statistical_results/analysis_warning.txt` 与 metadata。\n"
+                                )
+                            }
+                    except Exception:
+                        pass
                     pruned_tasks, prune_reason = _prune_remaining_differential_tasks(
                         tasks, paths
                     )
@@ -842,7 +1163,7 @@ async def stream_agent_pipeline(
                         tasks[:] = pruned_tasks
                         yield {
                             "delta": (
-                                f"ℹ️ 统计未产生差异代谢物：{prune_reason}\n"
+                                f"统计未产生差异代谢物：{prune_reason}\n"
                                 "已跳过差异提取、谱库注释与 KEGG 富集。"
                                 "若已有 spectra.mgf 或上传了 .mgf，仍可运行 molecular_networking_gnps / deepmass_annotation。\n"
                             )
@@ -898,7 +1219,7 @@ async def stream_agent_pipeline(
                                         tasks[:] = pruned
                                         yield {
                                             "delta": (
-                                                "⚠️ 格式转换未成功，已跳过后续 XCMS 及下游步骤。"
+                                                "格式转换未成功，已跳过后续 XCMS 及下游步骤。"
                                                 f" {conversion_environment_hint()}\n\n"
                                             )
                                         }
@@ -923,13 +1244,14 @@ async def stream_agent_pipeline(
                     {"role": "tool", "content": result_str[:4000]}
                 )
                 if is_mcp_tool_result_error(result, result_str) or conversion_failed:
-                    fail_title = f"❌ **{tool_name}** 失败"
+                    had_tool_failure = True
+                    fail_title = f"**{tool_name}** 失败"
                     if conversion_failed:
-                        fail_title = "❌ **格式转换** 全部候选工具均失败"
+                        fail_title = "**格式转换** 全部候选工具均失败"
                     yield {
                         "delta": (
                             f"{fail_title}：\n{result_str}\n\n"
-                            "ℹ️ 后续步骤可能因缺少输入文件而无法继续，请修复后重试。\n\n"
+                            "ℹ后续步骤可能因缺少输入文件而无法继续，请修复后重试。\n\n"
                         )
                     }
                     if is_raw_converter(tool_name) or (
@@ -940,7 +1262,7 @@ async def stream_agent_pipeline(
                         if len(pruned) < len(tasks):
                             tasks[:] = pruned
                 else:
-                    yield {"delta": f"✅ **{tool_name}** 完成：\n{result_str}\n\n"}
+                    yield {"delta": f"**{tool_name}** 完成：\n{result_str}\n\n"}
                     # 出图工具成功后补写语义 sidecar，并按分析意图确定性重绘
                     if tool_name in {
                         "statistical_analysis_mixomics",
@@ -978,12 +1300,23 @@ async def stream_agent_pipeline(
                             if written:
                                 yield {
                                     "delta": (
-                                        f"📎 已为 {len(written)} 张结果图生成/更新语义编辑 sidecar。\n"
+                                        f"已为 {len(written)} 张结果图生成/更新语义编辑 sidecar。\n"
                                     )
                                 }
+                            # 网络/KEGG 等：扫输出目录 PNG，保证任意分析都能进聊天预览
+                            if tool_name != "statistical_analysis_mixomics":
+                                out_for_pngs = tool_args.get("output_dir") or paths.get(
+                                    "outputspace"
+                                )
+                                _append_output_png_visuals(
+                                    visual_results,
+                                    out_for_pngs,
+                                    Path(paths["outputspace"]),
+                                    kind=tool_name,
+                                )
                         except Exception as sidecar_exc:
                             yield {
-                                "delta": f"⚠️ 语义 sidecar 生成跳过：{sidecar_exc}\n"
+                                "delta": f"语义 sidecar 生成跳过：{sidecar_exc}\n"
                             }
                         try:
                             from web_frontend.backend.analysis_intent import (
@@ -1000,7 +1333,7 @@ async def stream_agent_pipeline(
                                 label = describe_intent(intent_preview) or "分析意图"
                                 yield {
                                     "delta": (
-                                        f"🎨 检测到分析意图（{label}），"
+                                        f"检测到分析意图（{label}），"
                                         "正在按意图重绘相关结果图…\n"
                                     )
                                 }
@@ -1022,22 +1355,24 @@ async def stream_agent_pipeline(
                                     if item.get("error"):
                                         yield {
                                             "delta": (
-                                                f"⚠️ 意图重绘失败（{item.get('stem')}）："
+                                                f"意图重绘失败（{item.get('stem')}）："
                                                 f"{item['error']}\n"
                                             )
                                         }
                                         continue
                                     fname = (item.get("file") or {}).get("name")
-                                    if fname:
-                                        visual_results.append(
-                                            {"kind": "plot_edit", "file": fname}
+                                    if not fname:
+                                        continue
+                                    visual_results.append(
+                                        {"kind": "plot_edit", "file": fname}
+                                    )
+                                    yield {
+                                        "delta": (
+                                            f"已按意图重绘：`{fname}`"
+                                            f"（{item.get('analysis_intent') or label}）\n"
                                         )
-                                        yield {
-                                            "delta": (
-                                                f"✅ 已按意图重绘：`{fname}`"
-                                                f"（{item.get('analysis_intent') or label}）\n"
-                                            )
-                                        }
+                                    }
+                                # 意图重绘图写入 visual_results；聊天预览由 webapp 合并推送
                                 if any(not r.get("error") for r in coloring_results):
                                     tasks[:] = [
                                         t
@@ -1056,14 +1391,15 @@ async def stream_agent_pipeline(
                                     ]
                         except Exception as coloring_exc:
                             yield {
-                                "delta": f"⚠️ 分析意图重绘跳过：{coloring_exc}\n"
+                                "delta": f"分析意图重绘跳过：{coloring_exc}\n"
                             }
             except Exception as exc:
+                had_tool_failure = True
                 err_msg = (
                     f"工具 {tool_name} 失败: {exc}\n{traceback.format_exc()}"
                 )
                 history_summary.append({"role": "tool", "content": err_msg})
-                yield {"delta": f"❌ {err_msg}\n\n"}
+                yield {"delta": f"{err_msg}\n\n"}
                 if tool_name in MZML_DEPENDENT_TOOLS or is_raw_converter(tool_name):
                     pruned, _removed = prune_mzml_dependent_tasks(tasks)
                     if len(pruned) < len(tasks):
@@ -1080,24 +1416,33 @@ async def stream_agent_pipeline(
                         if event.get("cancelled"):
                             return
         else:
-            yield {"delta": "ℹ️ 本计划仅含本地工具（改图/拼图），跳过 MCP 子进程。\n\n"}
+            yield {"delta": "本计划仅含本地工具（改图/拼图），跳过 MCP 子进程。\n\n"}
             async for event in _run_task_loop(None):
                 yield event
                 if event.get("cancelled"):
                     return
 
-        done_payload: dict[str, Any] = {
-            "delta": "\n\n---\n🎉 **所有计划任务已执行完毕。**\n"
-            f"✅ 结果已写入 **outputspace/{storage_slug or session_id}/**。\n"
-        }
+        if had_tool_failure:
+            done_payload: dict[str, Any] = {
+                "delta": (
+                    "\n\n---\n⚠️ **计划已跑完，但有步骤失败。**\n"
+                    f"请查看上方错误与 outputspace/{storage_slug or session_id}/ 下的日志"
+                    "（如 statistical_analysis_mixomics.log / analysis_warning.txt）。\n"
+                )
+            }
+        else:
+            done_payload = {
+                "delta": "\n\n---\n🎉 **所有计划任务已执行完毕。**\n"
+                f"结果已写入 **outputspace/{storage_slug or session_id}/**。\n"
+            }
         if visual_results:
             done_payload["visual_results"] = visual_results
             files_line = "、".join(v["file"] for v in visual_results)
-            done_payload["delta"] += f"🖼️ 视觉产物：{files_line}\n"
+            done_payload["delta"] += f"视觉产物：{files_line}\n"
         yield done_payload
         if visual_results:
             yield {"visual_results": visual_results, "finished": True}
 
     except Exception as exc:
-        yield {"delta": f"\n❌ Agent 执行中断: {exc}\n{traceback.format_exc()}\n"}
+        yield {"delta": f"\nAgent 执行中断: {exc}\n{traceback.format_exc()}\n"}
         yield {"error": str(exc)}

@@ -15,6 +15,8 @@ from typing import List, Optional
 
 from web_frontend.backend.agent_intent import looks_like_agent_request
 from web_frontend.backend.agent_jobs import cancel_job, clear_job, is_cancelled, register_job
+from web_frontend.backend.anti_hallucination import chat_guard_messages
+from web_frontend.backend.plot_versioning import prefer_effective_among_rels
 from web_frontend.backend.session_storage import (
     default_session_title,
     delete_workspace_dirs,
@@ -790,7 +792,10 @@ def probe_llm(req: LlmProbeRequest):
 def chat(req: ChatRequest):
     try:
         client = LLM_Client(model=req.model)
-        payload = [{"role": m.role, "content": m.content} for m in req.messages]
+        # 与 SSE 纯对话一致：注入防幻觉 system
+        payload = chat_guard_messages() + [
+            {"role": m.role, "content": m.content} for m in req.messages
+        ]
         answer = client.think(payload, temperature=req.temperature)
         if answer is None:
             raise HTTPException(status_code=500, detail="LLM returned empty response")
@@ -1307,6 +1312,24 @@ def _sse_pack(data: dict) -> str:
     return f"data: {json.dumps(data, ensure_ascii=False)}\n\n"
 
 
+def _append_chat_images_marker(text: str, files: list[str]) -> str:
+    """助手消息末尾写入隐藏标记；同底图只保留当前生效 intent/edited 版。"""
+    clean = [str(f).strip() for f in files if str(f).strip()]
+    if not clean:
+        return text
+    ordered = prefer_effective_among_rels(clean)
+    marker = f"<!--massagent:chat_images:{json.dumps(ordered, ensure_ascii=False)}-->"
+    body = (text or "").rstrip()
+    if "<!--massagent:chat_images:" in body:
+        body = re.sub(
+            r"\n*<!--massagent:chat_images:\[.*?\]-->\s*$",
+            "",
+            body,
+            flags=re.DOTALL,
+        )
+    return f"{body}\n\n{marker}"
+
+
 def _should_auto_agent(session_id: str, user_message: str) -> bool:
     """附件或明确分析意图时启用 Agent；普通闲聊仍走纯 LLM。"""
     del session_id
@@ -1385,16 +1408,9 @@ async def chat_stream(req: ChatStreamRequest, request: Request):
     history = db_get_messages(req.session_id)
     context = [{"role": m["role"], "content": m["content"]} for m in history]
     # 纯对话模式：禁止声称已写文件 / 已跑分析（防幻觉）
-    system_guard = {
-        "role": "system",
-        "content": (
-            "你当前处于「纯对话模式」，没有工具执行权限。"
-            "不要声称已经合并图片、改图、保存文件、运行 XCMS/GNPS 或给出虚构的 outputspace 路径。"
-            "若用户需要改图/拼图/分析，请明确告知需要触发 Agent 工具，并建议其用具体指令重试"
-            "（例如「合并 A.png 和 B.png」「把 PCA 标题改成…」「开始分析」）。"
-        ),
-    }
-    payload = [system_guard] + context + [{"role": "user", "content": stream_user_message}]
+    payload = chat_guard_messages() + context + [
+        {"role": "user", "content": stream_user_message}
+    ]
 
     async def gen_llm():
         assistant_text_parts: list[str] = []
@@ -1426,7 +1442,7 @@ async def chat_stream(req: ChatStreamRequest, request: Request):
 
 @app.post("/api/sessions/{session_id}/cancel")
 async def cancel_session_agent(session_id: str):
-    """前端「终止」时调用，跳过后续 Agent 步骤（已在跑的 R/Docker 可能仍会结束）。"""
+    """前端「终止」：置取消标志，并尽力杀掉已登记的子进程（如 Rscript）。"""
     cancelled = await cancel_job(session_id)
     return {"ok": True, "cancelled": cancelled}
 
@@ -1440,6 +1456,7 @@ async def _stream_agent_sse_async(req: ChatStreamRequest, request: Request):
     final_error = None
     was_cancelled = False
     visual_results: list = []
+    chat_images: list = []
     storage_slug = resolve_storage_slug(req.session_id)
     cancel_event = await register_job(req.session_id)
     recent_messages = db_get_messages(req.session_id)[-12:]
@@ -1477,6 +1494,10 @@ async def _stream_agent_sse_async(req: ChatStreamRequest, request: Request):
                 yield _sse_pack({"delta": f"\n❌ {final_error}\n"})
             elif event.get("cancelled"):
                 was_cancelled = True
+            if event.get("chat_image"):
+                img = event["chat_image"]
+                chat_images.append(img)
+                yield _sse_pack({"chat_image": img})
             if event.get("visual_results"):
                 visual_results = event["visual_results"]
 
@@ -1486,6 +1507,19 @@ async def _stream_agent_sse_async(req: ChatStreamRequest, request: Request):
                 yield _sse_pack({"delta": "\n\n⚠️ **已终止**\n"})
 
         text = "".join(parts) or (final_error or "Agent 未产生输出")
+        chat_files = [
+            str(item.get("file") or "").strip()
+            for item in chat_images
+            if isinstance(item, dict) and item.get("file")
+        ]
+        # 任意分析产物：合并 visual_results → 聊天预览（同底图优先 intent）
+        vr_files = [
+            str(item.get("file") or "").strip()
+            for item in visual_results
+            if isinstance(item, dict) and str(item.get("file") or "").strip()
+        ]
+        chat_files = prefer_effective_among_rels([*chat_files, *vr_files])
+        text = _append_chat_images_marker(text, chat_files)
         time_str = db_append_message(req.session_id, "assistant", text)
         done_payload = {
             "done": True,
@@ -1496,6 +1530,8 @@ async def _stream_agent_sse_async(req: ChatStreamRequest, request: Request):
         }
         if visual_results:
             done_payload["visual_results"] = visual_results
+        if chat_files:
+            done_payload["chat_images"] = chat_files
         yield _sse_pack(done_payload)
     except asyncio.CancelledError:
         partial = "".join(parts).strip()

@@ -4,6 +4,10 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from web_frontend.backend.anti_hallucination import (
+    MERGE_EDIT_SYSTEM_GUARD,
+    messages_with_system,
+)
 from web_frontend.backend.json_parse import extract_first_json_object
 from web_frontend.backend.web_llm import WebLLMClient
 
@@ -40,6 +44,8 @@ def _build_merge_edit_prompt(
 - label_mode: upper=A/B/C, lower=a/b/c, num=1/2/3, none=无标签, custom=使用 custom_labels
 - custom_labels 的键用子图序号字符串 "0","1",...（从 0 开始），值为标签文字
 - cols 为列数；gap 为像素间距
+- 不要编造不存在的子图索引；不要声称已导出 PNG 或写入 merged_figures/
+- 严格保留用户标签大小写与字号
 - 不要输出 markdown 或解释
 """
 
@@ -60,7 +66,11 @@ def parse_merge_edit_instruction(
         sources=sources,
         instruction=instruction,
     )
-    raw = llm.think_complete([{"role": "user", "content": prompt}], temperature=0.0, max_tokens=1024)
+    raw = llm.think_complete(
+        messages_with_system(MERGE_EDIT_SYSTEM_GUARD, prompt),
+        temperature=0.0,
+        max_tokens=1024,
+    )
     if not raw:
         raise RuntimeError("LLM 未返回有效内容，请检查 API 配置")
 

@@ -37,12 +37,30 @@ _COLORING_HINT_RE = re.compile(
 )
 
 _P_THRESHOLD_RE = re.compile(
-    r"(?:p(?:\.?adjust|adj|value)?|fdr|显著性)\s*(?:[<＜≤<=]|小于|低于)\s*(0?\.\d+|\d+(?:\.\d+)?(?:e-?\d+)?)",
+    r"(?:"
+    # p<0.05 / p值小于0.05 / p 值 < 0.05
+    r"p\s*(?:\.?adjust|adj|value|值)?\s*(?:[<＜≤<=]|小于|低于)\s*(0?\.\d+|\d+(?:\.\d+)?(?:e-?\d+)?)"
+    r"|"
+    r"(?:fdr|显著性)\s*(?:[<＜≤<=]|小于|低于)\s*(0?\.\d+|\d+(?:\.\d+)?(?:e-?\d+)?)"
+    r"|"
+    # p 值阈值设为 0.05 / p-value threshold = 0.05
+    r"p\s*(?:\.?adjust|adj|value|值)?\s*(?:阈值|threshold)?\s*"
+    r"(?:设为|设成|设置为|定为|为|[=:：])\s*(0?\.\d+|\d+(?:\.\d+)?(?:e-?\d+)?)"
+    r"|"
+    r"(?:fdr|显著性)\s*(?:阈值|threshold)?\s*"
+    r"(?:设为|设成|设置为|定为|为|[=:：])\s*(0?\.\d+|\d+(?:\.\d+)?(?:e-?\d+)?)"
+    r")",
     re.IGNORECASE,
 )
 _FC_THRESHOLD_RE = re.compile(
-    r"(?:\|?\s*log2?\s*f[co](?:ld)?\s*c(?:hange)?\s*\|?|\|?fc\|?|倍变|折叠变化)"
-    r"\s*(?:[>≥>=]|大于|高于|超过)\s*(\d+(?:\.\d+)?)",
+    r"(?:"
+    r"(?:\|?\s*log2?\s*f[co](?:ld)?\s*c(?:hange)?\s*\|?|\|?log2\s*FC\s*\|?|\|?fc\|?|倍变|折叠变化)"
+    r"\s*(?:[>≥>=]|大于|高于|超过)\s*(\d+(?:\.\d+)?)"
+    r"|"
+    # |log2FC| 阈值设为 1
+    r"(?:\|?\s*log2?\s*f[co](?:ld)?\s*c(?:hange)?\s*\|?|\|?log2\s*FC\s*\|?|\|?fc\|?|倍变|折叠变化)"
+    r"\s*(?:阈值|threshold)?\s*(?:设为|设成|设置为|定为|为|[=:：])\s*(\d+(?:\.\d+)?)"
+    r")",
     re.IGNORECASE,
 )
 _TOP_N_RE = re.compile(
@@ -284,8 +302,13 @@ _ONLY_FIGURE_RE = re.compile(
     re.IGNORECASE,
 )
 _EXCLUDE_NET_RE = re.compile(
-    r"(?:不要|跳过|别做|无需|不用|不跑|禁止).{0,8}(?:分子网络|网络分析|networking|fbmn|gnps|ms2lda|molnet)|"
-    r"(?:no|skip|without)\s+(?:molecular\s*)?network",
+    r"(?:"
+    r"(?:不要|跳过|别做|无需|不用|不跑|禁止)"
+    r"((?:(?!统计|mixomics|pca|pls|kegg|富集|deepmass).){0,8})"
+    r"(?:分子网络|网络分析|networking|fbmn|gnps|ms2lda|molnet)"
+    r"|"
+    r"(?:no|skip|without)\s+(?:molecular\s*)?network"
+    r")",
     re.IGNORECASE,
 )
 _EXCLUDE_KEGG_RE = re.compile(
@@ -297,8 +320,14 @@ _EXCLUDE_DEEPMASS_RE = re.compile(
     re.IGNORECASE,
 )
 _EXCLUDE_STATS_RE = re.compile(
-    r"(?:不要|跳过|别做|无需|不用|不跑).{0,8}(?:统计|pca|pls|mixomics)|"
-    r"(?:no|skip|without)\s+(?:stats|statistics|mixomics|pca)",
+    r"(?:"
+    # 不要…统计/mixomics/PCA；中间若已点名网络等对象则不算排除统计
+    r"(?:不要|跳过|别做|无需|不用|不跑)"
+    r"((?:(?!分子网络|网络分析|networking|fbmn|gnps|ms2lda|molnet|kegg|富集|deepmass).){0,8})"
+    r"(?:统计分析|统计|mixomics|pca|pls-?da|pls)"
+    r"|"
+    r"(?:no|skip|without)\s+(?:stats|statistics|mixomics|pca)\b"
+    r")",
     re.IGNORECASE,
 )
 _FACET_RE = re.compile(
@@ -311,6 +340,81 @@ _SIZE_BY_RE = re.compile(
     r"size\s*(?:by|with)\s+([A-Za-z_][\w]*)",
     re.IGNORECASE,
 )
+
+# 火山对比组：A vs B / 对比 A 和 B / contrast=A vs B
+_CONTRAST_RE = re.compile(
+    r"(?:"
+    r"(?<![A-Za-z0-9_])([A-Za-z0-9_][\w\-]*)\s*(?:vs\.?|versus)\s*([A-Za-z0-9_][\w\-]*)(?![A-Za-z0-9_])|"
+    r"(?:对比|比较)\s+([A-Za-z0-9_\u4e00-\u9fff][\w\u4e00-\u9fff\-]*)\s*"
+    r"(?:vs\.?|和|与|/)\s*([A-Za-z0-9_\u4e00-\u9fff][\w\u4e00-\u9fff\-]*)|"
+    r"(?:火山(?:图)?|volcano).{0,24}?"
+    r"(?<![A-Za-z0-9_])([A-Za-z0-9_][\w\-]*)\s*(?:vs\.?|versus|/)\s*([A-Za-z0-9_][\w\-]*)(?![A-Za-z0-9_])|"
+    r"contrast\s*[=:]\s*([A-Za-z0-9_][\w\-]*)\s*(?:vs\.?|,|/)\s*([A-Za-z0-9_][\w\-]*)"
+    r")",
+    re.IGNORECASE,
+)
+
+# PLS / 监督变量列：按 Time 做 PLS、group_column=Batch、Y=Group
+_GROUP_COLUMN_RE = re.compile(
+    r"(?:"
+    r"(?:pls-?da|pls|监督分类|分类模型).{0,24}(?:按|用|以)\s*"
+    r"([A-Za-z_\u4e00-\u9fff][\w\u4e00-\u9fff]*)|"
+    r"(?:按|用|以)\s*([A-Za-z_\u4e00-\u9fff][\w\u4e00-\u9fff]*)\s*"
+    r"(?:做|进行|作为)?.{0,8}(?:pls-?da|pls|监督|Y\b)|"
+    r"group_column\s*[=:]\s*([A-Za-z_][\w]*)|"
+    r"(?:^|[^\w])Y\s*(?:列|column)?\s*[=:]\s*([A-Za-z_][\w]*)"
+    r")",
+    re.IGNORECASE,
+)
+
+_GROUP_COLUMN_STOP = frozenset(
+    {
+        "pca",
+        "pls",
+        "plsda",
+        "图",
+        "颜色",
+        "color",
+        "样本",
+        "sample",
+        "火山",
+        "volcano",
+        "vip",
+        "统计",
+        "分析",
+    }
+)
+
+
+def _load_column_levels(metadata_csv: str | None, column: str) -> list[str]:
+    if not metadata_csv or not column:
+        return []
+    try:
+        import pandas as pd
+
+        frame = pd.read_csv(metadata_csv)
+        # 大小写不敏感找列
+        col_map = {str(c).lower(): c for c in frame.columns}
+        real = col_map.get(str(column).lower())
+        if real is None:
+            return []
+        values = [
+            str(v).strip()
+            for v in frame[real].dropna().tolist()
+            if str(v).strip() and str(v).strip().lower() != "nan"
+        ]
+        # 保序去重
+        out: list[str] = []
+        seen: set[str] = set()
+        for v in values:
+            key = v.lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            out.append(v)
+        return out
+    except Exception:
+        return []
 
 
 def _parse_facet(text: str) -> str | None:
@@ -333,6 +437,156 @@ def _parse_size_by(text: str) -> str | None:
     return None
 
 
+def _normalize_meta_token(token: str) -> str:
+    raw = (token or "").strip()
+    if not raw:
+        return raw
+    if _TIME_HINT_RE.search(raw) or raw.lower() in {"time", "timepoint"}:
+        return "Time"
+    if _BATCH_HINT_RE.search(raw) or raw.lower() == "batch":
+        return "Batch"
+    if _GROUP_HINT_RE.search(raw) or raw.lower() in {"group", "class"}:
+        return "Group"
+    return raw
+
+
+def _parse_contrast(text: str) -> tuple[str, str] | None:
+    pairs = _parse_all_contrasts(text)
+    return pairs[0] if pairs else None
+
+
+def _parse_all_contrasts(text: str) -> list[tuple[str, str]]:
+    """提取消息中全部 A vs B；按出现顺序去重。"""
+    out: list[tuple[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+    stop = {"图", "火山", "volcano", "pls", "pca", "分析", "差异", "对比", "比较"}
+    for m in _CONTRAST_RE.finditer(text or ""):
+        cand = [
+            (m.group(1), m.group(2)),
+            (m.group(3), m.group(4)),
+            (m.group(5), m.group(6)),
+            (m.group(7), m.group(8)) if m.lastindex and m.lastindex >= 8 else (None, None),
+        ]
+        for a, b in cand:
+            if not a or not b:
+                continue
+            g1, g2 = a.strip(), b.strip()
+            if g1.lower() == g2.lower():
+                continue
+            if g1.lower() in stop or g2.lower() in stop:
+                continue
+            key = (g1.lower(), g2.lower())
+            if key in seen:
+                continue
+            seen.add(key)
+            out.append((g1, g2))
+            break
+    return out
+
+
+def prefer_contrast_for_metadata(
+    contrasts: list[tuple[str, str]],
+    *,
+    group_levels: list[str] | None,
+) -> tuple[str, str] | None:
+    """优先选用两端都落在 metadata 实际水平里的对比组。"""
+    if not contrasts:
+        return None
+    if not group_levels:
+        return contrasts[0]
+    levels_l = {str(x).strip().lower(): str(x).strip() for x in group_levels if str(x).strip()}
+
+    def _resolve(name: str) -> str | None:
+        return levels_l.get(name.lower())
+
+    for g1, g2 in contrasts:
+        r1, r2 = _resolve(g1), _resolve(g2)
+        if r1 and r2 and r1.lower() != r2.lower():
+            return r1, r2
+    return contrasts[0]
+
+
+def validate_mixomics_kwargs(
+    kwargs: dict[str, Any],
+    *,
+    metadata_columns: list[str],
+    group_levels: list[str] | None = None,
+) -> list[str]:
+    """跑前硬校验；返回可读错误列表（空=可通过）。"""
+    errors: list[str] = []
+    cols = [str(c) for c in (metadata_columns or [])]
+    cols_l = {c.lower(): c for c in cols}
+    gc = str(kwargs.get("group_column") or "Group").strip() or "Group"
+    if cols and gc.lower() not in cols_l:
+        errors.append(
+            f"group_column「{gc}」不在 metadata 列中。可用列：{', '.join(cols) or '(无)'}。"
+            "请改用现有列（常见 Group），或先在 metadata.csv 增加该列。"
+        )
+        return errors
+    levels = [str(x).strip() for x in (group_levels or []) if str(x).strip()]
+    g1 = str(kwargs.get("contrast_group1") or "").strip()
+    g2 = str(kwargs.get("contrast_group2") or "").strip()
+    if levels and len({x.lower() for x in levels}) < 2:
+        errors.append(
+            f"「{gc}」目前只有 1 个水平（{', '.join(levels)}），"
+            "无法做 PLS-DA / 火山对比。请检查 Sample–Group 标注是否正确"
+            "（至少需要 2 个不同组名，例如 Control 与 Treatment）。"
+        )
+        return errors
+    if g1 and g2 and levels:
+        levels_l = {x.lower(): x for x in levels}
+        if g1.lower() not in levels_l or g2.lower() not in levels_l:
+            errors.append(
+                f"火山对比「{g1} vs {g2}」不在「{gc}」的实际水平中。"
+                f"当前水平：{', '.join(levels)}。"
+                "请改用真实组名，或更新 metadata 后再跑。"
+            )
+    return errors
+
+
+def _parse_group_column(
+    text: str,
+    *,
+    metadata_columns: list[str] | None = None,
+) -> str | None:
+    """解析 PLS/Y 所用 metadata 列；与「按 X 着色」区分。"""
+    m = _GROUP_COLUMN_RE.search(text or "")
+    token: str | None = None
+    if m:
+        for g in m.groups():
+            if g:
+                token = g.strip()
+                break
+    if not token:
+        return None
+    if token.lower() in _GROUP_COLUMN_STOP:
+        return None
+    # 纯着色话术（无 PLS/监督）不当作 group_column
+    if _COLORING_HINT_RE.search(text) and not re.search(
+        r"pls|plsda|监督|group_column|(?:^|[^\w])Y\s*[=:]", text, re.IGNORECASE
+    ):
+        return None
+    token = _normalize_meta_token(token)
+    columns = [str(c) for c in (metadata_columns or [])]
+    if columns:
+        for col in columns:
+            if col.lower() == token.lower():
+                return col
+        # 常见别名
+        try:
+            matched = match_color_by_column(
+                token,
+                None,
+                columns=columns,
+                fallback=False,
+            )
+            if matched:
+                return matched
+        except Exception:
+            pass
+    return token
+
+
 def _parse_exclude_analysis(text: str) -> list[str]:
     out: list[str] = []
     if _EXCLUDE_NET_RE.search(text):
@@ -344,6 +598,18 @@ def _parse_exclude_analysis(text: str) -> list[str]:
     if _EXCLUDE_STATS_RE.search(text):
         out.append("stats")
     return out
+
+
+def _exclude_compatible_with_targets(
+    exclude: list[str], targets: list[str]
+) -> list[str]:
+    """目标图依赖的分析种类不得被 exclude（避免「不要网络。PCA着色」误删 stats）。"""
+    required = {
+        _STEM_TO_ANALYSIS[stem]
+        for stem in targets
+        if stem in _STEM_TO_ANALYSIS
+    }
+    return [kind for kind in exclude if kind not in required]
 
 
 def _parse_only_mode(text: str) -> bool:
@@ -457,16 +723,20 @@ def _parse_thresholds(text: str) -> dict[str, float] | None:
     thresholds: dict[str, float] = {}
     m = _P_THRESHOLD_RE.search(text)
     if m:
-        try:
-            thresholds["p"] = float(m.group(1))
-        except ValueError:
-            pass
+        raw = next((g for g in m.groups() if g), None)
+        if raw is not None:
+            try:
+                thresholds["p"] = float(raw)
+            except ValueError:
+                pass
     m = _FC_THRESHOLD_RE.search(text)
     if m:
-        try:
-            thresholds["log2fc"] = float(m.group(1))
-        except ValueError:
-            pass
+        raw = next((g for g in m.groups() if g), None)
+        if raw is not None:
+            try:
+                thresholds["log2fc"] = float(raw)
+            except ValueError:
+                pass
     # 常见「p<0.05」简写
     if "p" not in thresholds:
         m2 = re.search(r"p\s*[<＜≤<=]\s*(0?\.\d+)", text, re.IGNORECASE)
@@ -578,6 +848,7 @@ def build_analysis_intent(
       analysis / exclude_analysis / only_figures
       targets
       color_by / color_type / color_channel / cluster / thresholds
+      group_column? / contrast?   # mixOmics 参数化
       facet? / size_by?
       marks / errors / warnings
     """
@@ -633,7 +904,9 @@ def build_analysis_intent(
         elif named:
             targets = named
 
-    exclude_analysis = _parse_exclude_analysis(text)
+    exclude_analysis = _exclude_compatible_with_targets(
+        _parse_exclude_analysis(text), targets
+    )
     analysis = _infer_analysis_from_targets(targets, text)
     analysis = [a for a in analysis if a not in exclude_analysis]
     # only_figures：分析集合收缩为 targets 所需
@@ -647,6 +920,31 @@ def build_analysis_intent(
 
     facet = _parse_facet(text)
     size_by = _parse_size_by(text)
+    all_contrasts = _parse_all_contrasts(text)
+    group_column = _parse_group_column(
+        text, metadata_columns=[str(c) for c in (metadata_columns or [])]
+    )
+    # 用实际 metadata 水平优选对比组（多句测试粘贴时避免乱选）
+    group_levels = _load_column_levels(
+        metadata_csv, group_column or "Group"
+    )
+    contrast = prefer_contrast_for_metadata(all_contrasts, group_levels=group_levels)
+    if len(all_contrasts) > 1:
+        # 单次 mixOmics 只能一对对比；其余记入 warnings
+        extra = ", ".join(f"{a} vs {b}" for a, b in all_contrasts[1:])
+        # warnings 稍后合并
+        contrast_multi_note = (
+            f"检测到多组对比（{', '.join(f'{a} vs {b}' for a, b in all_contrasts)}）；"
+            f"单次统计只应用一对"
+            + (f"：{contrast[0]} vs {contrast[1]}" if contrast else "")
+            + f"。其余未执行：{extra}。"
+        )
+    else:
+        contrast_multi_note = ""
+    if contrast and "volcano_plot" not in targets:
+        targets = list(dict.fromkeys([*targets, "volcano_plot"]))
+        if "stats" not in analysis and "stats" not in exclude_analysis:
+            analysis = list(dict.fromkeys([*analysis, "stats"]))
 
     color_by = mapping.get("color_by")
     resolved, errors, warnings = _validate_metadata_color_by(
@@ -657,6 +955,30 @@ def build_analysis_intent(
     )
     if resolved:
         mapping["color_by"] = resolved
+    if contrast_multi_note:
+        warnings.append(contrast_multi_note)
+
+    # group_column 缺列提示
+    cols = [str(c) for c in (metadata_columns or [])]
+    if group_column and cols:
+        if not any(c.lower() == str(group_column).lower() for c in cols):
+            try:
+                matched = match_color_by_column(
+                    str(group_column),
+                    metadata_csv,
+                    columns=cols,
+                    fallback=False,
+                )
+            except Exception:
+                matched = None
+            if matched:
+                group_column = matched
+            else:
+                errors.append(
+                    f"metadata 中不存在「{group_column}」列，无法作为 PLS/Y（group_column）。"
+                    f"可用列：{', '.join(cols)}。"
+                )
+                group_column = None  # 勿把无效列注入工具
 
     # 无任何有效信号则空
     has_signal = bool(
@@ -671,6 +993,8 @@ def build_analysis_intent(
         or mapping.get("marks")
         or facet
         or size_by
+        or group_column
+        or contrast
         or errors
     )
     if not has_signal:
@@ -687,6 +1011,8 @@ def build_analysis_intent(
         "color_channel": mapping.get("color_channel"),
         "cluster": mapping.get("cluster"),
         "thresholds": mapping.get("thresholds"),
+        "group_column": group_column,
+        "contrast": list(contrast) if contrast else None,
         "facet": facet,
         "size_by": size_by,
         "marks": mapping.get("marks") if isinstance(mapping.get("marks"), dict) else None,
@@ -980,6 +1306,11 @@ def describe_intent(intent: dict[str, Any]) -> str:
     thr = intent.get("thresholds")
     if isinstance(thr, dict) and thr:
         bits.append(f"阈值 {thr}")
+    if intent.get("group_column"):
+        bits.append(f"PLS/Y={intent['group_column']}")
+    contrast = intent.get("contrast")
+    if isinstance(contrast, (list, tuple)) and len(contrast) >= 2:
+        bits.append(f"火山对比 {contrast[0]} vs {contrast[1]}")
     if intent.get("facet"):
         bits.append(f"分面={intent['facet']}")
     if intent.get("size_by"):
@@ -990,6 +1321,26 @@ def describe_intent(intent: dict[str, Any]) -> str:
     if intent.get("errors"):
         bits.append("错误：" + "；".join(intent["errors"]))
     return "；".join(bits)
+
+
+def intent_to_mixomics_kwargs(intent: dict[str, Any] | None) -> dict[str, Any]:
+    """从意图对象取出可注入 statistical_analysis_mixomics 的参数。"""
+    if not intent:
+        return {}
+    out: dict[str, Any] = {}
+    gc = intent.get("group_column")
+    if gc:
+        out["group_column"] = str(gc)
+    contrast = intent.get("contrast")
+    if isinstance(contrast, (list, tuple)) and len(contrast) >= 2:
+        out["contrast_group1"] = str(contrast[0])
+        out["contrast_group2"] = str(contrast[1])
+    thr = intent.get("thresholds") if isinstance(intent.get("thresholds"), dict) else {}
+    if thr.get("p") is not None:
+        out["pvalue_threshold"] = float(thr["p"])
+    if thr.get("log2fc") is not None:
+        out["log2fc_threshold"] = float(thr["log2fc"])
+    return out
 
 
 def merge_intent_into_patch(patch: dict[str, Any], intent: dict[str, Any]) -> dict[str, Any]:
@@ -1023,6 +1374,9 @@ __all__ = [
     "build_analysis_intent",
     "parse_analysis_intent",
     "intent_to_plot_patch",
+    "intent_to_mixomics_kwargs",
+    "validate_mixomics_kwargs",
+    "prefer_contrast_for_metadata",
     "prune_plan_tasks_by_intent",
     "task_matches_analysis_kind",
     "format_coloring_task",

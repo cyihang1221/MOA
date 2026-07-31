@@ -388,6 +388,84 @@ body:has(.shared-banner:not(.hidden)) {
   word-break: break-word;
 }
 
+.chat-image-gallery {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.chat-image-gallery:empty {
+  display: none;
+}
+
+.chat-image-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: min(560px, 100%);
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #f8fafc;
+  cursor: pointer;
+  overflow: hidden;
+  text-align: left;
+}
+
+.chat-image-card.chat-image-card-collapsed,
+.chat-image-card[hidden] {
+  display: none !important;
+}
+
+.chat-image-more-btn {
+  /* 独占一行，居中放在最后一张可见图下方 */
+  flex: 0 0 100%;
+  align-self: center;
+  display: block;
+  width: fit-content;
+  min-width: 72px;
+  margin: 4px auto 0;
+  padding: 6px 18px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--muted, #64748b);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  text-align: center;
+}
+
+.chat-image-more-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: #f8fafc;
+}
+
+.chat-image-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+.chat-image-card img {
+  display: block;
+  width: 100%;
+  height: 360px;
+  object-fit: contain;
+  background: #fff;
+}
+
+.chat-image-caption {
+  padding: 6px 8px;
+  font-size: 12px;
+  color: #475569;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .message.user {
   align-self: flex-end;
   background: var(--accent);

@@ -1011,13 +1011,13 @@ async def feature_filtering_and_missing_value_imputation_knn_tool(
     - PLS-DA (supervised classification)
     - Cross-validation (Mfold)
     - VIP score calculation
-    - Volcano plot (2-group only)
+    - Volcano plot (2-group contrast; optional contrast_group1/contrast_group2)
     - Differential metabolite selection
     - Heatmap of top VIP features
 
     Input:
     - Reads file: {input_dir}/feature_table_filtered_imputed.csv (output from feature_filtering_and_missing_value_imputation_knn step)
-    - metadata_csv: full path to sample metadata CSV file (columns: Sample, Group)
+    - metadata_csv: full path to sample metadata CSV (must include Sample + group_column, default Group)
 
     Parameters:
     - input_dir: path to the input directory containing feature_table_filtered_imputed.csv
@@ -1033,6 +1033,9 @@ async def feature_filtering_and_missing_value_imputation_knn_tool(
     - padj_threshold: adjusted p-value threshold (default 0.05)
     - log2fc_threshold: log2 fold change threshold for differential analysis (default 0.58, which corresponds to 1.5-fold change)
     - use_fdr: whether to use FDR correction for p-values (default False)
+    - group_column: metadata column used as PLS-DA Y / plot grouping (default "Group")
+    - contrast_group1: volcano baseline group level (optional)
+    - contrast_group2: volcano treatment/contrast group level (optional); log2FC = mean(g2) - mean(g1)
 
     Output files (written to output_dir):
     - differential_metabolites.csv — differential metabolites table (Feature, log2FC, pvalue, padj, VIP, mz, rt columns), used as input for extract_differential_features step
@@ -1064,7 +1067,10 @@ async def statistical_analysis_mixomics_tool(
     pvalue_threshold: float = 0.05,
     padj_threshold: float = 0.05,
     log2fc_threshold: float = 0.58,
-    use_fdr: bool = False
+    use_fdr: bool = False,
+    group_column: str = "Group",
+    contrast_group1: str | None = None,
+    contrast_group2: str | None = None,
 ):
     statistical_analysis_mixomics_impl(
         input_dir=input_dir,
@@ -1079,7 +1085,10 @@ async def statistical_analysis_mixomics_tool(
         pvalue_threshold=pvalue_threshold,
         padj_threshold=padj_threshold,
         log2fc_threshold=log2fc_threshold,
-        use_fdr=use_fdr
+        use_fdr=use_fdr,
+        group_column=group_column,
+        contrast_group1=contrast_group1,
+        contrast_group2=contrast_group2,
     )
 
     return (

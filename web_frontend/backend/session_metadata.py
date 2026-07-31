@@ -156,6 +156,7 @@ def ensure_aligned_metadata_csv(
     - 零交集（旧实验残留 metadata）：按文件名推断 Group 并重写
     - 部分匹配：保留已知分组，缺失样本自动推断
     - 全匹配：按特征表顺序重写 Sample 列（统一扩展名）
+    - 写回时保留用户自定义列（如 Time/Batch），只按特征表样本裁剪/补齐行
     """
     upload = Path(upload_dir).resolve()
     upload.mkdir(parents=True, exist_ok=True)
@@ -164,12 +165,30 @@ def ensure_aligned_metadata_csv(
     if not samples:
         raise ValueError("ensure_aligned_metadata_csv: sample_ids 为空")
 
+    existing_frame: pd.DataFrame | None = None
     existing_map: dict[str, str] = {}
+    extra_by_key: dict[str, dict[str, Any]] = {}
+    extra_cols: list[str] = []
     source = "none"
     if session_meta.is_file():
         try:
-            existing_map = _group_map_from_frame(pd.read_csv(session_meta))
+            existing_frame = pd.read_csv(session_meta)
+            existing_map = _group_map_from_frame(existing_frame)
             source = "session"
+            extra_cols = [
+                str(c)
+                for c in existing_frame.columns
+                if str(c) not in ("Sample", "Group")
+            ]
+            if "Sample" in existing_frame.columns:
+                for _, row in existing_frame.iterrows():
+                    sample = str(row["Sample"]).strip()
+                    if not sample or sample.lower() == "nan":
+                        continue
+                    key = normalize_sample_key(sample)
+                    extra_by_key[key] = {
+                        col: row[col] for col in extra_cols if col in existing_frame.columns
+                    }
         except Exception:
             existing_map = {}
             source = "session_unreadable"
@@ -177,13 +196,30 @@ def ensure_aligned_metadata_csv(
         global_meta = PROJECT_ROOT / "inputspace" / "metadata.csv"
         if global_meta.is_file():
             try:
-                existing_map = _group_map_from_frame(pd.read_csv(global_meta))
+                existing_frame = pd.read_csv(global_meta)
+                existing_map = _group_map_from_frame(existing_frame)
                 source = "global"
+                extra_cols = [
+                    str(c)
+                    for c in existing_frame.columns
+                    if str(c) not in ("Sample", "Group")
+                ]
+                if "Sample" in existing_frame.columns:
+                    for _, row in existing_frame.iterrows():
+                        sample = str(row["Sample"]).strip()
+                        if not sample or sample.lower() == "nan":
+                            continue
+                        key = normalize_sample_key(sample)
+                        extra_by_key[key] = {
+                            col: row[col]
+                            for col in extra_cols
+                            if col in existing_frame.columns
+                        }
             except Exception:
                 existing_map = {}
 
     matched = 0
-    rows: list[dict[str, str]] = []
+    rows: list[dict[str, Any]] = []
     inferred: list[str] = []
     for sample in samples:
         group = _lookup_group(sample, existing_map)
@@ -192,7 +228,11 @@ def ensure_aligned_metadata_csv(
             inferred.append(sample)
         else:
             matched += 1
-        rows.append({"Sample": sample, "Group": group})
+        row: dict[str, Any] = {"Sample": sample, "Group": group}
+        extras = extra_by_key.get(normalize_sample_key(sample)) or {}
+        for col in extra_cols:
+            row[col] = extras.get(col, "")
+        rows.append(row)
 
     action = "reuse"
     if matched == 0:
@@ -210,7 +250,8 @@ def ensure_aligned_metadata_csv(
         "n_matched": matched,
         "n_inferred": len(inferred),
         "inferred_samples": inferred,
-        "groups": sorted({r["Group"] for r in rows}),
+        "groups": sorted({str(r["Group"]) for r in rows}),
+        "extra_columns": list(extra_cols),
     }
 
     if write_back:
@@ -226,7 +267,8 @@ def ensure_aligned_metadata_csv(
                 report["backup"] = normalize_display_path(bak)
             except OSError:
                 pass
-        out = pd.DataFrame(rows, columns=["Sample", "Group"])
+        columns = ["Sample", "Group", *extra_cols]
+        out = pd.DataFrame(rows, columns=columns)
         out.to_csv(session_meta, index=False)
         note = upload / "metadata_alignment_note.txt"
         note.write_text(
@@ -236,6 +278,7 @@ def ensure_aligned_metadata_csv(
             f"matched={matched}/{len(samples)}\n"
             f"inferred={len(inferred)}\n"
             f"groups={','.join(report['groups'])}\n"
+            f"extra_columns={','.join(extra_cols)}\n"
             + (
                 "inferred_samples:\n" + "\n".join(inferred) + "\n"
                 if inferred

@@ -62,6 +62,8 @@ DEFAULT_COLORS = {
     "median_color": "#ff7f0e",
     "scatter_color": "#4c72b0",
     "significant": "#E64B35",
+    "upregulated": "#E64B35",
+    "downregulated": "#4DBBD5",
     "nonsignificant": "#B0B0B0",
     "bar_color": "#3C5488",
     "fragment_color": "#c0392b",
@@ -354,3 +356,66 @@ def merge_plot_config(base: dict[str, Any], patch: dict[str, Any]) -> dict[str, 
             merged.setdefault(section, {})
             merged[section].update(patch[section])
     return merged
+
+_DIFF_SKIP_KEYS = frozenset({"source_rel", "instruction", "updated_at", "created_at"})
+
+
+def diff_plot_config(
+    before: dict | None,
+    after: dict | None,
+) -> dict:
+    """比较两份 plot_config，返回 changed / added / removed。"""
+    before = before if isinstance(before, dict) else {}
+    after = after if isinstance(after, dict) else {}
+    keys = sorted(set(before) | set(after))
+    changed = {}
+    added = {}
+    removed = {}
+    for key in keys:
+        if key in _DIFF_SKIP_KEYS:
+            continue
+        if key not in before:
+            added[key] = after.get(key)
+            continue
+        if key not in after:
+            removed[key] = before.get(key)
+            continue
+        bv, av = before.get(key), after.get(key)
+        if bv == av:
+            continue
+        if isinstance(bv, dict) and isinstance(av, dict):
+            nested = {}
+            for nk in sorted(set(bv) | set(av)):
+                if bv.get(nk) != av.get(nk):
+                    nested[nk] = {"from": bv.get(nk), "to": av.get(nk)}
+            if nested:
+                changed[key] = nested
+        else:
+            changed[key] = {"from": bv, "to": av}
+    return {
+        "changed": changed,
+        "added": added,
+        "removed": removed,
+        "summary": _format_config_diff_summary(changed, added, removed),
+    }
+
+
+def _format_config_diff_summary(changed, added, removed) -> str:
+    parts = []
+    for key, val in changed.items():
+        if isinstance(val, dict) and "from" in val and "to" in val:
+            parts.append(f"{key}: {val['from']!r} → {val['to']!r}")
+        elif isinstance(val, dict):
+            for nk, nv in val.items():
+                if isinstance(nv, dict) and "from" in nv:
+                    parts.append(f"{key}.{nk}: {nv['from']!r} → {nv['to']!r}")
+                else:
+                    parts.append(f"{key}.{nk}")
+        else:
+            parts.append(str(key))
+    for key in added:
+        parts.append(f"+{key}")
+    for key in removed:
+        parts.append(f"-{key}")
+    return "；".join(parts) if parts else "无字段变化"
+

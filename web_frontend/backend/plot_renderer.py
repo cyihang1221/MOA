@@ -352,34 +352,73 @@ def render_volcano_plot_png(
     if not required.issubset(df.columns):
         raise ValueError("volcano_results.csv 缺少 log2FC / neglog10p 列")
 
-    sig_col = "Significant" if "Significant" in df.columns else None
-    sig_color = _color_from_config(plot_config, "significant", "#E64B35")
+    thresholds = (
+        plot_config.get("thresholds")
+        if isinstance(plot_config.get("thresholds"), dict)
+        else {}
+    )
+    p_cut = float(thresholds["p"]) if thresholds.get("p") is not None else None
+    fc_cut = float(thresholds["log2fc"]) if thresholds.get("log2fc") is not None else None
+    if p_cut is not None or fc_cut is not None:
+        p_mask = pd.Series(True, index=df.index)
+        fc_mask = pd.Series(True, index=df.index)
+        if p_cut is not None:
+            if "pvalue" in df.columns:
+                p_mask = pd.to_numeric(df["pvalue"], errors="coerce").lt(p_cut)
+            elif "padj" in df.columns:
+                p_mask = pd.to_numeric(df["padj"], errors="coerce").lt(p_cut)
+            else:
+                p_mask = pd.to_numeric(df["neglog10p"], errors="coerce").ge(
+                    -np.log10(max(p_cut, 1e-300))
+                )
+        if fc_cut is not None:
+            fc_mask = pd.to_numeric(df["log2FC"], errors="coerce").abs().ge(fc_cut)
+        sig_mask = (p_mask & fc_mask).fillna(False)
+    elif "Significant" in df.columns:
+        sig_mask = df["Significant"].astype(bool)
+    else:
+        sig_mask = pd.Series(True, index=df.index)
+
+    up_mask = sig_mask & df["log2FC"].gt(0)
+    down_mask = sig_mask & df["log2FC"].lt(0)
+    nonsig_mask = ~sig_mask
+    up_color = _color_from_config(
+        plot_config,
+        "upregulated",
+        _color_from_config(plot_config, "significant", "#E64B35"),
+    )
+    down_color = _color_from_config(plot_config, "downregulated", "#4DBBD5")
     nonsig_color = _color_from_config(plot_config, "nonsignificant", "#B0B0B0")
+    threshold_color = _color_from_config(plot_config, "threshold_color", "#d62728")
     fs = plot_config.get("font_size") or {}
     fig_w, fig_h = plot_config.get("figure_size") or [8.0, 6.0]
 
     fig, ax = plt.subplots(figsize=(float(fig_w), float(fig_h)), facecolor="white")
-    if sig_col:
-        sig_mask = df[sig_col].astype(bool)
-        ax.scatter(
-            df.loc[~sig_mask, "log2FC"],
-            df.loc[~sig_mask, "neglog10p"],
-            c=nonsig_color,
-            s=18,
-            alpha=0.7,
-            label="Non-significant",
+    for label, mask, color, size, alpha in (
+        ("Not significant", nonsig_mask, nonsig_color, 18, 0.7),
+        ("Upregulated", up_mask, up_color, 22, 0.85),
+        ("Downregulated", down_mask, down_color, 22, 0.85),
+    ):
+        if mask.any():
+            ax.scatter(
+                df.loc[mask, "log2FC"],
+                df.loc[mask, "neglog10p"],
+                c=color,
+                s=size,
+                alpha=alpha,
+                label=label,
+            )
+    if fc_cut is not None:
+        ax.axvline(-fc_cut, color=threshold_color, linestyle="--", linewidth=1.5)
+        ax.axvline(fc_cut, color=threshold_color, linestyle="--", linewidth=1.5)
+    if p_cut is not None:
+        ax.axhline(
+            -np.log10(max(p_cut, 1e-300)),
+            color=threshold_color,
+            linestyle="--",
+            linewidth=1.5,
         )
-        ax.scatter(
-            df.loc[sig_mask, "log2FC"],
-            df.loc[sig_mask, "neglog10p"],
-            c=sig_color,
-            s=22,
-            alpha=0.85,
-            label="Significant",
-        )
-        ax.legend(prop=_cjk(fs.get("legend", 11)))
-    else:
-        ax.scatter(df["log2FC"], df["neglog10p"], c=sig_color, s=18, alpha=0.8)
+    ax.legend(prop=_cjk(fs.get("legend", 11)))
 
     ax.set_title(
         plot_config.get("title", "Volcano Plot"),
@@ -399,16 +438,49 @@ def render_volcano_plot_png(
 
 def build_echarts_volcano(volcano_csv: str | Path, plot_config: dict[str, Any]) -> dict[str, Any]:
     df = pd.read_csv(volcano_csv)
-    sig_col = "Significant" if "Significant" in df.columns else None
-    sig_color = _color_from_config(plot_config, "significant", "#E64B35")
+    thresholds = (
+        plot_config.get("thresholds")
+        if isinstance(plot_config.get("thresholds"), dict)
+        else {}
+    )
+    p_cut = float(thresholds["p"]) if thresholds.get("p") is not None else None
+    fc_cut = float(thresholds["log2fc"]) if thresholds.get("log2fc") is not None else None
+    if p_cut is not None or fc_cut is not None:
+        p_mask = pd.Series(True, index=df.index)
+        fc_mask = pd.Series(True, index=df.index)
+        if p_cut is not None:
+            if "pvalue" in df.columns:
+                p_mask = pd.to_numeric(df["pvalue"], errors="coerce").lt(p_cut)
+            elif "padj" in df.columns:
+                p_mask = pd.to_numeric(df["padj"], errors="coerce").lt(p_cut)
+            else:
+                p_mask = pd.to_numeric(df["neglog10p"], errors="coerce").ge(
+                    -np.log10(max(p_cut, 1e-300))
+                )
+        if fc_cut is not None:
+            fc_mask = pd.to_numeric(df["log2FC"], errors="coerce").abs().ge(fc_cut)
+        sig_mask = (p_mask & fc_mask).fillna(False)
+    elif "Significant" in df.columns:
+        sig_mask = df["Significant"].astype(bool)
+    else:
+        sig_mask = pd.Series(True, index=df.index)
+
+    up_color = _color_from_config(
+        plot_config,
+        "upregulated",
+        _color_from_config(plot_config, "significant", "#E64B35"),
+    )
+    down_color = _color_from_config(plot_config, "downregulated", "#4DBBD5")
     nonsig_color = _color_from_config(plot_config, "nonsignificant", "#B0B0B0")
+    threshold_color = _color_from_config(plot_config, "threshold_color", "#d62728")
     fs = plot_config.get("font_size") or {}
     series = []
-    if sig_col:
-        for label, mask, color in (
-            ("Non-significant", ~df[sig_col].astype(bool), nonsig_color),
-            ("Significant", df[sig_col].astype(bool), sig_color),
-        ):
+    for label, mask, color in (
+        ("Not significant", ~sig_mask, nonsig_color),
+        ("Upregulated", sig_mask & df["log2FC"].gt(0), up_color),
+        ("Downregulated", sig_mask & df["log2FC"].lt(0), down_color),
+    ):
+        if mask.any():
             points = [
                 [float(r.log2FC), float(r.neglog10p)]
                 for r in df.loc[mask].itertuples()
@@ -422,16 +494,19 @@ def build_echarts_volcano(volcano_csv: str | Path, plot_config: dict[str, Any]) 
                     "data": points,
                 }
             )
-    else:
-        series.append(
-            {
-                "name": "Features",
-                "type": "scatter",
-                "symbolSize": 8,
-                "itemStyle": {"color": sig_color},
-                "data": [[float(a), float(b)] for a, b in zip(df["log2FC"], df["neglog10p"])],
-            }
-        )
+    mark_lines = []
+    if fc_cut is not None:
+        mark_lines.extend([{"xAxis": -fc_cut}, {"xAxis": fc_cut}])
+    if p_cut is not None:
+        mark_lines.append({"yAxis": float(-np.log10(max(p_cut, 1e-300)))})
+    if mark_lines and series:
+        series[0]["markLine"] = {
+            "silent": True,
+            "symbol": ["none", "none"],
+            "lineStyle": {"color": threshold_color, "type": "dashed", "width": 1.5},
+            "label": {"show": False},
+            "data": mark_lines,
+        }
     return {
         "title": {"text": plot_config.get("title", ""), "textStyle": {"fontSize": fs.get("title", 16)}},
         "tooltip": {"trigger": "item"},

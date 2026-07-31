@@ -4,6 +4,11 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from web_frontend.backend.anti_hallucination import (
+    PLAN_ANTI_HALLUCINATION_RULES,
+    TOOL_MATCH_ANTI_HALLUCINATION_RULES,
+)
+
 
 def _schema_params(tool: Any) -> dict:
     schema = getattr(tool, "inputSchema", None) or (
@@ -78,6 +83,8 @@ def build_plan_prompt(
         "If mandatory_first_step is set, plan[0] MUST be that step (or equivalent wording with the same tool and paths).",
         "If user uploaded .mzML to inputspace, data_preprocessing_xcms (or an alternative preprocessing tool if requested) may run without raw conversion; mzML is auto-synced to converted_mzml.",
         "If .raw files exist but no mzML in inputspace or converted_mzml, raw conversion MUST be plan step 1 — never start with data_preprocessing_xcms.",
+        "When the user asks for volcano contrast (A vs B) or PLS by a metadata column (按 Time 做 PLS), "
+        "include group_column / contrast_group1 / contrast_group2 in statistical_analysis_mixomics arguments.",
         "If intermediate outputs already exist (feature_table.csv, imputed table, etc.), skip upstream steps and continue from the latest missing step.",
         "If the user message is casual chat (greetings, unrelated questions), return {\"plan\": []} with zero steps.",
         "For plot style edits (title/color/font/align) on EXISTING figures ONLY (no new analysis), use plot_edit — do NOT invent image paths or re-run analysis just to change style.",
@@ -103,7 +110,9 @@ def build_plan_prompt(
         "All tools use input_dir and output_dir (directories), NOT input_csv/output_csv, except extract_differential_features uses differential_csv + input_mgf + output_dir.",
         "feature_filtering: input_dir must contain feature_table.csv (usually peak_detection_results/).",
         "statistical_analysis_mixomics: input_dir has feature_table_filtered_imputed.csv; metadata_csv is upload/metadata.csv "
-        "(runtime auto-aligns Sample names to the feature table; mismatched stale metadata is regenerated from filenames).",
+        "(runtime auto-aligns Sample names to the feature table; mismatched stale metadata is regenerated from filenames). "
+        "Optional: group_column (PLS-DA Y, default Group), contrast_group1/contrast_group2 for volcano when >2 groups "
+        "(e.g. Treatment vs Control). Runtime also injects these from user intent when stated in natural language.",
         "After XCMS: NEVER plan peak_group_alignment_openms unless *.featureXML already exists; "
         "FBMN must use XCMS feature_table.csv / filtered imputed table + spectra.mgf, not openms_aligned_features/.",
         "molecular_networking_ms2lda: ALWAYS use peak_detection_results/spectra.mgf "
@@ -118,9 +127,10 @@ def build_plan_prompt(
         "deepmass_annotation: input_dir is deepmass_annotation_results/ under outputspace; output_dir is the same or a sibling deepmass folder. Uploaded .mgf is auto-copied to differential_spectra.mgf — do NOT skip DeepMASS when differential_metabolites.csv is empty.",
         "library_match_* / spectral_annotation: prefer when user asks for library matching or annotation against spectral libraries.",
         "peak_detection_* / align_* / group_peaks_* / fill_missing_* / filter_redundant_* / redundant_feature_filtering_*: use for step-by-step pipelines when user does not want end-to-end data_preprocessing_*.",
+        *PLAN_ANTI_HALLUCINATION_RULES,
     ]
     return {
-        "role": "Act as a Metabolomics Expert. Follow all rules strictly.",
+        "role": "Act as a Metabolomics Expert. Follow all rules strictly. You only emit a JSON plan; runtime executes tools.",
         "rules": rules,
         "current_user_message": user_message.strip(),
         "existing_outputs": existing_outputs or [],
@@ -154,7 +164,7 @@ def build_tool_match_prompt(
             break
 
     return {
-        "role": "Tool selection assistant. Pick the tool for the current sub-task.",
+        "role": "Tool selection assistant. Pick the tool for the current sub-task. Emit JSON only.",
         "rules": [
             "Respond ONLY with JSON: {\"tool_call\": {\"name\": \"...\", \"arguments\": {...}}}",
             "arguments keys MUST match exactly the \"parameters\" object for the chosen tool (e.g. input_dir, output_dir).",
@@ -163,6 +173,7 @@ def build_tool_match_prompt(
             "Do not invent tools outside available_tools.",
             "For plot_edit / image_merge / merge_edit: arguments must include instruction (natural language); optional source_rel or target_rel for specific files.",
             "Never claim a file was written unless the tool result lists a real path.",
+            *TOOL_MATCH_ANTI_HALLUCINATION_RULES,
         ],
         "global_goal": goal_description,
         "current_sub_task": task,

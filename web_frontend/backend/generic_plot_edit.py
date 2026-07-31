@@ -9,12 +9,22 @@ from typing import Any
 
 from src.platform_utils import normalize_display_path
 
+from web_frontend.backend.anti_hallucination import (
+    GENERIC_PLOT_EDIT_SYSTEM_GUARD,
+    messages_with_system,
+)
 from web_frontend.backend.export.editable_export import (
     build_editable_metadata,
     editable_json_path,
 )
 from web_frontend.backend.json_parse import extract_first_json_object
 from web_frontend.backend.session_storage import edited_plots_dir, session_work_dir
+from web_frontend.backend.plot_versioning import (
+    canonical_plot_base,
+    find_effective_plot_rel,
+    stable_intent_filename,
+    write_current_pointer,
+)
 from web_frontend.backend.web_llm import WebLLMClient
 
 
@@ -34,6 +44,55 @@ def _load_editable_meta(png: Path) -> dict[str, Any]:
     return build_editable_metadata(png, title=png.stem.replace("_", " "))
 
 
+def _heuristic_title_patch(instruction: str) -> dict[str, Any] | None:
+    """从「标题改成 XXX」类自然语言提取 patch，失败返回 None。"""
+    text = (instruction or "").strip()
+    if not text:
+        return None
+    patterns = [
+        r"(?:把|将)?标题(?:改成|改为|修改为|设为|换成)\s*[「『\"“](.+?)[」』\"”]\s*$",
+        r"(?:把|将)?标题(?:改成|改为|修改为|设为|换成)\s*[「『\"']?(.+?)[」』\"']?\s*$",
+        r"(?:change|set)\s+(?:the\s+)?title\s+to\s+[\"']?(.+?)[\"']?\s*$",
+        r"title\s*[:=]\s*[\"']?(.+?)[\"']?\s*$",
+    ]
+    for pat in patterns:
+        m = re.search(pat, text, flags=re.IGNORECASE)
+        if m:
+            title = m.group(1).strip().rstrip("。．.！!")
+            if title and "字号" not in title and "放大" not in title:
+                return {"title": title}
+    return None
+
+
+def _heuristic_font_size_patch(
+    instruction: str,
+    current_size: int,
+) -> dict[str, Any] | None:
+    text = (instruction or "").strip()
+    if not text:
+        return None
+    cur = max(12, min(72, int(current_size or 28)))
+    m = re.search(
+        r"(?:标题)?(?:的)?(?:字号|字体大小|字体)?(?:再)?(?:放大|增大|增加|加大|加)\s*(\d+)",
+        text,
+    )
+    if m:
+        return {"title_size": min(72, cur + int(m.group(1)))}
+    m = re.search(
+        r"(?:标题)?(?:的)?(?:字号|字体大小|字体)?(?:再)?(?:缩小|减小|减少|减)\s*(\d+)",
+        text,
+    )
+    if m:
+        return {"title_size": max(12, cur - int(m.group(1)))}
+    m = re.search(
+        r"(?:标题)?(?:字号|字体大小|字体)\s*(?:改成|改为|设为|设置成|设置为|=|:|：)\s*(\d+)",
+        text,
+    )
+    if m:
+        return {"title_size": max(12, min(72, int(m.group(1))))}
+    return None
+
+
 def parse_generic_edit_instruction(
     *,
     instruction: str,
@@ -43,6 +102,12 @@ def parse_generic_edit_instruction(
 ) -> dict[str, Any]:
     if not instruction.strip():
         raise GenericPlotEditError("改图说明不能为空")
+
+    cur_size = int(current_meta.get("title_size") or 28)
+    font_patch = _heuristic_font_size_patch(instruction, cur_size)
+    title_patch = _heuristic_title_patch(instruction)
+    if font_patch and not title_patch:
+        return font_patch
 
     prompt = f"""你是图表样式编辑助手。根据用户要求，输出对可编辑图元数据的 JSON patch。
 只输出一个 JSON 对象，不要 markdown。
@@ -65,15 +130,19 @@ def parse_generic_edit_instruction(
 
 规则:
 - 未提及的字段不要返回
+- 只改字号时不要返回 title，必须保留当前标题
+- 「放大/缩小 N 个字号」基于当前 title_size 加减后输出绝对值
 - 颜色必须是 #RRGGBB
 - title_size 范围 12-72
+- 不要编造源图路径；不要声称已重绘或已保存文件
+- 不要 markdown 或解释文字
 """
     # 常见「改标题」指令可无 LLM，避免配置/网络问题时完全不可用
-    heuristic = _heuristic_title_patch(instruction)
+    heuristic = title_patch or font_patch
     try:
         llm = WebLLMClient(model=model)
         raw = llm.think_complete(
-            [{"role": "user", "content": prompt}],
+            messages_with_system(GENERIC_PLOT_EDIT_SYSTEM_GUARD, prompt),
             temperature=0.0,
             max_tokens=1024,
         )
@@ -95,26 +164,12 @@ def parse_generic_edit_instruction(
         if heuristic:
             return heuristic
         raise GenericPlotEditError(f"无法解析 Agent 返回：{raw[:400]}")
+    if font_patch and not title_patch:
+        patch.pop("title", None)
+        patch["title_size"] = font_patch["title_size"]
+    elif title_patch and "title" not in patch:
+        patch["title"] = title_patch["title"]
     return patch
-
-
-def _heuristic_title_patch(instruction: str) -> dict[str, Any] | None:
-    """从「标题改成 XXX」类自然语言提取 patch，失败返回 None。"""
-    text = (instruction or "").strip()
-    if not text:
-        return None
-    patterns = [
-        r"(?:把|将)?标题(?:改成|改为|修改为|设为|换成)\s*[「『\"']?(.+?)[」』\"']?\s*$",
-        r"(?:change|set)\s+(?:the\s+)?title\s+to\s+[\"']?(.+?)[\"']?\s*$",
-        r"title\s*[:=]\s*[\"']?(.+?)[\"']?\s*$",
-    ]
-    for pat in patterns:
-        m = re.search(pat, text, flags=re.IGNORECASE)
-        if m:
-            title = m.group(1).strip().rstrip("。．.！!")
-            if title:
-                return {"title": title}
-    return None
 
 
 def _draw_title_on_image(
@@ -174,7 +229,9 @@ def apply_generic_plot_edit(
     filename: str | None = None,
 ) -> dict[str, Any]:
     output_root = session_work_dir(project_root, storage_slug).resolve()
-    source = (output_root / source_rel).resolve()
+    eff = find_effective_plot_rel(output_root, source_rel)
+    use_rel = eff.get("effective_rel") or source_rel
+    source = (output_root / use_rel).resolve()
     try:
         source.relative_to(output_root)
     except ValueError as exc:
@@ -183,6 +240,22 @@ def apply_generic_plot_edit(
         raise GenericPlotEditError(f"找不到 PNG：{source_rel}")
 
     current = _load_editable_meta(source)
+    # 也尝试从同名 plot_config 继承标题（语义改图产物）
+    cfg_sidecar = source.with_name(source.stem + ".plot_config.json")
+    if cfg_sidecar.is_file():
+        try:
+            cfg = json.loads(cfg_sidecar.read_text(encoding="utf-8"))
+            if isinstance(cfg, dict):
+                if cfg.get("title") and not current.get("title"):
+                    current["title"] = cfg["title"]
+                fs = cfg.get("font_size")
+                if isinstance(fs, dict) and fs.get("title") and not current.get("title_size"):
+                    current["title_size"] = int(fs["title"])
+                if cfg.get("source_rel") and not current.get("source_rel"):
+                    current["source_rel"] = cfg["source_rel"]
+        except Exception:
+            pass
+
     patch = parse_generic_edit_instruction(
         instruction=instruction,
         current_meta=current,
@@ -197,13 +270,29 @@ def apply_generic_plot_edit(
     title_size = max(12, min(72, title_size))
 
     edit_dir = edited_plots_dir(output_root)
-    stem = Path(filename or f"{source.stem}_edited.png").stem
+    base = eff.get("base") or canonical_plot_base(use_rel)
+    out_name = filename or stable_intent_filename(base or source.stem)
+    stem = Path(out_name).stem
     target = edit_dir / f"{stem}.png"
-    if target.exists():
-        target = edit_dir / f"{stem}_{uuid.uuid4().hex[:8]}.png"
+    # 稳定 intent 名覆盖写，避免 hash 分叉
+
+    # 连续改图：叠字必须画在「干净原图」上，避免在已烧录标题的 intent 上再叠一层
+    preserved = str(
+        current.get("source_rel")
+        or eff.get("original_rel")
+        or use_rel
+    )
+    draw_base = source
+    clean = (output_root / preserved).resolve()
+    try:
+        clean.relative_to(output_root)
+        if clean.is_file() and clean.suffix.lower() == ".png":
+            draw_base = clean
+    except ValueError:
+        pass
 
     _draw_title_on_image(
-        source,
+        draw_base,
         target,
         title=title,
         title_color=title_color,
@@ -219,7 +308,7 @@ def apply_generic_plot_edit(
         height=current.get("height"),
         objects=current.get("objects") if isinstance(current.get("objects"), list) else [],
     )
-    meta["source_rel"] = source_rel
+    meta["source_rel"] = preserved
     meta["title_color"] = title_color
     meta["title_size"] = title_size
     meta["title_align"] = patch.get("title_align") or current.get("title_align") or "center"
@@ -228,10 +317,39 @@ def apply_generic_plot_edit(
     sidecar = editable_json_path(target)
     sidecar.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
 
+    rel_png = target.relative_to(output_root).as_posix()
+    if base:
+        write_current_pointer(output_root, base, rel_png)
+
+    before_keys = {
+        "title": current.get("title"),
+        "title_size": current.get("title_size"),
+        "title_color": current.get("title_color"),
+        "title_position": current.get("title_position"),
+    }
+    after_keys = {
+        "title": title,
+        "title_size": title_size,
+        "title_color": title_color,
+        "title_position": title_position,
+    }
+    changed = {
+        k: {"from": before_keys[k], "to": after_keys[k]}
+        for k in before_keys
+        if before_keys[k] != after_keys[k]
+    }
+    config_diff = {
+        "changed": changed,
+        "added": {},
+        "removed": {},
+        "summary": "；".join(f"{k}: {v['from']!r} → {v['to']!r}" for k, v in changed.items())
+        or "无字段变化",
+    }
+
     stat = target.stat()
     return {
         "file": {
-            "name": target.relative_to(output_root).as_posix(),
+            "name": rel_png,
             "path": normalize_display_path(target),
             "size": stat.st_size,
         },
@@ -239,10 +357,13 @@ def apply_generic_plot_edit(
             "name": sidecar.relative_to(output_root).as_posix(),
             "path": normalize_display_path(sidecar),
         },
-        "source_rel": source_rel,
+        "source_rel": preserved,
+        "effective_rel": rel_png,
+        "plot_base": base,
         "plot_type": "generic",
         "edit_mode": "generic",
         "agent_patch": patch,
+        "config_diff": config_diff,
     }
 
 

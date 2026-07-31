@@ -253,8 +253,8 @@ function isImagePath(path) {
 function preferOutputGalleryImage(a, b) {
   const aName = String(a?.name || "");
   const bName = String(b?.name || "");
-  const aEdited = aName.startsWith("edited_plots/");
-  const bEdited = bName.startsWith("edited_plots/");
+  const aEdited = aName.startsWith("edited_plots/") || /_intent(_[a-f0-9]+)?\./i.test(aName);
+  const bEdited = bName.startsWith("edited_plots/") || /_intent(_[a-f0-9]+)?\./i.test(bName);
   if (aEdited !== bEdited) return aEdited ? a : b;
   const aMerged = aName.startsWith("merged_figures/");
   const bMerged = bName.startsWith("merged_figures/");
@@ -274,9 +274,28 @@ function preferOutputGalleryImage(a, b) {
   return aName.length <= bName.length ? a : b;
 }
 
+/** 聊天预览：pca_plot.png 与 pca_plot_intent*.png 归为同一底图（优先 intent） */
+function outputGalleryBaseKey(rel) {
+  const name = String(rel || "").split("/").pop() || String(rel || "");
+  return name
+    .replace(/\.(png|jpe?g|gif|webp|svg)$/i, "")
+    .replace(/_(?:intent|edited)(_[a-f0-9]+)?$/i, "")
+    .toLowerCase();
+}
+
 /**
- * 不同工具目录常产出同名 PNG（如 cosine_distribution.png）。
- * 图库只显示 basename，按文件名去重；merged_figures 内互不去重。
+ * 右侧图库去重键：保留文件名完整 stem（含 _intent/_edited），
+ * 避免 pca_plot.png 被 pca_plot_intent.png 顶掉后无法在图库中找到。
+ * 跨目录同名（如根目录扁平副本）仍去重。
+ */
+function outputGalleryDedupeKey(rel) {
+  const name = String(rel || "").split("/").pop() || String(rel || "");
+  return name.replace(/\.(png|jpe?g|gif|webp|svg)$/i, "").toLowerCase();
+}
+
+/**
+ * 不同工具目录常产出同名 PNG；图库按文件名 stem 去重（intent 与原图分开展示）。
+ * merged_figures 内互不去重。
  */
 function dedupeOutputImagesByBasename(files) {
   const chosen = new Map();
@@ -287,7 +306,7 @@ function dedupeOutputImagesByBasename(files) {
       chosen.set(`merged:${rel}`, file);
       return;
     }
-    const base = rel.split("/").pop().toLowerCase();
+    const base = outputGalleryDedupeKey(rel);
     const prev = chosen.get(base);
     chosen.set(base, prev ? preferOutputGalleryImage(file, prev) : file);
   });
@@ -1222,9 +1241,11 @@ function createMessageEl(role, content, timeStr = "", messageId = null) {
   div.className = `message ${role}`;
   if (messageId != null) div.dataset.messageId = String(messageId);
 
+  const { text, images } = parseChatImagesFromContent(content || "");
+
   const contentEl = document.createElement("div");
   contentEl.className = "message-content";
-  contentEl.textContent = content || "";
+  contentEl.textContent = text;
 
   const actionsEl = document.createElement("div");
   actionsEl.className = "message-actions";
@@ -1246,6 +1267,13 @@ function createMessageEl(role, content, timeStr = "", messageId = null) {
   metaEl.textContent = `${label} · ${displayTime(timeStr) || ""}`;
 
   div.appendChild(contentEl);
+  if (role === "assistant") {
+    const galleryEl = ensureChatImageGallery(div);
+    if (images.length && currentSessionId) {
+      images.forEach((rel) => appendChatImage(galleryEl, currentSessionId, rel));
+      syncChatImageGalleryCollapse(galleryEl);
+    }
+  }
   if (actionsEl.childElementCount) div.appendChild(actionsEl);
   div.appendChild(metaEl);
   messagesEl.appendChild(div);
@@ -1255,6 +1283,192 @@ function createMessageEl(role, content, timeStr = "", messageId = null) {
     lastAssistantMessageId = messageId;
   }
   return { div, contentEl, metaEl, actionsEl };
+}
+
+const CHAT_IMAGES_MARKER_RE = /<!--massagent:chat_images:(\[[\s\S]*?\])-->/g;
+
+/** 同一底图若同时有原始图与 edited_plots/*_intent*，优先保留意图重绘版 */
+function preferEditedChatImageRels(rels) {
+  const list = (Array.isArray(rels) ? rels : [])
+    .map((r) => String(r || "").trim())
+    .filter(Boolean);
+  if (list.length <= 1) return list;
+
+  const baseKey = (rel) => outputGalleryBaseKey(rel);
+  const isEdited = (rel) =>
+    /(?:^|\/)edited_plots\//i.test(rel) ||
+    /_(?:intent|edited)(_[a-f0-9]+)?\./i.test(rel);
+
+  const byBase = new Map();
+  for (const rel of list) {
+    const key = baseKey(rel);
+    const prev = byBase.get(key);
+    if (!prev) {
+      byBase.set(key, rel);
+      continue;
+    }
+    // 有意图/编辑版时替换原始版；同为编辑版时保留后出现的（通常更新）
+    if (isEdited(rel) && !isEdited(prev)) byBase.set(key, rel);
+    else if (isEdited(rel) && isEdited(prev)) byBase.set(key, rel);
+  }
+  // 保持首次出现顺序：先扫 list，按最终 byBase 取值去重
+  const out = [];
+  const seen = new Set();
+  for (const rel of list) {
+    const chosen = byBase.get(baseKey(rel));
+    if (!chosen || seen.has(chosen)) continue;
+    seen.add(chosen);
+    out.push(chosen);
+  }
+  return out;
+}
+
+function parseChatImagesFromContent(content) {
+  const images = [];
+  const text = String(content || "")
+    .replace(CHAT_IMAGES_MARKER_RE, (_, jsonStr) => {
+      try {
+        const arr = JSON.parse(jsonStr);
+        if (Array.isArray(arr)) {
+          arr.forEach((item) => {
+            const rel = String(item || "").trim();
+            if (rel && !images.includes(rel)) images.push(rel);
+          });
+        }
+      } catch {
+        /* ignore bad marker */
+      }
+      return "";
+    })
+    .replace(/\n{3,}/g, "\n\n")
+    .trimEnd();
+  return { text, images: preferEditedChatImageRels(images) };
+}
+
+/** 聊天预览默认只展示前 N 张，其余点「展开」显示全部 */
+const CHAT_IMAGE_PREVIEW_LIMIT = 3;
+
+function ensureChatImageGallery(messageDiv) {
+  let gallery = messageDiv.querySelector(".chat-image-gallery");
+  if (gallery) return gallery;
+  gallery = document.createElement("div");
+  gallery.className = "chat-image-gallery";
+  const contentEl = messageDiv.querySelector(".message-content");
+  if (contentEl && contentEl.nextSibling) {
+    messageDiv.insertBefore(gallery, contentEl.nextSibling);
+  } else if (contentEl) {
+    contentEl.after(gallery);
+  } else {
+    messageDiv.appendChild(gallery);
+  }
+  return gallery;
+}
+
+function syncChatImageGalleryCollapse(galleryEl) {
+  if (!galleryEl) return;
+  const cards = Array.from(galleryEl.querySelectorAll(".chat-image-card"));
+  let moreBtn = galleryEl.querySelector(".chat-image-more-btn");
+  const expanded = galleryEl.getAttribute("data-chat-images-expanded") === "1";
+  const overflow = cards.length > CHAT_IMAGE_PREVIEW_LIMIT;
+
+  cards.forEach((card, index) => {
+    const hide = !expanded && overflow && index >= CHAT_IMAGE_PREVIEW_LIMIT;
+    card.classList.toggle("chat-image-card-collapsed", hide);
+    card.hidden = hide;
+  });
+
+  if (!overflow) {
+    if (moreBtn) moreBtn.remove();
+    galleryEl.removeAttribute("data-chat-images-expanded");
+    return;
+  }
+
+  if (!moreBtn) {
+    moreBtn = document.createElement("button");
+    moreBtn.type = "button";
+    moreBtn.className = "chat-image-more-btn";
+    moreBtn.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const open = galleryEl.getAttribute("data-chat-images-expanded") === "1";
+      galleryEl.setAttribute("data-chat-images-expanded", open ? "0" : "1");
+      syncChatImageGalleryCollapse(galleryEl);
+      scrollMessagesIfPinned();
+    });
+    galleryEl.appendChild(moreBtn);
+  }
+
+  // 放在当前最后一张可见图之后（折叠=第 N 张；展开=全部最后一张）
+  const anchor = expanded
+    ? cards[cards.length - 1]
+    : cards[CHAT_IMAGE_PREVIEW_LIMIT - 1] || cards[cards.length - 1];
+  if (anchor && moreBtn.previousElementSibling !== anchor) {
+    anchor.after(moreBtn);
+  }
+
+  const hiddenCount = Math.max(0, cards.length - CHAT_IMAGE_PREVIEW_LIMIT);
+  if (expanded) {
+    moreBtn.textContent = t("image.chatCollapse") || "收起";
+    moreBtn.title = t("image.chatCollapseHint") || "收起多余预览图";
+  } else {
+    moreBtn.textContent = t("image.chatExpand") || "展开";
+    moreBtn.title =
+      t("image.chatExpandHint", { n: hiddenCount }) ||
+      `展开其余 ${hiddenCount} 张预览图`;
+  }
+}
+
+function appendChatImage(galleryEl, sessionId, rel) {
+  const fileRel = String(rel || "").trim();
+  if (!galleryEl || !sessionId || !fileRel) return;
+  const already = Array.from(galleryEl.querySelectorAll("[data-chat-image-rel]")).some(
+    (el) => el.getAttribute("data-chat-image-rel") === fileRel
+  );
+  if (already) return;
+  const url = workspaceFileUrl(sessionId, fileRel);
+  if (!url) return;
+
+  const card = document.createElement("button");
+  card.type = "button";
+  card.className = "chat-image-card";
+  card.setAttribute("data-chat-image-rel", fileRel);
+  card.title = fileRel;
+
+  const img = document.createElement("img");
+  img.loading = "lazy";
+  img.alt = fileRel.split("/").pop() || fileRel;
+  img.src = url;
+
+  const caption = document.createElement("span");
+  caption.className = "chat-image-caption";
+  caption.textContent = fileRel.split("/").pop() || fileRel;
+
+  card.appendChild(img);
+  card.appendChild(caption);
+  card.addEventListener("click", () => {
+    openImageLightbox({ url, title: fileRel.split("/").pop() || fileRel });
+  });
+  const moreBtn = galleryEl.querySelector(".chat-image-more-btn");
+  if (moreBtn) galleryEl.insertBefore(card, moreBtn);
+  else galleryEl.appendChild(card);
+  galleryEl.classList.remove("hidden");
+  syncChatImageGalleryCollapse(galleryEl);
+}
+
+function appendChatImageToMessage(messageApi, sessionId, rel) {
+  if (!messageApi?.div) return;
+  const gallery = ensureChatImageGallery(messageApi.div);
+  appendChatImage(gallery, sessionId, rel);
+  scrollMessagesIfPinned();
+}
+
+function appendChatImagesToMessage(messageApi, sessionId, rels) {
+  if (!messageApi?.div || !sessionId) return;
+  const list = preferEditedChatImageRels(rels);
+  if (!list.length) return;
+  const gallery = ensureChatImageGallery(messageApi.div);
+  list.forEach((rel) => appendChatImage(gallery, sessionId, rel));
+  scrollMessagesIfPinned();
 }
 
 function getMessagePlainText(contentEl) {
@@ -4383,7 +4597,7 @@ function shouldUseAgent(message, hasNewUpload = false) {
   if (shouldUseMergeFigureEdit(text)) return true;
   if (hasNewUpload) return true;
   if (/\[已上传附件\]|\[Attachments uploaded\]/.test(text)) return true;
-  return /继续|重新(?:运行|进行|分析|做)|执行分析|跑一遍|开始分析|运行工具|分子网(?:络|格)|molecular\s*network|GNPS|DeepMASS|deepmass|XCMS|峰检测|差异代谢|谱库注释|富集分析|converted_mzml|spectra\.mgf|\.mzML|\.mgf|continue|re-?run|run analysis|start agent|execute pipeline/i.test(
+  return /继续|重新(?:运行|进行|分析|做)|执行分析|跑一遍|开始分析|运行工具|统计(?:分析)?|做统计|跑统计|统计作图|mixOmics|mixomics|火山图|volcano\s*plot|volcano|PLS-?DA|差异分析|显著性分析|组间对比|两组对比|(?:Treatment|Control|Group).{0,20}(?:vs|VS|对比|比较)|Treatment\s*vs\.?\s*Control|Control\s*vs\.?\s*Treatment|分子网(?:络|格)|molecular\s*network|GNPS|DeepMASS|deepmass|XCMS|峰检测|差异代谢|谱库注释|富集分析|converted_mzml|spectra\.mgf|\.mzML|\.mgf|continue|re-?run|run analysis|start agent|execute pipeline/i.test(
     text
   );
 }
@@ -4530,7 +4744,7 @@ async function enterSharedView(sessionId) {
   updateBrowserUrl(sessionId, true);
 }
 
-async function consumeSseStream(res, onDelta, onDone, onError, signal) {
+async function consumeSseStream(res, onDelta, onDone, onError, signal, onChatImage) {
   const reader = res.body.getReader();
   const decoder = new TextDecoder("utf-8");
   let buffer = "";
@@ -4559,6 +4773,9 @@ async function consumeSseStream(res, onDelta, onDone, onError, signal) {
         } catch {
           continue;
         }
+        if (payload?.chat_image && typeof onChatImage === "function") {
+          onChatImage(payload.chat_image);
+        }
         if (payload?.delta !== undefined) onDelta(payload.delta);
         else if (payload?.done) onDone(payload);
         else if (payload?.error) onError(payload.error);
@@ -4578,6 +4795,7 @@ async function streamChat({
   onDelta,
   onDone,
   onError,
+  onChatImage,
 }) {
   let res;
   try {
@@ -4606,7 +4824,7 @@ async function streamChat({
     throw new Error(detail || t("err.requestFailed", { status: res.status }));
   }
   try {
-    await consumeSseStream(res, onDelta, onDone, onError, signal);
+    await consumeSseStream(res, onDelta, onDone, onError, signal, onChatImage);
   } catch (err) {
     if (err.name === "AbortError") throw err;
     throw new Error(t("err.streamInterrupted"));
@@ -4646,6 +4864,10 @@ async function runAssistantStream({
         assistantEl.contentEl.textContent = assistantText;
         scrollMessagesIfPinned();
       },
+      onChatImage: (img) => {
+        const rel = typeof img === "string" ? img : img?.file;
+        if (rel) appendChatImageToMessage(assistantEl, currentSessionId, rel);
+      },
       onDone: (payload) => {
         if (payload?.time) {
           assistantEl.metaEl.textContent = `${t("role.assistant")} · ${displayTime(payload.time)}`;
@@ -4653,8 +4875,27 @@ async function runAssistantStream({
         if (payload?.error) {
           assistantEl.contentEl.textContent = assistantText || payload.error;
         }
+        const fromChat = Array.isArray(payload?.chat_images) ? payload.chat_images : [];
+        const fromVisual = (Array.isArray(payload?.visual_results) ? payload.visual_results : [])
+          .map((item) => (typeof item === "string" ? item : item?.file))
+          .filter(Boolean);
+        const doneImages = preferEditedChatImageRels([...fromChat, ...fromVisual]);
+        // 若有意图重绘图，移除同底图的原始预览卡片
+        const gallery = assistantEl.div?.querySelector?.(".chat-image-gallery");
+        if (gallery && doneImages.length) {
+          const keep = new Set(doneImages);
+          gallery.querySelectorAll("[data-chat-image-rel]").forEach((el) => {
+            const rel = el.getAttribute("data-chat-image-rel");
+            if (rel && !keep.has(rel)) el.remove();
+          });
+          gallery.setAttribute("data-chat-images-expanded", "0");
+        }
+        doneImages.forEach((rel) =>
+          appendChatImageToMessage(assistantEl, currentSessionId, rel)
+        );
+        if (gallery) syncChatImageGalleryCollapse(gallery);
         if (payload?.finished && !payload?.cancelled) {
-          if (payload?.visual_results?.length) {
+          if (payload?.chat_images?.length || payload?.visual_results?.length) {
             statusText.className = "status-text status-ok";
             setStatus(t("status.visualDone"));
           } else if (payload?.plot_edit) {
@@ -4736,10 +4977,24 @@ form.addEventListener("submit", async (event) => {
 });
 
 stopButton.addEventListener("click", async () => {
-  forceStopStreamingUI();
-  if (activeStreamAbort) {
-    activeStreamAbort.abort();
+  // 先拿到 controller，再发 cancel；切勿在 abort 前把 activeStreamAbort 置空
+  const ctrl = activeStreamAbort;
+  statusText.className = "status-text status-warn";
+  setStatus(t("status.stopRequested"));
+
+  const lastContent = messagesEl.querySelector(
+    ".message.assistant:last-of-type .message-content"
+  );
+  if (lastContent) {
+    const cur = String(lastContent.textContent || "").trim();
+    if (cur && !cur.includes("已终止")) {
+      lastContent.textContent = `${cur}\n\n⚠️ **[已终止]**`;
+      scrollMessagesIfPinned();
+    } else if (!cur) {
+      lastContent.textContent = "⚠️ **[已终止]**";
+    }
   }
+
   try {
     if (currentSessionId) {
       await fetch(`/api/sessions/${currentSessionId}/cancel`, { method: "POST" });
@@ -4747,8 +5002,15 @@ stopButton.addEventListener("click", async () => {
   } catch {
     /* ignore */
   }
-  statusText.className = "status-text status-warn";
-  setStatus(t("status.stopRequested"));
+  if (ctrl) {
+    try {
+      ctrl.abort();
+    } catch {
+      /* ignore */
+    }
+  }
+  setStreamingState(false);
+  activeStreamAbort = null;
 });
 
 promptInput.addEventListener("input", () => {

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 from web_frontend.backend.analysis_intent import (
@@ -9,9 +10,12 @@ from web_frontend.backend.analysis_intent import (
     merge_intent_into_patch,
     parse_analysis_intent,
 )
+from web_frontend.backend.anti_hallucination import (
+    PLOT_EDIT_SYSTEM_GUARD,
+    messages_with_system,
+)
 from web_frontend.backend.json_parse import extract_first_json_object
 from web_frontend.backend.plot_edit_registry import get_plot_spec
-from web_frontend.backend.plot_theme import default_title
 from web_frontend.backend.web_llm import WebLLMClient
 
 _SCHEMA_BY_CATEGORY = {
@@ -114,10 +118,86 @@ def _build_prompt(
 - 颜色用十六进制 #RRGGBB
 - palette / colors 的键使用英文或数据中已有的类别名
 - 标题靠左/居中/靠右分别用 title_align: left / center / right
-- 减小或增大标题字号时修改 font_size.title
+- 减小或增大标题字号时修改 font_size.title；「放大/缩小 N 个字号」必须基于当前 font_size.title 做加减，输出最终绝对值
+- 只改字号时不要改 title；必须保留当前配置中的标题原文
 - 换着色字段用 color_by（metadata 列名）；聚类用 cluster；不要用改 palette 键名冒充换维度
+- 不要编造不存在的颜色键、metadata 列或文件路径
+- 不要输出「已保存」「已改好」等完成声明
 - 不要输出 markdown 或解释文字
 """
+
+
+def _current_title_font_size(current_config: dict[str, Any]) -> int:
+    font = current_config.get("font_size") if isinstance(current_config, dict) else None
+    if isinstance(font, dict):
+        try:
+            return max(8, min(96, int(font.get("title") or 16)))
+        except (TypeError, ValueError):
+            pass
+    return 16
+
+
+def _heuristic_font_size_patch(
+    instruction: str,
+    current_config: dict[str, Any],
+) -> dict[str, Any] | None:
+    """解析「标题放大/缩小 N 个字号」等，避免连续改图时丢掉标题或算错字号。"""
+    text = (instruction or "").strip()
+    if not text:
+        return None
+    cur = _current_title_font_size(current_config)
+
+    m = re.search(
+        r"(?:标题)?(?:的)?(?:字号|字体大小|字体)?(?:再)?(?:放大|增大|增加|加大|加)\s*(\d+)\s*(?:个)?(?:字号|磅|pt)?",
+        text,
+        flags=re.IGNORECASE,
+    )
+    if m:
+        return {"font_size": {"title": min(72, cur + int(m.group(1)))}}
+
+    m = re.search(
+        r"(?:标题)?(?:的)?(?:字号|字体大小|字体)?(?:再)?(?:缩小|减小|减少|减)\s*(\d+)\s*(?:个)?(?:字号|磅|pt)?",
+        text,
+        flags=re.IGNORECASE,
+    )
+    if m:
+        return {"font_size": {"title": max(8, cur - int(m.group(1)))}}
+
+    m = re.search(
+        r"(?:标题)?(?:字号|字体大小|字体)\s*(?:改成|改为|设为|设置成|设置为|调到|调成|=|:|：)\s*(\d+)",
+        text,
+        flags=re.IGNORECASE,
+    )
+    if m:
+        return {"font_size": {"title": max(8, min(72, int(m.group(1))))}}
+
+    m = re.search(
+        r"(?:enlarge|increase|increase\s+by|grow)\s+(?:the\s+)?(?:title\s+)?(?:font\s*size\s+)?(?:by\s+)?(\d+)",
+        text,
+        flags=re.IGNORECASE,
+    )
+    if m:
+        return {"font_size": {"title": min(72, cur + int(m.group(1)))}}
+
+    return None
+
+
+def _heuristic_title_patch(instruction: str) -> dict[str, Any] | None:
+    text = (instruction or "").strip()
+    if not text:
+        return None
+    patterns = [
+        r"(?:把|将)?标题(?:改成|改为|修改为|设为|换成)\s*[「『\"“](.+?)[」』\"”]\s*$",
+        r"(?:把|将)?标题(?:改成|改为|修改为|设为|换成)\s*[「『\"']?(.+?)[」』\"']?\s*$",
+        r"(?:change|set)\s+(?:the\s+)?title\s+to\s+[\"']?(.+?)[\"']?\s*$",
+    ]
+    for pat in patterns:
+        m = re.search(pat, text, flags=re.IGNORECASE)
+        if m:
+            title = m.group(1).strip().rstrip("。．.！!")
+            if title and "字号" not in title and "放大" not in title:
+                return {"title": title}
+    return None
 
 
 def parse_plot_edit_instruction(
@@ -140,6 +220,15 @@ def parse_plot_edit_instruction(
     if intent.get("errors"):
         raise ValueError("；".join(str(e) for e in intent["errors"]))
 
+    # 纯样式增量（字号+/-）优先走规则，避免 LLM 回写旧标题
+    font_patch = _heuristic_font_size_patch(instruction, current_config)
+    title_patch = _heuristic_title_patch(instruction)
+    if font_patch and not title_patch and re.search(
+        r"字号|字体|放大|缩小|enlarge|font\s*size", instruction, flags=re.IGNORECASE
+    ):
+        # 「只改字号」且能规则解析时，不再问 LLM，保留当前 title
+        return font_patch
+
     llm = WebLLMClient(model=model)
     prompt = _build_prompt(
         plot_type=plot_type,
@@ -148,12 +237,25 @@ def parse_plot_edit_instruction(
         instruction=instruction,
         metadata_columns=metadata_columns,
     )
-    raw = llm.think_complete([{"role": "user", "content": prompt}], temperature=0.0, max_tokens=2048)
+    raw = llm.think_complete(
+        messages_with_system(PLOT_EDIT_SYSTEM_GUARD, prompt),
+        temperature=0.0,
+        max_tokens=2048,
+    )
     if not raw:
         # 规则意图足够时允许无 LLM
+        patch: dict[str, Any] = {}
         if intent:
             patch = intent_to_plot_patch(intent)
-            patch.setdefault("title", current_config.get("title") or default_title(plot_type))
+        if title_patch:
+            patch.update(title_patch)
+        if font_patch:
+            patch.setdefault("font_size", {}).update(font_patch.get("font_size") or {})
+            patch["font_size"] = {
+                **(patch.get("font_size") or {}),
+                **(font_patch.get("font_size") or {}),
+            }
+        if patch:
             return patch
         raise RuntimeError("LLM 未返回有效内容，请检查 API 配置")
 
@@ -166,6 +268,14 @@ def parse_plot_edit_instruction(
 
     patch = merge_intent_into_patch(patch, intent)
 
-    if "title" not in patch:
-        patch.setdefault("title", current_config.get("title") or default_title(plot_type))
+    # 只改字号时：丢掉 LLM 可能编造/回退的 title，强制用规则字号
+    if font_patch and not title_patch:
+        patch.pop("title", None)
+        fs = dict(patch.get("font_size") or {}) if isinstance(patch.get("font_size"), dict) else {}
+        fs.update(font_patch.get("font_size") or {})
+        patch["font_size"] = fs
+    elif title_patch and "title" not in patch:
+        patch["title"] = title_patch["title"]
+
+    # 不再无条件注入 title：未改标题时由 merge_plot_config 保留上一版
     return patch
