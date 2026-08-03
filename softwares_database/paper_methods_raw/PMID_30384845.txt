@@ -1,0 +1,263 @@
+
+Methods
+The motor evoked potentials (MEPs) induced by single-pulse TMS
+over the primary motor cortex depending on the magnitudes of SM1
+ERD (i.e., 35% and 70%) extracted by the online LIA or FFT
+algorithm were monitored during a motor imagery task of wrist
+extension in 17 healthy participants. Then, the peak-to-peak
+amplitudes of MEPs and their variabilities were assessed to
+investigate the precision of the algorithms.
+Results
+We found greater MEP amplitude evoked by single-pulse TMS
+triggered by motor imagery-related alpha SM1 ERD than at rest.
+This enhancement was associated with the magnitude of ERD in
+both FFT and LIA algorithms. Moreover, we found that the
+variabilities of peak-to-peak MEP amplitudes at 35% and 70% ERDs
+calculated by the novel online LIA algorithm were smaller than
+those extracted using the conventional FFT algorithm.
+Conclusions
+The present study demonstrated that the calculation of motor
+imagery-related SM1 ERDs using the novel online LIA algorithm led
+to a more precise estimation of corticospinal excitability than when
+the ordinary FFT-based algorithm was used.
+Electronic supplementary material
+The online version of this article (10.1186/s12984-018-0440-5)
+contains supplementary material, which is available to authorized
+users.
+Keywords: Brain-computer interface (BCI), Transcranial magnetic
+stimulation (TMS), Corticospinal excitability, Event-related
+desynchronization (ERD), Electroencephalogram (EEG),
+Sensorimotor cortex (SM1)
+Background
+Physical motor exercise aided by an electroencephalogram (EEG)-
+based brain-computer interface (BCI) facilitates functional recovery
+in patients with motor deficits due to stroke [1–12]. In such a BCI
+paradigm, event-related desynchronization (ERD) in the alpha (8–
+13 Hz) and beta (15–30 Hz) bands is extracted from EEG signals
+recorded over the primary sensorimotor area (SM1), and visual and
+sensory feedback contingent to the extent of ERD is provided via a
+motor-driven orthosis or neuromuscular electrical stimulation. The
+repetition of BCI-aided motor exercise in finger opening or arm
+reaching paradigms is suggested to help patients learn to activate
+sensorimotor cortical neurons more efficiently than exercises
+without a BCI [9, 13].
+Previous studies using transcranial magnetic stimulation (TMS)
+delivered to the primary motor cortex have shown that an increase
+of corticospinal excitability is associated with ERD [14] and is
+accompanied with a decrease of GABAergic intracortical inhibition
+[15], indicating ERD as a biomarker of corticospinal excitability.
+However, the real-time estimation of ERD trace results has a time
+delay measured in hundreds of milliseconds. A variety of spectral
+analyses, such as fast Fourier transformation (FFT) [8, 10, 12, 16–
+20], continuous Wavelet transformation [21, 22], an autoregressive
+model [9, 23, 33], have been used to calculate the frequency
+spectrum in a given time-sliding window with certain overlaps, but
+the results were smoothed due to window overlapping, and were
+delayed due to window length, causing the inevitable limited
+resolution of ERD.
+Recently, we successfully developed a novel online lock-in amplifier
+(LIA) algorithm to estimate the amplitude modulation of motor
+imagery-related alpha ERD over SM1 [24]. LIA can reliably extract
+signal amplitude in a defined frequency band using a point-by point
+multiplication and filtering algorithms. Using this algorithm, the
+delay time, accuracy, and stability to estimate motor-related SM1
+ERD were significantly improved compared with those calculated
+by the conventional online FFT, continuous Wavelet transformation,
+and autoregressive algorithms. These technical improvements to
+extract an ERD trace imply a potential advantage for a better trace
+of the excitatory status of SM1 in the context of a BCI.
+Therefore, in this paper, we assessed the precision of LIA-based ERD
+tracking for estimation of corticospinal excitability using a TMS
+paradigm. We monitored the motor evoked potentials (MEPs)
+induced by single-pulse TMS over the primary motor cortex
+depending on the magnitude of SM1 ERD (i.e., 35% and 70%)
+extracted by the novel online LIA and conventional FFT algorithms
+during a motor imagery task of wrist extension in healthy
+participants. Then, we compared the peak-to-peak amplitudes of
+MEPs and their variabilities triggered by the different magnitudes of
+ERD extracted by the novel LIA and conventional FFT algorithms to
+investigate their precision of corticospinal excitability.
+Methods
+Participants
+Seventeen healthy participants (average age, 23.8 ± 2.8 years)
+participated in this study. All participants were right-handed,
+without any medical or psychological disorders according to self-
+reports. Informed consent was given by all participants after they
+received an explanation of the experimental procedure. The
+experimental protocol used in this study was in accordance with the
+Helsinki Declaration and was approved by the ethics committee of
+Keio University.
+Data acquisition
+EEG recordings
+EEG signals were recorded with 128-channel Geodesic Sensor Nets
+over the whole scalp. Electrode impedance was kept lower than 40
+kΩ throughout the experiments [25]. The EEG signals were
+amplified and band-pass and notch filtered between 5 and 70 Hz by
+the Geodesic EEG System (Electrical Geodesics Incorporated [EGI],
+Oregon, USA) and then recorded at a sampling rate of 1000 Hz. The
+EEG signals were extracted using a large Laplacian filter centered
+on C3, which was defined as the nearest channel to the
+contralateral SM1 [24], since we recorded EEG sensorimotor
+responses during motor imagery tasks of right wrist extension (see
+Experimental procedures in the Methods section).
+ERD estimation algorithms
+First, we used an FFT algorithm as the conventional method to
+probe the motor-imagery-related ERDs [8, 10, 12, 15, 19, 20].
+According to these previous studies, EEG data were processed using
+the following 4 steps: (1) segmentation of 1-s time windows with
+99% overlap; (2) power spectrum density calculation by FFT
+algorithm with a Hanning window; (3) determination of a
+frequency of interest (FOI), which showed the most significant ERD
+over the alpha bands by visual inspection in Screening session (see
+Experimental procedures in the Methods section); and (4) ERD
+transformation [15]. The algorithm of the motor-related ERD was
+defined as follows:
+ERDft=Aft−RfRf×100
+where A is the power spectrum density (PSD) of the EEG signal and
+R is the PSD of the baseline period from 3 to 5 s in each resting
+phase at time t and frequency f, which was most reactive frequency
+displaying ERD over the alpha band during the kinesthetic motor
+imagery task in the screening session.
+Second, we used LIA-based algorithm as a novel estimation method
+[24]. According to the previously established algorithm with LIA
+[24], EEG data were processed using the following 4 steps: (1)
+determination of a FOI; (2) applying a narrow band-pass filter (FOI 
+± 1 Hz) using a second-order Butterworth band-pass filter with a 1-
+s time window; (3) LIA process (i.e. point-by-point multiplication
+and integration of the input signal with a reference trigonometric
+basis signal) with segmentation of 1/FOI s with a 99% overlap time
+window; and (4) ERD transformation [15].
+In briefly, the previous study suggested that the averaged time
+delays by the online LIA algorithm (200 ± 9.49 ms) were around
+300 ms shorter than those by the online FFT algorithm (503 ± 
+18 ms) [24]. In addition, the accuracy and stability to detect
+amplitude modulation of motor-imagery-related ERDs by the online
+LIA algorithm were significantly higher than those calculated by the
+online FFT algorithm (p < 1.0*10–10, p < 1.0*10–9, respectively)
+[24].
+Surface electromyography (EMG) recordings
+Surface EMG activity was recorded with Ag/AgCl electrodes (fixed
+electrode distance: 20 mm) over the muscle belly of the right flexor
+carpi radialis and extensor carpi radialis (ECR) muscles. Impedance
+for all channels was maintained below 20 kΩ through the
+experiments. EMG signals were band-pass filtered (5–1000 Hz with
+2nd order Butterworth) with a notch (50 Hz to avoid power line
+contamination), and digitized at 2 kHz using a bio-signal amplifier
+(Neuropack MEB-9200; Nihon Kohden, Tokyo, Japan). The pre-
+stimulus EMG activity and MEP were analyzed using − 50 to
+150 ms periods of each pulse in an offline process.
+TMS protocol
+Single-pulse TMS was applied with a double-cone coil (outer
+diameter of each coil: 11 cm, angle of each coil: 95°) connected to a
+Magstim 200 magnetic stimulator (Magstim, Whitland, UK). The
+optimal coil position was determined where the motor evoked
+potential (MEP) amplitude in the ECR was observed with the lowest
+stimulus intensity and marked with the Brainsight TMS navigation
+system (Rogue Research, Cardiff, UK). The optimal coil orientation
+and location remained constant throughout the session. The resting
+motor threshold (rMT) intensity was defined as the lowest
+stimulator output intensity capable of inducing an MEP with at least
+50 μV peak-to-peak amplitude in relaxed muscles in at least half of
+the 10 trials [26, 27]. TMS in all experiments was applied with an
+intensity of 120% of the individual rMT. The values of rMT in each
+participant are shown in Table 1. We inspected the EMG data
+during offline analysis, discarding any trials containing pre-stimulus
+EMG activities more than ±20 μV. Less than 5% of all trials were
+rejected due to contamination.
+Table 1.
+Most reactive frequency displaying ERD during the right wrist
+motor imagery task in the screening session, resting motor
+threshold, and stimulus intensity in each participant
+Participant
+Age
+(years)
+Frequency
+(Hz)
+Resting motor
+threshold
+(%MSO)
+Stimulus
+intensity
+(%MSO)
+1
+23
+12
+43
+52
+2
+21
+9
+45
+54
+3
+21
+13
+36
+43
+4
+26
+13
+43
+52
+5
+24
+11
+38
+46
+6
+24
+13
+43
+52
+7
+21
+13
+33
+40
+8
+23
+9
+36
+43
+9
+28
+12
+37
+44
+10
+31
+10
+42
+50
+11
+24
+13
+32
+38
+12
+23
+12
+44
+53
+13
+26
+13
+41
+49
+14
+21
+12
+44
+53
+15
+22
+12
+43
+52
+16
+26
+13
+39
+47
+17
+22

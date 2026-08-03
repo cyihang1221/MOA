@@ -1,0 +1,181 @@
+
+Methodology, Software, Validation, Formal analysis, Investigation,
+Data curation, Writing – original draft, Writing – review & editing,
+Visualization
+Find articles by Shoham Das
+1, Yash Patel
+Yash Patel
+1Molecular and Cellular Biosciences Department, University of
+Southern California, Los Angeles, CA 90089, USA;
+shohamda@usc.edu (S.D.); yashdhir@usc.edu (Y.P.);
+kjiayiwang@gmail.com (K.W.)
+Methodology, Software, Validation, Formal analysis, Investigation,
+Data curation
+Find articles by Yash Patel
+1, Kyle Wang
+Kyle Wang
+1Molecular and Cellular Biosciences Department, University of
+Southern California, Los Angeles, CA 90089, USA;
+shohamda@usc.edu (S.D.); yashdhir@usc.edu (Y.P.);
+kjiayiwang@gmail.com (K.W.)
+Methodology, Validation, Formal analysis, Investigation, Data
+curation
+Find articles by Kyle Wang
+1, John Tower
+John Tower
+1Molecular and Cellular Biosciences Department, University of
+Southern California, Los Angeles, CA 90089, USA;
+shohamda@usc.edu (S.D.); yashdhir@usc.edu (Y.P.);
+kjiayiwang@gmail.com (K.W.)
+Conceptualization, Methodology, Validation, Formal analysis,
+Investigation, Resources, Data curation, Writing – original draft,
+Writing – review & editing, Supervision, Project administration,
+Funding acquisition
+Find articles by John Tower
+1,*
+Editor: Susanne Neupert1
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC13299798  PMID: 42355357
+Simple Summary
+Falls are a major source of human disability and death, with
+interventions currently limited to exercise. Drosophila is a powerful
+model system for the analysis of movement disorders and possible
+interventions, both during normal aging and in Drosophila models of
+human neurodegenerative disease. However, previous Drosophila
+experiments have been limited by the inability to distinguish
+between falls and downward jumps (downjumps). Here, individual
+flies moving freely in a culture vial were analyzed using a single 58
+fps video camera. Upward jumps were readily identified by positive
+movement in the vertical direction. Advanced statistical and
+machine learning tools were used to distinguish between falls and
+downjumps. Falls were characterized by an initial velocity
+consistent with simple acceleration due to gravity. By contrast,
+downjumps were characterized by a greater initial velocity,
+consistent with active propulsion by the fly. In agreement with
+previous studies, aged flies moved less and explored a smaller
+region of the vial. In addition, aged flies took longer to resume
+movement after a fall, suggesting possible negative effects of falls.
+These methods should facilitate future studies of the effects of aging
+and neurodegeneration models on locomotor behaviors and falls,
+including the testing of potential interventions.
+Keywords: Drosophila, aging, falls, video, machine learning,
+locomotor activity, computer vision
+Abstract
+Analysis of freely moving Drosophila captures complex movement
+behaviors. However, previous experiments have been limited by the
+inability to distinguish between falls and downward jumps
+(downjumps). Here, individual flies moving freely in a culture vial
+were recorded using a single 58 fps video camera. Upward jumps
+were readily identified by positive movement in the vertical
+direction. Several statistical and machine learning methods were
+used to distinguish between falls and downjumps, including
+Principal Component Analysis (PCA), K-Means Clustering, Uniform
+Manifold Approximation and Projection (UMAP), Hierarchical
+Density-Based Spatial Clustering with Applications to Noise
+(HDBSCAN) and Shapley Additive Explanations (SHAP). Falls were
+abundant and characterized by an initial velocity consistent with
+simple acceleration due to gravity. Downjumps were more rare, and
+were characterized by a greater initial velocity, indicating active
+propulsion by the fly. Aged flies took longer to resume movement
+after a fall, suggesting possible negative effects of falls. Falls in
+young w[1118]-strain flies exhibited mid-event velocities that were
+lower than expected, indicating some compensatory behavior that
+was reduced in aged flies. These methods should facilitate future
+studies of the effects of aging and neurodegenerative disease models
+on locomotor behaviors and falls, including the testing of potential
+interventions.
+1. Introduction
+In humans, both normal aging and neurodegenerative disease (ND)
+are associated with locomotor impairments, including increased
+falls. Falls are a significant cause of disability and death, and there
+are currently no effective interventions known other than exercise
+[1,2,3,4]. It is therefore of interest to leverage the Drosophila model
+system to study the etiology of locomotor impairments, including
+falls, with the ultimate goal of identifying environmental or small-
+molecule interventions that might be relevant to human health.
+Drosophila is a leading model system for the study of nervous
+system function and animal behavior. The neuronal wiring diagram
+and cell connectome have been mapped for the entire Drosophila
+brain [5,6], and powerful transgenic tools enable modulation of the
+activity of specific neuronal subsets, including individual neurons
+[7]. Video analysis has been used to analyze several complex
+Drosophila behaviors including flight, grooming, mating and
+aggression [8,9,10,11].
+Drosophila is also a leading model for the study of aging [12,13,14]
+and for modeling human ND, including Alzheimer’s disease (AD)
+and Parkinson’s disease (PD) [15]. Several methods have been used
+to study how normal aging and the ND models affect Drosophila
+locomotor behaviors. Drosophila activity monitors (DAMs) and
+locomotor activity monitors (LAMs) employ infrared beams in the
+fly container, and record each time the beam is disrupted by a
+moving fly. These assays provide quantification of total fly
+movement activity, which is observed to be reduced with age and in
+the ND models. The negative geotaxis assay specifically measures
+upward climbing speed after the fly is knocked to the bottom of a
+cylinder, a behavior generally interpreted as an induced escape
+response [16]. Negative geotaxis behavior is also reduced with age
+and in Drosophila ND models [17,18,19]. Drosophila have also been
+assayed for 2D locomotor behaviors while moving freely in a Petri
+dish-shaped arena [20], and for 3D locomotor behaviors while
+moving freely in a culture vial [18,21], including assays of 3D
+movement trajectories using synchronized video cameras [22].
+These studies have revealed locomotor behaviors associated with
+imminent mortality, including bouts of erratic movement (as
+indicated by increased frequency of directional heading changes),
+and supine behavior (fly lying on its back) [21,22,23,24,25].
+Several previous studies of Drosophila have described events where
+the fly drops rapidly through space from a higher position in the
+observation chamber to a lower position, and these drops have
+sometimes been referred to as “falls” depending on the context in
+which they were observed. For example, Lobato et al. [26] used 30
+fps video to analyze flies as they climbed upwards in a negative
+geotaxis assay. Flies were observed to occasionally drop during
+climbing, and they defined drops of greater than 11.7 mm as “falls”.
+Similarly, Canic et al. [27] used 30 fps video to analyze flies as they
+climbed upwards in the negative geotaxis assay, and defined drops
+of greater than 12 mm as “falls”. Finally, in our recent study,
+YOLOv4 machine learning software was trained to recognize drops
+in 30 fps videos of freely moving flies [28]. In that study, the
+frequency of drops was found to peak proximal to death associated
+with normal aging or as produced by dehydration/starvation stress.
+Those events were interpreted to most likely represent “falls”,
+because they increased in the hours before death when total
+movement activity had significantly decreased. One limitation of
+the previous studies is that 30 fps video analysis cannot
+unambiguously distinguish between a true fall, where the
+downwards velocity results only from acceleration due to gravity,
+and a downjump, where the downwards velocity will include
+additional acceleration produced by the fly.
+Analysis of falls and downjumps is of particular interest, because
+the inability of aged flies to right themselves after a fall is
+implicated as one cause of death [22,23,24,25]. Here a single 58 fps
+camera was used to record individual flies moving freely in a
+culture vial. Custom software (MotionDetection version 2.1,
+MDv2.1) was developed to track fly movement trajectories, and
+analysis of drop velocities and other metrics revealed distinct
+behaviors, including falls, downjumps, upward jumps (upjumps)
+and arced jumps (arcjumps).
+2. Materials and Methods
+2.1. Drosophila Culture and Strains
+Drosophila melanogaster flies were cultured at 25 °C and 65–80%
+humidity under a 12 h:12 h light–dark cycle using standard agar/
+dextrose/corn meal/yeast media [29]. Several strains were obtained
+from the Bloomington Drosophila Stock Center (BDSC,
+Bloomington, IN, USA). Strain y[1] w[1118]; P[w[+mC] = UAS-
+APP.Abeta42.E693G.VTR]4 (BDSC #33773, abbreviated here as
+“UAS-Abeta42”, is a UAS-controlled transgene containing the
+human amyloid β42 protein with the E693G mutation [18]. Strain
+w[*]; P[w[+mC] = UAS-Hsap\SNCA.A30P]40.1 (BDSC #8147,
+abbreviated here as “UAS-SNCA”) is a UAS-controlled transgene
+encoding the A30P mutant of human α-synuclein [30]. Strain
+P[w[+mW.hs] = GawB]elav[C155] (BDSC #458, abbreviated here
+as “elav-GAL4”) yields neuronal GAL4 expression driven by the elav
+gene promoter [31]. The w[1118] reference strain (w[1118]-iso; 2-
+iso; 3-iso) has been previously described and sequenced [32,33].
+This strain was previously cleared of Wolbachia by three generations
+culture on doxycycline followed by confirmation using PCR as
+described [34]. Each transgenic strain was backcrossed nine
+generations to the w[1118] reference strain. To generate flies with
+pan-neuronal expressio

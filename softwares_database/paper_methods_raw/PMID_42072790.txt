@@ -1,0 +1,182 @@
+
+Methodology, Software, Formal analysis, Investigation, Data
+curation, Writing – original draft, Writing – review & editing,
+Visualization
+Find articles by Kazuki Otsuka
+2, Yuki Yamanaka
+Yuki Yamanaka
+3Faculty of Health Care Science, Himeji Dokkyo University, Himeji
+670-8524, Japan; yukiyama@gm.himeji-du.ac.jp
+Methodology, Validation, Investigation, Data curation, Writing –
+review & editing, Visualization
+Find articles by Yuki Yamanaka
+3, Kentaro Mori
+Kentaro Mori
+4Department of Electrical and Computer Engineering, National
+Institute of Technology, Maizuru College, Maizuru 625-8511,
+Japan; k.mori@maizuru-ct.ac.jp
+Methodology, Software, Validation, Formal analysis, Investigation,
+Writing – original draft, Writing – review & editing, Visualization
+Find articles by Kentaro Mori
+4, Yutaka Hata
+Yutaka Hata
+2Graduate School of Information Science, University of Hyogo,
+Kobe 650-0047, Japanhata@gsis.u-hyogo.ac.jp (Y.H.)
+Conceptualization, Methodology, Resources, Writing – review &
+editing, Supervision, Project administration
+Find articles by Yutaka Hata
+2, Yasumitsu Fujii
+Yasumitsu Fujii
+5Department of Rehabilitation Medicine, Ishikawa Hospital, Himeji
+671-0221, Japan
+Conceptualization, Methodology, Resources, Writing – review &
+editing, Supervision, Project administration
+Find articles by Yasumitsu Fujii
+5, Yoshitada Sakai
+Yoshitada Sakai
+6Division of Rehabilitation Medicine, Kobe University Graduate
+School of Medicine, Kobe 650-0017, Japan; yossie@med.kobe-
+u.ac.jp
+Conceptualization, Methodology, Resources, Writing – review &
+editing, Supervision, Project administration
+Find articles by Yoshitada Sakai
+6
+Editor: Jae-Ho Han
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC13114281  PMID: 42072790
+Abstract
+Background: In rehabilitation medicine, efficient gait analysis is
+crucial for evaluating postoperative recovery and frailty, especially
+given the increasing burden on clinicians due to an aging
+population. Objectives: This study aims to conduct preliminary
+validation of an automated linear walking evaluation system using
+2D AI posture tracking. By evaluating the basic accuracy of the
+system on healthy individuals, we aim to establish a technical
+foundation for future introduction into clinical rehabilitation
+settings. Methods: In this observational study, we utilized a
+standard visible light camera for practical use. To evaluate
+accuracy, we compared 2D AI tracking against a gold-standard
+three-dimensional (3D) motion capture system during normal
+walking trials with 10 healthy participants. Specifically, we
+employed Dynamic Time Warping (DTW) to temporally align the
+asynchronous data streams from the 2D and 3D systems, ensuring
+precise comparison of joint angles. Results: Following the DTW-
+based alignment, the similarity with the 3D system was 0.806 ±
+0.094 overall (Left: 0.797 ± 0.101, Right: 0.814 ± 0.086).
+Conclusions: In this preliminary validation, the proposed 2D AI
+posture tracking showed good agreement with the gold standard 3D
+motion capture for gait in healthy individuals. While the average
+systematic bias was within clinically acceptable limits, the observed
+limits of agreement suggest that this system is currently optimal as
+a foundational tool for gait screening. These results establish a
+technical foundation for the clinical application of this system.
+Keywords: markerless analysis, walking evaluation, joint angle,
+rehabilitation, artificial intelligence, motion capture
+1. Introduction
+Currently, the aging population in the world is rapidly progressing,
+and population aging is expected to progress even more rapidly in
+the future in developed and developing regions. In recent years, the
+aging rate, which is the proportion of individuals aged ≥65 years
+in the total world population, has increased from 5.1% in 1950 to
+9.4% in 2020 and is expected to further increase to 18.7% in 2060.
+Over the next 40 years, the population is expected to age rapidly
+[1]. In Japan, aging is also a serious problem, and the aging rate,
+which was 28.6% in 2020, is expected to continue increasing and
+reach 37.9% in 2060. Additionally, a survey by the Ministry of
+Health, Labor, and Welfare in Japan reported that the number of
+patients with fractures, which is a typical injury and disease
+requiring rehabilitation treatment, has been recently increasing and
+that a higher proportion of patients with fractures are older adults
+[2]. Consequently, as the population ages, the number of patients
+undergoing rehabilitation due to fractures, arthritis, and
+musculoskeletal disorders is expected to increase; reducing the
+burden on medical professionals in rehabilitation is very important.
+Quantitative human motion analysis methods include measurement
+using acceleration sensors and motion capture. However, these
+methods pose problems and disadvantages, including requiring
+large and expensive equipment for exclusive use, limited locations,
+and complicated preparations for measurement. It is rarely used in
+routine clinical practice due to the time-consuming procedure of
+attaching markers to the patient’s body [3,4]. Furthermore,
+attaching markers can be invasive and may alter a patient’s natural
+gait pattern. As a result, it is often impractical to adopt these
+conventional systems into routine rehabilitation. Therefore, there is
+a strong demand for a markerless, low-cost, portable system that
+can easily provide objective gait parameters in hospital wards and
+corridors. To address this need, several recent studies on human
+skeleton estimation using videos have been actively conducted.
+Previous studies included various approaches using stereo cameras
+[5], multi-view cameras [6,7], and depth images [8], volume
+prediction method [9]; and the method using a convolution module
+[10]. Historically, markerless motion capture relied on depth
+sensors, such as Microsoft Kinect, to estimate joint centers [11].
+While these systems offered a low-cost alternative to optical motion
+capture, they required specialized hardware, had low sampling
+rates, and limited outdoor applicability. In recent years, the field
+has undergone a paradigm shift with the emergence of deep
+learning and convolutional neural networks (CNNs). Algorithms
+such as OpenPose [12] and DeepLabCut [13] enable pose
+estimation from standard 2D RGB video without the need for depth
+information or markers. This advancement has popularized gait
+analysis, enabling retrospective analysis of existing footage and
+remote patient monitoring using consumer cameras.
+The most typical training evaluation in rehabilitation is gait
+evaluation. It is mainly performed visually by doctors and physical
+therapists; therefore, it requires plenty of time and effort, and
+improving efficiency is required. In contrast, the automatic
+evaluation using video analysis not only reduces the burden on
+specialists but also quantifies the evaluation. Additionally, it helps
+realize remote consultations by capturing, sending, and receiving
+videos using the currently widespread smartphones and tablets. We
+developed a gait analysis support system to perform quantitative
+evaluation by calculating the gait features using the OpenPose,
+human tracking, or floor reaction force meter in our previous
+studies [14,15,16,17]. However, there is no evidence regarding the
+relationship between OpenPose and motion capture system, which
+is the gold standard for gait assessment. Although OpenPose has
+rapidly gained popularity across various fields, its application to
+clinical gait analysis remains under validation. Previous studies
+have evaluated the concurrent validity of OpenPose with gold-
+standard systems [18,19]. However, results have been inconsistent.
+While sagittal plane hip kinematics often show high correlation,
+accuracy for knee and ankle joints varies significantly across studies
+due to factors such as camera viewpoint, clothing, and occlusion.
+Furthermore, many existing studies focus on simple static postures
+or gait in controlled environments, lacking detailed analysis of error
+characteristics essential for clinical interpretation.
+Therefore, rigorous technical validation to clarify the limits of
+agreement for specific gait parameters is urgently needed. A major
+methodological challenge in validating such systems is the temporal
+discrepancy in gait cycles. Observed gait patterns often differ
+significantly from representative data in terms of walking speed and
+rhythmic consistency. In such cases, simple point-to-point (frame-
+by-frame) error comparison is invalid due to phase shifts [20,21].
+Therefore, to rigorously evaluate the accuracy of a markerless
+system, simply comparing spatial coordinate data is insufficient; an
+analysis method that considers discrepancies on the time axis,
+which means temporal consistency, is essential.
+This study aims to validate the clinical application of a markerless
+gait analysis system using a monocular camera and OpenPose. The
+main objective is to evaluate its kinematic accuracy and reliability
+compared to the gold standard 3D motion capture system,
+particularly verifying the temporal and spatial consistency
+necessary for clinical interpretation. Ultimately, the goal is to
+provide a low-cost quantitative evaluation tool usable in everyday
+rehabilitation settings.
+2. Materials and Methods
+2.1. Participants
+The study was conducted in accordance with the Declaration of
+Helsinki, and approved by the Ethics Committee of Advanced
+Medical Engineering Research Institute, University of Hyogo, Japan
+(protocol code 22-005 and date of approval 10 March 2023).
+Informed consent was obtained from all subjects involved in the
+study. Subjects were excluded based on the following criteria to
+eliminate confounding factors affecting gait mechanics:
+•  History of severe orthopedic diseases in the lower limbs or
+spine.
+•  Previous joint replacement surgery (e.g., artificial hip or knee
+joints).
+•  Presence of gait disorders caused by neurological conditions,
+or inability to walk independ

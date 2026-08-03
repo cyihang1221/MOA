@@ -1,0 +1,183 @@
+
+Methodology, Project administration, Software, Validation, Writing
+– original draft, Writing – review & editing
+Find articles by Oussama El Othmani
+1,2,#, Sami Naouali
+Sami Naouali
+3Information Systems Department, College of Computer Science and
+Information Technology, King Faisal University, Al Ahsa, Saudi
+Arabia
+Conceptualization, Funding acquisition, Methodology, Resources,
+Supervision, Validation, Writing – original draft, Writing – review &
+editing
+Find articles by Sami Naouali
+3,*,#
+Editor: Jia-Lang Xu4
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC13178875  PMID: 42139240
+Abstract
+Pain assessment remains challenging for patients unable to verbally
+communicate, including neonates, cognitively impaired individuals,
+sedated patients, and those who suppress expressions due to
+cultural norms or stoicism. We demonstrate that integrating thermal
+imaging with RGB facial expression analysis provides more accurate
+and robust pain intensity estimation than either modality alone.
+Our dual-camera system records synchronized thermal and RGB
+video, processed through a cross-spectral attention fusion (CSAF)
+model with a temporal transformer for continuous 0–10 scale pain
+prediction. In a controlled laboratory pain induction study, 50
+healthy adults (ages 21–68, 87.3 h video) underwent Cold Pressor
+Test and pressure algometry protocols; our system achieves MAE  
+=  0.79, representing a 33.1% improvement over RGB-only (MAE  
+=  1.18, p < 0.001). In a real-world clinical postoperative
+monitoring study, 30 surgical patients (ages 31–74, 17.7 h video)
+recovering from abdominal surgery were monitored; our system
+achieves MAE  =  1.08, representing a 28.5% improvement over
+RGB-only (MAE  =  1.51, p < 0.001). Across the combined cohort (n 
+= 80), MAE  =  0.87 (29.3% overall improvement over RGB-only).
+Benefits increase at higher pain intensities (38.5% at severe pain)
+and for challenging populations where expressions are suppressed
+(37.6% for low expressers). Thermal responses precede visible
+expressions by 1.2 ± 0.3 seconds, enabling earlier detection. This
+work was validated on adults only; pediatric applications require
+dedicated validation. Translation to clinical practice requires multi-
+site prospective trials, regulatory approval, and careful
+implementation planning.
+Author summary
+Pain assessment in patients who cannot speak—newborns,
+cognitively impaired individuals, or those under sedation—remains
+one of medicine’s most difficult challenges. Clinicians currently rely
+on observational tools that are time-consuming, subjective, and
+only applied at discrete time points, potentially missing pain
+episodes between assessments.
+This study asks whether a camera-based system that simultaneously
+captures both visible facial expressions (standard video) and skin
+temperature changes (thermal infrared imaging) can estimate pain
+intensity more accurately and continuously than existing
+approaches. We enrolled 80 adults undergoing either controlled
+experimental pain (cold water immersion, pressure testing) or real
+postoperative monitoring.
+Our cross-spectral attention fusion model, which learns how
+thermal and visual signals complement each other, reduced average
+prediction error by 29% compared to video-only methods.
+Crucially, benefits were largest (up to 38%) for patients with
+suppressed expressions and at high pain intensities—exactly the
+situations where current tools fail most. Skin temperature also
+changed about 1.2 seconds before facial expressions appeared,
+suggesting earlier pain detection may be possible.
+This work is validated on adults only; future work must extend to
+children and diverse clinical populations before clinical deployment
+can be considered.
+1 Introduction
+Pain assessme‌nt [1] in non-verbal patients—neonates, individuals
+with cognitive impairment, and sedated patients—represents one of
+clinical medicine’s most critical unmet needs. Current observational
+tools (FLACC, PAINAD, NIPS) provide structured frameworks but
+are limited by inter-rater variability (ICC 0.55–0.75), discontinuous
+monitoring, and reliance on observable behavioral cues that may be
+absent in suppressed or pharmacologically modified individuals
+[2,3]. Automated approaches using RGB facial video have
+progressed from Action Unit detection (60–70% accuracy) through
+CNNs (70–75%) [4,5], temporal LSTMs (75–78%), and transformer
+architectures (78–83%) [6–8], yet all share a fundamental
+constraint: they access only behavioral-expressive responses visible
+in the surface spectrum, missing the autonomic-vascular responses
+that accompany pain even when facial expressions are controlled or
+absent [9,10].
+Thermal infrared imaging offers a non-contact window onto these
+autonomic responses—peripheral vasoconstriction [11], metabolic
+heat changes, sympathetic activation—that manifest as skin
+temperature variations detectable regardless of voluntary expression
+control [12,13]. Wearable physiological sensors capture similar
+signals but face deployment barriers including patient discomfort,
+infection risk, movement artifacts, and compliance issues that are
+particularly problematic in vulnerable patient populations. A
+synchronized thermal-RGB system provides physiological signal
+access without skin contact, motivating our investigation.
+The gap between clinical need and current technology is
+substantial. Automated RGB-only systems achieve 78–83% 3-class
+accuracy on benchmark datasets under controlled conditions, yet
+clinical deployment faces two fundamental barriers. First, real-
+world pain expressions are attenuated by analgesic medication,
+individual stoicism, cultural norms [14], and cognitive impairment
+—precisely the populations where objective measurement matters
+most. Second, RGB-only methods capture only the voluntary-motor
+component of pain, missing the involuntary autonomic response
+that is more difficult to suppress and more directly linked to
+nociceptive processing [9,13]. This work addresses these gaps by (i)
+combining visible and thermal spectrum imaging to access both
+components simultaneously; (ii) developing a cross-spectral
+attention mechanism that dynamically weights modalities based on
+signal quality and pain severity; and (iii) validating in both
+controlled and real postoperative settings. The clinical motivation is
+strongest for populations where behavioral cues are most unreliable
+—neonates, cognitively impaired patients, sedated individuals, and
+patients from cultures with high pain stoicism—and our results
+specifically demonstrate benefit for low expressers (37.6%
+improvement) and sedated-controlled subjects (32.1%
+improvement).
+Our work tests three hypotheses:
+H1 (Physiological Manifestation): pain triggers detectable
+thermal patterns in autonomically innervated facial regions.
+H2 (Multimodal Complementarity): integrating thermal
+autonomic signals with RGB behavioral signals improves pain
+estimation, especially when expressions are suppressed [15].
+H3 (Temporal Dynamics): thermal autonomic responses may
+precede behavioral expressions, enabling earlier detection through
+temporal modeling.
+Our contributions are:
+(1) a novel cross-spectral attention fusion architecture
+(CSAF+Transformer) for continuous pain regression;
+(2) a synchronized thermal-RGB pain dataset with controlled
+and clinical components;
+(3) interpretability analyses revealing physiological
+mechanisms and thermal pain signatures;
+(4) validation on challenging populations (low expressers,
+elderly, diverse skin tones) demonstrating the clinical
+relevance of thermal augmentation. A full state-of-the-art
+comparison is provided in Table A in S1 File.
+2 Methodology
+Ethics statement
+This study was approved by the Institutional Review Board of the
+Military Research Center (IRB Protocol #2023–041-PAIN). All
+procedures were conducted in accordance with the Declaration of
+Helsinki and relevant ethical guidelines for human subjects research
+[16,17]. All participants (or their legal guardians) provided written
+informed consent prior to participation. Data privacy and
+confidentiality were ensured through complete anonymisation,
+secure encrypted storage, and access limited to authorised
+researchers. Video recordings and raw facial data were
+automatically deleted after feature extraction, except where explicit
+written consent for long-term retention was granted.
+2.1 System overview
+Fig 1 illustrates our complete pipeline: (1) synchronized thermal
+(FLIR A655sc, 640×480, 7.5–14 μm) and RGB (Canon EOS 90D,
+1920×1080) cameras at 30 fps; (2) face detection, spatial
+registration, and region-of-interest (ROI) extraction for five facial
+zones; (3) separate ResNet-50 encoders for each modality; (4)
+bidirectional cross-spectral attention fusion (CSAF); (5) temporal
+transformer over 10-second windows; (6) regression head yielding
+continuous 0–10 pain scores.
+Fig 1. System architecture pipeline.
+[image]
+Open in a new tab
+The framework processes synchronized thermal and RGB video
+streams through modal-specific encoders, cross-spectral attention
+fusion (CSAF), and a temporal transformer to estimate continuous
+pain intensity on the 0–10 NRS scale. Attention mechanisms enable
+interpretability by revealing which regions and time segments
+contribute most to predictions. NRS  =  Numeric Rating Scale; CSAF  
+=  Cross-Spectral Attention Fusion; ROI  =  Region of Interest.
+2.2 Data acquisition and preprocessing
+Hardware selection and synchronization details are provided in
+Table C in S1 File. Briefly: the FLIR A655sc was selected for thermal
+sensitivity (<0.04°C), sufficient for detecting pain-related
+temperature changes of 0.3–1.5°C. Hardware-triggered
+synchronization (NI USB-6001 DAQ, TTL pulses at 30 Hz) ensures
+inter-camera temporal offset <10 ms (verified median: 3.2 ms).
+Controlled environments (21–23°C, 40–60% humidity) are
+maintained to prevent ambient thermal confounds.
+Preprocessing: Face detection uses RetinaFace [18] (99.1%
+detection rate). Spatial registrat

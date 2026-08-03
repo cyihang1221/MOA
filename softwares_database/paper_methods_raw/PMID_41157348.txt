@@ -1,0 +1,176 @@
+
+Methodology
+Find articles by Tian Tan
+1, Xiaolong Wang
+Xiaolong Wang
+1Naval University of Engineering, Wuhan 430033, China;
+m24182602@nue.edu.cn (X.L.); m24170104@nue.edu.cn (T.T.);
+m24185401@nue.edu.cn (X.W.); 13871162114@yeah.net (X.Z.);
+m24185801@nue.edu.cn (Y.X.)
+Find articles by Xiaolong Wang
+1, Xinwen Zhao
+Xinwen Zhao
+1Naval University of Engineering, Wuhan 430033, China;
+m24182602@nue.edu.cn (X.L.); m24170104@nue.edu.cn (T.T.);
+m24185401@nue.edu.cn (X.W.); 13871162114@yeah.net (X.Z.);
+m24185801@nue.edu.cn (Y.X.)
+Find articles by Xinwen Zhao
+1, Yanlong Xu
+Yanlong Xu
+1Naval University of Engineering, Wuhan 430033, China;
+m24182602@nue.edu.cn (X.L.); m24170104@nue.edu.cn (T.T.);
+m24185401@nue.edu.cn (X.W.); 13871162114@yeah.net (X.Z.);
+m24185801@nue.edu.cn (Y.X.)
+Find articles by Yanlong Xu
+1
+Editor: Andrea Cataldo1
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC12568100  PMID: 41157348
+Abstract
+The reliability of hydraulic valves is critical for the safety and
+efficiency of industrial systems. While vibration and pressure
+sensors are widely deployed for condition monitoring, leveraging
+the heterogeneous data from these multi-sensor systems for accurate
+remaining useful life (RUL) prediction remains challenging due to
+noise, outliers, and inconsistent sampling rates. This study proposes
+a sensor data-driven framework that integrates multi-step signal
+preprocessing, time–frequency feature fusion, and a machine
+learning model to address these challenges. Specifically, raw data
+from vibration and pressure sensors are first harmonized through a
+multi-step preprocessing pipeline including Hampel filtering for
+impulse noise, Robust Scaler for outlier mitigation, Butterworth
+low-pass filtering for effective frequency band retention, and
+resampling to a unified rate. Subsequently, vibro-acoustic features
+are extracted from the preprocessed sensor signals, including Fast
+Fourier Transform (FFT)-based frequency domain features and
+Wavelet Packet Decomposition (WPD)-based time–frequency
+features, to comprehensively characterize the valve’s degradation. A
+health indicator (HI) is constructed by fusing the most sensitive
+features. Finally, a Kernel Principal Component Analysis (KPCA)-
+optimized Random Forest model is developed for HI prediction,
+which strongly correlates with RUL. Validated on the UCI hydraulic
+condition monitoring dataset through 20-run Monte-Carlo cross-
+validation, our method achieves a root mean square error (RMSE)
+of 0.0319 ± 0.0090, a mean absolute error (MAE) of 0.0109 ±
+0.0014, and a coefficient of determination (R2) of 0.9828 ±
+0.0097, demonstrating consistent performance across different data
+partitions. These results confirm the framework’s effectiveness in
+translating multi-sensor data into actionable insights for predictive
+maintenance, offering a viable solution for industrial health
+management systems.
+Keywords: hydraulic valve, remaining useful life, multi-sensor data
+fusion, vibration analysis, signal preprocessing, random forest,
+health indicator, predictive maintenance
+1. Introduction
+In modern industrial systems, the reliability of critical components
+directly determines operational safety and economic efficiency.
+Hydraulic valves, as core components that regulate fluid dynamics
+in the energy, manufacturing, and aerospace sectors, undergo
+inevitable degradation due to cyclic loading, material fatigue, and
+harsh working environments. Statistical data indicate that valve-
+related failures account for 30–40% of unplanned shutdowns in
+hydraulic systems, resulting in annual losses exceeding billions of
+dollars globally [1]. The operational health of these components is
+typically monitored using a network of sensors—such as vibration
+accelerometers, pressure transducers, and temperature sensors—
+that generate continuous, high-dimensional data streams. Accurate
+remaining useful life (RUL) prediction of hydraulic valves thus
+becomes pivotal for implementing predictive maintenance
+strategies, which can reduce maintenance costs by up to 25% while
+increasing equipment availability by 15–20% [2].
+A fundamental challenge in achieving reliable RUL prediction lies in
+effectively processing and interpreting sensory data, which serves as
+the foundation for all subsequent analysis. Recent studies have
+explored various approaches in this field. Li et al. [3] extracted
+four-dimensional characteristic variables from the p-V diagram,
+including pressure ratio, process angle coefficient, area coefficient,
+and process index coefficient, and applied PCA and LDA to establish
+a diagnostic model for fault identification of reciprocating
+compressor valves. Similarly, Wang et al. [4] combined a
+convolution kernel and LSTM, using acoustic emission sensors to
+collect data and realize the remaining useful life prediction of
+electric valves in nuclear power plants.
+Shi et al. [1] proposed a valve service life prediction method based
+on the PCA-PSO-LSSVM algorithm, using PCA to obtain the main
+factors affecting valve service life, LSSVM to predict valve service
+life, and PSO to optimize parameters. Nie et al. [2] proposed a
+hybrid model integrating ARIMA and LSTM, using an FNN
+algorithm for state detection and the hybrid model for remaining
+useful life prediction of water hydraulic high-speed on-off valves.
+Wang et al. [5] presented an improved TCN model for nuclear
+power plant electric gate valve remaining useful life estimation,
+integrating convolutional auto-encoder layers to improve model
+performance. Huang et al. [6] explored the main failure forms of
+direct-drive electro-hydraulic servo valves based on computational
+fluid dynamics, combined with erosion theory to calculate, and
+established a physical failure model.
+An et al. [7] proposed a deep learning fault detection and
+prediction framework combining PCA and Informer, where PCA is
+used for dimensionality reduction and fault feature extraction, and
+Informer realizes fault prediction through encoder and decoder. Li
+et al. [3] extracted time-domain features to form eigenvectors of
+vibration signals, used PCA to reduce the dimensionality of multi-
+dimensional feature vectors, and then used the squirrel optimization
+algorithm to optimize SVM parameters to establish a state-life
+evaluation model of rolling bearings.
+Several studies have employed peak-to-peak (P2P) amplitude or
+other time-domain statistics (crest factor, kurtosis, RMS) for valve
+condition monitoring. Xu et al. [8] used P2P standard deviation to
+detect 0.1 g/s water leakage in sodium flow, but had to re-tune the
+threshold whenever magnetic field strength drifted. Sim et al. [9]
+reported ≈85% accuracy with crest factor and kurtosis, yet their
+confusion matrix shows frequent misclassification of small-leak
+cases. Ye et al. [10] modeled valve inner leakage with Gaussian-
+process regression fed by P2P, RMS, skewness and kurtosis; for
+flows <2% of the rating the 95% confidence interval was wider
+than the true leakage, indicating poor resolution at incipient
+degradation. These findings consistently show that pure amplitude-
+based indices lose sensitivity when multiple failure modes coexist or
+the fault is still minor. Consequently, we adopt FFT and wavelet-
+packet decomposition to capture both stationary and non-stationary
+characteristics and integrate them into a unified preprocessing →
+feature → model pipeline; to our knowledge, such an end-to-end
+integration has not been demonstrated for hydraulic valve RUL
+prediction.
+Although methods based on time-domain statistics such as Peak-to-
+Peak (P2P) amplitude have been widely used in valve condition
+monitoring and have achieved certain results, these approaches
+essentially rely on macroscopic changes in signal amplitude. Studies
+have shown that P2P-based indicators exhibit limited sensitivity to
+early-stage, subtle degradation patterns or concurrent multiple
+failure modes [8,9,10]. For example, Xu et al. [8] found that the
+detection threshold of the P2P standard deviation is susceptible to
+drift due to external environmental factors (such as magnetic field
+strength), requiring frequent recalibration; the work of Sim et al.
+[9] and Ye et al. [10] further demonstrated that amplitude-based
+indicators (such as kurtosis and crest factor) lack resolution during
+incipient fault stages, exhibit wide confidence intervals, and are
+prone to misclassifying minor leakage cases. This is primarily
+because the early signs of valve degradation often manifest as subtle
+shifts in signal energy within the frequency domain or the
+generation of specific transient impulse components—features that
+are masked by the predominant energy of normal signals in the
+time-domain amplitude information.
+Consequently, indicators based solely on P2P or time-domain
+amplitude are inadequate for comprehensively capturing the
+coupled evolution of steady-state and transient characteristics
+throughout complex degradation processes. To overcome this
+limitation, this study adopts Fast Fourier Transform (FFT) and
+Wavelet Packet Decomposition (WPD) as core feature extraction
+tools. FFT can reveal steady-state frequency structure changes (e.g.,
+enhancement or attenuation of specific frequency components)
+caused by wear, leakage, etc., while WPD excels at capturing non-
+stationary, transient signal components induced by friction,
+impacts, etc., and provides detailed time–frequency localized
+energy distribution. This time–frequency domain fused feature
+engineering strategy, compared to solely time-domain amplitude
+analysis, enables a more sensitive and comprehensive
+characterization of the complete degradation process from early to
+late stages. It is precisely based on this superior characterization
+capability that we can effectively construct a highly sensitive Health
+Indicator (HI) and ultimately achieve the high-accuracy
+performance of the first comprehensive end-to-end integrated
+pipeline from preprocessing to prediction, as proposed in this paper.
+Our experiment

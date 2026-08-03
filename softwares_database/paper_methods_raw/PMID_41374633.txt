@@ -1,0 +1,173 @@
+
+Methodology, Validation, Investigation
+Find articles by André Lopes
+1,*, Luís Fernandes
+Luís Fernandes
+1INOV-Instituto de Engenharia de Sistemas e Computadores
+Inovação, 1000-029 Lisbon, Portugal; luis.fernandes@inov.pt (L.F.);
+paulo.chaves@inov.pt (P.C.)
+Methodology, Resources, Validation, Writing – review & editing,
+Supervision, Investigation, Conceptualization
+Find articles by Luís Fernandes
+1,†, Paulo Chaves
+Paulo Chaves
+1INOV-Instituto de Engenharia de Sistemas e Computadores
+Inovação, 1000-029 Lisbon, Portugal; luis.fernandes@inov.pt (L.F.);
+paulo.chaves@inov.pt (P.C.)
+Project administration, Funding acquisition, Writing – review &
+editing
+Find articles by Paulo Chaves
+1,†
+Editors: Richard J J Povinelli1, Cristinel Ababei1, Priya Deshpande1
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC12694330  PMID: 41374633
+Abstract
+This work aimed to develop and evaluate a real-time
+communication channel detection system in the Very High
+Frequency (VHF) band using software-defined radio (SDR). For this
+purpose, an FFT based spectral analyzer with 32,768 points was
+designed, capable of converting signals from the time domain to the
+frequency domain, ensuring efficient characterization of a 3 MHz
+bandwidth with updates every 0.5 s. Three detection algorithms
+were developed and compared: Energy Detection (ED) and two
+Waveform-Based Detection methods supported by machine learning
+models, SVM and KNN. ED stood out for its low computational
+requirements, suitable for low-cost systems, but had a limited
+probability of detection (Pd) at short distances, with zero detection
+beyond 500 m. KNN showed superior performance at longer
+distances, achieving 23% Pd at 700 m but insufficient for real-time
+applications. The SVM model proved to be the most effective,
+achieving a Pd of 80% at 1000 m and maintaining a low false
+positive rate of around 1%. It is concluded that the SVM model is
+the most suitable for real-time detection systems in the VHF band,
+offering a balance between accuracy and usability. The
+extrapolation of the results demonstrates the system’s potential for
+coverage greater than 2 km with higher-powered marine radios,
+around 25 W.
+Keywords: software-defined radio, SDR, Very High Frequency,
+VHF, monitoring, spectral analysis, SVM, KNN, machine learning,
+FFT
+1. Introduction
+Nowadays, countries are more concerned about the security of their
+borders, whether they are maritime or terrestrial. Because of this,
+every year these countries’ budgets have more money allocated to
+defense, and thereby to the security of their populations. On the
+European continent, several countries share part of their borders
+with vast bodies of water, such as the Atlantic Ocean or the
+Mediterranean Sea, and as a result, in recent years, illegal traffic in
+counterfeit goods, drugs and even illegal immigrants has increased
+exponentially, causing great overload and fatigue in the security
+forces that work there [1,2,3,4].
+One of the methods used by traffickers to cross the borders is the
+use of public Very High Frequency (VHF) radio channels. Smugglers
+exploit these channels not only for communication but also to
+coordinate actions between their teams on both sides of a border,
+for example, at sea and shore. Additionally, they use this low-cost
+solution to issue real-time instructions to their vessels or vehicles,
+warning those at sea of the movements of the security forces and
+border guards, allowing all the merchandise to enter undetected
+into the countries. Because of this technique, the difficulty of
+confiscating all the cargo and substances by the maritime
+authorities has only increased [5].
+Another situation that complicates the work of the security forces is
+that the boats carrying out these tasks are actually commercial
+vessels, registered and easily identifiable in normal situations, and
+so would never be identified as a vessel involved in clandestine acts
+[6]. For all the above reasons, these situations have become
+increasingly common, and with well-organized operations both on
+the coast and at sea, illegal trafficking has been able to enter
+countries more easily, demonstrating how VHF can be widely used
+for this type of operation, as it offers effective long-range coverage
+at a very low price.
+Communication in the VHF band occurs between 156 and 174 MHz
+and has more than 80 channels, distributed between simplex and
+duplex channels divided into ship, shore, and ship/shore (according
+to ITU-R M.1084-5) [7]. So, a channel assigned to ships is simplex,
+where it is mostly used for transmissions from ships. A coast
+channel is also simplex, but it is reserved for onshore transmissions,
+usually used for things like weather reports or safety information.
+Then there are ship/shore channels, which allow transmission by
+both vessels and land, and these channels can be simplex or duplex.
+Each channel is characterized by a unique number and frequency,
+which makes the channel identification process relatively simple
+and easy to identify when activated. The channels to be detected
+are only those related to ship communications, as this is the most
+logical approach for detecting suspicious activity. Theses channels
+have a bandwidth of 25 KHz, but in the middle of these primary
+channels there are intermediate channels with a bandwidth of 12.5
+KHz. If channels with lower bandwidth are transmitting, their
+presence must be taken into account when determining whether the
+main channels, the ones with 25 kHz bandwidth, are in use. This is
+one of the situations that requires careful consideration during the
+design and fine-tuning of the detection system.
+Therefore, this study aims to present a solution that can help detect
+the smuggling problem explained above by constantly monitoring
+communication channels in the VHF band. An important aspect to
+consider is the legal, regulatory, and privacy issues surrounding the
+continuous monitoring of VHF communication channels. This is
+because indiscriminate interception of radio communications may
+be restricted by the ITU and national telecommunications
+regulations and may constitute a violation of privacy. In order to
+mitigate potential misuse, the proposed system is designed
+exclusively to detect whether a ship’s communication channel is
+active, without listening to or analyzing the content of the
+transmissions. Thus, the data retained is only used for monitoring
+or analysis purposes, ensuring compliance with legal restrictions
+and minimizing privacy risks. So, in order to achieve this goal, it is
+necessary to have equipment that can analyze the entire spectrum
+associated with the VHF maritime band for ship communications
+and ship/coast communications, which would help the authorities
+to prevent the problem more effectively and with better results.
+This analysis needs to be in real time and on relatively low-cost
+hardware [8,9], so it could be implemented on a variety of
+surveillance boats and speedboats, or checkpoints along the coasts
+of the countries where this situation is most alarming. To meet
+these requirements, the proposed system uses software-defined
+radio (SDR) for flexible, wideband monitoring of the VHF spectrum.
+Signal processing is handled by single-board computers (SBCs),
+enabling a compact and low-cost setup for mobile or fixed
+surveillance [10]. The detection approach combines Energy
+Detection to identify active signals and waveform-based methods
+using machine learning models to classify transmission types. This
+combination improves accuracy while keeping resource use low,
+supporting real-time maritime communication monitoring.
+2. Technology Review
+Over the years, technological evolution has been remarkably rapid
+and linear, with communication products capable of transmitting
+over greater distances, increasingly larger datasets, and all of this
+more efficiently and quickly. However, this increase is not without
+a cost, as new protocols need to be developed to enable these
+transmissions, requiring new frequencies to be allocated. The
+spectrum being a finite place, with the passing of the years and the
+technological trend never slowing down, it began to suffer from a
+lack of available frequencies that could be designated for future
+protocols. As a result, a new area of study emerged, where the main
+objective was to identify holes, or free spaces in the frequency
+spectrum, and dynamically and autonomously allocate new
+transmissions, or, if occupied, find new free slots for them
+depending on their protocol. This area was designated cognitive
+radio [11]. Therefore, cognitive radio englobes different sectors of
+the communications field, from spectrum sensing to spectrum
+management and even spectrum sharing. To analyze the spectrum
+in the VHF band and detect active communications, it will be
+interesting to explore the spectrum sensing sector in greater depth
+and better understand what types of algorithms and products have
+been developed over the years, as well as the results that have been
+achieved. Two of the methods that are most prominent in various
+articles are the Energy Detection method and the Waveform
+Detection method, one for its efficiency and simplicity and the other
+for its intelligence and accuracy, respectively.
+2.1. Spectrum Sensing
+Spectrum sensing is essential for the real-time detection of active
+maritime communication channels, as it is this method that enables
+continuous analysis of the radio frequency spectrum [12]. This form
+of analysis provides insights into the composition of the background
+noise, the type and characteristics of the signals present, such as
+their modulations and frequencies, the allocation of these signals in
+the spectrum, and the free frequencies that can be used for new
+channels, among other aspects. So, the goal and the methods used
+highly depend on the application since what may be an excellent
+result in one context may not be in another. A good example of this
+is in cognitive radio systems for mobile networks, where the ma

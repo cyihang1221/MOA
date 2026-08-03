@@ -1,0 +1,199 @@
+
+Methodology, Validation, Formal analysis, Investigation, Data
+curation, Writing – review & editing
+Find articles by Lijing Zhang
+1,2,†, Fan Yang
+Fan Yang
+1Hangzhou Institute for Advanced Study, University of Chinese
+Academy of Sciences, Hangzhou 310024, China
+2University of Chinese Academy of Sciences, Beijing 100049, China
+Methodology, Software, Visualization
+Find articles by Fan Yang
+1,2, Mengchen Lin
+Mengchen Lin
+1Hangzhou Institute for Advanced Study, University of Chinese
+Academy of Sciences, Hangzhou 310024, China
+2University of Chinese Academy of Sciences, Beijing 100049, China
+Software
+Find articles by Mengchen Lin
+1,2, Jiadong Wang
+Jiadong Wang
+1Hangzhou Institute for Advanced Study, University of Chinese
+Academy of Sciences, Hangzhou 310024, China
+2University of Chinese Academy of Sciences, Beijing 100049, China
+Validation
+Find articles by Jiadong Wang
+1,2, Shengxiang Cao
+Shengxiang Cao
+1Hangzhou Institute for Advanced Study, University of Chinese
+Academy of Sciences, Hangzhou 310024, China
+2University of Chinese Academy of Sciences, Beijing 100049, China
+Validation
+Find articles by Shengxiang Cao
+1,2, Chenlong Zhang
+Chenlong Zhang
+1Hangzhou Institute for Advanced Study, University of Chinese
+Academy of Sciences, Hangzhou 310024, China
+2University of Chinese Academy of Sciences, Beijing 100049, China
+Formal analysis
+Find articles by Chenlong Zhang
+1,2, Di Liu
+Di Liu
+1Hangzhou Institute for Advanced Study, University of Chinese
+Academy of Sciences, Hangzhou 310024, China
+3School of Electronic and Information Engineering, Beihang
+University, Beijing 100191, China
+Investigation
+Find articles by Di Liu
+1,3, Mingzhong Pan
+Mingzhong Pan
+1Hangzhou Institute for Advanced Study, University of Chinese
+Academy of Sciences, Hangzhou 310024, China
+2University of Chinese Academy of Sciences, Beijing 100049, China
+Conceptualization, Resources, Writing – review & editing,
+Supervision, Project administration, Funding acquisition
+Find articles by Mingzhong Pan
+1,2,*, Jin Yang
+Jin Yang
+1Hangzhou Institute for Advanced Study, University of Chinese
+Academy of Sciences, Hangzhou 310024, China
+2University of Chinese Academy of Sciences, Beijing 100049, China
+Resources, Writing – review & editing, Supervision, Project
+administration, Funding acquisition
+Find articles by Jin Yang
+1,2,*
+Editor: Manuel Graña
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC13259175  PMID: 42280895
+Abstract
+Traditional hyperspectral cameras transmit full data cubes to host
+computers, creating severe bandwidth and storage bottlenecks that
+impede real-time analysis. We present a Zynq-7035-based
+intelligent camera using hardware–software codesign to enable on-
+board processing and transmit only actionable results. This
+intelligent camera is designed for high-throughput edge-sensing
+tasks, prioritizing rapid detection and information extraction over
+exhaustive raw data acquisition. The processing system (PS) handles
+command scheduling while the programmable logic (PL)
+implements a row-parallel pipeline for image acquisition,
+preprocessing, and spectral matching; all modules are decoupled
+through a unified DDR3 interface to support flexible algorithm
+integration. Push-broom experiments on leaf samples demonstrate
+Euclidean distance-based spectral matching executed entirely within
+the camera. Raw data and classification maps are uploaded via User
+Datagram Protocol (UDP). Results confirm accurate identification of
+diseased regions with two orders of magnitude data reduction,
+validating the architecture for real-time hyperspectral processing.
+Keywords: hyperspectral imaging, intelligent camera, real-time
+processing, ZYNQ, hardware–software codesign, euclidean distance
+spectral matching
+1. Introduction
+Hyperspectral imaging captures spatial and spectral data
+simultaneously [1]. Material discrimination is achieved by
+measuring reflectance or radiance across wavelengths and matching
+against spectral libraries. Increasing detector resolutions
+continuously expand data volumes [2]. Under medium-to-high
+frame rates or continuous observation, gigabyte-to-terabyte
+accumulations occur rapidly, straining transmission bandwidth and
+edge storage. Traditional cameras transmit complete data cubes to
+host computers for processing, yet massive data volumes create
+severe bandwidth and storage bottlenecks [3], preventing real-time
+online analysis.
+In contrast, intelligent hyperspectral cameras integrate imaging,
+algorithms, and decision-making within a single device, enabling
+direct output of visualized results [4] and significantly improving
+processing latency. Recent satellite missions demonstrate that
+shifting partial processing to the camera—transmitting only results
+—substantially alleviates downlink bandwidth constraints and
+reduces end-to-end latency: CubeSat missions targeting chemical
+plumes perform real-time onboard processing to generate retrieval
+images before transmission [5], while HYPSO-1 continuously
+downlinks both raw and processed data for subsequent analysis [6],
+validating the feasibility of combining onboard processing with
+selective data downlink.
+To this end, we employ a heterogeneous embedded platform for the
+intelligent camera. The primary objective of this work is to mitigate
+the transmission bandwidth bottleneck in edge-computing
+scenarios. We focus specifically on an intelligent camera
+architecture that executes hardware-accelerated spectral matching
+to output actionable results directly, thereby reducing the reliance
+on host-side post-processing. Current solutions include ARM-based
+general-purpose processors and lightweight platforms [7], DSPs for
+complex signal processing [8], GPUs with massive parallel
+capabilities [9,10], and Field Programmable Gate Arrays (FPGAs)
+supporting parallel pipelines with customized data paths [11].
+Balancing real-time performance, energy efficiency, and interface
+compatibility, we adopt the Zynq System-on-Chip (SoC). The Zynq
+series integrates a multicore ARM Cortex-A Processing System (PS)
+and Programmable Logic (PL) within a single heterogeneous chip.
+The two are interconnected via high-bandwidth AXI buses, offering
+lower inter-chip I/O overhead and power consumption than discrete
+CPU-plus-FPGA configurations. Meanwhile, the PL enables
+deterministic low-latency pipelines with channel-parallel processing
+for hyperspectral data [12].
+Building on this approach, we propose a Zynq-based intelligent
+hyperspectral camera using hardware–software codesign. The
+architecture adopts a “PS coordination and PL row-level parallel
+acceleration” paradigm: image acquisition modules capture target
+scenes, processing pipelines perform computational analysis, and
+results are uploaded.
+The remainder of this paper is organized as follows. Section 2
+describes the Zynq-based hardware–software codesign architecture,
+detailing the data and control paths and the processing workflow.
+Section 3 presents the embedded implementation of key algorithms.
+Section 4 evaluates the hardware prototype and raw camera
+performance, along with spectral calibration of the optical module.
+Section 5 reports application test results. Section 6 concludes with a
+summary and future outlook.
+2. System Architecture
+The proposed intelligent camera performs preprocessing and
+spectral matching on-board, transmitting only compact results via
+Ethernet to the host PC. This shifts the hyperspectral data path from
+transmission-dominated to computation-dominated. To achieve this,
+we employ a Zynq-7035 SoC as the main controller, implementing a
+hardware–software codesign architecture. The PS serves as the
+control plane for lightweight real-time multitasking and parameter
+deployment, while the PL functions as the data plane with row-level
+parallelism and deterministic pipelining. High-bandwidth AXI
+interconnect enables seamless collaboration between control and
+streaming processing within a single chip.
+2.1. Coordination Between Control and Data Planes
+The intelligent camera architecture is illustrated in Figure 1,
+comprising the Zynq-7035 SoC and its peripherals. The established
+architecture is developed based on the high-bandwidth AXI4 bus
+standard, leveraging the Processing System (PS) coordination and
+Programmable Logic (PL) acceleration paradigm commonly
+employed in high-performance embedded vision systems.
+Leveraging the heterogeneous nature of the Zynq, the chip is
+partitioned into control and data planes. The camera employs a
+Sony IMX535 sensor (Sony Semiconductor Solutions Corporation,
+Atsugi, Japan) with spectral response from 400 to 1000 nm, an
+effective resolution of 4096×3000 pixels, and a pixel size of
+2.74 μm×2.74 μm, offering favorable cost-effectiveness and
+usability.
+Figure 1.
+[image]
+Open in a new tab
+Intelligent camera system architecture.
+The PS serves as the control plane, responsible for system-wide
+command scheduling. To ensure real-time performance and
+maintainability, we employ FreeRTOS with fixed-priority
+preemptive scheduling combined with round-robin time slicing for
+tasks of equal priority [13]. PS tasks are categorized into three
+priority levels: highest priority for receiving and parsing commands
+from the host PC, intermediate priority for camera parameter
+configuration, image processing, and data transmission, and lowest
+priority for camera initialization and standby operations. Critical
+control tasks run at elevated priority levels, preempting lower-
+priority tasks when their deadlines arrive. Tasks within the same
+priority level execute in turn with extremely short time slices [14],
+yielding predictable thread synchronization and deterministic
+behavior [15].
+The PL serves as the data plane, implementing a row-level parallel
+pipeline that forms a closed loop of reception, storage, processing,
+and transmission. Image data from the IMX535 are delivered to the
+PL reception module via an 8-channel SLVS interface, receiving 8
+pixels per clock cycle to achieve 8-pixel parallelism. Data are
+buffered in FIFOs

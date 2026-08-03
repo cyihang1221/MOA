@@ -1,0 +1,162 @@
+
+Methods
+D3R 2016 challenge and test datasets
+The D3R 2016 PL-2016-1 Challenge was based on the two datasets
+provided by Barry Stoddard and David Baker. Each of these datasets
+contained a series of closely related proteins (sequence identity
+>90% within each series) artificially designed to bind a single
+ligand, 17-hydroxyprogesterone (17-OHP) or 25-
+hydroxycholecalciferol (25-D3) respectively. Throughout the text,
+we refer to the datasets using the names of the target ligands.
+The 17-OHP binding dataset consisted of two protein-ligand co-
+crystal structures: PL-2016-1-O-1 and PL-2016-1-O-2, resolved with
+resolutions of 2.5 and 2.0 Angstrom, respectively, and provided to
+the challenge participants with ligands removed. The goal of the
+challenge was to predict the ligand binding poses for each of the
+two protein-ligand complexes and rank proteins within this series
+by their affinity to 17-OHP.
+The 25-D3 binding dataset contained three protein-ligand co-crystal
+structures referred as PL-2016-1-C-1, PL-2016-1-C-2 and PL-2016-1-
+C-3, with resolutions of 1.9, 2.1 and 1.9 Angstrom and, again, with
+ligands removed. Similarly to the previous case, the D3R challenge
+participants were expected to predict the ligand binding pose for
+each complex. The affinity prediction challenge, however, was
+different: the goal was to predict the relative affinity of PL-2016-1-
+C-1 to 25-D3 and its other ligand, vitamin D3.
+Notably, for both datasets the water-mediated interactions were
+assumed to play an important role, and the crystal structures
+provided by the organizers included crystal waters. The ligands
+were available in 2D representations as SDFiles, and, therefore, an
+additional challenge was to correctly predict the puckers of
+nonplanar rings for 17-OHP.
+Up to 5 ligand poses per protein were allowed for submission in
+each docking prediction. Affinity prediction was to be submitted as
+absolute affinity in nM, as relative affinity, or as a simple ranking of
+proteins by their affinity.
+Docking and scoring protocol
+The overall structure of the docking protocol is presented in Fig. 1.
+Figure 1.
+[image]
+Open in a new tab
+Ligand pose prediction protocol.
+The whole protocol consisted of the 5 major steps:
+First, multiple possible conformers of the ligand featuring various
+possible torsion angle orientations and different nonplanar ring
+puckers were generated. For this purpose we employed Confab - a
+systematic generator of low energy conformers [10]. At the end of
+this stage 10 lowest-energy conformers for 25-D3 and vitamin D
+were retained for future processing. For 17-OHP only 5 low
+conformers were generated, likely due to the rigidity of the
+molecule.
+Pre-generated conformers were then used as inputs for our FFT-
+based rigid body global docking program PIPER [1]. Using an FFT-
+based approach greatly accelerates the solution of the rigid body
+search problem, and allows to perform global sampling of protein-
+ligand interaction landscape in affordable time, evaluating billions
+of putative protein-ligand orientations on a grid. Performing
+docking of a rigid protein to multiple pre-generated ligand
+conformers allowed to account for ligand flexibility within the FFT
+based docking framework, similar in style to our recently developed
+FFT based peptide docking protocol [9].
+Docking of each ligand conformer constituted a single FFT docking
+run; the resulting low-energy poses from different runs were merged
+to form a pool of 1000 poses and then clustered together. Docking
+poses serving as cluster centers were retained for later optimization
+stages.
+Rigid docking poses generated with FFT served as starting points for
+an in-house Monte Carlo minimization algorithm [11–13]. Since all
+proteins present in the two datasets had a large central cavity, in
+each case such cavity was assumed to be the target binding site, and
+thus only poses located within the cavity were further refined.
+During the MCM stage, all ligand torsions were treated as rotatable,
+except for those localized within closed rings. CHARMM19-based
+energy function augmented with knowledge-based hydrogen
+bonding and GBSA terms was used for scoring of generated
+conformations as previously described in [12]. Each MCM trajectory
+consisted of 10,000 Monte Carlo steps, and conformations
+corresponding to all accepted moves were retained.
+In the final stage of the docking pipeline, all accepted Monte Carlo
+conformations were rescored with crystal waters using a Vina [14]
+based energy function. Structural water molecules in the binding
+site are known to mediate protein-ligand interactions, and correct
+placement of waters was shown to improve the scoring of ligand
+poses [15]. The minimization step in MCM drives ligands toward
+local minima and greatly reduces the number of poses for rescoring.
+Rescored poses were clustered with a 1.0 Angstrom RMSD cutoff
+after which the lowest-energy poses from each cluster were
+reported as final docking predictions. These final predictions were
+ranked according to their Vina scores.
+For the purpose of scoring in D3R, we simply used the Vina scoring
+function of the top docking models.
+FFT based rigid body docking
+FFT docking was performed with PIPER [1] using a variation of the
+protocol described previously [16]. In short, given a protein
+receptor and a ligand conformer, we explore the full discretized
+conformational space of receptor-ligand rigid body orientations
+using the Fast Fourier Transform correlation approach. In the
+process of sampling the protein remains fixed, while the ligand is
+rotated and translated. Rotational degrees of freedom are sampled
+from a semi-uniform set of 70,000 rotations constructed using
+layered Sukharev grid sequence, and translations are sampled on a
+3D grid with 1.0 Angstrom spacing.
+The advantage of the FFT approach is that if the energy function is
+written down as a sum of several correlation functions, then for a
+single rotation of the ligand (or, in our case, ligand conformer),
+energy values for all possible translations can be evaluated very
+efficiently using P forward and one inverse Fourier transforms,
+where P is the number of correlation terms in the energy function.
+Thus if N denotes the size of translation grid in each dimension,
+then the complexity of the FFT approach per one rotation is 0
+(N3ln(N)), as opposed to 0(N6) for the direct approach. In PIPER,
+the FFT calculations are repeated for all 70,000 rotations of the
+ligand, and a single lowest-energy pose is retained for each rotation,
+resulting in a total of 70,000 low energy poses.
+For the purpose of small molecule docking, we use an energy
+function composed of attractive (Eattr) and repulsive (Erep) Van der
+Waals contributions, as well as an electrostatic term with Born
+correction (Eelec) [17]: E = Evdw + w2Eelec. Here individual terms
+are computed as:
+Evdw=Eattr+w1Erep,Eelec=∑i∑jqiqjr2+D2exp(-r2/D2),
+where r is the distance between atoms i,j and D is an Born radius.
+For consistency, we use a standard set of weights previously
+developed for protein docking applications: w1 = 1, w2 = 750.
+When docking the D3R targets, a separate docking run was
+performed for each ligand conformer, resulting in 10 docking runs
+for for each target from the 25-D3 dataset and 5 docking runs for
+those from the 17-OHP dataset. An equal number (100 for 25-D3
+dataset targets and 200 for 17-OHP) of lowest-energy poses from
+each run were taken to form a pool of 1000 poses, which were then
+clustered together with a clustering radius of 1.0 Angstrom and
+cluster centers of the 10 largest clusters retained as final FFT
+docking models.
+Monte Carlo Minimization refinement
+For the purpose of flexible docking pose optimization, we have
+updated the Monte Carlo minimization (MCM) package previously
+developed in our lab for protein docking refinement[11–13], with
+capabilities for sampling ligand torsional degrees of freedom.
+Additionally the algorithm provides full support for sampling ligand
+rigid body degrees of freedom, and allows for side-chain flexibility
+on the receptor side. Random moves are coupled with fast local
+minimization of the generated poses carried out using a manifold-
+based optimization algorithm. In the latest version of the code, our
+previously reported custom energy function [12] and Vina [14]
+energy function can be used for pose evaluation, and pose
+acceptance is guided by a Metropolis criterion. Here we provide a
+brief overview of the major algorithmic features of our MCM
+package.
+In our approach, the treatment of ligand flexibility is based on the
+common assumption that the changes in covalent bond-lengths and
+bond-angles can be neglected. In this context, the whole ligand can
+be viewed as a set of rigid molecular clusters (aromatic rings,
+methyl groups, etc.) interconnected by rotatable bonds. The only
+internal degrees of freedom of the ligand are, therefore, associated
+with torsional moves around such rotatable bonds, and description
+of the ligand as a whole can be given in terms of 6 rigid body and d
+torsional degrees of freedom, where d is the number of torsions.
+Overall, such ligand representation is typical for small molecule
+docking methods (e.g. [14, 18]. To correctly handle the changes in
+the molecule upon torsional moves, we employ a torsion tree data
+structure as described in previous work [13].
+An interesting observation that comes from representing molecular
+configurations in terms of rigid body orientations and torsions is the
+fact that the underlying space of such representation is, a manifold,

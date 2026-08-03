@@ -1,0 +1,35 @@
+
+Methods
+Monte Carlo Simulations
+We ran conventional Metropolis Monte Carlo simulations of
+Lennard-Jones fluids in the canonical ensemble (i.e., constant NVT),
+to generate particle configurations for insertion and deletion. Each
+system started with a prescribed number of particles on the grid
+points of a cubic lattice. Rather than the full Lennard-Jones
+potential,
+uLJ(r)=4ε[(σr)12−(σr)6] (8)
+where r, σ, and ε denote the interparticle distance, particle
+diameter, and energy well depth, respectively, we used a shifted-
+force form,
+u(r)=uLJ(r)−uLJ(rc)−(r−rc)uLJ′(rc)for r≤rc=0for r>rc (9)
+where rc denotes the cutoff distance and a prime denotes derivative.
+The periodic boundary condition was applied and treated by the
+minimum image convention. For simplicity, we use reduced units,
+i.e., σ = 1, ε = 1, and kB = 1. As a result, all temperatures listed
+below are scaled by ε/kB, and all number densities scaled by σ−3.
+The cutoff distance chosen was 2.5; for this choice, the reported
+critical temperature Tc was 0.937.40
+The side length of the cubic simulation box was 8 in all the
+simulations. Simulations were run at six subcritical temperatures
+ranging from 0.65 to 0.90 at an increment of 0.05. At each
+temperature, a total of 15 N-particle systems were simulated for
+insertion, with N ranging from 30 to 450 (at an increment of 30)
+and correspondingly the number density ranging from 0.059 to
+0.879. In parallel, the same number of (N + 1)-particle systems
+were simulated for deletion.
+At each Monte Carlo simulation step, a particle was randomly
+chosen for a trial move. The displacement of the move in each
+direction was random, with a uniform distribution limited to a
+maximum displacement of 1.2. The trial move was accepted with
+the probability min[1, exp(− βΔUint)], where ΔUint was the
+change, upon the trial move, of the interaction energy of the chosen

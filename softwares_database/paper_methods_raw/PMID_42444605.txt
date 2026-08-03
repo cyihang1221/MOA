@@ -1,0 +1,203 @@
+
+Methodology, Validation, Visualization, Writing - original draft
+Find articles by Chengkang Li
+2,3,4,c,✉, Nur Yesiltac-Tosun
+Nur Yesiltac-Tosun
+5 Department of Pharmaceutical Chemistry, Goethe University
+Frankfurt, Frankfurt (Main) 60438, Germany
+Formal analysis, Methodology, Resources, Visualization, Writing -
+original draft
+Find articles by Nur Yesiltac-Tosun
+5,c, Jannick Schicktanz
+Jannick Schicktanz
+6 Department of Pharmaceutical Chemistry, Goethe University
+Frankfurt, Frankfurt (Main) 60438, Germany
+Investigation, Validation, Visualization, Writing - original draft
+Find articles by Jannick Schicktanz
+6, Leona Rusling
+Leona Rusling
+7 Department of Pharmaceutical Chemistry, Goethe University
+Frankfurt, Frankfurt (Main) 60438, Germany
+8 Mass Spectrometry Service Unit, Goethe-University Frankfurt,
+Max-von-Laue-Str. 9, Frankfurt (Main) 60438, Germany
+Formal analysis, Investigation, Methodology
+Find articles by Leona Rusling
+7,8, Steffen Kaiser
+Steffen Kaiser
+9 Mass Spectrometry Service Unit, Goethe-University Frankfurt,
+Max-von-Laue-Str. 9, Frankfurt (Main) 60438, Germany
+Formal analysis, Investigation, Methodology
+Find articles by Steffen Kaiser
+9, Samuel Wein
+Samuel Wein
+10 Applied Bioinformatics, Department of Computer Science,
+University of Tübingen, Tübingen 72074, Germany
+11 OpenMS Inc., Erie, Pennsylvania 16502, United States
+Investigation, Software, Validation
+Find articles by Samuel Wein
+10,11, Stefanie Kaiser
+Stefanie Kaiser
+12 Department of Pharmaceutical Chemistry, Goethe University
+Frankfurt, Frankfurt (Main) 60438, Germany
+Conceptualization, Data curation, Funding acquisition,
+Investigation, Methodology, Project administration, Resources,
+Supervision, Validation, Visualization, Writing - original draft
+Find articles by Stefanie Kaiser
+12,✉
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC13366003  PMID: 42444605
+Abstract
+RNA modifications regulate diverse cellular processes, yet
+comprehensive characterization of modified RNA sequences remains
+technically challenging. Mass spectrometry provides direct chemical
+information on RNA, but current oligonucleotide-based workflows
+typically require micrograms of RNA input and often rely on ion-
+pairing reagents for chromatographic separation, limiting their
+applicability to scarce or native RNA samples. Here, we establish a
+sensitive oligonucleotide mass spectrometry workflow that
+combines ion-pair-free nanoflow hydrophilic interaction liquid
+chromatography with systematic benchmarking of controlled RNA
+cleavage strategies. We compared RNase T1, RNase 4, and colicin
+E5 and evaluated how reaction conditions influence cleavage
+specificity, fragment length distribution, and terminal chemistries of
+RNA hydrolysates. The resulting workflow enables robust LC-MS/
+MS analysis using standard MS-compatible buffers and supports
+confident oligonucleotide identification through
+NucleicAcidSearchEngine (NASE) database searching. Using this
+approach, we achieved high sequence coverage from nanogram-
+scale RNA inputs, enabling modification analysis of 25–50 ng native
+yeast tRNAPhe and sequence verification of 250 ng synthetic mRNA.
+Together, this work establishes a sensitive and broadly applicable
+platform for oligonucleotide mass spectrometry and provides
+practical guidance for RNase selection and digestion strategies. The
+method expands the applicability of RNA MS to low-input samples
+and supports future studies of RNA sequence and modification
+landscapes.
+Graphical Abstract
+Graphical Abstract.
+[image]
+Open in a new tab
+Introduction
+RNA modifications expand the functional diversity of the
+transcriptome and play central roles in cellular regulation. To date,
+~150 different RNA modifications are known [1], which occur in
+all life forms and RNA species studied to date. RNA modifications
+are increasingly recognized to impact human health [2], disease
+prevention [3], and agricultural success [4]. The characterization of
+RNA modifications requires analytical approaches that provide both
+sequence context and direct chemical information. However,
+existing technologies do not yet robustly deliver this combined
+information for native RNA at low input levels. Consequently,
+comprehensive and site-specific analysis of modified RNAs remains
+a central challenge in RNA biology.
+Two orthogonal concepts for RNA modification analysis have been
+established, namely mass spectrometry (MS) and sequencing. Both
+provide complementary information but also exhibit intrinsic
+limitations. Next-generation sequencing allows sensitive detection
+of nanogram amounts of RNA but relies on reverse transcription
+(RT) of RNA into complementary DNA (cDNA). RNA modifications
+are lost during cDNA synthesis, and only a few remain detectable
+through e.g. RT blocks or misincorporations [5, 6]. New reverse
+transcriptases address this particular challenge for tRNAs that have
+dense and chemically diverse modifications [7]. A similar
+sensitivity can be achieved by polymerase-chain reaction, which
+was recently used to detect tRNA-derived fragments from 100 ng of
+total RNA [8]. Third-generation sequencing, such as Oxford
+Nanopore sequencing, analyze RNA directly by measuring changes
+in electrical current as nucleotides pass through a pore. Although
+these approaches are rapidly evolving and show potential for direct
+modification detection (as often shown for pseudouridine [9]), their
+accuracy and interpretation remain dependent on signal modeling
+and training data [10, 11]. As a result, sequencing-based methods
+currently provide limited direct chemical resolution of RNA
+modifications.
+MS is a valuable tool to analyze RNA modifications as it allows
+chemical characterization of RNA modifications [12]. Commonly,
+RNA is purified and hydrolyzed to the nucleoside building block
+with subsequent targeted MS analysis. While this approach provides
+valuable information about the absolute abundance and
+stoichiometry of RNA modifications [13–15], its key bottleneck is
+the loss of all sequence information. This fundamental limitation
+restricts its utility for comprehensive mapping of RNA modification
+landscapes.
+To overcome this limitation, bottom-up oligonucleotide MS
+approaches have been developed. In these workflows, RNA is
+enzymatically cleaved into defined fragments using sequence-
+specific ribonucleases, followed by chromatographic separation and
+MS/MS analysis. This strategy preserves both sequence information
+and chemical modification content within individual fragments.
+Conceptually, bottom-up RNA MS parallels shotgun proteomics. The
+workflow relies on four key steps: controlled RNA fragmentation,
+chromatographic separation, mass spectrometric detection, and
+computational data analysis. First implementations of this approach
+date back to the introduction of electrospray ionization in the 1990s
+[16], and recent advances have enabled its application to
+increasingly complex RNA substrates [17–19] including
+modification mapping in transfer RNA (tRNA) and ribosomal RNA
+(rRNA) [20–25].
+The analytical performance of oligonucleotide MS critically depends
+on the properties of the employed ribonucleases. Sequence
+coverage, fragment length distribution, and redundancy of
+overlapping fragments are directly determined by cleavage
+specificity. In contrast to proteomics, where broadly applicable
+proteases such as trypsin are available, no universally applicable
+RNase exists.
+RNase T1 represents the most widely used enzyme and serves as a
+benchmark due to its well-defined cleavage 3′ of guanosine residues
+[17, 18, 26, 27]. This high specificity enables predictable
+fragmentation patterns but also results in relatively short fragments
+and incomplete sequence coverage. In addition, RNase T1
+preferentially cleaves single-stranded regions, which can lead to
+missed cleavages in structured RNAs and thereby generate longer
+fragments [28]. While such missed cleavages can increase sequence
+information, they simultaneously expand the search space due to
+the growing number of possible fragment combinations, a challenge
+also encountered in proteomics [29].
+Importantly, RNase T1 cleavage is influenced by RNA chemistry
+and modifications. For example, RNase T1 cleaves after inosine [30]
+but is inhibited by certain methylated guanosine derivatives [31].
+This dependence on sequence context, structure, and chemical
+modifications is not unique to RNase T1 but represents a general
+challenge in enzymatic RNA fragmentation.
+Consequently, the choice of RNase directly determines the
+accessibility of sequence regions and the interpretability of MS data.
+A conceptual classification of RNases is provided in Table 1, with a
+detailed overview in Supplementary Table S1. Importantly, no
+single RNase provides sufficient sequence coverage due to inherent
+trade-offs between cleavage frequency, fragment length, and
+sequence uniqueness. Different RNases generate complementary
+fragment sets, where frequently cleaving enzymes provide dense but
+redundant coverage, while more selective enzymes yield longer,
+more unique fragments. Current workflows often rely on a limited
+set of enzymes [17, 18, 27, 32, 33], and their substrate specificity is
+rarely characterized under varying experimental conditions.
+Table 1.
+Conceptual classification of RNases used in this study
+Class
+Example
+RNases
+Key property
+Base-specific
+T1, A
+Predictable but short
+fragments
+Context-
+dependent
+RNase 4
+Variable cleavage
+Motif-specific
+Colicin E5,
+MazF
+High specificity, limited
+coverage
+Open in a new tab
+In this context, RNase 4 and colicin E5 represent particularly
+interesting candidates. These enzymes may be useful to probe
+complementary aspects of sequence coverage and modification
+sensitivity. RNase 4 has been reported to preferentially cleave after
+uridine in a context-dependent manner [27, 32], yet its
+performance with respect to RNA structure, modifications, and
+robustness remains insufficiently characterized. Colicin E5,
+originally described as a tRNA anticodon nu

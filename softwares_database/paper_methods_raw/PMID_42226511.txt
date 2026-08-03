@@ -1,0 +1,173 @@
+
+Methods
+Here we present a new computational method for quantifying gut
+peristalsis in preclinical mouse models that requires only a video
+taken using a mobile phone camera. Our analytical pipeline
+processes the videographic data to track motion as it correlates to
+gastrointestinal transit.
+Results
+This method is compatible with different mouse models (such as
+conventionally housed and germ‐free), gut microbiome
+compositions, and can further be used to screen the impact of drugs
+on gut motility, which we demonstrate using methacholine as an
+example. Quantitative peristalsis measurements after methacholine
+treatment of conventionally housed and germ‐free mice with or
+without reconstitution of their gut microbiomes demonstrate that
+our analytical method can detect and quantify changes in peristalsis
+driven not only by endogenous acetylcholine signaling but also by
+colonic anatomy and the microbiome.
+Conclusion
+We envision that our computational tool will find uses in preclinical
+drug or mouse model screenings and forms the cornerstone to
+expand this methodology to other non‐gastrointestinal applications.
+Keywords: computational, method, motility, peristalsis,
+smartphone
+Key Points
+•  A new computational method for quantifying gut peristalsis
+in live animals.
+•  Requires videos taken using a smartphone camera and our
+analytical pipeline.
+•  Our methodology can be expanded to multiple applications
+including peristaltic assessments of rodent gastrointestinal
+disease models, screening novel compounds for off and on
+target gastrointestinal effects, and quantifying body wall
+movements of other muscle groups.
+Plain Language Summary
+Many diseases and medical interventions affect gut motility. But
+quantitative methods for measuring gut motility in live animals are
+uncommon, cumbersome, and lack standardization. To address this
+unmet need, we present a new computational method for
+quantifying gut motility in preclinical mouse models that requires
+only a video taken using a mobile phone camera. This method is
+compatible with different mouse models and across distinct gut
+microbiome compositions (we demonstrate its use for measuring
+gut motility in conventionally housed mice, germ‐free mice, and
+germ‐free mice whose microbiomes were subsequently
+reconstituted). It can further be applied to different preclinical
+scenarios such as screening of drugs and probiotics, studying the
+effects of different microbiome compositions, and screening
+preclinical mouse models. Additionally, our method is amenable for
+use beyond its application in gastrointestinal motility and could be
+further enhanced by integrating advances in AI like video
+processing neural networks.
+A new computational method and analytical pipeline for
+quantifying gut peristalsis in live mouse models that involves taking
+a video using a smartphone camera and then processing the
+videographic data using our custom analytical pipeline to quantify
+gastrointestinal motility.
+[image]
+1. Introduction
+Peristalsis forms the basis of the involuntary physiological
+gastrointestinal (GI) muscle contraction and relaxation that propels
+chyme through the digestive tract, representing a major mechanism
+of gut motility. The peristaltic contractions in the alimentary canal
+are initiated by a number of interrelated signals, many of which are
+mediated by the interstitial cells of Cajal (ICC), pacemaker cells in
+the GI tract [1]. The ICC interface with smooth muscle,
+parasympathetic neurons, and enteric neurons [2], which can
+stimulate gut movement through release of acetylcholine in the
+postprandial stage, or motilin to stimulate migratory motility
+complexes in the fasting or inter‐digestive phases [3]. Acetylcholine
+acting on M3 muscarinic receptors on smooth muscle cells [4] and
+ICC [5] facilitates calcium‐dependent [6, 7] muscle contractions [8]
+to propel chyme in the anterograde direction.
+Dysregulation of GI motility can result from a number of diseases
+and is also a typical side effect of many commonly used drugs like
+NSAIDS, antidepressants, and colchicine [9]. Gastroparesis, chronic
+intestinal pseudo‐obstruction, or neuromuscular junction disorders
+like myasthenia gravis are characterized by reduced rates of
+peristaltic contractions and can result in constipation or
+malnutrition [10, 11]. On the other hand, pathologies such as
+hyperthyroidism may increase gut motility and cause diarrhea [12].
+While some of these disorders arise in adulthood, congenital
+diseases like Hirschsprung disease result in abnormal or absent
+peristaltic motility from birth [13]. Irritable bowel syndrome (IBS)
+may result in diarrhea or constipation, due to fast or slow
+peristalsis, respectively. Furthermore, numerous classes of drugs
+have well‐characterized positive or negative effects on GI motility.
+For example, prokinetic drugs, a class including acetylcholinesterase
+inhibitors, dopamine antagonists, and serotonergic agonists,
+increase peristalsis and gastric emptying, while opioids, selective
+serotonin reuptake inhibitors, antihistamines, and many other
+classes of drugs inhibit peristalsis and lead to constipation.
+Due to these common drug actions on gastrointestinal motility,
+many methodologies for visualizing, measuring, and quantifying gut
+motility are currently in clinical use. These include procedures like
+antroduodenal manometry (which requires invasive catheterization
+[14]) as well as non‐invasive techniques such as gadolinium‐ or
+manganese‐contrast magnetic resonance imaging, which offer high
+resolution of soft tissue but are costly, time consuming, and affected
+by positioning and breathing [15, 16]. Many related procedures
+have availability limited to specific tertiary settings and suffer from
+a lack of standardized protocols [17]. Recently, body surface gastric
+mapping (BSGM) and ultrasound have been offered as inexpensive,
+non‐invasive methods of measuring gastrointestinal motility in
+point‐of‐care settings. BSGM is a promising new technology that
+utilizes an array of electrodes placed onto the body [18] with recent
+FDA approval; however, it is currently limited to gastric mapping
+and lacks multiple key standardization studies [18, 19]. Intestinal
+ultrasound shows similar promise, allowing high‐resolution
+visualization of rhythmic intestinal movements in real time in the
+small intestine [20] and colon [21]. The drawbacks to ultrasound,
+however, include difficulty visualizing movement when
+gastrointestinal fluid volume varies amongst patients [22],
+sometimes necessitating polyethylene glycol laxative ingestion [23],
+and challenges in standardizing the method to generate
+reproducible results across modalities [24].
+To address these shortcomings, many new methodologies are
+currently being evaluated using preclinical animal models. For
+example, ultrasonography on anesthetized live mice shows promise,
+as it does in clinical settings [25], and trans‐illumination near‐
+infrared technology has been used to generate detailed
+spatiotemporal mapping of the gastrointestinal tracts of freely
+moving live mice [26]. Novel dyes for use with near‐infrared
+imaging have shown further promise in enhancing gastrointestinal
+resolution for visualization of peristalsis [27]. While encouraging,
+these technologies require specialized equipment to generate
+images. Videography, on the other hand, has been in development
+for the capture and analysis of uterine movement in mice [28], and
+represents a methodological advancement primarily due to its low
+barrier to entry. Recent developments in artificial intelligence (AI)
+and computational analysis have shown promise to enhance
+analysis of video data; however, there remains an unmet need for
+quantitative, standardized tools which can measure intestinal
+motility via videography. Such a tool could find application at the
+preclinical stage to characterize effects of drugs or diseases on
+gastrointestinal motility in animal models, and eventually in point‐
+of‐care clinical settings for diagnostic or prognostic usage.
+In this study, we present a novel computational tool for visualizing
+and evaluating gut peristalsis in live animals. Our approach
+involves recording gut motility using a smartphone camera and
+quantifying motility with a customized video analytical pipeline.
+We demonstrate the promise of our tool in both the quantification
+of peristaltic movement as well as for screening the effects of drug
+concentrations on gastrointestinal motility in conjunction with the
+FlexiVent ventilator system [29], which allows rapid and controlled
+administration of nebulized drugs.
+2. Methods
+2.1. Maintenance of Germ‐Free Animals and Animal
+Welfare
+Mice were maintained in germ‐free conditions in the CWRU
+gnotobiotic core using the nested isolation system [30] and were
+regularly tested for contamination by performing standard testing
+including 16S rRNA sequencing, fecal cultures, and gram staining.
+All procedures were carried out in accordance with the National
+Institutes of Health guidelines for care and use of laboratory
+animals and were approved (4/22/19–4/30/27, protocols
+#20140158 and #20140035) by the Case Western Reserve
+University Institutional Animal Care and Use Committee (Assurance
+Number A‐3145‐01).
+2.2. Gavage of Germ‐Free Animals
+Each of the 4–8‐week‐old germ‐free mice were orally gavaged with
+1 × 108 E. coli strain BW25113 obtained from the KEIO collection
+from the Coli Genetic Stock Center (CGSC) at Yale University that
+had been grown overnight in SOC media at 37°C and then
+resuspended in 300 μL of sterile PBS. This gavage was repeated after
+1 week. Limiting dilution assay of fecal samples from gavaged mice
+demonstrated 3.37 ± 0.39 × 107 colony‐forming units on LB
+medium. Similarly, 4–8‐week‐old GF mice were orally gavaged with
+300 μL PBS that contained normal microbiome that was prepared by
+resuspending and vortexing fecal material collected from
+conventionally housed mice in sterile PBS, followed by
+centrifugation at 3000×g for 1 min to obtain supernatant for oral
+gavage. Thi

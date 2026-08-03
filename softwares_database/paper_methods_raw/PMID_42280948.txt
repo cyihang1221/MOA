@@ -1,0 +1,180 @@
+
+Methodology, Conceptualization, Supervision, Writing – review &
+editing
+Find articles by Nobuo Funabiki
+1,*, I Nyoman Darma Kotama
+I Nyoman Darma Kotama
+1Department of Information and Communication Systems, Okayama
+University, Okayama 700-8530, Japan; p44c722y@s.okayama-
+u.ac.jp (A.A.S.P.); p9363bg2@s.okayama-u.ac.jp (I.N.D.K.);
+pzc37um1@s.okayama-u.ac.jp (K.S.B.); p18z9yov@s.okayama-
+u.ac.jp (P.S.)
+Software, Visualization
+Find articles by I Nyoman Darma Kotama
+1, Kadek Suarjuna Batubulan
+Kadek Suarjuna Batubulan
+1Department of Information and Communication Systems, Okayama
+University, Okayama 700-8530, Japan; p44c722y@s.okayama-
+u.ac.jp (A.A.S.P.); p9363bg2@s.okayama-u.ac.jp (I.N.D.K.);
+pzc37um1@s.okayama-u.ac.jp (K.S.B.); p18z9yov@s.okayama-
+u.ac.jp (P.S.)
+Conceptualization, Methodology, Validation, Visualization, Writing
+– review & editing, Investigation, Formal analysis
+Find articles by Kadek Suarjuna Batubulan
+1, Putu Sugiartawan
+Putu Sugiartawan
+1Department of Information and Communication Systems, Okayama
+University, Okayama 700-8530, Japan; p44c722y@s.okayama-
+u.ac.jp (A.A.S.P.); p9363bg2@s.okayama-u.ac.jp (I.N.D.K.);
+pzc37um1@s.okayama-u.ac.jp (K.S.B.); p18z9yov@s.okayama-
+u.ac.jp (P.S.)
+Software, Visualization, Formal analysis
+Find articles by Putu Sugiartawan
+1
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC13259489  PMID: 42280948
+Abstract
+Nowadays, closed-circuit television (CCTV) cameras are deployed
+worldwide to monitor movements of humans and other objects to
+improve the efficiency and safety of societies. Therefore, their
+proper placement is crucial for achieving effective surveillance
+coverage. Additionally, their proper placement is significantly
+important for maximizing visual coverage while reducing
+installation/management costs. For this task, digital twin is a useful
+technology, since it can simulate coverage and blind spots while
+freely changing camera locations. To implement digital twin, 3D
+modelling of a structure including a complex room is a key issue. In
+this paper, we propose a 3D indoor modelling method using 360°
+panoramic images and show its application to a CCTV camera
+placement optimization. This method constructs a structured 3D
+model of a target room from captured 360° panoramic images using
+a 3D Gaussian Splatting reconstruction method based on a visual
+simultaneous localization and mapping (VSLAM) framework. The
+Inertial Measurement Unit (IMU) is used together to improve the
+camera position estimation accuracy. The model construction is
+anchored using a GNSS/GPS reference to establish global spatial
+coordinates. As an application of the generated 3D model, optimal
+locations of a given number of CCTV cameras are determined by
+combining ray-casting visibility analysis and a greedy optimization
+algorithm in the virtual environment, maximizing visual coverage
+while minimizing blind spots and avoiding excessive overlap
+between camera views. For evaluations, we applied the proposed
+method to three rooms in Okayama University, Japan, and seven
+rooms in the Indonesian Institute of Business and Technology,
+Indonesia. After optimizing camera locations in the virtual
+environment, the cameras were actually installed in the rooms
+according to the recommended positions. The performance was
+evaluated using visibility coverage, blind spot reduction, and Root
+Mean Squared Error (RMSE) between the estimated and actual
+camera positions, where promising results were achieved.
+Keywords: CCTV placement optimization, 360° panoramic image,
+3D modelling, 3D Gaussian splatting, VSLAM, inertial measurement
+unit (IMU), ray-casting visibility analysis, greedy optimization,
+digital twin
+1. Introduction
+Nowadays, (CCTV) cameras are widely deployed in various
+environments to monitor human activities and objects to improve
+the efficiency and safety of our societies [1,2]. Besides outdoor
+locations, CCTVs are commonly installed in indoor environments
+such as offices, university buildings, and public facilities. By
+continuously capturing visual information, CCTV systems enable
+surveillance operators to observe activities, detect abnormal
+situations, and support security management [3,4,5]. However, the
+effectiveness of a CCTV surveillance system strongly depends on the
+placement of cameras within the monitored environment. Proper
+camera placement is therefore essential to maximize the visual
+coverage of the target area while minimizing blind spots and
+avoiding unnecessary installation costs [6,7].
+To support effective camera placement planning, digital twin
+technology has recently attracted attention. A digital twin
+represents a virtual model of a real environment that enables
+simulations before actual deployment [8,9]. In a CCTV system, it
+can simulate camera fields of view and estimate coverage areas
+under different placement configurations, helping to determine
+camera locations that can maximize visibility coverage by
+minimizing blind spots [10,11].
+To perform such a simulation, an accurate three-dimensional (3D)
+model of the target indoor room environment is required. Previous
+studies have explored indoor 3D modelling using technologies such
+as laser scanners, RGB-D cameras, and VSLAM [12,13]. Among them,
+vision-based methods using panoramic images have attracted
+attention because they can capture comprehensive environmental
+information with fewer images while enabling camera trajectory
+estimation and spatial reconstruction [14,15].
+However, existing approaches have several limitations when
+applied to practical CCTV placement planning. First, some methods
+require specialized and expensive equipment, such as laser
+scanners, which increases deployment costs [16,17]. Second, other
+vision-based approaches suffer from reduced accuracy in camera
+position estimation, especially in indoor environments with complex
+structures [18,19]. Third, the integration of indoor 3D modelling
+with practical applications, such as CCTV camera placement
+optimization, remains insufficiently investigated [20,21,22].
+In this paper, we propose a 3D indoor modelling method using 360°
+panoramic images and demonstrate its application to the CCTV
+camera placement optimization within a digital twin environment.
+The proposed method constructs a structured 3D model of a target
+room from captured panoramic images using a 3D Gaussian Splatting
+reconstruction approach integrated with a VSLAM-based pose
+estimation framework, supported by IMU and GNSS/GPS data to
+improve spatial accuracy.
+To address existing limitations, this paper introduces an end-to-end
+indoor modelling pipeline that integrates panoramic image
+acquisition, sensor-based localization, and 3D reconstruction to
+generate an accurate digital twin of indoor environments. In
+addition, a 3D model refinement strategy is proposed, including point
+cloud upscaling and ceiling removal, to improve the reliability of
+visibility analysis for surveillance applications. Furthermore, a
+hybrid camera placement optimization method is developed by
+combining ray-casting visibility simulation with a greedy algorithm to
+maximize visual coverage while minimizing blind spots and
+reducing overlap between cameras. Finally, the effectiveness of the
+proposed framework is validated through real-world CCTV
+deployment, demonstrating high positional accuracy and reliable
+monitoring performance.
+For the evaluation of the proposed method, we implemented the
+system and applied it to three rooms in Okayama University, Japan,
+and seven rooms in Indonesian Institute of Business and
+Technology, Indonesia. The optimized camera placement using the
+obtained 3D model was implemented in the real environments.
+Then, the performance of this camera placement was evaluated by
+measuring the visibility coverage, blind spot reduction, and the Root
+Mean Squared Error (RMSE) between the estimated and actual
+camera positions [23]. The experimental results demonstrate that
+the proposed method effectively assisted the CCTV camera
+placement optimization using the generated 3D indoor model.
+Finally, this paper is structured as follows. Section 2 provides a
+review of related work to 3D indoor reconstruction and camera
+placement optimization. Section 3 describes the design of the
+proposed system pipeline. Section 4 explains its implementation.
+Section 5 presents experimental results for evaluations. Section 6
+concludes the paper and discusses possible directions for future
+work.
+2. Related Works
+In this section, we introduce relevant works in literature.
+2.1. CCTV Camera Placement Optimization
+In [24], Manuel et al. explored the use of panoramic images to
+capture indoor environments and support digital environment
+representation. Panoramic imaging enables the acquisition of
+comprehensive visual information with fewer images compared to
+conventional ones. However, this approach primarily focuses on
+environment visualization and does not explicitly address practical
+applications such as CCTV camera placement optimization.
+In [25], Zhengyuan et al. proposed a Building Information Modeling
+(BIM)-based framework for CCTV placement optimization. Although
+this approach is effective in structured environments, such models are
+not always readily available in practical scenarios. Therefore, an
+efficient method for constructing indoor 3D models and applying
+them to CCTV placement optimization is still required.
+In [26], Li et al. proposed a method for optimizing the selection and
+placement of security cameras with the objective of minimizing the
+overall system cost. Their approach considers factors such as camera
+types, coverage requirements, and installation constraints to determine
+an efficient camera configuration. The results demonstrated that the
+proposed method can reduce installation and maintenance costs
+while maintaining adequate surveillance coverage. However, this
+approach assumes the availability of an accurate spatial
+representation of the environment and does not address the problem
+of 3D mo

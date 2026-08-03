@@ -1,0 +1,181 @@
+
+Methodology, Investigation, Writing – review & editing
+Find articles by Wenjun Yin
+1, Dongdong Teng
+Dongdong Teng
+2School of Physics, Sun Yat-Sen University, Xin’gang West Road No.
+135, Guangzhou 510275, China
+Methodology, Formal analysis, Writing – original draft, Supervision,
+Funding acquisition
+Find articles by Dongdong Teng
+2,*, Lilin Liu
+Lilin Liu
+1State Key Lab of Optoelectronic Materials and Technology, School
+of Electronics and Information Technology, Sun Yat-Sen University,
+Xin’gang West Road No. 135, Guangzhou 510275, China;
+yinwj7@mail2.sysu.edu.cn
+Methodology, Formal analysis, Data curation, Writing – original
+draft, Supervision, Funding acquisition
+Find articles by Lilin Liu
+1,*
+Editor: Alessandro Leone
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC13165990  PMID: 42122342
+Abstract
+Event cameras are bio-inspired vision sensors offering low latency,
+low power consumption, and high dynamic range, capturing motion
+with microsecond-level precision via a per-event triggering
+mechanism. Despite these advantages, the inherent sparsity and
+lack of color in event data hinder direct analysis, necessitating
+advanced deep learning approaches. To achieve low-latency and
+high-precision motion segmentation for indoor robotic applications,
+this paper introduces a dual-branch decoupled CNN framework.
+Specifically, Principal Component Analysis (PCA) is utilized to
+project 3D event point clouds into 2D motion trend maps, capturing
+local motion priors while suppressing ambiguity in structured
+environments. Concurrently, an Event Leaky Integration (ELI)
+model, inspired by biological membrane potentials, is designed to
+enhance the structural representation of sparse events. Within this
+framework, separate branches respectively perform motion
+validation and shape extraction and are fused via a Spatial Gated
+Fusion (SGF) module to suppress static background interference. It
+is demonstrated experimentally that with an input window of only
+10 ms, the proposed method achieves a 77% average mIoU across
+five indoor test scenarios from the EV-IMO dataset with an
+inference latency of 10 ms per frame. Compared to state-of-the-art
+methods like MSRNN and GCN, which required 30–300 ms event
+slices, our framework achieves a favorable trade-off between
+computational efficiency and segmentation accuracy, maintaining
+competitive performance under ultra-short time windows for indoor
+event-based motion processing.
+Keywords: event camera, independent motion segmentation,
+principal component analysis, event leaky integration model
+1. Introduction
+1.1. Biological Inspiration for Motion Perception
+In the evolutionary trajectory of biological visual systems, dynamic
+motion perception has emerged as a critical survival capability.
+Athletes, for instance, precisely estimate projectile trajectories
+during high-speed locomotion, while raptors and insects rapidly
+track prey or evade predators. The essence of this capability lies in
+specialized functional regions that compute and neutralize ego-
+motion-induced background interference—a process known as ego-
+motion compensation. This mechanism allows biological systems to
+isolate the true motion of external objects, offering profound bio-
+inspired insights for enhancing the perceptual robustness of
+robotics, UAVs, and autonomous vehicles in complex environments
+[1,2].
+1.2. Limitations of Conventional Sensors
+Traditional motion segmentation relies primarily on RGB cameras
+and LiDAR, focusing on real-time performance, blur resistance, and
+adaptability to sparse scenes [3]. However, RGB-based methods are
+constrained by fixed frame rates (typically 24–60 fps), leading to
+motion blur and segmentation latency during rapid movements.
+Although high-speed cameras (up to 1000 Hz) exist, they introduce
+excessive data redundancy and computational overhead.
+Furthermore, implementing adaptive frame rates remains difficult
+for frame-based sensors due to the challenges of real-time trigger
+determination. LiDAR-based methods often require prior semantic
+segmentation and struggle with non-rigid motions (e.g., limb
+movements or vehicle turns) because point clouds frequently lack
+sufficient temporal continuity [4].
+1.3. Challenges in Event-Based Vision
+Event cameras, as bio-inspired sensors, transcend the traditional
+frame-based paradigm. Their microsecond-level temporal resolution
+captures instantaneous dynamics, mitigating latency, while their
+asynchronous nature—generating data only where intensity changes
+—suppresses static noise and reduces computational costs [5,6].
+Despite these advantages, current event-based motion segmentation,
+which largely relies on event-based optical flow, faces the
+bottleneck of motion ambiguity. Since event data primarily captures
+intensity changes perpendicular to an object’s edges (normal
+direction) rather than the tangential direction, a single event stream
+can correspond to multiple valid motion vectors. This instability
+complicates the distinction between static backgrounds and
+independent moving objects, limiting the practical utility of event
+cameras.
+In response to the aforementioned ambiguity in motion, this article
+first proposes a Motion Trend Map (MTM) data processing
+architecture. Discrete events are mapped into continuous 2D image
+representations to suppress the interference of motion ambiguity on
+segmentation and provide motion priors for the initial localization
+of independent moving objects while preserving the motion
+direction information of each target in the scene.
+In addition, events are scarce inside the target or in low-contrast
+areas, resulting in incomplete scene structure and affecting
+segmentation accuracy. To this end, an event leaky integration (ELI)
+model is employed to enhance the edge features of scenes and
+moving targets, supplement missing structural details, and provide
+a more complete scene representation for segmentation.
+A dual-branch segmentation network is built in this article. The
+Trend Branch utilizes MTMs for motion priors, while the Structure
+Branch processes ELI-enhanced representations for spatial context.
+Through multi-scale feature fusion, the network achieves high-
+precision segmentation of moving objects with minimal
+computational latency, effectively balancing accuracy and real-time
+performance.
+2. Related Work
+2.1. Frame-Based Motion Segmentation
+Traditional motion segmentation primarily relied on frame-based
+visual sequences, where performance was inherently limited by
+fixed frame rates and exposure-related latency. Early approaches,
+such as frame differencing [7], detected motion via pixel-level
+temporal changes. However, these were highly sensitive to noise
+and struggled with multi-object scenarios. Edge-based methods
+relied on static texture assumptions, exhibiting poor robustness
+under weak textures or dynamic blur. To improve precision, optical
+flow was widely employed to estimate velocity fields by modeling
+spatio-temporal gradients [8,9]. Nevertheless, optical flow was
+fundamentally constrained by the brightness constancy assumption,
+which frequently failed in real-world conditions involving
+illumination changes, occlusions, or complex material properties.
+While subsequent research integrated camera poses, depth
+information, or dual-stream RGB-flow networks to enhance
+robustness, these solutions remained bottlenecked by the physical
+latency of frame-based data, failing to satisfy the requirements for
+real-time, high-precision mask segmentation in high-speed
+scenarios.
+2.2. Learning-Based Methods for Conventional Vision
+With the advancement of deep learning, Convolutional Neural
+Networks (CNNs) have become the mainstream for motion
+segmentation [10,11,12]. Architectures like U-Net utilize skip
+connections to fuse shallow and deep features, preserving critical
+spatial details. For instance, Tokmakov et al. extracted and fused
+feature maps from consecutive frames to generate motion masks,
+while Meunier et al. [13] explored self-supervised learning to
+reduce dependency on labeled data [14]. Despite these
+advancements, frame-based CNNs still face severe challenges [15]:
+high-speed movement causes significant motion blur and inter-
+frame temporal misalignment, while high dynamic range (HDR)
+scenes lead to information loss in over- or under-exposed regions
+and low signal-to-noise ratios [16].
+2.3. Event-Based Motion Segmentation: Optimization
+Approaches
+Event cameras offer a bio-inspired paradigm shift to overcome the
+aforementioned limitations. Event-based segmentation can be
+categorized into optimization-based and learning-based methods
+[17,18]. Optimization-based methods typically realize segmentation
+by minimizing cost functions or tuning hyperparameters [19,20].
+Mitrokhin et al. [21] fitted a camera motion model using event
+timestamps to identify outliers as moving objects. Falanga et al.
+[22] further improved real-time performance and estimation
+accuracy by incorporating IMU sensors, while He et al. [23] refined
+timestamp representations by fusing depth information. Although
+these methods do not require labeled data, their computational
+efficiency is low, and their underlying assumptions of spatio-
+temporal coherence often fail in complex scenes due to conflicting
+motions or depth discontinuities.
+2.4. Event-Based Motion Segmentation: Learning
+Approaches
+Learning-based methods pre-process event data and feed it into
+architectures such as CNNs, Graph Neural Networks (GNNs), or
+Spiking Neural Networks (SNNs) [24]. The introduction of the EV-
+IMO dataset provided a high-quality benchmark with precise masks
+for evaluating these algorithms [25]. The original EV-IMO study
+proposed a U-Net-based scheme that accumulated event streams
+into three-channel slices; however, using five consecutive slices
+resulted in a 125 ms delay, limiting real-time utility.
+Recent research tried to balance latency and accuracy. Mitrokhin et
+al. utilized Graph Neural Networks (GNNs), treating time as a third
+coordin

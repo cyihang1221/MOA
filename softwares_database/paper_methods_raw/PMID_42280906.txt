@@ -1,0 +1,174 @@
+
+Methodology, Software, Validation, Formal analysis, Investigation,
+Data curation, Writing – original draft, Visualization
+Find articles by Ang Li
+1,*, Wei Lu
+Wei Lu
+1School of Communications and Information Engineering, Nanjing
+University of Posts and Telecommunications, Nanjing 210023,
+China; 20210151@njupt.edu.cn
+Funding acquisition, Project administration, Conceptualization,
+Writing – review & editing, Resources, Supervision
+Find articles by Wei Lu
+1
+Editor: Pierre Boulanger1
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC13258953  PMID: 42280906
+Abstract
+High-quality cardiopulmonary resuscitation (CPR) aims at saving
+lives in time-critical emergencies, which requires correct
+compression rate, depth, and hand placement. However, due to the
+high cost and environmental constraints of sensor-equipped
+manikins or dedicated hardware, it is unrealistic to deploy these
+devices in ordinary training settings. For monocular vision-based
+methods, estimating compression depth without direct depth signals
+and tracking hands under severe overlap are difficult. To address
+these problems, this paper proposes VISIOCPR, a monocular vision-
+based CPR training system with human-computer collaborative
+feedback, which provides quantitative CPR coaching using only a
+standard RGB camera. To address the inherent visual constraints,
+the system integrates a tiered compression-point detector that
+maintains robust tracking continuity despite severe hand overlap
+and motion blur. Furthermore, it recovers accurate metric depth
+without attached markers through a fused calibration scheme,
+which combines an empirical baseline, a reference-object
+measurement, and visible body proportions. A randomized
+controlled study (n=40) showed that participants trained with
+VISIOCPR achieved higher simultaneous compliance and reached
+competency faster than the control group under the tested setting.
+Keywords: cardiopulmonary resuscitation, monocular depth
+estimation, human–computer interaction, medical training, real-
+time feedback
+1. Introduction
+Out-of-hospital cardiac arrest remains a time-critical emergency,
+and the opportunity for effective intervention is short [1,2,3].
+Immediate cardiopulmonary resuscitation (CPR) from people
+nearby can significantly improve survival. However, this only works
+when compressions are delivered within an acceptable range of
+rate, depth, and hand placement. Although the American Heart
+Association defines that range explicitly [4], many learners practise
+without any source of real-time correction. This lack of feedback
+negatively affects overall training outcomes. Specifically, a trainee
+may remember the general procedure and still miss the quantitative
+targets that determine whether the manoeuvre is effective.
+Therefore, the practical issue is not whether feedback is useful, but
+how to provide it in ordinary training settings.
+Existing solutions have shown that real-time feedback improves
+CPR quality during practice. However, they heavily rely on
+equipment that is rare outside formal training environments. On the
+one hand, accelerometer-based systems and force-sensing pads
+provide reliable rate and depth estimates [5,6,7]. Marker-based
+vision systems can also achieve high precision in controlled settings
+[8]. The trade-off for these systems is practical rather than
+conceptual, as these methods depend on dedicated devices,
+consumables, or complex setup routines. Many homes, schools, and
+community settings simply lack these specialized resources. On the
+other hand, depth cameras reduce this burden but still introduce
+extra hardware and environmental constraints. They often struggle
+in spaces with unstable lighting or reflective surfaces [9]. Compared
+to them, recent RGB-video approaches remove the hardware barrier
+[10,11], yet they mostly classify errors qualitatively. For effective
+coaching, qualitative feedback is often not enough. Knowing a
+compression is “too shallow” is helpful, but knowing the exact
+deviation is more actionable.
+This is the point at which monocular video becomes difficult. A
+single RGB stream does not contain metric depth. Therefore,
+compression amplitude must be inferred from image motion and
+tied to a scale factor. That factor is not stable by default, since it
+changes with camera placement, viewing distance, and lens
+characteristics. In addition, tracking the hands is also less
+straightforward than it looks. During compressions, the hands
+overlap, reverse direction quickly, and often blur. This makes a
+single detector unreliable over an entire session. In addition,
+position assessment introduces another related tracking problem.
+The system needs a reference point to judge if the hands remain
+over the lower sternum. This point must be anatomically
+meaningful and visually recoverable without attached markers. The
+task is therefore not only one of recognition; it is also one of
+calibration, continuity, and anatomical anchoring.
+To overcome this dilemma, we propose VISIOCPR with these
+specific constraints in mind. The system uses a standard webcam
+and runs on consumer hardware. It cannot rely on dense depth
+sensing, long calibration routines, or manual annotation. Instead,
+the tracking process is organized as a hierarchy. Specifically, the
+system uses hand keypoints when they are clearly visible. If they
+become unstable due to overlap or blur, it switches to a motion-
+centroid estimate. If both cues fail, a synthetic fallback preserves
+interface continuity, and those frames are marked invalid for
+scoring. Metric depth is estimated through a fused calibration
+scheme. This scheme combines an empirical baseline, a reference-
+object measurement, and a body-proportion cue. In particular, users
+complete a short setup sequence before practice begins. They mark
+the region of interest and identify the target sternum location. The
+interface then displays rate, depth, and hand position continuously.
+It issues spoken prompts only when a deviation persists long
+enough to be a meaningful error.
+We evaluated VISIOCPR in a randomized controlled study
+comparing system-guided training with instructor-led practice. We
+measured immediate performance after training and again at
+follow-up to assess retention rather than within-session
+improvement alone. The main contributions of this work can be
+summarized as follows:
+•  We propose a webcam-based CPR training pipeline providing
+continuous estimates of rate, depth, and hand position.
+•  We design a detection and calibration scheme tailored to the
+specific failure modes of monocular CPR analysis.
+•  A controlled evaluation showed that system-guided training
+improved three-metric compliance and short-term retention
+under the tested setup.
+The remainder of this paper is organized as follows. The related
+work of sensor-based CPR systems, RGB and depth-camera
+approaches, and monocular depth estimation is introduced in
+Section 2. Our system design, study protocol, and empirical findings
+are presented in Section 3 and Section 4. Finally, the conclusion of
+our paper is presented in Section 5.
+2. Related Work
+2.1. Sensor-Based and Hardware-Dependent Systems
+Early CPR feedback systems reached high accuracy by
+instrumenting the body, the manikin, or both. Specifically, Mini-
+VREM used infrared reflective markers and a dedicated camera
+setup to achieve high depth accuracy [8]. The limitation is not that
+the measurements are poor. The setup simply presumes a highly
+controlled training environment. Marker placement and camera
+alignment introduce operational overhead. This overhead is hard to
+justify in low-cost or unsupervised practice settings.
+Accelerometer-based and force-sensing devices avoid many of the
+problems faced by vision systems. Published studies report accurate
+rate and depth estimation when motion is measured directly at the
+compression site [5,6,7]. At the same time, these devices observe
+only what their sensors are positioned to measure. They are
+informative about displacement and rhythm, but less informative
+about continuous hand placement unless extra instrumentation is
+added. They also assume access to dedicated hardware, which is
+precisely the access constraint that camera-only approaches try to
+relax. To provide comprehensive feedback, some studies analyze
+motion-capture data to extract CPR quality parameters [12].
+However, the high device cost and complex setup routines hinder
+the widespread deployment of these sensor-based systems.
+2.2. Vision-Based and Depth-Camera Systems
+With the rapid development of computer vision, vision-based
+systems have become a popular alternative for CPR training. Depth
+cameras opened a useful middle ground between body-mounted
+sensors and ordinary RGB video. Systems such as RELIVE, LISSA,
+and AIMS track compression motion without markers using depth
+cameras [9,13,14]. Their main limitation is again mostly practical.
+A depth camera is an extra device that must be purchased and
+positioned. They are also sensitive to ambient infrared light and
+specific room layouts. For laboratory instruction this may be
+acceptable; for casual or repeated home use it is less attractive.
+RGB-based systems are the most attractive from a deployment
+perspective because they rely on hardware users already own.
+Recent work identifies CPR errors and training phases from
+standard video with good expert agreement [10,11]. In addition,
+computer vision techniques based on modular neural networks have
+been applied to automatic assessment of physical therapy
+rehabilitation activities [15], which shares similar challenges with
+CPR training. Furthermore, deeply learned view-invariant features
+have been proposed for cross-view action recognition [16],
+providing potential solutions for handling different camera
+viewpoints. In general, vision-based systems in healthcare have
+shown great potential in various use cases and real-time
+applications [17]. What remains less developed is the recovery of
+continuous physical measures from t

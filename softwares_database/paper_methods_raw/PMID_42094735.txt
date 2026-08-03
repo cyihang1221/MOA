@@ -1,0 +1,177 @@
+
+Methodology, Software, Writing – original draft
+Find articles by Yuanyun Zheng
+1, Sidi Li
+Sidi Li
+1College of Pharmaceutical Sciences, Jishou University, Jishou,
+Hunan, China
+Conceptualization, Data curation, Formal analysis, Funding
+acquisition, Investigation, Methodology, Project administration,
+Resources, Software, Supervision, Validation, Writing – original
+draft, Writing – review & editing
+Find articles by Sidi Li
+1,*
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC13139089  PMID: 42094735
+Abstract
+This study aimed to develop a DeepLabCut (DLC)-based object
+recognition analysis system for assessing rodent cognitive function
+and validate its application in natural aging and elderly
+periodontitis mouse models. The system’s hardware was constructed
+with a custom arena and high-definition industrial camera, and the
+DLC deep learning algorithm was trained to track five mouse body
+landmarks, enabling automatic quantification of 36 indicators
+across three categories: sniffing frequency, exploration duration,
+and novelty preference. The system subdivided exploratory
+behaviors by calibrating nose tip and body center, and set dynamic
+distance thresholds (1 cm, 1.5 cm, 2 cm) for the nose tip to capture
+fine-grained exploration. In the novel object recognition (NOR) and
+object location recognition (OLR) paradigms, traditional visual
+inspection failed to detect significant cognitive differences between
+young and aged mice, while the DLC system identified marked
+reductions in aged mice in the frequency and duration of body
+center and combined nose tip-body center exploration of the new
+object (2 cm away from the object), as well as corresponding
+novelty preference indices. In the elderly periodontitis models,
+traditional metrics showed increased nose tip exploration of the old
+object (2 cm away from the object) and reduced novelty preference
+in model mice; the DLC system further detected significantly
+elevated nose tip exploration frequency toward the old object
+(1.5 cm away from the object), accompanied by decreased
+frequency preference for exploration (1 cm away from the object).
+Collectively, this DLC-based system achieves sensitive, precise, and
+multidimensional quantification of mouse exploratory behavior,
+effectively distinguishing cognitive characteristics of aged and
+disease model mice. By overcoming the limitations of traditional
+methods, it captures subtle cognitive changes in aging and
+periodontitis models, screens key indicators for cognitive decline,
+and provides comprehensive behavioral evidence for elucidating the
+neural mechanisms underlying aging- and inflammation-associated
+cognitive impairment.
+Keywords: aging, artificial intelligence, cognition, DeepLabCut,
+object recognition analysis system, periodontitis
+1. Introduction
+Object recognition experiments are a widely used method in
+cognitive neuroscience and behavioral research, designed to assess
+cognitive abilities in animals (typically rodents) and humans,
+particularly non-spatial memory, recognition memory, and
+exploratory behavior (Seyedhosseini Tamijani et al., 2023; Blaser
+and Heyser, 2015; Antunes and Biala, 2012). This experiment is
+based on an individual’s preference for novel stimuli, meaning
+organisms tend to spend more time exploring novel objects than
+familiar ones (Antunes and Biala, 2012). Therefore, object
+recognition experiments infer an individual’s recognition memory
+capacity by measuring its exploration time toward novel objects.
+Currently, primary behavioral analysis equipment both domestically
+and internationally relies on principles such as computer vision
+capture, sensors, and video tracking for detection. However, these
+methods each possess certain limitations: computer vision capture
+primarily depends on changes in image pixels to extract animal
+contours, combined with digital image processing techniques, and
+cannot precisely capture specific animal behaviors (Fernandes et al.,
+2020); sensors are susceptible to interference from liquids (e.g.,
+animal urine) and metals, potentially causing unstable signal
+transmission, while implanted tags may induce short-term stress
+responses in animals (Peleh et al., 2019). Video tracking primarily
+relies on background contrast to identify nose tip positions; object
+occlusions can lead to marker point loss and misjudgment, thereby
+compromising recognition accuracy (Benice and Raber, 2008; Spink
+et al., 2001). With the advancement of artificial intelligence
+technology, the DeepLabCut (DLC) algorithm has gained
+prominence and is widely applied in behavioral assessment. This
+algorithm utilizes AI to achieve automatic localization of markers in
+video footage (Ibañez et al., 2023; Lauer et al., 2022).
+Cognitive decline in older adults poses a significant health
+challenge, and periodontitis is closely associated with cognitive
+impairment: the elderly are prone to periodontitis, and the chronic
+inflammation it induces may accelerate cognitive decline
+(Brahmbhatt et al., 2024; Ide et al., 2016). The interaction between
+these two conditions has become a research focus (Ding et al.,
+2018; Wu et al., 2026). In traditional object recognition
+experiments within this field, comprehensive and precise automated
+quantification of mouse behavior remains lacking. Using DLC
+v2.1.5, we developed a customized cognitive behavioral analysis
+system for object recognition in mice. Based on standard DLC
+feature point tracking technology, the system establishes an
+innovative analysis workflow and a customized behavioral analysis
+framework. Its features include multi-feature point collaborative
+decision-making, hierarchical distance thresholds, and head-
+direction filtering, which reduce false exploration events and enable
+precise quantification of cognitive behavior. This system was then
+applied to perform automated comprehensive analysis of behavioral
+performance in object recognition for aging and periodontitis
+models, which enables the analysis of cognition-related fine
+behaviors (such as exploration duration and sniffing frequency) and
+the automation of traditional metrics. By assessing changes in these
+fine behaviors, the system determines whether cognitive
+impairments have emerged in the disease models, mitigates the
+impact of accidental contact, and preliminarily explores cognitive
+strategies. This provides a methodological foundation for future
+object recognition experiments aimed at drug development for
+cognitive enhancement and research into the pathological
+mechanisms of cognitive impairment.
+2. Materials and methods
+2.1. Experimental animals
+Twenty-eight male SPF-grade C57BL/6J mice were used,
+comprising 7 six-month-old, 14 fifteen-month-old mice,and 7
+twenty-month-old animals. All mice were purchased from Hunan
+Slaike Jingda Laboratory Animal Co., Ltd. (License No.
+SCXK(Xiang)2019–0004). During the experiment, mice had free
+access to water and food, and strict adherence to relevant
+regulations for laboratory animal management was maintained.
+This study was reviewed and approved by the Ethics Committee of
+Jishou University (No. JSDX-2024-0101) and complied with the
+requirements of the Guidelines for the Management and Use of
+Laboratory Animals.
+2.2. Reagents
+Porphyromonas gingivalis (SHBCC D10892 = ATCC 33277) and
+Fusobacterium nucleatum (SHBCC D10462 = ATCC 25586) were
+purchased from Shanghai Bio-Sample Preservation Center; 4%
+carboxymethyl cellulose (Specification: 500 mL, Batch No.:
+P3137023) purchased from Shanghai Titan Technology Co., Ltd.
+2.3. Hardware
+Computer (Core i5 9400F, 2.9 GHz, NVIDIA GeForce RTX 2060
+SUPER, 8 GB RAM, 500 GB HDD), object recognition experiment
+arena (dimensions: 50 cm × 50 cm × 50 cm, gray), and industrial
+camera (LouKe LRCP, 30 fps, resolution: 1920 × 1,080).
+2.4. Quantification of metrics
+Five body landmarks—the mouse’s nose tip, both ears, body center,
+and tail base—were manually annotated. Following annotation,
+DeepLabCut (DLC, v 2.1.5) was iteratively trained using an artificial
+neural network to construct an object recognition model capable of
+automatically tracking annotated landmark positions in images.
+Then, using the programming language Python as a metric
+quantification tool, the CSV file containing the marked point
+coordinates exported from DLC was automatically processed to
+calculate traditional metrics and new, refined object recognition
+metrics.
+2.5. Model establishment
+2.5.1. Natural aging models
+Fourteen male C57BL/6J mice were randomly selected, comprising
+seven 6-month-old (6 M) mice and seven 20-month-old (20 M) mice,
+representing young and aged mice, respectively.
+2.5.2. Elderly periodontitis models
+Fourteen 15-month-old male C57BL/6J mice were randomly
+divided into a control group (Control) and a periodontitis model
+group (CAP), with 7 mice in each group. After 7 days of antibiotic
+treatment, drinking water was replaced with pure water for 3 days.
+A 20 μL suspension containing 1 × 109 CFU of Porphyromonas
+gingivalis and Fusobacterium nucleatum in 2% carboxymethylcellulose
+was administered to mice via gastric lavage. The control group
+received sterile 2% carboxymethylcellulose solution. Following
+colonization by oral pathogens, the cementoenamel junction-
+alveolar bone crest (CEJ-ABC) distance significantly increased in the
+periodontitis model group compared to the control group,
+indicating alveolar bone resorption and successful establishment of
+the periodontitis models (Jiang et al., 2025). Object recognition
+behavioral experiments 112 were conducted.
+2.6. Object recognition experiment
+2.6.1. Novel object recognition paradigm (NOR)
+This experiment comprises three phases: adaptation, familiarization,
+and testing. During adaptation, mice are exposed to the apparatus
+and allowed to explore for 10 min. Following a 30-min interval, the
+familiarization phase commences. During familiarization, mice
+freely explore two identical objects in different corners of the arena
+for 10 min. After a 30-min interval, the 10-min tes

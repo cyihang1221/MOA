@@ -1,0 +1,183 @@
+
+Experimental Medicine, Christian-Albrechts-Universität zu Kiel,
+24105 Kiel, Germany
+Find articles by Philipp T Kaulich
+§, Konrad Winkels
+Konrad Winkels
+§Systematic Proteome Research & Bioanalytics, Institute for
+Experimental Medicine, Christian-Albrechts-Universität zu Kiel,
+24105 Kiel, Germany
+Find articles by Konrad Winkels
+§, Andreas Tholey
+Andreas Tholey
+§Systematic Proteome Research & Bioanalytics, Institute for
+Experimental Medicine, Christian-Albrechts-Universität zu Kiel,
+24105 Kiel, Germany
+Find articles by Andreas Tholey
+§, Oliver Kohlbacher
+Oliver Kohlbacher
+†Applied Bioinformatics, Department for Computer Science,
+University of Tübingen, 72076 Tübingen, Germany
+‡Institute for Bioinformatics and Medical Informatics, University of
+Tübingen, 72076 Tübingen, Germany
+∥Translational Bioinformatics, University Hospital Tübingen, 72076
+Tübingen, Germany
+Find articles by Oliver Kohlbacher
+†,‡,∥,*
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC11525931  PMID: 39424290
+Abstract
+[image]
+Accurate quantification of individual proteoforms is a crucial step in
+identifying proteome-wide alterations in different biological
+conditions. Intact proteoforms have been analyzed predominantly
+by liquid chromatography–mass spectrometry (LC-MS)-based top-
+down proteomics (TDP) and quantified primarily by the label-free
+quantification (LFQ) method, as it requires no additional costly
+labeling. In TDP, due to frequent coelution and complex signal
+structures, overlapping signals deriving from multiple proteoforms
+complicate accurate quantification. Here, we introduce
+FLASHQuant for MS1-level LFQ analysis in TDP, which is capable of
+automatically resolving and quantifying coeluting proteoforms. In
+benchmark tests performed with both spike-in proteins and
+proteome-level mixture data sets, FLASHQuant was shown to
+perform highly accurate and reproducible quantification in short
+runtimes of just a few minutes per LC-MS run. In particular, it was
+demonstrated that resolving overlapping proteoforms boosts the
+quantification accuracy. FLASHQuant is publicly available as
+platform-independent open-source software at https://openms.org/
+flashquant/, accompanied by the simple alignment algorithm
+ConsensusFeatureGroupDetector for multiple LC-MS runs.
+Introduction
+Top-down proteomics (TDP) based on mass spectrometry (MS) is an
+emerging analytical approach for the comprehensive identification
+and characterization of intact proteoforms.1−6 The term
+proteoform refers to all of the different molecular forms of a protein
+that can originate from variations at genetic or protein levels, i.e.,
+posttranslational modifications.1 TDP’s advantage over the
+conventional bottom-up approach is its ability to preserve the intact
+form of proteins by skipping the enzymatic digestion step prior to
+MS, thus providing a more complete and accurate representation of
+the biologically relevant proteoforms. In the past decade, research
+in TDP has seen substantial improvements in protein separation, MS
+techniques, and bioinformatic software and demonstrated its
+potential to elucidate the important role of proteoforms in
+biomedical processes.3,7−9 Technical advances have enabled
+researchers to move forward from qualitative to quantitative
+analysis on proteoform studies.10−12
+Quantitative analysis is crucial in proteomics, as it opens the door
+for comparative studies of proteins in different biological functions
+or biomarker discovery.10,13,14 In principle, three general strategies
+can be employed to quantify proteoform abundances: label-free
+quantitation (LFQ), metabolic labeling, and chemical labeling.
+Metabolic labeling has seldom been employed in TDP, mainly due
+to inherent challenges such as interfering isotope patterns between
+light/heavy labeled proteins.15−17 In contrast, chemical labeling-
+based strategies such as isobaric labeling have been successfully
+applied, but further improvements are still needed regarding the
+labeling procedures as well as the bioinformatics data
+interpretation.18,19
+Therefore, the most widely applied approach in TDP is LFQ,11,12,20
+which performs a relative quantification by direct comparison
+between MS runs. It has advantages over the labeling method, such
+as low costs (no need for expensive labeling reagents), fewer
+experimental steps, and omission of increased sample complexity
+(i.e., introduced in chemical labeling approaches due to incomplete
+or overlabeling).
+Nevertheless, the analysis of TDP-LFQ data is still a major
+bottleneck. Existing data analysis tools for MS1 level quantification
+(including chromatographic feature detection and intensity
+calculation) still need further developments and improvements
+regarding reproducibility, overlapping signal resolution, or
+usability.
+LFQ of proteoforms in most cases still relies on deconvolution-
+centric software, such as Protein Deconvolution (Thermo Fisher
+Scientific),21,22 DataAnalysis (Bruker Daltonics),23−25 TopPIC
+suite,5,26,27 and ProMex.28,29 As the primary goal of deconvolution
+tools is to detect proteoforms’ masses rather than quantify them,
+chromatographic information needed for quantification is widely
+neglected on these platforms. This results in limited peak coverage
+and compromises reproducibility in quantification. Therefore, many
+LFQ studies have been performed using in-house scripts to retrieve
+chromatographic data based on deconvoluted proteoform masses.
+Despite its significance, the problem of overlapping signals in LFQ
+studies has often been overlooked.2,30 Overlapping signals occur
+when the distinct proteoforms interfere with each other (i.e.,
+sharing mass-to-charge ratio (m/z) values), primarily due to the
+complexity of the samples and the coelution of multiple
+proteoforms from the LC within a narrow retention window. TDP,
+which deals with larger analytes compared to bottom-up proteomics
+or metabolomics, exacerbates this issue; the larger size of analytes
+(proteoforms) leads to broader isotopic envelopes and wider charge
+state ranges compared to those of peptides, contributing to the data
+set’s high complexity. As a result, coeluted proteoforms of different
+charge states can occupy similar or overlapping m/z ranges even
+when they have highly distinct masses,2,31 introducing possible
+quantification bias, particularly in the above-mentioned
+deconvolution-centric approaches. Thus, the overlapping signal
+issue should be addressed for accurate LFQ in TDP, which
+necessitates advanced data analysis strategies.
+Several TDP-LFQ data analysis algorithms have been developed but
+are not freely available to users, e.g., QMT20 and IPQuant,32 and
+commercial platforms such as ProSightPD (Proteinaceous, Inc.,
+Evanston, USA).
+Here, we introduce FLASHQuant, a fast and robust tool for MS1-
+level LFQ analysis in TDP. FLASHQuant incorporates an individual
+chromatogram extraction procedure and a conflicting feature (i.e.,
+overlapping proteoform signals) resolution method using a non-
+negative least-squares solver. In our evaluation, FLASHQuant
+demonstrated its effectiveness compared to the widely used
+ProSightPD, TopFD31 (from the TopPIC Suite), and
+FLASHDeconv.33 Also, since quantitative analysis inevitably
+accompanies multiple MS runs, we implemented
+ConsensusFeatureGroupDetector to align quantified proteoforms
+across multiple MS runs. As part of OpenMS,34 both FLASHQuant
+and ConsensusFeatureGroupDetector are publicly available as
+platform-independent open-source software with a graphical user
+interface at https://OpenMS.org/FLASHQuant.
+Materials and Methods
+Structure of FLASHQuant
+FLASHQuant is composed of two main stages: feature group
+detection and quantity calculation (Figure 1). Feature group refers
+to the group of LC features of different charge states from a single
+putative proteoform and its isotopes. For accurate quantification,
+the detected feature groups are refined while the quantities are
+calculated.
+Figure 1.
+[image]
+Open in a new tab
+Illustration of FLASHQuant algorithm. From a centroided LC-MS1
+full scan, FLASHQuant extracts m/z traces (individual ion
+chromatograms), denoted as black curved lines at the top-center.
+Detected m/z traces are then assembled into feature groups,
+representing putative proteoforms. Feature groups (depicted as
+yellow and green) often share m/z traces (the mixed-colored line),
+which should be resolved for accurate quantification. The
+theoretical shapes of each feature group are estimated using its
+nonshared m/z traces by fitting them against an exponential-
+Gaussian hybrid (EGH) function. Based on the estimated shapes
+(having retention time and intensity values), the proportion of each
+shape (q1 and q2) in the shared trace is estimated with a non-
+negative least-squares solver. Then, the shared m/z trace quantity is
+distributed between the corresponding feature groups. The feature
+group abundances are finally calculated as the summed area of m/z
+traces in each feature group. The output of FLASHQuant is given as
+a TSV format file.
+The feature group detection stage starts with extracting m/z traces
+(individual ion chromatograms) from the LC-MS spectra using
+MassTraceExtractor.35 MassTraceExtractor is a self-consistent kernel
+density estimator that connects peaks having m/z values within the
+tolerance (defined by the instrument’s mass accuracy) along the
+retention time. Thus, each extracted m/z trace represents a
+chromatographic signal having a specific charge state and isotopic
+composition over an elution window. This m/z trace extraction is
+performed before deconvolution to reduce noises, similar to the
+Sliding Window Algorithm36 in ProSightPD. Then, the windows are
+set by binning the total retention time of the LC-MS run. The
+extracted m/z traces are deconvolved per window and assembled
+into feature groups by FLASHDeconv. Both charge and isotope
+deconvolution are applied to m/z traces to determine the masses. In
+this step, an m/z trace may be assigned to multiple feature groups
+representing the overlappin

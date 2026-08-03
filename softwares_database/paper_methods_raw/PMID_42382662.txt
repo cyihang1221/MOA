@@ -1,0 +1,169 @@
+
+Experimental characterizations have addressed yield strength,
+microporosity, alternative material systems, coatings, and
+densification[11, 13, 16, 20–22]. Filling the metallic spheres with
+mineral or ceramic particles yields particle-filled hollow sphere
+structures (PHSS) [23], in which additional energy dissipates
+through particle-particle and particle-shell collisions, further
+enhancing damping[15, 23, 24].
+Complementing the experimental investigations, a number of
+theoretical and numerical investigations were conducted to
+determine the mechanical properties of HSCs. For instance,
+exploiting formal similarities of HSCs and foams, mechanical
+properties were estimated by heuristic formulas developed for
+foams, see the works [12, 23, 25] and Gibson-Ashby [26, §5].
+Several studies utilizing finite element method (FEM) models were
+conducted on regularly arranged HSCs and cellular structures to
+determine the yield strength [27–30], the creep  [31], and the
+buckling behavior [32], the thermal conductivity [14], and the
+fracture behavior [20]. Furthermore, the compression of a single
+hollow sphere [33] and the impact behavior of an HSC [34] were
+investigated. To determine the acoustic properties, tube absorption
+methods were used [35].
+To determine the mechanical properties of a material accurately,
+the proper microstructure should be taken into account [36]. The
+aforementioned contributions all restrict to regular sphere
+arrangements, presumably due to restrictions on the computational
+feasibility. Key features of industrial PHSS include random filler size
+distribution, imperfections and manufacturing-induced variations.
+Simplified microstructural models neglect these aspects and, as a
+result, fail to accurately represent real microstructures or to capture
+their influence on effective material properties.
+Different approaches were developed to model random
+microstructures, in particular accounting for non-uniform sphere
+sizes and irregular arrangements. The simplest method is random
+sequential adsorption (RSA) [37], which places spheres one by one
+such that no overlap with previously placed spheres occurs,
+terminating once the target volume fraction is reached. RSA cannot
+reach high packing densities, which motivated dynamic and
+contraction-based alternatives [38–40]. The sequential addition and
+migration method (SAM) [41, 42], originally developed for fiber-
+reinforced composites and equally applicable to spheres, achieves
+significantly higher packing densities than RSA by adding only a
+portion of the inclusions at a time and removing overlaps before the
+next addition step.
+In addition to the spheres of the HSCs, the glued adhering them
+must be modeled as well. In previous contributions [43, 44], an
+organic interface between spheres is modeled via a thin, uniform
+outer layer for regular and random sphere arrangements. To
+account for the connectivity of pores, one may use operators from
+mathematical morphology [45], specifically the closing
+operation [46, §4]. To represent the binder in casting applications,
+the closing was performed on a digitized microstructure [47] or an
+approximation of the level-set function was utilized [48].
+Morphological operations on spheres result in overlapping sphere
+assemblies. For these assemblies, analytical analyses for
+advantageous decompositions and inclusion-exclusion strategies
+exist [49, 50]. These strategies were originally proposed for the
+description of molecules [51].
+In summary, HSCs demonstrate excellent lightweight properties,
+and particle filling enhances their damping capabilities. Tailored
+experiments provided numerous insights into the material
+properties. Such experiments may be complemented by dedicated
+computational approaches, in particular to cover a wider range of
+variations within the material at a comparatively low cost.
+However, existing approaches do not provide microstructure
+representations that simultaneously capture
+(i)
+irregular sphere arrangements,
+(ii)
+thin interphases between particles, and
+(iii)
+efficient evaluation within computational homogenization
+frameworks.
+These shortcomings limit their applicability for realistic HSCs.
+Contributions
+To overcome these limitations, we develop a microstructure
+modeling framework for glued hollow-sphere assemblies that
+combines an analytic level-set representation with an FFT-based
+homogenization approach.
+The computational studies for HSCs presented in the introductory
+section 1.1 offer valuable insights; however, they only consider
+highly idealized microstructures, such as grid-like sphere
+arrangements or systems with only small epoxy fractions. In
+particular, the typically considered cubic sphere arrangement with
+isotropic constituent materials leads to an effective stiffness tensor
+which reflects the cubic symmetry of the microstructure, i.e., the
+proposed microstructure model does not match the isotropic
+material behavior observed for real HSCs [1]. Therefore, we aim to
+create random sphere assemblies with no preferred direction(s) and
+analyze their apparent elastic material properties. Both Schneider et
+al. [47] and Donval et al. [48] consider irregular geometric
+arrangements of sand grains that are bonded together by an
+inorganic binder and modeled using a morphological operator. We
+take a similar approach, determining the binder/epoxy phase via a
+closing operation with an exact level-set function in the continuous
+setting. We introduce a projection scheme to determine the level-set
+function for a union of overlapping balls. This microstructure
+representation is then used to predict the macroscopic behavior of
+hollow sphere composites based on their microstructure,
+specifically, the linear elastic properties of randomly arranged
+hollow spheres (HS) joined by epoxy.
+Microstructure parameters that can be directly controlled during the
+manufacturing process are of particular interest. For HSCs, such
+parameters include the nominal wall thickness of the hollow
+spheres and the amount of epoxy within the composite. The
+influence of other parameters, such as the sphere packing density
+and the shell size distribution, is also of interest because these
+parameters could also be regulated, albeit with greater effort. For
+example, particle-filled hollow spheres could be screened for
+minimum and maximum diameters to influence the sphere size
+distribution [11]. A comprehensive understanding of the impact of
+manufacturing parameters facilitates the identification of
+production steps that require meticulous attention depending on the
+sensitivity of the effective stiffness with respect to the parameters
+influenced by said production step.
+We demonstrate that the previously outlined material modeling
+approach is able to represent industrial HSCs. We utilize
+computational homogenization methods based on the Fast Fourier
+Transform (FFT), originally developed by Moulinec and Suquet [52,
+53] and subsequently extended in various directions [54–56]. FFT-
+based methods operate on a regular voxel grid and prove
+advantageous for complex microstructures such as the HSCs, since
+boundary-conforming mesh generation is avoided. Determining the
+material phase is rather straightforward if level-set functions are
+available, offering a fully contained homogenization framework. Of
+particular relevance to the work at hand is the use of stable
+discretizations [57, 58] required to handle porous materials [59]
+and the composite voxel method [60, 61]. The latter requires
+determining the volume fractions of the individual material phases
+within interface voxels, and the provided analytic level-set
+representation permits determining those fractions in a grid-
+independent and robust way.
+The high damping of HSCs is a geometric effect, improving the
+dissipation capabilities significantly compared to the dense bulk
+material. Since the forces between neighboring spheres are
+transmitted through thin shells and epoxy bridges, a modest
+macroscopic strain produces rather large strain and stress
+amplitudes locally in these connective regions, increasing material
+damping [62, 63]. Predicting the damping of an HSC, therefore,
+reduces, in essence, to predicting where and how strain is
+distributed in the microstructure under load. Therefore, any error
+made for the elastic model is inherited by the identified damping
+parameters. Following the elastic-viscoelastic correspondence
+principle [64], we therefore determine the elastic response first,
+leaving only the dissipative parameters to be identified in a
+subsequent step. The material modeling in this linear elastic step is
+the focus of the present work.
+In Sect. 2.1, we introduce the microstructure under consideration.
+Section 2.2 summarizes the experimental approach to determine the
+effective elastic properties of the material using the impulse
+excitation technique (IET). In Sect. 2.3, we discuss the
+morphological closing operator used to determine the connectivity
+between the spheres within an HSC as well as the general approach
+to microstructure generation of an HSC. To perform the erosion
+operation, a level-set function must be determined first. Therefore,
+in Sect. 2.4, we introduce an algorithm for determining the level-set
+function of a three-dimensional union of balls and discuss how to
+identify the material phase for any point within the domain. We
+also present some resulting periodic microstructures.
+In Sect. 4, we study the influence of different factors on the ensuing
+mechanical properties. To do so, we use the findings obtained in
+Sect. 3. Furthermore, we determine the local stress fields in
+Sect. 4.1, where we also analyze the stress localization. In Sect. 4.2,
+we present the influence of the volume fraction of epoxy, the shell
+thickness of the individual spheres, the sphere size distribution and
+the sphere packing density on the elastic moduli. Section 4
+concludes the computations with a validation of the computational
+model by comparing the experimental results from Sect. 2.2 and
+another composi

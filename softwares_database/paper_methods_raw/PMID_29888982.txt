@@ -1,0 +1,196 @@
+
+Methods:
+In this Institutional Review Board approved, Health Insurance
+Portability and Accountability Act -compliant, retrospective case-
+control study, we evaluated 156 patients with predominantly solid,
+non-macroscopic fat containing, enhancing renal masses identified
+between June 2009 and June 2016. 110 cases (70%) were
+malignant RCC, including clear cell, papillary and chromophobe
+subtypes and, 46 cases (30%) were benign renal masses:
+oncocytoma and lipid-poor angiomyolipoma. Whole lesions were
+manually segmented using Synapse 3D (Fujifilm, CT) and co-
+registered from the multiphase CT acquisitions for each tumor.
+Pathological diagnosis of all tumors was obtained following surgical
+resection. Matlab function, FFT2 was used to perform the image to
+frequency transformation.
+Results:
+A Wilcoxon rank sum test showed that FFT-based metrics were
+significantly (p < 0.005) different between 1. benign vs malignant
+renal masses, 2. oncocytoma vs clear cell renal cell carcinoma and
+3. oncocytoma vs lipid-poor angiomyolipoma. Receiver operator
+characteristics analysis revealed reasonable discrimination (area
+under the curve >0.7, p < 0.05) within these three groups of
+comparisons.
+Conclusion:
+In combination with other metrics, FFT-metrics may improve
+patient management and potentially help differentiate other renal
+tumors.
+Advances in knowledge:
+We report for the first time that FFT-based metrics can differentiate
+between some solid, non-macroscopic fat containing, enhancing
+renal masses using their contrast-enhanced CT data.
+Introduction
+The incidental diagnosis of renal masses has increased in the last
+decades owing to the widespread use of radiological imaging within
+the clinical workflow.1 Multiphase cross-sectional imaging,
+including contrast-enhanced CT (CECT) and MRI, is the current
+standard in diagnostic and therapeutic imaging for lesion
+characterization, staging, surgical planning, and tumor subtype
+assessment.2 Apart from lipid-rich angiomyolipomas (lp-AMLs) and
+simple or minimally complex cysts, it is difficult to differentiate a
+localized renal lesion as benign or malignant or characterize its
+subtype based on imaging.3 Quantitative metrics derived from
+cross-sectional imaging, including pixel mapping,4 contrast
+enhancement pattern analysis,5 chemical shift MRI,6 and histogram
+analysis,7, 8 have been studied as potential markers to differentiate
+renal lesions. However, to date, none of these metrics been proven
+to be a consistent or reliable discriminator as benign and malignant
+lesions demonstrate significant overlap in quantitative imaging
+characteristics.9, 10 Currently, an invasive procedure, either surgical
+resection or percutaneous biopsy, is required to differentiate benign
+and malignant solid, non-macroscopic fat containing renal
+tumors.11
+It is important to differentiate between benign and malignant renal
+masses and possibly characterize its subtype, given differences in
+prognosis and tumor behavior. Despite these differences, the current
+initial treatment of localized benign or malignant lipid poor solid
+renal masses is either partial or radical nephrectomy depending on
+size and location of the tumor given the difficulty in accurately
+diagnosing these lesions in the preoperative setting. If benign
+masses can be reliably differentiated from malignant masses
+preoperatively, particularly when the size of the tumor is small or
+in patients who are poor surgical candidates, this information can
+be used in deciding between nephrectomy (partial or radical),
+ablative techniques (cryoablation, radiofrequency ablation), or
+active surveillance as initial treatment options.12
+Texture analysis involves the study of pixel image intensity
+variation.13 Within the imaging domain, the image intensities can
+be transformed to the frequency components for the purpose of
+texture analysis. Extracting latent information that correlates with
+tumor behavior (aggressiveness and type) from standard-of-care
+images (here, CECT) would be an invaluable tool for physicians to
+improve their non-invasive diagnostic accuracy of tumor
+classification, particularly without the need for invasive biopsies
+and the associated physical and financial burden. Various
+mathematical techniques have been developed to quantify image
+texture, including statistical, Fourier, and wavelet-based methods
+and have been applied to numerous pathologies, such as multiple
+sclerosis,14 brain tumors,15 and liver diseases.16 Non-frequency
+based textural methods have been reported to produce promising
+results in segregating renal tumor types using CECT and
+multiparametric MRI.17–21
+The purpose of our study is to evaluate the feasibility of using fast
+Fourier transform (FFT)-based metrics, to differentiate between
+different solid, non-macroscopic fat containing, enhancing renal
+masses on preoperative CECT. By design, FFT magnitude captures
+the energy captured with the individual frequencies making up the
+image and FFT phase captures the positioning of these frequencies.
+Here, we used a standard implementation of FFT (FFT2 function in
+Matlab®) to extract FFT magnitude and phase, which are present
+metrics that capture tumor texture such as complexity index (CI), a
+measure of the sum of all the harmonic amplitudes making up a
+tumor image. CI provides us an overall metric of the heterogeneity
+of texture within the tumor. A larger CI means higher spatial
+frequency/textural heterogeneity. Another FFT-based metric is
+entropy of the FFT magnitude, which is a measure of the
+randomness in the spatial frequency variation. The measure would
+capture the transition of texture from high to low frequency and
+vice-versa within the tumor. A larger entropy of FFT magnitude
+means higher variation in spatial frequency/textural heterogeneity.
+Finally, entropy of the FFT phase is an additional frequency-based
+metric that measures the randomness in the spatial frequency
+variation (phase). The measure would capture the transition of
+texture from high to low phase and vice-versa within the tumor.
+Larger entropy of FFT phase indicates higher variation in spatial
+frequency/ textural heterogeneity. Here, we report the performance
+of the FFT-metrics extracted from CECT data in segregating three
+groups of comparisons, i.e. 1. benign vs malignant renal masses, 2.
+oncocytoma vs clear cell renal cell carcinoma (ccRCC) and 3.
+oncocytoma vs lp-AML.
+methods and Materials
+Patient data
+156 patients with predominantly solid, non-macroscopic fat
+containing, enhancing renal masses, 110 cases were malignant renal
+cell carcinoma (RCC), including clear cell, papillary and
+chromophobe subtypes and, 46 cases were benign renal masses:
+oncocytoma, and lp-AML, who underwent partial nephrectomy for
+clinically localized disease, were included in this Institutional
+Review Board-approved and Health Insurance Portability and
+Accountability Act-compliant study (Table 1) (Figure 1a,b). Patients
+were identified by retrospectively querying the prospectively
+maintained surgical database for all patients who had pre-operative
+multiphase CECT of the abdomen and pelvis between June 2009
+and June 2016. Specialized genitourinary pathologists performed
+pathologic evaluation of all tumors. In the current study, we
+assessed only the primary tumor, and none of the lesions had
+intralesional calcifications in the areas assessed. Multicentric
+[synchronous] or metachronous RCCs were not included. The
+internal morphology of all lesions were predominantly solid. A few
+of the lesions (<3%) were described on histopathological
+evaluation as having a few areas of necrosis but this was not
+quantified. None of them showed necrotic areas on gross radiologic
+or pathologic evaluation. In addition, our cohort did not include
+predominantly cystic lesions such as Bosniak 3 or Bosniak 4 lesions.
+The ccRCC tumors were classified into different grades using the
+Fuhrman nuclear grade system (Table 1). The mean and median
+tumor size of the ccRCC dataset was 2.79 cm and 2.2 cm
+respectively with a standard deviation of 1.36 cm.
+Table 1.
+Tumor type distribution within the acquired CECT data
+Tumor type No. of tumors
+Class
+Tumor grade
+1
+2
+3
+4
+ccRCC
+70
+Malignant 100 5
+61 28
+6
+pRCC
+20
+chRCC
+10
+Malignant 10
+NA NA NA NA
+lpAML
+18
+Benign 46
+NA NA NA NA
+Oncocytoma
+28
+Open in a new tab
+Here, ccRCC, clear cell RCC; chRCC, chromophobe RCC; lpAML,
+lipid-poor angiomyolipoma; pRCC, papillary RCC and oncocytoma:
+renal oncocytoma. Please note that chromophobe RCC, although
+malignant is NOT subclassified using Fuhrman grade.
+Figure 1.
+[image]
+Open in a new tab
+(a) (Left) Axial nephrographic phase CT image of a heterogeneous
+hypodense, exophytic tumor, subsequently proven to be a clear cell
+RCC in a 65-year-old male patient. (b) Axial nephrographic phase
+CT image of a relatively homogenous, primarily endophytic tumor
+in the left renal interpolar region, proven to be an
+oncocytoma. RCC, renal cell carcinoma.
+CECT settings
+CT (Brilliance 64, Philips Healthcare, CT) imaging was performed
+using patient breath-holding technique with the following
+parameters: 120 kVp, variable tube current, slice thickness of 0.5
+mm with reconstruction interval of 2 mm. Post-contrast CT scans
+were acquired based on fixed time delay to scanning post-injection
+technique for corticomedullary phase images (30 s), nephrographic
+phase images (90 s), and excretory phase images (5 min).
+Approximately, 100–150 ml of nonionic water soluble intravenous
+iodinated contrast Iopamidol (Isovue®−300, Bracco Diagnostics,
+Inc, Princeton, NJ, USA) dosed to weight was administered with a
+power injector at a rate of 5 ml/s.
+Tumor segmentation
+Manual segmentation was used to extract the renal tumor contours
+and performed by an experienced radiologist in Synapse 3D as
+three-dimensional (3D) regions of interest (ROIs).22 Nephrographic
+phase provided the best delineation of the tumor, and hence it was
+used as the reference template to co-register the other phases. The
+series of images were then co-registered using norma

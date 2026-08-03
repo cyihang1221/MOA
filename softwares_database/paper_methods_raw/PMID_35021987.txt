@@ -1,0 +1,99 @@
+
+Methods
+An overview of the Aird data structure is shown in Fig. 1, and the
+main methods are described here:
+Fig. 1.
+[image]
+Open in a new tab
+A Traditional mzXML-like indexing, MS data is sorted by retention
+time. The retention time and spectrum start position are stored as
+an index. B In DDA, each MS1 spectrum is followed by 0-N MS2
+data. Extracted ion chromatogram is generally calculated in
+successive MS1 data, so reordering MS1 data to put them in the
+same physical file block can speed up file reads. C Typically used in
+SWATH/DIA, every MS2 data belongs to a particular m/z SWATH
+window. MS2 data in the same window will be frequently accessed
+and calculated. Reordering is essential for fast file I/O
+ZDPD algorithm for m/z compression
+The m/z array has the following characteristics.
+1. In metabolomics and proteomics, the fragment mass is
+generally between 0 and 3000;
+2. The m/z arrays are ordered;
+3. In the m/z array, there will be several consecutive numbers
+close to each other, and the difference of these numbers is
+relatively tiny and fixed;
+We built a new compressor called ZDPD. The brief principle of
+ZDPD is shown in Fig. 3B. Aird chooses the integer type as the
+storage type for the m/z array. If the needed data precision is ten
+ppm (100 daltons to calculate), the accuracy can be accurate to 3
+decimal places (dp). If 0.1 ppm is needed, five dp is necessary. The
+m/z array in each spectrum is an ordered array. Aird achieves the
+best compression rate by combining FastPfor and Zlib algorithms
+reasonably. FastPfor library is a suitable compressor to store deltas
+between adjacent integers, benefiting from its particular
+optimization. It also supports SIMD acceleration [8]. After
+compressing the sorted integers, Aird uses the Zlib
+algorithm(Compression Level = 6, Zlib library is DotNetZip from
+http://dotnetzip.codeplex.com) to compress the delta values, which
+can achieve a better result than only using the Zlib or FastPfor
+algorithm. The combination of the two algorithms perfectly utilizes
+the prior characteristics of the m/z array.
+Fig. 3.
+[image]
+Open in a new tab
+A Metadata with the same content is stored in JSON and XML
+format, and Thermo QE and SCIEX TOF generate the files. File size
+increased by about 65% when transferred from JSON to XML for
+SCIEX TOF files and 1.7 times for Thermo QE files. B The principle
+of the ZDPD algorithm. C The compression size is compared with
+Zlib using each compression algorithm. The ratio increases as the
+accuracy improve. The ZDPD algorithm shows the best
+performance. D The encoding time for each algorithm. Due to SIMD
+support, the FastPfor algorithm is high-speed. E The decoding time
+for each algorithm. Decoding time is one of the most critical
+parameters in the computation-oriented process. Although ZDPD is
+not the fastest, the ZDPD algorithm's performance is the most
+balanced when combining the compression rate and decoding speed
+rate
+Algorithm for intensity compression
+Unlike the m/z array, the intensity data has a high degree of
+repeatability, consistent with the Zlib algorithm's compression
+characteristics. The results also show that Zlib has an excellent
+performance in compression of intensity array. Therefore, Aird
+chooses the Zlib algorithm as the intensity array's compressor. In
+AirdPro, we also implement another optional compression
+algorithm called "Log10 Compressor" proposed by MS-Numpress
+[1].
+Multiple indexing and storage strategies
+Different acquisition modes have various computing features. For
+example, when dealing with DIA/SWATH. The most frequently
+calculated objects are the spectrums of the same precursor. They are
+discontinuous in retention time(RT). Using the traditional model
+based on RT will significantly reduce the reading efficiency and is
+unsuitable for distributed reading. According to these various
+features, Aird builds additional correlation indexes in the metadata
+so that the program can read the data more quickly during analysis.
+Aird will take the calculation features of different acquisition modes
+as the core optimization point and provide a corresponding
+integration interface in SDK as a computing-oriented format. Aird
+also provides an RT-based data model that acts like mzML but has a
+much higher compression ratio.
+Aird does not use any database technology like HDF5 or SQLite but
+also provides a similar querying ability. The spectrum querying
+ability strategies mainly depend on mass spectrometry acquisition
+modes. Different modes have different requirements for spectrum
+index. If we can summarize and adapt the indexes of varying
+acquisition modes, we can achieve the same query ability as using
+database technology.
+The MS data storage includes the index strategy and the disk's
+actual storage location. For example, both mzXML and mzML
+provide an index strategy by storing the scanning number and start
+position of each spectrum, as it keeps specific MS data in the order
+of the scanning number. Each scanning number represents a
+particular RT. The indexing strategy of mzXML and mzML is
+inflexible. Considering the Data Independent Acquisition (DIA) and
+Data Dependent Acquisition (DDA), Aird described three indexing
+and storage strategies:
+1. RT-MS index: This is one of the most traditional indexing
+strategies, which is also used in mzXML and mzML format.
+This strategy is an efficient way to access successive MS data.

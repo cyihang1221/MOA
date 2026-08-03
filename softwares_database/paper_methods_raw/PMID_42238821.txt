@@ -1,0 +1,182 @@
+
+Methodology, Formal analysis, Conceptualization, Validation,
+Visualization, Writing – original draft, Investigation, Writing –
+review & editing
+Find articles by Nimrod Kruger
+1,*, Nicholas Owen Ralph
+Nicholas Owen Ralph
+1International Centre for Neuromorphic Systems, The MARCS
+Institute, Western Sydney University, Sydney, NSW, Australia
+Writing – review & editing, Writing – original draft, Data curation,
+Visualization
+Find articles by Nicholas Owen Ralph
+1, Gregory Cohen
+Gregory Cohen
+1International Centre for Neuromorphic Systems, The MARCS
+Institute, Western Sydney University, Sydney, NSW, Australia
+Writing – review & editing, Supervision, Writing – original draft,
+Resources
+Find articles by Gregory Cohen
+1, Paul Hurley
+Paul Hurley
+1International Centre for Neuromorphic Systems, The MARCS
+Institute, Western Sydney University, Sydney, NSW, Australia
+2Centre for Research in Mathematics and Data Science, Western
+Sydney University, Sydney, NSW, Australia
+Writing – review & editing, Supervision, Writing – original draft,
+Conceptualization
+Find articles by Paul Hurley
+1,2
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC13227969  PMID: 42238821
+Abstract
+Event Vision Sensors, or neuromorphic cameras, report sparse, and
+asynchronous image change-related data and enable microsecond-
+scale sensing and high dynamic range, but challenge physics-based
+sensor design approaches. In response to log-intensity threshold-
+crossing instances, this event representation does not readily
+integrate with forward operators used to describe most
+computational imaging and optical systems. We present a physics-
+grounded processing pipeline that maps event streams to estimates
+of per-pixel log-intensity and its derivatives, and embeds these
+measurements in a dynamic linear systems model with a time-
+varying Point-Spread Function (PSF). This enables inverse filtering
+directly from event data via frequency-domain Wiener
+deconvolution with a known dynamic transfer function, enabling
+scene inference even when no image is formed on the sensor plane.
+We validated the approach in simulation for single and overlapping
+point-sources under modulated defocus, and on real event data from
+a tunable-focus telescope imaging a star field, demonstrating
+superior source localization and separability compared with frame-
+based imaging. The proposed framework provides a practical bridge
+between event sensing and model-based computational imaging for
+dynamic optical systems.
+Keywords: computational imaging, dynamic linear system, event-
+vision sensors, neuromorphic engineering, Point Spread Function
+(PSF)
+1. Introduction
+An Event Vision Sensors (EVS) approximately represents
+asynchronous log-intensity changes dLdt, where L ≡ log(I), rather
+than direct absolute intensity I, as is common for conventional
+frame-based sensors. In these complementary metal–oxide–
+semiconductor (CMOS) sensors, a timely per-pixel event of log-
+intensity threshold crossing is reported relative to an internal
+reference level, followed by updating that level in anticipation of
+the next crossing event. The ability of EVS to report changes at
+microsecond resolution and to achieve a high dynamic range
+compared to most image sensors is driving many event-based
+applications in computer vision. However, representing these events
+in a physics-grounded manner, so that their information can be
+processed using a dynamic linear systems approach, has not been
+thoroughly explored in the literature. A linear system description
+can be used to relate a full scene to the spatial-temporal event-
+stream output, informed by physical modeling of the optics and
+sensor, as is often used to design fast inference of a scene in frame-
+based computer-vision tasks. Currently, most EVS physics-grounded
+approaches first create a full image-from-events reconstruction, use
+the scene intensity constancy assumption, or both (Zhang et al.,
+2022). These typically assume the conventional pinhole camera
+model, with a sensor array that roughly maps the angular scene
+intensity, and are useful for recording through traditional in-focus
+imaging lenses. However, the pinhole camera model and scene
+intensity constancy assumption are not always applicable for a
+generalized imaging system.
+The desire to recover more scene information in highly dynamic
+scenes, in applications such as robotics, industrial inspection, and
+medicine, has led to the proliferation of work using EVS for
+computational imaging. These include EVS plenoptic cameras (Qu
+et al., 2024), microscopy (Bian et al., 2024; Zhang et al., 2025;
+Baird et al., 2025), wavefront sensing (Kong et al., 2020), coded
+aperture (Shah et al., 2024; Habuchi et al., 2024), lens-less imaging
+(You et al., 2025), and more (Arja et al., 2025; Cai et al., 2025; Zhu
+et al., 2024a)—collectively coined Computational Neuromorphic
+Imaging (CNI) (Zhu et al., 2024b). This is an emerging field that
+aims to expand EVS to overcome the latency-bandwidth-sensitivity
+bottlenecks of traditional imaging, while maintaining low system
+costs, energy consumption, and data bandwidth.
+Computational imaging system designs often use a forward operator
+that maps a transfer function from scene intensity, light field, or
+complex wavefront to the sensor readout signal. Scalar-theory
+methods (e.g., angular spectrum and Fresnel approximation) can be
+used to predict sensor response to scene illumination, and also
+design systems for extracting specific information under various
+assumptions and priors (Joseph, 1968). With event-stream's unique
+data structure of binary threshold crossing response to log-intensity
+and asynchronous sampling mode, the transfer function definition
+and the information we put through the system are not directly
+obtained. Consequently, current CNI designs often reuse optical
+methods proven for frame-based imaging, thereby reducing
+performance. Alternatively, successful data-driven approaches will
+be hard-pressed to extrapolate, missing model-based
+parameterization.
+We propose a refreshed view of log-intensity change events in the
+context of linear optical systems, paving the way for CNI models
+and methods. This will expand the range of design possibilities for
+machine vision systems, microscopy, and advanced optical sensors.
+The following components are presented:
+1. Log-intensity derivative revisited: we describe the relation
+between a pixel's log-intensity threshold-crossing event
+stream to the per-event estimate of log-intensity derivative,
+intensity, and intensity derivative, for the limited case of a
+simple event pixel model.
+2. Dynamic imaging system model: describe a linear forward
+model for optical signals transferred through a system with
+internally controlled dynamics, represented by the operator
+T(t), and projected onto a sensor plane. The expected
+intensity and its changes are related to the information
+encoded in the event stream.
+3. Scene-informed spatial-temporal filter: an example spatial-
+temporal transfer function is used to design a filter as an
+inverse operator on event-data to extract scene estimation.
+A direct path from event-stream to scene inference is then
+facilitated by the combined use of event interpolation, known
+optical transfer functions (with controlled system parameters), and
+scene priors.
+We demonstrated this path using a simulated optical model of an
+imaging system with a modulated focal length, and on real-world
+EVS data of a star field taken with a tunable liquid-lens imaging
+system. In these, the introduced controlled dynamics are achieved
+by the active focus and defocus of the Point-Spread Function of a
+static point source (or a star field) on the sensor plane. Presenting
+this framework with a dynamic system and a static scene allows us
+to use a simple operator for source estimation, implemented here as
+Wiener deconvolution on event-stream data. Previous research
+using active neuromorphic vision with a tunable liquid lens for
+point-source localization (Ralph et al., 2024) shows improved
+sensitivity, noise rejection, and localization error, compared to
+other EVS-based space imaging methods, but requires long
+accumulation time. The ability to perform a similar task via direct
+deconvolution from events presents an avenue for novel algorithms
+for this task and for various other CNI applications.
+2. Methods
+2.1. Notation and pixel level derivative estimation
+EVS's react to change in log-brightness by reporting either ON or
+OFF events when the pixel reference voltage crosses predefined θON
+or θOFF threshold values, respectively, and then reset the pixel
+reference voltage after a pre-defined refractory period, trf. The pixel
+voltage generally follows a logarithmic function of the impinging
+photon flux intensity. An event ek ≡ (xk, tk, pk) represents such a
+change at pixel xk = (xk, yk) at an instance tk, where pk = 1 or −1
+for log-intensity increase by θON or decrease by θOFF respectively,
+assuming no latency and no noise events. Figure 1a shows an
+example log-intensity signal for a single pixel, with an overlay of
+binary ON and OFF events where pixel voltage crosses said
+threshold. Specifically, for small thresholds and limited bandwidth
+signals, the relation between event k and the log-intensity
+derivative can be approximated by Equation 1:
+Figure 1.
+[image]
+Open in a new tab
+Threshold crossing events for dynamic optical systems. (a) The
+event-pixel typically reports the signal-threshold crossing of log-
+intensity, with a fixed refractory-period delay. (b) These are used to
+estimate the signal log-intensity derivative per event. A simple
+linear interpolation estimate works well for consecutive, similarly
+polarized events but fails for polarity-switching events. (c) A
+dynamic linear systems description of an optical system, T,
+projecting an input field U to an intensity map I. The product rule
+describes the temporal derivative of these functions. Such a system
+can dynamically model a point-source projection through an
+elec

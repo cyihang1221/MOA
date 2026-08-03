@@ -1,0 +1,145 @@
+
+Methods
+Analysis of Cellular Metabolites
+MRC5 primary human fibroblasts were switched to DMEM with 25
+mM 13C6-glucose for 5 or 60 min. The medium was aspirated; cells
+were washed quickly with ice-cold PBS, and metabolites were
+extracted with 50:30:20 methanol/acetonitrile/water. Samples
+(triplicates) were applied to liquid chromatography–mass
+spectrometry (LC-MS) using a 15 cm × 4.6 mm ZIC-pHILIC (Merck
+Millipore) column fitted with a guard on a Thermo Ultimate 3000
+HPLC. A gradient of decreasing acetonitrile (with 20 mM
+ammonium carbonate as the aqueous phase) was used to elute
+metabolites into a Q Exactive mass spectrometer. Data were
+acquired in wide scan negative mode. In order to generate mzML
+files, the command “msconvert_all()” was run that uses the
+msconvert utility of Proteowizard11,12 to generate separate positive
+and negative mode mzML files.
+Software Description
+Input File Format
+AssayR uses the R package mzR to extract chromatograms from files
+in mzML format.
+Config File
+A configuration file in .tsv format is associated with each analysis
+(Figure 2). This file specifies the m/z value and the retention time
+(RT) window of each metabolite of interest as well as the maximum
+number of isotopologues to analyze (split into 13C, 15N, and 2H).
+For config file setup purposes, the full retention time range can be
+selected (e.g., Initial config file in Figure 2) as well as default values
+for the width of the peak detection filter (“seconds”; see Extracted
+Ion Chromatogram Generation and Peak Detection below) and
+intensity threshold. An “interactive” option is also included so that
+the user can opt out of the iterative peak detection step for any
+metabolite, for instance, if it is known that the peak is always
+picked correctly by the current settings. Isotopologue selection is
+simply a numerical input for 13C, 15N, or 2H, and combined
+isotopes can be selected: all possible isotopologues are analyzed.
+Figure 2.
+[image]
+Open in a new tab
+Examples of Initial and Final config files. Typical default values are
+given in the Initial config file. “seconds” refers to the width of the
+peak detection filter and not the peak width. The red box highlights
+parameters that are modified during interactive peak picking. The
+blue box highlights the simple isotopologue number input.
+Extracted Ion Chromatogram Generation and Peak
+Detection
+A more detailed description accompanies the R package code,
+which is available at https://gitlab.com/jimiwills/assay.R. Briefly, a
+row from the configuration table (Figure 2), representing an
+analyte, is read and the configured mz ranges (combining m/z,
+ppm, and isotope settings) are extracted from mzML files via the
+mzR package. Interpolation is used to standardize the retention
+times across these chromatograms, and the maximal
+chromatographic profile is taken forward for peak detection. This
+means that a peak only needs to be present in a single sample for a
+single isotope for that peak to be detected and measured across the
+whole context. The use of combined isotopologues (Figure 3A) for
+metabolite peak identification is particularly important when a mix
+of labeled and unlabeled samples are analyzed or for samples where
+the labeling in a given metabolite is saturated, and therefore, the
+monoisotopic m/z value would be inappropriate for metabolite peak
+identification.
+Figure 3.
+[image]
+Open in a new tab
+Peak detection in AssayR. (A) Peak detection (shaded blue) is
+specified for each metabolite based upon all isotopologues in all
+samples. (B) Example of peak detection (blue shading) despite poor
+chromatography. (C) AssayR enables split peaks to be detected
+separately (shaded green/yellow) or together. Shaded areas are
+detected and quantified.
+The retention time minimum and maximum from the configuration
+table are used to select a region of the chromatogram on which
+peak detection will be performed. A Mexican hat filter is used with
+the filter function in R to translate the chromatogram and to set
+start and end indices for each detected peak. The indices are used to
+define the range to be summed to generate peak area measurements
+for each chromatogram. Individual peaks are marked (in blue),
+where more than one peak is identified within a metabolite
+retention time window; the peaks are separated and shaded in
+different colors (e.g., green/yellow for 2 peaks; Figure 3C), to assist
+with peak curation. The interactive peak picking procedure then
+allows simple alteration of detection parameters through an
+intuitive query-based format. Alteration of the width of the Mexican
+hat (“seconds” column in the config file) enables most peaks to be
+picked, even when the chromatography is poor, such as when
+measuring glucose on a ZIC-pHILIC column (Figure 3B). Split peaks
+can also be selected as a single metabolite or two peaks by
+alteration of the hat width (Figure 3C). The minimum and
+maximum m/z values, the hat filter width, and the peak detection
+threshold are all updated during the interactive peak picking
+process. Once the user is satisfied with the result, the updated
+parameters are written back to the configuration file (e.g., Final
+config file in Figure 2) and the peak areas are saved for output in
+the data .csv file.
+Output
+The primary output from AssayR is a .csv file with samples
+separated by column and metabolites/isotopologues separated by
+row. Images of the extracted ion chromatograms generated during
+peak detection are exported for recording metabolite identification
+and quality control: these images are generated even when the
+software is run without interactive peak curation. Stacked bar
+charts of absolute and relative peak intensity are produced for each
+metabolite, allowing quick and easy visualization of the data. These
+reveal variance between samples and allow for quick identification
+of possible outlier samples (as outlined below). A representative
+analysis of 13C6-glucose tracing in primary human fibroblasts is
+presented in Figure 4.
+Figure 4.
+[image]
+Open in a new tab
+Glycolytic and related stable isotope tracing of 13C6-glucose
+metabolism quantified by AssayR. Relative (percentage) stacked bar
+charts of triplicates are shown as produced by AssayR (absolute
+stacked bar charts and EICs are also produced automatically).
+MRC-5 fibroblasts were pulsed for 5 or 60 min with 13C6-glucose in
+triplicate. Abbreviations: Glu (glucose), G6P (glucose 6-phosphate),
+F6P (fructose 6-phosphate), FBP (fructose 1,6-bisphosphate), PGA
+(3-phosphoglyceraldehyde), DHAP (dihydroxyacetone phosphate),
+2/3-PG (2-/3-phosphoglycerate), PEP (phosphoenolpyruvate), Pyr
+(pyruvate), Ala (alanine), Lac (lactate), Cit/Iso (citrate/isocitrate).
+Comparison with XCMS
+A popular chromatographic approach in metabolomics is the use of
+ZIC-pHILIC columns at high pH9 because they capture a wide range
+of metabolites, including most of the organic acids of central carbon
+metabolism. However, the chromatographic performance of these
+matrices can be poor, especially in comparison to reversed-phase
+chromatographic approaches. Variability in peak shape can be
+pronounced as some metabolites can interact with the matrix in
+more than one way, and this can lead to spread (e.g., glucose in
+Figure 3B) or separated peaks. This variability can be more
+pronounced if methanol is used during sample loading due to
+additional surface effects of the solvent. Using the metabolomic
+data set from MRC5 primary human fibroblasts pulsed with 13C6-
+glucose, we analyzed glycolytic and related metabolites with
+AssayR (Figure 4) and XCMS. As described above, the
+chromatography of glucose is poor and XCMS did not pick any of
+the isotopologues, whereas AssayR showed almost full labeling in
+all samples (Figure 5A). While fructose 6-phosphate was well
+resolved and accurately picked by both packages, the monoisotopic
+glucose 6-phosphate peak had an overlapping isobaric peak with
+slightly later retention time (Figure 5B). During the peak detection
+stage in AssayR, it was clear that these were mixed metabolites
+because some of the extracted ion chromatograms (EICs) matched
+the first peak only whereas some matched both peaks (Figure 5B).

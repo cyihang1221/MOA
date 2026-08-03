@@ -1,0 +1,152 @@
+
+Materials and Methods
+Proteomics Data Set
+To demonstrate the capabilities of our proteogenomics pipeline, we
+applied it to the human testis tissue data set published by Zhang
+and colleagues.10 We will refer to this as the “C-HPP testis” data
+set. The data set contains three biological replicates, each
+fractionated using two different protein separation methods (regular
+SDS-PAGE and tricine-SDS-PAGE), with six samples in total. Each
+sample gave rise to 28 (regular) and 22 (tricine) fractions,
+respectively, which were digested using trypsin and analyzed on an
+LTQ Orbitrap Velos (Thermo Scientific) mass spectrometer,
+acquiring fragment ion (MS2) spectra using CID activation. We
+downloaded the 150 RAW files from these liquid chromatography–
+tandem mass spectrometry (LC–MS/MS) runs from the PRIDE
+repository11 (accession PXD002179) and converted them to mzML
+format, extracting only the MS2 scans, using the “msconvert”
+program from the ProteoWizard software suite12 (version
+3.0.8789). A single RAW file was renamed to fit the naming scheme
+of the remaining files (“CHPP_Testis_tricine_1010.raw” to
+“CHPP_TESTIS_Tricine_1010.raw”). Another file,
+“CHPP_SDS_3003.raw”, turned out to be corrupt, so we downloaded
+the corresponding MGF file from PRIDE and converted that to
+mzML. The mzML files were then used as inputs for our OpenMS
+pipeline.
+Sequence Database
+The amino acid sequence database against which fragment ion
+(MS2) spectra are matched is critical for comprehensive
+identification of peptides. A sequence database for use with our
+pipeline should consist of four parts: (1) known protein-coding
+sequences; (2) sequences of common contaminants; (3) prospective
+protein sequences currently unannotated or presumed noncoding
+that could potentially contain unrecognized coding regions (e.g.,
+lncRNA transcripts, RNA-Seq models, predicted transcripts, etc.);
+and (4) decoy sequences. The four parts are concatenated into a
+single sequence database that is used for database searching of MS2
+spectra; parts 1–3 are also used individually to filter the
+downstream search results. When analyzing data with the aim of
+finding “novel” peptides, we are interested in high-confidence
+matches to peptides that are in part 3 of the database but are not
+also in parts 1 or 2.
+For the analysis of the C-HPP testis data, we used the sequence
+database from Wright et al.2 This database consists of human
+translated amino acid sequences from the following sources. For
+part 1, it contains the translated CDS from GENCODE13 v20 and the
+UniProt14 reference proteome. For part 2, it contains the collection
+of common contaminant proteins from the Max Planck Institute of
+Biochemistry, together with sequences of the major
+histocompatibility complex from the IPD-IMGT/HLA database.15
+For part 3, it contains noncoding sequences from GENCODE v20
+(pseudogenes, lncRNA, 5′ UTR), gene predictions from
+AUGUSTUS,16 pseudogene predictions from Pseudogene.org,17 and
+three-frame translated transcripts from three different large-scale
+RNA-Seq experiments.13,18,19 For part 4, it contains randomized
+decoy sequences generated from parts 1–3 using the Mimic software
+(https://github.com/percolator/mimic). To simplify dealing with
+the isobaric amino acids leucine and isoleucine, all occurrences of
+“I” in the sequences were replaced by “L”. In total, the database
+contains 8 406 627 entries; the FASTA file takes up 1.1 GB of
+memory (including accessions).
+Software
+Our data analysis pipeline leverages many existing software tools.
+We used TOPP tools20 from the OpenMS framework (version 2.0.1;
+http://openms.org) for most data-processing steps, although in
+some areas we extended the functionality offered by OpenMS (see
+below). Importantly, OpenMS provides an easy-to-use graphical
+interface for designing and running TOPP-based data analysis
+workflows, called TOPPAS.21 It also offers a mechanism for
+wrapping non-TOPP command line applications so that they can be
+included in TOPPAS workflows (“GenericWrapper”).
+Central to any proteomics analysis pipeline is the identification of
+peptides from the MS2 spectra, for which we used the database
+search engines Mascot22 (version 2.5.1, Matrix Science) and MS-
+GF+23 (version 10089). The following parameters were used with
+both engines: 10 ppm precursor mass tolerance, 0.5 Da fragment
+mass tolerance; trypsin cleavage with full specificity, allowing two
+missed cleavages; fixed modification: carbamidomethylation of
+cysteine; variable modifications: oxidation of methionine,
+deamidation of asparagine and glutamine, N-terminal acetylation,
+and conversion to pyroglutamic acid of N-terminal glutamine and
+glutamic acid.
+We applied Percolator24 (revision “273ff55” from https://
+github.com/percolator/percolator) for statistical evaluation and
+rescoring of the search results (in the Mascot case via an adapted
+MascotPercolator,8,9 version 2.16; http://www.sanger.ac.uk/
+science/tools/mascotpercolator). To summarize the results of our
+pipeline and visualize the data, we used the R software
+environment for statistical computing (version 3.1.2).25
+Results
+Software Contributions
+We were able to rely on existing applications for the construction of
+our proteogenomic pipeline and for many of the data processing
+tasks; however, for several tasks, we developed new tools or refined
+and extended existing ones. We added wrappers for the search
+engine MS-GF+23 and for the postprocessing tool Percolator24 to
+OpenMS. In addition, we adapted several existing TOPP tools and
+underlying OpenMS library classes, tailoring them for use in an
+integrated pipeline and for the needs of proteogenomic data
+analysis. We not only added missing functionality but in several
+cases also improved the quality (and thus reliability and
+maintainability) of the source code.
+Adapter for the MS-GF+ Search Engine
+OpenMS includes TOPP tools that serve as adapters to several
+widely used database search engines (e.g., Mascot, OMSSA, and X!
+Tandem). We developed a TOPP tool that wraps the newer search
+engine MS-GF+ called MSGFPlusAdapter. The adapter takes as
+input the location of the MS-GF+ Java package, a spectral data file
+(mzML), a sequence database file (FASTA), and a number of search
+parameters, including lists of desired fixed and variable
+modifications. It creates a temporary file containing the user-
+defined modifications in the format required by MS-GF+. A Java
+process runs the MS-GF+ program, supplying search parameters
+and input files. MS-GF+ performs the search and writes results into
+an mzIdentML file. Because OpenMS internally still uses its own
+format, idXML, for peptide and protein identification (ID) data, the
+adapter can optionally convert the mzIdentML file to idXML once
+the search is complete. This conversion was initially implemented
+via an intermediary step in which a tabular text file is generated
+from the mzIdentML file using a function of MS-GF+. Information
+from this file is then used to fill internal data structures and, from
+there, written out to idXML. Support for the mzIdentML format in
+OpenMS has improved in the meantime, so it is now also possible to
+convert the mzIdentML file to idXML directly. Irrespective of the
+method used for the conversion, the adapter needs to look up
+retention time (RT) values for peptide IDs in the spectral data. This
+information is missing from the mzIdentML file generated by MS-
+GF+, but it is vital for many downstream applications and analyses
+in OpenMS. To support this, we developed two related classes for
+the OpenMS C++ library, SpectrumLookup and
+SpectrumMetaDataLookup, to handle the recurring task of looking
+up spectra and their associated information based on different kinds
+of spectral references (e.g., scan numbers). These classes have now
+been broadly adopted in OpenMS.
+Percolator Wrappers
+Percolator is a tool for postprocessing peptide–pectrum matches
+(PSMs) from sequence database searches of LC–MS/MS data.24 It
+can improve the number of confident PSMs recovered from the data
+by applying a semisupervised machine learning approach to
+distinguish correct from incorrect PSMs. Percolator also calculates
+statistically meaningful scores for PSMs, i.e., q values (a measure of
+the false discovery rate, FDR) and posterior error probabilities
+(PEP).26
+Percolator for MS-GF+
+To run Percolator on MS-GF+ search results, we created two
+wrappers using the Generic-Wrapper mechanism provided by
+OpenMS: one for the “msgf2pin” program packaged with
+Percolator, which converts mzIdentML files generated by MS-GF+
+to Percolator’s input format,27 and one for the Percolator
+executable itself.
+In addition, we implemented a parser for the output files produced
+by Percolator. Percolator can generate results on the levels of PSMs,
+peptides, or proteins. We implemented support for PSM-level output

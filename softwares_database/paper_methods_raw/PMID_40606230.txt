@@ -1,0 +1,158 @@
+
+Methods
+We aimed to extend the previously described Grinsted wavelet
+package with rectified bias of power and transfer function gain
+estimation of cerebral autoregulation assessment. The algorithm
+was validated in simulated signals and data of five healthy male
+subjects undergoing a protocol to produce large changes in
+hemodynamics by using lower body positive pressure (LBNP) with
+mild hypoxia and lower body negative pressure (LBNP). We
+intended to compare wavelet-based observations with FFT-based
+estimates.
+Results
+We found good agreement between wavelet and FFT-based
+coherence and gain of cerebral tissue oxygenation index, in Bland
+Altman Plot and linear correlations for repeated measurement
+especially in the low frequency range (0.04 -0.15 Hz, coherence: r
+= 0.69, p < 0.001, gain: r = 0.74, p = 0.001), but was less in the
+very low frequency range (≤0.04 Hz, coherence: r = 0.65, p <
+0.001, gain: r = 0.66, p < 0.001) and high frequency range
+(0.15-0.4 Hz, coherence: r = 0.39, p < 0.001, gain: r = 0.71, p =
+0.001). FFT-based coherence was smaller than wavelet estimates for
+values <0.5.
+Discussion
+We demonstrated good agreement in power, coherence, transfer
+function gain estimates between FFT-based method and our
+modified wavelet method. This was confirmed in simulated data
+and in healthy subjects undergoing LBNP and LBPP with hypoxia.
+Near-infrared spectroscopy-derived wavelet transform could be
+useful for exploring cerebral autoregulation dynamics, especially in
+non-stationary data.
+Keywords: cerebral autoregulation, transfer function analysis,
+wavelet, lower body negative pressure, lower body positive pressure
+Introduction
+Cerebral autoregulation is an important characteristic of the
+cerebral vasculature to maintain adequate cerebral perfusion even
+in the presence of changing arterial driving pressure. The concept,
+originally introduced by Lassen, suggests a stable plateau on the
+autoregulation curve beyond which cerebral blood flow becomes
+pressure passive, potentially leading to damage by over- or
+underperfusion of the brain (Lassen, 1959; Lassen and Christensen,
+1976). Apart from exceeding the limits of cerebral autoregulation,
+certain diseases can also affect autoregulation integrity with an
+increased risk of cerebrovascular events leading to unfavorable
+outcome (Thudium et al., 2024; Soehle et al., 2004).
+Several methods of data integration and processing with other
+cardiovascular parameters have been proposed to allow insights
+into cerebral autoregulation properties. With an increased use of
+near-infrared spectroscopy (NIRS) as a surrogate parameter for
+cerebral blood flow, time domain parameters like moving
+correlation coefficients have been employed to describe the linear
+relationship between NIRS and mean arterial blood pressure (MBP).
+A cerebral oxygenation index (COx) has been introduced
+implementing a moving Pearson correlation coefficient between
+NIRS saturation and arterial blood pressure similar to the original
+mean velocity index (Mx) which is based on the correlation
+between transcranial Doppler sonography and MBP. These indices
+have been used on many occasions, and have even been used in
+clinical settings (Soehle et al., 2004; Brady et al., 2010; Joshi et al.,
+2012; Laflam et al., 2015). Time domain methods can observe
+changes over time but are limited to observe changes in a certain
+frequency ranges like rapid or slower fluctuations. Frequency
+domain methods based on Fast Fourier Transform (FFT) describe
+the phase relationship, gain and the transfer function between MBP
+as an input and NIRS as an output signal. These methods can be
+used to describe autoregulation properties in a wide range of
+frequencies. Coherence analyses in the frequency-domain have been
+utilized to estimate autoregulatory properties especially in the very
+low frequency range (VLF: ≤0.04 Hz) (Brady et al., 2010).
+However, FFT based coherence analysis requires stationary data and
+its time-frequency resolution is not optimized.
+Continuous wavelet transform (CWT) and wavelet coherence have
+been introduced in cerebral autoregulation assessment (Tian et al.,
+2016; Cui et al., 2014). The wavelet method convolutes a time-
+domain signal with a selected scaled and sliding mother wavelet, in
+contrast to fixed time windows of the FFT-based method. The scaled
+wavelet alleviates the time resolution limitation, while the sliding
+wavelet overcomes the request of stationarity (Grinsted et al.,
+2004). Tian et al. applied continuous wavelet coherence in pediatric
+patients successfully. They demonstrated that in-phase and anti-
+phase coherences are related to worse clinical outcome (Tian et al.,
+2016). However, observed changes were over long periods from 80
+min to 2.5 h. Cui et al. found age related differences in coherence
+and phase between elderly and young subjects using wavelet
+coherence analysis in higher frequency range (Cui et al., 2014). This
+demonstrates the importance to study also faster oscillations to
+characterize dynamic cerebral autoregulation.
+More recent concepts of cerebral autoregulation suggest a rather
+mild sloped region instead of a completely flat plateau in the
+autoregulation curve as originally proposed by Lassen (Lassen,
+1959; Brassard et al., 2021). This may lead to a difficult distinction
+between intact and impaired cerebral autoregulation when using
+COx or Mx calculations using correlation coefficients since a certain
+degree of correlation does not always imply disturbed
+autoregulation. Additionally, there is local and neural mediated
+vasomotion causing periodicities with low frequency oscillations
+(LF: 0.04 – 0.15 Hz, periodicities between 10 and 20 s) in the
+cardiovascular system which have not been studied fully as a
+separate entity in dynamic cerebral blood flow. Moving correlation
+coefficients process the signal over the whole frequency range and
+cannot distinguish LF oscillations from other changes in
+hemodynamics. FFT based coherence analysis allows to study LF
+oscillations but cannot be applied to short non-stationary data. The
+continuous wavelet transform allows to estimate coherence with
+optimal frequency and temporal resolution. Using only coherence
+cannot estimate the damping magnitude of external blood pressure
+disturbances on cerebral blood circulation. In this context, transfer
+function analysis can be employed to estimate gain and phase
+relationship between these two signals. The wavelet package by
+Grinsted introduced coherence analysis of geophysical time series
+has not implemented and validated transfer function estimates.
+Additionally, distorted wavelet spectral power has been reported
+and needs to be corrected in the algorithm (Grinsted et al., 2004;
+Liu et al., 2007).
+Our objective was to extend the Grinsted wavelet package with a
+transfer function analysis with rectified estimation of power and
+validated transfer function gain applicable for assessment of
+dynamic cerebral autoregulation. We hypothesized that wavelet
+transfer function gain can be used to detect dynamic hemodynamic
+changes in the cerebral circulation under extreme conditions. We
+intended to test if 1) the modified wavelet transfer function delivers
+similar results compared to FFT-based method 2) cerebral tissue
+oxygenation by near infrared spectroscopy (NIRS) and cerebral
+blood velocity by transcranial Doppler (TCD) results reflect
+impaired cerebral autoregulation as compared to baseline
+measurements. To be suitable for application in dynamic clinical
+settings, we intended to focus especially on the LF range which is
+under the control of autonomic nervous system.
+In order to test the validity of the wavelet package in conjunction
+with NIRS monitoring, it was necessary to observe a wide range of
+hemodynamic states, possibly exceeding the limits of the
+autoregulatory plateau as originally described by Lassen (Lassen,
+1959). Therefore, we intended to use incremental lower body
+negative pressure (LBNP) to reduce cardiac preload. For
+hyperdynamic states, we aimed to use increased cardiac preload
+with incremental lower body positive pressure (LBPP) with added
+mild hypoxia on the last pressure level. Hypoxia has previously
+been reported to be associated with impaired cerebral
+autoregulation (Ainslie et al., 2008).
+The aim of this pilot study was to validate wavelet transfer function
+algorithm with surrogate data and during a wide range of cerebral
+blood flow disturbances, induced by lower body negative or
+positive pressure and additional hypoxia, in a homogenous group of
+young healthy male subjects with intact cerebral autoregulation in
+order to receive uniform cerebrovascular responses to adequately
+observe differences between intact and impaired cerebral
+autoregulation.
+Materials and methods
+LBNP and LBPP and additional hypoxia protocols were used to
+modulate blood pressure fluctuations and cerebrovascular response
+in healthy subjects. The protocol was approved by the ethics
+committee of the chamber of physicians North-Rhine, Duesseldorf,
+Germany (Chair: Prof. K. Racké, No 2018246). A signed informed
+consent was obtained for all subjects before participation.
+Enrollment
+Subjects were enrolled after medical examination and confirmation
+of healthy status. Inclusion criteria were healthy, male subjects of
+age 18-30 years. Exclusion criteria were arterial hypertension, any
+type of regular medication, and cerebrovascular malformations.

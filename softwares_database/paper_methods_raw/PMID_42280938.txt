@@ -1,0 +1,195 @@
+
+Methodology, Software
+Find articles by Seth Donahue
+1,2,*, JD Peiffer
+JD Peiffer
+3Shirley Ryan AbilityLab, Center for Bionic Medicine, Chicago, IL
+60611, USA; johnpeiffer2026@u.northwestern.edu (J.D.P.);
+rcotton@sralab.org (R.J.C.)
+4Department of Physical Medicine and Rehabilitation, Northwestern
+University, Evanston, IL 60208, USA
+Methodology, Writing – review & editing
+Find articles by JD Peiffer
+3,4, R Tyler Richardson
+R Tyler Richardson
+5Department of Kinesiology, School of Behavioral Sciences and
+Education, Pennsylvania State University at Harrisburg,
+Middletown, PA 17057, USA; rtr12@psu.edu
+Writing – review & editing, Methodology, Conceptualization,
+Supervision
+Find articles by R Tyler Richardson
+5, Yishan Zhong
+Yishan Zhong
+6School of Electrical and Computer Engineering, Georgia Institute
+of Technology, Atlanta, GA 30332, USA; yzhong307@gatech.edu
+(Y.Z.); stan99@gatech.edu (S.Q.Y.T.); benoitmarteau@gatech.edu
+(B.L.M.)
+Data curation, Writing – review & editing
+Find articles by Yishan Zhong
+6, Shaun Q Y Tan
+Shaun Q Y Tan
+6School of Electrical and Computer Engineering, Georgia Institute
+of Technology, Atlanta, GA 30332, USA; yzhong307@gatech.edu
+(Y.Z.); stan99@gatech.edu (S.Q.Y.T.); benoitmarteau@gatech.edu
+(B.L.M.)
+Data curation, Writing – review & editing
+Find articles by Shaun Q Y Tan
+6, Benoit L Marteau
+Benoit L Marteau
+6School of Electrical and Computer Engineering, Georgia Institute
+of Technology, Atlanta, GA 30332, USA; yzhong307@gatech.edu
+(Y.Z.); stan99@gatech.edu (S.Q.Y.T.); benoitmarteau@gatech.edu
+(B.L.M.)
+Data curation, Writing – review & editing
+Find articles by Benoit L Marteau
+6, Stephanie A Russo
+Stephanie A Russo
+7Nationwide Children’s Hospital, Columbus, OH 43205, USA
+Conceptualization, Methodology, Data curation, Writing – review &
+editing
+Find articles by Stephanie A Russo
+7, May D Wang
+May D Wang
+8Wallace H. Coulter Department of Biomedical Engineering,
+Georgia Institute of Technology and Emory University, Atlanta, GA
+30322, USA; maywang@gatech.edu
+Methodology, Resources, Data curation, Writing – review & editing
+Find articles by May D Wang
+8, R James Cotton
+R James Cotton
+3Shirley Ryan AbilityLab, Center for Bionic Medicine, Chicago, IL
+60611, USA; johnpeiffer2026@u.northwestern.edu (J.D.P.);
+rcotton@sralab.org (R.J.C.)
+4Department of Physical Medicine and Rehabilitation, Northwestern
+University, Evanston, IL 60208, USA
+Methodology, Writing – review & editing
+Find articles by R James Cotton
+3,4, Ross Chafetz
+Ross Chafetz
+9Shriners Hospitals for Children, Philadelphia, PA 19140, USA;
+rchafetz@shrinenet.org
+Methodology, Writing – review & editing, Data curation,
+Supervision, Conceptualization
+Find articles by Ross Chafetz
+9
+Editors: Behnaz Ghoraani, Yunfeng Wu
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC13259413  PMID: 42280938
+Abstract
+This study validates a clinically accessible approach for quantifying
+the Upper Extremity Reachable Workspace (UERW) using
+monocular AI-driven Markerless Motion Capture (MMC). Objective
+validation of such techniques for clinically oriented tasks is
+essential to support their adoption in clinical motion analysis. Nine
+adults without impairments performed the standardized UERW task,
+reaching targets distributed across a virtual sphere centered on the
+torso and displayed via VR headset. Movements were
+simultaneously captured with a marker-based system and eight FLIR
+cameras; monocular analysis was applied to two videos representing
+frontal and offset camera configurations. Agreement was assessed
+by comparing the percentage workspacereached across six of eight
+workspace octants between the systems. The frontal camera
+demonstrated strong agreement with the marker-based reference
+(mean bias: 0.61±0.12% reachspace per octant), whereas the offset
+view underestimated workspace reached −5.66±0.45%. Depth-
+related errors in the frontal configuration were confined to posterior
+octants, whereas the offset view introduced inaccuracies in both
+contralateral and posterior octants. These findings support the
+feasibility of a frontal monocular camera for UERW assessment,
+particularly for anterior workspace evaluation. While posterior
+accuracy remains limited by depth estimation and anatomical
+occlusion errors, the overall results demonstrate clinical potential
+for practical, monocular-camera assessments.
+Keywords: reachable workspace, Markerless Motion Capture,
+monocular camera, clinical feasibility, artificial intelligence
+1. Introduction
+Quantitative tracking of human movement is central to clinical
+assessment, enabling identification of biomechanical phenotypes
+that complement subjective evaluations and patient-reported
+outcomes (PROs) [1,2]. Traditionally, this tracking has been
+performed using marker-based motion capture, which is considered
+the gold standard for biomechanical analysis. Marker-based systems
+track anatomical landmarks using retro-reflective markers and have
+been widely used to assess upper extremity (UE) function, with high
+spatial accuracy of ≤2 mm [2,3].
+Over the past two decades, UE motion assessment has evolved from
+subjective scoring to objective quantification using marker-based
+systems [4,5,6]. However, many analyses have focused on a limited
+set of motions or static poses [7,8]. In contrast, the Upper Extremity
+Reachable Workspace (UERW) provides a holistic appraisal of
+global UE mobility by quantifying the regions in space that can be
+reached by the hand [3,9]. The UERW task involves patients
+reaching toward virtual targets displayed around them, providing a
+quantitative, biofeedback-driven measure of their reachable
+workspace [2]. Assessment of the UERW task is calculated by the
+number of targets reached compared to the number of targets
+available in the octant to reach and is expressed as a percentage.
+The previous literature has established UERW as a valid, objective
+and clinically relevant measure to differentiate between patient
+populations and healthy controls, and to track rehabilitation
+progress over time [2,10,11,12]. While highly accurate and
+clinically valuable, the measurement of UERW with marker-based
+systems comes with several practical challenges. This includes the
+need for specialized laboratory space, multiple cameras, careful
+calibration, and technical expertise for both setup and operation.
+Variability in marker placement between clinicians and skin motion
+artifacts may affect accuracy. In addition, patients often require
+significant preparation time, and data processing can be labor-
+intensive. Together, these factors make it challenging to integrate
+motion capture into everyday clinical workflows, limiting its
+accessibility for many patients and clinicians.
+As an alternative to marker-based motion capture, MMC has
+emerged as a promising alternative. Initial work in this space
+included simple video-based methods for objective movement
+analysis using manual annotation of patient joints and body
+segments, often performed frame by frame by an engineer or
+clinical team member [13,14,15]. However, these manual
+approaches are time-intensive and require both clinical and
+technical expertise. Advances in artificial intelligence (AI),
+computer vision, and human pose estimation now offer a pathway
+to overcome these limitations; multi-camera systems, such as
+Theia3D, OpenCap, and open-source biomechanics frameworks,
+have demonstrated high accuracy, with errors in the sagittal plane
+≤5∘, in angle estimations across diverse movement tasks
+[16,17,18,19,20,21]. Despite the accuracy of multi-camera MMC for
+UE assessment, clinical implementation remains hampered by the
+complexity of the synchronized hardware [17,22,23,24,25]. Given
+the logistical challenges of multi-camera systems, monocular MMC
+offers a simpler, more scalable approach for point-of-care
+biomechanical analysis [26,27]. Recent advancements have
+demonstrated that monocular reconstructions can achieve accuracy
+levels comparable to marker-based systems in controlled
+environments, even when accounting for inherent challenges such
+as occlusion and keypoint detection noise [28,29].
+While frameworks utilizing computer vision keypoints have
+proliferated, many lack the underlying biomechanical constraints
+requisite for clinical decision making. Without these constraints,
+pose estimation often functions as a “black box” model, prioritizing
+2D image fitting over the physical plausibility required for clinical
+trust [30,31,32]. Other portable alternatives, such as depth-sensing
+cameras, have demonstrated accuracy for upper extremity
+measurements but are limited by their need for specific lighting,
+specialized hardware, and a dedicated spatial footprint. Similarly,
+inertial measurement units (IMUs) offer portability but remain
+prone to sensor drift and magnetic interference in clinical settings.
+Recently, monocular camera applications have successfully
+integrated anatomically accurate biomechanical models, such as
+MuJoCo, to overcome these limitations [27]. These emerging
+technologies hold the promise of delivering the capabilities of a
+biomechanics laboratory through a single mobile device. Currently,
+however, the technical validation of these systems has been largely
+confined to gait. Unlike the cyclical and relatively predictable
+nature of walking, upper extremity tasks involve higher degrees of
+freedom, significant self-occlusion, and rapid multi-planar
+transitions that challenge the limits of monocular pose and depth
+estimation [33,34].
+To address this gap, the present study evaluates the technical
+validity of a monocular, biomechanically constrained MMC pipeline
+for the UERW task. This work represents a novel expansion of
+monocular MMC validation beyond linear locomotion into complex,
+volumetric clinical assessments. We evaluate two independent
+camera configurations—frontal and offset—against the clinical gold
+standard (marker-based motion capture). We hypothesize that the
+frontal configuration will demonstrate superior agreement across

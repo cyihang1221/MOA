@@ -1,0 +1,170 @@
+
+Methods
+Twenty adults (mean ± SD age, 36.1 ± 14.7 years; 50% female)
+were affixed with the thigh-worn activPAL and wrist-worn
+ActiGraph GT3X+ devices for 7 days. The activPAL was processed
+using standard software and five algorithms (ActiLife, Oak, Step
+Detection Threshold [SDT], Verisense, and stepcount) were applied
+to the ActiGraph data. Participants completed two, 3-hour sessions
+during which they were recorded using a GoPro camera. Camera
+data were annotated where step counts, activity type, posture and
+whole-body movements were labeled. Linear mixed effects
+regression and equivalence testing were used to compare each
+algorithm’s step counts to direct observation.
+Results
+Among the wrist algorithms, the mean absolute percent error was
+lowest for stepcount (17.1%) and highest for SDT (231.5%)
+compared to direct observation. The variance explained was
+moderate-to-high (R2 = 0.64–0.90). The stepcount algorithm was
+similar to activPAL estimates; both were statistically equivalent to
+direct observation at a 15% level and provided similar estimates
+over a 7-day period (R2=0.87, MAPE=12.8%). Accuracy was
+highest during walking/running for all algorithms, and was lower
+and highly variable for biking, modified walking, and mixed
+movements, such as pushing a stroller, working at a screen, and
+food preparation.
+Conclusions
+Step count estimates differed among algorithms, however those
+measured from the thigh-worn activPAL and the wrist algorithm
+stepcount were the most accurate.
+Keywords: accelerometer, equivalence, wearables, validation
+INTRODUCTION
+Over the past 20 years, the proliferation of fitness trackers and
+wearable devices has led to increasing interest in stepping behavior
+as a measure of physical activity (1). Epidemiologic studies using
+devices placed on the wrist and hip have concluded that higher
+daily step counts are associated with reduced risk of several chronic
+diseases and improved longevity (2–7). In addition, daily step
+counts are easily interpretable by the general public and clinicians,
+are provided on the majority of consumer wearable devices to
+facilitate self-monitoring, and are therefore an attractive potential
+target for public health efforts to promote physical activity (8). As
+the field evaluates whether there is a sufficient evidence base to
+develop a step count target in future iterations of public health
+guidelines, concerns remain about the accuracy and comparability
+of predicted step counts from the device signal across different
+algorithms, attachment sites (e.g., wrist, ankle, hip) and device
+models (9).
+A major limitation that has plagued this research is a lack of
+rigorous evaluation of step counts generated across different devices
+and processing methods using gold standard criterion in free-living
+settings (10, 11), and the overall low quality of wearable device
+validation studies is “evident and alarming” (12). In an attempt to
+address this problem, Toth and colleagues were among the first to
+evaluate step counting methods from several devices compared to
+video-recorded direct observation during free-living activity (9).
+They found the ankle-worn StepWatch measured steps accurately
+(within 5% of hand-counted steps) while the thigh-worn activPAL
+had more error (20%). The performance of the wrist-worn
+ActiGraph varied widely depending on the processing criteria used
+(25%–120%) (9). Free-living studies using the StepWatch as the
+criterion measure in lieu of direct observation have reported similar
+findings for the activPAL (13) and wrist-worn devices (13–15).
+Given the limited amount of published evidence using gold standard
+or acceptable criterion measures, continued evaluation of step
+counts generated from different devices, algorithms, and wear
+locations in naturalistic environments is needed.
+As the field moved to 24-hour wear protocols, and in an effort to
+enhance wear-time compliance, many large studies have begun
+shifting to the wrist as the attachment site for wearable devices
+(16–18). While step counts generated from wrist-worn devices have
+had low accuracy in prior studies, advanced step counting
+algorithms have recently been made available as open source (19)
+and are increasingly being used in large epidemiologic studies of
+steps and health outcomes (7, 20–22). The Oak algorithm leverages
+walking features of intensity, periodicity, and duration to compute
+step counts from vector magnitudes, and these temporal
+characteristics are obtained from continuous wavelet transform
+(23). Step Detection Threshold (SDT) computes step counts based
+on peak detection from the vector magnitude (24). Verisense 2 is
+also based on the peak-detection based method (25) and has been
+recently refined to improve its accuracy (26). Lastly, OxWearables’s
+stepcount was developed using self-supervised machine learning
+methods trained on a free-living dataset of step-annotated wrist-
+worn accelerometer data (27). Few studies have evaluated the
+accuracy of these open-source algorithms compared to a gold-
+standard criterion measure in free-living settings and in samples
+independent from those in which the models were developed (27).
+Therefore, the primary aim of the present paper was to evaluate the
+performance of step counts estimated from the thigh-worn
+activPAL, the proprietary ActiLife algorithm, and from four open-
+source algorithms (Oak, SDT, Verisense, stepcount) applied to the
+wrist-worn ActiGraph GT3X+ compared to gold standard video-
+recorded direct observation step counts among 20 adults in a free-
+living environment. A secondary aim is to compare step counts from
+each device from up to 7 days of device wear to inform which wrist-
+algorithms provide comparable estimates to a thigh-worn device for
+purpose of data pooling and between-study comparisons.
+METHODS
+Details of the participant recruitment and study procedures are
+described elsewhere (28). Briefly, participants were recruited from
+San Luis Obispo, CA, from July 2019 to March 2020. Eligibility
+criteria included ages 18–75 years, the ability to walk without an
+assistive device, and having internet access. Those with physical
+limitations that impaired their walking or other major health
+conditions that restricted physical activity were excluded. All
+participants read and signed an informed consent document that
+was approved by the Cal Poly Institutional Review Board. Overall,
+53 participants consented to the study, and 24 provided additional
+consent to complete a sub-protocol that included two, three-hour
+video recorded direct observation sessions.
+The study protocol for each participant lasted seven days. At the
+first study visit, participants provided informed consent, completed
+demographic surveys, and were affixed with the thigh-worn
+activPAL and a wrist-worn ActiGraph GT3X+ accelerometers. They
+were also asked to complete a previous night sleep diary each
+morning from which time out of and into bed each day was
+reported and used to define the waking day. The subset who
+consented for direct observation scheduled two, three-hour periods
+within the seven-days during which they would be continuously
+video recorded using a GoPro Hero 5 (GoPro, Inc., San Mateo, CA)
+camera. At the end of the seven days, they returned the devices to
+study personnel.
+Devices
+The activPAL3 (PAL Technologies Inc., Glasgow, Scotland) is a
+triaxial accelerometer tapped to the right thigh that collects data at
+20 Hz. Data were processed using the VANE (v0.1) and CREA
+algorithms (v1.3) within the PALAnalysis (v9.1.0.77), and the
+resulting event files were further processed by incorporating the
+start/stop times for each waking period using the R-package
+activPAL processing (v0.4.1). The ActiGraph GT3X+ (Firmware
+v1.9.2) is a triaxial accelerometer that was worn on the non-
+dominant wrist and was initialized to sample at 80Hz. The raw
+ActiGraph data were then processed using the open-source Oak,
+SDT, Verisense, and stepcount algorithms and the proprietary
+ActiLife.
+Algorithms
+The proprietary step counting algorithm within the ActiLife
+software (v.7.2.0) was utilized to convert the raw ActiGraph data to
+1s epochs with calculated step counts. ActiLife has the capability to
+output epochs ranging from 1s to 4 min; 1s epochs were selected to
+mirror the epochs from direct observation.
+The VANE algorithm identifies periods of sitting, standing, and
+stepping for the activPAL device, and the dynamic accelerations
+during stepping caused by the movement of the thigh and foot
+strike detects stepping events (29). The CREA algorithm
+subsequently builds on these activity classes to identify periods of
+non-wear and cycling (30). All repeated “cyclical” leg movements in
+an upright posture are classified as Progressive Leg Movements
+(PLM). However, the VANE algorithm classifies cycling PLM as
+stepping, so for backwards compatibility cycling PLM is included in
+step counts at the epoch level but is excluded in the daily summary
+reports by CREA (30). Therefore, epoch-level analyses include
+cycling PLM in the total step counts while day-level analyses
+excludes them.
+Five open-source step counting algorithms for high-resolution wrist
+accelerometry data were previously identified (19, 31), and we
+examined four of these in our study. We were unable to include the
+ADEPT algorithm because ADEPT was developed for stride
+segmentation and does not compute step counts directly as part of
+its standard output (32).
+Oak leverages the fact that during walking, device signal oscillates
+around a local mean with an amplitude and frequency equal to
+walking speed (23). Peak-to-peak distance is computed into 1s non-
+overlapping segments using continuous wavelet transform, and
+several tuning parameters are applied to determined marked
+walking periods. Oak was implemented using the walking (v.0.4.0)
+R package (https://github.com/muschellij2/walking), which uses
+the R package reticulate (v.1.44.0) to interface with the original
+forest Python package that Oak was developed in.
+SDT is a threshold-based pea

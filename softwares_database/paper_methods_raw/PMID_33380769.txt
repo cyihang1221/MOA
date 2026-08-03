@@ -1,0 +1,171 @@
+
+Method
+1. Introduction
+Image registration (also known as image alignment, warping, or
+matching) is an important task in medical image analysis [1]. It is
+used in computer aided diagnosis and clinical population studies. A
+comprehensive overview can be found in [2, 3, 4, 5, 6, 7, 1]. The
+process of image registration involves finding transformations that
+relate spatial information conveyed in one image to those in
+another [8]. We illustrate this in Figure 1. In mathematical terms,
+we are given two images m0(x) (the template image) and m1(x) (the
+reference image; here, x∈Ω⊂ℝ3), we seek a spatial transformation
+y:ℝ3→ℝ3,x↦y(x), such that the deformed template image m0(y(x))
+is similar to m1(x) [5]. Registration methods can be classified
+according to the parameterization for y. In this paper, we consider
+methods that belong or are related to large-deformation
+diffeomorphic metric mapping (LDDMM) [9, 10]. In the original
+LDDMM formulation, the map y is parameterized by a time-
+dependent velocity field v, modeled through the ordinary
+differential equation dty = v(y). In our formulation, we model the
+deformation through a hyperbolic transport equation; the map y
+does not appear explicitly (see §2.1). Such mappings parameterized
+through a velocity field v provide maximal flexibility [1]. LDDMM
+maps are expensive to compute since they are infinite-dimensional.
+Upon discretization, the number of unknowns of our problem is still
+in the millions even if we restrict ourselves to stationary velocity
+fields v(x)∈ℝ3: For each grid point of the discretized domain Ω, we
+seek a vector in ℝ3. Consequently, solving a problem for two
+images of resolution 2563 requires us to find the vector entries of v
+for 2563 grid points, which results in ≈50 M unknowns (three
+unknowns per grid point). Furthermore, LDDMM registration is a
+highly non-linear and ill-conditioned inverse problem [7]. As a
+result, image registration can take a few minutes on multi-core
+high-end CPUs. As large clinical, cross-center, population-study
+workflows require thousands of registrations, reducing the compute
+time of a single registration to seconds translates to a reduction of
+clinical study time from weeks to a few days. GPUs with their
+inherent parallelism and low energy consumption are an attractive
+choice to achieve this goal. However, despite the need for high-
+througput computational performance for registration, and the
+existence of several software libraries for LDDMM registration,
+there is little work on highly optimized GPU implementations (see
+§1.3 below).
+Figure 1:
+[image]
+Open in a new tab
+Illustration of the image registration problem. Panel (A): Volume
+rendering of exemplary 3D input data. Panel (B): Image registration
+is the process of establishing spatial correspondences between two
+views of the same object. These sought-after correspondences y are
+indicated by the red arrows for some exemplary points within an
+axial slice of the template and reference imaging data shown in
+panel (A). Prior to executing CLAIRE, we correct for the global
+misalignment between the considered data (i.e., an affine
+transformation). In panel (C), we show an axial slice of the volume
+visualized in panel (A) after an affine pre-alignment step has been
+performed; we execute CLAIRE on this data. Panel (D): The output
+of CLAIRE is a deformation map y, more precisely, a
+diffeomorphism, that relates each point in the template image m0 to
+its corresponding point in the reference image m1. We show a
+typical deformation map y in the leftmost image, and the associated
+determinant of the deformation gradient (encodes volume change)
+in the second and third image from the left (axial and coronal slice).
+In CLAIRE, we do not directly invert for the deformation map y but
+for a stationary velocity field v that parameterizes y (second and
+third figure from the right; color denotes orientation). The last
+figure in panel (D) shows the point-wise residual after applying
+CLAIRE.
+1.1. Contributions
+Based on the open source diffeomorphic image registration
+framework CLAIRE [11, 12, 13, 14, 15], we introduce a new,
+optimized, GPU implementation of LDDMM registration. The
+overall mathematical formulation and solution strategy remains
+unaltered from [14]. In our past work, we demonstrated that the
+main computational kernels of CLAIRE–interpolation and
+differentiation—take up 90% of the runtime of the CPU version of
+CLAIRE [16, 13, 14]. To address this, we propose several
+modifications of the differentiation and interpolation kernels. More
+specifically, our contributions are:
+•  Interpolation: The first important computational kernel is
+scattered-data interpolation used for semi-Lagrangian
+advection. CLAIRE originally employed a Lagrange-basis
+cubic interpolation. We study several alternative methods on
+GPUs using a combination of pre-filtering, texture, and
+polynomial interpolation. We study their accuracy and
+performance using simple performance models and vendor
+performance profiling tools in §3.
+•  Differentiation: The second important computational kernel
+is computing derivatives (gradient and divergence) of 3D
+images (scalar fields). CLAIRE in its original version used
+FFTs to calculate all derivatives and their inverse in the
+reduced gradient and in the forward and adjoint PDE systems.
+We introduce a mixed-precision implementation using 8th
+order finite-difference (FD8) kernels to replace FFT-based
+spectral derivatives. In particular, we replace all first order
+derivatives that appear in the partial differential equations
+(PDE) of our optimality systems. Note that FFTs are still
+retained for higher-order derivatives and their inverse. We
+discuss this in detail in §3.
+•  Evaluation: We evaluate the new algorithm on four
+exemplary magnetic resonance imaging (MRI) scans and for
+three different image resolutions. We compare the proposed
+method with the original CLAIRE in §4 as well as with the
+GPU packages PyCA [17] and deformetrica [18, 19]. The
+focus of this study is not to provide a complete benchmark for
+registration accuracy of CLAIRE. It is to establish a baseline to
+compare our improved solver to our prior work and the work
+of other groups. Overall, we will see that our method is over
+20× faster than the original CPU-based CLAIRE and produces
+registration maps of similar quality. This speedup does not
+only reflect hardware differences but mostly algorithmic
+changes, some of which could also be implemented in a CPU
+version. Furthermore, reducing the accuracy of certain
+calculations to exploit hardware acceleration has no negative
+effects on the quality of the registration.
+1.2. Limitations
+The original implementation of CLAIRE was built to support the
+Message Passing Interface (MPI) for parallelism [13, 14, 16]. Our
+proposed adaption for GPUs has not been integrated with MPI yet.
+This will be subject to future work, in particular the integration of
+the high-speed GPU interface NVLink in a multi-node multi-GPU
+context. Thus, our solver does not scale to the image sizes that can
+be handled by CLAIRE. However, this is not an issue for clinical
+images since typical image sizes fit in a single GPU1. CLAIRE
+currently only supports periodic boundary conditions. Most medical
+imaging data is embedded into a zero background and therefore
+naturally periodic. If the data is not periodic, it can be mollified. If
+effects of boundary conditions on the computed solution are of
+concern, the data can be embedded into a larger domain.
+1.3. Related Work
+We refer to [1, 5, 6, 7] for recent developments in image
+registration. Surveys of GPU accelerated solvers can be found in
+[20, 21, 22]. As mentioned above, this work extends CLAIRE [14,
+15, 12, 16]. Popular (in clinical studies) software packages for
+deformable registration are IRTK [23], elastix [24], NiftyReg [25],
+and FAIR [6]. GPU implementations of (low-dimensional)
+parametric approaches are described in [25, 26, 27, 28]. Fast GPU
+implementations of (high-dimensional) nonparametric formulations
+available in FAIR are presented in [29, 30]. Unlike CLAIRE, these
+methods do not guarantee that the computed map y is a
+diffeomorphism. One possibility to safeguard against non-
+diffeomorphic maps y is by augmenting the formulation by hard
+and/or soft constraints on y [31], which introduces significant
+algorithmic complications. Another approach to enable
+diffeomorphic registration is to parametrize y via a smooth time-
+dependent velocity field v [32, 33]. This approach has been termed
+LDDMM [9]. The formulation in CLAIRE is closely related to
+LDDMM. A key difference is that LDDMM is based on non-
+stationary (time-dependent) v but CLAIRE uses stationary v.
+Moreover, in the original formulation, the map y appears explicitly.
+In our work, we eliminate y and model the deformation using a
+transport equation (see §2.1; the work in [11, 34] and establishes a
+connection to LDDMM [9]).
+Other approaches that use stationary v are described in [35, 36, 37,
+38, 39, 40]. There exists a large body of literature on LDDMM-type
+approaches that, in many cases, mostly focuses on theoretical
+considerations [10, 33, 41, 42, 43]. There is much less work on the
+design of efficient solvers; examples are [9, 36, 40, 44, 45, 46, 47,
+48, 49]. Popular software packages for LDDMM are diffeomorphic
+Demons [40], ANTs [45,50], DARTEL [36], deformetrica [18, 19,
+51, 52], and PyCA [17].
+Before we discuss available GPU implementations in more detail,
+we note that the runtimes reported below are included to put our
+work into perspective. In general, numerous implementation aspects
+and settings such as complexity of the computational kernels,
+programming languages, employed optimization algorithms, used
+tolerances, computational accuracy, considered hardware, and even
+varying input data (complexity of the problem) will have an effect
+on the runtime. This is why we include our own experiments for
+software of other groups (see §4.2.2).
+A GPU implementation of the diffeomorphic Demons algorithm is

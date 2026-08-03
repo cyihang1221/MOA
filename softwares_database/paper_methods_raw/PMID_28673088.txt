@@ -1,0 +1,65 @@
+
+Materials and Methods
+Software
+We developed our feature detection algorithm in C++ within the
+OpenMS open-source framework for computational mass
+spectrometry,15 version 2.1. Internally, our software makes use of
+the OpenSWATH toolset for DIA data analysis17 and of the LIBSVM
+C library,18 version 3.12. The two libraries are included in or come
+bundled with OpenMS, respectively. In the analysis of the
+benchmark data set (see below), we used several of the executable
+tools provided by OpenMS for various data processing tasks. For
+downstream data analysis we used the R environment for statistical
+computing,19 versions 3.3.0 and 3.3.2., and especially the MSstats R
+package,20 version 3.6.0, for quantification on the protein level.
+Benchmark Data Set
+We evaluated our algorithm based on data from the iPRG-2015
+study.21 The data set consists of four biological samples, analyzed
+in three technical replicates (12 LC–MS/MS runs in total). The
+samples contain yeast cell lysate with spike-ins of six different
+purified proteins at varying concentrations. LC–MS/MS data were
+acquired on a Thermo Scientific Q Exactive orbitrap instrument,
+then centroided and converted to mzML using the ProteoWizard
+software. We downloaded the data in mzML format from the study
+repository (ftp://iprg_study:ABRF329@ftp.peptideatlas.org).
+This data set had been analyzed by Zhang and colleagues for their
+publication on the DeMix-Q workflow, which included a benchmark
+of multiple other software tools for label-free quantification.14
+Information about the spike-in proteins and the amounts used was
+taken from supplementary table 1 of this publication. The authors
+also kindly made their peptide/protein identification results
+available, which were generated using the DeMix search pipeline.22
+The results were prefiltered to 1% FDR on the PSM level. We
+performed the peptide-to-protein mapping and removed
+nonmatching (decoy) peptides using the OpenMS tools
+PeptideIndexer and IDFilter. Afterward the data contained around
+28 300 (±2200) peptide IDs per file, corresponding to around
+21 100 (±1800) distinct peptide sequences (including
+modifications) per file. We used this data in our analysis to enable a
+comparison with DeMix-Q and, by extension, with the other
+software tools tested by Zhang et al.
+FeatureFinderIdentification Analyses
+In analyses incorporating external peptide IDs, prior to feature
+detection with FFId, retention time alignments of those IDs were
+performed using OpenMS tools. For each LC–MS/MS run, its
+internal IDs were used as reference to align external IDs from other
+runs, using MapAlignerIdentification11 with the “lowess” smoothing
+option. Subsequently external IDs from multiple runs were merged
+using IDMerger. In all FFId analyses, two isotopologues per peptide
+(monoisotopic and 13C peak) were used in the generation of assays.
+The expected elution peak width was set to 40 s. The m/z window
+size for chromatogram extraction was 10 ppm.
+Variability of Peptide Quantification
+To compute coefficients of variation (CVs) of peptide abundances,
+FFId feature detection results were first processed with
+ProteinQuantifier to obtain peptide quantities. The peptide data was
+loaded into R and normalized using simple scaling to equal medians
+to correct for global differences between the LC–MS/MS runs. The
+following data processing choices were made to allow comparisons
+to the results reported for DeMix-Q and other software tools:14
+Abundances of differently modified variants of the same peptide
+sequence were summed. Only peptides that were quantified in all
+12 runs were considered. Peptides from spike-in proteins were not
+excluded from the analysis. (Although their abundances are not
+expected to be constant, the influence on median CVs is negligible.)
+Finally, CVs for the resulting peptide abundances were calculated.

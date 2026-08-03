@@ -1,0 +1,187 @@
+
+Methodology, Conceptualization, Software, Validation, Formal
+analysis, Investigation, Data curation, Writing – original draft,
+Visualization
+Find articles by Ziquan Liu
+1,*, Hai Xue
+Hai Xue
+1Electric Power Research Institute, State Grid Jiangsu Electric
+Power Co., Ltd., Nanjing 211103, China; xueh5@js.sgcc.com.cn
+(H.X.); huchengbodky@js.sgcc.com.cn (C.H.); weic1@js.sgcc.com.cn
+(C.W.)
+Methodology, Validation, Formal analysis, Investigation, Writing –
+review & editing
+Find articles by Hai Xue
+1, Chengbo Hu
+Chengbo Hu
+1Electric Power Research Institute, State Grid Jiangsu Electric
+Power Co., Ltd., Nanjing 211103, China; xueh5@js.sgcc.com.cn
+(H.X.); huchengbodky@js.sgcc.com.cn (C.H.); weic1@js.sgcc.com.cn
+(C.W.)
+Software, Validation, Investigation, Data curation, Visualization
+Find articles by Chengbo Hu
+1, Chao Wei
+Chao Wei
+1Electric Power Research Institute, State Grid Jiangsu Electric
+Power Co., Ltd., Nanjing 211103, China; xueh5@js.sgcc.com.cn
+(H.X.); huchengbodky@js.sgcc.com.cn (C.H.); weic1@js.sgcc.com.cn
+(C.W.)
+Resources, Writing – review & editing, Supervision, Funding
+acquisition
+Find articles by Chao Wei
+1, Can Zhang
+Can Zhang
+2Nanjing Power Supply Company, State Grid Jiangsu Electric Power
+Co., Ltd., Nanjing 210019, China
+Conceptualization, Resources, Writing – review & editing,
+Supervision, Project administration, Funding acquisition,
+Visualization
+Find articles by Can Zhang
+2
+Editor: Chun Sing Lai
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC13306398  PMID: 42356909
+Abstract
+Highlights
+What are the main findings?
+•  A multimodal defect sensing framework for substation
+equipment monitoring was developed by integrating vertical
+domain pre-training, bidirectional cross-modal feature
+mapping, and hierarchical neuro-symbolic reasoning.
+•  The proposed method achieved the best overall detection
+performance on the test set, reaching 90.8% mAP@0.5,
+68.7% mAP@0.5:0.95, and 89.4% F1-score, while also
+reducing logically conflicting false positives through
+knowledge-guided reasoning.
+What are the implications of the main findings?
+•  Cross-modal semantic alignment between inspection images
+and defect text can significantly enhance the perception of
+complex, weakly salient, and small-target defects in
+substation inspection scenarios.
+•  Incorporating topology knowledge and spatial rules into
+posterior reasoning improves the reliability, interpretability,
+and engineering applicability of intelligent inspection systems
+for equipment status monitoring and early warning.
+Abstract
+To address the limitations of vision-only defect detection, image–
+semantic misalignment, and spatial-logic conflicts in complex
+substation inspection scenarios, this paper proposes a camera-
+sensor-based multimodal defect sensing framework with cross-
+modal feature mapping for substation equipment monitoring. The
+proposed framework integrates field inspection images acquired by
+camera sensors, defect textual descriptions, and equipment topology
+knowledge and establishes a unified domain-adaptive pre-training–
+bidirectional cross-modal mapping–hierarchical reasoning
+workflow. First, a Contrastive Language–Image Pre-training (CLIP)-
+based domain-adaptive pre-training strategy is developed to
+enhance the representation of equipment categories, defect
+attributes, and inspection-scene semantics. Second, a bidirectional
+cross-modal feature mapping network is constructed to model fine-
+grained interactions between candidate visual regions and textual
+semantics, where uncertainty-aware fusion and prototype
+constraints are introduced to improve semantic alignment and
+defect discrimination. Third, a hierarchical neuro-symbolic
+reasoning module incorporates equipment topology and spatial
+rules for posterior verification, logical consistency checking, and
+false-positive suppression. Experiments on a substation inspection
+image dataset demonstrate that the proposed method achieves
+90.8% mAP@0.5, 68.7% mAP@0.5:0.95, and 89.4% F1-score,
+outperforming mainstream and recent detection models.
+Keywords: substation equipment monitoring, multimodal
+perception, cross-modal feature mapping, advanced sensing
+technology, intelligent inspection, neuro-symbolic reasoning
+1. Introduction
+Substations are key hubs for power collection, transformation, and
+distribution, and their equipment status directly affects power grid
+safety, stability, and reliability [1,2]. The development of new
+power systems, high-proportion renewable energy integration,
+bidirectional source–load interaction, and increased operational
+uncertainty have raised higher requirements for equipment
+monitoring, risk warning, and abnormal-event response. In recent
+years, fixed high-definition cameras, inspection robots, infrared
+thermography, edge-intelligent terminals, and intelligent sensing
+technologies have been increasingly used in substation inspection,
+promoting equipment monitoring toward online, automated, and
+intelligent operation. Among them, image-sensor-based defect
+perception has become an important research direction because of
+its high efficiency, low cost, and suitability for continuous
+monitoring [3,4].
+Deep learning has promoted power equipment defect identification
+from experience-based judgment to data-driven recognition [5,6].
+Existing studies show that convolutional neural networks and object
+detection frameworks can identify typical defects such as insulator
+damage, oil leakage, instrument faults, and component corrosion
+[7,8]. Detection methods for Unmanned Aerial Vehicle (UAV)
+inspection, robot inspection, and complex-scene image analysis
+have also progressed in small-target localization, feature
+enhancement, and lightweight deployment [9,10]. In addition,
+infrared thermography combined with visible-light detection
+provides richer information for thermal anomaly diagnosis,
+condition assessment, and risk perception [4,11,12,13].
+However, real substation inspection scenarios remain complex.
+Substation equipment varies in type and layout, with significant
+differences in appearance, scale, and background environment
+[2,14]. Field images are also affected by illumination changes,
+weather disturbances, seasonal variations, occlusion, and cluttered
+backgrounds, resulting in weakly salient, small-scale, and low-
+contrast defects [14,15]. For complex defects such as bird nests,
+suspended foreign objects, loose components, and abnormal parts,
+single-modal visual appearance is still insufficient to ensure
+accuracy, robustness, and cross-scenario generalization [14,16].
+To address these challenges, existing studies have explored object
+detection, image segmentation, anomaly identification, data
+augmentation, and multi-source information fusion [6,15,17]. Some
+methods improve detection performance by enhancing backbone
+feature extraction, optimizing multi-scale feature fusion,
+introducing semantic-enhanced anomaly learning, and conducting
+joint detection–segmentation modeling [14,15,16]. Other methods
+alleviate insufficient samples through synthetic data, adversarial
+generation, and foggy-scene construction [9,18]. For small and
+blurred targets, lightweight network design, semantic-enhanced
+detection, and multi-domain collaborative feature modeling have
+also been introduced to balance real-time performance and
+accuracy [10,15,16]. Nevertheless, most existing methods still focus
+mainly on single-modal visual information, while defect semantics,
+textual descriptions, equipment spatial relationships, and operation
+and maintenance rules remain insufficiently utilized [18,19].
+Recent intelligent fault diagnosis studies have improved diagnostic
+reliability, label utilization efficiency, and cross-domain
+generalization through a lightweight multi-expert wavelet
+Transformer [20], entropy-oriented semi-supervised prototype
+contrastive learning [21], and spatial–channel collaborative multi-
+scale graph transfer learning [22]. These studies provide useful
+insights into trustworthy representation learning and knowledge
+transfer. However, they mainly focus on vibration, current,
+acoustic, or time-series signals, whereas substation visual defect
+perception relies on camera-sensor images and faces additional
+challenges such as small targets, complex backgrounds, image–text
+semantic inconsistency, and topological spatial constraints.
+Therefore, a camera-sensor-based multimodal perception method is
+needed to jointly model visual features, defect semantics, and
+operation and maintenance rules.
+With the development of vision–language pre-trained models, cross-
+modal semantic modeling provides a new perspective for complex
+defect perception in substations. Vision–language models
+represented by CLIP can associate visual features with semantic
+descriptions through image–text alignment learning and have
+shown strong potential in few-shot, zero-shot, and open-set anomaly
+recognition tasks [23,24]. For substation equipment monitoring,
+unified modeling of equipment images, defect text descriptions, and
+domain-specific corpora can help overcome the limitations of
+single-modal visual representation. Recent studies on multimodal
+power sample feature transfer also show that cross-modal
+information decoupling and alignment can enhance complementary
+representation among heterogeneous information sources
+[23,25,26]. Meanwhile, neuro-symbolic learning, knowledge graph
+fusion, and knowledge-enhanced zero-shot reasoning provide
+methodological support for introducing equipment topology, spatial
+logic, and expert operation and maintenance knowledge [27,28]. By
+combining data-driven detection with knowledge-driven logical
+reasoning, the rationality, reliability, and interpretability of
+monitoring results can be further improved [27,28,29].
+Based on the above analysis, this paper focuses on three key issues
+in complex substation defect monitoring: difficulty in multimodal
+semantic alignment, insufficient perception capability for complex
+defects, and lack of knowledge constraints in monit

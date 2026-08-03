@@ -1,0 +1,186 @@
+
+Methodology, Writing – review & editing
+Find articles by Junyi Zhao
+1, Zhao Sheng
+Zhao Sheng
+1Signal and Communication Research Institute, China Academy of
+Railway Sciences Corporation Limited, Beijing 100081, China;
+hezhiyu@rails.cn (Z.H.); jsxuning@aliyun.com (N.X.);
+zhaocars@163.com (Z.Z.); 19111070@bjtu.edu.cn (J.Z.);
+18810387926@163.com (Z.S.); zhaoxiaoyu059@126.com (X.Z.)
+Investigation
+Find articles by Zhao Sheng
+1, Xiaoyu Zhao
+Xiaoyu Zhao
+1Signal and Communication Research Institute, China Academy of
+Railway Sciences Corporation Limited, Beijing 100081, China;
+hezhiyu@rails.cn (Z.H.); jsxuning@aliyun.com (N.X.);
+zhaocars@163.com (Z.Z.); 19111070@bjtu.edu.cn (J.Z.);
+18810387926@163.com (Z.S.); zhaoxiaoyu059@126.com (X.Z.)
+Investigation
+Find articles by Xiaoyu Zhao
+1
+Editors: Ikhlas Abdel-Qader, Hung-Min Hsu, Yizhou Wang
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC13166022  PMID: 42122411
+Abstract
+Accurate camera–LiDAR calibration is a fundamental prerequisite
+for reliable perception in autonomous systems. However, traditional
+methods typically rely on manual intervention or specific
+calibration targets, which restrict their flexibility and scalability in
+dynamic, real-world environments. To address the challenge of
+targetless calibration, we propose EdgeDenseCalib, a novel
+approach driven by enhanced edge feature densification. A key
+innovation lies in a two-stage process designed to densify the
+inherently sparse edge features in LiDAR data, thereby making them
+highly comparable to the fine-grained edges present in images.
+Consequently, this facilitates more reliable feature matching
+between the two cross-modal data sources. An optimization
+algorithm is subsequently employed to refine the alignment and
+minimize the reprojection error. Experiments on the KITTI dataset
+show our method achieves accurate calibration results of 0.105° in
+mean rotation error and 0.903 cm in mean translation error.
+Compared to state-of-the-art edge-based methods, our approach
+significantly improves the rotation accuracy by 33.1% to 89.9%.
+This work provides a practical and automatic calibration solution,
+contributing to the development of more robust perception systems
+for autonomous applications.
+Keywords: camera–LiDAR calibration, sensor fusion, extrinsic
+parameters, edge feature enhancement, depth discontinuity
+1. Introduction
+The real-time perception of surrounding environment plays an
+important role in a wide range of applications, including robotics,
+autonomous driving, and industrial processing control. Accurate
+environmental understanding is essential for tasks such as obstacle
+detection, semantic segmentation, and scene reconstruction, which
+are critical for ensuring safety, efficiency, and reliability in
+autonomous systems. To achieve comprehensive perception, multi-
+sensor fusion has become an increasingly popular approach, with
+cameras and light detection and ranging (LiDAR) sensors being two
+of the most commonly employed devices [1,2]. Cameras offer rich
+visual information, including detailed textures, colors, and semantic
+cues, enabling nuanced scene interpretation but lack of accurate
+depth information. In contrast, LiDAR provides precise three-
+dimensional spatial measurements against varying lighting
+conditions but with sparse point cloud data. The integration of
+camera and LiDAR data can significantly enhance the performance
+of environmental perception by leveraging the complementary
+strengths of both sensors. Thus, to better align the characteristics
+extracted from camera and LiDAR, the accurate extrinsic calibration
+is a crucial prerequisite.
+In this paper, extrinsic calibration is the estimation procedure for
+six degrees-of-freedom (6-DoF) transformation between camera and
+LiDAR coordinate systems. Traditionally, the previous studies on
+solving the camera–LiDAR extrinsic calibration problem mainly
+depend on artificial markers, especially checkboard [3,4,5,6,7].
+However, those methods are typically applied for offline
+calibration, making it difficult to accommodate pose deviations or
+position offsets during device operation, and the process always
+requires human participation, leading to human-induced errors. In
+such scenarios, offline calibration techniques cannot provide timely
+adjustments to extrinsic parameters jitter. Moreover, the use of
+checkboards necessitates the pre-fabrication of customized
+calibration targets and the design of specific calibration procedures,
+which are time-consuming, labor-intensive, and costly [8].
+Therefore, although target-based methods yield highly accurate
+extrinsic calibration results, target-free approaches are more
+suitable for long-term deployment of sensing devices in real-world
+environments.
+Targetless camera–LiDAR extrinsic calibration breaks through the
+limitation of target-based methods. Such methods leverage features
+from natural scenes by extracting typical edges like points, lines,
+and corners from both 2D images and 3D point cloud data to seek
+feature correspondences [9,10,11]. The edge features extracted
+from images contain an abundance of detailed information, which
+can inadvertently introduce interference in the camera–LiDAR
+calibration process. Conversely, the edge features obtained from
+LiDAR are often insufficient. A discrepancy exists between 2D and
+3D features due to an imbalance in feature density from both
+sensors. This situation may lead to ambiguities and increase the
+complexity of accurately aligning cross-modal data. Moreover,
+because LiDARs usually scan horizontally, many extracted 2D lines
+cannot be paired with corresponding 3D features due to poor
+vertical characteristics [12].
+To deal with the aforementioned problem, we propose the
+EdgeDenseCalib, which makes full use of the 2D and 3D edge
+features to achieve robust correspondences in various scenarios. For
+2D images, we apply Gaussian filtering to suppress noise and a
+gradient-based method combined with angular constraints to
+extract prominent linear edges. These orientation constraints help
+to filter out irrelevant edges and retain those that are most
+informative for calibration. Moreover, for the 3D point cloud data,
+we propose an edge extraction method combined with depth
+discontinuities and a two-stage LiDAR edge-enhancement
+mechanism to enrich edge expression. Figure 1 illustrates the edge
+feature extraction result of our method.
+Figure 1.
+[image]
+Open in a new tab
+Edge features extracted from an image (a) and a point cloud (b)
+from the same scenario. After optimizing the 2D and 3D feature
+correspondences, the projected point cloud data (c) is well aligned
+with the edge features in the image.
+A fundamental distinction between our proposed EdgeDenseCalib
+and existing edge-based methods lies in the treatment of occlusion
+boundaries. Conventional methods primarily rely on basic depth
+gradients or intensity variations for LiDAR edge extraction.
+Consequently, they often suffer from severe feature fragmentation
+and sparsity, especially at the boundaries between foreground
+objects and unreturned backgrounds. Our approach explicitly
+addresses this density imbalance. By combining the CSW module
+with a novel BPSW module that uniquely utilizes localized missing
+data as a physical cue, our method captures critical boundary-
+transition edges that previous methods systematically miss. This
+dual-stage densification fundamentally ensures a more robust and
+balanced cross-modal feature alignment.
+Our contributions can be summarized as follows:
+(1)
+We propose the EdgeDenseCalib that operates without
+manual intervention or artificial markers. By leveraging
+common vertical structures and enhancing point-cloud
+representations, our approach notably improves edge-feature
+quality across both sensing modalities.
+(2)
+We introduce a two-stage LiDAR edge-enhancement strategy
+consisting of a cross-searching window (CSW) module and a
+background-preserving searching window (BPSW) module.
+This design enriches sparse point-cloud edges and effectively
+balances the feature density between images and LiDAR data,
+enabling more reliable cross-modal matching in natural
+scenes.
+(3)
+We develop a neighborhood-search optimization method
+based on the iterative closest point (ICP) framework. It
+minimizes reprojection errors by aligning LiDAR-projected
+points with nearby image edges. Extensive evaluation on the
+KITTI dataset under real-world conditions demonstrates the
+method’s accuracy and practical viability.
+The rest of this paper is organized as follows: Section 2 summarizes
+related works; Section 3 introduces the EdgeDenseCalib in this
+paper; Section 4 evaluates the performance of the EdgeDenseCalib
+in a natural environment; and Section 5 summarizes our research.
+2. Related Works
+The camera–LiDAR extrinsic calibration approaches can be divided
+into two branches: (1) target-based methods and (2) targetless-
+based methods, depending on whether a preset calibration target is
+needed.
+2.1. Target-Based Methods
+Target-based methods usually utilize explicit and predesigned
+objects, like a chessboard [3,4,5,6], ArUco label [7,13], triangular
+target [14], or cube target [15,16] for extrinsic matrix estimation.
+Zhang et al. [17] first introduced a checkboard to solve the extrinsic
+parameters calibration problem between a two-dimensional LiDAR
+and a camera. This method optimized the re-projection error by
+using the points constrained by planes. Unnikrishnan et al. [18]
+proposed a fast camera–LiDAR calibration toolkit by manually
+selecting corresponding points from both sensors. Pandey et al. [3]
+described a calibration method from a minimum of three views.
+Dhall et al. [19] utilized a rectangle carved checkboard to calibrate
+extrinsic parameters through selected points. The methods
+mentioned above always require human intervention through the
+manual annotation of points from images and point clouds, which
+introduces manual errors, and the chosen points may not align with
+each other precisely.
+To 

@@ -1,0 +1,183 @@
+
+Methodology, Investigation, Data curation, Writing – original draft,
+Writing – review & editing, Visualization
+Find articles by Allyson McGowan
+1, Santanu Banerjee
+Santanu Banerjee
+1Department of Chemistry and Physics, Tougaloo College,
+Tougaloo, MS 39174, USA
+Writing – review & editing, Project administration, Funding
+acquisition
+Find articles by Santanu Banerjee
+1, Jing Wang
+Jing Wang
+2Department of Chemistry, Physics and Atmospheric Sciences,
+Jackson State University, Jackson, MS 39217, USA
+Conceptualization, Data curation, Writing – original draft, Writing –
+review & editing
+Find articles by Jing Wang
+2, Wojciech Kolodziejczyk
+Wojciech Kolodziejczyk
+2Department of Chemistry, Physics and Atmospheric Sciences,
+Jackson State University, Jackson, MS 39217, USA
+Find articles by Wojciech Kolodziejczyk
+2, Jerzy Leszczynski
+Jerzy Leszczynski
+2Department of Chemistry, Physics and Atmospheric Sciences,
+Jackson State University, Jackson, MS 39217, USA
+Validation, Writing – review & editing, Supervision, Project
+administration, Funding acquisition
+Find articles by Jerzy Leszczynski
+2,*
+Editors: Sung-Kun (Sean) Kim, Usama Ashraf
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC11592782  PMID: 39590339
+Abstract
+Even though COVID-19 is no longer the primary focus of the global
+scientific community, its high mutation rate (nearly 30 substitutions
+per year) poses a threat of a potential comeback. Effective vaccines
+have been developed and administered to the population, ending
+the pandemic. Nonetheless, reinfection by newly emerging
+subvariants, particularly the latest JN.1 strain, remains common.
+The rapid mutation of this virus demands a fast response from the
+scientific community in case of an emergency. While the immune
+escape of earlier variants was extensively investigated, one still
+needs a comprehensive understanding of how specific mutations,
+especially in the newest subvariants, influence the antigenic escape
+of the pathogen. Here, we tested comprehensive in silico
+approaches to identify methods for fast and accurate prediction of
+antibody neutralization by various mutants. As a benchmark, we
+modeled the complexes of the murine antibody 2B04, which
+neutralizes infection by preventing the SARS-CoV-2 spike
+glycoprotein’s association with angiotensin-converting enzyme
+(ACE2). Complexes with the wild-type, B.1.1.7 Alpha, and
+B.1.427/429 Epsilon SARS-CoV-2 variants were used as positive
+controls, while complexes with the B.1.351 Beta, P.1 Gamma,
+B.1.617.2 Delta, B.1.617.1 Kappa, BA.1 Omicron, and the newest
+JN.1 Omicron variants were used as decoys. Three essentially
+different algorithms were employed: forced placement based on a
+template, followed by two steps of extended molecular dynamics
+simulations; protein–protein docking utilizing PIPER (an FFT-based
+method extended for use with pairwise interaction potentials); and
+the AlphaFold 3.0 model for complex structure prediction.
+Homology modeling was used to assess the 3D structure of the
+newly emerged JN.1 Omicron subvariant, whose crystallographic
+structure is not yet available in the Protein Database. After a careful
+comparison of these three approaches, we were able to identify the
+pros and cons of each method. Protein–protein docking yielded two
+false-positive results, while manual placement reinforced by
+molecular dynamics produced one false positive and one false
+negative. In contrast, AlphaFold resulted in only one doubtful result
+and a higher overall accuracy-to-time ratio. The reasons for
+inaccuracies and potential pitfalls of various approaches are
+carefully explained. In addition to a comparative analysis of
+methods, some mechanisms of immune escape are elucidated
+herein. This provides a critical foundation for improving the
+predictive accuracy of vaccine efficacy against new viral
+subvariants, introducing accurate methodologies, and pinpointing
+potential challenges.
+Keywords: SARS-CoV-2, mutations, molecular dynamics, protein–
+protein docking, AlphaFold, homology modeling, immune escape,
+benchmark
+1. Introduction
+Mutations in SARS-CoV-2, the virus that causes COVID-19, were a
+significant topic of research and concern throughout the pandemic.
+These mutations can alter the virus’s features, including its
+transmissibility, virulence, and interaction with the human immune
+system. Some mutations may increase the virus’s infectivity or
+transmissibility, while others might decrease them [1,2]. Viral
+evolution has led to the emergence of variants of concern, such as
+Delta and Omicron (since late November 2021) (Figure 1a), which
+raised concerns about possible immunity evasion and increased
+transmissibility [3]. Occurred mutations may impact the
+effectiveness of approved medications and vaccinations [4]. Thus,
+understanding their impact on viral properties is extremely
+important.
+Figure 1.
+[image]
+Open in a new tab
+Mutations in SARS-CoV-2 receptor-binding domain: (a) mutation
+progression over time (Figures are adapted from Nextstrain.org,
+used under a CC-BY-4.0 license; https://nextstrain.org/ncov/gisaid/
+global/all-time (accessed on 1 May 2024)); (b) scheme of spike
+neutralization by 2B04 antibody; (c) list of mutations occurring in
+RBD of selected mutant structures.
+Significant progress has been made in understanding SARS-CoV-2
+mutant immune escape using experimental methods. Classifications
+and structural analyses shed light on the immune responses against
+SARS-CoV-2 [5], providing a blueprint for the design of antibody
+cocktails as immunogens for vaccines. In [6], the spike
+glycoprotein’s N-terminal domain was identified as a promising
+target for therapeutic monoclonal antibodies (mAbs) against
+COVID-19. Specifically, the 4A8 mAb exhibited high neutralization
+potency against authentic and pseudotyped SARS-CoV-2 without
+binding to its receptor-binding domain (RBD). Eleven potent
+neutralizing antibodies against COVID-19 were identified in [7].
+With a large number of experimental works concentrating on the
+Wild-Type (WT) RBD or selected mutants [5,6,7,8,9,10,11], some
+works provide a more comprehensive picture for the comparison of
+mutant immune escape [12,13,14,15,16]. The pseudovirus system
+makes deep mutational scanning of the complete SARS-CoV-2 spike
+possible. In [17], the genotype–phenotype-linked lentivirus
+pseudotyping method served as the basis for a mutational scanning
+platform to produce libraries of the Omicron BA.1 and Delta spikes.
+Nonetheless, the high cost of these assays makes evaluating a wide
+range of variants and strains experimentally challenging. This
+results in significant knowledge gaps that require further, more
+exhaustive, and more detailed investigation of the influence of
+mutations.
+Computational methods allow for high-throughput analysis of big
+datasets, enabling researchers to systematically evaluate how
+mutations affect antibody binding and neutralization across various
+variants. Experimental studies alone may not capture the full
+spectrum of antigenic changes associated with SARS-CoV-2 mutants.
+Based on structure- and sequence-based analyses, computational
+approaches can predict the antigenic effects of mutations, offering
+insights into how mutations change the immune system’s detection
+of the virus. Molecular dynamic (MD) simulation and Molecular
+Mechanics/General Born Surface Area (MM/GBSA) have been
+shown to be promising tools to explore the effect of mutations on
+the binding affinity of monoclonal antibodies (mAbs)
+[18,19,20,21,22,23] and human angiotensin-converting enzyme
+(ACE2) [19,24,25,26,27] against the receptor-binding domain
+(RBD) region of the S protein. Various computational tools, such as
+AMBER (V 16, V 18, and V 20), GROMACS (V 2022.5), NAMD (V
+2.13 and V 2.14), and Desmond (V 3.0), have been utilized. MD
+simulations are often enhanced by combining them with other
+approaches, such as density functional calculation [8] or FoldX 5.0,
+as used in [28] to predict escape mutations, focusing on the SARS-
+CoV-2 receptor-binding domain. Protein–protein docking is another
+widely employed approach for examining the RBD’s protein–protein
+interactions. This computational technique allows one to predict the
+binding pose and interactions between proteins with high precision.
+Various servers and tools are utilized to facilitate these studies. For
+instance, the ClusPro 2.0 server has been extensively used to model
+RBD–ACE2 interactions, providing valuable insights into their
+binding mechanisms [29,30]. Similarly, the HDOCK server supports
+a range of applications, including the analysis of RBD–ACE2
+interactions [31], RBD interactions with amyloidogenic proteins
+[32], intraviral protein–protein interactions [33], and SARS-CoV-2
+Orf7a/LFA-1 complexes [34]. The PatchDock and COVID-19
+Docking Server were used for a drug discovery purpose, targeting
+RBD/ACE2 interactions using potential peptide-based drugs [35].
+HawkDock was utilized in [36] to investigate the RBD–ACE2
+interactions. As an alternative to physics-based methods, machine
+learning (ML) techniques have gained popularity and are widely
+implemented to study protein–protein interactions of SARS-CoV-2.
+These include an artificial intelligence-based framework, UniBind
+[37]; the Pipeline for the Extraction of Predicted Protein–Protein
+Interactions (PEPPI) [38]; various classifiers [39,40,41]; and
+language models [42], among others. The recently introduced
+AlphaFold 3 model, which is available for non-commercial use,
+demonstrates substantially high antibody–antigen prediction
+accuracy [43].
+This work aims to compare and evaluate existing approaches and
+tools for the rapid and accurate assessment of antigen–antibody
+interactions, focusing on their potential influence on immune
+escape. As a benchmark model, we used experimental results from a
+study on SARS-CoV-2 neutralization by two murine antibodies
+targeting the RBD [13]. In this work, murine antibody 2B04 was
+shown to neutralize the spike glycoprotein RBD of specific variants
+by blocking its i

@@ -1,0 +1,177 @@
+
+Methodology, Resources, Software, Supervision, Validation,
+Visualization, Writing – original draft
+Find articles by Rajesh Neupane
+a, Bhuwan Shrestha
+Bhuwan Shrestha
+a Texas A&M University, College Station, Texas, USA
+Methodology, Project administration, Visualization, Writing –
+original draft, Writing – review & editing
+Find articles by Bhuwan Shrestha
+a, Hsin-I Chiang
+Hsin-I Chiang
+b National Chung Hsing University, South District, Taichung,
+Taiwan
+Methodology, Project administration, Visualization, Writing –
+original draft, Writing – review & editing
+Find articles by Hsin-I Chiang
+b, Ashrant Aryal
+Ashrant Aryal
+a Texas A&M University, College Station, Texas, USA
+Methodology, Project administration, Writing – original draft,
+Writing – review & editing
+Find articles by Ashrant Aryal
+a
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC13248482  PMID: 42259761
+ABSTRACT
+The objective was to evaluate the potential of machine learning
+algorithms utilizing thermal imaging and/or milk-based parameters
+for the identification of subclinical mastitis(SCM) in dairy cows.
+Holstein dairy cows (n = 194) were enrolled, and milk samples
+were collected from each quarter separately (n = 776 quarter-level
+samples) and analyzed for milk-based parameters. Four images per
+cow, representing all four quarters, were captured using a handheld
+infrared camera. Skin temperatures were extracted using Fluke
+Connect software, yielding 776 images for analysis. SCM was
+defined at the quarter level as SCC > 200,000 cells/mL, identifying
+139 infected and 637 healthy quarters. The data were analyzed to
+test Random Forest Classifier(RFC), Logistic Regression Classifier,
+AdaBoost Classifier(ABC), and Naïve Bayes Classifier algorithms.
+The RFC models using milk features and temperature features
+achieved accuracy and precision scores of 0.88 and 0.88,
+respectively, yielding 0.90 AUC values, with high feature
+importance for milk lactose and SNF. Using only thermal imaging
+features, the ABC model yielded accuracy and precision of 0.82 and
+0.67, respectively, with 0.56 AUC. We conclude that SCM
+prediction using machine learning algorithms is most promising
+when combined with thermal images and milk-based parameters.
+Future studies with larger datasets and refined methods for thermal
+image capture and analysis are warranted to validate these findings.
+Introduction
+Mastitis remains one of the most economically significant diseases
+in the dairy industry that impacts farm profitability (Hogeveen et
+al. 2011). It is characterized by inflammation of the mammary
+gland, primarily caused by bacterial infections, and can manifest as
+either clinical or subclinical mastitis (Bradley 2002; Jamali et al.
+2018). While clinical mastitis is identifiable by visible signs such as
+redness, pain, swollen udders, and abnormal milk, subclinical
+mastitis (SCM) is more challenging to detect because of its lack of
+overt symptoms (Seegers et al. 2003). SCM is defined by an
+elevated somatic cell count (SCC) in milk, leading to reduced milk
+quality, decreased production, and increased treatment costs
+(Halasa et al. 2007). The on-farm prevalence of SCM varies widely,
+with studies reporting rates ranging from 20% to over 50%
+depending on region and management factors (Ruegg 2003; Abebe
+et al. 2016).
+The economic impact of SCM is substantial, with estimates
+suggesting that it accounts for a greater portion of the total mastitis-
+related losses (Halasa et al. 2007; Krishnamoorthy et al. 2021). In
+the United States, the annual cost of mastitis to the dairy industry is
+estimated to be in the billions of dollars (Ruegg 2017). Therefore,
+early and accurate detection of SCM is critical for effective
+management and control. Traditional diagnostic methods, such as
+somatic cell counts, electrical conductivity, and the California
+Mastitis Test (CMT), have been widely used but have intrinsic
+limitations. These methods often require collecting milk samples
+from cows, which is time-consuming, and may not provide real-time
+results suitable for on-farm decision-making (Schukken et al. 2003;
+Ruegg 2017). Additionally, the variables measured in these
+techniques can be influenced by non-mastitis factors such as the
+stage of lactation, milking frequency, and stress, potentially leading
+to misdiagnosis (Schepers et al. 1997; Krishnamoorthy et al. 2021).
+In recent years, interest in non-invasive technologies, and cow-level
+features for mastitis detection has increased (Pakrashi et al. 2023).
+Infrared thermography (IRT), or thermal imaging, has emerged as a
+promising tool for identifying inflammation in dairy cattle (Polat et
+al. 2010; Schaefer et al. 2004). The principle of IRT is based on
+detecting heat patterns; inflammation associated with mastitis
+increases local temperature due to enhanced blood flow and
+metabolic activity, which can be captured by thermal cameras
+(Stewart et al. 2010; Wang et al. 2022). Several studies have
+investigated the efficacy of IRT in detecting mastitis. As a high level
+of inflammation, which contributes to increased temperature, is
+inherent in clinical mastitis cases, the utility of temperature
+variables in SCM is of concern, as the inherent clinical signs are not
+present. Hovinen et al. (2008) demonstrated that IRT could detect
+clinical mastitis with high accuracy, indicating that temperature
+increases in affected udder quarters. With the recent rise of
+advanced analytics and machine learning tools, their utilization for
+mastitis detection is suggested. In addition to other advanced
+analytics tools, machine learning algorithms have been identified to
+detect mastitis from thermal images (Wang et al. 2022; Chu et al.
+2023). These advancements highlight the potential of machine
+learning to process complex cow- and quarter-level data, identify
+subtle patterns of inflammation, and integrate multiple variables for
+more robust SCM detection, paving the way for automated, on-farm
+diagnostic systems. However, the use of milk-derived variables, IRT,
+and their combination in SCM prediction has not been extensively
+explored. The main goal of this project is to identify a strategy to
+use advanced analytic tools using IRT, milk-based variables and
+their combination for mastitis detection in dairy farms. This study
+aims to evaluate the potential of using infra-red imaging alone as
+well as in combination with milk-derived features (fat%, protein%,
+SNF%, lactose, and MUN) using machine learning algorithms to
+identify SCM in dairy cattle. By comparing and combining thermal
+imaging with traditional diagnostic methods and developing
+standardized algorithms, we seek to provide dairy farmers with an
+effective, non-invasive method for the early detection and
+management of SCM.
+Materials and methods
+Study population
+This study was conducted at a commercial dairy farm in central
+Texas during February 2023, milking a rolling average of 2200
+cows. The study protocol was approved by the Institutional Animal
+Care and Use Committee at Texas A&M AgriLife Research (IACUC
+#2022-026A). A total of 194 Holstein dairy cows were enrolled,
+with days in milk (DIM) ranging from 25 to 245 and parity 1–7. The
+sample size used was based on available resources, including funds
+and logistics, during the study period. Cows were purposively
+selected based on their lactation stage [Early lactation (25–70 DIM 
+= 63; Mid (70–150) = 72; Late lactation (151–245) = 59], parity [
+1st lactation = 52; 2nd lactation = 45; > 2 = 97], and historical
+udder level somatic cell count (SCC) records [SCC > 200 thousands]
+to ensure a representation of healthy and potentially affected
+animals of different cow groups for the robust model development
+based on previous monthly herd tests. Cows with dead quarters
+were not used in this study. The farm was operated under standard
+farm management practices, with cows housed in a free-stall barn
+and milked twice daily in a double 24 parallel milking parlor. Cows
+were fed a total mixed ratio (TMR) two times a day, formulated to
+meet or exceed the nutritional requirements for lactating Holstein
+cow producing 30 kg of milk/d with 3.5% fat and 3.1% true
+protein.
+Mastitis management on the farm
+Cows on the farm were milked two times per day. Cow monitoring
+involved checking for clinical mastitis signs during the milking
+process. Cows identified with clinical mastitis were treated
+according to the farm protocol. All cows were monitored monthly
+for their milk production, milk components, and somatic cell counts
+(SCC) through DHIA testing. Cows with high SCC values in these
+tests were closely monitored for their probability of developing
+clinical signs of mastitis.
+Milk sampling and analysis
+Milk samples were collected from each udder quarter (n = 776
+quarter-level samples) during the morning milking session. A 10 mL
+sample was obtained from each quarter using sterile techniques and
+stored at 4 °C until analysis. After cleaning the teat ends thoroughly
+using a cotton pad soaked in alcohol (70%), milk samples were
+collected from all quarters on the day of the dairy visit. Milk
+samples were submitted immediately to the Texas DHIA laboratory
+(Stephenville, TX). The samples were evaluated for multiple
+parameters, including SCC (reported as n × 1000 cells/mL), fat (%),
+protein (%), lactose (%), solids-not-fat (SNF, %), beta-
+hydroxybutyrate (BHBA, mM/L), acetone (mM/L), and milk urea
+nitrogen (MUN, mg/dL). The SCC was measured using a Fossomatic
+analyzer (Foss, Hillerød, Denmark), while other milk components
+were analyzed using a Bentley FTS/FCM 400 analyzer (Bentley
+Instruments, Chaska, MN, USA). Subclinical mastitis (SCM) was
+defined at the quarter level as SCC > 200,000 cells/mL, which is
+consistent with established thresholds in dairy research (Schukken
+et al. 2003).
+Thermal imaging protocol
+Thermal images were captured using a handheld infrared camera
+(Fluke TiS 75+ , Fluke Corporation, Everett, WA, USA) with a
+resolution of 320 × 240 pixels and a thermal sensitivit

@@ -1,0 +1,62 @@
+
+Methods
+Overview
+The overall architecture of TLCFormer is illustrated in Fig. 1. Given
+an input video sequence of red-green-blue (RGB) frames Irgb ∈
+R^(B×T×3×H×W) and thermal frames Ith ∈
+R^(B×T×1×H×W), where B denotes batch size, T is the total
+number of input frames, H and W are spatial resolution, we
+uniformly sample S frames (S ≤ T) for spatio-temporal modeling. In
+the present design, the internal sampled-frame number is fixed to a
+short temporal context for efficient motion modeling, while the
+effects of different temporal window lengths and sampling intervals
+are further analyzed in “Temporal sensitivity analysis”. The
+sampled sequence is then processed through the following stages:
+Fig. 1.
+[image]
+Open in a new tab
+Overall architecture of TLCFormer. The framework consists of Cube
+Encoding for RGBT fusion, MADA for motion-aware background
+suppression, DLCM for local contrast enhancement, VPA Encoder
+with Hybrid Mixer for multi-scale feature extraction, feature
+pyramid network (FPN) neck with background suppression, and the
+detection head. Here, c1 and c2 denote the channel dimensions of
+different stages in the hierarchical encoder, which are set to 96 and
+192, respectively, following the backbone configuration used in this
+work.
+1. Cube encoding: Fuses RGB and thermal modalities of the
+sampled S frames into a 4D spatio-temporal cube
+C∈R^(B×2×H×W×S).
+2. MADA: Applies motion-aware difference attention to suppress
+static background.
+3. DLCM: Enhances local contrast to boost signal-to-clutter ratio.
+4. Visual prior aggregation (VPA) Encoder: Extracts multi-scale
+features using hybrid energy-preserving mixers.
+5. Detection head: Produces classification, bounding box, and
+centerness predictions.
+Here, c1 and c2 denote the channel dimensions of different stages in
+the hierarchical encoder. In our implementation, the backbone root
+width is set as embed_dim = 96, and the subsequent stages follow a
+standard stage-wise channel expansion strategy, resulting in stage
+widths of 96/192/384/768. Therefore, the values c1 = 96 and c2 =
+192 are determined by the backbone design rather than chosen
+arbitrarily. As further validated by the width sensitivity analysis in
+Sect.  4.8, this configuration provides a reasonable trade-off
+between representation capacity and computational efficiency.
+Motion-aware difference attention (MADA)
+The key insight behind MADA is that small targets exhibit motion
+continuity across frames, while background elements (clouds,
+buildings, vegetation) remain relatively static. Unlike FFT-based
+Doppler filtering that operates in the frequency domain and
+struggles with high-frequency background noise, MADA directly
+exploits temporal differences in the spatial domain. The detailed
+architecture of MADA is illustrated in Fig. 2.
+Fig. 2.
+[image]
+Open in a new tab
+Detailed architecture of the motion-aware difference attention
+(MADA) module. Frame differencing captures motion regions, and
+the Hadamard product of consecutive differences filters out
+transient noise. The resulting attention map modulates the original
+features through a residual structure.
+Motion saliency map

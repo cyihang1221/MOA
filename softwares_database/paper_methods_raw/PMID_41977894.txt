@@ -1,0 +1,182 @@
+
+Methodology, Writing – review & editing
+Find articles by Xiuping Li
+1,2, Chengliang Zhong
+Chengliang Zhong
+1Guangxi Key Laboratory of Precision Navigation Technology and
+Application, Guilin University of Electronic Technology, Guilin
+541004, China; lijingjing@guet.edu.cn (J.L.);
+liujuan@mails.guet.edu.cn (J.L.); lxp863@gmail.com (X.L.);
+chengliabgzhong@mails.guet.edu.cn (C.Z.)
+2Information and Communication School, Guilin University of
+Electronic Technology, Guilin 541004, China
+Software, Validation, Investigation
+Find articles by Chengliang Zhong
+1,2, Xiyan Sun
+Xiyan Sun
+1Guangxi Key Laboratory of Precision Navigation Technology and
+Application, Guilin University of Electronic Technology, Guilin
+541004, China; lijingjing@guet.edu.cn (J.L.);
+liujuan@mails.guet.edu.cn (J.L.); lxp863@gmail.com (X.L.);
+chengliabgzhong@mails.guet.edu.cn (C.Z.)
+2Information and Communication School, Guilin University of
+Electronic Technology, Guilin 541004, China
+3National & Local Joint Engineering Research Center of Satellite
+Navigation Positioning and Location Service, Guilin 541004, China
+4GUET-Nanning E-Tech Research Institute Co., Ltd., Nanning
+530031, China
+Methodology, Data curation
+Find articles by Xiyan Sun
+1,2,3,4,*
+Editor: Wilmar Hernandez
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC13074403  PMID: 41977894
+Abstract
+Roadside perception systems, also known as roadside units (RSUs),
+are critical in Vehicle-to-Everything (V2X) applications, yet spatio-
+temporal asynchrony between multiple sensors severely
+compromises the accuracy of fusion. In this paper, a spatio-temporal
+synchronization method for millimeter-wave (MMW) radar and
+camera fusion is proposed, integrating target matching based on
+dynamic time warping (DTW) with spatio-temporal parameter
+estimation. Leveraging the advantages of DTW in time-series
+alignment to calculate the similarity between radar and visual
+trajectories enables target matching and parameter estimation in
+sparse scenes. This method was validated on a real-world dataset
+containing over 30 pedestrian trajectories, covering scenarios with
+varying densities ranging from one to six pedestrians. The results
+indicate a temporal offset of 0.116 s between the camera and radar.
+Following synchronization, the average spatial deviation decreased
+from 1.4358 to 0.1074 m in the x-direction (i.e., across the road)
+and from 3.0732 to 0.1775 m in the y-direction (i.e., along the
+road). Consequently, this method provides an efficient solution for
+deploying roadside perception systems in sparse traffic
+environments.
+Keywords: spatio-temporal synchronization, DTW, radar and
+camera fusion
+1. Introduction
+The evolution of Intelligent Transportation Systems (ITSs) [1] over
+the past decade has significantly promoted the deployment of RSUs.
+As a core component of Cooperative Vehicle–Infrastructure Systems
+(CVISs), roadside units extend the perception range beyond the line
+of sight of onboard sensors [2]. Among various sensor
+configurations, the combination of cameras and MMW radar is
+gaining increasing popularity. Cameras provide rich semantic
+information and high angular resolution, while MMW radar offers
+robust ranging and velocity measurement capabilities that are
+independent of lighting conditions [3,4,5]. The fusion of such
+heterogeneous sensors is crucial for achieving all-weather and
+comprehensive traffic monitoring.
+However, roadside sensors typically operate within independent
+subsystems with inconsistent sampling frequencies and misaligned
+internal clocks. Furthermore, their spatial coordinate systems are
+physically separated and lack a common reference benchmark [6].
+Without precise calibration in the temporal and spatial dimensions,
+data association becomes ambiguous, thereby compromising the
+accuracy of subsequent data fusion.
+Existing inter-sensor calibration methods are primarily categorized
+into target-based and target-less approaches. Target-based
+calibration utilizes dedicated targets with specific geometric
+features, such as checkerboards [7,8,9] or corner reflectors [10,11],
+for offline calibration. However, this approach requires
+cumbersome on-site operations and traffic disruption, making it ill-
+suited for large-scale deployment. To address this issue, recent
+studies have explored target-less calibration methods. For example,
+Yuan et al. proposed a novel and reliable depth-continuous edge
+extraction algorithm that leads to more accurate calibration
+parameters [12]; Cheng et al. utilized deep learning techniques to
+extract common features between radar and camera systems,
+developing an online target-less calibration [13]; Ou et al. proposed
+a novel target-less Lidar–camera calibration method based on cross-
+modality structure consistency and ensured global convergence
+within a large search range [14]. Additionally, Du et al. proposed
+extracting the time headway of continuous vehicular flow using
+“virtual detection lines” to match cross-sensor trajectories [15].
+While this method proves effective in highway scenarios with dense
+and continuous traffic, the scarcity of targets in sparse traffic
+environments leads to the degradation of statistical features.
+Consequently, such methods are prone to matching failures and
+parameter divergence.
+Therefore, this paper proposes a spatio-temporal synchronization
+method tailored for sparse traffic conditions. The main
+contributions of this paper are summarized as follows:
+(1) We propose a trajectory-matching strategy based on DTW and
+the Hungarian algorithm. The calculated DTW distance serves as
+the cost matrix for the Hungarian algorithm to achieve multi-target
+matching.
+(2) We construct a linear regression optimization model. By
+utilizing the time series of trajectories aligned via DTW and
+applying the least squares method, the model achieves a joint
+estimation of the temporal offset and spatial deviation.
+(3) The proposed method is validated using pedestrian data.
+Comparisons of matching results and spatio-temporal deviations
+before and after synchronization demonstrate that the method
+achieves effective synchronization, even in scenarios with sparse
+traffic flow.
+2. Related Work
+2.1. Target-Based Calibration
+Target-based calibration methods typically utilize specific
+calibration targets to establish correspondence between the
+coordinate systems of radar and camera sensors. For instance,
+Cheng et al. proposed an extrinsic calibration method for 3D radar
+and cameras in which a corner reflector was placed on the ground
+and data from both sensors were captured simultaneously via ROS.
+Radar–camera correspondences were then established based on
+timestamps and subsequently employed to solve the Perspective-n-
+Point (PnP) problem, thereby obtaining the extrinsic calibration
+matrix [16]. Domhof et al. adopted a single-target calibration
+design and developed an open-source tool integrated into the Robot
+Operating System (ROS) to facilitate its implementation [17]. Song
+et al. utilized an AR marker detectable by radar to simultaneously
+measure the marker’s position relative to the camera and radar
+coordinate systems; by applying paired point registration, they
+obtained the transformation between the radar and camera
+coordinate systems [18].
+2.2. Target-Less Calibration
+In contrast, target-less calibration does not rely on specific
+calibration tools. He et al. proposed a novel spatial calibration
+method that obtains corresponding 2D–3D point pairs by combining
+tracking results from radar and camera sensors. Initial extrinsic
+parameters are estimated via the PnP algorithm and subsequently
+refined through nonlinear optimization to enhance the calibration
+accuracy [19]. Durmaz et al. introduced a fully target-less
+calibration framework that estimates the rigid spatial
+transformation between radar and camera coordinate frames by
+aligning the trajectories of moving objects observed by both sensors
+[20]. Furthermore, Hu et al. proposed a general calibration
+framework based on the Iterative Best Match (IBM) algorithm. This
+method improves alignment by optimizing correspondences
+between sensors, thereby eliminating the need for traditional point-
+to-point matching and predefined calibration targets [21]. Liu et al.
+proposed a track association algorithm for heterogeneous sensors to
+achieve target-less calibration between the radar and camera.
+Corresponding points were extracted from millimeter-wave radar
+and image coordinate systems, and external parameters were
+obtained by applying PnP and nonlinear optimization algorithms
+[22]. Furthermore, Schöller et al. proposed the first data-driven
+method for automatic rotational radar–camera calibration without
+dedicated calibration targets. They employed a boosting-inspired
+training algorithm, where they trained the fine network on the
+residual error of the coarse network [23].
+2.3. Dynamic Time Warping
+H. Sakoe and S. Chiba pioneered the application of dynamic time
+warping to the field of speech recognition [24]. Subsequently, other
+researchers have continuously refined the algorithms and applied
+them across various fields. Chen et al. proposed a methodology for
+the joint simulation of the dynamic RCS under two DOF models and
+the subsequent comparison and analysis of the resulting sequence
+data via the dynamic time warping algorithm [25]. Mehta, R et al.
+utilized DTW as a classical baseline for temporal alignment to
+demonstrate the superior performance of deep learning
+architectures in recognizing continuous human activities from radar
+micro-Doppler signatures [26]. To address the temporal variations
+in gesture execution, Liu et al. utilized DTW to synchronize radar
+and vision sequences, ensuring robust feature alignment across
+different sensing modalities [27].
+3. Methodology
+3.1. System Framework
+The framework of the proposed spatio-temporal synchronization
+method based on radar–camera fusion is illustrated in Figure 1. The
+framework primarily consists of three modules: the preprocessing

@@ -1,0 +1,111 @@
+
+Methods
+Dataset
+The data analyzed stem from a dataset (Tsuji et al., 2025) collected
+using Children Helping Science (Scott & Schulz, 2017), a platform
+specialized in collecting experimental infant gaze data from
+webcams. Infants between 1 and 12 months of age with a
+gestational age of over 37 weeks were recruited on the same
+platform. Legal guardians gave informed consent by reading the on-
+screen explanations and reading aloud their consent while being
+video-recorded. They received a $5 gift voucher for study
+completion. The study protocol was approved by the Life Science
+Research Ethics and Safety committee at the University of Tokyo
+(Approval No. 24–593). The dataset comprised participants for
+which the video recording was complete and included stimulus
+sounds in which human annotations had been made, all gaze
+classifiers functioned without errors, and data such as experimental
+settings and timestamps were properly aligned without technical
+issues (N = 47, 23 girls, Mage = 257.43 days, SD = 103.55, range = 
+67–392). A further 15 infants were excluded because of technical
+errors (N = 13) or extensive fussiness (N = 2).
+Infants participated in a visual preference task, in which they were
+exposed to black-and-white visual stimuli (see Fig. 1). Following
+Teller (1979), in each trial, either one stimulus was presented to the
+left or right of the screen (eight trials), or two stimuli were
+presented, one on each side of the screen (four trials). Each of the
+resulting 12 trials lasted for 20 s and was preceded by a 5-s central,
+colorful attention-getter stimulus accompanied by a chime-like
+sound. Within the two presentation types, we varied stimulus
+movement (static, dynamic) and complexity (low, high). The trial
+order was randomized. Between subjects, we varied stimulus shape
+(squares, circles) and whether there was background music present
+during the experiment.
+Fig. 1.
+[image]
+Open in a new tab
+Example trial displays (black-and-white visual stimuli). Notes. Left:
+Pairwise presented high-complexity circles (red arrow symbolizes
+dynamic stimulus). Right: Low-complexity circle presented on one
+side of the screen
+Although the experimental software provided information on trial
+onset and other timing parameters, they did not account for delays
+caused by internet transmission. Therefore, to correct the onset time
+of each trial, we automatically detected the onset and offset of an
+attention-getter that preceded each trial, through its sound as
+recorded through the webcam. Human annotators checked and
+corrected this automatic detection. Infant gaze directions during
+each trial were coded by trained human annotators into five
+categories: Center, Left, Right, Away, and Unsure. Frames labeled as
+unsure were excluded from subsequent analyses, as these frames
+were considered difficult to judge even for human annotators (7.5%
+of all frames). In addition, frames labeled as Center were removed
+when calculating agreement scores, because the gaze classifiers
+evaluated in this study do not output a Center label. Center frames
+accounted for only 6.1% of all frames, so their exclusion is unlikely
+to affect the results. Note that these exclusions were applied only to
+the dependent-variable side (i.e., the computation of accuracy
+metrics); for the quantification of noise factors described below, we
+used all frames from which relevant information could be extracted.
+To assess the reliability of human annotations, we calculated the
+agreement between two trained annotators for a subset of data
+consisting of four participants (8.5% of the dataset, 47 trials). On
+average, the agreement rate was very high (M = 95.9%, SD = 5.4),
+ensuring that human annotations could be regarded as ground
+truth.
+Automated gaze classifiers
+In this study, we used three state-of-the-art gaze classifiers tailored
+to infant looking-time experiments. Infant gaze classification for
+evaluation of experimental results commonly requires classification
+into two or three categories. In the case of two categories, the
+classification is between cases where the infant’s gaze is “on” or
+“off” screen, which is often used as a marker of general interest in
+the content of the screen display. In the case of three categories, the
+“on” category is further divided into “left” and “right” as an
+indicator of a preference for the content shown on the respective
+side of the screen. Unless otherwise specified, we used the default
+hyperparameter settings for each classifier.
+iCatcher+. On the video datasets, we ran iCatcher+ v0.2.0 (Erel et
+al., 2023; https://github.com/icatcherplus/icatcher_plus/releases/
+tag/0.2.0), rooted in computer vision methods and developed
+especially for detecting gaze from infant online experiments.
+iCatcher+ was developed based on iCatcher (Erel et al., 2022), an
+automated gaze classifier specifically designed for research with
+infants and young children. iCatcher+ was reported to achieve
+accurate and robust gaze classification on new datasets (> 80%,
+Erel et al., 2023; Luchkina et al., 2025) by being trained on
+substantially varied datasets in terms of experimental settings
+(online, in-lab, and outside of the lab), research topics (intuitive
+physics, language comprehension), infant age, and ethnicity.
+iCatcher+ consists of three components: the face detector, face
+classifier, and gaze classifier. The face detector extracts areas that
+possibly include faces using OpenCV (Bradski, 2000), which was
+not specifically tuned toward infant face detection. Candidate areas
+are then fed into the face classifier. This determines whether the
+area is an infant’s or adult’s face and selects which of the candidate
+areas is most likely to belong to the participant. The gaze classifier
+then predicts gaze direction (i.e., Left, Right, and Away). It
+produces this result for the temporal middle frame within the
+moving window of five consecutive frames. If no face is found, the
+model returns a label of Invalid.
+OWLET. This online webcam-linked eye-tracker (Werchan et al.,
+2022) is an open-source tool for automatically estimating infants’
+gaze coordinates on a monitor based on smartphone and webcam
+recordings. High correlation coefficients of over .95 were reported
+between OWLET–human annotations in terms of overall looking
+time, maximum looking duration, and the number of gaze shifts.
+OWLET consists of three components: infants’ face/eye/pupil
+detector, gaze direction estimator, and estimator of point-to-gaze on
+the screen. The first component extracts infants’ face/gaze/pupil
+frame-by-frame using OpenCV (Bradski, 2000) and the Dlib
+Machine Learning Toolkit (King, 2009). If more than one face is

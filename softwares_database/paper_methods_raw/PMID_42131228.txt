@@ -1,0 +1,179 @@
+
+Methods
+We developed an AI-based image recognition system integrating
+RGB-D imaging, the Segment Anything Model (SAM) for food image
+segmentation, and the SE_ResNet50_vd model for food
+classification. The system comprised hardware components (food
+weight collector, image collector, computing host) and software
+modules (nutritional analysis platform developed in Java/Spring
+Boot). A comprehensive database was constructed from 204
+standardized therapeutic diet varieties from Peking University
+People's Hospital, incorporating the Chinese Food Composition
+Table and cooking loss factors. Post-meal intake was calculated by
+comparing pre- and post-meal food volumes using depth camera
+imaging and density-based weight estimation. Food type
+recognition accuracy was tested on 1,000 samples, and volume
+estimation accuracy was validated against gravimetric
+measurements across 100 food items.
+Results
+The food image recognition model achieved 99.2% accuracy on the
+test set. Volume estimation accuracy exceeded 90% in 39% of cases
+and 80–90% in 61% of cases, with a minimum threshold of 80%
+across all tested items. The SAM model demonstrated robust
+segmentation performance for diverse food types in standardized
+meal containers. The integrated system successfully monitored over
+20 types of therapeutic diets, matching nutrient compositions to
+personalized requirements with ≥90% accuracy for meal
+verification.
+Conclusions
+This intelligent system provides standardized, real-time nutrient
+intake assessment with superior accuracy compared to traditional
+dietary survey methods. By automating therapeutic meal
+supervision and enabling precision nutrition monitoring, it
+represents a significant advancement from empirical to precision-
+based clinical nutrition practice, with substantial potential for
+improving treatment accuracy, patient outcomes, and healthcare
+resource optimization in hospital settings.
+Keywords: artificial intelligence, clinical nutrition, dietary survey,
+nutrient intake, segment anything model
+1. Introduction
+The quality of hospital nutritional diets significantly impacts
+healthcare service standards. Providing high-quality nutrition
+therapy and dining services ensures patients' nutritional needs are
+met, promotes recovery, and enhances satisfaction. Clinically,
+hospital therapeutic diets are a vital component of the clinical
+nutrition diagnosis and treatment system, playing a key role in
+improving health status, aiding postoperative recovery, and
+restoring functional capacity.
+Current dietary survey methodologies, including the 24-h dietary
+recall, food frequency questionnaires (FFQ), and weighed food
+records, exhibit well-documented limitations in clinical and
+research contexts. Studies demonstrate that self-reported food
+descriptions achieve only 60–70% accuracy, with significant
+underestimation of portion sizes and nutrient content. Additionally,
+these methods are labor-intensive, require highly trained personnel,
+and impose considerable burden on both patients and healthcare
+providers. While image-based dietary assessment techniques have
+emerged as promising alternatives, existing approaches often lack
+integration with precise weighing systems and standardized
+nutrient databases, limiting their applicability for large-scale
+clinical implementation. To address these critical gaps, we
+developed an artificial intelligence (AI)-based image recognition
+system that automates therapeutic meal supervision and enables
+precise, real-time nutrient intake assessment.
+The present study describes the design and technical
+implementation of this intelligent nutrition assessment system
+within a tertiary hospital setting. We hypothesized that the
+integration of machine vision, electronic weighing, and
+standardized therapeutic diet databases would achieve ≥90%
+accuracy in food recognition and ≥80% precision in volume
+estimation, thereby providing a robust foundation for evidence-
+based clinical nutrition management.
+2. Materials and methods
+2.1. Materials
+A total of 204 varieties of therapeutic diets provided by Peking
+University People's Hospital for inpatients were selected as the
+study materials. These foods were standardized during preparation,
+with image and weight data collected to construct a data set for
+food and recipes used in both training and testing phases.
+The dataset mainly contains two core types of data:
+(1) Image data: Standardized images of the 204 types of
+therapeutic diets mentioned above were collected. These
+images serve as the raw input data and, after preprocessing
+steps such as image scaling, cropping, and brightness/contrast
+adjustment, are used to train image recognition and
+segmentation models.
+(2) Recipe and Nutrition Database: A comprehensive database
+was constructed to store detailed ingredient information and
+their corresponding nutrient data, including essential
+components such as energy, protein, fat, carbohydrates,
+vitamins, and trace elements. This database is integrated with
+the recipe database to form a system foundation capable of
+providing precise nutritional information.
+2.2. System structure and function
+2.2.1. System platform construction
+The system comprises hardware and software components. The
+hardware includes a food weight collector, a food image collector,
+and a computing host. The computing host primarily utilizes
+nutritional analysis software for data collection and processing
+tasks. The software was developed in a Java environment using
+Spring Boot on the Windows operating system.
+2.2.2. System function and operation
+Considering existing technology and the hospital application
+scenario, this design employs a combination of weighing and
+camera recording to accurately record patients' nutritional intake.
+Given that the hospital's therapeutic diet recipes and food
+combinations are relatively fixed, it is feasible to establish a picture
+database and match the nutrients of each meal. This system
+effectively addresses the reliance on memory and descriptive
+abilities in traditional methods while eliminating human error
+during measurement. The system ensures that the nutrient
+composition of over 20 types of therapeutic diets aligns with
+personalized intake requirements.
+2.3. Methods
+2.3.1. Database construction
+A comprehensive database was established to store detailed
+information about food ingredients and their corresponding
+nutrients, including energy, protein (percentage of high-quality
+protein), fat (ratios of saturated and unsaturated fatty acids),
+carbohydrates, vitamins, trace elements, dietary fiber, and other
+essential components.
+2.3.2. Food recognition system
+The system integrates an intelligent recognition module to identify
+food types and quantities, ensuring precise calculation of nutrient
+intake. This module employs advanced image analysis technology
+to achieve rapid and accurate identification of foods and their
+respective portions.
+2.3.3. Nutritional analysis process
+After patients finish their meals, regardless of whether any food
+remains uneaten, they are required to take photos of the meal boxes
+using their smartphones (equipped with depth cameras). By
+leveraging Paddle AI online models and positioning markers on the
+meal boxes, the system calculates the volume of remaining food in
+each compartment. Combined with recorded data on food type,
+weight, and volume from meal preparation, the system estimates
+the actual intake weight of each dish (assuming consistent density
+for each item). The intake data are then matched to the built-in
+meal database, enabling precise calculation of the actual nutrient
+intake based on the established nutritional database.
+2.3.4. Image preprocessing
+The RGB-D images acquired by the food image collector served as
+the raw input data. These inputs underwent preprocessing steps,
+including image resizing, cropping, brightness and contrast
+adjustment, and normalization targeting specific positioning
+markers. This preprocessing reduced computational complexity and
+significantly enhanced the efficiency of model training while
+preserving critical spatial information for subsequent segmentation
+tasks.
+2.3.5. Food image segmentation
+The Segment Anything Model (SAM) is a state-of-the-art image
+segmentation framework comprising a Vision Transformer (ViT)-
+based encoder and a prompt-guided decoder. Leveraging the meal
+box area position markers as guidance, SAM demonstrated
+exceptional capability in segmenting objects not present in its
+extensive training data set (SA-1B). This model's robustness and
+versatility stem from its large-scale training strategy, enabling
+accurate segmentation across diverse scenarios.
+The key strength of SAM lies in its ability to handle arbitrary-
+shaped inputs and perform semantic segmentation on any specified
+image region. Given these advantages, SAM was selected as the
+food image segmentation algorithm in this study. By inputting the
+preprocessed RGB images into the trained SAM model, the system
+obtained precise segmentation information and pixel-level
+localization for each food item within the meal box.
+The segmentation algorithm workflow designed in this study
+explicitly supports processing of single photographs containing
+multiple dishes. Specifically, the input image first undergoes
+preprocessing, wherein positioning markers on the food container
+are utilized to determine bounding boxes for individual
+compartments. Subsequently, the segmentation model generates
+multiple independent segmentation masks in parallel within the
+single image based on these bounding box prompts, corresponding
+to distinct dish types, respectively. This workflow emulates actual
+hospital meal provisioning scenarios (multiple dishes per meal),
+circumventing the cumbersome procedure of physically separating
+multiple dishes prior to photography, thereby enhancing system
+practicality and operational efficiency.
+2.3.6. Food type recognition
+For food classification and recognition, this study utilized the
+SE_ResNet50_vd model from the Paddle industr

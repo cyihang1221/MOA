@@ -1,0 +1,182 @@
+
+Methodology, Supervision, Writing – review & editing
+Find articles by Weiwei Zu
+2, Xianjing Dong
+Xianjing Dong
+3School of Tourism and Public Administration, Huzhou Vocational
+and Technical College, Huzhou, China
+Project administration, Resources
+Find articles by Xianjing Dong
+3, Liangquan Jia
+Liangquan Jia
+2School of Information Engineering, Huzhou University, Huzhou,
+China
+Data curation, Funding acquisition, Validation
+Find articles by Liangquan Jia
+2,*
+Editor: Gen Li4
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC13367711  PMID: 42447115
+Abstract
+The rapid advancement of deep learning has enabled intelligent
+analysis in professional sports, yet tennis remains particularly
+challenging due to small and fast-moving objects, frequent
+occlusions, and complex backgrounds. To address these difficulties,
+we propose YOLO-Net, a lightweight detection framework tailored
+for tennis event analysis. Built upon YOLO11n, the framework
+integrates three task-oriented improvements: a C3k-MSEIS module
+for multi-scale edge enhancement and dual-domain feature
+selection to refine fine-grained boundaries; an ECA channel
+attention mechanism inserted after C2PSA to strengthen inter-
+channel dependency modeling and improve feature discriminability;
+and a Focaler-IoU loss function to emphasize hard and small
+samples while reducing localization errors. In addition, we
+construct and annotate a dedicated tennis dataset containing 6,648
+images across three categories—player, racquet, and ball—covering
+diverse scenes, camera angles, and lighting conditions.
+Experimental results show that YOLO-Net achieves 84.5% precision
+and 78.2% mAP@0.5 with only 2.58M parameters, outperforming
+the YOLO11n baseline by 2.5% in precision and 0.9% in mAP while
+maintaining real-time inference. These findings demonstrate that
+YOLO-Net is an efficient, accurate, and deployable solution for
+applications such as referee assistance, tactical analysis, and
+intelligent broadcasting in tennis competitions.
+Introduction
+In modern competitive sports, tennis stands out for its agility,
+intensity, and technical sophistication, attracting widespread
+attention from athletes and enthusiasts alike. Recent studies further
+suggest that tennis may be regarded as one of the most
+“comprehensive” forms of exercise, capable of enhancing both
+physical and psychological capacities across multiple dimensions
+[1]. Within the professional arena, the precise detection of players
+and ball trajectories is of critical importance: it not only provides
+objective evidence for refereeing and statistical analysis but also
+supports performance evaluation, tactical planning, and intelligent
+event management. Comprehensive recognition of player
+positioning, movement trajectories, and cooperative patterns
+enables coaches and analysts to design training regimens tailored to
+individual athletes [2]. Moreover, real-time detection and tracking
+of the tennis ball allow for fine-grained measurement of velocity,
+spin, and landing points, thereby facilitating tactical interpretation
+and enriching broadcast quality [3].
+In recent years, deep learning has emerged as a cornerstone of
+artificial intelligence, delivering remarkable advances across
+computer vision tasks. The integration of convolutional neural
+networks (CNN) with Transformer architectures has markedly
+improved the accuracy of image classification, object detection, and
+segmentation [4,5]. Beyond conventional vision tasks, recent AI
+models have also shown strong potential in complex dynamic-scene
+modeling, such as graph-based vehicle trajectory prediction in
+intelligent transportation systems [6]. In object detection, leading
+frameworks such as You Only Look Once (YOLO), Detection
+Transformer (DETR), Faster Region-based Convolutional Neural
+Network (Faster R-CNN), and Single Shot MultiBox Detector (SSD)
+have collectively accelerated progress in real-time recognition
+under complex conditions [7,8]. Yet, tennis-specific detection
+remains uniquely challenging. First, the ball is diminutive and
+moves at high velocity, creating sharp scale disparities relative to
+players and the net that hinder robust feature extraction [9].
+Second, occlusions frequently arise among players, racquets, and
+the net, compounded by cluttered backgrounds that degrade
+detection accuracy. Third, variability in lighting and camera
+perspectives undermines robustness [10]. Although several tennis
+detection algorithms have been proposed, they often fail to balance
+accuracy, real-time performance, and adaptability under such
+constraints. These limitations underscore the urgent need for
+specialized approaches to enhance trajectory detection of both
+players and the ball in tennis scenarios.
+To address these challenges, we propose YOLO-Net, a task-oriented
+lightweight detection framework built upon YOLO11n for tennis
+match scenarios. Rather than proposing a new general-purpose
+detection paradigm, YOLO-Net focuses on improving edge-aware
+feature representation, channel-level discriminability, and
+bounding-box regression for small and fast-moving tennis targets.
+YOLO-Net preserves real-time efficiency while improving the
+recognition of small objects, such as tennis balls, and structural
+targets, such as racquets and players. Our contributions are
+fourfold:
+(1) We construct a tennis-specific object detection dataset
+comprising diverse court types, camera viewpoints,
+illumination conditions, and match scenarios, with fine-
+grained annotations of players, tennis racquets, and balls,
+enabling comprehensive evaluation in authentic tennis
+settings.
+(2) We design a C3k-MSEIS module by introducing multi-
+scale edge enhancement and dual-domain feature selection
+into the YOLO11n backbone. This module strengthens the
+representation of complex boundaries and high-frequency
+details, thereby improving the detection of small and
+structural targets in tennis scenes.
+(3) We integrate ECA channel attention after C2PSA to
+enhance channel-level feature recalibration with limited
+parameter overhead, improving feature discriminability and
+cross-scene robustness.
+(4) We adopt Focaler-IoU for bounding-box regression to
+emphasize hard and extremely small samples and reduce
+localization drift. Together with C3k-MSEIS and ECA, it forms
+a lightweight, edge-enhanced YOLO11n-based framework for
+tennis object detection.
+Related work
+Object detection evolution
+Object detection has undergone a rapid evolution from traditional
+hand-crafted feature methods to modern deep learning approaches.
+Early studies largely relied on sliding windows and manually
+designed descriptors such as Haar, HOG, and SIFT, which were
+typically combined with support vector machines or boosting
+classifiers to perform detection [11,12]. While these methods
+achieved limited success in constrained settings, they generally
+suffered from weak feature representation, sensitivity to
+illumination and pose variations, and high computational costs,
+making them unsuitable for deployment in complex real-world
+environments [13,14].
+with the rapid progress of deep convolutional neural networks,
+learning-based detectors quickly became dominant. Representative
+two-stage approaches, such as the R-CNN family, integrate proposal
+mechanisms with convolutional features to substantially enhance
+detection accuracy [15]. Yet, depending on proposal networks often
+results in heavy computational costs, restricting their use in real-
+time applications. By contrast, one-stage detectors such as YOLO
+and SSD reformulated detection as a dense regression problem,
+striking a more favorable balance between accuracy and efficiency
+and thereby accelerating the adoption of real-time detection
+systems [16,17]. The YOLO family, in particular, has advanced
+rapidly: successive iterations have incorporated cross-stage partial
+connections, attention mechanisms, and anchor-free strategies. The
+latest version, YOLO11, further refines the trade-off between speed
+and precision, consolidating YOLO’s role as a leading paradigm in
+object detection [18].
+More recently, Transformer-based architectures have been
+introduced into the field. DETR illustrates this paradigm shift by
+treating detection as sequence prediction, removing classical
+elements like proposals and non-maximum suppression, and
+offering an elegant end-to-end solution [19]. Despite its
+methodological simplicity and conceptual novelty, DETR faces
+practical challenges, including slow convergence and heavy
+computational demands, which hinder its suitability for real-time
+applications.
+Overall, the trajectory of object detection research reflects a
+persistent effort to reconcile accuracy with efficiency, to strengthen
+robustness against small objects and complex environments, and to
+integrate multi-task learning with lightweight model design. These
+advances establish a solid foundation for the development of next-
+generation detection frameworks tailored to the unique challenges
+of tennis analysis.
+Tennis object detection
+Early research on tennis detection primarily relied on handcrafted
+cues such as color, motion, and geometric features for target
+modeling. Archana et al. proposed a method based on logical
+operations and background subtraction, which, combined with
+connected-component analysis, enabled the joint recognition of
+tennis balls and players [20]. Rocha et al. integrated computer
+vision and morphological operations with machine learning to
+detect ball positions, court boundaries, and players, applying the
+results to assist refereeing decisions [21]. Saralıoğlu et al. employed
+image enhancement and adaptive filtering techniques to achieve
+accurate ball-impact detection even under low-resolution and low-
+frame-rate conditions [22]. Yu et al. developed a hybrid tracking
+algorithm that combined mean shift with color histograms to
+address appearance variations and complex motion in sports videos,
+achieving favorable accuracy and robustness [23]. Nonetheless,
+these approaches depended heav

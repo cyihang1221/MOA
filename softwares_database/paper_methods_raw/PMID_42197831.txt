@@ -1,0 +1,79 @@
+
+Experimental validation is conducted to demonstrate the feasibility
+of reliable cavity-type identification and consistent geometric
+refinement using a small, fixed number of indentations at selected
+locations across different gripper configurations. Unlike learning-
+based tactile perception approaches that require large training
+datasets and dense sensing, this work focuses on minimizing
+physical interactions through mechanics-driven selection, without
+training or prior data collection.
+2. Methods and Materials
+This section describes the method proposed in this study and the
+materials used to validate it. The proposed approach consists of two
+components. The first is a theoretical procedure that determines a
+minimal set of indentation locations capable of discriminating
+cavity types. The second is an estimation–correction pipeline that
+reconstructs the internal cavity geometry from sparse experimental
+measurements and FEM feedback. These two components are then
+integrated with a robotic indentation setup, a set of fabricated soft
+objects, and a Neo-Hookean FEM model implemented in SOFA.
+Finally, the section concludes with the experimental protocol.
+2.1. Proposed Method
+The two components introduced in this work address
+complementary challenges: selecting where to probe and how to
+reconstruct internal geometry from the resulting measurements.
+The first contribution of this work is a minimal informative set of
+indentation locations, determined prior to any real experiment from
+FEM-simulated force responses and flat-punch estimation to
+maximize discrimination between baseline cavity models. This
+minimal set serves as the foundation for the entire pipeline,
+ensuring that the robot performs physical probing only at locations
+that are theoretically guaranteed to distinguish between internal
+cavity types. The selection relies on a generalized-error
+computation that evaluates, for each candidate indentation site,
+force-response discrepancies across cavity models, with indentation
+depth contributing as a weighted and normalized consistency term.
+The second contribution is an estimation–correction pipeline that
+reconstructs the cavity type and geometry using sparse real
+indentation measurements taken exclusively at the locations
+contained in the minimal set. The estimation stage compares each
+measured indentation depth against an analytical baseline
+corresponding to a homogeneous cube to produce an initial cavity
+classification and preliminary geometric parameters. The correction
+stage then refines these parameters by simulating the same
+indentation conditions in SOFA and adjusting the cavity geometry
+based on discrepancies between simulated and measured reaction
+forces.
+Together, these two components constitute a unified approach. The
+minimal indentation set (stage 1) enables efficient data acquisition
+(Figure 1), and the estimation–correction pipeline (stage 2 and 3)
+reconstructs internal cavities using only a small number of
+measurements (Figure 2). The minimal indentation set is
+determined prior to the estimation–correction pipeline; both rely on
+real indentation measurements and FEM force reactions, but also on
+independent data. The method assumes known cavity families,
+elastic material behavior, and centered internal structures. These
+assumptions define the intended scope of the framework rather than
+incidental limitations: the known-family assumption enables the
+margin-based discrimination criterion to operate on a fixed
+hypothesis space, the known-material assumption allows FEM
+simulations to produce physically consistent force predictions
+without a preliminary characterization step, and the centered-
+structure assumption establishes a tractable foundation from which
+the pipeline can be validated and extended. Each assumption
+corresponds to a concrete requirement that must be satisfied or
+verified before applying the pipeline to a new object, and the
+implications of relaxing them are discussed in Section 4. All
+hyperparameter values used in the following stages are reported in
+Table A1 (see Appendix A.5).
+Figure 1.
+[image]
+Open in a new tab
+Minimal indentation set identification.
+Figure 2.
+[image]
+Open in a new tab
+Estimation and correction pipeline: Reconstruction of internal
+cavities.
+The three stages exploit complementary information. The minimal
+set guarantees that real measurements are mechanically informative

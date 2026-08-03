@@ -1,0 +1,178 @@
+
+Methodology, Resources, Software, Validation, Visualization,
+Writing – original draft, Writing – review & editing
+Find articles by Lucas M Martini
+1,2,*, Anna Bognár
+Anna Bognár
+3Department of Neuroscience, KU Leuven, Leuven, Belgium
+4Leuven Brain Institute, KU Leuven, Leuven, Belgium
+Conceptualization, Data curation, Formal analysis, Investigation,
+Methodology, Resources, Software, Supervision, Validation, Writing
+– review & editing
+Find articles by Anna Bognár
+3,4, Rufin Vogels
+Rufin Vogels
+3Department of Neuroscience, KU Leuven, Leuven, Belgium
+4Leuven Brain Institute, KU Leuven, Leuven, Belgium
+Conceptualization, Formal analysis, Funding acquisition,
+Investigation, Methodology, Supervision, Writing – review & editing
+Find articles by Rufin Vogels
+3,4, Martin A Giese
+Martin A Giese
+1Hertie Institute for Clinical Brain Research (HIH) and Centre for
+Integrative Neuroscience (CIN), University Clinic Tübingen,
+Tübingen, Germany
+2International Max Planck Research School for Intelligent Systems
+(IMPRS-IS), Tübingen, Germany
+Conceptualization, Funding acquisition, Methodology, Project
+administration, Supervision, Writing – review & editing
+Find articles by Martin A Giese
+1,2,*
+Editor: Matthew F S Rushworth5
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC13367704  PMID: 42447116
+Abstract
+Social interactions are essential for survival in primates, relying on
+both facial expressions and body signals. The accurate
+characterization of these signals is critical for understanding the
+neurocomputational mechanisms underlying social communication.
+While previous work has focused on recognizing monkey behavior,
+a causal and direct manipulation of individual cues strongly
+benefits from believable, dynamic body avatars—analogous to those
+successfully developed for faces. Creating lifelike monkey avatars
+with realistic body motion, however, is challenging. Acquiring
+sufficiently accurate movement data for animation with marker-
+based motion capture is impractical, and markerless tracking
+methods require extensive manual labeling. To address this, we
+developed MacAction, a realistic macaque body avatar animated
+from multi-camera markerless tracking data. Our method
+reconstructs accurate trajectories for a large number of keypoints,
+as required for the 3D animation of realistic body models. The
+entire time course of individual actions is captured using only two
+labeled keyframes per second, with performance further validated
+on a large-scale human multi-view dataset. We assessed the
+animation quality of our dynamic avatar in a free-viewing
+experiment with eight macaque observers for single macaque
+actions, where fixation behavior was indistinguishable between our
+animations and matched real videos. Moreover, by systematically
+varying the realism of the avatar, we found an uncanny valley effect
+in macaque body perception, similar to that previously described in
+both humans and macaque faces. These findings support the
+commonalities of social vision across primate species, providing a
+foundation for controlled experiments aimed at clarifying the
+detailed neurocomputational mechanisms of social body perception
+in primates.
+Social interactions in primates rely on both facial expressions and
+body signals, but creating lifelike monkey avatars with realistic
+body motion is challenging. This study presents MacAction, a
+realistic macaque body avatar animated from multi-camera
+markerless tracking data, and reveals an uncanny valley effect in
+macaque body perception, similar to that described in humans.
+Introduction
+Because of their genetic and physiological similarities to humans,
+rhesus macaques are the most widely studied nonhuman primate
+(NHP) species in biological disciplines, such as neuroscience,
+psychology, ethology, behavioral ecology, and medicine [1–4].
+Scientific results from macaques have also been fundamental for
+understanding many biological functions in humans [5,6], and
+specifically human vision [7–9]. Macaques are a major model
+species for understanding human social perception, since they allow
+studies at the single-neuron level within a visual system that is
+highly similar to that of humans. Understanding these processes is
+critical not only from the viewpoint of neuroscience but also due to
+the growing number of technical applications that rely on the
+perception of digital human bodies, including games, film, virtual
+try-on [10,11], the metaverse [12], and clinical applications [13].
+However, the computational and neural mechanisms involved in
+processing bodies in the primate brain remain poorly understood
+[14–16]. To clarify these mechanisms, experiments in psychology
+and neuroscience typically expose humans or monkeys to visual
+stimuli that manipulate underlying visual features in controlled
+ways [17–19]. The difficulty in studying body perception lies in the
+generation of dynamic body stimuli that can be exactly controlled.
+Avatars of monkeys, unlike real-world videos of behaving animals,
+offer the advantage of precise control over all relevant stimulus
+features and timing. However, creating these stimuli is challenging.
+Accurate motion data for their animation is not easily obtained, and
+such synthetic stimuli must guarantee a high level of realism to
+ensure the ecological validity of experimental results. Although
+monkey face avatars have been used successfully in the study of
+dynamic facial expression perception [20,21], to date, there have
+been no attempts to create lifelike monkey body avatars with
+realistic motion.
+The digital reconstruction of a macaque’s moving body is a
+challenging problem. As with other animals, the amount of
+available tracking data from monkeys is limited [22], and creating
+datasets comparable in size to those for humans is impractical [22–
+26]. Moreover, standard motion capture technology is not
+applicable for recording full-body motion of macaques. Positioning
+markers reproducibly on their dense fur is difficult, and the animals
+typically remove or destroy body-attached markers during
+grooming. In addition, attached markers might alter their natural
+behavior, making deep-learning based markerless video tracking the
+only viable solution.
+Various datasets that capture poses of monkeys in single-view
+images have been published [27–30]. However, tracking the
+dynamic body of NHPs in 3D space remains difficult, as monkeys
+exhibit a high-dimensional pose space comparable to that of
+humans. Recent multi-camera approaches have succeeded at the
+reconstruction of small sets of 3D keypoints for behavioral analysis,
+exploiting setups with a considerable number of cameras and
+extensive hand-labeling [31–33]. Such small marker sets, however,
+are insufficient for the animation of realistic avatar models with
+many degrees of freedom (DOF). At the same time, extending these
+methods for larger marker sets with sufficient tracking accuracy
+would result in impractically high amounts of required hand-
+labeling.
+The use of computer-generated stimuli still raises the question of
+ecological validity, and even stimuli that appear realistic to humans
+might not do so to monkeys. In fact, it has been shown that as the
+realism of artificial agents or robots is continuously increased,
+observers might actually dislike artificial stimuli with high but not
+perfect levels of realism. This effect has been termed the "uncanny
+valley" (UV) according to an early paper in robotics that has
+formulated this hypothesis (Mori [34,35]). This phenomenon has
+nowadays been exploited to assess whether graphics-generated
+stimuli or robots appear realistic enough [36–40], and an UV has
+also been demonstrated in macaque observers for the recognition of
+static [41] and dynamic monkey faces [21]. Whether this effect also
+exists for monkey bodies is unknown.
+Addressing the two key challenges of obtaining sufficiently accurate
+motion-tracking data from macaques for computer animation and
+generating animations with an appropriate level of realism, we have
+developed MacAction, a method for generating and validating
+highly realistic animations of macaque bodies based on markerless
+video motion capture. The core of our approach is a method for
+retrieving accurate 3D markerless pose trajectories for a large
+number of keypoints based on high-resolution multi-camera footage
+(Fig 1). It exploits learning-based methods in combination with
+different triangulation post-processing to reconstruct densely
+sampled action sequences from a small number of labeled
+keyframes. This enables the generation of realistic 3D animations of
+complex commercial avatars at high frame rates, requiring as few as
+only two labeled frames per second (LPS). Our method thereby
+substantially improves tracking accuracy compared to other
+macaque pose estimation methods in behavioral analysis [42], and
+we validate the realism of our animations in an eye fixation
+experiment with real monkeys. Not only do we show that the
+animals perceive our animations (S1 Video and S2 Video) as very
+similar to real-life video footage, but we also demonstrate the
+existence of an uncanny valley effect for bodies in NHPs. This
+makes our approach suitable for controlled investigations of the
+psychological and neurocomputational processes underlying body
+and social perception in primates.
+Fig 1. MacAction animates 3D markerless pose
+tracking to generate realistic synthetic images.
+[image]
+Open in a new tab
+a, Pipeline for character animation: selection of actions from sets of
+synchronously recorded videos from multiple viewpoints. A neural
+network-based tracking algorithm predicts keypoint trajectories for
+all frames of an action (shown in blue), exploiting a very small
+subset of hand-labeled keyframes for training. The retargeting
+process then maps this motion onto a 3D avatar. The resulting
+animation can be embedded into a 3D model of the background
+scene, which can be rendered from any viewpoint. b, Generated
+images of the virtual action over time. c, Compariso
