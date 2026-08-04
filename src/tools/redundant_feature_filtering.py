@@ -785,6 +785,44 @@ def redundant_feature_filtering_camera_impl(
         merged_df.to_csv(merged_csv, index=False)
         print(f"\n  ✅ 合并注释峰表: {merged_csv} ({len(merged_df)} 个特征)")
 
+    # ============================================
+    # 对齐级聚合：跨样本合并冗余标注 → 过滤特征表
+    # ============================================
+    # CAMERA 工作在单样本级别（每个特征的 is_redundant 标注可能因样本而异）。
+    # 下游工具（Stage 4+）需要对齐级特征表，因此必须将逐样本标注聚合为
+    # 对齐级的"该特征是否冗余"判断，并产生过滤后的 feature_table.csv。
+    aligned_removed = 0
+    if all_annotated:
+        print(f"\n  [对齐级聚合] 将逐样本标注聚合为对齐级冗余判断...")
+        agg = merged_df.groupby("feature_id").agg(
+            n_samples=("is_redundant", "count"),
+            n_redundant=("is_redundant", "sum"),
+            n_ips=("is_ips", "sum"),
+            isotopes=("isotopes", lambda x: (x.notna() & (x != "") & (x != "-1")).sum()),
+        ).reset_index()
+        # 多数表决: ≥50% 的样本标记为冗余 → 对齐级判定为冗余
+        agg["is_aligned_redundant"] = agg["n_redundant"] >= (agg["n_samples"] * 0.5)
+        n_aligned_red = agg["is_aligned_redundant"].sum()
+        print(f"  对齐级冗余特征: {n_aligned_red}/{len(agg)} "
+              f"({100*n_aligned_red/max(len(agg),1):.1f}%)")
+
+        # 读取原始 XCMS 对齐峰表，移除冗余特征
+        xcms_ft = os.path.join(input_dir, "feature_table.csv")
+        if os.path.isfile(xcms_ft):
+            ft = pd.read_csv(xcms_ft)
+            redundant_ids = set(
+                agg[agg["is_aligned_redundant"]]["feature_id"]
+            )
+            ft_filtered = ft[~ft["feature_id"].isin(redundant_ids)].copy()
+            aligned_removed = len(ft) - len(ft_filtered)
+            filtered_csv = os.path.join(output_dir, "feature_table_filtered.csv")
+            ft_filtered.to_csv(filtered_csv, index=False)
+            print(f"  过滤后峰表: {filtered_csv}")
+            print(f"  移除 {aligned_removed}/{len(ft)} 个冗余特征 "
+                  f"→ 保留 {len(ft_filtered)} 个")
+        else:
+            print(f"  ⚠️ 未找到 {xcms_ft}，跳过对齐级过滤")
+
     # 摘要
     t_elapsed = time.time() - t_start
     total_features = sum(s["total_features"] for s in sample_stats.values())
@@ -801,6 +839,7 @@ def redundant_feature_filtering_camera_impl(
         f"  假谱图数: {total_pcgroups}",
         f"  冗余特征数: {total_redundant} ({100*total_redundant/max(total_features,1):.1f}%)",
         f"  非冗余特征数: {total_features - total_redundant}",
+        f"  对齐级过滤: 移除 {aligned_removed} 个特征",
         f"  电离模式: {polarity}",
         f"  参数: ppm={ppm}, mzabs={mzabs}, perfwhm={perfwhm}, "
         f"cor_eic_th={cor_eic_th}, sigma={sigma}",

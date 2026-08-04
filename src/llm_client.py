@@ -1,69 +1,40 @@
 import os
 from typing import List, Dict
-from langchain_openai import ChatOpenAI
+from openai import OpenAI
 
 
 class LLM_Client:
+    """通用 LLM 调用客户端，支持 OpenAI 兼容接口。"""
+
     def __init__(self, model: str = None, apiKey: str = None, baseUrl: str = None, timeout: int = None):
-        """初始化客户端，从环境变量加载。"""
-        self.model = model or os.getenv("LLM_MODEL_ID")
-        apiKey = apiKey or os.getenv("LLM_API_KEY")
-        baseUrl = baseUrl or os.getenv("LLM_BASE_URL")
-        timeout = timeout or int(os.getenv("LLM_TIMEOUT", 60))
+        self.model = os.getenv("LLM_MODEL_ID")
+        apiKey = os.getenv("LLM_API_KEY")
+        baseUrl = os.getenv("LLM_BASE_URL")
+        timeout = int(os.getenv("LLM_TIMEOUT", 60))
 
         if not all([self.model, apiKey, baseUrl]):
             raise ValueError("模型ID、API密钥和服务地址必须被提供或在.env文件中定义。")
 
-        self.llm = ChatOpenAI(
-            model=self.model, 
-            api_key=apiKey, 
-            base_url=baseUrl, 
-            timeout=timeout,
-            temperature=0.0  # default
-        )
+        self.client = OpenAI(api_key=apiKey, base_url=baseUrl, timeout=timeout)
 
-    def think(
-        self,
-        messages: List[Dict[str, str]],
-        temperature: float = 0,
-        *,
-        stream_to_stdout: bool = True,
-    ):
-        """调用大语言模型进行思考，并返回其响应。"""
+    def think(self, messages: List[Dict[str, str]], temperature: float = 0):
+        """调用大语言模型进行思考，返回流式响应拼接结果。"""
         try:
-            response = self.llm.stream(
-                input=messages,
-                temperature=temperature  # 对于代码生成任务，使用0，保证确定性
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                temperature=temperature,
+                stream=True,
             )
 
-            # 处理流式响应
             collected_content = []
             for chunk in response:
-                content = chunk.content
-                if content:
-                    if stream_to_stdout:
-                        print(content, end="", flush=True)
-                    collected_content.append(content)
-            if stream_to_stdout and collected_content:
-                print()
-            
-            return "".join(collected_content)  # 将列表中存储的所有小块内容拼接成完整字符串并返回
+                content = chunk.choices[0].delta.content or ""
+                print(content, end="", flush=True)
+                collected_content.append(content)
+            print()
+            return "".join(collected_content)
 
-        except Exception as e:  # 捕获异常类并绑定为变量
-            if stream_to_stdout:
-                print(f"❌ 调用LLM API时发生错误: {e}")
+        except Exception as e:
+            print(f"❌ 调用LLM API时发生错误: {e}")
             return None
-
-    def stream_think(self, messages: List[Dict[str, str]], temperature: float = 0):
-        """
-        流式调用 LLM：按块 yield 每一段增量文本。
-        用于前端 SSE 逐字显示。
-        """
-        response = self.llm.stream(
-            input=messages,
-            temperature=temperature,
-        )
-        for chunk in response:
-            content = getattr(chunk, "content", None)
-            if content:
-                yield content

@@ -1,0 +1,180 @@
+
+Methodology, Data curation, Visualization, Writing – review &
+editing
+Find articles by Guanxu Li
+1, Zhiyi Liu
+Zhiyi Liu
+1Yantai Institute, China Agricultural University, Yantai 264670,
+China; yinziyi@cau.edu.cn (Z.Y.); liguanxu@cau.edu.cn (G.L.);
+13281266485@163.com (Z.L.); liufeng2008@cau.edu.cn (F.L.)
+Methodology, Writing – review & editing
+Find articles by Zhiyi Liu
+1, Feng Liu
+Feng Liu
+1Yantai Institute, China Agricultural University, Yantai 264670,
+China; yinziyi@cau.edu.cn (Z.Y.); liguanxu@cau.edu.cn (G.L.);
+13281266485@163.com (Z.L.); liufeng2008@cau.edu.cn (F.L.)
+2Shandong Key Laboratory of Digital Fishery, Yantai 264670, China
+Methodology, Writing – review & editing
+Find articles by Feng Liu
+1,2, Mai Li
+Mai Li
+3Institute of Agricultural Engineering, Chongqing Academy of
+Agricultural Sciences, Chongqing 401329, China; rlm410@163.com
+Data curation
+Find articles by Mai Li
+3, Chengguo Wang
+Chengguo Wang
+1Yantai Institute, China Agricultural University, Yantai 264670,
+China; yinziyi@cau.edu.cn (Z.Y.); liguanxu@cau.edu.cn (G.L.);
+13281266485@163.com (Z.L.); liufeng2008@cau.edu.cn (F.L.)
+2Shandong Key Laboratory of Digital Fishery, Yantai 264670, China
+Conceptualization, Supervision, Funding acquisition, Writing –
+review & editing
+Find articles by Chengguo Wang
+1,2,*
+Editor: Guo Zhao
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC13364466  PMID: 42451492
+Abstract
+To achieve non-contact and continuous monitoring of body length
+in Micropterus salmoides and overcome the stress damage and
+subjective error associated with traditional manual measurement,
+this paper proposes an improved YOLOv8-based multi-target
+tracking framework for intensive recirculating aquaculture systems.
+The system employs a geometric measurement framework based on
+monocular vision that achieves conversion from pixel coordinates to
+actual body length through camera calibration, water-surface
+refraction correction, and pose projection correction. Under a
+collaborative optimization framework integrating detection and
+tracking, the model incorporates multi-scale feature enhancement,
+lightweight re-identification (ReID), and a robust data association
+mechanism, which improves system stability under conditions of
+high fish density, variable illumination, and turbid water. A shallow
+feature fusion path is introduced to enhance small-target
+perception, and a MobileNetV3_ReID model is adopted to extract
+highly discriminative appearance features, which improves identity
+consistency while maintaining model compactness. In the data
+association stage, a hybrid cost matrix integrating IoU, cosine
+similarity, and motion consistency is constructed, and optimal
+matching is realized through the Hungarian algorithm. Dynamic
+threshold adjustment and an exponential moving-average feature-
+update strategy are introduced to effectively suppress identity
+switching. Experiments were conducted on an overhead video
+dataset of Micropterus salmoides collected at a recirculating
+aquaculture system facility. The results show that the proposed
+method achieves 82.7% mAP50 while maintaining a real-time
+throughput of 88 FPS, with MOTA reaching 76.9% and IDF1
+reaching 81.5%—the latter representing an improvement of 3.2
+percentage points over BoT-SORT and 5.3 percentage points over
+the YOLOv8 baseline tracker. The number of identity switches
+(IDSW) decreased from 89 in the baseline configuration to 39, a
+reduction of 56.2%. Crucially, these component-level improvements
+translate into a body length error (BLE) of 5.2 ± 1.8% (MAE =
+1.35 cm, Pearson r = 0.972), representing a 38.8% improvement
+over the baseline BLE of 8.5% and satisfying the 5–10% tolerance
+required for aquaculture growth monitoring. Ablation analysis
+confirms that both detection enhancements (contributing −1.3%
+BLE) and tracking optimizations (contributing −2.0% BLE) are
+necessary to achieve this application-level accuracy.
+Keywords: YOLOv8, Micropterus salmoides, computer vision, target
+detection, multi-target tracking
+1. Introduction
+Micropterus salmoides is an important freshwater aquaculture species
+in China. According to statistics from the Ministry of Agriculture
+and Rural Affairs of China (2025), the total output of aquatic
+products in China in the first half of 2025 reached 33.6453 million
+tons, an increase of 4.59% year-on-year. Among these, the total
+output of Micropterus salmoides aquaculture exceeded 800,000 tons,
+approaching that of grass carp (Ctenopharyngodon idella), one of the
+most commonly consumed fish in China. As the highest-yielding
+single species in Chinese aquaculture, M. salmoides is sometimes
+referred to as the “fifth major domesticated fish.” With the
+increasing intensification of M. salmoides farming, the need for
+accurate assessment of growth status has become increasingly
+urgent. Body length, as a core indicator for evaluating the growth
+and development of M. salmoides, directly influences feeding
+strategy, hierarchical management decisions, and harvest timing,
+and is a key parameter for achieving refined aquaculture
+management.
+Traditional body length measurement of M. salmoides relies on
+manual operation. Fish must be captured, removed from the water,
+and immobilized before measurement with a ruler or calipers. This
+process causes significant stress, increases the risk of injury and
+mortality, and is time-consuming, labor-intensive, and inefficient.
+Due to operational costs and manpower constraints, the frequency
+of routine monitoring is typically low, and the number of
+individuals sampled in each round is limited, making it difficult to
+achieve continuous tracking and comprehensive evaluation of
+population growth trends. In addition, measurement results are
+susceptible to subjective judgment by operators, and the lack of
+standardized data-recording practices further limits the
+comparability and analytical value of the data. Therefore, the
+development of automatic, non-contact, non-invasive, and long-
+term stable body length monitoring methods represents an
+important direction for promoting the intelligent upgrading of
+aquaculture.
+Non-contact body length measurement technology provides a viable
+solution to these challenges. Among available approaches, vision-
+based estimation algorithms have attracted significant attention
+owing to their high efficiency and non-destructive nature. Early
+semi-automatic schemes still relied on manual intervention, offering
+only limited efficiency improvements. For instance, a semi-
+automatic measurement system utilizing template matching,
+developed by Shafait et al. [1], achieved a sixfold increase in
+measurement speed with an error of approximately 1%, albeit
+requiring manual initialization and correction, which limits its
+application in high-throughput, unattended aquaculture monitoring.
+Advances in deep learning have facilitated accurate localization of
+multiple individuals and extraction of contour information from
+single-frame images. Consequently, neural network-based object
+detection and semantic segmentation have become the mainstream
+approaches for fish size and length estimation. The IMAFISH_ML
+system, developed by Navarro et al. [2], employed traditional
+image-processing algorithms to automatically measure 27
+morphological characteristics of fish species such as gilthead
+seabream (Sparus aurata). However, this process requires ex situ
+imaging on a specific background plate, which significantly
+diverges from real-world aquaculture conditions. To achieve non-
+destructive monitoring of free-swimming fish, recent studies have
+focused on overcoming environmental disturbances in aquaculture
+imaging. Salman et al. [3] pioneered the application of CNNs for
+unconstrained underwater fish species classification, demonstrating
+the ability of CNNs to automatically learn features robust to
+illumination and background variations, significantly outperforming
+traditional hand-crafted feature methods and laying a crucial
+foundation for subsequent deep learning applications in complex
+tasks such as body length estimation. To address imaging
+distortions at the water–air interface, Al-Jubouri et al. [4] proposed
+a comprehensive mathematical model incorporating background
+subtraction, morphological filtering, and physical optics-based
+refraction correction. Huang et al. [5] utilized Mask R-CNN to
+precisely segment fish body contours from stereo images,
+integrating this with 3D reconstruction technology to achieve
+accurate length estimation and demonstrating the capabilities of
+deep learning in complex aquaculture scenarios.
+Contemporary research prioritizes the comprehensive optimization
+of algorithmic accuracy, efficiency, and scene adaptability. The
+YOLO (You Only Look Once) series algorithms, known for their
+excellent balance between real-time performance and detection
+accuracy, have emerged as a cornerstone for non-contact, high-
+throughput object detection and are extensively employed in visual
+perception tasks across agriculture, industry, and ecological
+monitoring [6]. In fish measurement, Fernandes et al. [7] used a
+SegNet-based model to distinguish the body and fins of tilapia,
+though its versatility was limited by off-water measurement
+requirements. To address species-specific challenges, Feng et al. [8]
+proposed the YOLMA system, introducing an Asymptotic Feature
+Pyramid Network (AFPN) to address the challenge of measuring the
+transparent pectoral fins of large yellow croaker (Larimichthys
+crocea) and achieving automatic quantification of the pectoral fin
+length to pelvic fin length (PFL/PEL) ratio for the first time. Cong et
+al. [9] combined DeepLabV3+ and CatBoost regression models to
+estimate the body length and weight of pearl gentian grouper with
+high accuracy (R2 = 0.987). Despite these advances, existing
+studies predominantly focus on static, single-target, or ex situ
+scenarios. In dynamic, high-density aquaculture environments—
+characterized by frequent occlusions, crossing events, and variable
+wate

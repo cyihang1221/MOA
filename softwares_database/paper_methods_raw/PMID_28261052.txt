@@ -1,0 +1,47 @@
+
+Materials and methods
+The dynamic time warping algorithm
+Dynamic Time Warping algorithm uses elastic matching, which can
+correct for phase-shifts as well as distortions of the shape of the
+signal, as illustrated in Figure 1A. For example, the peak in x1 is
+matched to the peak in x2 when comparing the x1 and x2 with DTW
+(Tomašev et al., 2015). At the conceptual level, the calculation of
+the DTW distance of two time series x1 and x2 can be considered as
+transforming one of the time series into the other one, i.e., DTW is
+an edit distance. While doing that, each edit step is associated with
+a cost and the final DTW distance is the sum of the costs of the
+editing steps that are able to transform x1 into x2 with minimal
+total costs. In particular, two editing steps are possible: (i) the
+replacement of an element of x1 to an element of x2 and (ii)
+elongation of an element of x1 or x2. In both cases, some elements
+of the two time series are matched. The cost of a single editing
+operation is the difference between the matched elements of the
+two time series.
+Figure 1.
+[image]
+Open in a new tab
+(A) x1 and x2 time series compared with DTW: the i-th element of
+x1 is elastically matched elastically matched to the appropriate
+element of x2. (B) The filled-out DTW matrix plotted as a heat-map
+(warmer color represents larger values), w denotes the size of the
+warping window, the maximal allowed time-lag between two
+matched time series element. The main diagonal is represented by
+the dark red line, while the warping path is plotted with red. The
+time-delay between the x1 and x2 time series at a given time-point
+is given by the warping path's deviation from the main diagonal
+(represented by the black arrows) (C) Calculation of DTW distance
+by filling out the DTW matrix: the example shows the first six
+element of x1 and first six element of x1 and x2 time series
+highlighted with the black rectangle in (B). Elements of x1
+corresponds to rows, while elements of x2 corresponds to columns
+of the matrix. The optimal warping path is highlighted with dark
+gray. (D) Formula to calculate entry (i,j)—in this example entry
+(3,5): squared distance of x1(i) and x2(j) plus the minimum of the
+matrix entries (i−1,j), (i−1,j−1), (i,j−1) (E) Optimal matching of
+the first six elements of x1 and x2 revealed by the DTW matrix.
+At the technical level, DTW distance is calculated by filling an l1-by-
+l2 matrix, called DTW matrix, where l1 and l2 refer to the length of
+time series x1 and x2, respectively. We use DTW(i,j) to denote the
+(i,j)-th entry of the aforementioned matrix. The (i,j)-th entry of the
+DTW matrix corresponds to the distance between the prefix of
+length i of x1 and the prefix of length j of x2 and it can be

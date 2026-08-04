@@ -1,6 +1,15 @@
 # 网络分析
 # 涉及到的工具："GNPS", "FBMN", "MS2LDA", "MolNetEnhancer"
 
+import os
+import json
+import time
+import warnings
+import numpy as np
+import pandas as pd
+import networkx as nx
+from typing import List, Dict, Tuple, Optional
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # GNPS 经典分子网络工具 — 基于 MS/MS 谱图余弦相似度的分子网络构建
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -17,15 +26,6 @@
 #   2. 注释传播 — 已知化合物的注释可以传播给同一家族中未被注释的邻居
 #   3. 发现同系物和代谢通路 — 同一分子家族中的节点往往具有结构相关性
 #   4. 为下游 MolNetEnhancer 等工具提供网络拓扑基础
-
-import os
-import json
-import time
-import warnings
-import numpy as np
-import pandas as pd
-import networkx as nx
-from typing import List, Dict, Tuple, Optional
 
 
 # ============================= MGF 解析器 =============================
@@ -120,7 +120,7 @@ def _parse_mgf(mgf_path: str) -> List[Dict]:
 
 # ============================= 余弦相似度计算 =============================
 
-def _compute_cosine_greedy(
+def _compute_cosine_greedy(     # 基于贪婪策略的谱图余弦相似度计算
     mz1: np.ndarray,
     int1: np.ndarray,
     mz2: np.ndarray,
@@ -260,14 +260,14 @@ def _compute_all_vs_all_similarity(
 
 # ============================= GNPS 分子网络主实现 =============================
 
-# KEYWORD: GNPS
+# GNPS
 def molecular_networking_gnps_impl(
     input_mgf: str,
     output_dir: str,
-    min_cosine: float = 0.7,
-    min_matched_peaks: int = 6,
-    fragment_tol: float = 0.02,
-    top_k: int = 10,
+    min_cosine: float = 0.7,        # ⭐    余弦相似度的最低阈值
+    min_matched_peaks: int = 6,     # ⭐    两个谱图至少要有 N 个碎片峰成功匹配 与 cosine 配合
+    fragment_tol: float = 0.02,     # ⭐    碎片离子 m/z 匹配的容差窗口
+    top_k: int = 10,                # ⭐    每个节点最多保留 K 条最强边
     precursor_ppm: float = 5,
 ):
     """
@@ -344,7 +344,6 @@ def molecular_networking_gnps_impl(
             f"生成 differential_spectra.mgf。"
         )
 
-    output_dir = resolve_network_method_output_dir(output_dir, "gnps")
     os.makedirs(output_dir, exist_ok=True)
 
     # ========== 1. 解析 MGF ==========
@@ -357,7 +356,7 @@ def molecular_networking_gnps_impl(
             f"至少需要 2 个谱图才能构建网络。"
         )
 
-    print(f"成功解析 {len(spectra)} 个有效谱图")
+    print(f"    成功解析 {len(spectra)} 个有效谱图")
 
     # ========== 2. 全对全余弦相似度 ==========
     print(f"\n  [Step 2/5] 全对全余弦相似度计算...")
@@ -616,7 +615,7 @@ def _compute_intensity_correlation(
         return 0.0
 
 
-# KEYWORD: FBMN
+# FBMN
 def molecular_networking_fbmn_impl(
     input_mgf: str,
     input_feature_table: str,
@@ -690,7 +689,6 @@ def molecular_networking_fbmn_impl(
     if not os.path.isfile(input_feature_table):
         raise FileNotFoundError(f"特征表未找到: {input_feature_table}")
 
-    output_dir = resolve_network_method_output_dir(output_dir, "fbmn")
     os.makedirs(output_dir, exist_ok=True)
 
     # ========== 1. 解析输入 ==========
@@ -700,8 +698,12 @@ def molecular_networking_fbmn_impl(
         raise ValueError(f"MGF 中仅有 {len(spectra)} 个谱图，至少需要 2 个")
 
     feat_df = pd.read_csv(input_feature_table)
+    # 列名兼容：mixOmics 输出用 "Feature"，其他工具用 "feature_id"
     if "feature_id" not in feat_df.columns:
-        raise ValueError("特征表必须包含 feature_id 列")
+        if "Feature" in feat_df.columns:
+            feat_df = feat_df.rename(columns={"Feature": "feature_id"})
+        else:
+            raise ValueError("特征表必须包含 feature_id 或 Feature 列")
 
     # 识别样本列（排除 feature_id, mz, rt_med 等元数据列）
     meta_cols = {"feature_id", "mz", "rt_med", "rt", "mz_med"}
@@ -803,57 +805,63 @@ def molecular_networking_fbmn_impl(
                 info["rt"] = round(float(row[col]), 2)
                 break
 
-        # 组均值（兼容 Sample 名带/不带 .mzML 后缀）
+        # 直接从特征表读取 log2FC（优先于后续组均值重算）
+        for col in ["log2FC", "logFC"]:
+            if col in feat_df.columns:
+                val = row.get(col)
+                if pd.notna(val):
+                    try:
+                        info["log2FC"] = round(float(val), 3)
+                    except (ValueError, TypeError):
+                        pass
+                break
+
+        # 组均值
         group_means = {}
-        if group_map:
-            col_lookup = {str(c): str(c) for c in feat_df.columns}
-            for c in list(feat_df.columns):
-                stem = str(c)
-                for suf in (".mzML", ".mzml", ".MZML", ".raw", ".RAW"):
-                    if stem.endswith(suf):
-                        stem = stem[: -len(suf)]
-                        break
-                col_lookup.setdefault(stem, str(c))
+        if group_map and info["mz"] is not None:
             for sample_name, group in group_map.items():
-                sample_key = str(sample_name)
-                col = col_lookup.get(sample_key)
-                if col is None:
-                    stem = sample_key
-                    for suf in (".mzML", ".mzml", ".MZML", ".raw", ".RAW"):
-                        if stem.endswith(suf):
-                            stem = stem[: -len(suf)]
-                            break
-                    col = col_lookup.get(stem)
-                if col is None:
-                    continue
-                try:
-                    val = float(row[col])
-                    if pd.notna(val):
-                        group_means.setdefault(group, []).append(val)
-                except (ValueError, TypeError, KeyError):
-                    pass
+                if sample_name in feat_df.columns:
+                    try:
+                        val = float(row[sample_name])
+                        if pd.notna(val):
+                            group_means.setdefault(group, []).append(val)
+                    except (ValueError, TypeError):
+                        pass
         group_avg = {g: round(np.mean(vals), 2) for g, vals in group_means.items()} if group_means else {}
 
         feat_info[fid] = {
             "mz": info["mz"],
             "rt": info["rt"],
             "group_means": group_avg,
+            "log2FC": info.get("log2FC"),
         }
 
     # 添加节点
     for sp in spectra:
         fid = sp["feature_id"]
         fi = feat_info.get(fid, {})
+        # RT: 特征表优先（0.0 视为占位，跳过），fallback MGF RTINSECONDS，绝不写 None
+        _rt = fi.get("rt")
+        if not _rt:
+            _rt = round(sp["rt"], 2) if sp.get("rt") else 0.0
+        # precursor_mz: 特征表优先（0.0 视为占位），fallback MGF PEPMASS
+        _pmz = fi.get("mz")
+        if not _pmz:
+            _pmz = round(sp["precursor_mz"], 4) if sp.get("precursor_mz") else 0.0
         G.add_node(
             fid,
-            precursor_mz=fi.get("mz") or round(sp["precursor_mz"], 4),
-            rt=fi.get("rt") or round(sp["rt"], 2) if sp["rt"] else None,
+            precursor_mz=_pmz,
+            rt=_rt,
             charge=sp.get("charge", "1+"),
             num_peaks=len(sp["mz_array"]),
         )
         # 添加组均值信息
         for grp, val in fi.get("group_means", {}).items():
             G.nodes[fid][f"mean_{grp}"] = val
+        # log2FC 优先从特征表读取
+        fi_log2fc = fi.get("log2FC")
+        if fi_log2fc is not None:
+            G.nodes[fid]["log2FC"] = fi_log2fc
 
     # 添加边
     for _, row in edges_df.iterrows():
@@ -878,19 +886,21 @@ def molecular_networking_fbmn_impl(
         G.nodes[node]["molecular_family"] = family_map.get(node, "singleton")
         G.nodes[node]["degree"] = G.degree(node)
 
-    # 计算 log2FC（对于两组设计）
+    # 计算 log2FC（fallback：仅对尚未从特征表获取到的节点，尝试组均值重算）
     if len(group_map) > 0:
         groups = sorted(set(group_map.values()))
         if len(groups) == 2:
             for node in G.nodes():
+                # 特征表已有 log2FC 的节点跳过重算
+                if "log2FC" in G.nodes[node] and G.nodes[node]["log2FC"] is not None:
+                    continue
                 key1 = f"mean_{groups[0]}"
                 key2 = f"mean_{groups[1]}"
-                v1 = G.nodes[node].get(key1, 0) or 0
-                v2 = G.nodes[node].get(key2, 0) or 0
+                v1 = G.nodes[node].get(key1) or 0
+                v2 = G.nodes[node].get(key2) or 0
                 if v1 > 0 and v2 > 0:
                     G.nodes[node]["log2FC"] = round(np.log2((v2 + 1) / (v1 + 1)), 3)
-                else:
-                    G.nodes[node]["log2FC"] = None
+                # 算不出的节点不写入 log2FC，避免 None 值污染 GraphML
 
     n_nodes = G.number_of_nodes()
     n_edges = G.number_of_edges()
@@ -902,18 +912,16 @@ def molecular_networking_fbmn_impl(
     # ========== 6. 导出 ==========
     print(f"\n  [Step 6/6] 导出 FBMN 文件...")
 
-    # GraphML 不支持 None；导出前清理节点/边属性
-    for _n, attrs in G.nodes(data=True):
-        for key in list(attrs.keys()):
-            if attrs[key] is None:
-                del attrs[key]
-    for _u, _v, attrs in G.edges(data=True):
-        for key in list(attrs.keys()):
-            if attrs[key] is None:
-                del attrs[key]
-
-    # GraphML
+    # GraphML（防御清理：移除所有 None 值属性，GraphML 不支持 NoneType）
     graphml_path = os.path.join(output_dir, "fbmn_network.graphml")
+    for node, attrs in list(G.nodes(data=True)):
+        for k, v in list(attrs.items()):
+            if v is None:
+                del G.nodes[node][k]
+    for u, v, attrs in list(G.edges(data=True)):
+        for k, val in list(attrs.items()):
+            if val is None:
+                del G.edges[u, v][k]
     nx.write_graphml(G, graphml_path)
     print(f"    ✅ {graphml_path}")
 
@@ -1126,7 +1134,7 @@ def _bin_fragments_for_lda(
     return doc_term, np.array(vocab), feature_ids
 
 
-# KEYWORD: MS2LDA
+# MS2LDA
 def molecular_networking_ms2lda_impl(
     input_mgf: str,
     output_dir: str,
@@ -1200,7 +1208,6 @@ def molecular_networking_ms2lda_impl(
     if not os.path.isfile(input_mgf):
         raise FileNotFoundError(f"MGF 文件未找到: {input_mgf}")
 
-    output_dir = resolve_network_method_output_dir(output_dir, "ms2lda")
     os.makedirs(output_dir, exist_ok=True)
 
     # ========== 1. 解析 MGF ==========
@@ -1208,12 +1215,10 @@ def molecular_networking_ms2lda_impl(
     spectra = _parse_mgf(input_mgf)
     n_spectra = len(spectra)
 
-    if n_spectra < 20:
+    if n_spectra < 10:
         raise ValueError(
             f"仅 {n_spectra} 个谱图，MS2LDA 建议至少 20 个谱图。"
             f"当前数据量不足以发现可靠的 Mass2Motif。"
-            f"若仅使用了 differential_spectra.mgf，请改用 "
-            f"peak_detection_results/spectra.mgf（XCMS 全量特征谱）。"
         )
 
     # 自动调整 n_motifs
@@ -1507,13 +1512,81 @@ def _parse_compound_name(name: str) -> Dict[str, str]:
     return {"category": "unknown", "confidence": "low"}
 
 
-# KEYWORD: MolNetEnhancer
+def _classify_by_smiles(smiles: str) -> Dict[str, str]:
+    """
+    基于 SMILES 子结构模式进行化学分类后备方案。
+
+    当 compound_name 无法识别时（例如 spectraverse 内部 ID），
+    利用 SMILES 字符串中的特征子结构推断化学类别。
+    使用环闭合编号无关的片段匹配策略。
+
+    Returns dict with keys: category, confidence
+    """
+    if not smiles or pd.isna(smiles):
+        return {"category": "unknown", "confidence": "low"}
+
+    import re
+    s = str(smiles)
+    # 去除环闭合编号的版本，用于线性片段匹配
+    s_nodigits = re.sub(r'\d', '', s)
+    # 进一步去除分支符号用于碳链检测
+    s_chain = s_nodigits.replace('(', '').replace(')', '')
+
+    # --- 苯丙素类（必须在黄酮类之前，避免肉桂酸被误判）---
+    # 肉桂酸骨架: C=C 连接到一个羟基/甲氧基取代的苯环
+    if bool(re.search(r'C=Cc\dccc\(O', s)) or bool(re.search(r'C=Cc\dcc\(O\)c', s)):
+        return {"category": "Phenylpropanoids and polyketides", "confidence": "medium"}
+
+    # --- 黄酮类: C6-C3-C6 骨架 ---
+    # B-ring（独立环闭合的取代苯环）+ 羰基
+    has_b_ring = bool(re.search(r'c\dccc\(O', s)) or bool(re.search(r'c\dcc\(O\)c', s))
+    has_carbonyl = '=O' in s or 'O=' in s
+    if has_b_ring and has_carbonyl:
+        return {"category": "Flavonoids", "confidence": "medium"}
+
+    # --- 脂质类: 长碳氢链 (原始 SMILES 中 ≥8 个连续碳，不依赖去数字) ---
+    # 使用原始 SMILES 避免环闭合编号去除后环状结构被误判为直链
+    if 'CCCCCCCC' in s:
+        return {"category": "Lipids and lipid-like molecules", "confidence": "medium"}
+
+    # --- 氨基酸/肽类: α-氨基酸骨架或肽键特征 ---
+    if any(p in s_nodigits for p in ["NC(C)C(=O)O", "NC(Cc", "NC(CO)C(=O)O"]):
+        return {"category": "Amino acids, peptides, and analogues", "confidence": "low"}
+
+    # --- 糖类: 多羟基特征 (≥3 个 C(O) 单元) ---
+    if s_nodigits.count("C(O)") >= 3:
+        return {"category": "Carbohydrates and carbohydrate conjugates", "confidence": "medium"}
+
+    # --- 萜类/甾体: 角甲基 (CC(C)CCC) 或异戊二烯单元 (CC(C)=C) ---
+    # 使用去数字版本避免环编号干扰
+    if "CC(C)CCC" in s_nodigits or "CC(C)=C" in s:
+        return {"category": "Terpenoids", "confidence": "low"}
+
+    # --- 核苷类: 嘌呤/嘧啶特征 ---
+    if any(p in s for p in ["n1cnc", "N1C=NC", "n1c(=O)"]) or \
+       any(p in s_nodigits for p in ["ncnc", "nc(=O)n"]):
+        return {"category": "Nucleosides, nucleotides, and analogues", "confidence": "low"}
+
+    # --- 生物碱: 含氮杂环 ([nH]=吡咯/吲哚, cnc/吡啶等) ---
+    if any(p in s for p in ["[nH]", "n1cc", "c1ncc", "ncn1", "cnc"]) or \
+       "[nH]" in s_nodigits:
+        return {"category": "Alkaloids and derivatives", "confidence": "low"}
+
+    # --- 苯环衍生物（通用兜底，在所有更特异模式之后）---
+    if "c1ccccc1" in s or "c1ccc" in s:
+        return {"category": "Benzenoids", "confidence": "low"}
+
+    return {"category": "unknown", "confidence": "low"}
+
+
+# MolNetEnhancer
 def molecular_networking_molnetenhancer_impl(
     network_edges_csv: str,
     network_nodes_csv: str,
     annotation_csv: Optional[str],
     output_dir: str,
     annotation_col: str = "compound_name",
+    id_mapping_csv: Optional[str] = None,
 ):
     """
     基于 MolNetEnhancer 思路对分子网络进行增强注释。
@@ -1543,6 +1616,14 @@ def molecular_networking_molnetenhancer_impl(
         输出目录。
     annotation_col : str, default="compound_name"
         注释表中化合物名称所在的列名。
+    id_mapping_csv : str or None, default=None
+        可选的特征ID到化合物ID映射表。用于桥接网络节点ID（XCMS feature_id，
+        如 FT00073）和注释表ID（RAMClust compound_id，如 C0044）之间的差异。
+        通常是 Stage 3 的 ramclust_clusters.csv，包含 feature_id 和 cluster 列。
+        如果提供了此文件，MolNetEnhancer 将自动进行 ID 转换：
+        - 网络节点 ID（feature_id）→ compound_id → 注释表
+        - 如果注释表使用 compound_id，它们将被反向映射到 feature_id 以匹配网络节点
+        如果不提供，则假设网络节点 ID 和注释表 ID 直接匹配。
 
     Outputs
     -------
@@ -1565,7 +1646,6 @@ def molecular_networking_molnetenhancer_impl(
         if not os.path.isfile(path):
             raise FileNotFoundError(f"{desc}未找到: {path}")
 
-    output_dir = resolve_network_method_output_dir(output_dir, "molnetenhancer")
     os.makedirs(output_dir, exist_ok=True)
 
     # ========== 1. 加载网络数据 ==========
@@ -1582,11 +1662,72 @@ def molecular_networking_molnetenhancer_impl(
     src_col = "source" if "source" in edges_df.columns else "Source"
     tgt_col = "target" if "target" in edges_df.columns else "Target"
 
-    # ========== 2. 加载并映射注释 ==========
+    # ========== 2. 加载 ID 映射并加载注释 ==========
     print(f"\n  [Step 2/5] 加载谱库注释...")
-    annotation_map = {}  # feature_id → compound_name
+    annotation_map = {}    # feature_id → compound_name
+    annotation_smiles = {}  # feature_id → SMILES (用于化学分类后备)
 
-    # 从节点表已有的 compound_name 加载
+    # --- 2a. 构建网络节点 ID 集合（始终需要，用于匹配验证）---
+    network_node_ids = set(nodes_df["feature_id"].astype(str).values)
+
+    # --- 2b. 加载 ID 映射表 (feature_id ↔ compound_id) ---
+    feature_to_compound = {}  # feature_id (FT00073) → compound_id (C0001)
+    compound_to_features = {} # compound_id (C0001) → [feature_id, ...]
+
+    # 如果未显式提供 id_mapping_csv，自动搜索 ramclust_clusters.csv
+    if not id_mapping_csv or not os.path.isfile(id_mapping_csv):
+        # 从输入路径推导 outputspace 根目录
+        ref_path = network_edges_csv or network_nodes_csv
+        outputspace_root = os.path.dirname(   # .../outputspace/
+            os.path.dirname(                   # .../molecular_networking_gnps/
+                os.path.dirname(ref_path)      # .../molecular_networking/
+            )
+        )
+        # 优先在 redundant_feature_filtering 子目录中搜索
+        for root, dirs, files in os.walk(
+            os.path.join(outputspace_root, "redundant_feature_filtering")
+        ):
+            if "ramclust_clusters.csv" in files:
+                id_mapping_csv = os.path.join(root, "ramclust_clusters.csv")
+                break
+        # Fallback: 搜索整个 outputspace
+        if not id_mapping_csv or not os.path.isfile(id_mapping_csv):
+            for root, dirs, files in os.walk(outputspace_root):
+                if "ramclust_clusters.csv" in files:
+                    id_mapping_csv = os.path.join(root, "ramclust_clusters.csv")
+                    break
+
+    if id_mapping_csv and os.path.isfile(id_mapping_csv):
+        mapping_df = pd.read_csv(id_mapping_csv)
+        print(f"    ID 映射表: {id_mapping_csv} ({len(mapping_df)} 行)")
+
+        if "feature_id" in mapping_df.columns:
+            # 确定 compound 列的格式
+            if "cluster" in mapping_df.columns:
+                # RAMClust 格式: feature_id, cluster → compound_id = C + 4-digit cluster
+                for _, row in mapping_df.iterrows():
+                    fid = str(row["feature_id"])
+                    cluster_num = row["cluster"]
+                    if pd.notna(cluster_num) and int(cluster_num) >= 0:
+                        cid = f"C{int(cluster_num):04d}"
+                        feature_to_compound[fid] = cid
+                        compound_to_features.setdefault(cid, []).append(fid)
+            elif "compound_id" in mapping_df.columns:
+                for _, row in mapping_df.iterrows():
+                    fid = str(row["feature_id"])
+                    cid = str(row["compound_id"])
+                    feature_to_compound[fid] = cid
+                    compound_to_features.setdefault(cid, []).append(fid)
+
+        if feature_to_compound:
+            print(f"    构建 ID 映射: {len(feature_to_compound)} 个 feature → "
+                  f"{len(compound_to_features)} 个 compound")
+        else:
+            print(f"    ⚠️ ID 映射表缺少 feature_id 和 cluster/compound_id 列")
+    elif id_mapping_csv:
+        print(f"    ⚠️ ID 映射表未找到: {id_mapping_csv}")
+
+    # --- 2c. 从节点表已有的 compound_name 加载 ---
     if "compound_name" in nodes_df.columns:
         for _, row in nodes_df.iterrows():
             val = row["compound_name"]
@@ -1594,7 +1735,7 @@ def molecular_networking_molnetenhancer_impl(
                 annotation_map[str(row["feature_id"])] = str(val).strip()
         print(f"    从节点表加载: {len(annotation_map)} 个已有注释")
 
-    # 从独立的注释表加载（优先级更高）
+    # --- 2d. 从独立的注释表加载（优先级更高）---
     if annotation_csv and os.path.isfile(annotation_csv):
         anno_df = pd.read_csv(annotation_csv)
         # 兼容 xcms 输出的 Feature 列名和标准 feature_id
@@ -1602,17 +1743,69 @@ def molecular_networking_molnetenhancer_impl(
             "Feature" if "Feature" in anno_df.columns else None
         )
         if id_col and annotation_col in anno_df.columns:
-            count = 0
+            count_direct = 0
+            count_bridged = 0
+            count_skipped = 0
+            # 检测 SMILES 列（用于化学分类后备）
+            smiles_col = None
+            for c in ["smiles", "SMILES", "Smiles"]:
+                if c in anno_df.columns:
+                    smiles_col = c
+                    break
+
             for _, row in anno_df.iterrows():
                 val = row[annotation_col]
-                if pd.notna(val) and str(val).strip():
-                    annotation_map[str(row[id_col])] = str(val).strip()
-                    count += 1
-            print(f"    从注释表加载: {count} 个注释")
+                if pd.isna(val) or not str(val).strip():
+                    continue
+
+                raw_id = str(row[id_col])
+                smiles_val = None
+                if smiles_col:
+                    s = row[smiles_col]
+                    if pd.notna(s) and str(s).strip():
+                        smiles_val = str(s).strip()
+
+                # 尝试 1: raw_id 直接匹配网络节点 ID
+                if raw_id in network_node_ids:
+                    annotation_map[raw_id] = str(val).strip()
+                    if smiles_val:
+                        annotation_smiles[raw_id] = smiles_val
+                    count_direct += 1
+                # 尝试 2: 有 ID 桥接映射，尝试反向查找
+                elif feature_to_compound:
+                    if raw_id in compound_to_features:
+                        for mapped_fid in compound_to_features[raw_id]:
+                            annotation_map[mapped_fid] = str(val).strip()
+                            if smiles_val:
+                                annotation_smiles[mapped_fid] = smiles_val
+                            count_bridged += 1
+                    else:
+                        count_skipped += 1
+                else:
+                    # 无法匹配且没有桥接映射
+                    count_skipped += 1
+
+            # 输出加载统计
+            parts = [f"{count_direct} 个直接匹配"]
+            if count_bridged > 0:
+                parts.append(f"{count_bridged} 个 ID 桥接")
+            if count_skipped > 0:
+                parts.append(f"跳过 {count_skipped} 个无法匹配")
+            print(f"    从注释表加载: {' + '.join(parts)}")
+
+            # 如果存在无法匹配的 ID 且没有桥接映射，给出明确提示
+            if count_skipped > 0 and not feature_to_compound:
+                print(f"    💡 提示: 注释表 ID 与网络节点 ID 格式不一致。")
+                print(f"       网络节点 ID 示例: {sorted(list(network_node_ids))[:3]}")
+                anno_sample = [str(x) for x in anno_df[id_col].dropna().values[:3]]
+                print(f"       注释表 ID 示例: {anno_sample}")
+                print(f"       请提供 id_mapping_csv 参数来桥接两种 ID 体系，")
+                print(f"       或确保 Stage 3 (redundant_feature_filtering) 已运行")
+                print(f"       以自动生成 ramclust_clusters.csv 映射文件。")
         else:
             print(f"    ⚠️ 注释表缺少 feature_id/Feature 或 {annotation_col} 列")
 
-    total_annotated = len(annotation_map)
+    total_annotated = sum(1 for fid in annotation_map if fid in network_node_ids)
     print(f"    总计注释节点: {total_annotated}/{len(nodes_df)} "
           f"({100 * total_annotated / max(1, len(nodes_df)):.1f}%)")
 
@@ -1621,14 +1814,39 @@ def molecular_networking_molnetenhancer_impl(
     node_category = {}    # feature_id → category
     node_conf = {}        # feature_id → confidence
 
+    n_name_classified = 0
+    n_smiles_classified = 0
+
     for fid, cpd_name in annotation_map.items():
         result = _parse_compound_name(cpd_name)
         node_category[fid] = result["category"]
         node_conf[fid] = result["confidence"]
 
+        if result["category"] != "unknown":
+            n_name_classified += 1
+        else:
+            # 名称无法分类 → 尝试用 SMILES 子结构匹配
+            smi = annotation_smiles.get(fid)
+            if smi:
+                result_smi = _classify_by_smiles(smi)
+                if result_smi["category"] != "unknown":
+                    node_category[fid] = result_smi["category"]
+                    node_conf[fid] = result_smi["confidence"]
+                    n_smiles_classified += 1
+
     n_classified = sum(1 for v in node_category.values() if v != "unknown")
-    print(f"    直接分类: {n_classified}/{len(node_category)} "
-          f"({100 * n_classified / max(1, len(node_category)):.1f}%)")
+    if n_name_classified > 0 or n_smiles_classified > 0:
+        parts = []
+        if n_name_classified > 0:
+            parts.append(f"{n_name_classified} 个按名称")
+        if n_smiles_classified > 0:
+            parts.append(f"{n_smiles_classified} 个按 SMILES")
+        print(f"    直接分类: {n_classified}/{len(node_category)} "
+              f"({100 * n_classified / max(1, len(node_category)):.1f}%)"
+              f" — {' + '.join(parts)}")
+    else:
+        print(f"    直接分类: {n_classified}/{len(node_category)} "
+              f"({100 * n_classified / max(1, len(node_category)):.1f}%)")
 
     # ========== 4. 网络注释传播 ==========
     print(f"\n  [Step 4/5] 分子家族内注释传播...")
@@ -1715,34 +1933,33 @@ def molecular_networking_molnetenhancer_impl(
     print(f"    ✅ {graphml_out}")
 
     # --- 化学类别分布 ---
-    if n_classified > 0 or n_prop > 0:
-        cat_dist = {}
-        for comp_idx, comp in enumerate(components):
-            family_id = f"MF_{comp_idx + 1:04d}"
-            family_cats = {}
-            for node in comp:
-                cat = node_category.get(node, "unknown")
-                family_cats[cat] = family_cats.get(cat, 0) + 1
-            for cat, cnt in family_cats.items():
-                cat_dist.setdefault(cat, []).append({
-                    "molecular_family": family_id,
-                    "count_in_family": cnt,
-                    "family_size": len(comp),
-                    "fraction_in_family": round(cnt / len(comp), 3),
-                })
+    cat_dist = {}
+    for comp_idx, comp in enumerate(components):
+        family_id = f"MF_{comp_idx + 1:04d}"
+        family_cats = {}
+        for node in comp:
+            cat = node_category.get(node, "unknown")
+            family_cats[cat] = family_cats.get(cat, 0) + 1
+        for cat, cnt in family_cats.items():
+            cat_dist.setdefault(cat, []).append({
+                "molecular_family": family_id,
+                "count_in_family": cnt,
+                "family_size": len(comp),
+                "fraction_in_family": round(cnt / len(comp), 3),
+            })
 
-        dist_rows = []
-        for cat, entries in cat_dist.items():
-            for e in entries:
-                dist_rows.append({"chemical_category": cat, **e})
-        dist_df = pd.DataFrame(dist_rows)
-        if len(dist_df) > 0:
-            dist_df = dist_df.sort_values(
-                ["chemical_category", "fraction_in_family"], ascending=[True, False]
-            )
-        dist_out = os.path.join(output_dir, "chemical_class_distribution.csv")
-        dist_df.to_csv(dist_out, index=False)
-        print(f"    ✅ {dist_out}")
+    dist_rows = []
+    for cat, entries in cat_dist.items():
+        for e in entries:
+            dist_rows.append({"chemical_category": cat, **e})
+    dist_df = pd.DataFrame(dist_rows)
+    if len(dist_df) > 0:
+        dist_df = dist_df.sort_values(
+            ["chemical_category", "fraction_in_family"], ascending=[True, False]
+        )
+    dist_out = os.path.join(output_dir, "chemical_class_distribution.csv")
+    dist_df.to_csv(dist_out, index=False)
+    print(f"    ✅ {dist_out} ({len(dist_df)} 行)")
 
     # --- 传播日志 ---
     if n_prop > 0:
@@ -1815,7 +2032,6 @@ matplotlib.use("Agg")  # 非交互后端，服务器环境安全
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from collections import Counter
-from web_frontend.backend.export.editable_export import save_editable_figure
 
 # 全局绘图风格
 plt.rcParams.update({
@@ -1969,37 +2185,7 @@ def _plot_network_topology(
     )
     ax.axis("off")
     fig.tight_layout()
-
-    # 落盘布局坐标，供前端 SVG 语义编辑重绘
-    try:
-        import pandas as _pd
-
-        layout_rows = []
-        for node_id, (px, py) in pos.items():
-            attrs = G.nodes[node_id]
-            layout_rows.append(
-                {
-                    "node_id": node_id,
-                    "x": float(px),
-                    "y": float(py),
-                    "family": attrs.get(color_by, "singleton"),
-                    "degree": int(G.degree(node_id)),
-                }
-            )
-        layout_csv = os.path.join(os.path.dirname(output_path), "network_layout.csv")
-        _pd.DataFrame(layout_rows).to_csv(layout_csv, index=False)
-    except Exception as exc:
-        print(f"    ⚠️ network_layout.csv 写出失败: {exc}")
-
-    save_editable_figure(
-        fig,
-        output_path,
-        title=title,
-        skip_plotly=True,
-        dpi=300,
-        bbox_inches="tight",
-        facecolor="white",
-    )
+    fig.savefig(output_path, dpi=300, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     print(f"    ✅ 网络拓扑图: {output_path}")
 
@@ -2063,29 +2249,7 @@ def _plot_family_size_distribution(
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
     fig.tight_layout()
-    from web_frontend.backend.export.plotly_export import build_family_size_distribution_figure
-
-    plotly_fig = None
-    try:
-        plotly_fig = build_family_size_distribution_figure(
-            labels=labels,
-            sizes=sizes,
-            colors=colors,
-            title=title,
-            n_families=len(sorted_fams),
-            n_singletons=n_singletons,
-        )
-    except Exception:
-        pass
-    save_editable_figure(
-        fig,
-        output_path,
-        title=title,
-        plotly_fig=plotly_fig,
-        dpi=300,
-        bbox_inches="tight",
-        facecolor="white",
-    )
+    fig.savefig(output_path, dpi=300, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     print(f"    ✅ 家族大小分布图: {output_path}")
 
@@ -2135,26 +2299,7 @@ def _plot_cosine_distribution(
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
     fig.tight_layout()
-    from web_frontend.backend.export.plotly_export import build_cosine_distribution_figure
-
-    plotly_fig = None
-    try:
-        plotly_fig = build_cosine_distribution_figure(
-            cosines=cosines,
-            title=title,
-            median=median,
-        )
-    except Exception:
-        pass
-    save_editable_figure(
-        fig,
-        output_path,
-        title=title,
-        plotly_fig=plotly_fig,
-        dpi=300,
-        bbox_inches="tight",
-        facecolor="white",
-    )
+    fig.savefig(output_path, dpi=300, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     print(f"    ✅ 余弦相似度分布图: {output_path}")
 
@@ -2200,29 +2345,7 @@ def _plot_degree_distribution(
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
     fig.tight_layout()
-    from web_frontend.backend.export.plotly_export import build_degree_distribution_figure
-
-    plotly_fig = None
-    try:
-        plotly_fig = build_degree_distribution_figure(
-            degrees=degrees,
-            title=title,
-            avg_deg=float(avg_deg),
-            max_deg=max_deg,
-            isolated=degrees.count(0),
-            n_nodes=G.number_of_nodes(),
-        )
-    except Exception:
-        pass
-    save_editable_figure(
-        fig,
-        output_path,
-        title=title,
-        plotly_fig=plotly_fig,
-        dpi=300,
-        bbox_inches="tight",
-        facecolor="white",
-    )
+    fig.savefig(output_path, dpi=300, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     print(f"    ✅ 度数分布图: {output_path}")
 
@@ -2297,7 +2420,7 @@ def _plot_pearson_r_distribution(
 
     fig.suptitle(title, fontsize=13, fontweight="bold", y=1.02)
     fig.tight_layout()
-    save_editable_figure(fig, output_path, title=title, dpi=300, bbox_inches="tight", facecolor="white")
+    fig.savefig(output_path, dpi=300, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     print(f"    ✅ Pearson 相关性图: {output_path}")
 
@@ -2399,7 +2522,7 @@ def _plot_chemical_class_distribution(
 
     fig.suptitle(title, fontsize=14, fontweight="bold", y=1.02)
     fig.tight_layout()
-    save_editable_figure(fig, output_path, title=title, dpi=300, bbox_inches="tight", facecolor="white")
+    fig.savefig(output_path, dpi=300, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     print(f"    ✅ 化学类别分布图: {output_path}")
 
@@ -2582,7 +2705,7 @@ def _plot_mass2motif_top_fragments(
         fontsize=14, fontweight="bold", y=1.01,
     )
     fig.tight_layout()
-    save_editable_figure(fig, output_path, title=title, dpi=300, bbox_inches="tight", facecolor="white")
+    fig.savefig(output_path, dpi=300, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     print(f"    ✅ Mass2Motif 碎片图 (mirror plot): {output_path}")
 
@@ -2639,7 +2762,7 @@ def _plot_motif_spectrum_association_heatmap(
     cbar = fig.colorbar(im, ax=ax, shrink=0.8)
     cbar.set_label("P(motif | spectrum)", fontsize=9)
     fig.tight_layout()
-    save_editable_figure(fig, output_path, title=title, dpi=300, bbox_inches="tight", facecolor="white")
+    fig.savefig(output_path, dpi=300, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     print(f"    ✅ Motif 关联热图: {output_path}")
 
@@ -2703,39 +2826,6 @@ KNOWN_TRANSFORMATIONS = {
 }
 
 
-def _precursor_mass_diff_payload(G):
-    """Collect filtered Δm/z values and top annotated transformations."""
-    mass_diffs = []
-    for u, v in G.edges():
-        mz_u = G.nodes[u].get("precursor_mz")
-        mz_v = G.nodes[v].get("precursor_mz")
-        if mz_u and mz_v and mz_u > 0 and mz_v > 0:
-            mass_diffs.append(abs(float(mz_u) - float(mz_v)))
-
-    if len(mass_diffs) < 5:
-        return None
-
-    mass_diffs = np.array(mass_diffs, dtype=float)
-    mass_diffs = mass_diffs[(mass_diffs >= 0.1) & (mass_diffs <= 600)]
-    if mass_diffs.size < 5:
-        return None
-
-    nearby_transforms: dict[str, tuple[float, int]] = {}
-    for name, delta in KNOWN_TRANSFORMATIONS.items():
-        if 0 <= delta <= mass_diffs.max():
-            count = int(((mass_diffs >= delta - 0.5) & (mass_diffs <= delta + 0.5)).sum())
-            if count > 0:
-                nearby_transforms[name] = (float(delta), count)
-
-    sorted_transforms = sorted(
-        nearby_transforms.items(),
-        key=lambda item: item[1][1],
-        reverse=True,
-    )[:15]
-    annotated = [(name, delta, count) for name, (delta, count) in sorted_transforms]
-    return mass_diffs, annotated
-
-
 def _plot_precursor_mass_difference(
     G,
     output_path,
@@ -2750,12 +2840,20 @@ def _plot_precursor_mass_difference(
 
     标注已知的常见化学变换位置，帮助快速识别数据中的主要代谢转化模式。
     """
-    payload = _precursor_mass_diff_payload(G)
-    if payload is None:
+    mass_diffs = []
+    for u, v in G.edges():
+        mz_u = G.nodes[u].get("precursor_mz")
+        mz_v = G.nodes[v].get("precursor_mz")
+        if mz_u and mz_v and mz_u > 0 and mz_v > 0:
+            mass_diffs.append(abs(mz_u - mz_v))
+
+    if len(mass_diffs) < 5:
         print("    ⚠️ 不足 5 个有效前体质量差，跳过")
         return
 
-    mass_diffs, sorted_transforms = payload
+    mass_diffs = np.array(mass_diffs)
+    # 仅关注有意义的质量差范围 (0–600 Da)
+    mass_diffs = mass_diffs[(mass_diffs >= 0.1) & (mass_diffs <= 600)]
 
     fig, axes = plt.subplots(1, 2, figsize=figsize)
 
@@ -2775,8 +2873,17 @@ def _plot_precursor_mass_difference(
 
     # --- 右图：标注已知化学变换 ---
     ax2 = axes[1]
-    colors_transform = plt.cm.tab10.colors
-    y_max = np.histogram(mass_diffs, bins=80)[0].max()
+    # 找到数据范围内的已知变换
+    nearby_transforms = {}
+    for name, delta in KNOWN_TRANSFORMATIONS.items():
+        if 0 <= delta <= mass_diffs.max():
+            count = ((mass_diffs >= delta - 0.5) & (mass_diffs <= delta + 0.5)).sum()
+            if count > 0:
+                nearby_transforms[name] = (delta, count)
+
+    # 按 Δm/z 排序的 top 转换
+    sorted_transforms = sorted(nearby_transforms.items(),
+                               key=lambda x: x[1][1], reverse=True)[:15]
 
     ax2.hist(mass_diffs, bins=80, color="#888888", edgecolor="white",
              alpha=0.3, linewidth=0.3)
@@ -2787,7 +2894,9 @@ def _plot_precursor_mass_difference(
         fontsize=11, fontweight="bold",
     )
 
-    for i, (name, delta, count) in enumerate(sorted_transforms):
+    colors_transform = plt.cm.tab10.colors
+    y_max = np.histogram(mass_diffs, bins=80)[0].max()
+    for i, (name, (delta, count)) in enumerate(sorted_transforms):
         color = colors_transform[i % len(colors_transform)]
         ax2.axvline(x=delta, color=color, linestyle="--", linewidth=1.2, alpha=0.8)
         ax2.annotate(
@@ -2803,26 +2912,7 @@ def _plot_precursor_mass_difference(
 
     fig.suptitle(title, fontsize=13, fontweight="bold", y=1.02)
     fig.tight_layout()
-    from web_frontend.backend.export.plotly_export import build_precursor_mass_diff_figure
-
-    plotly_fig = None
-    try:
-        plotly_fig = build_precursor_mass_diff_figure(
-            mass_diffs=mass_diffs,
-            title=title,
-            annotated_transforms=sorted_transforms,
-        )
-    except Exception:
-        pass
-    save_editable_figure(
-        fig,
-        output_path,
-        title=title,
-        plotly_fig=plotly_fig,
-        dpi=300,
-        bbox_inches="tight",
-        facecolor="white",
-    )
+    fig.savefig(output_path, dpi=300, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     print(f"    ✅ 前体质量差分布图: {output_path}")
 
@@ -2841,8 +2931,6 @@ def _plot_fbmn_group_intensity(
 
     使用分组柱状图（grouped bar chart），展示各家族在实验组和对照组的
     mean ± 范围，帮助识别在特定条件下共调控的代谢物家族。
-
-    同时写出 fbmn_group_intensity.csv（长表）供前端语义重绘。
     """
     # 提取组信息
     group_keys = set()
@@ -2899,35 +2987,6 @@ def _plot_fbmn_group_intensity(
                          key=lambda x: x[1]["fold_change"], reverse=True)
     show_fams = sorted_fams[:top_families]
 
-    # ---- sidecar CSV（语义编辑）----
-    try:
-        rows = []
-        g0, g1 = group_keys[0], group_keys[1]
-        for rank, (fam, fs) in enumerate(show_fams, start=1):
-            m0 = fs["stats"][g0]["mean"]
-            m1 = fs["stats"][g1]["mean"]
-            log2fc = float(np.log2((m1 + 1) / (m0 + 1))) if (m0 > 0 or m1 > 0) else 0.0
-            for g in group_keys[:2]:
-                st = fs["stats"][g]
-                rows.append(
-                    {
-                        "molecular_family": fam,
-                        "family_size": int(family_sizes.get(fam, 0)),
-                        "group": g,
-                        "mean_intensity": float(st["mean"]),
-                        "std_intensity": float(st["std"]),
-                        "n_nodes": int(st["n"]),
-                        "abs_mean_diff": float(fs["fold_change"]),
-                        "log2fc": log2fc,
-                        "rank": rank,
-                    }
-                )
-        csv_path = os.path.join(os.path.dirname(output_path), "fbmn_group_intensity.csv")
-        pd.DataFrame(rows).to_csv(csv_path, index=False)
-        print(f"    ✅ FBMN 组强度 sidecar: {csv_path}")
-    except Exception as exc:
-        print(f"    ⚠️ fbmn_group_intensity.csv 写出失败: {exc}")
-
     fig, ax = plt.subplots(figsize=figsize)
     n_fams = len(show_fams)
     n_groups = len(group_keys[:2])  # 比较前两组
@@ -2974,7 +3033,7 @@ def _plot_fbmn_group_intensity(
     ax.spines["right"].set_visible(False)
 
     fig.tight_layout()
-    save_editable_figure(fig, output_path, title=title, dpi=300, bbox_inches="tight", facecolor="white")
+    fig.savefig(output_path, dpi=300, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     print(f"    ✅ FBMN 组强度对比图: {output_path}")
 
@@ -3043,7 +3102,7 @@ def _plot_mass2motif_overview(
     cbar.set_label("N associated spectra", fontsize=9)
 
     fig.tight_layout()
-    save_editable_figure(fig, output_path, title=title, dpi=300, bbox_inches="tight", facecolor="white")
+    fig.savefig(output_path, dpi=300, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     print(f"    ✅ Mass2Motif 总览图: {output_path}")
 
@@ -3127,6 +3186,8 @@ def _plot_mass2motif_network(
         spectrum_nodes.append(node_id)
         pos[node_id] = (radius_s * np.cos(angle), radius_s * np.sin(angle))
 
+    fig, ax = plt.subplots(figsize=figsize)
+
     # 计算 motif 节点大小
     motif_loads = {}
     for mcol in valid_motif_cols:
@@ -3138,77 +3199,19 @@ def _plot_mass2motif_network(
             motif_loads[motif_id] = 1
     max_load = max(motif_loads.values()) if motif_loads else 1
 
-    # 边表（同时用于画图与 sidecar）
-    edge_rows = []
-    for spec_id in active_spectra.index:
-        for mcol in valid_motif_cols:
-            score = float(active_spectra.loc[spec_id, mcol])
-            if score >= score_threshold:
-                edge_rows.append(
-                    {
-                        "spectrum_id": str(spec_id),
-                        "motif_id": str(mcol),
-                        "score": score,
-                    }
-                )
-
-    # ---- sidecar CSV（语义编辑）----
-    try:
-        out_dir = os.path.dirname(output_path)
-        node_rows = []
-        for mcol in valid_motif_cols:
-            node_id = f"motif:{mcol}"
-            px, py = pos[node_id]
-            node_rows.append(
-                {
-                    "node_id": node_id,
-                    "node_type": "motif",
-                    "label": mcol.replace("Motif_", "M"),
-                    "motif_id": mcol,
-                    "spectrum_id": "",
-                    "total_load": float(motif_loads.get(mcol, 1)),
-                    "max_score": "",
-                    "x": float(px),
-                    "y": float(py),
-                }
-            )
-        for spec_id in active_spectra.index:
-            node_id = f"spec:{spec_id}"
-            px, py = pos[node_id]
-            node_rows.append(
-                {
-                    "node_id": node_id,
-                    "node_type": "spectrum",
-                    "label": str(spec_id),
-                    "motif_id": "",
-                    "spectrum_id": str(spec_id),
-                    "total_load": "",
-                    "max_score": float(active_spectra.loc[spec_id, "_max_score"]),
-                    "x": float(px),
-                    "y": float(py),
-                }
-            )
-        nodes_csv = os.path.join(out_dir, "mass2motif_network_nodes.csv")
-        edges_csv = os.path.join(out_dir, "mass2motif_network_edges.csv")
-        pd.DataFrame(node_rows).to_csv(nodes_csv, index=False)
-        pd.DataFrame(edge_rows).to_csv(edges_csv, index=False)
-        print(f"    ✅ Motif 网络 sidecar: {nodes_csv}, {edges_csv}")
-    except Exception as exc:
-        print(f"    ⚠️ mass2motif_network sidecar 写出失败: {exc}")
-
-    fig, ax = plt.subplots(figsize=figsize)
-
     # 绘制边（从谱图到 motif）
     edge_count = 0
-    for row in edge_rows:
-        spec_node = f"spec:{row['spectrum_id']}"
-        motif_node = f"motif:{row['motif_id']}"
-        score = row["score"]
-        alpha = max(0.1, min(0.6, score * 0.8))
-        ax.plot([pos[spec_node][0], pos[motif_node][0]],
-                [pos[spec_node][1], pos[motif_node][1]],
-                color="#aaaaaa", alpha=alpha, linewidth=0.3, zorder=1)
-        edge_count += 1
+    for spec_idx, spec_id in enumerate(active_spectra.index):
+        spec_node = f"spec:{spec_id}"
+        for mcol in valid_motif_cols:
+            score = active_spectra.loc[spec_id, mcol]
+            if score >= score_threshold:
+                motif_node = f"motif:{mcol}"
+                alpha = max(0.1, min(0.6, score * 0.8))
+                ax.plot([pos[spec_node][0], pos[motif_node][0]],
+                        [pos[spec_node][1], pos[motif_node][1]],
+                        color="#aaaaaa", alpha=alpha, linewidth=0.3, zorder=1)
+                edge_count += 1
 
     # 绘制谱图节点（小方块）
     spec_x = [pos[n][0] for n in spectrum_nodes]
@@ -3238,7 +3241,7 @@ def _plot_mass2motif_network(
     ax.axis("equal")
     ax.axis("off")
     fig.tight_layout()
-    save_editable_figure(fig, output_path, title=title, dpi=300, bbox_inches="tight", facecolor="white")
+    fig.savefig(output_path, dpi=300, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     print(f"    ✅ Motif-谱图关联网络图: {output_path}")
 
@@ -3346,7 +3349,7 @@ def _plot_family_chemical_consensus(
     ax.spines["right"].set_visible(False)
 
     fig.tight_layout()
-    save_editable_figure(fig, output_path, title=title, dpi=300, bbox_inches="tight", facecolor="white")
+    fig.savefig(output_path, dpi=300, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     print(f"    ✅ 分子家族化学一致性图: {output_path}")
 
@@ -3475,7 +3478,7 @@ def _plot_annotation_propagation_summary(
 
     fig.suptitle(title, fontsize=13, fontweight="bold", y=1.02)
     fig.tight_layout()
-    save_editable_figure(fig, output_path, title=title, dpi=300, bbox_inches="tight", facecolor="white")
+    fig.savefig(output_path, dpi=300, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     print(f"    ✅ 注释传播总结图: {output_path}")
 
@@ -3483,91 +3486,6 @@ def _plot_annotation_propagation_summary(
 # ═══════════════════════════════════════════════════════════════════════════════
 # 统一入口函数
 # ═══════════════════════════════════════════════════════════════════════════════
-
-_SHARED_NETWORK_PLOT_STEMS = (
-    "network_topology",
-    "family_size_distribution",
-    "degree_distribution",
-    "precursor_mass_diff",
-    "cosine_distribution",
-)
-
-_NETWORK_SIDECAR_SUFFIXES = (
-    ".png",
-    ".svg",
-    ".vl.json",
-    ".plot_config.json",
-    ".plotly.json",
-    ".editable.json",
-    ".echarts.json",
-)
-
-
-def resolve_network_method_output_dir(base_network_dir: str, method: str) -> str:
-    """将各分子网络方法落到 molecular_network_results/<method>/，避免根目录与子目录重复。"""
-    method = (method or "gnps").strip().lower()
-    base = os.path.abspath(base_network_dir)
-    # 已是方法子目录则不再嵌套
-    if os.path.basename(base).lower() == method:
-        return base
-    parent_name = os.path.basename(base).lower()
-    # 旧独立目录 molecular_network_fbmn_results → molecular_network_results/fbmn
-    if (
-        parent_name.startswith("molecular_network_")
-        and parent_name.endswith("_results")
-        and parent_name != "molecular_network_results"
-    ):
-        session_out = os.path.dirname(base)
-        return os.path.join(session_out, "molecular_network_results", method)
-    # 传入 molecular_network_results 根目录
-    if parent_name == "molecular_network_results":
-        return os.path.join(base, method)
-    # 其它路径：在其下建 method 子目录
-    return os.path.join(base, method)
-
-
-def dedupe_flat_network_plot_copies(network_root: str, method: str) -> list[str]:
-    """删除 molecular_network_results/ 根目录下与方法子目录同名的共享图副本。
-
-    XCMS/统计图在 statistical_results/，stem 不同，不受影响。
-    GNPS 与 FBMN 共享 cosine/topology 等 stem 时：保留方法子目录，去掉根目录扁平副本。
-    """
-    root = os.path.abspath(network_root)
-    method = (method or "").strip().lower()
-    if not method or not os.path.isdir(root):
-        return []
-    if os.path.basename(root) != "molecular_network_results":
-        return []
-    method_dir = os.path.join(root, method)
-    if not os.path.isdir(method_dir):
-        return []
-
-    removed: list[str] = []
-    for stem in _SHARED_NETWORK_PLOT_STEMS:
-        method_png = os.path.join(method_dir, f"{stem}.png")
-        if not os.path.isfile(method_png):
-            continue
-        for suffix in _NETWORK_SIDECAR_SUFFIXES:
-            flat = os.path.join(root, f"{stem}{suffix}")
-            if os.path.isfile(flat):
-                try:
-                    os.remove(flat)
-                    removed.append(flat)
-                except OSError:
-                    pass
-        if stem == "network_topology":
-            flat_layout = os.path.join(root, "network_layout.csv")
-            method_layout = os.path.join(method_dir, "network_layout.csv")
-            if os.path.isfile(flat_layout) and os.path.isfile(method_layout):
-                try:
-                    os.remove(flat_layout)
-                    removed.append(flat_layout)
-                except OSError:
-                    pass
-    if removed:
-        print(f"    🧹 已清理根目录重复网络图 {len(removed)} 个文件（保留 {method}/）")
-    return removed
-
 
 def generate_network_figures(
     method,
@@ -3741,31 +3659,6 @@ def generate_network_figures(
     print(f"\n✅ 所有图表已生成到: {output_dir}/")
     print(f"{'=' * 60}\n")
 
-    # 清理根目录与方法子目录的同名重复图（GNPS/FBMN 共用 stem）
-    try:
-        method_dir = os.path.abspath(output_dir)
-        parent = os.path.dirname(method_dir)
-        if os.path.basename(method_dir).lower() == str(method or "").lower():
-            dedupe_flat_network_plot_copies(parent, method)
-        else:
-            dedupe_flat_network_plot_copies(method_dir, method)
-    except Exception as exc:
-        print(f"    ⚠️ 网络图去重跳过: {exc}")
-
-    from web_frontend.backend.export.plotly_sidecar_backfill import backfill_molecular_network_plotly_sidecars
-
-    backfill_molecular_network_plotly_sidecars(
-        output_dir,
-        title_prefix=title_prefix or (method.upper() if method else "GNPS"),
-        color_by=color_by,
-    )
-    try:
-        from web_frontend.backend.plot_edit_service import ensure_default_plot_configs
-
-        ensure_default_plot_configs(output_dir)
-    except Exception as exc:
-        print(f"    ⚠️ Default plot_config backfill skipped: {exc}")
-
 
 # ======================== 综合仪表板 ========================
 
@@ -3912,19 +3805,47 @@ def generate_network_dashboard(
         fontsize=15, fontweight="bold", y=1.01,
     )
     fig.tight_layout()
-    save_editable_figure(fig, output_path, title=title, dpi=300, bbox_inches="tight", facecolor="white")
+    fig.savefig(output_path, dpi=300, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     print(f"    ✅ 综合仪表板: {output_path}")
 
 
 if __name__ == "__main__":
     # ---- 输入文件路径 ----
-    input_mgf = "/data2/liuwei/MOA/outputspace/differential_extraction/differential_spectra.mgf"
-    output_dir = "/data2/liuwei/MOA/outputspace/networking_gnps"
+    base = "/data2/luxiang/MOA/outputspace"
+    mgf = f"{base}/statistical_analysis/differential_features/differential_spectra.mgf"
+    feature_table = f"{base}/data_preprocessing/xcms_processed/feature_table.csv"
+    annotation = f"{base}/library_matching/annotation_results/differential_feature_table_library_match_clean&add.csv"
+    networking_dir = f"{base}/networking"
 
     # ---- GNPS 经典分子网络 ----
-    molecular_networking_gnps_impl(
-        input_mgf=input_mgf,
-        output_dir=output_dir,
-        min_cosine=0.7, min_matched_peaks=6, fragment_tol=0.02, top_k=10,
+    # molecular_networking_gnps_impl(
+    #     input_mgf=mgf,
+    #     output_dir=f"{networking_dir}/GNPS",
+    #     min_cosine=0.7, min_matched_peaks=6, fragment_tol=0.02, top_k=10,
+    # )
+
+    # ---- FBMN 特征基分子网络 ----
+    # molecular_networking_fbmn_impl(
+    #     input_mgf=mgf,
+    #     input_feature_table=feature_table,
+    #     output_dir=f"{networking_dir}/FBMN",
+    #     min_cosine=0.7, min_matched_peaks=4, fragment_tol=0.02, top_k=10,
+    #     min_correlation=0.0,
+    # )
+
+    # ---- MS2LDA Mass2Motif 发现 ----
+    # molecular_networking_ms2lda_impl(
+    #     input_mgf=mgf,
+    #     output_dir=f"{networking_dir}/MS2LDA",
+    #     n_motifs=200, fragment_tol=0.005, n_iterations=1000, random_seed=42,
+    # )
+
+    # ---- MolNetEnhancer 分子网络增强注释 ----
+    molecular_networking_molnetenhancer_impl(
+        network_edges_csv=f"{networking_dir}/GNPS/network_edges.csv",
+        network_nodes_csv=f"{networking_dir}/GNPS/network_nodes.csv",
+        annotation_csv=annotation,
+        output_dir=f"{networking_dir}/MolNetEnhancer",
     )
+

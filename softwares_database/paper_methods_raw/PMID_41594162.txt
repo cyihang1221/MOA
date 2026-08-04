@@ -1,0 +1,178 @@
+
+Methodology, Software, Validation, Formal analysis, Investigation,
+Writing – original draft, Visualization
+Find articles by Chen-Hao Peng
+1,2, Jhu-Fong Wu
+Jhu-Fong Wu
+3Department of Radiology, Ditmanson Medical Foundation Chia-Yi
+Christian Hospital, Chiayi 60002, Taiwan; 12669@cych.org.tw
+Validation, Data curation
+Find articles by Jhu-Fong Wu
+3, Chu-Jen Kuo
+Chu-Jen Kuo
+3Department of Radiology, Ditmanson Medical Foundation Chia-Yi
+Christian Hospital, Chiayi 60002, Taiwan; 12669@cych.org.tw
+Funding acquisition, Project administration, Supervision, Writing –
+review & editing, Data curation, Resources
+Find articles by Chu-Jen Kuo
+3,*, Da-Chuan Cheng
+Da-Chuan Cheng
+1Department of Biomedical Imaging and Radiological Science,
+China Medical University, Taichung 404328, Taiwan;
+u112202701@cmu.edu.tw
+Conceptualization, Methodology, Formal analysis, Investigation,
+Writing – original draft, Writing – review & editing, Supervision,
+Project administration
+Find articles by Da-Chuan Cheng
+1,*
+Editors: Tudor Drugan, Daniel Leucuta
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC12840336  PMID: 41594162
+Abstract
+Background: Lung cancer is the leading cause of cancer-related
+mortality globally. Early detection via low-dose computed
+tomography (LDCT) can reduce mortality, but its implementation is
+challenged by the absence of objective diagnostic criteria and the
+necessity for extensive manual interpretation. Public datasets like
+the Lung Image Database Consortium often lack pathology-
+confirmed diagnoses, which can lead to inaccuracies in ground
+truth labels. Variability in voxel sizes across these datasets also
+complicates feature extraction, undermining model reliability. Many
+existing methods for integrating nodule boundary annotations use
+deep learning models such as generative adversarial networks,
+which often lack interpretability. Methods: This study assesses the
+effect of voxel normalization on pulmonary nodule classification
+and introduces a Fast Fourier Transform-based contour fusion
+method as a more interpretable alternative. Utilizing pathology-
+confirmed LDCT data from 415 patients across two medical centers,
+both machine learning and deep learning models were developed
+using voxel-normalized images and attention mechanisms, including
+transformers. Results: The results demonstrated that voxel
+normalization significantly improved the overlap of features
+between datasets from two different centers by 64%, resulting in
+enhanced selection stability. In the ROI-based radiomics analysis,
+the top-performing machine-learning model achieved an accuracy
+of 92.6%, whereas the patch-based deep-learning models reached
+98.5%. Notably, the FFT-based method provided a clinically
+interpretable integration of expert annotations, effectively
+addressing a major limitation of generative adversarial networks.
+Conclusions: Voxel normalization enhances reliability in
+pulmonary nodule classification while the FFT-based method offers
+a viable path toward interpretability in deep learning applications.
+Future research should explore its implications further in multi-
+center contexts.
+Keywords: lung nodule, machine learning, deep learning, auto
+contouring fusion, computer-aided diagnosis
+1. Introduction
+In recent years, advancements in medical technology and oncology
+have contributed to a decline in annual mortality rates associated
+with cancer. Nevertheless, lung cancer (LC) remains a significant
+public health challenge, consistently reporting the highest incidence
+and mortality rates as indicated in the 2024 World Cancer Statistics
+[1]. In Taiwan, LC has been the leading cause of cancer-related
+fatalities for over the past decade [2]. Projections for 2024
+anticipate that mortality from LC will be approximately threefold
+more significant than that from colorectal cancer, which ranks
+third, underscoring the considerable lethality of this malignancy
+[1].
+One widely utilized lung cancer screening modality is low-dose
+computed tomography (LDCT) [3]. Lung nodules are typically
+detected in LDCT images when more significant than 3 mm in
+diameter. Nodules of this size and, more important, are generally
+visible and can be evaluated for further assessment, although
+smaller nodules may also be detected under optimal imaging
+conditions. For precise clinical contexts, guidelines may vary, and
+follow-up imaging may be recommended for nodules below this
+size.
+In lung cancer studies, the “nodule spectrum” refers to the variety
+of lung nodules identified in imaging studies. This spectrum
+includes differences in size, shape, margins, and density. Nodules
+can range from very small to large and may exhibit smooth or
+irregular edges, from soft to complex in density. The growth
+patterns of nodules over time are also important for evaluation.
+Understanding this spectrum helps clinicians assess the risk of lung
+cancer and determine appropriate management strategies. For
+instance, one of the spectra can be classified into solid, part-solid,
+and ground-glass nodules (GGN) [4].
+Several critical factors are assessed in the evaluation of lung
+nodules for potential malignancy. Nodule size is paramount; those
+exceeding 3 cm in diameter exhibit a higher probability of being
+malignant. Margin characteristics are also significant, as smooth,
+well-defined edges generally indicate benign lesions, while
+spiculated or irregular margins heighten suspicion of malignancy.
+The growth rate of the nodule is a crucial consideration; rapid
+enlargement is typically associated with malignancy, whereas stable
+nodules are often benign. Additionally, the density of the nodule
+plays a role, with solid nodules generally carrying a greater risk of
+cancer compared to ground-glass opacities. The pattern of
+calcification can aid in risk stratification, and patient-specific
+factors—including age, smoking history, and the presence of
+symptoms such as cough or weight loss—further inform the
+diagnostic process [4]. However, it is non-trivial to summarize these
+factors as a likelihood in cancer malignancy classification.
+Despite the recognized utility of these biomarkers, a notable
+limitation exists regarding their effectiveness in enabling
+radiologists to reach unequivocal diagnostic conclusions [5].
+Additionally, the diagnostic process is considerably impacted by the
+subjective interpretation of radiologists, leading to variability in
+diagnostic outcomes among practitioners with varying experience
+levels. Such diagnostic ambiguity often leads radiologists to
+recommend a biopsy to obtain definitive results. However, this
+approach carries the drawback of a significant false positive rate,
+increasing unnecessary invasive procedures [6,7]. However, with
+ongoing advancements in research, there is optimism for developing
+more reliable and precise diagnostic tools that may enhance
+diagnostic accuracy and consistency.
+Significant research has been conducted on developing computer-
+aided diagnosis (CAD) systems, aiming to improve the accuracy of
+diagnosis in two main areas of lung cancer screening: nodule
+detection [8] and malignancy classification. Since this study focuses
+on nodule malignancy classification, we do not discuss nodule
+detection here.
+The LIDC-IDRI dataset [9] is a popular dataset that primarily
+includes detailed annotations related to lung nodules, including
+their presence, size, and characteristics as assessed by radiologists.
+While it provides some information regarding the assessment of
+nodules, it does not explicitly label them as malignant or benign.
+Instead, the dataset includes radiologist assessments of the
+likelihood of malignancy, which is often based on subjective
+interpretations and consensus ratings but may not definitively
+classify each nodule’s malignancy status. Researchers typically use
+this information to develop and evaluate predictive models for
+nodule malignancy, such as [10,11,12,13,14].
+Relying exclusively on the LIDC-IDRI dataset for diagnosing nodule
+malignancy presents certain limitations. This dataset lacks biopsy-
+confirmed pathological verification; instead, malignancy labels are
+derived from subjective assessments by radiologists, which may
+introduce bias in the training and evaluation of CAD models. To
+overcome this challenge, our study gathers LDCT data from patients
+with suspected lung cancer at local institutions, ensuring that all
+subjects have undergone biopsies for definitive pathological
+confirmation.
+Another common challenge in relevant research utilizing open
+datasets is the reliance on unprocessed CT images for developing
+CAD systems. In real-world clinical settings [15], CT scans
+encounter variability in equipment settings, resulting in
+discrepancies in pixel spacing and slice thickness among patients.
+This variability results in non-uniform voxel sizes, which can
+negatively affect the comparability of extracted radiomic features
+and the generalization ability of machine learning (ML) models. To
+enhance the applicability and effectiveness of these systems,
+regardless of whether deep learning (DL) or ML techniques are
+employed, it is crucial to use normalized images with uniform
+parameters. Previous studies have addressed this issue, reaching a
+consensus on the importance of geometrically normalizing images
+before their utilization [16,17,18,19].
+Moreover, the studies utilizing the LIDC-IDRI database for nodule
+classification face another challenge in managing contours
+delineated by four radiologists. Some studies only use contours from
+one radiologist [20], potentially missing insights from others. In
+contrast, others employ Generative Adversarial Networks (GANs)
+[21] to integrate all four, which can make models less interpretable
+and reduce clinical trust. This affects the consistency of
+classification outcomes. In this study, we will tackle this issue and
+demonstrate our solution to the problem.
+In summary, this study has four primary objectives:
+1. To collect two-center data with pathological verification for

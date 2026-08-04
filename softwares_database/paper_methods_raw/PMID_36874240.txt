@@ -1,0 +1,80 @@
+
+Materials and methods
+Soft-DTW-based averaging method for N400 event-
+related potentials
+The N400 is a non-strictly phase-locked event-related potential with
+certain timing deviations in the time domain dimension, and the
+application of the traditional arithmetic superposition averaging
+method to it easily leads to the degradation of the signal-to-noise
+ratio of the time series, which is manifested by the disappearance of
+local features or the introduction of dense noise. In this study, a soft
+DTW time-series differentiable loss function was introduced, and a
+soft DTW-based superposition averaging method was designed
+based on this method to perform gravitational superposition
+averaging on the original N400 data and to extract event-related
+potential averaging sequences with smoother waveform features
+and more uniform start times from 35 electrode dimensions,
+respectively. The method was named the single-subject short-
+distance event-related potential superposition averaging method.
+Dynamic time warping
+The Dynamic Time Warping (DTW) algorithm is a numerical
+distance measure for time series. The traditional Euclidean distance
+algorithm relies on point-to-point numerical comparisons and
+cannot match time series of different lengths. The DTW algorithm
+allows one-to-many mapping between series points and combines
+the idea of dynamic programming to achieve an efficient
+comparison of time series similarity, and nowadays it has become
+one of the most commonly used metrics to quantify the similarity
+between series (Cuturi et al., 2007).
+Assume that the multidimensional time series of variable length
+take values in the range of Ω ∈ ℝp. Therefore, the time series can be
+represented as matrices with p number of rows and different
+number of columns. For two p-dimensional time series x =
+(x1,…,xn) ∈ ℝp*n and y = (y1,…,ym) ∈ ℝp*m with lengths n and m,
+respectively, define the cost matrix Δ(x,y):=[δ(xi,yj)]ij ∈ ℝn*m,
+where δ is the differentiable cost function δ:ℝp×ℝp→ℝ+. The
+Euclidean distance is chosen as δ in most cases. Let ri,j be the cost
+sum of the cost matrix from the upper left corner to any point [i,j],
+and the dynamic programming equation of the DTW algorithm can
+be expressed as:
+ri,jD⁢T⁢W=δi,j+min⁡{ri,j-1,ri-1,j,ri-1,j-1}.
+The DTW algorithm effectively takes into account the translational
+invariance of the time series in the time domain dimension and is
+therefore often used in classifiers such as K-NN, SVM, etc. Petitjean
+et al. (2011) first proposed to output the entire time series as a
+fitted loss to achieve superposition averaging of the time series.
+However, at the computational level, the DTW algorithm is not
+trivial and unstable when applied to back-propagation loss
+functions, a factor that hinders the application of the DTW
+superposition averaging algorithm.
+Soft-DTW loss function
+To solve the problem of the non-minimizability of the DTW
+algorithm, Cuturi and Blondel (2017) used Soft minimum instead of
+DTW minimum and designed the minimizable Soft-DTW loss
+function. Under the Soft-DTW method, the sum of costs A can be
+expressed as:
+ri,jS⁢o⁢f⁢t⁢D⁢T⁢W=δi,j+min{ri,j-1,ri-1,j,ri-1,j-1}γ.
+min⁡a1γ,…,an={mini≤n⁡ai,γ=0,-γ⁢log⁢∑i=1ne-ai/γ,γ>0.
+Where γ is the smoothing parameter. When γ = 0 the algorithm is
+equivalent to the conventional DTW. Define the set An,m⊂{0,1}
+n×m, where each element A is an alignment matrix for the sequence
+x, y. For a particular alignment matrix A = [ai,j],A ∈ An,m, only the
+point (i,j) on the path from (1,1) to (n,m) has its ai,j = 1, and all
+other points have ai,j value 0. The path follows three directions of
+extension downward, rightward, and diagonal right until it reaches
+the lower right corner of the matrix. The cost sum under this path
+matrix can be expressed as ⟨A,Δ(x,y)⟩. Thus, the soft-dtw loss
+function is defined as:
+d⁢t⁢wγ⁢(x,y)=min{⟨A,Δ(x,y)⟩,A∈An,m}γ=-γ⁢log⁡(∑A∈An,me-
+⟨A⁢Δ⁢(x,y)/γ⟩).
+Soft-DTW back propagation
+The final goal of Soft-DTW is to obtain the numerical distance
+between time series x and y. If y is regarded as the target series, all
+that needs to be computed for back propagation is the gradient to
+the time series x. The gradient is expressed through the chain rule
+as:
+∇x⁡d⁢t⁢wγ⁢(x,y)=(∂⁡Δ⁢(x,y)∂⁡x)T⁢(∂⁡d⁢t⁢wγ⁢(x,y)∂⁡Δ⁢(x,y))=(∂⁡Δ⁢(x,y)∂⁡x)T⁢(∂⁡rn,m∂⁡Δ⁢(x,y
+Applying the same chain rule to the second term yields:
+∂⁡rn,m∂⁡δi,j=∂⁡rn,m∂⁡ri,j⁢∂⁡ri,j∂⁡δi,j=∂⁡rn,m∂⁡ri,j⋅1=∂⁡rn,m∂⁡ri,j.
+Define the elements ei,j=∂⁡rn,m∂⁡ri,j such that E = [ei,j],E ∈ ℝn×m is
+a matrix consisting of ei,j. The above equation is then re-expressed

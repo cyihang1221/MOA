@@ -1,0 +1,247 @@
+
+Methods
+Data processing
+We obtained genome-wide histone modification data of H3K4me3
+from the Zenodo repository as published by Sadeh et al.22. This
+dataset was generated using cfChIP-Seq technology to profile
+histone modifications in cell-free plasma samples from 88 healthy
+donors and 128 colorectal cancer (CRC) patients.
+Human ethics statement: all methods were carried out in accordance
+with relevant guidelines and regulations of human ethics protocol
+(#ET000631) approved by the human ethics committee of the
+University of Western Australia. Given we used the publicly
+available patient datasets of de-identified information, no informed
+consent of human subjects are required.
+For the single-nucleotide resolution processing, we defined a
+genomic sequence G of length n base pairs, where each position g ∈ 
+G is indexed from 1 to n. The set of H3K4me3 peaks P consists of
+tuples (s,e,v), where s and e denote the start and end positions,
+respectively, and v represents the peak intensity value. The signal
+intensity S(g) at genomic position g is defined as:
+[image]
+This formulation ensures that genomic positions within peak
+regions inherit their corresponding peak intensity values, while
+positions outside these regions are assigned zero intensity.
+FFT Implementation
+We developed a PyTorch-based Fast Fourier Transform (FFT)23
+approach for compressing epigenomic signals of histone
+modification. Given a signal vector x[n] of length L, the FFT
+transformation F(k) is computed as:
+[image]
+for k ∈ [0, L/2 + 1] in the real FFT case.
+The magnitude of each frequency component was then computed
+using24:
+[image]
+Given that the original genomic signal data contains L real-valued
+data points, applying the FFT transform converts each real number
+into a complex number with two components (real and imaginary),
+effectively doubling the storage requirement to 2L float values. To
+achieve an actual compression ratio of r relative to the original data
+size, we need to account for this doubling effect by retaining only
+m = L/(2r) frequency components. The specific number of
+components retained for each compression ratio and data size is
+detailed in Table 2.
+Table 2.
+Features extraction parameter across multiple data sizes and
+compression ratios using FFT and autoencoder.
+Compression
+ratios
+Data
+sizes
+FFT
+(Number of highest
+magnitude
+components)
+Autoencoder
+(Number of
+latent features)
+100X
+300 kb
+1,500
+3,000
+600 kb
+3,000
+6,000
+1 Mb
+5,000
+10,000
+5 Mb
+25,000
+50,000
+10 Mb
+50,000
+100,000
+50 Mb
+250,000
+500,000
+300X
+300 kb
+500
+1,000
+600 kb
+1,000
+2,000
+1 Mb
+1,666
+3,333
+5 Mb
+8,333
+16,666
+10 Mb
+16,666
+33,333
+50 Mb
+83,333
+166,666
+1000X
+300 kb
+150
+300
+600 kb
+300
+600
+1 Mb
+500
+1,000
+5 Mb
+2,500
+5,000
+10 Mb
+5,000
+10,000
+50 Mb
+25,000
+50,000
+Open in a new tab
+kb kilobase, Mb million bases.
+For signal reconstruction, a frequency domain array F′(k) of length
+L/2 + 1 was constructed, populated with the stored highest-
+magnitude components, and subjected to inverse FFT:
+This approach was applied across data sizes L ∈ {300 k, 600 k, 1 M,
+5 M, 10 M, 50 M} base pairs (bp) with r ∈ {100, 300, 1000}.
+The frequency spectrum spans from 0 to 0.5 in normalized
+frequency units, a direct consequence of the Nyquist-Shannon
+sampling theorem24,25. This theorem establishes that a discretely
+sampled signal can only represent frequency components up to half
+the sampling rate without aliasing. Since our data is sampled at
+single-nucleotide resolution (sampling rate = 1), the highest
+representable frequency is precisely 0.5 cycles per nucleotide
+(Fig. 1b).
+Fig. 1.
+[image]
+Open in a new tab
+Transforming epigenomic signals of H3K4me3 into frequency data
+using FFT. (a) The distributions of original H3K4me3 signal
+intensity from ChIP-Seq data across a 300 kb genomic region
+surrounding the GAPDH locus prior to the FFT analysis. kb,
+kilobase. (b) The plot of magnitude and frequency obtained from
+the FFT analysis of H3K4me3 signals from (a). Zoom, a selected
+region highlighting 1,500 components with highest magnitude
+(green) for later signal reconstruction. The magnitude is displayed
+on a logarithmic scale.
+Comparative analysis with autoencoder
+To benchmark our FFT-based method, we implemented an
+autoencoder model18 with identical compression ratios (100X,
+300X, and 1000X). For model training, we used a mini-batch size of
+64, Adam optimizer (learning rate = 0.0001) with
+ReduceLROnPlateau scheduler (factor = 0.1, patience = 10). The
+autoencoder architecture incorporated 4 convolutional layers in
+both encoder (1 → 16 → 32 → 64 → encoding_dim) and decoder
+(encoding_dim → 64 → 32 → 16 → 1) paths. The architecture utilized
+Batch Normalization after each convolutional operation and ReLU
+activation functions in all layers except the final output. The model
+was trained for a maximum of 1000 epochs across 100 distinct
+genomic regions, each spanning 300 kilobase pairs to capture
+diverse histone modification signals. Early stopping (patience = 50)
+was implemented to prevent overfitting. Training was performed
+across 2 NVIDIA Tesla V100-PCIe-32 GB GPUs using PyTorch’s
+DataParallel for acceleration, with data split into training and
+validation sets (80%/20%). For each compression ratio, the kernel
+sizes and strides were adjusted accordingly, and the model with the
+lowest validation loss was preserved for subsequent analyses.
+The detailed architecture of these models, including the number of
+convolutional layers, kernel sizes, stride values, and channel
+dimensions, is provided in Table 1. Model performance was
+subsequently evaluated on independent genomic regions excluded
+from the training phase.
+Table 1.
+Architectures of autoencoder models.
+Compression
+ratio
+Encoder
+layers
+Kernel
+size
+(K)
+Stride
+(S)
+Decoder layers
+100X
+Conv1D(1 
+→ 16)
+6
+2
+ConvTranspose1D(16 
+→ 1)
+Conv1D(16 
+→ 32)
+6
+5
+ConvTranspose1D(32 
+→ 16)
+Conv1D(32 
+→ 64)
+6
+5
+ConvTranspose1D(64 
+→ 32)
+Conv1D(64 
+→ 1)
+6
+5
+ConvTranspose1D(1 
+→ 64)
+300X
+Conv1D(1 
+→ 16)
+6
+5
+ConvTranspose1D(16 
+→ 1)
+Conv1D(16 
+→ 32)
+6
+5
+ConvTranspose1D(32 
+→ 16)
+Conv1D(32 
+→ 64)
+6
+4
+ConvTranspose1D(64 
+→ 32)
+Conv1D(64 
+→ 1)
+5
+3
+ConvTranspose1D(1 
+→ 64)
+1000X
+Conv1D(1 
+→ 16)
+10
+5
+ConvTranspose1D(16 
+→ 1)
+Conv1D(16 
+→ 32)
+8
+5
+ConvTranspose1D(32 
+→ 16)
+Conv1D(32 
+→ 64)
+5
+4
+ConvTranspose1D(64 
+→ 32)

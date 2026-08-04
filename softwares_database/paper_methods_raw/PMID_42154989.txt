@@ -1,0 +1,173 @@
+
+Methods:
+Static tests varied distance from 1–7 metres and viewing angle from
+0°–75°. Dynamic tests examined the impact of motion by varying
+walking speed from 0.8 m/s to 1.8 m/s and compared head-
+mounted, shoulder-mounted, and handheld positions. We evaluated
+a smartphone and smart glasses, including the phone’s main and
+ultra-wide cameras, across four OCR engines: Google Vision,
+PaddleOCR 3.0, EasyOCR, and Tesseract. Dynamic tests used
+PaddleOCR 3.0. Accuracy was computed at the character level using
+the Levenshtein ratio against manually defined ground truth.
+Results:
+Recognition accuracy declined with increased walking speed and
+wider viewing angles. Google Vision achieved the highest overall
+accuracy, with PaddleOCR close behind as the strongest open-
+source alternative. Across devices, the phone’s main camera
+achieved the highest accuracy, and a shoulder-mounted placement
+yielded the highest average among body positions; however,
+differences among shoulder, head, and hand were not statistically
+significant.
+Conclusion:
+OCR performance depends on the recognition engine, camera
+hardware, field of view, device placement, and user motion. OCR
+systems for navigation should be evaluated under dynamic,
+mobility-relevant conditions rather than static images alone and
+designed to balance coverage, recognition accuracy, and practical
+deployment.
+Keywords: Assistive technology, computer Vision, navigation,
+optical character recognition, visual impairment
+Introduction
+Visual impairment affects over 300 million people worldwide and is
+associated with reduced independence, increased reliance on others,
+higher unemployment, and diminished quality of life [1–5]. A
+major contributor to these challenges is difficulty navigating
+everyday environments safely and efficiently. Orientation and
+mobility (O&M) tasks such as locating entrances, identifying street
+names, interpreting warning signs, or reading posted instructions
+often depend on access to environmental text. For people with
+blindness or low vision (pBLV), this information may be
+inaccessible or difficult to find, creating barriers to independent
+travel and participation in daily activities. O&M research has long
+emphasised that access to environmental information is critical for
+safe and confident navigation, and that assistive technologies can
+complement traditional mobility tools such as long canes or guide
+dogs by providing additional sources of situational awareness [6,7].
+Assistive technologies therefore, play an important role in
+mitigating these barriers by providing alternative ways to perceive
+and interpret environmental information [8,9].
+One technology that has shown particular promise in this context is
+optical character recognition (OCR). OCR converts images of
+printed or handwritten text into machine-readable form, enabling
+digital systems to detect and interpret textual information from the
+environment. For pBLV, OCR enables a wide range of assistive
+applications, including reading printed documents, identifying
+currency, and recognising navigation signage in public
+environments [10]. Prior work has explored several OCR-based
+assistive systems to improve accessibility, ranging from mobile
+document readers [11] to navigation-oriented systems that detect
+street or facility signage [12,13]. For instance, mobile applications
+have been developed that allow users to search for specific
+keywords in real-world scenes using smartphone cameras,
+facilitating efficient information access in cluttered environments
+[11]. In navigation contexts, systems such as Commute Booster
+integrate OCR with transit data to identify relevant wayfinding
+signage and provide real-time guidance in complex environments
+such as subway stations [12]. Observational studies of assistive
+technology use also indicate that pBLV frequently rely on access to
+environmental text to confirm destinations, identify landmarks, and
+locate entrances during orientation and mobility tasks [14–17]. In
+navigation scenarios, reliable OCR can therefore improve
+environmental awareness by enabling users to identify street names,
+read building labels, interpret warning signs, or locate points of
+interest during travel. When integrated into real-time assistive
+systems, OCR thus has the potential to reduce uncertainty during
+navigation and support safer and more independent mobility.
+Despite this progress, most OCR performance evaluations rely on
+static benchmark datasets such as ICDAR Scene Text [18], IIIT 5K-
+Word [19], or COCO-Text [20]. These datasets contain large
+collections of labelled images and have been instrumental in
+advancing OCR algorithms. However, they largely represent static
+conditions in which the camera and scene remain stable. While
+several video-based datasets have been introduced to study text
+recognition in dynamic environments [21–23], these resources
+primarily focus on algorithmic performance in pre-recorded video
+and provide limited insight into how human motion and real-world
+device usage affect OCR reliability. This limitation is particularly
+important for assistive technology applications. During navigation,
+OCR systems must operate under continuously changing conditions.
+Users are typically walking, the camera is moving with the body,
+and environmental text may appear at different distances, angles,
+and sizes. Motion blur caused by walking can degrade image
+quality, and wide field-of-view cameras may capture text that
+appears small or distorted in the frame. Camera mounting location
+on the body can also influence image stability and viewing
+geometry. These factors interact with the hardware and software
+components of the assistive system and can substantially affect
+recognition reliability. As a result, a sign that is clearly legible in a
+static image may become difficult or impossible to recognise when
+captured during natural movement. Despite the practical
+importance of these factors, the combined effects of walking speed,
+camera placement, and camera hardware on OCR performance have
+not been systematically studied.
+To address this gap, we designed a controlled experimental
+framework to evaluate OCR performance under conditions
+representative of real-world assistive technology use. Specifically,
+we examined how recognition accuracy changes with walking
+speed, camera mounting location, and camera field of view. We
+quantified OCR accuracy across multiple walking speeds, compared
+camera mounting positions including head-mounted, shoulder-
+mounted, and handheld configurations, evaluated detection range
+and recognition accuracy using the iPhone main and ultra-wide
+cameras as well as the Meta smart glasses, and benchmarked four
+widely used OCR engines: Tesseract, Google Vision, PaddleOCR,
+and EasyOCR. We hypothesised that OCR performance would
+decline with increasing walking speed, wider viewing angles, and
+wider camera fields of view, and that camera mounting position
+would influence recognition accuracy through differences in image
+stability. Because Google Vision is trained on large-scale proprietary
+datasets, we expected it to achieve the highest overall accuracy.
+Among open-source engines, we hypothesised that PaddleOCR
+would provide the strongest performance based on prior evaluations
+[24–26]. By systematically quantifying how mobility-related factors
+influence OCR accuracy, this study aims to provide empirical
+guidance for the design of future OCR-based assistive technologies
+that support safe and effective navigation for people with visual
+impairments.
+Methods
+To evaluate OCR performance under conditions relevant to real-
+world assistive technology use, we designed a controlled
+experimental framework combining standardised signage, modern
+camera-equipped devices, and both static and dynamic testing
+paradigms. The signage was selected to capture variations in font
+size, colour, and background contrast commonly encountered in
+public environments. Recordings were collected using consumer
+devices, including a smartphone and smart glasses, mounted at
+positions representative of typical wearable configurations. Static
+tests systematically varied viewing distance and angle to establish
+recognition range, while dynamic tests examined the impact of user
+motion and mounting location on recognition stability. All captured
+frames were then processed by four widely used OCR engines,
+enabling direct comparison across hardware and software
+conditions.
+Signage Setup
+As shown in Figure 1, we included signage with varied font sizes,
+colours, and background contrasts to reflect a range of real-world
+conditions. With the exception of the Broadway sign, all signs were
+purchased from Home Depot. The “Danger” sign is a 10 in. × 14 in.
+aluminium sign with red text on a black background and black text
+on a white background [27]. The “No Smoking” sign is a 10 in. ×
+14 in. aluminium sign with red text on a black background [28].
+The “Pitch In!” sign is also 10 in. × 14 in. aluminium, containing
+both green-on-white and white-on-green text [29]. The “Posted:
+Private Property” sign is an 11 in. × 11 in. plastic sign featuring
+black text on a yellow background in multiple font sizes [30]. The
+Broadway sign was custom-printed to represent a common New
+York City street sign, with each character measuring 5 in. in height.
+Finally, the numeric panel was created using a 2 in. self-adhesive
+vinyl number set [31]. These signs were mounted on a board
+measuring approximately 92 × 70 cm, hereafter referred to as the
+sign board. Together, these signs represent examples of text
+commonly encountered in public environments.
+Figure 1.
+[image]
+Open in a new tab
+A photo of signage used in the study, illustrating variation in font
+size, colour, and background contrast.
+Hardware Configuration
+Devices
+Mobile phone camera.
+We used the iPhone 15 Pro Max as the primary input device. This
+smartphone features a triple rear-camera system representative of
+current high-end mobile devices. The main camera has a 48 MP
+sensor with an

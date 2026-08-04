@@ -4,24 +4,66 @@ import subprocess
 import tempfile
 import glob
 import pandas as pd
-from pathlib import Path
 from typing import Optional, List, Tuple
 
-from src.platform_utils import PROJECT_ROOT
-from web_frontend.backend.export.editable_export import ensure_editable_sidecars, save_editable_metadata
+
+# ===================== Rscript resolution =====================
+def _find_rscript():
+    """Find the Rscript binary on the system.
+
+    Searches common conda envs and system PATH. Raises FileNotFoundError
+    if no Rscript is found.
+    """
+    # 1) check explicit env paths (most reliable)
+    explicit_paths = [
+        os.path.expanduser("~/anaconda/envs/MOA/bin/Rscript"),
+        os.path.expanduser("~/anaconda/envs/MelonnPan/bin/Rscript"),
+        os.path.expanduser("~/anaconda/bin/Rscript"),
+        os.path.expanduser("~/miniconda3/bin/Rscript"),
+        "/home/luxiang/anaconda/envs/MOA/bin/Rscript",
+    ]
+    for p in explicit_paths:
+        if os.path.isfile(p) and os.access(p, os.X_OK):
+            return p
+
+    # 2) check PATH via shutil
+    found = shutil.which("Rscript")
+    if found:
+        return found
+
+    # 3) desperate search in common prefixes
+    search_roots = [
+        os.path.expanduser("~/anaconda"),
+        os.path.expanduser("~/miniconda3"),
+        "/home/luxiang/anaconda",
+        "/home/lizhengyan/miniconda3",
+    ]
+    for root in search_roots:
+        for dirpath, _dirnames, filenames in os.walk(root):
+            if "Rscript" in filenames:
+                candidate = os.path.join(dirpath, "Rscript")
+                if os.access(candidate, os.X_OK):
+                    return candidate
+            if dirpath.count(os.sep) - root.count(os.sep) > 3:
+                # don't recurse too deep
+                _dirnames.clear()
+
+    raise FileNotFoundError(
+        "Rscript not found. Please install R and required packages: "
+        "conda install -c conda-forge r-base r-clusterprofiler r-dose r-pathview r-ggplot2"
+    )
 
 
-def _xcms_tools_dir() -> str:
-    """Return src/tools directory; safe under normal import and exec()."""
-    mod_file = globals().get("__file__")
-    if mod_file:
-        return str(Path(mod_file).resolve().parent)
-    return str(PROJECT_ROOT / "src" / "tools")
+# cached Rscript path (resolved once at first use)
+_RSCRIPT_PATH = None
 
 
-def _r_plotly_export_path() -> str:
-    """Return path to r_plotly_export.R (lives under web_frontend/backend/export)."""
-    return str(PROJECT_ROOT / "web_frontend" / "backend" / "export" / "r_plotly_export.R")
+def _get_rscript():
+    """Return cached Rscript path, resolving on first call."""
+    global _RSCRIPT_PATH
+    if _RSCRIPT_PATH is None:
+        _RSCRIPT_PATH = _find_rscript()
+    return _RSCRIPT_PATH
 
 
 
@@ -93,13 +135,6 @@ def data_preprocessing_xcms_impl(
     output_csv = os.path.join(output_dir, "feature_table.csv")
     output_mgf = os.path.join(output_dir, "spectra.mgf")
 
-    # 如果结果文件已存在，跳过 XCMS 处理
-    if os.path.exists(output_csv) and os.path.exists(output_mgf):
-        print(f"  XCMS results already exist, skipping...")
-        print(f"    feature_table: {output_csv}")
-        print(f"    spectra:       {output_mgf}")
-        return
-
     if n_cores is None:
         n_cores = max(1, os.cpu_count() - 1)
 
@@ -148,6 +183,8 @@ raw_data <- readMSData(mzml_files, msLevel. = 1:2, mode = "onDisk", verbose = FA
 # ============================= peak detection =============================
 ms1_data <- filterMsLevel(raw_data, 1)
 
+# Register multicore backend — findChromPeaks uses bpparam() at call time.
+register(MulticoreParam(workers = n_cores))
 cwp <- CentWaveParam(
     ppm = ppm,
     peakwidth = peakwidth,
@@ -156,12 +193,9 @@ cwp <- CentWaveParam(
     mzCenterFun = "wMean",
     integrate = 1
 )
-
 xdata <- findChromPeaks(ms1_data, param = cwp)
 
 
-# ============================= RT alignment (serial to avoid parallel issues) =============================
-register(SerialParam())
 xdata <- adjustRtime(
     xdata,
     param = ObiwarpParam(
@@ -169,6 +203,7 @@ xdata <- adjustRtime(
         center = center
     )
 )
+
 
 
 # ============================= Peak grouping =============================
@@ -519,7 +554,7 @@ if (nrow(final_tab) == length(success_ids)) {{
     # 运行 R 脚本
     try:
         result = subprocess.run(
-            ['Rscript', r_file],
+            [_get_rscript(), r_file],
             capture_output=True,
             encoding='utf-8'
         )
@@ -537,16 +572,11 @@ if (nrow(final_tab) == length(success_ids)) {{
 
 # ============================================ feature filtering & missing value imputation =====================================================
 # kNN
-
-
-
-# ============================================ feature filtering & missing value imputation =====================================================
-# kNN
 def feature_filtering_and_missing_value_imputation_KNN_impl(
     input_dir: str,
     output_dir: str,
-    min_presence: float = 0.5,  # filtering
-    min_intensity: float = 0.0,  # filtering
+    min_presence: float = 0.8,  # filtering (80% rule: keep features present in ≥80% of samples)
+    min_intensity: float = 1000.0,  # filtering (minimum mean integrated peak area)
     n_neighbors: int = 5  # KNN
 ):
     """
@@ -564,13 +594,16 @@ def feature_filtering_and_missing_value_imputation_KNN_impl(
         Path to the output directory to save the filtered and imputed feature table.
 
     min_presence : float
-        Minimum fraction of non-missing samples required.
+        Minimum fraction of non-missing samples required (default 0.8, i.e. the
+        "80% rule": keep features present in at least 80% of samples).
 
     min_intensity : float
-        Minimum mean intensity threshold.
+        Minimum mean integrated peak area threshold (default 1000.0).  Features
+        whose mean intensity across samples falls below this value are discarded
+        as noise.  This should be tuned to the instrument; 0 disables the filter.
 
     n_neighbors : int
-        Number of neighbors for KNN imputation.
+        Number of neighbors for KNN imputation (default 5).
     """
 
     print("\nFiltering features and performing KNN missing value imputation...")
@@ -582,19 +615,134 @@ def feature_filtering_and_missing_value_imputation_KNN_impl(
     import numpy as np
 
     # ============================= read table =============================
-    df = pd.read_csv(os.path.join(input_dir, "feature_table.csv"))
-
-    required_cols = [
-        "feature_id",
-        "mz",
-        "rt_med"
+    # Auto-detect input file: try Stage 3 outputs first, then fall back to
+    # Stage 2 XCMS output.
+    #
+    # Priority order is intentional:
+    #   1. feature_table_redundancy_filtered.csv — pipeline combined output
+    #      (CAMERA + mzAnnotation + RAMClust). Must be checked FIRST to
+    #      prevent camera/feature_table_filtered.csv (CAMERA-only partial
+    #      result) from shadowing the full combined result.
+    #   2. feature_table_filtered.csv — standalone CAMERA output
+    #   3. camera/feature_table_filtered.csv — CAMERA output in pipeline
+    #      subdirectory (fallback when combined result is absent).
+    #   4-5. RAMClust outputs (compound-level intensity matrix).
+    #   6. feature_table.csv — XCMS peak detection output (no Stage 3).
+    input_candidates = [
+        "feature_table_redundancy_filtered.csv",           # Stage 3 pipeline combined
+        "feature_table_filtered.csv",                     # Stage 3 CAMERA standalone
+        "camera/feature_table_filtered.csv",              # Stage 3 CAMERA subdir
+        "ramclust_compound_intensities.csv",              # Stage 3 RAMClust standalone
+        "ramclust/ramclust_compound_intensities.csv",     # Stage 3 RAMClust subdir
+        "feature_table.csv",                              # Stage 1 XCMS fallback
     ]
+    input_file = None
+    for candidate in input_candidates:
+        candidate_path = os.path.join(input_dir, candidate)
+        if os.path.isfile(candidate_path):
+            input_file = candidate_path
+            break
+    if input_file is None:
+        raise FileNotFoundError(
+            f"No input file found in {input_dir}. Tried: {input_candidates}"
+        )
+    print(f"  Reading input from: {input_file}")
+    df = pd.read_csv(input_file)
+
+    # ——— Detect and normalize input format ———
+    if "compound" in df.columns:
+        # RAMClust format: compound, feature_table_SAMPLE, ...
+        # → normalize to XCMS format for downstream Stage 5 compatibility
+        df = df.rename(columns={"compound": "feature_id"})
+        # Strip 'feature_table_' prefix so sample names match metadata.csv
+        rename_map = {}
+        for c in df.columns:
+            if c.startswith("feature_table_"):
+                rename_map[c] = c[len("feature_table_"):]
+        if rename_map:
+            df = df.rename(columns=rename_map)
+            print(f"  Stripped 'feature_table_' prefix from {len(rename_map)} sample columns")
+        # Compound-level data lacks per-feature mz/rt — try to recover from
+        # ramclust_compound_spectra.csv (written by RAMClust alongside the
+        # intensities CSV in the same directory). This file carries mz_med,
+        # rt_med, main_peak_mz, and main_peak_rt for every compound.
+        if "mz" not in df.columns or "rt_med" not in df.columns:
+            spectra_path = os.path.join(input_dir, "ramclust_compound_spectra.csv")
+            if os.path.isfile(spectra_path):
+                spec_df = pd.read_csv(spectra_path)
+                # Prefer main_peak (best representative ion for the compound);
+                # fall back to cluster median when main_peak is absent.
+                mz_col = "main_peak_mz" if "main_peak_mz" in spec_df.columns else "mz_med"
+                rt_col = "main_peak_rt" if "main_peak_rt" in spec_df.columns else "rt_med"
+                merge_df = spec_df[["compound", mz_col, rt_col]].rename(
+                    columns={mz_col: "mz", rt_col: "rt_med", "compound": "feature_id"}
+                )
+                df = df.merge(merge_df, on="feature_id", how="left")
+                print(f"  Merged mz/rt from ramclust_compound_spectra.csv "
+                      f"({len(merge_df)} compounds)")
+            else:
+                # ramclust_compound_spectra.csv not available — try to recover
+                # mz/rt from XCMS feature table via ramclust_clusters.csv mapping.
+                clusters_path = os.path.join(input_dir, "ramclust_clusters.csv")
+                feature_table_path = os.path.join(input_dir, "feature_table.csv")
+                if os.path.isfile(clusters_path) and os.path.isfile(feature_table_path):
+                    clusters_df = pd.read_csv(clusters_path)
+                    ft_df = pd.read_csv(feature_table_path)
+                    if ("feature_id" in clusters_df.columns and "cluster" in clusters_df.columns
+                            and "feature_id" in ft_df.columns
+                            and "mz" in ft_df.columns and "rt_med" in ft_df.columns):
+                        # Map cluster → median mz/rt via XCMS feature IDs
+                        xcms_info = ft_df[["feature_id", "mz", "rt_med"]].copy()
+                        xcms_info = xcms_info.merge(
+                            clusters_df[["feature_id", "cluster"]],
+                            on="feature_id", how="inner"
+                        )
+                        # Compound IDs use Cxxxx format
+                        xcms_info["compound_id"] = xcms_info["cluster"].apply(
+                            lambda c: f"C{int(c):04d}"
+                        )
+                        # Aggregate: median mz/rt per compound (more robust than mean)
+                        agg_mz = xcms_info.groupby("compound_id")["mz"].median()
+                        agg_rt = xcms_info.groupby("compound_id")["rt_med"].median()
+                        merge_df = pd.DataFrame({
+                            "feature_id": agg_mz.index,
+                            "mz": agg_mz.values,
+                            "rt_med": agg_rt.values
+                        })
+                        df = df.merge(merge_df, on="feature_id", how="left")
+                        print(f"  Recovered mz/rt from XCMS feature_table via "
+                              f"ramclust_clusters.csv mapping "
+                              f"({len(merge_df)} compounds)")
+                    else:
+                        print("  WARNING: ramclust_clusters.csv or feature_table.csv "
+                              "missing required columns; mz/rt set to 0")
+                else:
+                    print("  WARNING: ramclust_compound_spectra.csv, "
+                          "ramclust_clusters.csv, and feature_table.csv not found; "
+                          "mz/rt set to 0 — mass-based KEGG lookup will be disabled")
+            # Fill any remaining NaN mz/rt with 0.0
+            # (e.g. spectra file or clusters file had missing rows).
+            if "mz" not in df.columns:
+                df["mz"] = 0.0
+            else:
+                df["mz"] = df["mz"].fillna(0.0)
+            if "rt_med" not in df.columns:
+                df["rt_med"] = 0.0
+            else:
+                df["rt_med"] = df["rt_med"].fillna(0.0)
+        required_cols = ["feature_id", "mz", "rt_med"]
+    elif "feature_id" in df.columns:
+        # XCMS format: already has feature_id, mz, rt_med — use as-is
+        required_cols = ["feature_id", "mz", "rt_med"]
+    else:
+        raise ValueError(
+            f"Unknown input format. Expected 'compound' or 'feature_id' column. "
+            f"Found columns: {list(df.columns)}"
+        )
 
     for col in required_cols:
         if col not in df.columns:
-            raise ValueError(
-                f"Missing required column: {col}"
-            )
+            raise ValueError(f"Missing required column: {col}")
 
     # ============================= sample columns =============================
     sample_cols = [
@@ -642,6 +790,9 @@ def feature_filtering_and_missing_value_imputation_KNN_impl(
     n_after_intensity = df.shape[0]
 
     # ============================= KNN imputation =============================
+    # Count missing values before imputation
+    missing_before = int(df[sample_cols].isna().sum().sum())
+
     from sklearn.impute import KNNImputer
 
     imputer = KNNImputer(
@@ -651,6 +802,10 @@ def feature_filtering_and_missing_value_imputation_KNN_impl(
     df[sample_cols] = imputer.fit_transform(
         df[sample_cols]
     )
+
+    # Count missing values after imputation
+    missing_after = int(df[sample_cols].isna().sum().sum())
+    missing_imputed = missing_before - missing_after
 
     # ============================= save =============================
     df.to_csv(
@@ -668,8 +823,14 @@ def feature_filtering_and_missing_value_imputation_KNN_impl(
         f"min_presence: {min_presence}",
         f"min_intensity: {min_intensity}",
         f"KNN neighbors: {n_neighbors}",
-        f"Final output: {os.path.join(output_dir, 'feature_table_filtered_imputed.csv')}"
+        f"Missing values before imputation: {missing_before}",
+        f"Missing values after imputation: {missing_after}",
+        f"Missing values imputed: {missing_imputed}",
+        f"Imputation method: KNN",
     ]
+    if missing_before == 0:
+        summary_lines.append("NOTE: Input data has no missing values — filtering and imputation are no-ops. This is normal for RAMClust compound-level output.")
+    summary_lines.append(f"Final output: {os.path.join(output_dir, 'feature_table_filtered_imputed.csv')}")
 
     with open(summary_txt, "w") as f:
         f.write("\n".join(summary_lines))
@@ -689,10 +850,6 @@ def feature_filtering_and_missing_value_imputation_KNN_impl(
 
 # ======================================================= statistical analysis ==================================================================
 # mixOmics
-
-
-
-# ======================================================= statistical analysis ==================================================================
 def statistical_analysis_mixomics_impl(
     input_dir: str,
     metadata_csv: str,
@@ -708,12 +865,7 @@ def statistical_analysis_mixomics_impl(
     pvalue_threshold: float = 0.05,
     padj_threshold: float = 0.05,
     log2fc_threshold: float = 0.58,
-    use_fdr: bool = False,
-
-    # analysis goal parameterization
-    group_column: str = "Group",
-    contrast_group1: str | None = None,
-    contrast_group2: str | None = None,
+    use_fdr: bool = True
 ):
     """
     Statistical analysis for metabolomics feature table.
@@ -726,33 +878,16 @@ def statistical_analysis_mixomics_impl(
     output_dir : str
         Directory to save the statistical analysis results.
 
-    group_column : str, default "Group"
-        Metadata column used as PLS-DA Y (and PCA/PLS plotIndiv group).
-
-    contrast_group1, contrast_group2 : str, optional
-        Volcano contrast levels within ``group_column``. When both set, volcano
-        uses those two levels even if there are more groups overall.
-        When omitted and exactly 2 levels exist, uses alphabetical factor order.
-
     Input feature table format:
     feature_id,mz,rt_med,sample1,sample2,...
 
     metadata.csv format:
-    Sample,<group_column>,...
+    Sample,Group
     """
 
     print("\nPerforming statistical analysis using mixOmics...")
 
     os.makedirs(output_dir, exist_ok=True)
-    _r_plotly_helpers = _r_plotly_export_path().replace(os.sep, "/")
-
-    imputed_csv = os.path.join(input_dir, "feature_table_filtered_imputed.csv").replace(os.sep, "/")
-    os.environ["MASS_MIXOMICS_INPUT_CSV"] = imputed_csv
-    os.environ["MASS_MIXOMICS_METADATA_CSV"] = metadata_csv.replace(os.sep, "/")
-    os.environ["MASS_MIXOMICS_OUTPUT_DIR"] = output_dir.replace(os.sep, "/")
-    os.environ["MASS_MIXOMICS_GROUP_COLUMN"] = str(group_column or "Group").strip() or "Group"
-    os.environ["MASS_MIXOMICS_CONTRAST_G1"] = str(contrast_group1 or "").strip()
-    os.environ["MASS_MIXOMICS_CONTRAST_G2"] = str(contrast_group2 or "").strip()
 
     r_script = f"""
 # ============================= packages =============================
@@ -763,16 +898,11 @@ library(ggplot2)
 library(mixOmics)
 library(pheatmap)
 
-try(source("{_r_plotly_helpers}", local = FALSE, encoding = "UTF-8"), silent = TRUE)
-
 
 # ============================= parameters =============================
-input_csv <- Sys.getenv("MASS_MIXOMICS_INPUT_CSV")
-metadata_csv <- Sys.getenv("MASS_MIXOMICS_METADATA_CSV")
-outdir <- Sys.getenv("MASS_MIXOMICS_OUTPUT_DIR")
-if (!nzchar(input_csv) || !nzchar(metadata_csv) || !nzchar(outdir)) {{
-  stop("Missing MASS_MIXOMICS_* environment variables")
-}}
+input_csv <- "{os.path.join(input_dir, 'feature_table_filtered_imputed.csv').replace(os.sep, '/')}"
+metadata_csv <- "{metadata_csv.replace(os.sep, '/')}"
+outdir <- "{output_dir.replace(os.sep, '/')}"
 
 ncomp_pca <- {ncomp_pca}
 ncomp_plsda <- {ncomp_plsda}
@@ -788,11 +918,6 @@ padj_threshold <- {padj_threshold}
 log2fc_threshold <- {log2fc_threshold}
 use_fdr <- {str(use_fdr).upper()}
 
-group_column_req <- Sys.getenv("MASS_MIXOMICS_GROUP_COLUMN", unset = "Group")
-if (!nzchar(group_column_req)) group_column_req <- "Group"
-contrast_g1_req <- Sys.getenv("MASS_MIXOMICS_CONTRAST_G1")
-contrast_g2_req <- Sys.getenv("MASS_MIXOMICS_CONTRAST_G2")
-
 dir.create(outdir, showWarnings = FALSE, recursive = TRUE)
 
 
@@ -807,29 +932,24 @@ metadata <- read_csv(
     show_col_types = FALSE
 )
 
+# Normalize sample names: strip file extensions from BOTH feature table
+# column names AND metadata Sample column. This handles all 4 cases:
+#   CSV: DY-1-1    / metadata: DY-1-1        → both unchanged → match
+#   CSV: DY-1-1    / metadata: DY-1-1.mzML   → metadata stripped → match
+#   CSV: DY-1-1.mzML / metadata: DY-1-1      → CSV stripped → match
+#   CSV: DY-1-1.mzML / metadata: DY-1-1.mzML → both stripped → match
+# feature_id, mz, rt_med have no dot → sub is no-op on them.
+colnames(feature_df) <- sub("\\\\.[^.]+$", "", colnames(feature_df))
+metadata$Sample <- sub("\\\\.[^.]+$", "", metadata$Sample)
+
 
 # ============================= parameter check =============================
 if (!scale_method %in% c("autoscale", "none")) {{
     stop("scale_method must be 'autoscale' or 'none'")
 }}
 
-if (!("Sample" %in% colnames(metadata))) {{
-    stop("metadata must contain a Sample column")
-}}
-
-resolve_meta_column <- function(requested, available) {{
-    if (requested %in% available) return(requested)
-    hit <- available[tolower(available) == tolower(requested)]
-    if (length(hit) >= 1) return(hit[[1]])
-    NULL
-}}
-
-group_column <- resolve_meta_column(group_column_req, colnames(metadata))
-if (is.null(group_column)) {{
-    stop(paste0(
-        "metadata missing group_column '", group_column_req,
-        "'. Available: ", paste(colnames(metadata), collapse = ", ")
-    ))
+if (!all(c("Sample", "Group") %in% colnames(metadata))) {{
+    stop("metadata must contain Sample and Group columns")
 }}
 
 
@@ -901,7 +1021,7 @@ if (scale_method == "autoscale") {{
 
 
 # ============================= prepare matrix =============================
-Y <- factor(metadata[[group_column]])
+Y <- factor(metadata$Group)
 
 feature_matrix <- as.matrix(
     X[, sample_cols, drop = FALSE]
@@ -916,22 +1036,6 @@ X_tmp <- X_tmp[
     ,
     drop = FALSE
 ]
-
-writeLines(
-    c(
-        paste0("group_column=", group_column),
-        paste0("n_levels=", nlevels(Y)),
-        paste0("levels=", paste(levels(Y), collapse = ",")),
-        paste0("contrast_group1_req=", contrast_g1_req),
-        paste0("contrast_group2_req=", contrast_g2_req),
-        paste0("n_samples=", nrow(X_tmp)),
-        paste0("group_sizes=", paste(names(table(Y)), as.integer(table(Y)), sep = "=", collapse = "; "))
-    ),
-    file.path(outdir, "analysis_params.txt")
-)
-# 每轮重写警告文件，避免旧 run 的「only 1 group」残留误导
-warning_file <- file.path(outdir, "analysis_warning.txt")
-if (file.exists(warning_file)) file.remove(warning_file)
 
 
 # ============================= PCA =============================
@@ -965,39 +1069,13 @@ plotIndiv(
     comp = pca_plot_comps,
     group = Y,
     legend = TRUE,
-    title = "PCA",
-    style = "graphics"
+    title = "PCA"
 )
 
 dev.off()
 
-try(
-try(
-    save_pca_plsda_plotly_sidecar(
-        pca_res$variates$X,
-        Y,
-        file.path(outdir, "pca_plot.png"),
-        "PCA",
-        pca_plot_comps
-    ),
-    silent = TRUE
-),
-    silent = TRUE
-)
-
 
 # ============================= PLS-DA =============================
-if (nlevels(Y) < 2) {{
-    writeLines(
-        paste(
-            "Skipped PLS-DA/CV/VIP/volcano: only",
-            nlevels(Y),
-            "group(s) matched feature table samples.",
-            "PCA was still computed."
-        ),
-        file.path(outdir, "analysis_warning.txt")
-    )
-}} else {{
 plsda_res <- plsda(
     X_tmp,
     Y,
@@ -1030,94 +1108,37 @@ plotIndiv(
     comp = plsda_plot_comps,
     group = Y,
     legend = TRUE,
-    title = "PLS-DA",
-    style = "graphics"
+    title = "PLS-DA"
 )
 
 dev.off()
 
-try(
-try(
-    save_pca_plsda_plotly_sidecar(
-        plsda_res$variates$X,
-        Y,
-        file.path(outdir, "plsda_plot.png"),
-        "PLS-DA",
-        plsda_plot_comps
-    ),
-    silent = TRUE
-),
-    silent = TRUE
-)
-
 
 # ============================= Cross Validation =============================
-# 小样本时 mixOmics::perf() 的 Mfold 极易在 solve(Sr) 上奇异崩溃；
-# CV 失败不应阻断 VIP / 火山图 / 差异代谢物输出。
 set.seed(seed)
 
-min_group_size <- min(as.integer(table(Y)))
-n_samples <- nrow(X_tmp)
-n_folds <- min(5L, max(2L, min_group_size))
+min_group_size <- min(table(Y))
 
-# 经验阈值：每组 <3 或总样本 <6 时跳过 CV（仍保留 PLS-DA 得分图）
-skip_perf <- (min_group_size < 3L) || (n_samples < 6L) || (n_folds < 2L)
+n_folds <- min(
+    5,
+    max(2, min_group_size)
+)
 
-if (skip_perf) {{
-    write(
-        paste0(
-            "Skipped PLS-DA cross-validation (perf): too few samples for stable Mfold ",
-            "(n=", n_samples, ", min_group_size=", min_group_size,
-            ", folds=", n_folds, "). VIP/volcano still computed from plsda model."
-        ),
-        file = file.path(outdir, "analysis_warning.txt"),
-        append = file.exists(file.path(outdir, "analysis_warning.txt"))
+perf_res <- perf(
+    plsda_res,
+    validation = "Mfold",
+    folds = n_folds,
+    nrepeat = 10,
+    progressBar = TRUE
+)
+
+capture.output(
+    print(perf_res$error.rate),
+    file = file.path(
+        outdir,
+        "plsda_cv_results.txt"
     )
-    writeLines(
-        paste0(
-            "CV skipped: n=", n_samples,
-            ", min_group_size=", min_group_size,
-            ", folds=", n_folds
-        ),
-        file.path(outdir, "plsda_cv_results.txt")
-    )
-}} else {{
-    perf_ok <- FALSE
-    tryCatch(
-        {{
-            perf_res <- perf(
-                plsda_res,
-                validation = "Mfold",
-                folds = n_folds,
-                nrepeat = 3,
-                progressBar = FALSE
-            )
-            capture.output(
-                print(perf_res$error.rate),
-                file = file.path(outdir, "plsda_cv_results.txt")
-            )
-            perf_ok <- TRUE
-        }},
-        error = function(e) {{
-            write(
-                paste0(
-                    "PLS-DA cross-validation (perf) failed: ",
-                    conditionMessage(e),
-                    ". Continuing with VIP/volcano from the fitted plsda model."
-                ),
-                file = file.path(outdir, "analysis_warning.txt"),
-                append = file.exists(file.path(outdir, "analysis_warning.txt"))
-            )
-            writeLines(
-                paste0("CV failed: ", conditionMessage(e)),
-                file.path(outdir, "plsda_cv_results.txt")
-            )
-        }}
-    )
-    if (!perf_ok) {{
-        message("perf() failed; continuing without CV metrics")
-    }}
-}}
+)
 
 
 # ============================= VIP =============================
@@ -1166,67 +1187,10 @@ write.csv(
 # ============================= Volcano =============================
 volcano_df <- NULL
 
-resolve_level <- function(requested, lev) {{
-    if (!nzchar(requested)) return(NULL)
-    if (requested %in% lev) return(requested)
-    hit <- lev[tolower(lev) == tolower(requested)]
-    if (length(hit) >= 1) return(hit[[1]])
-    NULL
-}}
+if (nlevels(Y) == 2) {{
 
-vol_g1 <- NULL
-vol_g2 <- NULL
-volcano_skip_reason <- NULL
-
-if (nzchar(contrast_g1_req) && nzchar(contrast_g2_req)) {{
-    vol_g1 <- resolve_level(contrast_g1_req, levels(Y))
-    vol_g2 <- resolve_level(contrast_g2_req, levels(Y))
-    if (is.null(vol_g1) || is.null(vol_g2)) {{
-        volcano_skip_reason <- paste0(
-            "contrast levels not found in ", group_column, ": requested ",
-            contrast_g1_req, " vs ", contrast_g2_req,
-            "; available=", paste(levels(Y), collapse = ",")
-        )
-    }} else if (identical(vol_g1, vol_g2)) {{
-        volcano_skip_reason <- paste0(
-            "contrast groups must differ; got ", vol_g1, " vs ", vol_g2
-        )
-        vol_g1 <- NULL
-        vol_g2 <- NULL
-    }}
-}} else if (nlevels(Y) == 2) {{
-    vol_g1 <- levels(Y)[1]
-    vol_g2 <- levels(Y)[2]
-}} else if (nlevels(Y) > 2) {{
-    volcano_skip_reason <- paste0(
-        "Skipped volcano: ", nlevels(Y), " levels in ", group_column,
-        ". Pass contrast_group1/contrast_group2 to compare two groups."
-    )
-}} else {{
-    volcano_skip_reason <- paste0(
-        "Skipped volcano: fewer than 2 levels in ", group_column
-    )
-}}
-
-if (!is.null(volcano_skip_reason)) {{
-    write(
-        volcano_skip_reason,
-        file = file.path(outdir, "analysis_warning.txt"),
-        append = file.exists(file.path(outdir, "analysis_warning.txt"))
-    )
-}}
-
-if (!is.null(vol_g1) && !is.null(vol_g2)) {{
-
-    idx1 <- which(as.character(Y) == vol_g1)
-    idx2 <- which(as.character(Y) == vol_g2)
-
-    write(
-        paste0("volcano_contrast=", vol_g1, " vs ", vol_g2,
-               " (log2FC = mean(", vol_g2, ") - mean(", vol_g1, "))"),
-        file = file.path(outdir, "analysis_params.txt"),
-        append = TRUE
-    )
+    idx1 <- which(Y == levels(Y)[1])
+    idx2 <- which(Y == levels(Y)[2])
 
     mean1 <- colMeans(
         X_tmp[idx1, , drop = FALSE],
@@ -1266,12 +1230,21 @@ if (!is.null(vol_g1) && !is.null(vol_g2)) {{
         stringsAsFactors = FALSE
     )
 
-    volcano_df$Significant <- with(
-        volcano_df,
-        !is.na(pvalue) &
-        pvalue < pvalue_threshold &
-        abs(log2FC) >= log2fc_threshold
-    )
+    if (use_fdr) {{
+        volcano_df$Significant <- with(
+            volcano_df,
+            !is.na(padj) &
+            padj < padj_threshold &
+            abs(log2FC) >= log2fc_threshold
+        )
+    }} else {{
+        volcano_df$Significant <- with(
+            volcano_df,
+            !is.na(pvalue) &
+            pvalue < pvalue_threshold &
+            abs(log2FC) >= log2fc_threshold
+        )
+    }}
 
     write.csv(
         volcano_df,
@@ -1300,7 +1273,7 @@ if (!is.null(vol_g1) && !is.null(vol_g2)) {{
             linetype = 2
         ) +
         theme_bw() +
-        ggtitle(paste0("Volcano: ", vol_g2, " vs ", vol_g1))
+        ggtitle("Volcano Plot")
 
     ggsave(
         file.path(outdir, "volcano_plot.png"),
@@ -1309,7 +1282,6 @@ if (!is.null(vol_g1) && !is.null(vol_g2)) {{
         height = 5,
         dpi = 300
     )
-    try(save_ggplot_plotly_sidecar(p, file.path(outdir, "volcano_plot.png")), silent = TRUE)
 
 
     # ============================= Differential Metabolites =============================
@@ -1424,67 +1396,32 @@ if (n_top > 0) {{
 
     heatmap_matrix <- t(heatmap_matrix)
 
-    # 空 data.frame 再 [[<- 赋值会因行数不匹配报错；按样本数一次性建表
     annotation_col <- data.frame(
-        setNames(list(Y), group_column),
-        check.names = FALSE,
-        stringsAsFactors = FALSE
+        Group = Y
     )
+
     rownames(annotation_col) <- rownames(X_tmp)
 
-    tryCatch(
-        {{
-            png(
-                file.path(
-                    outdir,
-                    "heatmap_top_vip.png"
-                ),
-                width = 2400,
-                height = 1800,
-                res = 300
-            )
-
-            pheatmap(
-                heatmap_matrix,
-                annotation_col = annotation_col,
-                scale = "none",
-                show_rownames = TRUE,
-                show_colnames = FALSE,
-                fontsize_row = 8
-            )
-
-            dev.off()
-
-            tryCatch(
-                write.csv(
-                    as.data.frame(heatmap_matrix),
-                    file.path(outdir, "heatmap_top_vip_matrix.csv"),
-                    quote = TRUE
-                ),
-                error = function(e) invisible(NULL)
-            )
-
-            try(
-                save_heatmap_plotly_sidecar(
-                    heatmap_matrix,
-                    file.path(outdir, "heatmap_top_vip.png"),
-                    "Top VIP Heatmap"
-                ),
-                silent = TRUE
-            )
-        }},
-        error = function(e) {{
-            if (dev.cur() > 1) try(dev.off(), silent = TRUE)
-            write(
-                paste0("Heatmap skipped: ", conditionMessage(e)),
-                file = file.path(outdir, "analysis_warning.txt"),
-                append = TRUE
-            )
-        }}
+    png(
+        file.path(
+            outdir,
+            "heatmap_top_vip.png"
+        ),
+        width = 2400,
+        height = 1800,
+        res = 300
     )
-}}
 
+    pheatmap(
+        heatmap_matrix,
+        annotation_col = annotation_col,
+        scale = "none",
+        show_rownames = TRUE,
+        show_colnames = FALSE,
+        fontsize_row = 8
+    )
 
+    dev.off()
 }}
 
 
@@ -1495,41 +1432,21 @@ writeLines(
 )
 """
 
-    _r_tmp = tempfile.NamedTemporaryFile(
-        mode="w", suffix=".R", delete=False, encoding="utf-8"
-    )
-    try:
-        _r_tmp.write(r_script)
-        r_file = _r_tmp.name
-    finally:
-        _r_tmp.close()
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.R', delete=False) as f:
+        f.write(r_script)
+        r_file = f.name
 
     try:
-        subprocess.run(["Rscript", r_file], capture_output=False)
-        ensure_editable_sidecars(
-            output_dir,
-            title_map={
-                "pca_plot.png": "PCA",
-                "plsda_plot.png": "PLS-DA",
-                "volcano_plot.png": "Volcano Plot",
-                "vip_scores.png": "VIP Scores",
-                "heatmap_top_vip.png": "Top VIP Heatmap",
-            },
-        )
-        try:
-            from web_frontend.backend.plot_edit_service import ensure_default_plot_configs
-
-            ensure_default_plot_configs(output_dir)
-        except Exception:
-            pass
+        result = subprocess.run([_get_rscript(), r_file], capture_output=True, text=True)
+        if result.returncode != 0:
+            print(f"\n[R ERROR] Statistical analysis failed (exit code {result.returncode}):")
+            print(result.stderr)
+            print(result.stdout)
+            raise subprocess.CalledProcessError(result.returncode, result.args, result.stdout, result.stderr)
 
     finally:
         os.unlink(r_file)
 
-
-
-
-# ========================================================= extract differential features =======================================================
 
 
 
@@ -1577,6 +1494,61 @@ def extract_differential_features_impl(
         f"Target differential features: "
         f"{len(target_features)}"
     )
+
+    # ============ ID mapping: compound → XCMS feature ============
+    # Stage 5 differential_metabolites.csv uses RAMClust compound IDs (C0201),
+    # but Stage 2 spectra.mgf uses XCMS feature IDs (FT00033).
+    # ramclust_clusters.csv maps: feature_id → cluster (compound number).
+    # Compound ID format: C + zero-padded 4-digit cluster number.
+    clusters_csv = None
+    outputspace_root = os.path.dirname(   # .../outputspace/
+        os.path.dirname(                   # .../statistical_analysis/
+            os.path.dirname(differential_csv)  # .../statistical_analysis_mixomics/
+        )
+    )
+    for root, dirs, files in os.walk(
+        os.path.join(outputspace_root, "redundant_feature_filtering")
+    ):
+        if "ramclust_clusters.csv" in files:
+            clusters_csv = os.path.join(root, "ramclust_clusters.csv")
+            break
+    # Fallback: search entire outputspace
+    if clusters_csv is None:
+        for root, dirs, files in os.walk(outputspace_root):
+            if "ramclust_clusters.csv" in files:
+                clusters_csv = os.path.join(root, "ramclust_clusters.csv")
+                break
+
+    if clusters_csv is not None:
+        print(f"  Found cluster mapping: {clusters_csv}")
+        clusters_df = pd.read_csv(clusters_csv)
+        # Build reverse mapping: compound ID → set of XCMS feature IDs
+        compound_to_features = {}
+        for _, row in clusters_df.iterrows():
+            cluster_num = row.get("cluster", -1)
+            if pd.notna(cluster_num) and int(cluster_num) >= 0:
+                cid = f"C{int(cluster_num):04d}"
+                compound_to_features.setdefault(cid, set()).add(
+                    str(row["feature_id"])
+                )
+        # Expand target_features to include underlying XCMS feature IDs
+        expanded = set(target_features)
+        mapped_count = 0
+        for cid in target_features:
+            if cid in compound_to_features:
+                expanded.update(compound_to_features[cid])
+                mapped_count += 1
+        print(
+            f"  ID mapping: {mapped_count}/{len(target_features)} "
+            f"compounds mapped to {len(expanded)} total feature IDs"
+        )
+        target_features = expanded
+    else:
+        print(
+            "  WARNING: ramclust_clusters.csv not found — "
+            "compound-to-feature ID mapping skipped. "
+            "Spectra may not match if IDs differ between stages."
+        )
 
 
     # ==================== copy feature table =================
@@ -1666,18 +1638,13 @@ def extract_differential_features_impl(
 
 # ============================================================= spectral_annotation =======================================================
 # Cosine
-
-
-
-# ============================================================= spectral_annotation =======================================================
-# Cosine
 def spectral_annotation_impl(
     input_dir: str,
     output_dir: str,
     precursor_ppm: float = 5,
     fragment_tol: float = 0.05,
     min_cosine: float = 0.5,
-    include_precursor: bool = False,
+    include_precursor: bool = True,
     use_mona: bool = True,
     use_spectraverse: bool = True
 ):
@@ -1694,9 +1661,10 @@ def spectral_annotation_impl(
         Fragment ion mass tolerance in Da.
     min_cosine : float, default=0.5
         Minimum cosine similarity score required for annotation.
-    include_precursor : bool, default=False
+    include_precursor : bool, default=True
         If True, require precursor m/z match (requirePrecursor=TRUE).
-        If False, skip precursor requirement for broader matching.
+        Enables fast path with precursor pre-filtering and parallel processing.
+        Set to False only if precursor m/z data is unavailable.
     use_mona : bool, default=True
         If True, also search the MoNA spectral libraries (much larger coverage).
     use_spectraverse : bool, default=True
@@ -1706,6 +1674,32 @@ def spectral_annotation_impl(
     print("\nPerforming spectral library annotation...")
 
     os.makedirs(output_dir, exist_ok=True)
+
+    # --- Auto-detect ramclust_clusters.csv for feature_id → compound mapping ---
+    # Query MGF contains XCMS feature IDs (FT00073), but the feature table
+    # contains RAMClust compound IDs (C0044). We need the cluster mapping to
+    # bridge these two ID systems when merging annotations.
+    outputspace_root = os.path.dirname(os.path.dirname(os.path.dirname(
+        os.path.dirname(os.path.dirname(input_dir))
+    )))  # input_dir is .../differential_feature_extraction/extract_differential_features/
+    clusters_csv = None
+    search_roots = [
+        os.path.join(outputspace_root, "redundant_feature_filtering"),
+        outputspace_root,
+    ]
+    for search_root in search_roots:
+        if os.path.isdir(search_root):
+            for root, dirs, files in os.walk(search_root):
+                if "ramclust_clusters.csv" in files:
+                    clusters_csv = os.path.join(root, "ramclust_clusters.csv")
+                    break
+        if clusters_csv:
+            break
+    if clusters_csv:
+        print(f"  Found cluster mapping: {clusters_csv}")
+    else:
+        print("  WARNING: ramclust_clusters.csv not found — "
+              "compound-level annotation merging may fail")
 
     base_dir = os.path.dirname(os.path.abspath(__file__))
     gnps_pos_path = os.path.join(base_dir, "../..", "database_file/GNPS/GNPS-NIH-NATURALPRODUCTSLIBRARY_ROUND2_POSITIVE.msp")
@@ -1717,6 +1711,7 @@ def spectral_annotation_impl(
     req_precursor_str = "TRUE" if include_precursor else "FALSE"
     use_mona_str = "TRUE" if use_mona else "FALSE"
     use_spectraverse_str = "TRUE" if use_spectraverse else "FALSE"
+    clusters_csv_r = clusters_csv.replace(os.sep, '/') if clusters_csv else ""
     gnps_pos_path_r = gnps_pos_path.replace(os.sep, '/')
     gnps_neg_path_r = gnps_neg_path.replace(os.sep, '/')
     mona_pos_path_r = mona_pos_path.replace(os.sep, '/')
@@ -1732,6 +1727,7 @@ library(MsBackendMsp)
 library(dplyr)
 library(KEGGREST)
 library(readr)
+library(BiocParallel)
 
 
 # ============================= parameters =============================
@@ -1753,6 +1749,17 @@ min_cosine <- {min_cosine}
 include_precursor <- {req_precursor_str}
 use_mona <- {use_mona_str}
 use_spectraverse <- {use_spectraverse_str}
+clusters_csv <- "{clusters_csv_r}"
+
+
+# ============================= parallel backend =============================
+# Register multicore parallel backend for matchSpectra.
+# When include_precursor=TRUE, matchSpectra uses bplapply to parallelize
+# per-query-spectrum matching against precursor-filtered library candidates.
+n_workers <- max(1, parallel::detectCores() - 1)
+register(MulticoreParam(workers = n_workers))
+bp <- bpparam()
+cat("Parallel backend registered with", n_workers, "workers\\n")
 
 
 # ============================= input validation =============================
@@ -1803,15 +1810,21 @@ extract_lib_metadata <- function(lib_spectra, target_idx, lib_name) {{
     colnames_avail <- colnames(meta)
 
     # --- compound name ---
+    # Priority: COMPOUND_NAME (semantically correct field) first,
+    # then TITLE (which is an internal ID for Spectraverse MGF files
+    # but a real compound name in GNPS/MoNA MSP format).
     name <- rep(NA_character_, length(target_idx))
-    if ("TITLE" %in% colnames_avail) {{
-        name <- meta$TITLE[target_idx]
-    }} else if ("name" %in% colnames_avail) {{
-        name <- meta$name[target_idx]
-    }} else if ("Name" %in% colnames_avail) {{
-        name <- meta$Name[target_idx]
-    }} else if ("COMPOUND_NAME" %in% colnames_avail) {{
+    if ("COMPOUND_NAME" %in% colnames_avail) {{
         name <- meta$COMPOUND_NAME[target_idx]
+    }}
+    if (all(is.na(name)) && "TITLE" %in% colnames_avail) {{
+        name <- meta$TITLE[target_idx]
+    }}
+    if (all(is.na(name)) && "name" %in% colnames_avail) {{
+        name <- meta$name[target_idx]
+    }}
+    if (all(is.na(name)) && "Name" %in% colnames_avail) {{
+        name <- meta$Name[target_idx]
     }}
 
     # --- SMILES ---
@@ -1839,13 +1852,17 @@ extract_lib_metadata <- function(lib_spectra, target_idx, lib_name) {{
     tryCatch({{
         prec_mz <- precursorMz(lib_spectra)[target_idx]
     }}, error = function(e) {{
-        # Try PRECURSOR_MZ / PrecursorMZ column
-        if ("PRECURSOR_MZ" %in% colnames_avail) {{
-            prec_mz <<- as.numeric(meta$PRECURSOR_MZ[target_idx])
-        }} else if ("PrecursorMZ" %in% colnames_avail) {{
-            prec_mz <<- as.numeric(meta$PrecursorMZ[target_idx])
-        }}
+        # precursorMz() threw an error — fall back to column lookup
     }})
+    # Second fallback: precursorMz() returned NA (no error), e.g. MoNA MSP
+    # where MsBackendMsp does not map "PrecursorMZ:" to the precursorMz slot.
+    if (all(is.na(prec_mz))) {{
+        if ("PrecursorMZ" %in% colnames_avail) {{
+            prec_mz <- as.numeric(meta$PrecursorMZ[target_idx])
+        }} else if ("PRECURSOR_MZ" %in% colnames_avail) {{
+            prec_mz <- as.numeric(meta$PRECURSOR_MZ[target_idx])
+        }}
+    }}
 
     # --- molecular formula ---
     formula <- rep(NA_character_, length(target_idx))
@@ -1880,7 +1897,27 @@ search_library <- function(lib_path, backend_type, lib_name) {{
         return(data.frame())
     }}
 
-    res <- matchSpectra(query_spectra, lib_spectra, match_param)
+    # Fix: MsBackendMsp may not map all PrecursorMZ field variants to the
+    # precursorMz slot. GNPS uses "PRECURSORMZ:" (all-caps, mapped correctly)
+    # but MoNA uses "PrecursorMZ:" (CamelCase, NOT mapped by MsBackendMsp).
+    # Without this fix, requirePrecursor=TRUE blocks all MoNA matches because
+    # precursorMz() returns NA for every library spectrum.
+    if (backend_type == "msp") {{
+        pmz <- precursorMz(lib_spectra)
+        if (all(is.na(pmz))) {{
+            meta_cols <- colnames(spectraData(lib_spectra))
+            if ("PrecursorMZ" %in% meta_cols) {{
+                precursorMz(lib_spectra) <- as.numeric(
+                    spectraData(lib_spectra)$PrecursorMZ
+                )
+                n_fixed <- sum(!is.na(precursorMz(lib_spectra)))
+                cat("    Fixed precursorMz from PrecursorMZ column:",
+                    n_fixed, "of", length(lib_spectra), "values\\n")
+            }}
+        }}
+    }}
+
+    res <- matchSpectra(query_spectra, lib_spectra, match_param, BPPARAM = bp)
     matches <- MetaboAnnotation::matches(res)
 
     if (nrow(matches) == 0) {{
@@ -2013,18 +2050,56 @@ feat_table$library_source <- NA
 
 
 # ============================= merge annotations into feature table =============================
+# Query MGF contains XCMS feature IDs (e.g. FT00073) while feat_table
+# contains RAMClust compound IDs (e.g. C0044). Build a mapping from
+# XCMS feature_id → compound_id using ramclust_clusters.csv, then
+# aggregate multiple features mapping to the same compound.
 if (nrow(anno_total) > 0) {{
-    for (i in seq_len(nrow(anno_total))) {{
-        idx <- anno_total$query_idx[i]
-        if (length(idx) > 0) {{
-            feat_table$compound_name[idx]    <- anno_total$compound_name[i]
-            feat_table$cosine_score[idx]     <- round(anno_total$score[i], 3)
-            feat_table$ion_mode_match[idx]   <- anno_total$ion_mode[i]
-            feat_table$library_precursor_mz[idx] <- anno_total$library_precursor_mz[i]
-            feat_table$smiles[idx]           <- anno_total$smiles[i]
-            feat_table$formula[idx]          <- anno_total$formula[i]
-            feat_table$library_source[idx]   <- anno_total$library_source[i]
+
+    # ---- Build feature_id → compound_id mapping ----
+    feature_to_compound <- list()
+    if (clusters_csv != "" && file.exists(clusters_csv)) {{
+        clusters_df <- read.csv(clusters_csv, stringsAsFactors = FALSE)
+        for (j in seq_len(nrow(clusters_df))) {{
+            fid <- as.character(clusters_df$feature_id[j])
+            cnum <- clusters_df$cluster[j]
+            if (!is.na(cnum) && cnum >= 0) {{
+                cid <- sprintf("C%04d", as.integer(cnum))
+                feature_to_compound[[fid]] <- cid
+            }}
         }}
+    }}
+
+    # ---- Get TITLE (feature ID) for each query spectrum ----
+    query_titles <- spectraData(query_spectra)$TITLE
+    if (is.null(query_titles)) {{
+        query_titles <- as.character(seq_along(query_spectra))
+    }}
+
+    # ---- Map matches to feat_table rows ----
+    for (i in seq_len(nrow(anno_total))) {{
+        qidx <- anno_total$query_idx[i]
+        title <- query_titles[qidx]
+        cid <- feature_to_compound[[as.character(title)]]
+        if (is.null(cid)) {{
+            # Fallback: use TITLE as-is (may match directly)
+            cid <- as.character(title)
+        }}
+        feat_row <- which(feat_table$Feature == cid)
+        if (length(feat_row) == 0) next
+
+        # Keep best score if multiple features map to same compound
+        existing_score <- feat_table$cosine_score[feat_row[1]]
+        new_score <- round(anno_total$score[i], 3)
+        if (!is.na(existing_score) && existing_score >= new_score) next
+
+        feat_table$compound_name[feat_row[1]]    <- anno_total$compound_name[i]
+        feat_table$cosine_score[feat_row[1]]     <- new_score
+        feat_table$ion_mode_match[feat_row[1]]   <- anno_total$ion_mode[i]
+        feat_table$library_precursor_mz[feat_row[1]] <- anno_total$library_precursor_mz[i]
+        feat_table$smiles[feat_row[1]]           <- anno_total$smiles[i]
+        feat_table$formula[feat_row[1]]          <- anno_total$formula[i]
+        feat_table$library_source[feat_row[1]]   <- anno_total$library_source[i]
     }}
 }}
 
@@ -2142,22 +2217,35 @@ if (nrow(df_annotated) > 0) {{
 }}  # end if(nrow(df_annotated) > 0)
 
 # ============================ Mass-based KEGG lookup for unmatched features ============================
+    # Try both [M+H]+ and [M-H]- adducts, guided by ion_mode_match when available.
     cat("\\n--- Mass-based KEGG lookup for unmatched features ---\\n")
     n_mass_found <- 0
     for (i in seq_len(nrow(feat_table))) {{
         if (is.na(feat_table$kegg_id[i])) {{
             mz_val <- feat_table$mz[i]
             if (!is.na(mz_val) && is.numeric(mz_val) && mz_val > 50) {{
-                # Assume [M+H]+ adduct, calculate neutral mass
-                neutral_mass <- mz_val - 1.0078
-                tryCatch({{
-                    mass_str <- as.character(round(neutral_mass, 4))
-                    kegg_result <- keggFind("compound", mass_str, "exact_mass")
-                    if (length(kegg_result) > 0) {{
-                        feat_table$kegg_id[i] <- names(kegg_result)[1]
-                        n_mass_found <- n_mass_found + 1
-                    }}
-                }}, error = function(e) {{ }})
+                ion_mode <- feat_table$ion_mode_match[i]
+                if (is.na(ion_mode)) ion_mode <- "UNKNOWN"
+
+                # Build adduct list: try known mode first, then the other
+                if (ion_mode == "NEG") {{
+                    adducts <- c(-1.0078, 1.0078)   # [M-H]- first, then [M+H]+ as fallback
+                }} else {{
+                    adducts <- c(1.0078, -1.0078)   # [M+H]+ first (POS and UNKNOWN), then [M-H]-
+                }}
+
+                for (adduct in adducts) {{
+                    if (!is.na(feat_table$kegg_id[i])) break
+                    neutral_mass <- mz_val - adduct
+                    tryCatch({{
+                        mass_str <- as.character(round(neutral_mass, 4))
+                        kegg_result <- keggFind("compound", mass_str, "exact_mass")
+                        if (length(kegg_result) > 0) {{
+                            feat_table$kegg_id[i] <- names(kegg_result)[1]
+                            n_mass_found <- n_mass_found + 1
+                        }}
+                    }}, error = function(e) {{ }})
+                }}
             }}
         }}
     }}
@@ -2189,7 +2277,7 @@ if (nrow(df_annotated) > 0) {{
 
     try:
         result = subprocess.run(
-            ['Rscript', r_file],
+            [_get_rscript(), r_file],
             capture_output=True,
             encoding='utf-8'
         )
@@ -2207,11 +2295,6 @@ if (nrow(df_annotated) > 0) {{
     finally:
         os.unlink(r_file)
 
-
-
-
-# ============================================================ sirius unkowns annotation =======================================================
-# SIRIUS
 
 
 
@@ -2300,9 +2383,66 @@ def sirius_unknowns_annotation_impl(
 
 # ============================================= KEGG ID lookup helpers ==================================================
 
+def _kegg_api_request(url_path: str, timeout: float = 10.0) -> Optional[str]:
+    """
+    Make a request to the KEGG REST API with HTTPS→HTTP fallback.
 
+    From mainland China, HTTPS connections to rest.kegg.jp often experience
+    SSL handshake timeouts due to network interference.  KEGG REST API
+    supports plain HTTP, so we try HTTPS first (for security), then fall
+    back to HTTP when the SSL layer fails.
 
-# ============================================= KEGG ID lookup helpers ==================================================
+    Proxy support: respects the conventional http_proxy / HTTP_PROXY
+    environment variables.
+
+    Parameters
+    ----------
+    url_path : str
+        Path portion of the URL, e.g. "find/compound/glucose".
+    timeout : float
+        Request timeout in seconds.
+
+    Returns
+    -------
+    str or None
+        Response body text, or None if all attempts fail.
+    """
+    import urllib.request
+    import urllib.error
+    import ssl
+
+    # Respect proxy environment variables
+    proxies = {}
+    http_proxy = os.environ.get('http_proxy') or os.environ.get('HTTP_PROXY')
+    if http_proxy:
+        proxies['http'] = http_proxy
+        # Also use http proxy for https when no separate https_proxy is set
+        if not (os.environ.get('https_proxy') or os.environ.get('HTTPS_PROXY')):
+            proxies['https'] = http_proxy
+    https_proxy = os.environ.get('https_proxy') or os.environ.get('HTTPS_PROXY')
+    if https_proxy:
+        proxies['https'] = https_proxy
+
+    proxy_handler = urllib.request.ProxyHandler(proxies) if proxies else None
+
+    # Try HTTPS first, then HTTP (KEGG supports both)
+    for scheme in ('https', 'http'):
+        url = f"{scheme}://rest.kegg.jp/{url_path}"
+        try:
+            if proxy_handler:
+                opener = urllib.request.build_opener(proxy_handler)
+                with opener.open(url, timeout=timeout) as resp:
+                    return resp.read().decode('utf-8').strip()
+            else:
+                req = urllib.request.Request(url)
+                with urllib.request.urlopen(req, timeout=timeout,
+                                             context=ssl._create_unverified_context()) as resp:
+                    return resp.read().decode('utf-8').strip()
+        except Exception:
+            continue  # try next scheme
+
+    return None
+
 
 def _lookup_kegg_by_name(compound_name: str, timeout: float = 10.0) -> Optional[str]:
     """
@@ -2325,15 +2465,7 @@ def _lookup_kegg_by_name(compound_name: str, timeout: float = 10.0) -> Optional[
 
     # Clean the name for URL
     encoded = urllib.parse.quote(compound_name.strip())
-    url = f"https://rest.kegg.jp/find/compound/{encoded}"
-
-    try:
-        req = urllib.request.Request(url)
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            text = resp.read().decode('utf-8').strip()
-    except (urllib.error.URLError, urllib.error.HTTPError, OSError) as e:
-        print(f"    [KEGG API] Connection error for '{compound_name[:60]}': {e}")
-        return None
+    text = _kegg_api_request(f"find/compound/{encoded}", timeout=timeout)
 
     if not text:
         return None
@@ -2366,18 +2498,9 @@ def _lookup_kegg_by_mass(neutral_mass: float, ppm: float = 10.0, timeout: float 
     List[str]
         KEGG compound IDs matching the mass within tolerance.
     """
-    import urllib.request
-    import urllib.error
-
-    url = f"https://rest.kegg.jp/find/compound/{neutral_mass}/exact_mass"
-
-    try:
-        req = urllib.request.Request(url)
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            text = resp.read().decode('utf-8').strip()
-    except (urllib.error.URLError, urllib.error.HTTPError, OSError) as e:
-        print(f"    [KEGG API] Connection error for mass {neutral_mass:.4f}: {e}")
-        return []
+    text = _kegg_api_request(
+        f"find/compound/{neutral_mass}/exact_mass", timeout=timeout
+    )
 
     if not text:
         return []
@@ -2446,10 +2569,7 @@ def _supplement_kegg_ids(input_csv: str, mzannotation_dir: str = None) -> str:
             formula_str = str(formula).strip()
             try:
                 encoded = urllib.parse.quote(formula_str)
-                url = f"https://rest.kegg.jp/find/compound/{encoded}/formula"
-                req = urllib.request.Request(url)
-                with urllib.request.urlopen(req, timeout=10) as resp:
-                    text = resp.read().decode('utf-8').strip()
+                text = _kegg_api_request(f"find/compound/{encoded}/formula", timeout=10)
                 if text:
                     first_line = text.split('\n')[0]
                     parts = first_line.split('\t')
@@ -2484,12 +2604,25 @@ def _supplement_kegg_ids(input_csv: str, mzannotation_dir: str = None) -> str:
             if not pd.isna(mz_val) and mz_val is not None:
                 try:
                     mz_f = float(mz_val)
-                    neutral_mass = mz_f - 1.0078
-                    if neutral_mass > 50:
-                        candidates = _lookup_kegg_by_mass(neutral_mass, ppm=20)
-                        if candidates:
-                            kegg_id = candidates[0]
-                            print(f"    [mass] m/z={mz_f:.4f} → {kegg_id}")
+                    # Determine adducts to try based on ion_mode if available
+                    ion_mode = row.get('ion_mode_match', None)
+                    if pd.isna(ion_mode) or str(ion_mode).strip() in ('', 'NA'):
+                        ion_mode = 'UNKNOWN'
+                    else:
+                        ion_mode = str(ion_mode).strip().upper()
+                    if ion_mode == 'NEG':
+                        adducts = [-1.0078, 1.0078]   # [M-H]- first, then [M+H]+ fallback
+                    else:
+                        adducts = [1.0078, -1.0078]   # [M+H]+ first (POS & UNKNOWN), then [M-H]-
+                    for adduct in adducts:
+                        if kegg_id is not None:
+                            break
+                        neutral_mass = mz_f - adduct
+                        if neutral_mass > 50:
+                            candidates = _lookup_kegg_by_mass(neutral_mass, ppm=20)
+                            if candidates:
+                                kegg_id = candidates[0]
+                                print(f"    [mass] m/z={mz_f:.4f} ion_mode={ion_mode} → {kegg_id}")
                 except (ValueError, TypeError):
                     pass
                 except Exception:
@@ -2513,11 +2646,6 @@ def _supplement_kegg_ids(input_csv: str, mzannotation_dir: str = None) -> str:
         return supplemented_path
 
     return input_csv
-
-
-# ============================================= pathway enrichment analysis ==================================================
-# KEGG
-
 
 
 # ============================================= pathway enrichment analysis ==================================================
@@ -2553,13 +2681,13 @@ def kegg_compound_enrich_impl(
     input_file = _supplement_kegg_ids(input_file, mzannotation_dir)
 
     os.makedirs(output_dir, exist_ok=True)
-    _r_plotly_helpers = _r_plotly_export_path().replace(os.sep, "/")
     enrich_table_out = os.path.join(output_dir, "kegg_compound_enrich.csv")
     bubble_plot_out = os.path.join(output_dir, "kegg_compound_bubble.png")
     dotplot_out = os.path.join(output_dir, "kegg_compound_dotplot.png")
     barplot_out = os.path.join(output_dir, "kegg_compound_barplot.png")
 
-    compound_pathway_path = str(PROJECT_ROOT / "database_file" / "compound_pathway.tsv")
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    compound_pathway_path = os.path.join(base_dir, "../..", "database_file/compound_pathway.tsv")
 
     r_script = f"""
 library(clusterProfiler)
@@ -2567,8 +2695,6 @@ library(ggplot2)
 library(KEGGREST)
 library(dplyr)
 library(enrichplot)
-
-try(source("{_r_plotly_helpers}", local = FALSE, encoding = "UTF-8"), silent = TRUE)
 
 compound_pathway_path <- "{compound_pathway_path.replace(os.sep, '/')}"
 
@@ -2633,7 +2759,6 @@ if (nrow(enrich_df) > 0) {{
     ) +
     theme_minimal()
     ggsave("{bubble_plot_out}", plot = p, width = 12, height = 8, dpi = 300)
-    try(save_ggplot_plotly_sidecar(p, "{bubble_plot_out}"), silent = TRUE)
 
     # 5. clusterProfiler dotplot
     p_dot <- dotplot(
@@ -2650,7 +2775,6 @@ if (nrow(enrich_df) > 0) {{
         height = 8,
         dpi = 300
     )
-    try(save_ggplot_plotly_sidecar(p_dot, "{dotplot_out}"), silent = TRUE)
 
     # 6. clusterProfiler barplot
     p_bar <- barplot(
@@ -2667,7 +2791,6 @@ if (nrow(enrich_df) > 0) {{
         height = 8,
         dpi = 300
     )
-    try(save_ggplot_plotly_sidecar(p_bar, "{barplot_out}"), silent = TRUE)
 }}
 """
 
@@ -2676,24 +2799,82 @@ if (nrow(enrich_df) > 0) {{
         r_file = f.name
 
     try:
-        subprocess.run(["Rscript", r_file], check=True, capture_output=True)
+        subprocess.run([_get_rscript(), r_file], check=True, capture_output=True)
     finally:
         os.unlink(r_file)
 
-    # Frontend editable / plotly sidecars for KEGG plots (incl. new dot/bar plots)
-    for png_path, title in (
-        (bubble_plot_out, "KEGG Compound Pathway Enrichment"),
-        (dotplot_out, "KEGG Compound Enrichment Dotplot"),
-        (barplot_out, "KEGG Compound Enrichment Barplot"),
-    ):
-        if os.path.isfile(png_path):
-            save_editable_metadata(png_path, title=title)
-    ensure_editable_sidecars(
-        output_dir,
-        title_map={
-            "kegg_compound_bubble.png": "KEGG Compound Pathway Enrichment",
-            "kegg_compound_dotplot.png": "KEGG Compound Enrichment Dotplot",
-            "kegg_compound_barplot.png": "KEGG Compound Enrichment Barplot",
-        },
-    )
 
+
+
+if __name__ == "__main__":
+    base = "/data2/luxiang/MOA/outputspace"
+
+    # data_preprocessing_xcms_impl(
+    #     input_dir=f"{base}/data_conversion/mzml",
+    #     output_dir=f"{base}/data_preprocessing/xcms_processed",
+    #     file_pattern="*.mzML",
+    #     blank_pattern="Blank",
+    #     ms2_ppm=20,
+    #     ms2_rt_window=5,
+    #     blank_ratio_threshold=3,
+    #     n_cores=None,
+    #     ppm=10,
+    #     peakwidth=(5, 20),
+    #     snthresh=10,
+    #     prefilter=(3, 100),
+    #     bin_size=0.25,
+    #     center=1,
+    #     bw=5,
+    #     min_fraction=0.5,
+    #     min_samples=2
+    # )
+
+    # feature_filtering_and_missing_value_imputation_KNN_impl(
+    #     input_dir=f"{base}/data_preprocessing/xcms_processed",
+    #     output_dir=f"{base}/missing_value_imputation/filtered_imputed_results",
+    #     min_presence=0.5,
+    #     min_intensity=0.0,
+    #     n_neighbors=5
+    # )
+
+    # statistical_analysis_mixomics_impl(
+    #     input_dir=f"{base}/missing_value_imputation/filtered_imputed_results",
+    #     metadata_csv="/data2/luxiang/MOA/inputspace/metadata.csv",
+    #     output_dir=f"{base}/statistical_analysis/mixomics_results",
+    #     ncomp_pca=5,
+    #     ncomp_plsda=2,
+    #     scale_method="autoscale",
+    #     top_n_heatmap=50,
+    #     seed=123,
+    #     vip_threshold=1.0,
+    #     pvalue_threshold=0.05,
+    #     padj_threshold=0.05,
+    #     log2fc_threshold=0.58,
+    #     use_fdr=False
+    # )
+
+    # extract_differential_features_impl(
+    #     differential_csv=f"{base}/statistical_analysis/mixomics_results/differential_metabolites.csv",
+    #     input_mgf=f"{base}/data_preprocessing/xcms_processed/spectra.mgf",
+    #     output_dir=f"{base}/statistical_analysis/differential_features"
+    # )
+
+    # spectral_annotation_impl(
+    #     input_dir=f"{base}/statistical_analysis/differential_features",
+    #     output_dir=f"{base}/library_matching/annotation_results",
+    #     precursor_ppm=100,
+    #     fragment_tol=0.2,
+    #     min_cosine=0.2
+    # )
+
+    # sirius_unknowns_annotation_impl(
+    #     input_dir=f"{base}/statistical_analysis/differential_features",
+    #     output_dir=f"{base}/unknown_identification/sirius_results",
+    #     profile="orbitrap",
+    #     database="pubchem"
+    # )
+
+    kegg_compound_enrich_impl(
+        input_dir=f"{base}/library_matching/annotation_results",
+        output_dir=f"{base}/enrichment_analysis/kegg_results",
+    )

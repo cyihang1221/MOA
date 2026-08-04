@@ -1,0 +1,100 @@
+
+Experimental results show that DSSA can substantially reduce
+bidirectional communication and local computation, demonstrating
+a favorable resource-performance trade-off under the tested settings
+with moderate performance degradation. These results suggest that,
+based on the benchmark evaluations conducted in this study, DSSA
+offers a promising FL alternative for distributed edge sensing
+systems where communication and computation resources are
+constrained.
+2. System Model
+2.1. FL Model
+Federated Averaging (FedAvg) [1] is a foundational algorithm in
+federated learning, enabling model training across decentralized
+clients without exposing private data, as illustrated in Figure 1. A
+central server initializes a global model and broadcasts it to clients,
+which then perform local training on their private datasets. The
+local objective of client k is to minimize its empirical loss:
+minwFk(w)=1nk∑i=1nkℓ(xi,yi,w), (1)
+where ℓ is the loss function, (xi,yi) denotes a data sample, nk is the
+number of samples, and w the model parameters.
+Figure 1.
+[image]
+Open in a new tab
+Federated learning model demonstration.
+Each client updates the model through several local epochs of
+stochastic gradient descent (SGD) and sends the results to the
+server. The server then aggregates these updates via weighted
+averaging according to local data sizes:
+wt+1=∑k=1Knknwtk, (2)
+with the total sample size:
+n=∑k=1Knk, (3)
+producing a refined global model for the next round. This process
+repeats until convergence.
+FedAvg achieves privacy preservation by keeping raw data local
+and reduces communication overhead through multiple local
+updates per round. Nonetheless, it faces challenges under statistical
+heterogeneity (non-IID data) and system heterogeneity (varying
+client resources), motivating numerous subsequent extensions.
+2.2. Data Distribution Model
+The Dirichlet distribution is commonly used in federated learning
+literature to simulate non-IID data distributions among clients
+[9,14,15,16,18,19,20]. The probability density function of the K-
+dimensional Dirichlet distribution is given by:
+f(x1,…,xK;α1,…,αK)=1B(α)∏i=1Kxiαi−1 (4)
+where xi≥0, ∑i=1Kxi=1, and B(α) is the multivariate Beta
+function.
+The concentration parameter α (typically using a symmetric
+Dirichlet with α1=…=αK=α) controls the degree of data
+heterogeneity among clients. When α→∞, the distribution
+approaches uniform allocation (IID setting). As α→0, the data
+distribution becomes increasingly skewed, with each client
+potentially dominated by only a few classes (highly non-IID). Many
+studies [15,19,20] have utilized different α values to simulate
+various non-IID scenarios, typically employing α=0.1 to 1.0 for
+strong non-IID settings and α=10 to 100 for near-IID conditions.
+2.3. Communication Model
+In this work, communication efficiency is characterized in terms of
+the number of model parameters transmitted between the server
+and clients during each communication round. Since the objective
+of DSSA is to reduce the payload of model exchange, we adopt a
+lightweight parameter-level communication model rather than a
+detailed physical-layer transmission model. This abstraction is
+suitable for evaluating the communication burden of federated
+learning in resource-constrained edge sensing systems.
+Let P denote the total number of parameters in the full global
+model. In conventional FL, the server broadcasts the full model to
+each selected client, and each client uploads a full model update or
+gradient vector of the same size. Therefore, the downlink and
+uplink communication costs per client in one round can be
+expressed as
+Cdlfull=P,Culfull=P, (5)
+where the unit is the number of transmitted parameters. If each
+parameter is represented using b bits, the corresponding
+communication payload in bits is given by
+Sdlfull=Pb,Sulfull=Pb. (6)
+In DSSA, the server prunes the global model before transmission.
+Let ps∈[0,1] denote the server-side pruning ratio, so that only a
+fraction (1−ps) of the model parameters is retained and
+transmitted to clients. The downlink communication cost per client
+then becomes
+CdlDSSA=(1−ps)P. (7)
+On the uplink, each client uploads only the complementary sparse
+update associated with the pruned coordinates. Let pc∈[0,1] denote
+the effective sparsity ratio of the uploaded client update. Then the
+uplink communication cost per client can be written as
+CulDSSA=(1−pc)P. (8)
+Accordingly, the corresponding payload sizes in bits are
+SdlDSSA=(1−ps)Pb,SulDSSA=(1−pc)Pb. (9)
+Suppose that K clients participate in a communication round. The
+total communication payload of conventional FL is
+Stotalfull=KSdlfull+Sulfull=2KPb, (10)
+whereas the total communication payload of DSSA becomes
+StotalDSSA=KSdlDSSA+SulDSSA=K(1−ps)+(1−pc)Pb. (11)
+Therefore, the communication reduction achieved by DSSA depends
+directly on the sparsity levels applied at the server and client sides.
+By transmitting only the retained global parameters on the
+downlink and only complementary sparse updates on the uplink,
+DSSA substantially reduces the bidirectional communication burden
+compared with dense model exchange. This communication model
+is consistent with the objective of our method and provides a clear

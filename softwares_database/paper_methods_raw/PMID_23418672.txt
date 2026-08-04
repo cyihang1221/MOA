@@ -1,0 +1,127 @@
+
+Methods
+Several precursor ion selection strategies are conceivable depending
+on the aim of a study and the available prior knowledge about the
+sample. Here, we focus on three settings: the first two use static
+inclusion lists created once before the MS/MS acquisition starts. The
+third changes the selection based on previous identifications. The
+two static inclusion list approaches differ in the information used
+during the selection process. In the following, when talking about
+peptides we refer to protein subsequences as opposed to precursors
+which denote MS/MS measurements.
+• Feature-based inclusion list: Given an LC-MS feature map, we
+want to maximize the number of scheduled precursors given some
+constraints on the number of simultaneous acquisitions per RT
+fraction. This is a common scenario with LC-MALDI due to its
+decoupled nature of LC and MS.
+• Protein-based inclusion list: Given a list of protein sequences but
+no prior LC-MS run, we want to find an optimal set of precursors
+that represents the proteins of interest best. As proteins are not
+identified directly we need to find a peptide set that optimally
+covers our specific proteins. For this peptide set, we predict the LC-
+MS features (i.e. retention time and m / z acquisition window) and
+add them to the inclusion list.
+• Iterative precursor ion selection: Given an LC-MALDI-MS
+feature map, we want to optimally exploit the set of possible
+precursors. Optimality in this case means that we want to identify
+the proteins in a sample using a minimal set of precursors, so that
+the remaining precursors can be used to discover other proteins.
+The precursor ion selection shall be adjusted during the ongoing
+MS/MS acquisition based on previous peptide and protein
+identifications. This way, we combine the discovery nature of DDA
+with directed MS/MS. As with both inclusion list formulations, the
+number of MS/MS acquisitions is limited by the number of
+precursors per RT fraction.
+These settings can be formulated as optimization problems, which
+can be formalized as Integer Linear Programs (ILP). Solving the ILPs
+yields a list of precursor ions, the actual inclusion list. In the
+following sections we will introduce and explain the formulations.
+Feature-based inclusion list
+Given a feature map, we want to schedule the highest possible
+number of features as precursors for MS/MS-fragmentation. Since a
+feature elutes over several scans we have the option to choose the
+feature as precursor in any of those scans. Ideally, one would like to
+use for each feature a fraction with a high signal intensity for
+fragmentation. A greedy approach (GA) chooses for each feature the
+fraction with the highest signal intensity. Then, in each fraction the
+highest of these feature maxima are scheduled for MS/MS.
+However, situations can be constructed where GA selects less
+features than a global strategy that tries to optimize the selection
+for all features simultaneously. An illustration of such a situation is
+shown in Figure 1. In the following, we present a formulation of the
+feature-based precursor ion selection as optimization problem.
+Figure 1.
+[image]
+Open in a new tab
+Feature-based precursor ion selection. (a) LC-MS map containing
+four features a - d. (b) MS spectra of the same map with feature
+peaks. The coloured ellipses show the selected precursors for the
+different strategies: green with DDA, blue with GA and red with the
+ILP. Limiting the number of precursors to 2 per spectrum, feature c
+is never chosen neither with DDA nor with GA. With GA no feature
+is selected in spectrum S3. The ILP selection selects all four features
+once.
+For each feature j, we introduce a set of binary variables xj,s, which
+are set to 1 if we choose feature j in scan s as a precursor and 0
+otherwise. Since we want to choose the best possible fraction for
+each precursor, we do not simply maximize the number of
+scheduled precursors but use the feature intensities as weights,
+because high intensity features are more likely to produce good and
+interpretable MS/MS spectra. The intensities are normalized by the
+maximal signal intensity the respective feature has in any spectrum.
+This results in weights between 0 and 1 and prevents a bias towards
+selecting only high intensity features.
+We have two constraints: first, the capacity of spectrum s, i.e., the
+maximal possible number of acquired MS/MS spectra in spectrum s.
+And second, the number of times a feature can be selected as a
+precursor which is set to 1 here, but this constraint could easily be
+relaxed to other values. Table 1 gives an overview of all variables
+and constants used in the LP formulations.
+Table 1.
+Variables and constants used in LP formulations
+Variable
+name
+Explanation
+xj,s
+Indicator variable, 1 if feature j is selected in
+spectrum s,
+ 
+0 otherwise
+xj
+Indicator variable, 1 if feature j is part of the solution,
+ 
+0 otherwise
+intj,s
+Normalized signal intensity of feature j in spectrum s
+caps
+Maximal number of MS/MS precursors in spectrum s
+Di
+Detectability of protein i
+yi
+-log(1-Di), higher values reflect a better protein
+detectability
+dk
+Detectability of peptide k
+ai,k
+Indicator variable, 1 if peptide k is part of protein i,
+ 
+0 otherwise
+ws
+RT window size
+tp
+Predicted RT
+max_list_size maximal number of elements in inclusion list
+pk
+Probability that peptide k was identified correctly
+Pi
+Probability that protein i was identified correctly
+k1,k2,k3
+Weights
+bi
+Indicator variable, 1 if the protein probability of
+protein i is at least c, 0 otherwise
+c
+Minimal protein probability to declare a protein
+identified
+zi
+zi = 1 if Pi ≥ c, otherwise zi ∈ [0, 1)

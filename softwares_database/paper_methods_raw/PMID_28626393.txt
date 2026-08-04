@@ -1,0 +1,180 @@
+
+Method Using Trinary
+Frequency-Shift Keying
+Encoded SSVEP (TFSK-SSVEP)
+Xing Zhao
+Xing Zhao
+1Department of Biomedical Engineering, School of Bioinformatics,
+Chongqing University of Post and Telecommunications, Chongqing,
+China
+Find articles by Xing Zhao
+1, Dechun Zhao
+Dechun Zhao
+1Department of Biomedical Engineering, School of Bioinformatics,
+Chongqing University of Post and Telecommunications, Chongqing,
+China
+Find articles by Dechun Zhao
+1,*, Xia Wang
+Xia Wang
+1Department of Biomedical Engineering, School of Bioinformatics,
+Chongqing University of Post and Telecommunications, Chongqing,
+China
+Find articles by Xia Wang
+1, Xiaorong Hou
+Xiaorong Hou
+2Department of Health Information Management and Decision
+Making, College of Medical Informatics, Chongqing Medical
+University, Chongqing, China
+Find articles by Xiaorong Hou
+2
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC5454068  PMID: 28626393
+Abstract
+SSVEP is a kind of BCI technology with advantage of high
+information transfer rate. However, due to its nature, frequencies
+could be used as stimuli are scarce. To solve such problem, a stimuli
+encoding method which encodes SSVEP signal using Frequency
+Shift–Keying (FSK) method is developed. In this method, each
+stimulus is controlled by a FSK signal which contains three different
+frequencies that represent “Bit 0,” “Bit 1” and “Bit 2” respectively.
+Different to common BFSK in digital communication, “Bit 0” and
+“Bit 1” composited the unique identifier of stimuli in binary bit
+stream form, while “Bit 2” indicates the ending of a stimuli
+encoding. EEG signal is acquired on channel Oz, O1, O2, Pz, P3,
+and P4, using ADS1299 at the sample rate of 250 SPS. Before
+original EEG signal is quadrature demodulated, it is detrended and
+then band-pass filtered using FFT-based FIR filtering to remove
+interference. Valid peak of the processed signal is acquired by
+calculating its derivative and converted into bit stream using
+window method. Theoretically, this coding method could
+implement at least 2n−1 (n is the length of bit command) stimulus
+while keeping the ITR the same. This method is suitable to
+implement stimuli on a monitor and where the frequency and phase
+could be used to code stimuli is limited as well as implementing
+portable BCI devices which is not capable of performing complex
+calculations.
+Keywords: SSVEP, BCI, EEG, HMI, FSK-SSVEP, TFSK-SSVEP
+Introduction
+“Brain-Computer Interface” (BCI) is a very attractive technology
+which provides hands-free access to devices for the situation where
+the access to input device proves to be rather difficult, e.g., space
+exploration or provide patients who suffers ALS or other body
+disabilities a mean to express themselves (Trejo et al., 2006; Parini
+et al., 2009). BCI usually directly interacts with the cerebral activity
+which is evoked or self-induced and translate it into computer
+instructions (Wolpaw et al., 2002; McFarland and Wolpaw, 2011).
+There are many different approaches trying to restore the broken
+communication between brain and environment from many aspects.
+These methods include “Functional Magnetic Resonance Imaging”
+(fMRI) which is blood oxygenation level dependent and the invasive
+Electrocorticography (ECoG) as well as Electroencephalography
+(EEG). Comparing to other non-invasive methods, EEG provides
+temporal resolution up to milliseconds while it is cheaper, non-
+radioactive and provides high portability which makes EEG become
+a favorable choice when building a BCI system (Sitaram et al.,
+2007; Cincotti et al., 2008; Athanasiou and Bamidis, 2010; Becedas,
+2012; Pistohl et al., 2012; Baranauskas, 2014).
+“Steady-State Visually Evoked Potential” (SSVEP) is a kind of EEG
+signal generated at the visual cortex. It usually evoked by visual
+stimuli which flickers at the range of around 5–20 Hz while LEDs or
+monitors are often used as the stimuli (Herrmann, 2001; Wang et
+al., 2006; Friman et al., 2007; Guger et al., 2012; Zhang et al.,
+2012). Due to its nature of high temporal resolution of milliseconds,
+SSVEP possesses great potentials in real-time application while
+methods like PET, fMRI, and NIRS which utilize the metabolism
+provide good spatial resolution but poor temporal resolution;
+making them a less desirable candidate for real-time brain-
+computer communication (Wolpaw et al., 2002; Becedas, 2012;
+Birbaumer et al., 2013).
+SSVEP is a very efficient way for a user to impose his or her will. In
+most situations, user who suffers from “Amyotrophic Lateral
+Scleroses” (ALS) or palsy tend to still have functional vision under
+good control while other parts of their body is disabled (Singla,
+2014). Visual evoked potential is known to associate with visual
+stimulations and always changes according to it. Eye's sensitivity to
+the stimuli is the highest at the center of the vision field. It is due to
+the retinal cones cell concentrate at the center (Sutter, 1992;
+McFarland and Wolpaw, 2011). In this way, the visual evoked
+potential signal carries some of the properties of the stimuli which
+user concentrates on, such as frequency and phase of the signal. By
+comparing the extracted signal with the stimuli, one could tell
+which stimuli the user is gazing at and then translate such
+information into computer instructions.
+To build a practical real-time BCI system, many genius minds
+proposed various kinds of strategies trying to increase the accuracy
+as well as the spelling speed of SSVEP based BCI system. Nowadays,
+the spelling speed of a high performance SSVEP system could
+achieve an ITR (Information Transfer Rate) of around 144 bits per
+minute (Nakanishi et al., 2014). To build a practical SSVEP BCI
+system, one must improve the effect of stimulus, increasing the
+number of stimulus, minimizing processing time while trying hard
+to keep the accuracy as high as possible. Since the optimal
+frequency to be utilized in stimuli is 5–20 Hz. To increase the
+number of the stimuli, it must be coded. Therefore, many coding
+strategies were proposed to increase the number of stimulus as well
+as to increase the “Signal Noise Ratio” (SNR); such methods are:
+“Time Division Multiple Access” (TDMA), “Frequency Division
+Multiple Access” (FDMA), and “Code Division Multiple Access”
+(CDMA) (Wei et al., 2016). It is worth noting that a practical BCI
+system which uses monitor to represent the stimulus would be
+bound to the refreshing rate of the monitor, which limited the
+stimulus could be implemented on a monitor. In order to tackle this
+problem, Wang proposed a strategy which can present stimulus with
+frequency less than half of the refreshing rate of the monitor (Wang
+et al., 2010). Still, the range of idea frequency to be used as stimuli
+is limited to 5–20 Hz, which could code about 40 stimuli with 0.2
+Hz intervals when coding the stimulus with different frequencies
+(Herrmann, 2001). Nakanishi et al. used a coding method of
+methods of mixing frequency and phase and achieved 32 stimuli
+(Zhang et al., 2012). Chen et al. used similar method and
+implemented a speller with 40 targets on a monitor (Chen et al.,
+2015). Wei et al. used a binary encoding method, which in theory
+could encode stimulus as many as needed (Wei et al., 2016).
+However, the binary encoding method used by Wei et al. is using up
+to 63 bits. Such method makes the processing too long to build a
+practical and portable BCI system. Kimura et al. also proposed a
+coding strategy adopting Frequency Shift-Keying (FSK) in digital
+telecommunication (Kimura et al., 2013).
+Performance of the EEG signal processing algorithm would also
+have a great influence on the performance of a BCI system. An ideal
+algorithm should have high accuracy and low complexity so that it
+could be fit into embedded devices or FPGAs (Hwang et al., 2013).
+After comparing the coding methods above, it would become clear
+that using binary coding strategy would face the problem of rather
+low accuracy due to the problem of “coding repetition.” While
+using a binary coding strategy to coding the stimuli, the beginning
+or the ending of the scheme is not distinguishable. For example, if a
+stimulus is coded with “1101,” the output of the bit stream would
+be an iteration of “1101.” However, since it is rather difficult to tell
+the ending of each segments; It is possible for the system to
+misinterpret the output “1101110111011101” into 1 1011 1011
+1011 101 rather than 1101 1101 1101 1101. Meanwhile, the
+complex coding strategy used by these methods often requires a lot
+of computational power and thus limited their application in
+portable BCI devices which based on embedded device and
+batteries.
+To mark the ending of each code, another third bit was introduced
+additional from the “Binary Frequency-Shifted Keying” (BFSK) used
+by Kimura which is named “Bit 2.” An experiment was conducted to
+evaluate its feasibility. By introducing this third bit, one could
+easily tell the ending of each code and thus increase the accuracy of
+binary encoded stimuli based BCI system.
+Materials and methods
+Modulation of FSK-SSVEP stimuli signal
+Frequency-Shift Keying is a modulation method commonly used in
+digital communication. It shifts the frequency of a continuous
+binary signal to two discrete frequencies as a “space frequency” and
+a “mark frequency” representing “0” and “1” in binary respectively.
+Such modulation is called “Binary Frequency-Shift Keying” (BFSK)
+or FSK for short. Unlike to the traditional modulation of BFSK
+which is commonly seen in digital communication. In this paper,
+the third frequency is introduced in “Trinary Frequency-Shift
+Keying-SSVEP” (TFSK-SSVEP) as the “separate frequency” which
+represents “Bit 2” apart the bits representing “1” and “0.” This third
+bit marks the ending of each stimuli encoding composited by “1”
+and “0.” The Figure 1 showed an example of FSK-SSVEP signal
+modulation of three periods of bit stream “11012” with bit length of
+1,000 ms and continued phase. “Bit 0,” “Bit 1,” and “Bit 2” are
+correspond to 7, 11, and 15 Hz 

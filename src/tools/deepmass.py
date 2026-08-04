@@ -10,8 +10,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 DEEPMASS_IMAGE = "deepmass2:test"
-MODEL_DIR = os.environ.get("DEEPMASS_MODEL_DIR", "/data2/liuwei/MOA/softwares/DeepMASS/model")
-DATA_DIR = os.environ.get("DEEPMASS_DATA_DIR", "/data2/liuwei/MOA/softwares/DeepMASS/data")
+MODEL_DIR = "/data2/luxiang/DeepMASS/model"
+DATA_DIR = "/data2/luxiang/DeepMASS/data"
 
 
 # DeepMASS

@@ -1,0 +1,118 @@
+
+Methods and materials
+This section first constructs a mechanical fault classification model
+that incorporates SVM with multi-strategy improved SSA. The study
+additionally suggests an mechanical FD approach based on SVM-
+MSISSA with two-channel CNN to further increase the precision and
+effectiveness of FD.
+Fusion of SVM and multi-strategy improved SSA for
+mechanical fault classification model construction
+There are various types and manifestations of mechanical failures.
+As an effective classification algorithm, SVM can effectively classify
+sample data with different failure modes by finding the optimal
+hyperplane. However, the parameters, including the kernel function
+(KF) and penalty factor, affects how well SVM performs. Overfitting
+of the model might result from unreasonable parameter values,
+which compromises fault classification’s accuracy and
+dependability19. Therefore, the study improves the SSA to construct
+an method that fuses SVM and multi-strategy improved sparrow
+search algorithm (SVM-MSISSA) for mechanical fault classification
+to accurately classify mechanical faults. To improve the
+performance of SVM in mechanical fault classification, MSISSA
+adjusts the parameters of the model.
+Before mechanical FD, the study first uses wavelet packet (WP)
+transform method to WP decomposition of the acquired fault signal.
+Then, the signal is reconstructed by thresholding20. The calculation
+is shown in Eq. (1).
+[image] 1
+In Eq. (1), [image] is the WP coefficients of the k th node of the k th
+layer. h(n) denotes the coefficients of the wavelet filter. x(n)
+denotes the original signal value. n is the integer variable.
+[image]denotes the wavelet basis function. [image]denotes the
+reconstructed signal. After signal reconstruction, the signal energy
+and mechanical failure feature vectors are calculated. The Eq. (2)
+displays the expression.
+[image] 2
+In Eq. (2), [image] means the WP reconstructed signal of the j th
+node of the p th layer. E(p, j) denotes the signal energy. T denotes
+the fault feature vector. J denotes the number of nodes in layer p.
+The study breaks down the complex signal into numerous modal
+components (MC) using the VMD method to further increase the
+stability of signal decomposition. Moreover, the complexity of the
+signal is measured using the arrangement entropy21. The Eq. (3)
+displays the expression.
+[image] 3
+In Eq. (3), x(t) denotes the input signal. uk means the k th MC.
+[image] denotes the center frequency. [image] means the Dirac
+function. [image] means the balance parameter. K means the
+number of MCs. Pe is the alignment entropy value. m! is the total
+number of alignment modes. m denotes the embedding dimension.
+The work used the principle component analysis (PCA) method for
+feature dimensionality reduction of the collected signals in order to
+eliminate the fault redundancy information22. Figure 1 displays the
+schematic diagram of WP decomposition with VMD.
+Fig. 1.
+[image]
+Open in a new tab
+Schematic diagram of WP decomposition and VMD.
+Figure 1(a) displays the process of generating different subbands of
+signal X by WP decomposition. Figure 1(b) graph depicts the
+iterative process of VMD which outputs the intrinsic mode function
+when the iteration is satisfied. It is investigated to find the optimal
+hyperplane by SVM to classify different classes of data in order to
+achieve linear separability23. Equation (4) displays the expression.
+[image] 4
+In Eq. (4), [image] denotes the KF. [image] denotes the parameters
+of the KF. [image] denotes the Lagrange multiplier. C denotes the
+penalty factor. yi is the label of the sample [image]. In an effort to
+maximize the parameters of SVM, SSA is used to quickly identify
+the global optimal solution in challenging optimization issues.
+Equation (5) provides an expression for it.
+[image] 5
+In Eq. (5), [image] denotes the position update (PU) of the
+discoverer. [image]and [image] denote the PU of the joiner and the
+vigilant, respectively. [image]means the position of the eth
+individual at the v th iteration. Q denotes the step factor. L denotes
+the Lévy flight vector. [image] denotes the optimal solution. F
+denotes a random number. G denotes the vigilance factor. To
+address the susceptibility of SSA to local optima and insufficient
+convergence accuracy, the study attempts to increase population
+diversity and GSA by initializing the population using segmented
+linear chaotic mapping, as shown in Eq. (6)24.
+[image] 6
+In Eq. (6), [image] denotes the dynamically adjusted step factor.
+The greatest and lowest values of the step factor are [image] and
+[image]. T means the highest number of iterations. [image] means
+the next value after chaotic mapping. [image] is the current value.
+[image] denotes the chaotic mapping parameter. The optimal
+classification hyperplane of SVM with chaotic mapping distribution
+is shown in Fig. 2.
+Fig. 2.
+[image]
+Open in a new tab
+Schematic diagram of optimal classification hyperplane and chaotic
+mapping distribution for SVM.
+The ideal classification hyperplane for SVM is schematically
+depicted in Fig. 2(a). The red dots and blue triangles denote the two
+types of data, the black lines are the classification boundaries, and
+the arrows display the boundary spacing. The distribution of
+chaotic values in various dimensions is displayed in Fig. 2(b). The
+Lévy flight perturbation is introduced during the iteration process
+to further enhance the GSA, as shown in Eq. (7).
+[image] 7
+In Eq. (7), [image] denotes the Lévy flight step vector. [image] and
+[image] denote standard normally distributed random numbers.
+[image] denotes the parameters of Lévy distribution. Unlike Chaos-
+SSA that mainly replaces random initialization with a chaotic
+sequence, Lévy-SSA that only injects Lévy flight as a perturbation,
+or adaptive SSA that focuses on step-size scheduling, the proposed
+MSISSA explicitly binds (1) chaotic mapping to population
+initialization for diversity control, (2) Lévy flight to iterative
+updates for exploration enhancement, and (3) adaptive step-size to
+global-local search balancing within a single optimization pipeline
+dedicated to SVM hyperparameter tuning. Therefore, MSISSA
+should be viewed as a stage-wise integrated and task-oriented
+framework rather than a simple engineering concatenation of
+common heuristics. Finally, the study identifies the mechanical
+failure types by SVM-MSISSA. The process is schematically shown
+in Fig. 3.

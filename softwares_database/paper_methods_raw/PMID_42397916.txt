@@ -1,0 +1,185 @@
+
+Methodology, Project administration, Software, Validation,
+Visualization, Writing - original draft, Writing - review & editing
+Find articles by Giacomo Sasso
+1,2,*, Alessandro Pagani
+Alessandro Pagani
+2Department of Industrial Engineering, University of Florence,
+Florence, Italy.
+Data curation, Formal analysis, Investigation, Methodology,
+Software, Validation, Visualization, Writing - original draft, Writing
+- review & editing
+Find articles by Alessandro Pagani
+2, Aaron M Duncan
+Aaron M Duncan
+1School of Engineering and Materials Science, Queen Mary
+University of London, London, UK.
+Data curation, Software
+Find articles by Aaron M Duncan
+1, Gianni Pedrizzetti
+Gianni Pedrizzetti
+3Department of Engineering and Architecture, University of Trieste,
+Trieste, Italy.
+Software, Writing - review & editing
+Find articles by Gianni Pedrizzetti
+3, Nicola Pugno
+Nicola Pugno
+1School of Engineering and Materials Science, Queen Mary
+University of London, London, UK.
+4Mechano-X Labs, Department of Civil, Environmental and
+Mechanical Engineering, University of Trento, Trento, Italy.
+Formal analysis, Funding acquisition, Writing - review & editing
+Find articles by Nicola Pugno
+1,4, James J C Busfield
+James J C Busfield
+1School of Engineering and Materials Science, Queen Mary
+University of London, London, UK.
+Conceptualization, Formal analysis, Funding acquisition,
+Methodology, Project administration, Resources, Supervision,
+Writing - review & editing
+Find articles by James J C Busfield
+1,*, Federico Carpi
+Federico Carpi
+2Department of Industrial Engineering, University of Florence,
+Florence, Italy.
+Conceptualization, Formal analysis, Funding acquisition,
+Methodology, Resources, Supervision, Visualization, Writing -
+original draft, Writing - review & editing
+Find articles by Federico Carpi
+2,*
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC13330820  PMID: 42397916
+Abstract
+High-resolution, real-time tactile sensing is essential for robotic
+tasks that demand accurate, dynamic detection of contact
+morphology and pressure distribution, such as grasping and
+manipulation of delicate, slippery, or irregularly shaped objects.
+Existing technologies, however, face a fundamental trade-off
+between spatial resolution and response speed. Taxel-based sensors
+(e.g., capacitive, resistive, or piezoelectric) operate in real time but
+are intrinsically limited in resolution by taxel size, spacing, wiring,
+and cross-talk; even deep learning–based tactile super-resolutions
+rarely surpass ∼1 millimeter. Finer resolutions can be achieved with
+vision-based tactile sensors using just a camera, although the
+computation required to transform raw images into three-
+dimensional contact maps inherently introduces latency. Here, we
+present mechanochromic tactile sensors that directly encode
+mechanical strain into spatially resolved structural colors, enabling
+vision-based tactile sensing with an unprecedented combination of
+high resolution, real-time operation, and intrinsic simplicity. The
+devices consist of a stretchable mechanochromic Bragg reflector
+embedded between two soft silicone layers, whose thickness can be
+tailored to precisely map contact pressure or strain. As an example,
+we present topological maps of a fingertip, a one-penny coin, and a
+leaf, with ∼100 micrometer resolution. In comparison to the most
+performing vision-based tactile sensors, this was achieved without
+requiring any deep learning–based data enhancement and without
+introducing any computational latency. The straightforward
+applicability of this mechanochromic strategy to enhance vision-
+based tactile sensing in a simple yet powerful way underscores its
+transformative potential for uses as diverse as robotic gripping and
+handling, tactile product inspection, and enhanced human-robot
+interaction.
+Mechanochromic sensors allow for vision-based tactile sensing in
+real time at high spatial resolutions.
+INTRODUCTION
+Tactile sensing plays an ever-growing role in various robotic
+systems interacting with the physical world, such as
+anthropomorphic hands and grippers. Such machines require soft/
+flexible surfaces capable of spatially distributed tactile sensing and
+conformability to objects of variable geometrical complexity (1–3).
+In particular, the ability to build spatial maps of contact
+morphology and pressure at high resolution and in real time is
+fundamental for high-level robotic functions as diverse as object
+detection, grasping and manipulation, environmental tactile
+mapping, and enhanced human-machine interaction (4–7).
+Existing tactile sensing strategies typically rely on piezocapacitive
+(8–10), piezoresistive (11–13), piezoelectric (14, 15), triboelectric
+(16, 17), or magnetic effects (18, 19). These technologies transduce
+mechanical deformations into electrical information through arrays
+of sensing units (taxels). Usually, they do not require time-
+consuming processing, enabling real-time operation. However,
+when such arrays are embedded into soft/flexible tactile interfaces,
+their spatial resolution is limited by the taxel size, spacing, and
+cross-talk, along with the surface area required to route stretchable/
+flexible interconnects to peripheral electronics (20). Recently,
+combinations of taxel arrays with deep learning–based strategies
+have been used to achieve tactile super-resolutions (i.e., spatial
+resolutions finer than the taxel-constrained physical limit), although
+they remain confined to the order of 1 mm (1).
+To overcome the limitations of taxel-based technologies, various
+approaches have been proposed. Xu et al. (21), for example,
+replaced conventional arrays of small elastomeric capacitors with a
+layered structure, comprising two capacitive membranes, virtually
+segmented into multiple sensing zones through a multifrequency
+interrogation method. That strategy enabled spatially resolved
+sensing without the need for physically segmented taxels (21).
+However, achieving high-resolution mapping for fine tactile sensing
+with such a method remains challenging. Alternatively, electrical
+impedance tomography (EIT) techniques can be used for contact
+localization from electrical measurements taken exclusively from
+the periphery of conductive surfaces (22–24). While promising in
+terms of wiring simplification, current EIT-based systems remain
+limited to spatial resolutions on the order of 10 mm (23).
+An effective alternative is offered by vision-based (or optical) tactile
+sensing (25, 26). It replaces an array of taxels with just a camera,
+which captures contact-induced deformations of a soft elastomeric
+interface. The camera is usually positioned to monitor the tactile
+interface from the side opposite to where contact occurs, i.e., from
+the inside of an enclosure created behind it. Tactile events are
+typically detected using two main strategies: (i) tracking the
+displacement of embedded visual markers (25, 27–30), such as in
+TacTip sensors (31), as illustrated in Fig. 1A; (ii) measuring changes
+in reflection patterns of distinct lights, typically red-green-blue or
+white, internally projected from different directions (25, 32–35),
+such as in GelSight sensors (36, 37), as shown in Fig. 1B.
+Fig. 1. Mechanochromic tactile sensing: Comparison
+with state-of-the-art vision-based sensing strategies
+and example of embodiment in a robotic finger.
+[image]
+Open in a new tab
+(A to C) Schematic diagrams of the working principles of the two
+most used conventional approaches for vision-based tactile sensing
+(marker displacement and directional light reflection), in
+comparison with the mechanochromic strategy proposed in this
+work. (D) Conceptual illustration of an example of an embodiment
+of the mechanochromic sensor, integrated into the structure of an
+anthropomorphic robotic finger. (E) Photograph of a prototype
+implementation of the sensorized robotic fingertip, where a
+transparent elastomeric cap was coated with a small circular patch
+(5 mm in diameter) of the mechanochromic bilayer. (F) Examples of
+images taken by the robotic fingertip’s internal camera when the
+mechanochromic interface contacted different parts of a one-penny
+coin (top panels), and corresponding 3D hue maps (bottom panels).
+A video of the real-time tactile sensing tests is available as movie
+S1.
+The second category falls within the broader class of intensity-based
+methods, which can use either reflection- or transmission-based
+strategies, although the reflection mode is the most investigated
+(25, 26). Moreover, hybrid approaches that combine both marker-
+based and intensity-based methods have been proposed to leverage
+complementary advantages (25, 38–40). Marker-based sensing
+enables the detection of contact pressures and surface textures, but
+it is inherently constrained in spatial resolution by the markers’
+density, i.e., their size and spacing. On the other hand, improved
+sensing performance can be achieved with directional light
+reflection-based sensing; by using accurate configurations of
+illumination and deep learning–based data-driven image processing,
+the resolution can be in the order of 100 μm (25, 36, 41, 42).
+However, the computational effort required to transform raw tactile
+images into three-dimensional (3D) contact maps inherently
+introduces latency, due to the multistage processing pipelines
+employed in vision-based tactile sensing. Such devices typically
+involve photometric calibration, illumination normalization, surface
+normal estimation (through photometric stereo techniques), normal
+integration for depth reconstruction, and subsequent spatial
+mapping, to obtain high-resolution 3D contact geometries and
+pressure distributions (36, 43–45).
+Here, we introduce a strategy to achieve an unprecedented
+combination of high resolution, real-time operation, and inherent
+simplicity in vision-based tactile sensing. It uses a stretchable
+mechanochromic elastomer that can convert mechanical strains into
+spatially resolved structural colors. So far, available
+mechanochromic ma

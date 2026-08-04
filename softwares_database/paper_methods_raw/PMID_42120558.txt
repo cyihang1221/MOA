@@ -1,0 +1,171 @@
+
+Experimental results show that the hybrid model handles pose
+orientation fluctuations and user-specific features better than
+vision-only or IMU-only models in terms of classification accuracy
+and false alarm rate. This work demonstrates that hybrid deep
+learning algorithms can be utilized for real-time, customized yoga
+position identification for the real time medical applications.
+Keywords: Yoga posture identification, Graph convolutional
+network (GCN), Inertial measurement unit (IMU), LSTM, Attention
+mechanism
+Subject terms: Computational biology and bioinformatics,
+Engineering, Health care, Mathematics and computing
+Introduction
+Yoga1–3, which has its roots in ancient India, is an all-encompassing
+practice combines mental, spiritual, and physical elements aims to
+promote consciousness, body-mind harmony, and overall well-
+being. Recent research shows the positive effects of yoga on
+postural stability, musculoskeletal flexibility, cardiovascular
+control, and psycho-physiological balance which significantly
+enhance their neuromuscular coordination and decrease stress
+markers in the human body.
+Despite these benefits, proper yoga posture execution is very
+important. In particular, strain or injury to the knees, ligaments,
+and spine can result in the formation of unbalanced weight
+distribution when yoga posture is not executed properly.
+Conventional yoga relies on qualified teachers who use visual
+examination to evaluate students’ muscle activation, alignment, and
+stability4–6. This kind of service is not available to practitioners due
+to the lack of skilled persons and increase in the population. This
+disparity has led to the development of automated yoga posture
+recognition (YPR) systems, which use image processing technology
+to assess, inspect, and adjust postures in the real time.
+Automated identification systems can be used in a variety of
+applications, such as online yoga systems provide the users with
+live supervision, interactive rehabilitation, personal wellness apps,
+and senior fitness tracking. These systems can assist practitioners
+without direct instructor supervision while preserving the safety
+and caliber of training when they are driven by computer vision
+and sensor technology. Thus, an efficient scalable, affordable
+solutions for individualized wellness management are offered by
+YPR research by employing computer vision, human–computer
+interaction, and health informatics.
+In YPR, most of the existing frameworks often rely on conventional
+CNN-based feature extraction combined with static fusion strategies
+such as feature concatenation or late decision-level integration.
+These approaches often lacks in the systematic modelling of skeletal
+linkages, adaptive cross-modal interaction, and personalized
+learning processes. However, to overcome these challenges, the
+proposed framework provides a hybrid Vision–IMU architecture
+which integrates temporal inertial analysis, adaptive multimodal
+fusion, and graph-based spatial modelling for an accurate yoga
+posture detection.
+In the proposed system, Visual skeletal important points are
+recorded as structured graphs and are interpreted using Graph
+Convolutional Networks (GCNs), to represent joint connections and
+body topology in a detailed manner. Additionally, an attention-
+driven fusion method has been proposed that dynamically adjusts
+each modality’s contribution based on contextual dependability and
+improves resilience against occlusion, sensor noise, and
+environmental variations. Furthermore, the proposed method
+provide the adaptable module which provides reinforcement
+learning to enable user-specific model adaptation and customized
+feedback.
+Challenges in yoga posture recognition
+Developing an automated system to identify and assess yoga
+postures presents a number of complex issues. Individual
+differences in limb length, muscle tone, flexibility, and movement
+style represent a basic limitation of human anatomy. As a result,
+assessing joint angles and position data across the multiple
+populations is very challenging for a single global model.
+Technical and environmental limitations may make this type of
+model visual-based identification difficult. Changes in the
+illumination, camera positioning, garment occlusions, or crowded
+backdrops can significantly impact the accuracy of joint detection.
+These drawbacks7–9 are especially noticeable at home, where
+consumers employs online tools to perform yoga postures by using
+webcams and motion detection systems.
+Temporal modelling is another important significant limitation; as
+yoga transitions is the blend of fast movement sequences with small
+pauses, methods that can represent both joint spatial configuration
+and temporal evolution are needed. Concurrent or transformer-
+based systems must mut provide trade-off between accuracy and
+real-time viability, whereas CNNs’ frame-wise analysis records
+posture at certain points in time but lacks temporal continuity.
+Moreover, there are no such publicly accessible databases on yoga
+positions.
+Most of the currently employed datasets contain limited pose
+classes (e.g., 10–20 asanas), limited environments, and moderate
+sample sizes. These restrictions limit the model generalization and
+reduces the transfer learning. Furthermore, the necessity for yoga
+personalization is frequently disregarded; a successful system
+should not only recognize the posture but also provide customized
+personal guidance based on the user’s prior injuries and physical
+limits. These issues collectively reinforce the need for hybrid,
+sensor-integrated, adaptive yoga systems.
+Role of AI, deep learning, and sensors
+Posture and human activity recognition limitation problems have
+changed as a result of deep learning10 and uses of artificial
+intelligence. Convolutional neural networks, or CNNs, required to
+provides the visually understanding of human postures and derive
+hierarchical spatial representations from images or videos. Current
+models such as PoseResNet, HRNet, and OpenPose demonstrate
+have the ability to accurately identify critical joints for the many
+individuals in chaotic environments. Even in cases of partial
+occlusion, transformers models such as ViT-Pose and HRFormer
+provide the feature of fine-grained skeleton coordinates, improving
+spatial contextualization.
+Hybrid sensor approaches, which can enable sensor fusion across
+data, feature, or decision levels, use these two modalities. It is
+possible to generate efficient multi-modal embeddings through
+fusion by obtaining a spatial posture estimate from vision and
+temporal motion characterization from IMUs. For adaptive
+feedback, Reinforcement Learning (RL) is another possible
+approach11. Reinforcement learning agents can create reward
+functions based on posture correctness metrics such as limb
+symmetry, balance stability, or joint deviation to learn the optimal
+remedial actions for each user. These self-learning procedures can
+be utilized to design dynamic training tools which adapt user
+progresses, which goes beyond the static posture assessment.
+Motivation for a hybrid vision–IMU framework
+Although both vision and IMU-based recognition techniques12 have
+achieved significant accuracy, their use is limited because of their
+limitations inherent. Vision-only systems perform poorly in
+situations with clutter, occlusions, or inadequate camera input, but
+they achieve excellent accuracy when the lighting and background
+are controlled. However, IMU-only techniques are inefficient in
+detecting misalignments such as non-uniform joint extension or
+shoulder tilt because they are not spatially interpretable and are
+still resistant to visual distortion. Motivated all these observations,
+this work proposes a hybrid vision–IMU13 posture detection system
+which efficiently combines the kinematic dependability of IMU
+sensors along with spatial precision of computer vision models. In
+the proposed work, IMUs proposed temporal dynamics and
+orientation stability, and provides structural context, which
+leverages these complementary qualities through feature-level or
+data-level fusion in an efficient manner.
+Moreover, hybrid frameworks14,15 improve error correction if one
+sensor stream degrades by permitting cross-validation across
+modalities. Robust adaptive training is made possible by real-time
+multi-modal synchronization, which replicates the atmosphere of a
+genuine home or studio even when there are outside disturbances.
+Reinforcement learning-based feedback can be used to continuously
+enhance the system’s guiding policy, resulting in a flexible personal
+trainer that adapts the frequency of input and the severity of
+corrections dependent on the user’s success.
+Research problem and objectives
+The main objectives of the proposed system are given as follows:
+1. To develop an effective deep learning based hybrid model
+which blends optical and inertial sense detection.
+2. To set up the efficient advanced sensor fusion algorithms
+which can quickly align multi-modal, asynchronous data
+streams.
+3. To improve the way tailored feedback which can be delivered
+by using reinforcement learning techniques to make sure that
+modifications are user-specific and performance-driven.
+4. To evaluate the design using a diverse, multi-subject yoga
+dataset, accounting for differences in camera circumstances,
+body sizes, and skill levels.
+Contributions of the paper
+The main contributions of this work are summarized as follows:
+1. Hybrid Graph-based Vision-IMU Structure: This unique
+multimodal pipeline model efficiently enables the
+simultaneous recording of motion dynamics and spatial
+topology by combining graph convolutional networks for
+structured skeletal modelling with LSTM-based temporal
+processing of IMU data.
+2. Adaptable Attention-Driven Sensor Fusion: This advanced
+multimodal fusion method dynamically assigns attention
+weights which are unique to each modality, enabling the
+system to highlight visual or inertial features in an adaptable
+manner based on contextual dependability a

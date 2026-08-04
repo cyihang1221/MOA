@@ -1,0 +1,184 @@
+
+Methodology, Funding acquisition
+Find articles by Zheye Tian
+1, Changhuizi Duan
+Changhuizi Duan
+2Intelligent Transportation Systems Research Center, Wuhan
+University of Technology, Wuhan 430063, China;
+dchz@whut.edu.cn
+Software, Data curation
+Find articles by Changhuizi Duan
+2, Shijie Gao
+Shijie Gao
+1Hebei Expressway Group Co., Ltd., Jingqin Branch, Qinhuangdao
+066001, China; 13832488886@126.com (Z.T.);
+13831713999@163.com (S.G.)
+Validation, Formal analysis
+Find articles by Shijie Gao
+1, Jianling Gu
+Jianling Gu
+3Hebei Expressway Group Co., Ltd., Shijiazhuang 050035, China;
+gujianling1983@163.com
+Conceptualization, Writing – original draft
+Find articles by Jianling Gu
+3, Nengchao Lyu
+Nengchao Lyu
+2Intelligent Transportation Systems Research Center, Wuhan
+University of Technology, Wuhan 430063, China;
+dchz@whut.edu.cn
+Methodology, Writing – review & editing
+Find articles by Nengchao Lyu
+2,*
+Editor: Andrey V Savkin
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC13363882  PMID: 42451493
+Abstract
+Highlights
+What are the main findings?
+•  We develop a two-stage “object-level–decision-level” fusion
+model and an improved Deep-SORT algorithm incorporating
+an occluded target tracking controller (OTTC), achieving a
+multi-object tracking accuracy of over 90% in complex traffic.
+•  We propose a geometry-motion consistency stepwise
+calibration (GMCSC) method alongside an inverse covariance
+intersection (ICI)-based trajectory stitching strategy, yielding
+a 98.4% identity association accuracy for cross-domain
+trajectories.
+What are the implications of the main findings?
+•  The proposed multimodal fusion and cross-domain stitching
+paradigm effectively mitigates the spatiotemporal
+fragmentation inherent to unimodal roadside perception,
+enabling scalable and uninterrupted macroscopic traffic flow
+observation.
+•  By synthesizing continuous, high-fidelity, full-domain vehicle
+trajectories, this framework provides trajectory data support
+for subsequent traffic safety analysis, risk-evolution studies,
+and complex traffic-flow dynamics analysis.
+Abstract
+Continuous full-domain vehicle trajectories are essential for smart
+highway monitoring, but single-sensor roadside perception is
+limited by physical coverage, occlusion, and environmental
+sensitivity. To address continuous trajectory tracking across
+multiple roadside-sensing domains, this study proposes a real-time,
+full-domain highway trajectory tracking framework based on radar–
+camera fusion, improved Deep-SORT, and inverse covariance
+intersection. At the local perception level, a two-stage object-level
+and decision-level fusion model is constructed, and Deep-SORT is
+improved using a CIoU matching strategy and an occluded target
+tracking controller to enhance local multi-object tracking
+continuity. At the cross-domain association level, a geometry-
+motion consistency stepwise calibration method is developed to
+unify adjacent sensing domains, and a CATS-ICI trajectory stitching
+strategy is introduced to improve trajectory association and state
+smoothness during sensor handover. The proposed framework was
+validated on a real highway test section with roadside radar, video,
+and drone-based ground-truth trajectories. Experimental results
+show that the full local method achieves an EMOTA of 92.35%, and
+the reconstructed full-domain trajectories achieve a successful
+trajectory matching rate of 98.4% under the 452 vehicles/10 min
+test condition. Additional ablation experiments further verify the
+contributions of radar–camera fusion, CIoU, OTTC, GMCSC, CATS,
+and ICI. These results demonstrate that the proposed framework can
+provide continuous and reliable full-domain vehicle trajectories for
+real-world highway monitoring.
+Keywords: traffic engineering, vehicle trajectory tracking,
+multisensor fusion, trajectory stitching
+1. Introduction
+With the accelerating advancement of transportation system
+intelligence, smart highway development centered on traffic digital
+twins has gained substantial momentum [1]. As the foundational
+layer for traffic state perception, large-scale roadside sensor
+networks play a pivotal role in acquiring dynamic traffic
+information. High-precision traffic perception not only provides an
+objective representation of the operational state of the physical
+traffic system, but also supplies a critical data foundation for
+refined road management, including dynamic risk assessment [2],
+high-risk event prediction [3], and trajectory-based traffic safety
+analysis [4]. Therefore, establishing a roadside perception system
+with full spatial coverage of the roadway, capable of accurately
+extracting vehicle trajectory data using multimodal sensors [5], is a
+fundamental prerequisite for realizing transportation digital twins
+and proactive safety management.
+At present, vehicle trajectory data are primarily collected using
+cameras, infrared thermal cameras, LiDAR, and millimeter-wave
+radar. Among these, target tracking technology based on machine
+vision is the most widely applied [6]. Since the introduction of the
+scale-invariant feature transform (SIFT) [7], a series of efficient
+feature extraction algorithms, including SURF and ORB, have been
+developed, markedly improving the stability of visual localization.
+Building on advances in vision-based perception, several open-
+source vehicle trajectory datasets have been established, including
+HighD, InD, RounD, and NGSIM. However, owing to the physical
+sensing boundaries and environmental sensitivity of single-sensor
+vision systems, such as cameras and unmanned aerial vehicles [8],
+existing datasets generally suffer from limited observation range
+(typically with a maximum coverage radius of less than 640 m),
+insufficient temporal continuity (continuous observation durations
+of less than 12 h), and weak scene generalizability, particularly
+under adverse weather conditions and in complex environments
+such as tunnels [9,10]. These limitations hinder their ability to
+support large-scale traffic-flow observation over wide spatial extents
+and long temporal horizons [11].
+Recent studies have explored vehicle state estimation and trajectory
+acquisition using single-sensor perception. Xu and Liu [12]
+proposed a keypoint detection-based and multi-deep learning model
+integrated method to identify the spatial-temporal distribution of
+vehicle axle loads from monocular vision, demonstrating the
+potential of camera-based methods for vehicle spatial state
+estimation under favorable imaging conditions. However, single-
+sensor perception is still constrained by physical observation
+boundaries and environmental sensitivity. Camera-only methods are
+susceptible to camera pose, calibration quality, target scale
+variation, occlusion, illumination, and visibility, especially under
+rain, fog, low illumination, and nighttime conditions. Previous
+nighttime vehicle detection research based on image translation
+technology has further shown that low-light conditions can
+significantly affect visual perception even when enhancement
+strategies are adopted [13]. To alleviate these limitations, Li et al.
+[14] developed RVIFNet to fuse radar and visual information for
+all-weather vehicle perception in roadside monitoring scenarios,
+showing that camera-based semantic and contour information can
+be complemented by radar-based range and velocity measurements.
+Xiang et al. [15] further reviewed multisensor fusion and
+cooperative perception methods and emphasized their value in
+improving object-tracking reliability in complex environments.
+Nevertheless, existing multisensor fusion studies mainly focus on
+object detection or trajectory tracking within a local single-scene
+sensing area, and they do not fully address continuous full-domain
+tracking across multiple roadside-sensing domains.
+Due to the constraints imposed by complex traffic environments and
+traffic-flow characteristics, existing studies on vehicle trajectory
+extraction have mainly focused on single-scene settings, and
+methods for global continuous trajectory extraction remain scarce.
+In terms of roadside radar perception, although multi-radar
+cascading and stitching can reconstruct trajectories over specific
+road sections [16], its generalizability under dense traffic flow and
+occlusion conditions has yet to be fully validated. In terms of
+roadside vision, cross-domain trajectory stitching techniques have
+shown good performance on urban roads with favourable top-down
+viewing angles [17]. However, in highway scenarios, high vehicle
+speeds and insufficient pitch angles caused by the height limits of
+standard roadside poles lead to severe occlusion, substantially
+increasing the difficulty of continuous tracking and matching across
+multiple cameras [18,19]. Moreover, roadside sensors are
+continuously exposed to outdoor environments and are vulnerable
+to disturbances such as strong winds, rain and snow, and vibrations
+induced by heavy vehicles, which may cause sensor pose drift and
+calibration-parameter deviations. These factors further increase the
+difficulty of maintaining consistent spatial mapping and reliable
+trajectory association across sensing domains. Therefore, compared
+with existing studies that mainly focus on local detection, single-
+scene tracking, or direct trajectory stitching, continuous full-domain
+highway tracking still requires a unified framework that can jointly
+address cross-domain calibration, ambiguous trajectory association,
+and state smoothing during sensor handover.
+To address the above challenges and meet the practical
+requirements of highway deployment, this study proposes a real-
+time full-domain vehicle trajectory tracking method based on
+roadside multisensor fusion. At the local perception level, a two-
+stage object-level and decision-level fusion model is constructed
+based on AdaBoost and Dempster–Shafer evidence theory, and
+Deep-SORT is improved to reduce trajectory interruption caused by
+vehicle occlusion, thereby achieving continuous local mu

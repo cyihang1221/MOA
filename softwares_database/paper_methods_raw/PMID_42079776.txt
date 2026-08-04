@@ -1,0 +1,220 @@
+
+Materials and Methods
+Plant materials and cultivation conditions
+Rice plants were cultivated at the National Agriculture and Food
+Research Organization (NARO) in Tsukuba (36°1ʹN, 140°6ʹE), Japan,
+during the normal cropping season. We grew 4 cultivars of Oryza
+sativa L. (japonica: ‘Nipponbare’ and ‘Koshihikari’, indica: ‘Takanari’
+and ‘IR64’) under alluvial and andosol soil conditions in 2016 and
+2020 for analysis during growth, and 10 japonica (‘Nipponbare’,
+‘Koshihikari’, ‘Akitakomachi’, ‘Hitomebore’, ‘Sasanishiki’,
+‘Toyomeki’, ‘Akidawara’, ‘Hinohikari’, ‘Mirenishiki’, and
+‘Momiroman’) and 4 indica (‘Takanari’, ‘IR64’, ‘Habataki’, and
+‘Hokuriku 193’) cultivars were used for analysis of flag leaves at the
+heading stage. In addition, for the QTL analysis we used
+recombinant inbred lines (RILs) derived from ‘Emi-no-kizuna’ and
+‘Tomohonami’ (Nagaoka et al. 2019) cultivated in 2019. We
+measured traits related to days to heading (DH) and grain
+appearance (GA) related traits, i.e., percentages of perfect grains
+(PG), milky white grains (MW), basal white grains (BW), and white
+back grains (WB), using a grain quality inspector (RGQI90A; Satake
+Co., Ltd., Hiroshima, Japan).
+VIS-NIR reflectance spectroscopy
+We collected uppermost expanded leaves from the four cultivars in
+2016 and rice grains from 96 RILs selected on the basis of DH with
+scores similar to ‘Emi-no-kizuna’ and ‘Tomohonami’. Frozen leaves
+and brown rice grains were ground into powder using a Shake
+Master Auto BMS-A20TP homogenizer (Bio Medical Science). As
+was the case in our previous study (Takehisa et al. 2022), the leaf
+samples were dried at 60°C for 48 h to avoid detecting strong
+absorption patterns of water in the near infrared region.
+Approximately 50 mg of each sample was placed in a screw tube
+bottle and centrifuged at 3,000 rpm for 2 min. For intact brown rice
+grains, an appropriate number were placed in the bottle. The
+spectral reflectance of the samples was then measured between
+400 nm and 2499.5 nm at 0.5-nm intervals using an XDS Rapid
+Content Analyzer (FOSS). Reflectance (R) was converted to
+absorbance (A) (A = log1/R).
+Hyperspectral imaging
+We used an NH-7 (EBA JAPAN Co., Ltd.) covering the 350–1100 nm
+range with 151 bands and an SIS-I (EBA JAPAN Co., Ltd.) covering
+900–1700 nm with 81 bands, in accordance with our previous study
+(Takehisa et al. 2022). As the light source, two halogen lamps were
+used for each system (300-W for NH-7 and 150-W for SIS-I). Leaf
+samples were placed on a light exclusion sheet (Super Black IR,
+Shibuya Optical Co., Ltd.) and scanned to finally acquire reflectance
+spectrographs in the visible (VIS) and near infrared (NIR) region
+(450–950 nm) with the NH-7 and the NIR region (950–1650 nm)
+with the SIS-I. In order to reduce the influence of light and noise in
+the raw hyperspectral images (Ir) and to obtain corrected
+reflectance images (Ic), white and dark corrections were performed
+using a white reference image (Iw) and a dark reference image (Id).
+The Iw was acquired using a white board (Color Checker White
+Balance, X-rite) and the Id by covering the camera lens with an
+opaque cap. The Ic was obtained using the following equation:
+Ic=(Ir−Id)/(Iw−Id)
+For extraction of a region of interest (ROI) from the VIS_NIR (450–
+950 nm) and NIR (950–1650 nm) imaging data, the spectral
+reflectance at 780 nm, and at 1260 nm and 1290 nm was used,
+respectively. All reflectance in the ROI was averaged and used as
+the reflectance spectrum of each sample.
+Analysis of hyperspectral data
+We pretreated the spectral data by smoothing based on moving
+averages and the 1st and 2nd order Savitzky-Golay derivatives
+(window size = 11) with or without the standard normal variate
+(SNV). In addition, mean-centering was applied to the data with or
+without scaling, finally providing 12 pretreated data sets, i.e.,
+smoothing, smoothing + scaling, SG1, SG1 + scaling, SG2,
+SG2 + scaling, SNV + smoothing, SNV + smoothing + scaling,
+SNV + SG1, SNV + SG1 + scaling, SNV + SG2, and
+SNV + SG2 + scaling. We used the partial least squares regression
+(PLS-R) for development of the prediction model. In addition, we
+calculated the normalized difference spectral index (NDSI) with Ri
+and Rj, the reflectance values at i and j nm wavelengths, as follows:
+NDSI(Ri,Rj)=(Rj−Ri)/(Rj+Ri)
+These procedures were performed in the R statistical environment
+with the “pls” and “signal” packages (R Core Team 2024). Principal
+component analysis (PCA) was conducted using the R program with
+the “prcomp” package. In order to evaluate the potential for
+prediction with hyperspectral data, we used the averaged gene
+expression values for each of the 54 clusters, which was reported in
+our previous study (Takehisa et al. 2022).
+QTL analysis
+We used the “qtl” package in the R statistical environment for
+estimation of the linkage map and QTL mapping (Broman et al.
+2003). For this analysis, we used 175 single nucleotide
+polymorphism markers (Nagaoka et al. 2017, 2019). Estimation of
+the linkage map was conducted with the Kosambi function setting.
+For QTL analysis, we used the 96 RILs based on DH and performed
+simple interval mapping with the EM algorithm. A threshold level
+of 5% for statistical significance was determined by 1000
+permutations. We extracted QTLs with LOD score above the
+threshold level.
+Results
+Reflectance spectroscopy profiling of rice leaves
+throughout the growth process
+We obtained 72 sets of hyperspectral data using reflectance
+spectroscopy (400–2499.5 nm) from the four rice cultivars at nine
+points from 21 to 77 days after transplanting (DAT) under alluvial
+and andosol soil conditions in 2016 (Table 1). PCA was applied to
+three sets of pretreated data (smoothing, SG1, and SG2), and this
+revealed the growth-stage dependent differences most clearly in
+SG2 (Fig. 1A). Profiles of PC1 scores along the growth direction of
+the rice plants showed that although there was no variation in
+profiles among the cultivars, there tended to be differences between
+alluvial and andosol soil conditions at the early stage of growth (28,
+35, and 42 DATs) (Fig. 1B).
+Table 1. Summary of hyperspectral data used in the study.
+Experiments Instruments
+Spectral
+rangea
+Sample info
+Years Fields
+Number
+of
+cultivars/
+lines
+Growt
+stage
+Reflectance
+spectroscopy
+analysis of
+rice leaf
+throughout
+growing
+process
+Spectrometer
+400–
+2499.5 nm
+with 4200
+bands
+2016 Alluvial
+Andosol
+japonica:
+2
+indica: 2
+9 points
+(21–77
+DAT)
+Hyperspectral
+imaging of
+rice leaf
+throughout
+growing
+process
+VIS-NIR
+hyperspectral
+camera
+450–
+950 nm
+with 101
+bands
+2020 Alluvial
+Andosol
+japonica:
+2
+indica: 2
+10 poin
+(26–90
+DAT)
+2020 Alluvial
+japonica:
+10
+indica: 4
+Headin
+2020 Alluvial
+japonica:
+1
+indica: 1
+35 DAT
+(9:00,
+12:00,
+15:00,
+18:00)
+NIR
+hyperspectral
+camera
+950–
+1650 nm
+with 71
+bands
+2020 Alluvial
+Andosol
+japonica:
+2
+indica: 2
+10 poin
+(26–90
+DAT)
+2020 Alluvial
+Andosol
+japonica:
+8
+Headin
+2020 Alluvial
+japonica:
+1
+indica: 1
+35 DAT
+(9:00,
+12:00,
+15:00,
+18:00)
+Reflectance
+spectroscopy
+analysis of
+rice grain
+Spectrometer
+400–
+2499.5 nm
+with 4200
+bands
+2020 Alluvial 96 RILs
+after
+harvest
+2020 Alluvial 96 RILs
+after
+harvest
+Open in a new tab
+a Spectral range used for the analysis.
+b Methods used in the main analysis.

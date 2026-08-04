@@ -1,0 +1,194 @@
+
+Methodology, Software, Validation, Formal analysis, Writing –
+original draft, Conceptualization, Visualization
+Find articles by Hangbiao Li
+1,2, Haojun Mo
+Haojun Mo
+2North Lian Chuang Communication Co., Ltd., Nanchang 330096,
+China; mo15270021365@163.com (H.M.); ftnupt@foxmail.com
+(T.F.)
+Methodology, Software, Data curation
+Find articles by Haojun Mo
+2, Xing Li
+Xing Li
+1School of Information and Engineering, Nanchang Hangkong
+University, Nanchang 330063, China; 13117802085@163.com
+(H.L.); lixing36@foxmail.com (X.L.); shuzhenyu@buaa.edu.cn (S.Y.)
+Validation, Visualization
+Find articles by Xing Li
+1, Tao Fang
+Tao Fang
+2North Lian Chuang Communication Co., Ltd., Nanchang 330096,
+China; mo15270021365@163.com (H.M.); ftnupt@foxmail.com
+(T.F.)
+Investigation
+Find articles by Tao Fang
+2, Sikun Liu
+Sikun Liu
+3School of Computer Science and Technology, University of Science
+and Technology of China, Hefei 230026, China;
+liusikun@mail.ustc.edu.cn
+Formal analysis, Writing – review & editing
+Find articles by Sikun Liu
+3, Shuzhen Yu
+Shuzhen Yu
+1School of Information and Engineering, Nanchang Hangkong
+University, Nanchang 330063, China; 13117802085@163.com
+(H.L.); lixing36@foxmail.com (X.L.); shuzhenyu@buaa.edu.cn (S.Y.)
+4School of Instrumentation and Optoelectronic Engineering,
+Beihang University, Beijing 100191, China
+Investigation
+Find articles by Shuzhen Yu
+1,4, Zhibo Rao
+Zhibo Rao
+1School of Information and Engineering, Nanchang Hangkong
+University, Nanchang 330063, China; 13117802085@163.com
+(H.L.); lixing36@foxmail.com (X.L.); shuzhenyu@buaa.edu.cn (S.Y.)
+Conceptualization, Methodology, Resources, Writing – review &
+editing, Supervision, Project administration, Funding acquisition
+Find articles by Zhibo Rao
+1,*
+Editor: Anastasios Doulamis
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC13211015  PMID: 42197984
+Abstract
+Stereo matching has witnessed rapid advances on curated
+benchmarks, yet deploying models in unconstrained real-world
+environments remains a fundamental challenge. This paper presents
+a sparse self-prompt-guided network (SSPGNet) for stereo matching
+with strong generalization across diverse environments. Our core
+innovation lies in a sparse self-prompt guidance mechanism: (1) a
+sparse disparity map, used as a prompt, is self-estimated from visual
+foundation model features via cost aggregation; (2) the sparse
+disparity is progressively refined into dense disparity maps through
+cross-attention-based stereo feature interaction, enabling sparse-to-
+dense disparity prediction. Additionally, we collected a diverse set
+of indoor and outdoor stereo pairs by using a ZED 2 camera to
+assess the real-world performance of our model. Extensive
+experiments demonstrate that the proposed sparse-to-dense prompt
+mechanism not only preserves the semantic awareness of visual
+foundation models but also enhances stereo correspondence
+reasoning, achieving strong performance on public benchmarks and
+our in-the-wild dataset. Specifically, under the cross-domain (zero-
+shot) protocol, the proposed SSPGNet achieves bad-pixel error rates
+of 3.6% on KITTI 2012 (>3 px), 4.4% on KITTI 2015 (>3 px),
+7.6% on Middlebury (>2 px), and 2.1% on ETH3D (>1 px),
+ranking first on three of the four public benchmarks. These results
+highlight the potential of SSPGNet for direct deployment in real-
+world stereo perception systems. The code is publicly available at
+GitHub.
+Keywords: stereo matching, domain generalization, vision
+foundation models, sparse prompt, real-world perception, disparity
+estimation
+1. Introduction
+Stereo matching has been studied for nearly half a century and
+remains a fundamental challenge in computer vision and robotics.
+Deep learning and large-scale datasets have driven significant
+progress, resulting in the proliferation of deep stereo matching
+models [1,2]. Although these models achieve state-of-the-art
+performance [3,4] on many public benchmarks—even without fine-
+tuning [5]—they are still rarely adopted in real-world applications.
+In other words, current methods excel at predicting disparity maps
+on specific benchmark datasets but still struggle in open-world
+scenarios. In contrast, foundation models have emerged in related
+areas and have demonstrated strong performance on in-the-wild
+images, such as DepthAnything [6] and Segment Anything [7].
+Meanwhile, recent engineering-oriented studies in Sensors further
+highlight the practical value of stereo vision and disparity
+estimation in real-world ranging and deployment scenarios [8]. This
+raises a critical question: how can stereo matching achieve a level
+of real-world generalization comparable to that of DepthAnything
+[6]?
+DepthAnything [6] suggests that scaling is a key factor in achieving
+zero-shot generalization, and its success benefits substantially from
+vision foundation models (VFMs). The performance improvement
+comes primarily from robust visual features extracted by VFMs such
+as DINO v2 [9], SAM [7], and DepthAnything [6]. Intuitively,
+stereo matching should benefit from such robust visual features if
+they can effectively capture pixel-level spatial information or
+provide a unified representation across two views. If this
+assumption holds, we could compare left–right features by
+constructing a cost volume and then regress the disparity map.
+However, in practice, we do not obtain the expected results because
+VFM tokens are spatially coarse and cannot directly preserve
+sufficient coordinate information for stereo correspondence.
+This paper introduces a sparse self-prompt-guided network
+(SSPGNet) to address the challenges of stereo matching in dynamic,
+open-world environments. Our key innovation lies in incorporating
+geometric priors into the stereo matching network through a sparse
+self-prompt, thereby enhancing its robustness. Specifically, our
+approach begins by extracting robust features from VFMs and
+exploring the relationship between tokens and pixel coordinates.
+We then estimate a sparse disparity map from the left–right
+features. Using this sparse disparity as an initial prompt, we guide
+the model to focus its learning capacity on the most informative
+regions of the stereo pair. The second key component is cross-
+attention-based stereo feature interaction. We employ cross-shift
+window attention between stereo features to generate an affinity
+matrix, which progressively refines the sparse disparity into a dense
+map through spatial propagation. This design provides a more
+nuanced understanding of disparity relationships, enabling the
+model to handle complex, occluded, and real-world environments
+more effectively.
+To validate the robustness and stability of SSPGNet, we evaluate
+our model on more than eight public datasets, including CreStereo
+[10], SceneFlow [11], KITTI 2012 and 2015 [12,13], ETH3D [14],
+Middlebury [15], and Flickr1024 [16]. Moreover, we collected a
+dataset of stereo pairs from diverse indoor and outdoor
+environments using a ZED 2, as shown in Figure 1. Through
+extensive experiments, we demonstrate that SSPGNet not only
+outperforms state-of-the-art methods on standard benchmarks but
+also achieves strong generalization on our in-the-wild dataset,
+highlighting its practical value. In summary, our work makes the
+following contributions:
+•  We design a sparse self-prompt mechanism based on vision
+foundation models to achieve strong generalization for in-the-
+wild stereo matching.
+•  We investigate whether tokens from vision foundation models
+can represent the coordinate information of all pixels within
+the original patch for stereo matching.
+•  We collect a set of in-the-wild stereo pairs and evaluate our
+model on more than eight public datasets, highlighting its
+potential for direct deployment in real-world stereo
+perception systems.
+Figure 1.
+[image]
+Open in a new tab
+Example predictions on in-the-wild stereo pairs. We show stereo
+pairs, sparse self-prompts, disparity maps, and reconstructed 3D
+models, demonstrating that our model predicts high-quality
+disparities and generalizes well to in-the-wild stereo pairs. More
+results on in-the-wild scenes and public datasets are provided in the
+Appendix A.
+2. Related Work
+Deep Stereo Matching. Since GC-Net [17], many end-to-end models
+have followed a common paradigm that includes feature extraction,
+cost volume construction, cost aggregation, and disparity
+regression. Shen et al. constructed a cascade pyramid cost volume
+and regressed a high-quality disparity map from coarse to fine [18].
+Li et al. designed a hierarchical network with recurrent refinement
+to update disparities from coarse to fine and proposed a group
+correlation layer to address erroneous rectification [10]. Zhao et al.
+designed a decoupled long short-term memory (LSTM) module to
+separate the hidden state from the update matrix of disparity maps
+[19]. Guan et al. proposed a disparity proposal network to
+adaptively prune the disparity search space [20]. Wang et al.
+aggregated hidden disparity across multiple frequencies, mitigating
+the risk of losing important hidden disparity during iterative
+processes [21]. Zhou et al. proposed a consistency-aware self-
+training framework to leverage real-world unlabeled data in a
+teacher–student manner [22]. Wang et al. proposed an adaptive
+down-sampling module and a disparity alignment module to
+balance accuracy and efficiency, enabling real-time stereo matching
+with reduced computational cost [23].
+Domain-Generalized Stereo Matching. Zhang et al. revisited feature
+consistency using a contrastive feature loss function and achieved
+superior performance on four datasets [24]. Rao et al. introduced
+masked modeling into stereo matching to build a pseudo-multi-task
+learning framework for more stable cross-domain performance [25].
+Zhang et al. introduced vision foundation models into the stereo
+matching pipeline and proposed a cosine-constrained concatenation
+cost to improve zero-shot performance [26]. Wen et al. constructed
+a large-scale synthetic training dataset with 

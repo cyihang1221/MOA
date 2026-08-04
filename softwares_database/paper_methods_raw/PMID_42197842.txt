@@ -1,0 +1,167 @@
+
+Methodology, Validation, Writing – original draft, Writing – review
+& editing
+Find articles by Constantin Catargiu
+1
+Editors: Duo Lu1, Bharatesh Chakravarthi1, Zheng Chen1
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC13211204  PMID: 42197842
+Abstract
+We study trajectory feature representations in the context of
+detecting spatially anomalous vehicle trajectories in urban
+intersections, using trajectory data from video streams captured by
+camera monitoring systems. These trajectories are extracted using
+an object detection pipeline and have particular characteristics like
+short lengths, variable endpoints, and other viewpoint-dependent
+detection artifacts, which make existing spatial feature approaches
+less effective. We introduce two feature representations adapted for
+intersection-level trajectories, based on distances to a fixed set of
+landmark points, which provide fixed-length vectors compatible
+with common tabular anomaly detector algorithms. We evaluate
+using a dataset of 5378 labeled trajectories collected from camera
+recordings in one deployment site, as well as on other existing city-
+wide benchmark datasets, showing that, in the evaluated setting,
+the proposed feature representations improve upon several existing
+spatial features and enable better detection of both shape and
+placement anomalies.
+Keywords: anomaly detection, trajectory, features, landmarks
+1. Introduction
+Trajectory data are ubiquitous in today’s scientific literature, thanks
+to the widespread proliferation of location-based tracking devices
+and sensors. Whether they are about human mobility, vehicle traffic
+patterns, animal behavior, or even movements of meteorological
+phenomena like hurricanes, trajectories are a rich source of
+information, leading to a vast body of literature on analysis,
+classification, and other data-mining techniques tailored for them.
+Analysis of traffic-based trajectories is a particularly important
+aspect within the emerging concept of smart cities since traffic
+management is an important part of daily urban life. While most of
+the existing literature focuses on long, city-wide trajectories
+recorded with GPS and other location-based sensors, the availability
+of video-based traffic monitoring systems provides an alternative
+source of relevant trajectory data, particularly suited for busy urban
+hubs and intersections, which are likely to be already equipped
+with such video monitoring systems. The use of AI-based object
+detection can help with automatic extraction and analysis of
+trajectories from traffic monitoring streams, providing a completely
+remote and non-intrusive solution for trajectory analysis, without
+needing to access the location data from the vehicles themselves.
+Anomaly detection is an important aspect in trajectory analysis,
+helping identify problematic and risky traffic patterns. In general,
+traffic anomalies include spatial, temporal (speed-related), or more
+complex behavioral aspects (e.g., aggressive driving). In this paper
+we consider only spatial anomalies, i.e., trajectories with abnormal
+shape or placement. We study spatial feature representations for a
+specific type of trajectory, namely vehicle trajectories in urban
+intersections extracted from traffic video using AI-based object
+detection and tracking, in the context of anomaly detection tasks.
+We investigate whether spatial trajectory features designed for
+general city-wide trajectories are suitable for intersection-level
+trajectories or whether these can be better handled with more
+specific features. We introduce two novel spatial feature
+representations for such trajectories, based on computing distances
+to a fixed set of reference points (landmarks), and we evaluate them
+using data collected from a busy intersection in Iași, Romania,
+consisting of 5378 vehicle trajectories from a 3 h long video
+extracted using the AI-based pipeline and hand-labeled for
+anomalies in shape and placement. Our analysis shows that they
+provide better results than several existing spatial feature
+approaches, especially for intersection-level trajectories, in the
+context of our preprocessing pipeline. We also discuss the
+importance of preprocessing in the context of trajectory data
+extracted from video streams with AI-based tools.
+Our work follows the classical pattern of feature extraction followed
+separately by outlier detection. This allows us to focus on
+evaluating the features independently of the detection model.
+Furthermore, the feature representation could also be updated to
+match specific characteristics of intersections monitored.
+The major contributions of this paper are the following:
+•  We introduce two types of spatial trajectory features for
+anomaly detection tasks, based on distances to a fixed set of
+reference points.
+•  We evaluate them in the context of a target urban
+intersection, using a new labeled dataset with 5378
+intersection-level vehicle trajectories, extracted from traffic
+video with AI tools, followed by a specific preprocessing
+pipeline.
+•  We show that the proposed representations yield better
+results than several existing spatial feature approaches for
+trajectories in the evaluation site when coupled with our
+preprocessing pipeline. We also discuss relevant factors such
+as landmark placement and provide complementary results
+on existing city-wide trajectory datasets, which suggest
+feature versatility in different contexts.
+We evaluate the proposed features with intersection trajectory data
+collected from a single intersection site, where our traffic
+monitoring pipeline is set up; in general, intersection-level
+trajectory datasets are scarcely available. As such, the work should
+be regarded as a feature-analysis case study targeting a localized
+intersection setup, motivating a deeper look into spatial feature
+representations adequate to intersection-level trajectories extracted
+from video data, rather than a full-scale anomaly detection solution.
+The rest of the paper is organized as follows. In Section 1, we
+review the most relevant literature related to our work. In Section
+2, we define the problem, discuss some limitations of existing
+approaches, and introduce the proposed landmark-based methods
+for trajectory features, as well as the new dataset of intersection-
+level trajectories. Several anomaly detection results are presented in
+Section 3, followed by a discussion in Section 4. Finally, we
+conclude the paper in Section 5.
+Related Work
+There is a vast body of literature on trajectory analysis and,
+specifically, anomaly detection. Several review papers [1,2]
+summarize the prevailing approaches in the field, as well as open
+challenges. We summarize below the major directions in the
+literature, focusing on anomaly detection approaches, types of
+trajectory data, and acquisition methods.
+When it comes to the approach used for anomaly characterization
+and detection, there are several major directions in the literature.
+One traditional approach is to characterize trajectories using
+features extracted from their shape or location and then use
+standard vector-based outlier detection algorithms. For example,
+Rintoul and Wilson [3] use 12 such features, mostly describing the
+geometrical shape pattern, in order to implement data mining
+techniques with the goal of retrieving trajectories with similar
+patterns. Features used include length, various measures of
+curvature, and descriptors of the convex hull encompassing the
+trajectory. In [4], a histogram-like feature vector is proposed, which
+describes the circular distribution of trajectory points around the
+trajectory centroid. In [5,6], a trajectory is characterized simply by
+computing the shortest distances from the trajectory to a set of
+external reference points (landmarks), thus forming a feature vector
+of distances; several types of distances are proposed and used. We
+discuss both these algorithms in more detail in Section 2.
+Note, however, that the selection of optimal features is highly
+problem-specific and sensitive to changing conditions and different
+types of trajectory data included. For example, an in-depth analysis
+and comparison of geometric and kinematic descriptors in [7],
+albeit done in the context of maritime ship classification from
+trajectories, reveals that the predictive power of models depends
+significantly on the ship classes included in the dataset, without a
+clear and consistent set of optimal features. In [8], we find another
+in-depth comparison of several shape-describing trajectory features,
+evaluated in a clustering problem.
+Instead of analyzing trajectories indirectly through features, another
+classic approach relies on defining custom distance metrics,
+specifically designed for trajectory data, which can quantify into a
+single number the difference (or the similarity) between two
+trajectories. Classic distance measures include the Hausdorff,
+Frechet, and edit-based distances, together with a multitude of
+variants, as well as more recent variants such as SSPD. A review of
+commonly used measures is available in [9]. These distances can be
+applied to sub-trajectories as well. A classic algorithm, TRAOD
+[10], splits trajectories into sub-trajectories, approximates them
+with segments, and relies on specific segment-based distance
+measures to identify anomalous sub-trajectories. Despite being easy
+to interpret, trajectory distances have some significant
+disadvantages. First, they cannot be used with a vast majority of
+vector-based algorithms, which require vector-space operations
+(e.g., same dimensions, means, projections, Euclidean distances),
+whereas trajectory distances provide only distance values between
+pairs of trajectories, without a vector-space embedding. Second,
+since trajectory distances need to be computed between every pair
+of trajectories separately, they are not a good fit for continuous
+operation when new trajectory data is continuously incoming over a
+long time. As such, trajectory distances ten

@@ -1,0 +1,48 @@
+
+Methods
+For a more detailed description of the methods, please refer to the
+supplemental material.
+Protein-Protein Docking
+Global Docking Using the ClusPro Server
+The ClusPro server34 docks the two proteins (considered the
+receptor and the ligand, respectively) using the PIPER program
+based on the FFT correlation approach. As reported earlier,19,34 the
+scoring function in PIPER is a weighted combination of three
+energy terms: a van der Waals term describing attractive and
+repulsive contributions, a truncated coulombic term for the
+electrostatic energy, and a structure-based pairwise potential
+primarily representing desolvation. Selecting the weights of the
+energy terms depends on the characteristics of the protein-protein
+association (hydrophobicity driven, balanced and electrostatics
+driven).34 Since the type of interaction primarily driving the
+association is generally not known prior to docking, a standard
+ClusPro run simultaneously performs docking with all three sets of
+coefficients.34 As will be described, we test resampling for type of
+complexes classified as “others” in the protein docking benchmark
+set.37 This class includes complexes with highly variable properties
+that generally result in fairly challenging docking problem. To
+reduce the dependence of docking results on the selection of the
+energy weighting scheme, the 500 best scoring structures are
+retained for each of the three sets of weighting coefficients, and
+merged into the final set of 1500 structures.
+The second step of ClusPro is clustering the 1500 structures using
+pairwise interface root mean square deviation (IRMSD) as the
+distance measure.34,38 Clusters are ranked based on the number of
+structures that a ligand has within a (default) cluster radius of 9Å
+IRMSD, and the ranked complexes are subjected to a
+straightforward (300 step and fixed backbone) van der Waals
+minimization using the CHARMM potential to remove potential side
+chain clashes.39
+As mentioned, in this work we explore refinement, and hence
+restrict consideration to the most near-native cluster. The region of
+interest, defined by this near-native cluster, is further restricted by
+removing the structures that are more than 10Å IRMSD from the
+structure representing the center of the cluster. For comparison to
+our previous docking results,19 we reduce the number of starting
+conformations to 1000 by selecting the 333 lowest energy
+structures from each of the three sets obtained by the different
+weighting coefficients, and add one more low energy structure.
+Measures are taken so that the final set has 1000 structures if any of
+the three sets has fewer than 333 structures.
+Focused Resampling of the Near-Native Region
+From a dense rotation set, rotations are chosen which are similar to

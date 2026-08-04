@@ -1,0 +1,79 @@
+
+Materials and methods
+Field study and data collection
+This field study was conducted in three provinces of Türkiye to
+collect a weed dataset reflecting real field conditions and to support
+precision farming. These three provinces are Balıkesir (Kepsut
+Hotaşlar and Nusret), Ankara (Batıkent, Başayaş, Gölbaşı Hacılar
+and Bala Afşar), and Aksaray (Çatalsu, Kurtuluş, Lalebağı, Kederli
+and Armutlu) villages. Figure 2 shows all the fields where the
+photographs were taken and a detailed map of the study areas.
+While collecting the data, efforts were made to create environments
+that were as similar as possible to real field conditions. No
+controlled testing environment was created. The entire dataset was
+collected from real agricultural environments showing various soil
+types, light conditions, damaged plants, and irrigated/dry soil
+conditions common in open-field tomato cultivation in Türkiye. The
+collected data has been gathered in a heterogeneous manner, and
+this method represents real field conditions, enabling the dataset to
+provide more realistic results.
+Figure 2.
+[image]
+Open in a new tab
+Map of fields where weeds and tomato plants were obtained.
+To obtain realistic ground-level data, an iPhone 11, iPhone 14 Pro
+Max, and a professional-grade DJI Mavic 3 Pro drone camera were
+used. We obtained 32,607 images. This gave us a total of 44,165
+bounding box annotations. 15,207 images (46.42%) were obtained
+with the drone.
+To make the model more realistic and ensure the dataset yielded
+realistic results, the dataset was collected under different lighting
+and environmental conditions, such as morning, midday, and
+afternoon light. Weed data were captured at all growth stages, from
+small seedlings to adult seedlings. The dataset also included
+samples that were weathered, rotten, hail damaged muddy,
+withered, and taken from different angles (e.g., top-down, side, and
+oblique views). The intention is to make the dataset less
+homogeneous, and therefore more realistic and easier for the model
+to generalize to real agriculture settings. These realistic approaches
+could deteriorate the performance of the model on precision, recall
+and mAP. This was a deliberate decision to obviate the use of
+controlled experiment accuracy and reflect practical field
+performance (Maxwell et al., 2021).
+The data, belonging to each class of tomato or weed, was bounding
+boxes annotations using IrfanView64 software. Species
+identifications and bounding box annotations were created while
+verifying agricultural weed species. The images were re-checked,
+particularly to minimize mislabeling of morphologically similar
+species. 44,165 bounding boxes annotations objects were identified
+in 32,607 images.
+To prevent potential confusion due to long scientific names during
+training, each plant species was assigned a unique number. These
+numbers are 0, 1, 2, 3, 4, 5, 6, 7 respectively, and they have made
+the training process more organized.
+The classes were defined as follows:
+Table 1 shows that 44,165 labels were created on 32,607 images.
+The labeling process is based on the scientific classification of plant
+species. Weed species with similar characteristics in the field were
+placed in the same class. This method was designed so that the
+model would not have problems with visual differences in different
+field conditions and would generalize well at the class level.
+Figure 3 shows the number of visual and limiting box labels for
+weed species.
+Table 1.
+Alphabetical codes assigned to weed species, along with the number
+of labels and images for each class.
+Class Scientific name
+Number of
+label
+Number of
+images
+0
+Acroptilon repens (L.)
+3.486
+2.593
+1
+Amaranthus retroflexus
+L.
+4.567
+4.527

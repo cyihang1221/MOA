@@ -1,36 +1,59 @@
+#!/usr/bin/env python3
+"""
+MOA V3.0 — 知识驱动代谢组学智能体
+
+三阶段架构：
+  Phase 1: RAG 检索知识库 → LLM 生成结构化计划
+  Phase 2: MCP 工具执行 + 每步 LLM 质检 → 失败自动修正
+  Phase 3: RAG 检索文献 → LLM 生成综合分析报告
+
+用法:
+    conda activate MOA
+    python run_agent_v3.py
+"""
+
 import os
 import sys
+
+# ---- 确保当前目录在 Python 路径中 ----
+ROOT = os.path.dirname(os.path.abspath(__file__))
+os.chdir(ROOT)   # 切换到项目根目录，确保 MCP 子进程继承正确的 CWD
+sys.path.insert(0, ROOT)
+
 from src.agent import Agent
-from dotenv import load_dotenv, find_dotenv
+from dotenv import load_dotenv
 
+# ---- 路径配置 ----
+PERSIST_DIR = os.path.join(ROOT, "softwares_database_RAG")
+SOURCE_DIR = os.path.join(ROOT, "softwares_database")
+INPUT_DIR = os.path.join(ROOT, "inputspace")
+OUTPUT_DIR = os.path.join(ROOT, "outputspace")
 
-base_dir = os.path.dirname(os.path.abspath(__file__))
-PERSIST_DIR = os.path.join(base_dir, "softwares_database_RAG")
-SOURCE_DIR = os.path.join(base_dir, "softwares_database")
+# ---- 加载环境变量 ----
+load_dotenv(os.path.join(ROOT, ".env"), override=False)
 
+# ---- 输入数据 ----
+data_list = f"{os.path.join(INPUT_DIR, 'raw')}: Mass spectrometry data in raw format (Thermo)."
+metadata_csv_path = os.path.join(INPUT_DIR, 'metadata.csv')
+metadata_csv_description = "Sample metadata CSV with Sample and Group columns."
 
-# 输入信息
-inputspace = os.path.join(base_dir, "inputspace")
-data_list = f"{os.path.join(inputspace, 'raw')}: These files are mass spectrometry data in raw format."
-# 新增
-metadata_csv = f"{os.path.join(inputspace, 'metadata.csv')}: This CSV file contains sample metadata, including columns for sample ID and experimental group."
-
-outputspace = os.path.join(base_dir, "outputspace")
-
-goal_description = "对thermo仪器产生的raw格式文件进行分析得到差异代谢物，并对差异代谢物质进行注释和通路富集分析。"
-
-
-# 加载 .env 文件中的环境变量
-load_dotenv(find_dotenv(), override=False)  # 把.env文件内容放进os.environ; override=False表示.env里的值不会覆盖“已经存在的环境变量”
-
-
-# 初始化并运行
-agent = Agent(
-    data_list=data_list,
-    metadata_csv=metadata_csv,  # 参数部分删除database_file_dir=database_file_dir，# 新增metadata_csv=metadata_csv
-    goal_description=goal_description,
-    outputspace=outputspace,
-    PERSIST_DIR=PERSIST_DIR,
-    SOURCE_DIR=SOURCE_DIR
+# ---- 分析目标 ----
+goal_description = (
+    "对thermo仪器产生的raw格式文件进行分析得到差异代谢物，"
+    "并对差异代谢物质进行注释，数据格式转换使用msconvert。"
 )
-agent.run()
+
+# ---- 启动 ----
+if __name__ == "__main__":
+    agent = Agent(
+        data_list=data_list,
+        metadata_csv_path=metadata_csv_path,
+        metadata_csv_description=metadata_csv_description,
+        goal_description=goal_description,
+        outputspace=OUTPUT_DIR,
+        PERSIST_DIR=PERSIST_DIR,
+        SOURCE_DIR=SOURCE_DIR,
+        max_retries=3,
+        similarity_top_k=5,
+    )
+    agent.run()

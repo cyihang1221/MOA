@@ -1,0 +1,130 @@
+
+EXPERIMENTAL PROCEDURES AND
+RESULTS
+Twenty LC-MS/MS runs of fractionated HeLa S3 cell lysate were
+acquired in data-dependent acquisition mode on an LTQ/Orbitrap
+classic (Thermo Scientific) system hyphenated to a nanoflow HPLC
+system (Eksigent). The survey scan range was limited to m/z 400–
+2000 at a nominal resolution of 60,000, and MS/MS scans were
+limited to the eight most abundant precursor ions. The resulting
+raw data files were converted to mzML using the ProteoWizard (1)
+tool set, mzML files were converted to mz5, and the identity of the
+mzML and mz5 file contents was confirmed. For all formats, the
+data were stored in compressed double precision. For the mzXML
+and mzML formats, indexing was turned on. All of the experiments
+were conducted using the same hardware, with all resources
+dedicated to the test runs (no parallel jobs). Overall, we consider
+the selected data set to be a reasonably common example of LC-MS/
+MS data acquisition and hence expect that the results generalize to
+a large majority of practical use cases.
+To assess mz5 performance, we conducted three types of
+comparative experiments, testing (i) write performance; (ii) read
+performance; and (iii) space requirements. For each of the 20 input
+files, we generated a set of 10 subsets of increasing sizes (sets of
+800, 1600, up to 8000 spectra, and the complete set of all spectra
+present in the respective input file). This strategy yielded 220 test
+cases. All of the time measurements were averaged over 10 repeats
+for every test case, after discarding the minimum and maximum
+timings. For performance comparisons between different formats,
+we fitted linear models with intercepts and determined relative
+slopes over time and space (see supplemental materials). mz5 files
+were used to generate each test case for mzXML, mzML, and mz5, to
+guarantee that all three file formats contain the same data.
+To test linear read performance, we measure the time it takes to
+read each of the test cases from the file it is stored in. Fig. 1a shows
+the linear read times of all test cases versus the number of (m/z,
+abundance) pairs. The mz5 format outperforms the mzXML and
+mzML formats by factors of ∼2.3 and ∼3.7, respectively. We note in
+passing that the mz5 gains over mzML are not strictly linear; this
+indicates optimization opportunities for the parsing of smaller
+mzML files. Interestingly, the mz5 linear read times also exhibit
+smaller variation compared with mzXML and, in particular, mzML
+read times.
+For strictly random reading, mz5 is significantly faster than mzML
+but performs slightly slower than mzXML. This is due to the
+underlying HDF5 caching/compression tradeoff. We focused on the
+vast majority of conceivable use cases and geared the tradeoff
+toward efficient linear reading. The random read and initialization
+performance tests, as well as benchmarks for different mass
+analyzer types, can be found in the supplemental materials.
+To test write performance, we extracted every test case from the
+respective mz5 input file and measured the time it takes to write the
+data to disk, using mzXML, mzML, and mz5. Consequently, potential
+read time delays only cause a constant offset that is identical
+between the different formats and does not affect the slopes.
+supplemental Fig. 1a illustrates the results for all 220 test cases.
+Time measurements for mzXML, mzML, and mz5 are shown as
+diamonds, triangles, and circles, respectively. It is apparent that mz5
+is consistently faster than mzXML and mzML. The read time-
+corrected relative slopes show improvements of a factor of ∼4.7 for
+mz5 over mzXML and ∼3.9 over mzML (Table I).
+Table I. Average read/write times and space
+requirements for 106 (m/z, abundance) pairs for the
+mz5, mzML, and mzXML file formats.
+The rows correspond to the linear read time (tlr), the write time
+(tw), the mz5 read time − corrected write time (tw − tlrmz5) and
+the space requirements. All of the timing values are in seconds or
+MB/106 data points, respectively. Columns 4 and 5 show that mz5
+outperforms the mzML and mzXML formats in all respects.
+mz5 mzML mzXML mzML/mz5 mzXML/mz5
+tlr
+0.13 0.49
+0.3
+3.65
+2.28
+tw
+0.63 2.08
+2.46
+3.28
+3.9
+tw − tlrmz5 0.5
+1.95
+2.33
+3.89
+4.66
+Space
+7.57 13.72
+14.13
+1.81
+1.87
+Open in a new tab
+Fig. 1b illustrates storage consumption versus the number of (m/z,
+abundance) pairs. It is evident that the mz5 format requires little
+more than half the disk space (54%) of the mzXML and mzML
+formats. The mzXML and mzML storage requirements are practically
+identical. Fig. 1c illustrates that mz5 even supersedes XML-based
+formats that are compressed at the file and spectrum levels for off-
+line long term storage. Hence, mz5 provides better compression
+levels while still offering immediate data access and avoiding the
+need for time-consuming file level compression and decompression.
+Fig. 1c also provides a rough comparison of space requirements for
+three popular proprietary vendor formats (Thermo raw, Bruker yep,
+and ABSciex wiff) against the open mzXML, mzML, and mz5
+formats. The mz5 format compares very favorably against the
+Thermo and Bruker formats and is the best open alternative for the
+ABSciex format. The Bruker yep file data was generated from
+Escherichia coli whole cell lysate and was acquired on a Bruker
+amaZon instrument. The ABSciex wiff file data stems from
+subcellular fractions of a HeLa cell lysate and was analyzed by LC/
+MS on an TripleTOF 5600.
+Implementation
+The mz5 format maps the mzML ontology, as implemented in the
+ProteoWizard library, into a collection of HDF5 objects. The HDF5
+library provides HDF5 object persistence.
+The design of mz5 is tailored to meet two specific goals: to create an
+open exchange format with both I/O speed and storage space
+requirements that rival existing vendor formats. The practical
+challenge was to develop data representations that enable the use of
+the HDF5 properties conducive to the above goals. In mz5, we
+represent mzML tags as HDF5 compound data types, which
+correspond to classical abstract data types. Collections of
+compounds are stored in instances of a multidimensional array type
+(H5::data set). Instances are compressed and stored to disk. It
+should be noted that the straightforward representation of mzML
+tags in terms of HDF5 groups is not a viable solution, because such
+an approach would prohibit data compression for technical reasons.
+The HDF5 library is already highly optimized for file I/O (17). The
+mz5 implementation guarantees optimized buffer sizes to minimize
+the number of necessary I/O operations, collecting raw data before
+bulk writes are performed. HDF5 natively supports compression
+filters, and to optimize compression rates, our implementation

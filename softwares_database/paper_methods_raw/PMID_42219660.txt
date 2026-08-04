@@ -1,0 +1,182 @@
+
+Methods
+Cherenkov images from multiple geometrically calibrated cameras
+were projected onto Computed Tomography (CT) surface datasets to
+provide a Cherenkov surface image map on the patient. A
+raycasting algorithm was utilized to virtually map the Cherenkov
+surface image into the beam's eye view. To test the ability to
+quantitatively measure beam versus patient surface deviations from
+the virtual beam's eye view, a series of 10 × 10 cm2 6X fields with
+simulated spatial shifts were delivered to both flat and
+anthropomorphic phantoms. Virtual beam's eye view images were
+generated for each shift, and the magnitudes of Cherenkov map
+shifts were measured with Iterative Closest Point (ICP) and
+Hausdorff distance metrics with respect to a reference field.
+Results
+Iterative Closest Point algorithms achieved an average x and y
+accuracy of 0.5 ± 0.2 mm and 0.3 ± 0.2 mm for the flat phantom
+and 0.5 mm ± 0.7 mm and 0.3 mm ± 0.2 mm for the
+anthropomorphic torso phantom. Camera projection error adds up
+to an additional 0.9 mm of error.
+Conclusion
+Multi‐view surface mapping of Cherenkov images onto the patient
+surface mesh enabled quantitative assessment of beam versus
+topology shifts between fractions, using the Cherenkov emission
+outline as a beam extent surrogate. We demonstrated the utility and
+metrics of Cherenkov 3D mapping towards future applications
+utilizing daily or real‐time surfaces obtained from, for example,
+cone‐beam CT or surface‐guided radiotherapy (SGRT) systems.
+Keywords: 3D surface mapping, optical quantitative imaging,
+photon EBRT
+1. INTRODUCTION
+Cherenkov imaging enables real‐time visualization of beam delivery
+during external beam radiation therapy (EBRT). 1 When
+megavoltage (MV) radiation passes through tissue, secondary
+electrons exceeding the phase velocity of light generate broadband
+optical Cherenkov emission, which can be detected by time‐gated
+intensified cameras. Imaging this emission during treatment reveals
+the spatial and temporal pattern of each beam as it is delivered.
+Cumulative images from each fraction can be compared with the
+planned fluence to detect delivery deviations, enabling correction in
+subsequent fractions.
+Clinical studies in a retrospective cohort of 622 patients 2
+demonstrated that Cherenkov imaging detected otherwise
+unrecognized, clinically significant incidents in approximately 1.4%
+of fractions. The technique complements surface guided
+radiotherapy (SGRT) by adding direct visualization of the radiation
+field, whereas SGRT alone provides only positional data in patient
+coordinates. 3 However, current Cherenkov imaging produces a
+fixed camera‐space view, limiting geometric interpretation. 4
+Most Cherenkov imaging systems use two oblique camera views,
+with an optional couch‐foot view, displayed as pseudo‐color
+Cherenkov emission overlays on grayscale anatomy. These allow
+visual detection of deviations such as unplanned anatomy in the
+beam 2 or bolus misplacement, 5 but remain spatially qualitative
+due to the oblique acquisition geometry and the lack of surface
+geometry reference. Quantitative spatial analysis requires mapping
+Cherenkov images into patient coordinates, which can be achieved
+by projecting them onto 3D patient surface meshes. Here, we
+combine multi‐view Cherenkov imaging data with surface meshes
+to create the first 3D Cherenkov emission maps, enabling
+visualization from arbitrary perspectives, including a virtual beam's‐
+eye view (BEV) showing the delivered field shape on the patient.
+This work develops and tests the utility of 3D Cherenkov surface
+mapping to:
+1. Merge multiple Cherenkov imaging viewpoints to avoid
+incomplete Cherenkov visualization due to gantry and tissue
+obstructions;
+2. Evaluate displacement metrics to measure the Cherenkov
+surface map deviations compared to Day 1 treatments;
+3. Determine the limits of spatial accuracy of combined spatial
+Cherenkov image mapping.
+Here static CT surfaces were used as the source of patient surface
+meshes and as the first step towards mapping that utilizes real‐time
+SGRT maps. A raycasting algorithm 6 was developed to project
+Cherenkov images from known camera positions onto static CT
+surface meshes. Textured patient surface meshes were then used to
+generate parallel and point projections of the Cherenkov emission
+from beam's eye views for quantitative spatial analysis. Point
+projection images were used to show users the beam shape on the
+patient surface, while parallel projection images were used to
+measure beam deviations.
+In this work, Cherenkov camera calibration accuracy was first
+assessed, then the raycasting accuracy was evaluated on a flat
+phantom. Next, the surface map coverage was improved by
+combining two Cherenkov images on an anthropomorphic phantom.
+Finally, the Iterative Closest Point 7 , 8 (ICP) and Hausdorff 7 , 9
+metrics were quantified on virtual beam's eye view parallel
+projection images to quantitatively detect and measure beam shifts
+on the patient surface.
+2. MATERIALS AND METHODS
+2.1. Experimental setup
+Measurements were taken on two different linear accelerators
+(Varian Trilogy and TrueBeam, Varian Medical Systems, Palo Alto,
+CA) in two different therapy vaults at the Dartmouth Cancer Center.
+6 MV beams were delivered at a dose rate of 600 monitor units per
+minute and a source to surface distance (SSD) of 100 cm to simulate
+clinical whole breast radiotherapy conditions. Each measurement
+used between 100 and 300 MU to maximize signal in each image
+set. Standard field sizes of 10 × 10 cm2 were delivered to each
+phantom (see Figure 1).
+FIGURE 1.
+[image]
+Open in a new tab
+[Phantoms used for Cherenkov surface imaging] Anatomical Annie
+Phantom (Left) and ABS Phantom (Right) with 10 × 10 cm2 fields
+delivered.
+Images were taken with two sets of clinical Cherenkov cameras
+(BeamSite, DoseOptics, Lebanon, NH) mounted inside each of the
+two treatment vaults. Both sets of Cherenkov cameras use fixed
+focal length lenses (50 mm f/1.2). Imaging systems were calibrated
+using factory isocenter calibration and positional calibration,
+providing camera position coordinates, focal direction vectors, view
+up vectors, and view angles.
+A flat ABS plastic slab (40 cm × 40 cm × 1 cm, DoseOptics)
+phantom and a tissue‐mimicking anthropomorphic silicone
+phantom 10 were used as delivery targets. Both phantoms were set
+up at the isocenter in the same position as their respective CT scans.
+The flat phantom was set up with its center at the isocenter (100 cm
+SSD) and used for virtual beam's eye view imaging, as its planar
+shape allowed for easy validation of projection models. The
+anthropomorphic phantom served to simulate a typical clinical case
+with more complex geometry than the flat phantom. This phantom
+was set up at isocenter with respect to positional radio‐opaque
+markers with an isocenter inside the phantom (97 cm SSD). A
+computer tomography (CT) scan was taken with 0.6 mm/slice
+resolution, and a stereolithographic STL surface mesh file was
+extracted from DICOM datasets with simple thresholding.
+2.2. Algorithm for surface mapping
+To integrate Cherenkov imaging with the patient's 3D geometry, the
+recorded camera images must be accurately mapped onto the
+patient surface mesh. This was accomplished using a raycasting
+approach, in which each pixel in the Cherenkov image is traced
+along a ray from the camera toward the 3D model. When a ray
+intersects the patient surface, the corresponding Cherenkov
+intensity value is assigned to that point on the mesh. Applying this
+process to all pixels generates a surface texture that represents the
+spatial distribution of Cherenkov emission on the patient. Once
+textured, the surface mesh can be virtually re‐rendered from any
+viewpoint, including a beam's‐eye view from the treatment source
+position (See Figure 2).
+FIGURE 2.
+[image]
+Open in a new tab
+[Raycasting overview] Transformation of multiple side view
+Cherenkov images fused to create one virtual beam's eye view
+image.
+The raycasting process required three essential data structures: (1)
+Cherenkov images, (2) Cherenkov camera spatial calibration data,
+and (3) patient surface data.
+1. Patient (phantom) surface data were acquired using a
+Siemens SOMATOM CT scanner. This data were exported
+from the Eclipse treatment planning software in Aria using
+the DICOM export media filter. Body contours were converted
+to STL format using 3D Slicer.
+2. Cherenkov camera positioning data were acquired using
+BeamSite calibration protocols and is stored as a text file
+alongside Cherenkov images after each image acquisition. The
+following essential data about the camera position is included
+in the extrinsic calibration file: Camera position in mm (x1,
+y1, z1), focal position in arbitrary units (x2, y2, z2), view up
+vector in arbitrary units (x3, y3, z3), and the view angle in
+degrees.
+3. Cherenkov images were acquired using BeamSite software.
+Images were captured at a framerate of 17 fps, internally
+darkfield‐corrected and background‐subtracted, and
+cumulative images were produced at a resolution of
+1920 × 1200 pixels with 32‐bit depth. These images were
+captured as raw 32‐bit frames and converted to png format
+using ImageJ.
+The following set of equations describes the steps to transform the
+original image matrix Imgi into the beam's eye view projection
+ImgBEV (all bolded variables are matrices/vector). For a visual
+guide to each variable, see Figure 3. First, to ensure proper
+texturing resolution at the isocenter approximately 1.4 m from the
+camera, the Cherenkov images were up‐sampled by a factor of 3 to
+generate an effective resolution of 5760 × 3600. To generate the
+rays to be cast from the image onto the patient surface mesh
+Surfmesh, the essential parameters are the camera position (treated
+as a point source) Cpos, the camera focal position vector Fpos, the
+view up vector that describes the correct image orientation Vup, and
+the view angle that describes the angular field of view ϴv. To
+transform the original two‐dimensional image in the

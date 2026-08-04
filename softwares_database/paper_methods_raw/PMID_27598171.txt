@@ -1,0 +1,92 @@
+
+Experimental setup. (a) Axes definition; (b) Holding mode.
+Knoblauch et al. [17] determined the walking speed of young
+pedestrians (ages 14 to 64) at 1.25 m/s and the walking speed of
+older pedestrians (ages 65 and older) at 0.97 m/s. According to
+Bohannon et al. [18], the mean comfortable speed was 1.27 m/s for
+women and 1.46 m/s for men, whereas the mean maximum speed
+was 1.75 m/s for women and 2.53 m/s for men. Obaidi et al. [19]
+concluded that the mean minimum walking speed is 0.8 m/s. It
+ranges from 1.08 to 1.24 m/s for normal walking, and it reaches
+1.81 m/s for fast walking. Tarawneh et al. [20] evaluated the
+pedestrian speed in Jordan, and found that pedestrian speeds vary
+from 1.17 to 1.49 m/s. Furthermore, pedestrians between 21 and 30
+years old were the fastest group, whereas, those over 65 years were
+the slowest group. Chandra et al. [21] proposed an average walking
+speed from 0.97 to 1.36 m/s on various types of facilities (e.g.,
+sidewalk, wide-sidewalk, and precinct). Based on these findings, we
+defined the speed levels to be used in the present experiments from
+a normal distribution of average walking velocities as shown in
+Figure 2. Specifically, we determined the ranges of low, normal,
+and high speed as v≤v¯−σ, v¯−σ<v<v¯+σ, and v≥v¯+σ,
+respectively. Here, v¯ and σ are the average speed and deviation of
+human walking speed, respectively. From Figure 2, we set v¯=1.36
+m/s and σ=0.29. Thus, these walking speed ranges are 0.68,1.07,
+1.08,1.64, and 1.65,2.05, respectively, where 0.68 and 2.05 are the
+minimum and maximum walking speeds in our experiments.
+Figure 2.
+[image]
+Open in a new tab
+Distribution of average walking speed.
+3.2. FFT Operation-Based Data Smoothing
+We apply FFT [22] to smooth the raw signals for step-detection.
+Each acceleration signal is represented by a four-dimensional
+function fX,Y,Z,t, where X,Y,Z denotes the space axes, whereas t
+denotes the time axis. We define the first-order finite differences
+operator matrix (D) as follows:
+Df=vecfX,Y,Z,t+1−fX,Y,Z,t (4)
+where f and vec⋅ represent the vectorized version of the space–time
+function fX,Y,Z,t and the vectorization operator, respectively. Our
+purpose is to obtain a smoothed signal after the inverse FFT (IFFT)
+process. Therefore, it is necessary to solve error by minimizing the
+problem in [22]. Then, we obtain the smoothed acceleration
+function A as follows:
+A=F-1Fμ×a+ρ×DTu−DTyμ+ρ×FD2 (5)
+where F⋅ and F-1⋅ are denoted for the FFT and inverse fast Fourier
+transform (IFFT) functions, respectively. DT is the transpose of D,
+and μ, ρ are the input and regularization parameters, respectively.
+To solve the intermediate variable error, letting v=Df+1ρ×y, we
+obtain u as follows:
+u=maxv−1ρ,0×signv (6)
+In addition, the Lagrange multiplier y was obtained from [22] as
+follows:
+yl+1=yl−ρ×ul+1-DAl+1 (7)
+Algorithm 1 summarizes the FFT operation-based data smoothing
+method by pseudo-code. Figure 3 shows an example of a raw signal
+and the corresponding smoothed signal on the Z-axis. This figure
+clarifies that the smoothed signal is less fluctuant than the raw
+signal. Therefore, we use the smoothed signal to detect the walking
+step.
+Figure 3.
+[image]
+Open in a new tab
+Smoothing of Z-axis acceleration.
+Algorithm 1 Pseudo code for FFT operation-based data smoothing
+method
+Input data: a
+Input parameter: μ
+Set parameter: ρ = 10, l = 100
+Initialize f0 = 0, u0 = 0, y0 = 0
+Compute the finite differences operator matrix D and its
+transpose DT
+for i = 1:l
+1. Solve A using Equation (5)
+2. Solve u using Equation (6)
+3. Update the Lagrange multiplier y using Equation (7)
+end
+Open in a new tab
+3.3. Step Detection Rules
+Step detection is an important problem in PDR that is calculated
+using the summation of all estimated step lengths. Because of false
+or missed detection, it can cause substantial errors in total walking
+distance estimation. Therefore, it is necessary to correctly detect the
+occurring-step moment. Recently, step detection methods using
+accelerometers were presented in PDR investigation. Three common
+methods for acceleration data processing were developed. The first
+method [23] analyzed the difference of the acceleration data along
+the vertical dimension (Z-axis) while the user was walking. The
+disadvantage of this method is that the acceleration data could be
+confusing if the orientation of the accelerometer changed. In the
+second method [24], the root mean square (RMS) of three axes was
+used to analyze the feature of the step. The RMS concept used for
+processing the raw acceleration data is calculated as follows:

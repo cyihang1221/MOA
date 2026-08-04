@@ -1,0 +1,181 @@
+
+Methodology, Software, Validation, Formal analysis, Investigation,
+Resources, Data curation, Writing – original draft, Visualization
+Find articles by Hao Duan
+1, Shaopeng Hu
+Shaopeng Hu
+2Digital Manufacturing Education and Research Center, Hiroshima
+University, Higashi-Hiroshima Campus, Higashihiroshima
+739-0046, Japan; hsp@hiroshima-u.ac.jp
+Supervision, Writing – review & editing, Project administration,
+Resources
+Find articles by Shaopeng Hu
+2, Feiyue Wang
+Feiyue Wang
+3Graduate School of Advanced Science and Engineering, Hiroshima
+University, Higashi-Hiroshima Campus, Higashihiroshima
+739-0046, Japan; feiyue@hiroshima-u.ac.jp (F.W.);
+simasaki@hiroshima-u.ac.jp (K.S.)
+Writing – review & editing, Supervision, Project administration,
+Formal analysis
+Find articles by Feiyue Wang
+3, Kohei Shimasaki
+Kohei Shimasaki
+3Graduate School of Advanced Science and Engineering, Hiroshima
+University, Higashi-Hiroshima Campus, Higashihiroshima
+739-0046, Japan; feiyue@hiroshima-u.ac.jp (F.W.);
+simasaki@hiroshima-u.ac.jp (K.S.)
+Supervision, Project administration, Formal analysis
+Find articles by Kohei Shimasaki
+3, Idaku Ishii
+Idaku Ishii
+3Graduate School of Advanced Science and Engineering, Hiroshima
+University, Higashi-Hiroshima Campus, Higashihiroshima
+739-0046, Japan; feiyue@hiroshima-u.ac.jp (F.W.);
+simasaki@hiroshima-u.ac.jp (K.S.)
+Conceptualization, Supervision, Project administration, Funding
+acquisition, Writing – review & editing
+Find articles by Idaku Ishii
+3,*
+Editor: Thomas P Karnowski
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC13259108  PMID: 42280973
+Abstract
+Dynamic three-dimensional (3-D) reconstruction of small objects
+moving at high speed is fundamentally limited by the number of
+viewpoints that a fixed camera array can provide at any single time
+instant. When the camera count is insufficient, single-frame multi-
+view stereo produces incomplete or inaccurate geometry. This paper
+proposes a multi-frame temporal integration approach that
+overcomes this limitation by exploiting the rigid-body assumption:
+because a falling object maintains its shape across consecutive
+frames, images captured at different time instants can be combined
+into a single, viewpoint-enriched reconstruction. A three-layer
+circular array of 32 synchronized RGB cameras captures 1440 ×
+1080 images at 160 fps, and a free-fall-oriented algorithm
+automatically detects active frames, selects informative temporal
+windows, and feeds the accumulated multi-frame images into a
+structure-from-motion and multi-view stereo (SfM-MVS) pipeline,
+effectively multiplying the number of viewpoints without additional
+hardware. The algorithm simultaneously recovers the 6-DOF pose
+trajectory of each object from the SfM-estimated camera
+parameters. Progressive accumulation experiments on freely falling
+soybeans (approximately 9–10 mm diameter) show that a single 32-
+camera frame already achieves an F-score exceeding 0.97 at a 0.5
+mm threshold against an industrial structured-light scanner
+reference, and that accumulating additional temporal frames
+reaches a stable convergence plateau with both objects reaching a
+plateau F-score of 0.984. Beyond approximately one to two
+accumulated frames, additional frames yield diminishing returns,
+confirming that a small number of temporal frames is sufficient for
+convergent sub-millimeter accuracy. Across 30 independent free-fall
+trials with three objects, the system achieves an overall mean error
+of 0.146±0.033 mm and an overall F-score of 0.980±0.006—a
+mean relative error of approximately 1.6% on 8–10 mm targets—
+and fine surface features such as structural cracks are resolved at a
+fidelity sufficient for visual defect identification. These results
+establish rigid-body multi-frame temporal integration as an effective
+strategy for high-throughput, non-contact 3-D inspection of small
+objects in motion.
+Keywords: high-speed imaging, multi-frame reconstruction,
+volumetric sensing, millimeter-scale 3-D shape measurement
+1. Introduction
+Three-dimensional (3-D) reconstruction from multi-view images is a
+well-established technique whose accuracy depends critically on the
+number, distribution, and geometric diversity of the input
+viewpoints. The foundational benchmark by Seitz et al. [1]
+demonstrated a clear relationship between viewpoint count and
+reconstruction completeness, showing that increasing the number of
+views from 16 to 317 progressively improves surface coverage and
+geometric detail. This dependence is well understood theoretically:
+the visual hull [2] converges to the true shape only as the number
+of silhouette viewpoints approaches infinity, and practical multi-
+view stereo (MVS) algorithms require sufficient baseline diversity to
+resolve depth ambiguities [3,4]. For static objects, viewpoint
+sufficiency can be addressed by capturing many images from
+planned positions [5], but for dynamic scenes—where objects move
+continuously and each time instant provides only a single snapshot
+from a fixed camera array—the number of available viewpoints is
+physically constrained by the camera count.
+In dynamic scenes, the viewpoint count of a fixed camera array sets
+an upper bound on reconstruction quality at any single time instant.
+Kanade’s Virtualized Reality dome [6] and subsequent performance
+capture systems [7,8,9] demonstrated that synchronized multi-
+camera arrays can capture dynamic events, but these systems
+typically employ dozens to hundreds of cameras to maximize
+viewpoint density. In compact or cost-sensitive configurations
+where the camera count is limited, a single frame can already
+produce a usable reconstruction, yet the achievable surface
+coverage and geometric detail remain bounded by the available
+viewpoint diversity. Simply adding more cameras is often
+impractical due to physical space constraints, synchronization
+complexity, and cost; an alternative strategy that increases effective
+viewpoint density without additional hardware is therefore
+desirable.
+Several strategies have been explored to mitigate viewpoint
+insufficiency without increasing camera count. Learning-based MVS
+methods such as MVSNet [10] and its successive extensions—
+including recurrent depth inference [11], cascade cost
+volumes [12], learned patchmatch propagation [13], transformer-
+based global context aggregation [14], unified depth
+representations [15], and iterative probability estimation [16]—use
+data-driven depth priors to improve reconstruction from sparse
+views. Neural rendering approaches—including NeRF [17] and its
+extensions to unbounded scenes [18] and accelerated training [19],
+neural implicit surface methods [20,21], and high-fidelity neural
+surface reconstruction [22]—can synthesize novel viewpoints or
+recover geometry from limited input. Three-dimensional Gaussian
+Splatting (3DGS) [23] and its geometry-focused variants [24,25]
+enable real-time rendering with explicit point-based
+representations, and recent feed-forward variants such as
+pixelSplat [26] and MVSplat [27] can predict 3-D Gaussians from as
+few as two images in a single forward pass, while InstantSplat [28]
+eliminates the need for structure from motion by jointly optimizing
+Gaussians and camera poses from sparse views. More recently, Gao
+et al. [29] proposed a lightweight 16-camera system for free-fall
+multi-view reconstruction of coarse aggregate particles using
+implicit neural representation, with ray marching and multi-
+resolution hash encoding, reporting an average measurement error
+of 75 μm at a throughput of up to four particles per second. Their
+work shares the free-fall multi-view imaging premise, but uses an
+implicit neural reconstruction paradigm rather than a classical SfM–
+MVS pipeline, and does not exploit temporal redundancy under the
+rigid-body assumption. However, all these methods require either
+per-scene optimization or large-scale training data, and their
+applicability to high-speed industrial inspection of numerous small
+objects remains undemonstrated. For non-rigid scenes, temporal
+fusion methods such as DynamicFusion [30] and Fusion4D [31]
+accumulate depth information across frames using deformable
+tracking, and de Aguiar et al. [32] demonstrated that sparse multi-
+view video, combined with temporal coherence constraints can
+reconstruct human performance. More recently, neural deformable
+representations such as Nerfies [33] and dynamic Gaussian
+approaches [34,35] have extended temporal fusion to photorealistic
+quality. However, all these deformable approaches require complex
+non-rigid tracking and are designed for subjects whose shape
+changes continuously over time.
+Beyond algorithmic approaches, advances in camera
+miniaturization and computational performance have enabled dense
+multi-camera arrays for volumetric capture across multiple spatial
+scales. At the microscopic level, selective plane illumination
+microscopy [36] and light-field microscopy [37] provide volumetric
+imaging of biological specimens, while neural rendering has
+recently been combined with atomic force microscopy for
+submicron 3-D reconstruction [38]. At the mesoscopic level, multi-
+camera array systems such as MCAM demonstrated gigapixel-scale
+imaging with synchronized cameras for wide-field volumetric
+tracking [39,40]. Building on this foundation, 3D-RAPID [41] and
+RUSH3D [42] achieved real-time gigapixel reconstructions at over
+100 volumes per second, while MCAS enabled rapid 3-D digitization
+of pathology slides [43], and compact configurations such as the
+M25 multifocus microscope [44] and ReFLeCT [45] provided high-
+speed 4-D reconstructions of small organisms. These systems
+demonstrate the power of multi-camera arrays for biological and
+biomedical imaging, but their designs prioritize field-of-view
+coverage and fluorescence detection over the requirements of
+industrial inspection, where continuous object flow, complete 360°
+coverage, and high-throughput reconstruction of numerous rigid
+objects are essential.
+A fundamentally simpl

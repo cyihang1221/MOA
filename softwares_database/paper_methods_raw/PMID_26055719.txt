@@ -1,0 +1,197 @@
+
+Experimental and
+Computational Pipeline*
+Christina Ranninger
+Christina Ranninger
+From the ‡Department of Molecular Biology, Division of Chemistry
+and Bioanalytics, University of Salzburg, 5020 Salzburg, Austria,
+Find articles by Christina Ranninger
+‡,1, Marc Rurik
+Marc Rurik
+the §Applied Bioinformatics Group, Center for Bioinformatics,
+Quantitative Biology Center and Department of Computer Science,
+University of Tübingen, Tübingen 72076, Germany,
+Find articles by Marc Rurik
+§,1, Alice Limonciel
+Alice Limonciel
+the ¶Division of Physiology, Department of Physiology and Medical
+Physics, Medical University of Innsbruck, Innsbruck 6020, Austria,
+Find articles by Alice Limonciel
+¶,1, Silke Ruzek
+Silke Ruzek
+From the ‡Department of Molecular Biology, Division of Chemistry
+and Bioanalytics, University of Salzburg, 5020 Salzburg, Austria,
+Find articles by Silke Ruzek
+‡, Roland Reischl
+Roland Reischl
+From the ‡Department of Molecular Biology, Division of Chemistry
+and Bioanalytics, University of Salzburg, 5020 Salzburg, Austria,
+Find articles by Roland Reischl
+‡, Anja Wilmes
+Anja Wilmes
+the ¶Division of Physiology, Department of Physiology and Medical
+Physics, Medical University of Innsbruck, Innsbruck 6020, Austria,
+Find articles by Anja Wilmes
+¶, Paul Jennings
+Paul Jennings
+the ¶Division of Physiology, Department of Physiology and Medical
+Physics, Medical University of Innsbruck, Innsbruck 6020, Austria,
+Find articles by Paul Jennings
+¶, Philip Hewitt
+Philip Hewitt
+‖Merck KGaA, Merck Serono, Nonclinical Safety, Darmstadt 64293,
+Germany, and
+Find articles by Philip Hewitt
+‖, Wolfgang Dekant
+Wolfgang Dekant
+the **Department of Toxicology, University of Würzburg, Würzburg
+97078, Germany
+Find articles by Wolfgang Dekant
+**, Oliver Kohlbacher
+Oliver Kohlbacher
+the §Applied Bioinformatics Group, Center for Bioinformatics,
+Quantitative Biology Center and Department of Computer Science,
+University of Tübingen, Tübingen 72076, Germany,
+Find articles by Oliver Kohlbacher
+§, Christian G Huber
+Christian G Huber
+From the ‡Department of Molecular Biology, Division of Chemistry
+and Bioanalytics, University of Salzburg, 5020 Salzburg, Austria,
+Find articles by Christian G Huber
+‡,2
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC4521035  PMID: 26055719
+Background: Drug toxicity testing calls for in vitro assays as
+alternatives to animal models.
+Results: OpenMS and KNIME are applicable for processing of
+HPLC-MS data sets to reveal metabolic changes upon
+chloroacetaldehyde treatment of kidney cells.
+Conclusion: Most significant changes are related to oxidative
+stress.
+Significance: Comprehensive multiomics studies support the risk
+assessment at an early stage of drug development.
+Keywords: bioinformatics, high performance liquid
+chromatography (HPLC), mass spectrometry (MS), metabolomics,
+oxidative stress, KNIME, OpenMS, chloroacetaldehyde, toxicity
+profiling
+Abstract
+Untargeted metabolomics has the potential to improve the
+predictivity of in vitro toxicity models and therefore may aid the
+replacement of expensive and laborious animal models. Here we
+describe a long term repeat dose nephrotoxicity study conducted on
+the human renal proximal tubular epithelial cell line, RPTEC/
+TERT1, treated with 10 and 35 μmol·liter−1 of chloroacetaldehyde,
+a metabolite of the anti-cancer drug ifosfamide. Our study outlines
+the establishment of an automated and easy to use untargeted
+metabolomics workflow for HPLC-high resolution mass
+spectrometry data. Automated data analysis workflows based on
+open source software (OpenMS, KNIME) enabled a comprehensive
+and reproducible analysis of the complex and voluminous
+metabolomics data produced by the profiling approach. Time- and
+concentration-dependent responses were clearly evident in the
+metabolomic profiles. To obtain a more comprehensive picture of
+the mode of action, transcriptomics and proteomics data were also
+integrated. For toxicity profiling of chloroacetaldehyde, 428 and
+317 metabolite features were detectable in positive and negative
+modes, respectively, after stringent removal of chemical noise and
+unstable signals. Changes upon treatment were explored using
+principal component analysis, and statistically significant
+differences were identified using linear models for microarray
+assays. The analysis revealed toxic effects only for the treatment
+with 35 μmol·liter−1 for 3 and 14 days. The most regulated
+metabolites were glutathione and metabolites related to the
+oxidative stress response of the cells. These findings are
+corroborated by proteomics and transcriptomics data, which show,
+among other things, an activation of the Nrf2 and ATF4 pathways.
+Introduction
+Metabolites represent the final products of all cellular and
+regulatory processes, providing a snap shot of the sum of all cellular
+process occurring at that moment (1). Consequently, to study the
+risks and/or consequences of exposure of humans to chemicals or
+drugs, untargeted metabolome analysis offers a viable approach to
+study the biological effects upon exposure to such compounds.
+However, because ethical reasons preclude the study of biological
+consequences of chemicals in human subjects (2), suitable models,
+including cultured human cells, can be employed to derive
+characteristic biomarkers and/or biochemical pathways that can be
+used for extrapolation to humans.
+Untargeted metabolomics aims at analyzing the broadest possible
+range of metabolites present in a biological sample to obtain an
+unbiased view of the organization and function of biological
+systems and to characterize their responses to changes in their
+environment such as drug or chemical treatment (3–6). Cultured
+cells can be utilized as very discriminative sensors for external
+stimulation and are very well suited for studying the action of drugs
+and their toxicity in vitro (7, 8). In vitro cell culture systems have
+numerous advantages over animal models, because they are easier
+to control as well as to handle, and biochemical changes are easier
+to interpret (8, 9).
+Different analytical methods such as NMR spectroscopy or MS in
+combination with separation by HPLC or GC are the key
+technologies applied to metabolomics (7, 10, 11). An NMR-based
+metabolic profiling method has previously been employed to screen
+the acute effects of six chemicals in the human renal proximal
+tubule epithelial cell line, RPTEC/TERT1 (12). The study showed
+the usefulness of metabolomics (MTX)3 for discrimination of toxins.
+A more complex experimental design was utilized for toxicity
+profiling of long term cyclosporine A exposures (2, 13). Cells were
+cultured on microporous filters and treated with two concentrations
+of compounds for 14 days. At set intervals (1, 3, and 14 days),
+transcriptomics (TCX), proteomics (PTX), and MTX were performed.
+Cellular metabolome analysis was conducted via direct infusion
+electrospray ionization mass spectrometry lacking the potential of
+compound separation and identification via HPLC or GC, which
+makes qualitative and quantitative analysis quite difficult.
+A comprehensive quantitative metabolic profiling therefore requires
+the combination of HPLC with high resolution mass spectrometry
+(HRMS) (14). The high information content of data generated by
+HRMS implies a strong need for automatable computational
+processing of the otherwise unmanageable amount of data (15). In
+addition to vendor software packages, numerous open source
+software tools are available for data processing like XCMS (16),
+MetAlign (17), MzMine (18), PeakML/mzMatch (19), and OpenMS/
+TOPP (20–22).
+Here we present a fully automated data analysis pipeline based on
+OpenMS, a comprehensive open source software library for the
+analysis of MS data, KNIME (23), an open source workflow engine
+that enables visual and interactive data analysis, and R, a
+programming platform for statistical analysis (24). Metabolite
+identification is based on matching the accurate masses against the
+theoretical mass of databases such as Human Metabolome Database
+(HMDB) or METLIN, followed by confirmation of hits by
+fragmentation using MS/MS and retention time matching using a
+reference standard (26).
+We performed a large scale profiling study of the long term
+nephrotoxicity of chloroacetaldehyde. Chloroacetaldehyde is of
+particular interest as a metabolite of ifosfamide, which is a
+pharmaceutical used for the treatment of cancer (25). Finally,
+proteomics and transcriptomics data were also integrated to
+increase the depth of understanding of the metabolomic alterations
+brought about by chloroacetaldehyde exposure.
+Experimental Procedures
+Chemicals and Materials
+Acetonitrile for LC-MS was purchased from VWR (Radnor, PA).
+Reagent grade formic acid, methanol, and chloroacetaldehyde were
+obtained from Sigma-Aldrich. High purity water was produced
+using a Milli-Q Integral 3 purification system from Merck Millipore.
+Standard substances used for identification were obtained from
+Merck (amino acids) or from Sigma-Aldrich (all other compounds).
+Cell Culture
+The human renal proximal tubule cell line RPTEC/TERT1 was
+obtained from Evercyte GmbH (Vienna, Austria). The RPTEC/
+TERT1 cells (26) were cultured on 1-μm PET 24-mm tissue culture
+inserts for MTX and PTX, and on 0.2-μm aluminum oxide 25 mm
+inserts for TCX and differentiated in a serum-free hormonally
+defined medium for a minimum of 10 days before exposure
+commencement (2). During this time, the cells cover the surface of
+the filter, become contact-inhibited and quiescent, and develop a
+stable barrier function of approximately 150 Ohm·cm2 (27).
+Because no further proliferation takes place after differentiation,
+each well has the same number of cells (28). The mature
+monolayers were exposed to either a low (10 μmol·liter−1) or high
+(35 μmol·liter−1) concentration of chloroacetaldehyde or control
+medium, on both the apical and the basolateral sides. The cells
+were treated every 24 h for 14 days and lysed on days 1, 3, and 14
+in ice-cold methanol f

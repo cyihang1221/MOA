@@ -1,0 +1,176 @@
+
+Methodology, Writing – review & editing, Supervision
+Find articles by Krzysztof Schwierz
+2
+Editor: Arturo Sanchez-Azofeifa
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC13306414  PMID: 42356849
+Abstract
+Integration of LiDAR and thermal sensing has become increasingly
+important in robotics, infrastructure diagnostics, environmental
+monitoring, and autonomous perception systems. LiDAR sensors
+provide accurate three-dimensional geometric information but do
+not directly capture thermal properties of observed objects, whereas
+thermal cameras provide temperature distributions without explicit
+spatial structure. Fusion of both sensing modalities enables
+thermally augmented 3D scene reconstruction and spatial
+localization of temperature anomalies. This paper presents a
+practical LiDAR–thermal fusion framework for three-dimensional
+localization of heat sources using an Ouster OS1 LiDAR sensor and a
+FLIR A70 thermal camera. The proposed framework includes
+intrinsic thermal-camera calibration, extrinsic LiDAR–thermal
+calibration, multimodal data synchronization, projection of LiDAR
+points onto the thermal image plane, and assignment of
+temperature values to spatial points. Additionally, a dedicated
+thermally distinguishable calibration target is proposed to enable
+reliable multimodal feature extraction under low-contrast LWIR
+imaging conditions. The developed framework was experimentally
+validated using real radiometric thermal data and LiDAR point
+clouds acquired under laboratory conditions. Quantitative
+evaluation demonstrated reprojection errors below 1 pixel and a
+mean hottest-point localisation error of approximately 4.1 cm at a
+distance of 12.3 m. The results confirm that accurate spatial
+localisation of thermal anomalies can be achieved using a
+geometry-based multimodal fusion approach without relying on
+computationally expensive learning-based methods. The proposed
+framework emphasises practical deployment, deterministic
+calibration, and applicability in scenarios where limited training
+data or constrained computational resources make learning-based
+approaches difficult to apply. The proposed system may be applied
+to building energy diagnostics, industrial inspection, technical
+infrastructure monitoring, and robotic perception systems that
+require reliable spatial localisation of heat sources under real
+measurement conditions.
+Keywords: LiDAR, thermal imaging, multisensor calibration, 3D
+thermal mapping, sensor fusion, temperature localization, thermal
+anomaly detection, point cloud
+1. Introduction
+Environmental perception systems based on spatial data are
+currently a key research area in robotics, autonomous systems, and
+the analysis of technical infrastructure. A three-dimensional
+representation of a scene enables accurate reconstruction of the
+geometric structure of the environment, which is applied, among
+others, in mobile robotics, decision support systems, intelligent
+transportation systems, and building energy diagnostics [1,2,3]. In
+many applications, it is important not only to reconstruct the
+environment’s geometry but also to obtain additional information
+about the physical properties of observed objects.
+One of the most commonly used sensors for spatial data acquisition
+is a LiDAR (Light Detection and Ranging) scanner, which enables
+the generation of accurate three-dimensional point clouds
+representing the structure of the scene [4,5]. LiDAR technology
+enables precise distance measurements independent of lighting
+conditions and provides high spatial resolution of the acquired data,
+making it particularly useful for applications requiring accurate
+reconstruction of environmental geometry [6]. However, LiDAR
+data provide only geometric information and limited radiometric
+information (e.g., return intensity), making it difficult to identify
+the physical properties of objects, such as surface temperature.
+A complementary source of information about physical properties of
+objects are thermal cameras, which enable measurement of
+temperature distribution on the surfaces of observed elements of the
+scene. Thermography is used, among other applications, for
+building energy diagnostics, industrial infrastructure monitoring,
+and the detection of thermal anomalies [7,8]. Thermal images
+provide information not available in the visible spectrum; however,
+the resulting data are two-dimensional and do not directly capture
+the spatial structure of the scene.
+Due to the limitations of individual sensors, increasing attention has
+been given to multi-sensor systems and data fusion methods,
+enabling integration of information obtained from different
+measurement sources [9,10]. Integration of LiDAR and image data
+allows obtaining a more complete representation of the
+environment, combining accurate scene geometry with additional
+physical information [11]. Of particular importance is the
+integration of LiDAR data with thermal imagery, which provides an
+extended spatial representation enriched with temperature
+information [12,13].
+Despite growing interest in multi-sensor data fusion, integrating
+LiDAR and thermal data poses several technical challenges. The
+most important problems include sensor-to-sensor calibration, data
+synchronization, and correct mapping of thermal information into
+three-dimensional space [14,15]. Additional difficulties arise from
+differences in spatial resolution, fields of view, and characteristics
+of the generated data. In particular, thermal cameras often have
+lower spatial resolution and limited image contrast, which
+complicates the calibration process and accurate data alignment
+[13].
+Various approaches to multi-sensor data integration have been
+proposed in the literature, including both geometric methods and
+machine-learning-based solutions [16,17]. In many cases, data
+integration is performed by transforming LiDAR point clouds into
+the camera reference frame and projecting spatial points onto the
+image plane [18]. Despite progress in this field, there is still a
+limited number of works focusing on the practical implementation
+of complete measurement systems enabling integration of thermal
+and spatial data in real measurement conditions.
+In contrast to classical LiDAR–RGB systems, integration of LiDAR
+and thermal cameras introduces additional challenges related to
+low image contrast, limited thermal texture, lower spatial
+resolution, and difficulties in extracting reliable multimodal
+correspondences. Although numerous calibration approaches have
+been proposed for RGB cameras, relatively few studies focus on
+practical LiDAR–thermal fusion systems operating on real
+radiometric thermal data under real measurement conditions.
+Furthermore, many existing approaches rely on complex
+optimisation frameworks or deep-learning-based models requiring
+large training datasets and high computational resources.
+Therefore, there remains a need for practical, interpretable, and
+experimentally validated LiDAR–thermal fusion frameworks capable
+of accurate spatial localisation of thermal anomalies using real
+measurement data.
+This paper presents a method for fusing LiDAR and thermal data for
+three-dimensional environmental analysis. The proposed approach
+includes the development of a complete measurement system, the
+implementation of a multi-sensor calibration procedure to estimate
+the transformation between sensor coordinate systems, and an
+algorithm for mapping thermal information onto LiDAR point
+clouds and determining the spatial coordinates of the hottest point.
+The effectiveness of the proposed method has been experimentally
+validated using real measurement data.
+The main contributions of this work are as follows:
+•  Development of a practical LiDAR–thermal fusion framework
+dedicated to long-range spatial localization of thermal
+anomalies using radiometric thermal data and 3D
+point clouds;
+•  Proposal of a thermally distinguishable calibration target
+enabling reliable correspondence extraction in both LiDAR
+and LWIR thermal modalities under low-visibility conditions;
+•  Implementation of a complete end-to-end calibration and
+thermal mapping pipeline using real synchronized
+measurements from an Ouster OS1 LiDAR and a FLIR A70
+thermal camera;
+•  Experimental validation of the proposed system under real
+measurement conditions, achieving sub-pixel reprojection
+accuracy and mean hottest-point localization error of 4.1 cm
+at a distance of approximately 12.3 m;
+•  Analysis of the influence of calibration point number and
+spatial distribution on thermal mapping accuracy and
+localization stability.
+Unlike many existing LiDAR–camera calibration approaches focused
+primarily on RGB imaging or targetless optimisation methods, the
+proposed framework is specifically designed for practical fusion of
+LiDAR data with radiometric thermal imagery in low-feature
+thermal environments. The proposed approach prioritises
+interpretability, practical deployment, and reliable thermal anomaly
+localisation using real measurement data instead of simulation-
+based evaluation.
+Unlike existing studies focusing primarily on calibration accuracy or
+multimodal perception, the proposed framework addresses the
+complete workflow from thermal-LiDAR calibration to three-
+dimensional localization of thermal anomalies using real
+radiometric thermal data. Particular emphasis is placed on practical
+deployment and direct estimation of the spatial coordinates of the
+hottest point.
+2. Related Work
+Integration of data from multiple sensors is an important research
+direction in environmental perception systems, particularly for
+improving scene reconstruction accuracy and increasing the amount
+of information obtained from a single measurement. In recent years,
+increasing interest has been observed in multi-sensor calibration
+methods and data fusion techniques combining LiDAR with various
+types of cameras, including RGB, multispectral, and thermal
+cameras [14,19]. Particular attention has been given to integrating
+spatial

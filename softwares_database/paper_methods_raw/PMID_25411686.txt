@@ -1,0 +1,94 @@
+
+Methods
+The algorithms described below can be run using the msConvert
+tool as part of the freely distributed ProteoWizard package (binaries
+and source code are available at
+www.proteowizard.sourceforge.net). ProteoWizard supports
+commonly used vendor raw files and many open formats (e.g.,
+mzML, mzXML, mz5) and is executed as native C++ code in order
+to maximize runtime performance. As such, this software package
+provides an ideal programming environment for running efficient
+cross-platform analyses. ProteoWizard also provides seamless access
+to many vendor peak-picking libraries, enabling users to compare
+results across different algorithms.
+CantWaiT: A Wavelet Peak-Picker
+The key signal processing algorithm that we incorporated into
+ProteoWizard was a spectral peak-picker. In order to maximize
+processing quality and cross-platform performance, we selected the
+continuous wavelet transformation (CWT) method for peak
+selection. The CWT method is noted for its performance in noisy,
+low-resolution spectra while also performing well on smooth, high-
+resolution data.9,20,21 For the parent wavelet, we chose the Ricker
+(“Mexican Hat”) wavelet for its unimodal and symmetric properties,
+providing a generic means of detecting peptides regardless of the
+strength of their isotopic distributions.
+CantWaiT is based on the MassSpecWavelet algorithm introduced
+by Du et al.,9 but we have built upon their implementation to
+reduce analysis runtime and to better handle spectra of varying
+resolution. Previously, the method’s biggest disadvantage was slow
+runtime, with the original developers reporting a processing time of
+∼30 s for a single spectrum, which renders it impractical for use
+with large clinical and research data sets. While this runtime was
+reported in 2006 when processor speeds were slower than they are
+today, the authors themselves acknowledged that code
+enhancements for improving the algorithm’s efficiency were
+needed. We reduced runtime by limiting the CWT computation to
+10 carefully chosen wavelet scales. A challenge for choosing the
+appropriate scales is the tendency for peaks and m/z spacing to
+widen with increasing m/z; consequently, a good set of scales at low
+m/z is seldom optimal at high m/z values. CantWaiT addresses this
+problem by applying a novel, adaptive method in which the wavelet
+scales that are sampled depend on m/z. Each spectrum is quickly
+scanned to determine the appropriate scales to sample as a function
+of m/z, by computing the average m/z spacing in a 10-point sliding
+window for each m/z point. The wavelet transformation is then
+performed using wavelet scales that vary linearly between one and
+seven times the m/z spacing computed during preprocessing. CWT
+computations are performed with wavelets centered on each m/z
+point and midpoint in the spectrum. In addition to being
+computationally efficient, CantWaiT also handles irregularly spaced
+data or spectra with zero-intensity points removed. Thus, no
+additional signal preprocessing such as smoothing or resampling is
+needed prior to peak-picking.
+Unlike MassSpecWavelet, CantWaiT does not perform ridge line
+identification in wavelet space for locating peaks, which further
+improves CantWaiT’s computational efficiency. Ridge line
+identification is one of the more computationally intense steps of
+MassSpecWavelet in which local maxima are connected along both
+the m/z and wavelet scale axes. CantWaiT avoids this step by
+simply scanning the correlation matrix a single time, locating local
+maxima that are separated by at least 0.1 m/z. While this is a less
+rigorous procedure for filtering true peaks from noise, we found
+that it provided consistent results with the ridge line identification
+procedure at a fraction of the computational cost. The local maxima
+identified by CantWaiT are next filtered via SNR thresholding,
+where the signal is defined as the maximum wavelet correlation
+value in the ridge line. To calculate the noise, CantWaiT separates a
+spectrum into bins composed of 300 m/z points each. The noise
+level for each point in a bin is then set to the 95-percentage
+quantile of correlation at the smallest scale within that bin. In the
+final peak list, CantWaiT records the m/z and intensity values
+corresponding to the maximum intensity value within each peak.
+Pseudocode for CantWaiT is including in the Supporting
+Information, Algorithm S1.
+Turbocharger: A Precursor Charge Determination
+Algorithm
+In MS/MS experiments, mass analyzers catalog intense peaks in a
+survey scan and then isolate these ions for fragmentation in tandem
+MS. Ions are generally isolated for fragmentation within a small
+window (e.g., ±1.25 m/z) centered at a target m/z value. Analyzing
+the isotopic content of this region is the most conventional means of
+determining a precursor ion charged state. This process is not
+always straightforward. For example, multiple ions with
+overlapping peaks may be present (i.e., chimeric spectra22), or
+strong evidence for isotopic features may be lacking. A robust
+algorithm must cope with these situations while remaining
+applicable among many different instruments. Turbocharger
+achieves this by using three criteria (m/z spacing, relative intensity
+distribution, and total intensity rank) to score how well groups of
+peaks conform to expected isotopic behavior. When the software is
+first initiated, it performs simulations to determine how to convert
+scores on the three criteria described below to p-values for
+evaluating isotopic packets.
+Turbocharger first uses CantWaiT to perform peak-picking within a
+window surrounding the instrument-reported target isolation m/z.

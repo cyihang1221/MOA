@@ -1,0 +1,215 @@
+
+Methodology, Validation, Investigation
+Find articles by Boao Wu
+5, Pintong Chen
+Pintong Chen
+6Pen-Tung Sah Institute of Micro-Nano Science and Technology,
+Xiamen University, Xiamen 361005, China;
+33520251153350@stu.xmu.edu.cn (P.C.); guojh@xmu.edu.cn (J.G.)
+Validation
+Find articles by Pintong Chen
+6, Zhajiacuo Zhou
+Zhajiacuo Zhou
+5School of Aerospace Engineering, Xiamen University, Xiamen
+361102, China; 34520251151642@stu.xmu.edu.cn (B.W.);
+34520251151621@stu.xmu.edu.cn (Z.Z.);
+34520251151600@stu.xmu.edu.cn (Y.L.);
+wangjingyao1@xmu.edu.cn (J.W.)
+Data curation
+Find articles by Zhajiacuo Zhou
+5, Yating Liu
+Yating Liu
+5School of Aerospace Engineering, Xiamen University, Xiamen
+361102, China; 34520251151642@stu.xmu.edu.cn (B.W.);
+34520251151621@stu.xmu.edu.cn (Z.Z.);
+34520251151600@stu.xmu.edu.cn (Y.L.);
+wangjingyao1@xmu.edu.cn (J.W.)
+Data curation
+Find articles by Yating Liu
+5, Jingyao Wang
+Jingyao Wang
+5School of Aerospace Engineering, Xiamen University, Xiamen
+361102, China; 34520251151642@stu.xmu.edu.cn (B.W.);
+34520251151621@stu.xmu.edu.cn (Z.Z.);
+34520251151600@stu.xmu.edu.cn (Y.L.);
+wangjingyao1@xmu.edu.cn (J.W.)
+Supervision
+Find articles by Jingyao Wang
+5, Jinghua Guo
+Jinghua Guo
+6Pen-Tung Sah Institute of Micro-Nano Science and Technology,
+Xiamen University, Xiamen 361005, China;
+33520251153350@stu.xmu.edu.cn (P.C.); guojh@xmu.edu.cn (J.G.)
+Resources, Writing – review & editing, Supervision
+Find articles by Jinghua Guo
+6, Lei He
+Lei He
+7School of Vehicle and Mobility, Tsinghua University, Beijing
+100084, China
+Conceptualization, Resources, Writing – review & editing, Project
+administration, Funding acquisition
+Find articles by Lei He
+7,*
+Editors: Cosimo Distante, Roberto Vezzani
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC13166031  PMID: 42122521
+Abstract
+Camera-based 3D occupancy prediction commonly relies on bird’s-
+eye-view (BEV) representations, yet two limitations remain:
+optimization instability when inserting new modules into pre-
+trained BEV encoders, and height-agnostic BEV-to-voxel lifting that
+fails to preserve elevation-aware scene structure. We propose GSH-
+Occ (Gradient-Shielded and Height-Aware BEV Occupancy
+Network), a framework that tackles both issues through two
+complementary mechanisms. Gradient-Shielded Residual Dual
+Attention (GS-RDA) introduces a zero-initialized residual gate that
+preserves the identity mapping at initialization, allowing new
+attention modules to be grafted onto pre-trained encoders without
+disturbing learned features. Height-Aware Adaptive Lift (HAL)
+replaces naive channel replication with per-voxel adaptive fusion of
+BEV features and learnable height embeddings, followed by 3D
+convolutional refinement to capture vertical structure. On the
+Occ3D-nuScenes validation benchmark, GSH-Occ achieves 46.92
+mIoU, outperforming FlashOcc by +3.40 mIoU. Ablation studies
+confirm that GS-RDA and HAL target distinct failure modes and
+yield complementary improvements.
+Keywords: 3D occupancy prediction, BEV perception, residual
+learning, dual attention, height-aware voxelization
+1. Introduction
+Bird’s-eye-view (BEV) representations have become the dominant
+paradigm for camera-based autonomous driving perception owing
+to their compact spatial layout and direct compatibility with
+downstream planning and control [1,2,3]. A common pipeline first
+transforms multi-view image features into a BEV feature map (e.g.,
+via explicit depth discretization or learned view transformers
+[2,4,5]), then applies a task-specific head for detection,
+segmentation, or dense voxel prediction. For 3D occupancy
+prediction, casting the problem as a BEV task and then expanding
+vertically has proved to be a practical balance between accuracy
+and runtime cost [6,7]. In contrast, methods that operate directly in
+3D volumes emphasize geometric fidelity but incur higher
+computational costs [8,9,10,11,12].
+Despite these successes, two practical limitations persist. First,
+many BEV encoders recover height through simple channel-axis
+expansion, implicitly assuming uniform semantic distributions
+across elevation layers; this ignores layer-specific cues, such as
+ground surface, moving objects, and free space, and weakens
+vertical fidelity. Second, LSS-style view-transformer BEV features
+degrade at far ranges and in sparsely observed regions, yet most
+pipelines apply no recalibration before voxelization to compensate
+for these errors [5,7].
+A further, orthogonal challenge arises during development and
+adaptation of large pre-trained BEV backbones: safely inserting new
+modules into trained networks. Randomly initialized attention
+blocks grafted onto a converged BEV encoder introduce high-
+variance gradients that disrupt the learned feature distribution,
+leading to loss spikes or sustained instability early in training.
+Existing workarounds—staged training, aggressive learning-rate
+warm-up, or partial freezing—are ad hoc and do not eliminate the
+underlying problem [13,14]. Techniques from adjacent domains
+have been proposed to address related problems: zero-initialized
+residual branches (ReZero) [15] improve gradient flow in deep
+networks, and adapter-style modules [16,17] enable parameter-
+efficient adaptation; neither, however, target the safe insertion of
+new components into feature-sensitive BEV encoders.
+To address both the geometric shortfall of naive height expansion
+and the stable-integration problem, we propose GSH-Occ (Gradient-
+Shielded and Height-Aware BEV Occupancy Network), a structured
+approach to inserting modules into BEV occupancy pipelines. GSH-
+Occ rests on two complementary components: (1) Gradient-
+Shielded Residual Dual Attention (GS-RDA), a dual-attention
+recalibration operator (channel and spatial) applied on the BEV
+plane and gated by a learnable scalar α initialized to zero. At
+initialization the block is an exact identity mapping; during
+training, α is optimized to smoothly activate the attention pathway,
+protecting the pre-trained feature distribution from initialization-
+induced disruption. (2) Height-Aware Adaptive Lift (HAL), a
+voxelization module that substitutes simple channel replication with
+per-voxel fusion of BEV features and learnable height embeddings; a
+subsequent 3D convolutional stage then enforces vertical continuity
+and fills in elevation priors where image evidence is sparse.
+Experiments on the nuScenes-Occ benchmark show that GSH-Occ
+achieves an improvement of +3.40 mIoU over a strong FlashOcc-
+based baseline.
+Figure 1 summarizes the accuracy–efficiency trade-off of
+representative camera-based occupancy methods on nuScenes-Occ.
+GSH-Occ achieves the highest mIoU (46.92%) among the compared
+methods while maintaining a frame rate of 1.56 FPS, showing that
+GS-RDA and HAL add little computational cost relative to the
+accuracy gains they bring.
+Figure 1.
+[image]
+Open in a new tab
+Accuracy–efficiency trade-off on the Occ3D-nuScenes validation set.
+The vertical axis reports mIoU (%) and the horizontal axis reports
+inference throughput (FPS). GSH-Occ achieves 46.92 mIoU at 1.56
+FPS, the highest accuracy among all compared methods. COTR [18]
+attains 46.2 mIoU at a lower throughput of 0.70 FPS; FlashOcc [6]
+reaches 43.52 mIoU at 1.67 FPS. GSH-Occ gains +3.40 mIoU over
+FlashOcc at a cost of only −0.11 FPS, supporting the efficiency of
+the proposed components.
+Our contributions are threefold:
+1.
+We identify the problem of safely inserting randomly
+initialized modules into pre-trained BEV encoders,
+characterize the problem’s gradient-level behavior through
+Jacobian analysis, and propose a principled solution (Section
+2.3).
+2.
+We propose GSH-Occ, instantiated through GS-RDA and HAL:
+GS-RDA employs a zero-initialized gate to ensure identity-
+preserving initialization and gradually activates dual-
+attention recalibration; HAL delivers height-aware
+voxelization through learnable elevation embeddings and per-
+voxel adaptive fusion (Section 2.4 and Section 2.5).
+3.
+We empirically validate GSH-Occ on nuScenes-Occ, where the
+full model achieves 46.92 mIoU (+3.40 over baseline) with
+consistent improvements across semantic categories (Section
+3).
+2. Method
+2.1. Problem Formulation
+Let I1:T={{Ii,t}i=1Nc}t=1T denote Nc calibrated surround-view
+images across T timesteps, with Ii,t∈R3×HI×WI. 3D occupancy
+prediction requires learning a mapping
+Φ:I1:T⟶O∈{0,…,K−1}X×Y×Z, (1)
+where Oxyz is the semantic label of voxel (x,y,z) and K=18 on
+Occ3D-nuScenes. The physical grid covers
+[−40,40]×[−40,40]×[−1,5.4] m3 discretized into a
+200×200×16 lattice.
+We decompose Φ into four sequential operators:
+Φ=H∘L∘R∘E, (2)
+where:
+•  E:I1:T→FBEV∈RC×H×W is the image encoder with LSS-
+style view transformation and temporal stereo fusion
+(C=256, H=W=200);
+•  R:RC×H×W→RC×H×W is the GS-RDA recalibration
+operator (Section 2.4);
+•  L:RC×H×W→RC′×Z×H×W is the HAL voxelization
+operator (C′=128, Z=16; Section 2.5);
+•  H:RC′×Z×H×W→RK×X×Y×Z is the occupancy
+classification head.
+R and L are the two novel components; E and H are adopted from
+FlashOcc unchanged [6].
+2.2. Overall Framework
+Figure 2 shows the architecture of GSH-Occ. Multi-view images are
+first processed by a shared backbone; the resulting multi-scale
+features are lifted into a BEV representation via view
+transformation and temporal stereo fusion. GS-RDA then
+recalibrates the BEV features along the channel and spatial
+dimensions through a zero-initialized gate, keeping training stable.
+HAL converts the refined BEV map into a 3D voxel volume by
+fusing BEV evidence with learnable height embeddings, improving
+vertical modeling. Finally, an occupancy head produces per-voxel
+semantic predictions.
+Figure 2.
+[image]
+Open in a new tab
+Overview of the proposed framework. (i) Image encoding and
+view transformation: A shared backbone encodes the surround-
+view images; an LSS-based stereo view transformer with depth
+supervision lifts the features into BEV space. (ii) Temporal fusion
+and BEV encoding: Multi-frame BEV features are ego-motion
+aligned

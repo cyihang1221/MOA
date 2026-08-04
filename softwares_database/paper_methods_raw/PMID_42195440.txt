@@ -1,0 +1,176 @@
+
+Methodology, Writing – review & editing, Visualization
+Find articles by Jarred Fastier-Wooller
+1,*, Shun Muramatsu
+Shun Muramatsu
+1Department of Precision Engineering, Graduate School of
+Engineering, University of Tokyo, Tokyo 113-8656, Japan
+Methodology, Investigation, Writing – review & editing
+Find articles by Shun Muramatsu
+1, Michitaka Yamamoto
+Michitaka Yamamoto
+1Department of Precision Engineering, Graduate School of
+Engineering, University of Tokyo, Tokyo 113-8656, Japan
+Writing – review & editing, Visualization, Project administration
+Find articles by Michitaka Yamamoto
+1, Toshihiro Itoh
+Toshihiro Itoh
+1Department of Precision Engineering, Graduate School of
+Engineering, University of Tokyo, Tokyo 113-8656, Japan
+Supervision, Project administration, Funding acquisition
+Find articles by Toshihiro Itoh
+1
+Editor: Shilun Feng1
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC13209532  PMID: 42195440
+Abstract
+The Timed Up and Go (TUG) test is a clinical gold standard for
+assessing elderly mobility, yet its automated deployment in home-
+monitoring and resource-limited areas is hindered by high hardware
+costs and expert calibration requirements. This study introduces a
+Physics–Data Hybrid framework specifically designed for
+uncalibrated consumer-grade CMOS cameras, enabling a “plug-and-
+play” solution for early Parkinson’s disease (PD) risk screening. The
+proposed pipeline integrates learning-based pose perception with a
+self-evolving physics model to recover absolute metric-scale motion
+without manual checkerboard calibration. A noise-adaptive fusion
+strategy is implemented to reconcile 2D pixel dynamics with 3D
+kinematic consistency, overcoming the inherent scale ambiguity of
+monocular vision. Crucially, this framework enables the extraction
+of high-dimensional spatiotemporal parameters—such as stride
+length coefficient of variation and mean gait velocity—which
+provide a finer diagnostic resolution for capturing subtle motor
+fluctuations than conventional timing-only systems. Results from
+our pilot study with a cohort of 10 subjects demonstrate that these
+extracted metric features serve as decisive markers for risk staging
+simulated by dual-task-induced cognitive-motor-interference,
+achieving 98% screening accuracy and an overall classification
+accuracy of 87.32%. This framework provides a robust, low-cost
+tool for ubiquitous telehealth, potentially supporting early PD risk
+assessment in underserved populations.
+Keywords: Timed Up and Go (TUG), gait analysis, calibration-free,
+monocular vision, phase segmentation, cognitive risk screening,
+home-based monitoring
+1. Introduction
+The rapid acceleration of global aging has positioned
+neurodegenerative diseases, particularly mild cognitive impairment
+(MCI) and dementia, as critical public health challenges [1]. Early
+risk screening is paramount for effective intervention, yet clinical
+diagnosis often lags behind disease onset. Growing evidence
+suggests that gait is a “window” to cognitive function, as walking
+requires significant executive resources. Consequently, motor
+dysfunction often precedes cognitive decline, making dual-task gait
+performance a robust predictor of dementia risk [2,3]. Among
+commonly adopted clinical assessments, the Timed Up and Go
+(TUG) test provides a concise yet comprehensive evaluation of
+functional mobility by integrating sit-to-stand, walking, turning,
+and stand-to-sit phases [4].
+While the TUG test provides a critical diagnostic window for early
+PD screening, its effective implementation in home-monitoring or
+resource-limited remote areas is often hindered by the high cost and
+operational complexity of professional sensing systems. This creates
+a significant ‘clinical barrier’ for elderly populations in underserved
+regions, where early-stage gait abnormalities often go unnoticed
+due to the lack of accessible screening tools. Traditional manual
+stopwatch timing [5] is subjective and lacks kinematic detail. While
+instrumented approaches using wearable sensors [6] or optical
+motion capture systems (e.g., Vicon) [7] offer high precision, they
+face a critical trade-off between accuracy and usability. Wearables
+are often viewed as intrusive by the elderly, leading to poor
+compliance, whereas motion capture systems are prohibitively
+expensive and confined to laboratory settings [8]. Meanwhile,
+advances in microfabrication have enabled miniaturized, low-power
+MEMS inertial/pressure sensors that underpin many wearable gait-
+analysis systems, reducing device size and cost [9,10]. Nevertheless,
+these micromachine-enabled wearables still require proper
+attachment and calibration to control bias and drift, and thus their
+real-world deployability in unsupervised home environments
+remains constrained by user adherence and setup variability [11].
+Computer vision-based markerless systems (e.g., Kinect, OpenPose)
+have emerged as promising alternatives [12]. However, a key
+practical bottleneck in this field lies in the deployment strategy:
+most existing high-precision systems rely on rigorous camera
+calibration (e.g., checkerboard patterns) to solve scale ambiguity
+[13]. While this ensures accuracy, it renders the system impractical
+for non-expert users in home environments. Conversely,
+uncalibrated methods often suffer from pixel jitter and depth
+ambiguity, leading to unreliable data [14]. A direct alternative to
+monocular RGB is the use of 3D sensing hardware such as
+structured-light or time-of-flight RGB-D cameras, which provide
+metric depth without explicit checkerboard calibration. However,
+these systems introduce additional opto-electronic complexity and
+remain susceptible to distance-dependent depth noise and temporal
+fluctuations under real-world conditions, including surface
+reflectance, ambient illumination, and multipath interference,
+potentially reintroducing depth jitter into derived gait parameters
+[14,15,16,17]. Technically compact 3D ranging modules leveraging
+micro-optics and MEMS components, such as beam-steering
+micromirrors in solid-state LiDAR, are becoming more feasible,
+underscoring the ongoing trade-off between hardware complexity
+and deployability in home monitoring scenarios [18]. Furthermore,
+regarding diagnostic algorithms, there is a divergence between
+“black-box” deep learning models, which require massive datasets,
+and interpretable biomechanical models. For clinical staging of
+cognitive load, specifically distinguishing between mild and high
+loads, purely data-driven methods often struggle with individual
+heterogeneity and lack physiological interpretability [19].
+Therefore, a practical home-deployable TUG system must
+simultaneously (i) avoid calibration, (ii) output metric-scale
+kinematics with low jitter, and (iii) provide interpretable staging
+under limited data.
+Existing monocular vision studies often focus on temporal
+segmentation (timing) but struggle with scale ambiguity, which
+filters out high-dimensional spatiotemporal metrics, which serves as
+critical biomarkers such as stride length variability. To address all
+these challenges, this study leverage widely accessible consumer-
+grade sensors (embedded CMOS optics) to develop a plug-and-play,
+low-cost hybrid framework for automated non-contact TUG analysis
+and cognitive screening. We propose a methodology that synergizes
+data-driven deep learning perception with physics-based optical
+modeling to achieve automatic motion segmentation, gait
+parameter extraction, and cognitive load screening.
+Specifically, intelligent algorithms are first employed to extract 2D
+keypoints and 3D skeletal representations from video streams.
+Subsequently, to circumvent the reliance on camera intrinsic
+parameters which are often unknown and variable across consumer
+devices—we leverage accessible external geometric constraints (i.e.,
+camera and subject height) based on pinhole imaging principles.
+This approach enables precise distance estimation using a single
+uncalibrated monocular camera. Furthermore, by introducing a
+multi-modal fusion technique that integrates the 2D pixel-derived
+distance with adaptive 3D skeletal pose data, we effectively
+suppress pixel jitter inherent in sensor noise and pose estimation
+uncertainty. Finally, a hierarchical classification system driven by
+Lasso regularization is then established to screen and stage
+cognitive impairment. It presents a pilot study to validate the
+technical feasibility and metrological accuracy of this proposed
+uncalibrated pipeline.
+The main contributions of this paper are summarized as follows:
+1. A physics–data hybrid framework: A unified pipeline
+integrating pose estimation with geometric constraints for
+fully automated TUG-phase segmentation and parameter
+extraction from uncalibrated video.
+2. Uncalibrated metric distance estimation: A self-calibration
+method that substitutes unknown intrinsics with practical
+geometric priors for consumer-grade deployment.
+3. Robust Jitter Suppression: A noise-adaptive fusion strategy
+that stabilizes metric trajectories by reconciling 2D pixel
+dynamics with 3D kinematic consistency.
+4. Explainable Diagnosis as a Pilot Study: An L1-regularized
+hierarchical model that provides interpretable feature-level
+evidence for staging, supporting clinically meaningful
+screening beyond a single aggregate metric and validating the
+metrological accuracy.
+2. Framework and Methods
+2.1. Framework Architecture
+The proposed framework addresses the challenge of quantifying the
+TUG test using a non-calibrated monocular camera. As illustrated in
+Figure 1, the processing pipeline consists of three cascaded
+modules: (1) Perception module, which extracts key points and
+estimates pose from raw video sequence, self-calibrate and recovers
+the metric scale via an optimization-based solver, and integrates
+geometric constraints with deep learning-based depth priors to
+mitigate perspective-induced jitter; (2) Gait Analysis module:
+automated Phase Segmentation, and Parameter Extraction, whi

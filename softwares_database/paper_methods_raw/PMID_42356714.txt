@@ -1,0 +1,182 @@
+
+Methodology, Conceptualization, Software, Validation, Formal
+analysis, Investigation, Resources, Data curation, Writing – original
+draft, Writing – review & editing, Funding acquisition, Project
+administration, Supervision, Visualization
+Find articles by Jiawei Shen
+1,†, Pengxiang Dong
+Pengxiang Dong
+1School of Electronic Science and Engineering, Nanjing University,
+Nanjing 210023, China; 602023230092@smail.nju.edu.cn (J.S.);
+652024230026@smail.nju.edu.cn (P.D.);
+502025230090@smail.nju.edu.cn (B.H.)
+Conceptualization
+Find articles by Pengxiang Dong
+1,†, Beichen Hu
+Beichen Hu
+1School of Electronic Science and Engineering, Nanjing University,
+Nanjing 210023, China; 602023230092@smail.nju.edu.cn (J.S.);
+652024230026@smail.nju.edu.cn (P.D.);
+502025230090@smail.nju.edu.cn (B.H.)
+Conceptualization
+Find articles by Beichen Hu
+1, Yuanqing Wang
+Yuanqing Wang
+1School of Electronic Science and Engineering, Nanjing University,
+Nanjing 210023, China; 602023230092@smail.nju.edu.cn (J.S.);
+652024230026@smail.nju.edu.cn (P.D.);
+502025230090@smail.nju.edu.cn (B.H.)
+Conceptualization
+Find articles by Yuanqing Wang
+1,*
+Editor: Cristiana Corsi1
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC13306384  PMID: 42356714
+Abstract
+Head-mounted eye-tracking systems play a critical role in virtual
+reality, human–computer interaction, and clinical applications, yet
+achieving both high angular accuracy and precise 3D gaze position
+estimation with low-cost hardware remains challenging. This paper
+proposes a lightweight, training-free geometric 3D gaze tracking
+framework for binocular 3D gaze tracking using consumer-grade
+hardware, which leverages stereo geometric triangulation and a
+simplified physiological eye model to achieve robust 3D gaze
+estimation, requiring only standard infrared cameras and dichroic
+mirrors without additional specialized hardware. The method was
+evaluated in controlled indoor conditions with 30 participants,
+where it achieved an angular error ranging from 1.1° to 2.82° and a
+3D gaze position error below 13.24 mm. Compared to two state-of-
+the-art academic non-deep-learning methods, the proposed
+framework delivers competitive angular accuracy while
+significantly reducing 3D position error, outperforming the
+baselines by 34% to 56% in depth estimation precision. These
+results demonstrates that the proposed geometric framework is a
+practical and effective solution for high-precision 3D gaze tracking
+on low-cost hardware, suitable for both research and consumer
+applications.
+Keywords: 3D gaze tracking, geometric modeling, lightweight
+framework, eye tracking, infrared image processing
+1. Introduction
+Eye-tracking technology captures the movement of the human eye
+and calculates gaze direction, facilitating contactless human–
+computer interaction. Compared to traditional input devices, it
+offers the characteristics of flexibility, speed, and accuracy,
+enabling direct two-way information transmission between humans
+and machines [1,2]. Emerging fields, such as telemedicine,
+intelligent industries, and entertainment, require timely and
+efficient human–computer interaction, driving the need for versatile
+and precise solutions with significant application potential. Eye
+tracking technology has become a foundational enabler for a wide
+spectrum of human–computer interaction applications, spanning
+immersive augmented reality and virtual reality headsets, portable
+laptop-based interaction systems, driver monitoring platforms, and
+assistive technologies for individuals with motor impairments.
+Currently, existing gaze tracking technologies are primarily
+categorized into two types: screen-based gaze tracking and head-
+mounted gaze tracking. Screen-based gaze tracking typically
+employs visible light cameras to capture images of the eyes and
+project gaze direction onto a screen [3,4]. This method is limited to
+two-dimensional tracking and is restricted to fixed-position screen
+interactions, resulting in low accuracy and a lack of flexibility. In
+contrast, head-mounted gaze tracking usually utilizes infrared
+imaging technology for three-dimensional tracking [5,6,7]. This
+technology captures eye images and calculates gaze direction,
+offering higher accuracy and allowing for more lifelike interaction
+scenarios. This paper presents a self-developed, lightweight
+geometric framework for head-mounted binocular 3D gaze tracking,
+designed to deliver accurate 3D gaze vectors using only low-cost
+hardware without deep learning. The key contributions of this study
+include a robust geometric formulation that achieves competitive
+angular accuracy while significantly improving 3D position
+precision, and comprehensive evaluations comparing the proposed
+method with both state-of-the-art academic approaches and
+representative commercial systems. The remainder of this paper is
+structured as follows: Section 2 reviews the related work of existing
+gaze tracking methods. Section 3 details the system setup and the
+proposed geometric framework. Section 4 describes the
+experimental design, including the participant pool, evaluation
+conditions, and performance metrics, and further presents the
+experimental results by comparing the proposed method with both
+academic baselines and commercial eye-tracking systems. Finally,
+Section 5 concludes the paper and outlines directions for future
+work.
+2. Related Work
+Accurate estimation of gaze direction is fundamentally reliant on
+the precise extraction of pupil contour and the exact determination
+of pupil center position. Kagemoto et al. proposed high-speed pupil
+tracking using an event camera based on the bright and dark pupil
+effect. Two illumination sources generated events in the pupil area,
+and the pupil center was determined in real time at over 2000 Hz
+without requiring complete image from the events [8]. Also, Lu et
+al. proposed a valuable industry-oriented ellipse detector by arc-
+support line segments, which simultaneously reached high detection
+accuracy and efficiency. Extensive experiments on three public
+datasets were implemented and their method achieved the best F-
+measure scores compared to the state-of-the-art methods [9].
+Notably, a model based on convolutional neural networks has been
+widely adopted in this field, enabling models to learn patterns of
+human eye movement from extensive datasets. Also, they proposed
+a novel 3D pupil localization method with a deep learning-based
+corneal refraction correction. Their method outperformed the state-
+of-the-art works by reducing the 3D pupil localization error by
+47.5% and the gaze estimation error by 18.7% [10]. In addition,
+Xiong et al. proposed a lightweight pupil localization algorithm,
+which utilized a convolutional neural network (CNN) with
+additional training samples. The experimental results demonstrated
+the algorithm’s significant effectiveness in identifying the pupil
+position within the training set, with the accuracy of pupil position
+in the test set reaching 97.78% [11]. These approaches significantly
+improved the accuracy and robustness of gaze tracking.
+Furthermore, low-resolution facial images remain a major
+bottleneck for practical gaze tracking. To address this, Yan et al.
+proposed FSKT-GE, a lightweight knowledge transfer framework. It
+aligns intermediate features via cosine similarity, transferring high-
+resolution knowledge to low-resolution networks. Evaluated on
+Gaze360 and RT-Gene with 2×–8× downsampling, it achieves
+MAEs of 10.97–13.61° and 6.73–7.75°, outperforming mainstream
+methods [12]. Additionally, lightweight deep learning models have
+been optimized for gaze tracking on edge devices. Habib et al.
+optimized MobileNetV3 via structured pruning and post-training
+quantization, achieving an ultra-lightweight model for multimodal
+eye-gaze and emotion recognition. Their method reduces inference
+time to 3 ms while maintaining high accuracy, offering an efficient
+solution for real-time gaze estimation on resource-constrained
+devices [13]. However, the methods mentioned above necessitated
+substantial datasets for training, involved protracted development
+periods, and incurred high costs.
+As consumer demand for seamless, intuitive, and always-on
+interaction grows, there is an urgent need for eye tracking solutions
+that deliver high 3D gaze estimation accuracy while remaining
+compatible with low-cost, resource-constrained, and battery-
+powered devices. However, existing state-of-the-art systems fail to
+meet this dual requirement; commercial solutions, such as Apple
+Vision Pro with M5 [14], VIVE Focus Vision [15], and Windows
+Studio [16], achieve exceptional angular accuracy but rely on
+specialized, high-cost hardware, closed-source proprietary
+algorithms, and significant computational overhead, making them
+prohibitively expensive and power-hungry for mass-market portable
+electronics.
+3. Theory
+3.1. Optical Path Design of the Device
+The pixel-level 3D gaze tracking system and optical path structure
+are depicted in Figure 1. To ensure an unobstructed view of the
+screen integrated into the device and to efficiently arrange the
+infrared camera in a confined space, the infrared camera is
+ingeniously positioned on the inner edge of the head-mounted
+device. As illustrated, a dichroic mirror is strategically placed at a
+45° angle between the infrared camera and the user. This mirror
+reflects infrared light while allowing visible light to pass through.
+Adjacent to the user’s eyes, an infrared illumination panel
+composed of eight LED beads is carefully arranged to illuminate the
+eye area, facilitating image acquisition by the infrared camera. This
+innovative optical path design not only provides an unobstructed
+view for the user but also ensures the precise capture of eye images.
+Figure 1.
+[image]
+Open in a new tab
+(a) Real object picture of the gaze tracking device. (b) Schematic
+diagram of the optical path. BE: binocular eye; IRIM: infrared
+illumination module; OP: optical path; DM: dichroic mirror; IRC:
+infrare

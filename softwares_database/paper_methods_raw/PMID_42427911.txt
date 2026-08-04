@@ -1,0 +1,195 @@
+
+Methodology, Investigation, Project administration, Visualization,
+Validation, Writing – original draft
+Find articles by Ryota Iizuka
+1, Koki Yamada
+Koki Yamada
+1Graduate School of Engineering and Science, Shibaura Institute of
+Technology, Saitama-shi, Saitama, Japan
+Methodology, Data curation, Investigation, Software,
+Conceptualization, Validation, Formal analysis, Project
+administration, Writing – review & editing
+Find articles by Koki Yamada
+1, Mizuki Sato
+Mizuki Sato
+1Graduate School of Engineering and Science, Shibaura Institute of
+Technology, Saitama-shi, Saitama, Japan
+Data curation, Investigation, Project administration, Writing –
+review & editing
+Find articles by Mizuki Sato
+1, Naka Gotoda
+Naka Gotoda
+2Integrated Center for Informatics, Kagawa University, Takamatsu-
+shi, Kagawa, Japan
+Software, Methodology, Conceptualization, Project administration,
+Writing – review & editing, Supervision
+Find articles by Naka Gotoda
+2,*, Ryota Akagi
+Ryota Akagi
+3College of Systems Engineering and Science, Shibaura Institute of
+Technology, Saitama-shi, Saitama, Japan
+Resources, Visualization, Formal analysis, Project administration,
+Supervision, Methodology, Validation, Conceptualization, Writing –
+review & editing
+Find articles by Ryota Akagi
+3,*
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC13347614  PMID: 42427911
+Abstract
+Introduction
+Monocular RGB-based human pose estimation is increasingly
+applied in field-based movement assessments; however, systematic
+projection-related errors inherent to the simplified camera geometry
+remain insufficiently characterized relative to laboratory-based
+biomechanical standards. This study quantified systematic
+projection bias in a browser-based markerless motion capture
+(MMC) system and validated a geometry-informed linear correction
+framework for sagittal-plane squat analysis under standardized
+monocular acquisition conditions.
+Methods
+Bodyweight squats performed by 30 healthy adult males were
+simultaneously recorded using a three-dimensional marker-based
+optical motion capture (OMC) system and a two-dimensional
+webcam positioned at a fixed distance and orientation.
+Results
+Raw joint angles obtained from the MMC system revealed
+significant systematic underestimation (hip: −11.2°, knee: −10.6°),
+consistent with perspective-induced projection effects predicted by
+the pinhole camera model and differences in the joint center
+definitions. To address this projection-consistent bias, a geometry-
+constrained linear correction model was developed and validated
+using leave-one-subject-out cross-validation. The correction
+effectively neutralized the systematic bias (hip: 0°, p = 0.323; knee:
+0°, p = 0.645) and substantially reduced root mean square error
+(hip: from 11.6° ± 4.2° to 4.0° ± 2.3°; knee: from 10.9° ± 3.3° to
+3.9° ± 1.5°). Furthermore, mean coefficients of determination were
+significantly improved and stabilized (hip: from 0.31 ± 0.94 to 0.90 
+± 0.17; knee: from 0.67 ± 0.30 to 0.96 ± 0.04).
+Discussion
+Importantly, high accuracy was achieved without incorporating
+participant-specific anthropometric variables, suggesting that
+projection-consistent geometric factors predominated under
+controlled camera conditions. These findings demonstrate that
+systematic errors in monocular pose estimation can be substantially
+mitigated when the acquisition distance and orientation are
+standardized. Our results suggest that under such predefined
+recording constraints, corrected joint angles provide practically
+relevant estimates for strength assessment and rehabilitation
+monitoring.
+Keywords: geometric correction, markerless motion capture,
+monocular pose estimation, projection bias, rehabilitation
+monitoring, squat biomechanics
+1. Introduction
+Squatting is one of the most fundamental exercises in strength
+training, rehabilitation, and sports science, targeting multiple
+muscle groups in the lower extremities and core (1–3). Dynamic
+squats primarily strengthen the hip, thigh, and back muscles, which
+are critical for running, jumping, and lifting (4). Accurate
+monitoring of joint angles, particularly hip and knee flexion-
+extension in the sagittal plane, is crucial to ensure exercise efficacy
+and prevent musculoskeletal injuries (5, 6). Although three-
+dimensional (3D) marker-based optical motion capture (OMC)
+systems remain the gold standard for kinematic analysis, offering
+sub-millimeter precision (7), their high cost, complexity, and
+requirement for controlled laboratory environments limit their
+feasibility for home-based training and clinical telerehabilitation (8,
+9).
+Recent advancements in computer vision have led to the
+development of markerless motion capture (MMC) technologies
+capable of estimating human kinematics from a standard two-
+dimensional (2D) RGB video (10–12). Among these, MoveNet has
+been adopted for real-time browser-based applications. The
+Lightning variant provides a computationally efficient architecture
+suitable for execution via TensorFlow.js on consumer-grade devices.
+Despite this feasibility, the use of monocular-webcam-based MMC
+systems in clinical or high-performance settings is limited by
+concerns about their measurement accuracy.
+Previous investigations have reported systematic discrepancies
+between monocular 2D pose estimation and 3D OMC systems,
+particularly during high-range-of-motion tasks such as deep squats
+(13–16). Importantly, these discrepancies are not purely random
+but are largely attributable to projection-consistent geometric
+effects inherent to monocular imaging. In the pinhole camera model
+(17), three-dimensional limb segments that rotate out of the image
+plane undergo perspective-induced foreshortening when projected
+onto a two-dimensional sensor. For example, during deep squat
+descent, the thigh segment rotates considerably out of the sagittal
+plane (hip abduction/rotation), forming an oblique angle θ relative
+to camera sensor's plane. As a result, the projected 2D length of the
+segment is reduced by a factor proportional to cos(θ), causing
+systematic underestimation of the knee flexion angle as the squat
+depth increases.
+Such projection-consistent bias is further amplified when the
+camera alignment deviates from the midsagittal plane or when
+participants exhibit minor transverse-plane rotations (e.g., 5°–10°).
+In addition, the variation in the camera-to-subject distance
+introduces differential perspective distortion, whereby proximal
+segments may appear disproportionately larger than distal segments
+(11). Because these effects arise from deterministic geometric
+principles rather than stochastic noise, they are theoretically
+predictable under standardized acquisition conditions.
+Highly accurate markerless solutions that use multicamera arrays
+are already being used in commercial and clinical environments.
+However, these systems often rely on complex, high-cost, and non-
+portable setups that remain inaccessible for typical home-based use.
+Furthermore, although research has investigated lifting 2D poses to
+3D using complex neural networks (18, 19) or multicamera
+calibration (16, 20), these approaches primarily seek to reconstruct
+the spatial depth rather than to explicitly characterize and model
+projection-induced bias under constrained monocular conditions.
+Consequently, the question remains whether a systematic error
+observed in the simplified browser-based configurations can be
+mathematically characterized and mitigated without resorting to
+complex 3D reconstruction pipelines. If projection-related
+discrepancies are geometrically consistent, fixing the acquisition
+geometry may allow for systematic bias to be isolated and corrected
+through transparent mathematical modeling. Such an approach
+would provide an interpretable alternative to data-intensive
+correction strategies while preserving the practical advantages of
+low-cost monocular systems.
+Therefore, this study aimed to characterize projection-consistent
+bias in browser-based monocular squat assessment and to determine
+whether this bias can be systematically mitigated under
+standardized camera geometry. Specifically, our objective was to 1)
+quantitatively characterize projection-related discrepancies between
+the MoveNet SinglePose Lightning system and a 3D OMC reference
+during sagittal plane squats and 2) develop and validate a
+geometry-constrained linear correction model under fixed
+acquisition conditions. We hypothesized that, when the camera
+distance and orientation were standardized, projection-induced
+errors would exhibit stable linear characteristics that permitted
+clinically acceptable correction without incorporating participant-
+specific anthropometric variables. By clarifying the deterministic
+geometric basis of the measurement error, this study sought to
+establish a standardized framework for condition-aware correction
+in low-cost browser-based biomechanical assessment.
+2. Methods
+2.1. System development
+To enable accessible home-based monitoring, we implemented a
+browser-based data acquisition system and developed a validated
+linear correction framework for post processing. The overall
+architecture of the developed system is illustrated in Figure 1. The
+process consists of the following stages:
+(a)
+Video Input: Captures real-time sagittal plane movement
+using a standard consumer-grade webcam.
+(b)
+Pose Estimation (MoveNet): Uses a lightweight, bottom-up
+CNN architecture to localize 17 body keypoints via heat maps
+and offset regression.
+(c)
+Body Segment Measurement: Automatically estimates the
+lengths of segments (e.g., femur and shank) based on the
+distance between the predicted 2D keypoint coordinates.
+(d)
+Joint Angle Calculation: Computes sagittal plane joint angles
+for the hip and knee using vectors derived from the keypoint
+positions.
+(e)
+Statistical Correction: Applies the validated linear regression
+model to the raw kinematic data to compensate for systematic
+underestimation caused by perspective distortion and joint
+center mismatch.
+(f)

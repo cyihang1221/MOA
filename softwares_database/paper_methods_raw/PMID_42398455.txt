@@ -1,0 +1,121 @@
+
+Materials and methods
+Farm description and video system
+The study was conducted on four commercial broiler farms situated
+in Brittany, France, each housing Ross 308 broiler chickens that
+arrived on the farms as one-day-old chicks. On each farm, three
+consecutive flocks were monitored between February and
+September 2024, resulting in a total of 12 monitored flocks. The
+farms operated under commercial conditions corresponding to a
+sex-segregated heavy broiler production system, with
+environmentally controlled buildings and separate male and female
+rearing zones.
+Each building was equipped with six 4 K resolution cameras
+(DS-2CD2086G2-IU, 2.8 mm; 3840 × 2160 pixels) mounted at a
+height of 3.5 m and oriented perpendicularly to the ground, three
+cameras covering the male area and three covering the female area.
+Each camera covered an area of approximately 8.35 × 3.33 m,
+including two to three feed lines, three to five water lines, and
+adjacent wall sections. Depending on the bird age, between 500 and
+1000 broilers were visible per camera. The camera system therefore
+sampled fixed zones within each rearing area rather than covering
+the entire house surface. Fig. 1 illustrates the configuration of
+camera placement and sex-segregated areas within a typical
+building. Housing surfaces ranged from 960 to 2000 m2, with total
+flock sizes between approximately 18,697 and 39,780 birds.
+Stocking density varied from 17.34 to 21.84 broilers/m2, and the
+maximum live-weight stocking density reached 42.63 kg/m² and
+was observed in the female area before female thinning.
+Fig. 1.
+[image]
+Open in a new tab
+Schematic representation of a typical farm building layout in this
+study, showing the division between male and female zones and the
+positioning of the six overhead cameras used for video recording.
+Each camera covers a fixed sampling area of approximately 8.35 m
+by 3.33 m, including multiple feed and water lines. These fixed
+camera views were used to sample representative areas within each
+sex-specific zone, rather than to monitor the entire house surface.
+Video recordings were scheduled for three daily 90-minute periods
+defined relative to each farm’s light schedule: post-lights-on, mid-
+light period, and pre-lights-off. These periods were used to capture
+the main daily fluctuation in flock activity while standardizing
+recordings with respect to the light cycle rather than fixed clock
+times, and to maintain a feasible volume of video data for storage,
+transfer, and AI-based processing. Data collection started at chick
+placement and continued until day 45, resulting in a total of 14,580
+h of footage covering variations across farms, flocks, sex, and time
+of day.
+Video processing pipeline
+All video footage first underwent geometric correction to remove
+distortions introduced by the cameras’ wide-angle lenses. Radial
+and tangential distortions were corrected using the Brown–Conrady
+model, as implemented in OpenCV 4.10 (Conrady, 1919; Zhang,
+2000). For each camera, intrinsic parameters and distortion
+coefficients were estimated through a standard calibration
+procedure: a checkerboard pattern was moved throughout the
+entire field of view and imaged from multiple angles and positions.
+These calibration images allowed quantifying how straight
+checkerboard lines were warped by the optics, enabling accurate
+correction of lens deformation across the whole monitored area.
+A dataset of 86,924 annotated broiler instances from 841 annotated
+images or image patches was used to train the detection model. This
+dataset was assembled for a computer-vision task and selected to
+cover visual variability relevant for broiler detection, including
+variation in bird size, posture, density, lighting, background, and
+image quality. It was used only for detector training, and was not
+intended to constitute a balanced sample of all monitored flocks.
+The YOLOv8 architecture was selected based on preliminary
+comparisons of accuracy and processing cost. Training was
+performed using the Ultralytics implementation (version 8.3.80) in
+Python 3.11.5, starting from a pretrained lightweight model and
+fine-tuning it for a single class (“broiler”). The training ran for up to
+500 epochs with an early-stopping patience of 100 epochs, a batch
+size of 1, and an image size of 1920 px. Default Ultralytics
+hyperparameters were used, including momentum = 0.937, weight
+decay = 0.0005, warm-up for 3 epochs, and standard data
+augmentation (hue–saturation–value shifts, scaling, translation, and
+horizontal flips). Training was executed on an NVIDIA RTX A4500
+GPU. The model was evaluated on a validation set of 10 images
+containing 5,766 annotated birds.
+After detection, birds were tracked across frames using BoT-SORT
+(Aharon et al., 2022), which combines appearance embeddings with
+Kalman filtering and matching heuristics to maintain short-term
+trajectory continuity. Videos were processed at 15 frames per
+second, providing sufficient temporal resolution for estimating
+short-term movement dynamics. The tracker output consisted of
+trajectory segments, each with an identifier valid over the period
+during which the bird was continuously tracked, together with
+frame index, image-plane coordinates (x,y), and bounding-box
+dimensions.
+Long-term identity preservation or re-identification after a bird left
+and re-entered the camera field of view was not required for the
+locomotion indicators used in this study. These indicators relied on
+short-term displacement dynamics aggregated within 90-min
+observation units. The duration of retained trajectory segments and
+the number of retained segments contributing to each observation
+unit are summarized in Supplementary Tables S2–S3 and
+Supplementary Figures S1–S2. The resulting structured tracking
+dataset therefore enabled the reconstruction of trajectory segments
+and the computation of the locomotor indicators used in the
+subsequent analyses. A schematic overview of the full processing
+pipeline is shown in Fig. 2.
+Fig. 2.
+[image]
+Open in a new tab
+Overview of the video processing pipeline used in this study,
+including geometric distortion correction based on per-camera
+geometric calibration, broiler detection using a YOLOv8 model, and
+individual tracking with the BoT-SORT algorithm. The resulting
+dataset provides temporally resolved spatial positions for each
+identified bird, enabling the computation of locomotion metrics.
+Event logging and construction of the routine-
+condition training set
+A routine health and production monitoring program was
+implemented on each farm, including regular visits by farm staff
+and veterinarians (Fig. 3). The primary purpose of this monitoring
+was to provide contextual information on conditions that may
+transiently alter locomotor expression or compromise the
+interpretation of video-derived movement descriptors.
+Fig. 3.
+[image]
