@@ -1,0 +1,165 @@
+
+Method
+To address this issue, we present a comprehensive free-living
+evaluation dataset, including 146.574 semi-automatic labeled
+strides of 28 Parkinson’s Disease patients. This dataset was used to
+evaluate the segmentation performance of a new Hidden Markov
+Model (HMM) based stride segmentation approach compared to an
+available dynamic time warping (DTW) based method.
+Results
+The proposed HMM achieved a mean F1-score of 92.1% and
+outperformed the DTW approach significantly. Further analysis
+revealed a dependency of segmentation performance to the number
+of strides within respective walking bouts. Shorter bouts (<30
+strides) resulted in worse performance, which could be related to
+more heterogeneous gait and an increased diversity of different
+stride types in short free-living walking bouts. In contrast, the HMM
+reached F1-scores of more than 96.2% for longer bouts (>50
+strides). Furthermore, we showed that an HMM, which was trained
+on at-lab data only, could be transferred to a free-living context
+with a negligible decrease in performance.
+Conclusion
+The generalizability of the proposed HMM is a promising feature, as
+fully labeled free-living training data might not be available for
+many applications. To the best of our knowledge, this is the first
+evaluation of stride segmentation performance on a large scale free-
+living dataset. Our proposed HMM-based approach was able to
+address the increased complexity of free-living gait data, and thus
+will help to enable a robust assessment of stride parameters in
+future free-living gait analysis applications.
+Supplementary Information
+The online version contains supplementary material available at
+10.1186/s12984-021-00883-7.
+Keywords: HMM, IMU, Machine learning, Mobile gait analysis,
+Stride borders, Wearable sensors
+Background
+In typical clinical gait analysis settings, a physician or clinical
+expert observes a patient’s gait in a hospital hallway to assess, for
+example, postural instability or motor function, which are major
+symptoms of the neurodegenerative Parkinson’s Disease (PD) and
+strongly related to independence, quality of life or risk of falls [1].
+Therefore, new tools and technologies to quantitatively and
+objectively assess various gait-related parameters are of increased
+interest to understand pathophysiological mechanisms, investigate
+treatment effects or quantify the disease state in PD [2]. Especially
+wearable sensors and, in particular, inertial measurement units
+(IMUs) are often used in clinical applications to measure spatio-
+temporal gait parameters in order to objectively monitor disease
+progression or fluctuations [3, 4].
+Due to advancements in size, energy consumption, and usability of
+wearable sensors, mobile gait analysis systems are getting started to
+be used beyond the borders of laboratory assessments in home-
+monitoring as well as free-living scenarios [5, 6]. Here, mobile gait
+analysis solutions enable a continuous and detailed insight into a
+patient’s mobility and motor performance under more natural and
+realistic conditions compared to clinical snapshot assessments [5,
+6].
+However, independent of the recording environment, a robust
+segmentation of individual strides from the continuous sensor data
+is one of the first steps in most wearable gait analysis systems and a
+crucial part of the underlying signal processing pipeline [7].
+Various different approaches have been proposed in the literature to
+solve the problem of stride segmentation for clinical gait analysis
+applications [8–22]. Methods vary with sensor location, ranging
+from the upper body like wrist, chest or lower back [9, 10] to the
+lower body with sensors attached to ankles or feet [11–15, 17–22]
+as well as with sensor modalities like IMUs or pressure sensors [7].
+Peak detection [8, 9], wavelet-based approaches [10–13], template
+matching [14, 15] as well as probabilistic machine learning models
+like the Hidden Markov Model (HMM) [16–20], and deep learning
+approaches like convolutional neural networks [21, 22] have been
+successfully applied in supervised laboratory conditions.
+Although all of the aforementioned studies obtained good results,
+they were constrained in most cases by a controlled and supervised
+laboratory setting. Furthermore, most studies only provide a limited
+amount of heterogeneity within the dataset due to the inclusion of
+only healthy subjects, a rather small number of strides, or
+evaluation on standardized gait tests.
+In contrast, a continuous full day free-living recording contains a
+variety of different unstructured activities as well as different stride
+types like initiation, termination, turnings, or transitions between
+activities. Influences of the external environment like context,
+location, different undergrounds, or cognitive challenges are known
+to be confounding factors for certain gait parameters [6, 23]. For
+PD patients, day-to-day and intra-day fluctuations of motor
+symptoms (related to health and medication state) increase the
+heterogeneity and irregularity of strides even further [1].
+Recent studies already highlighted the differences between
+laboratory and free-living gait analysis [24–26], but a technical
+evaluation of gait analysis pipelines on free-living data is still an
+open challenge. A major issue is the lack of free-living evaluation
+datasets, including ground truth information. For this reason,
+evaluation studies usually focus on at-lab recordings where for
+example pressurized mats [19] or motion capture systems [27] are
+used as gold-standard references. However, such system cannot be
+used for fully unconstrained free-living studies.
+Martindale et al. [20] tried to address this issue by collecting data
+of several semi-realistic scenarios covering different activities with
+providing stride level annotations of a large cohort of 80 healthy
+subjects. They used video recordings combined with pressure
+insoles and a smart annotation approach to generate labels for all
+activities. However, the study still followed a supervised protocol
+with scripted scenarios and only healthy subjects.
+Hickey et al. [28] also emphasized the lack of evaluation of gait
+analysis algorithms on free-living data. To address this issue, they
+equipped ten young and healthy subjects with a waist-mounted
+accelerometer together with a body-mounted camera filming the
+subject’s feet on two consecutive days for one hour each. Subjects
+could then perform free-living activities in a completely
+unsupervised setting, while the video streams were used to generate
+reference labels. However, Hickey et al. only evaluated macro gait
+parameters like walking bout duration and step counts, but did not
+investigate actual stride border locations.
+To address this lack of missing evaluation of stride segmentation
+algorithms on free-living data, we present a fully unconstrained and
+unsupervised free-living dataset including stride border annotations
+of 146.574 single strides of a cohort of 28 PD patients. Due to
+stigmatization and privacy concerns, we decided to not use body-
+worn cameras or similar reference systems but opted for a semi-
+automated manual labeling approach of the IMU data itself. For this
+semi-automated labeling approach, an existing template matching
+implementation based on subsequent Dynamic Time Warping
+(DTW), presented by Barth et al. [14], was combined with extensive
+manual post-processing.
+Furthermore, a new HMM-based segmentation approach was
+implemented for evaluation, as a probabilistic model is a promising
+candidate to be robust and at the same time flexible enough to
+handle the expected variety and heterogeneity within free-living
+patient data. Haji Ghassemi et al. [29] compared different stride
+segmentation approaches for PD patients and found that an HMM-
+based segmentation could outperform template matching methods
+like DTW or simple peak detection methods, reaching F1-Scores
+above 95% in laboratory settings. Additionally, HMMs showed the
+potential to handle also classification or sub-phase segmentation
+tasks. Martindale et al. [30] and Mannini et al. [19] presented
+HMMs, which can be applied beyond pure stride segmentation for
+gait phase segmentation and gait event detection by modelling
+swing and stance phase by individual models. Panahandeh et al.
+[31] used a combination of multiple individual HMMs for activity
+classification based on a cycle level identification. Furthermore,
+HMMs were successfully applied for at-lab gait analysis in
+hereditary spastic paraplegia (HSP) patients, where the
+heterogeneity of the disease required the need of personalized
+models and proofed their applicability in segmentation of severely
+impaired and strongly heterogeneous gait [30].
+Although the first steps towards the development and evaluation of
+stride segmentation algorithms on free-living data have been taken,
+this topic remains an open field in research with the need for
+optimized and robust methods. In this paper, we make the
+following contributions to the field of mobile gait analysis: first, we
+present a comprehensive, free-living dataset of PD patients,
+including semi-automatically labeled stride borders. Second, a new
+custom HMM-based stride segmentation approach was developed.
+The model architecture was chosen to best fit the available training
+labels as well as to model the expected heterogeneity within free-
+living gait data. Therefore, two HMMs, one for modelling strides
+and one for modelling transitions from and to gait, were
+individually trained and finally combined to a single flattened HMM
+for segmentation. Configurable model parameters were thoroughly
+optimized by a grid search to enable the best possible segmentation
+performance for future applications. Additionally, to test the
+generalizability of the data-driven HMM-method, model training
+was performed first only on available laboratory data and second
+also on the free-living dataset. To estimate the relative performance
+of the proposed HMMs, their segmentation results were compared
+to a non-data-d

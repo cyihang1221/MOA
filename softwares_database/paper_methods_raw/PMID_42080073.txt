@@ -1,0 +1,112 @@
+
+Materials and Methods
+Figure 1 illustrates the overall architecture of the proposed system,
+encompassing both the model training and real-time inference
+workflows. All deep learning models were trained and evaluated in
+a personal computer environment prior to deployment for mobile-
+based screening applications.
+Figure 1.
+[image]
+Open in a new tab
+Overall architecture of the proposed artificial intelligence-assisted
+system for detecting and grading digital clubbing.
+For image acquisition, users are guided by a smartphone application
+that provides on-screen posture instructions to ensure consistent
+finger positioning. To further standardize image quality, an
+OpenCV-based algorithm is employed to estimate the distance
+between the finger and the camera in real time. Image capture is
+automatically triggered only when the finger is positioned within a
+predefined optimal range, thereby reducing variability related to
+scale and focus.
+Once captured, the images are processed sequentially by two
+integrated deep learning models. The YOLOv8 model first performs
+binary classification to determine the presence or absence of digital
+clubbing. Images identified as positive are subsequently analyzed by
+the KeypointNet model, which localizes the anatomical landmarks
+required for severity assessment. The Clubbing Fingers Severity
+Analysis (CFSA) algorithm then computes the Lovibond angle based
+on these landmarks and categorizes disease severity into clinically
+relevant levels. The final assessment results are displayed
+immediately within the mobile application, enabling real-time, non-
+invasive preliminary screening.
+Image Acquisition
+In this study, digital clubbing was categorized into four clinically
+relevant severity levels: normal, mild, moderate, and severe. The
+classification criteria were defined according to established
+Lovibond angle thresholds reported in prior clinical literature 16,17.
+Model development and evaluation were conducted using publicly
+available and anonymized finger images obtained from open-access
+online medical image repositories. All images were used in
+accordance with their respective licensing terms and usage policies.
+No additional clinical data collection or direct interaction with
+human subjects was required.
+Inclusion criteria required clear lateral or oblique views of the distal
+phalanx with a visible nail contour and sufficient resolution to
+allow accurate landmark localization. Images with severe occlusion,
+excessive blur, incomplete nail structures, or indistinct anatomical
+boundaries were excluded from analysis.
+The final dataset comprised 1,956 images of clubbed fingers and
+1,744 images of normal fingers. Severity labeling was performed
+based on Lovibond angle thresholds defined in established
+diagnostic standards 16,17. No demographic metadata (e.g., age, sex,
+ethnicity, or geographic origin) were available in the open-access
+dataset. Consequently, demographic stratification analysis could not
+be performed. This limitation may influence generalizability across
+diverse populations and is further discussed in the Discussion
+section.
+Image Preprocessing
+Accurate detection of digital clubbing relies on consistent image
+quality during acquisition. Variations in the distance between the
+finger and the camera may affect image scale, focus, and
+anatomical feature visibility, thereby influencing model
+performance. To improve consistency, an OpenCV-based
+preprocessing module was implemented to guide standardized
+image capture.
+During acquisition, the system estimates the relative distance
+between the finger and the camera by analyzing the proportion of
+the finger region within the image frame. Image capture is
+automatically triggered only when the detected finger size falls
+within a predefined optimal range. If the finger is positioned too
+close or too far from the camera, real-time on-screen prompts
+instruct the user to adjust the distance accordingly.
+To determine the optimal acquisition range, validation experiments
+were conducted across distances ranging from 1 cm to 10 cm under
+controlled lighting conditions. Although recognition performance
+gradually decreased at extreme distances due to scale variation and
+focus limitations, distances between 4 cm and 7 cm consistently
+yielded stable and high recognition accuracy for both classification
+and keypoint localization tasks. Minor variability across trials was
+observed, reflecting natural fluctuations in lighting and device
+positioning. Based on these findings, the application was configured
+to restrict image capture to the 4-7 cm range to improve input
+consistency and enhance the robustness of subsequent detection and
+severity assessment.
+Model Based on YOLOv8
+To determine whether an input image exhibited digital clubbing,
+the YOLOv8 deep learning model was employed. YOLOv8 is a state-
+of-the-art one-stage object detection framework known for its high
+accuracy and low inference latency, making it suitable for real-time
+clinical screening applications 25-29,39. Compared with earlier
+YOLO variants, YOLOv8 incorporates architectural refinements that
+enhance feature extraction efficiency while maintaining strong
+discriminative performance.
+In this study, YOLOv8 was trained using 3,700 annotated finger
+images with a binary classification objective (clubbing vs. normal).
+Model training was performed using the AdamW optimizer with a
+batch size of 20 over 150 epochs. Model performance was evaluated
+on an independent test dataset using standard classification metrics,
+including accuracy, precision, recall, and F1-score, derived from
+confusion matrix analysis.
+As illustrated in Figure 2, the YOLOv8 architecture comprises a
+backbone for hierarchical feature extraction and a detection head
+for classification and localization. An anchor-free detection strategy
+combined with non-maximum suppression was applied to generate
+final predictions with high accuracy and computational efficiency.
+Detailed layer-wise architecture specifications and training
+hyperparameters are provided in Appendix B.
+Figure 2.
+[image]
+Open in a new tab
+Architecture of the YOLOv8-based model.
+Model optimization was performed using a multi-component loss
+function designed to balance localization accuracy and classification

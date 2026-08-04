@@ -1,0 +1,188 @@
+
+Methods and Performance
+Trade-Offs for Different
+Requirements
+Yixin Yan
+Yixin Yan
+1The Higher Educational Key Laboratory for Measuring & Control
+Technology and Instrumentation of Heilongjiang Province, Harbin
+University of Science and Technology, Harbin 150080, China
+Find articles by Yixin Yan
+1, Jinling Li
+Jinling Li
+1The Higher Educational Key Laboratory for Measuring & Control
+Technology and Instrumentation of Heilongjiang Province, Harbin
+University of Science and Technology, Harbin 150080, China
+Find articles by Jinling Li
+1, Qiuyang Liu
+Qiuyang Liu
+1The Higher Educational Key Laboratory for Measuring & Control
+Technology and Instrumentation of Heilongjiang Province, Harbin
+University of Science and Technology, Harbin 150080, China
+Find articles by Qiuyang Liu
+1, Siqian Lv
+Siqian Lv
+1The Higher Educational Key Laboratory for Measuring & Control
+Technology and Instrumentation of Heilongjiang Province, Harbin
+University of Science and Technology, Harbin 150080, China
+Find articles by Siqian Lv
+1, Qing Wu
+Qing Wu
+1The Higher Educational Key Laboratory for Measuring & Control
+Technology and Instrumentation of Heilongjiang Province, Harbin
+University of Science and Technology, Harbin 150080, China
+Find articles by Qing Wu
+1,*
+Editor: Udo Frese1
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC13258843  PMID: 42281027
+Abstract
+The RGB-D (Red, Green, Blue plus Depth) camera is a widely used
+onboard sensor for Simultaneous Localization and Mapping (SLAM),
+as it captures RGB images and depth information simultaneously.
+This capability has made RGB-D SLAM a topic of broad research
+interest. We present a comprehensive introduction to the
+framework of RGB-D SLAM and illustrate representative approaches
+in each component. Furthermore, we examine the conflicts among
+diverse performance metrics and discuss performance trade-offs in
+cutting-edge RGB-D SLAM from a requirement perspective, as
+achieving a SLAM system with perfect performance is challenging in
+the present landscape. This manuscript merges theory and practice,
+serving as a reference for the selection of RGB-D SLAM methods
+under various practical applications and offering a structured
+perspective for future development of RGB-D SLAM.
+Keywords: RGB-D SLAM, performance trade-off, deep learning,
+multi-sensor fusion
+1. Introduction
+Simultaneous Localization and Mapping (SLAM) has been utilized in
+the realm of Autonomous Driving [1], Augmented Reality [2],
+Robotics [3], Industrial Automation [4], Unmanned Aerial Vehicle
+[5], etc., broadly. A key characteristic of SLAM is that it relies only
+on onboard sensors to perceive the surrounding environment and
+achieve high-quality pose estimation and mapping without prior
+information or external signals [6]. Additionally, loop closure
+enables the system to recognize the true topological structure of
+environments and resist drift, thereby building a globally consistent
+map [7]. As a consequence, SLAM is well-suited for unknown and
+challenging environments where external signals may be unreliable,
+which has contributed to its widespread use. While SLAM
+approaches share collective characteristics and orientations, there is
+still considerable diversity among them. Especially in terms of
+sensor types, SLAM methods are primarily segmented into Visual
+SLAM and Light Detection and Ranging (LiDAR) SLAM [7]. LiDAR
+SLAM is widely regarded as a mature technique, and its recent
+progress has been relatively slow [8]. By contrast, the rapid
+advancements in deep learning and computer vision endow Visual
+SLAM, classified as Monocular SLAM [9], Stereo SLAM [10], and
+RGB-D SLAM in accordance with the camera type, with novel
+vitality.
+RGB-D SLAM, which uses an RGB-D camera and inherits the
+advantages of SLAM, is characterized by a promising method and
+has been researched widely since gaining the capacity to obtain
+depth information directly [11] and low expenditure. RGB-D
+cameras appeared in the early 2000s but were not as widely used as
+modern commercial products because of technical defects and high
+costs. They were typically specialized equipment found in research
+laboratories or industrial applications. Kinect sensors, introduced by
+Microsoft Research in 2011, were a significant milestone in the
+popularization of RGB-D camera technology and getting the
+research of RGB-D SLAM off the ground. KinectFusion was the first
+real-time 3D reconstruction system based on an RGB-D sensor,
+demonstrating the feasibility of combining depth sensing
+technology with iterative closest point (ICP) algorithms to generate
+detailed 3D models of indoor environments in real time. More
+recently, GPS-SLAM [12], a real-time 3D reconstruction system
+hybridizing a colorized signed distance field with 3D Gaussian
+splatting, achieves 150+ fps on Azure Kinect sequences—delivering
+an order-of-magnitude speedup over existing dense RGB-D SLAM
+methods while maintaining comparable reconstruction quality.
+However, the system suffers from a lack of loop closing and
+struggles in large-scale environments. Nadia Figueroa et al. used a
+combined approach toward consistent reconstructions based on 6D
+RGB-D Odometry and KinectFusion by feeding the estimated pose to
+the KinectFusion algorithm [12]. Additionally, Felix Endres et al.
+presented a mapping system that robustly generates highly accurate
+volumetric 3D maps of the environment for robot localization,
+navigation, and path planning using an RGB-D camera [13]. The
+approach is evaluated quantitatively and achieves an accuracy of
+9.7 cm and 3.95° with a frame processing time of 0.35s on average.
+Furthermore, in 2014, they presented a beam-based error
+evaluation model (EEM) to evaluate the quality of a frame-to-frame
+estimate [14]. By rejecting highly inaccurate estimates, the
+approach enables a mapping system based on an RGB-D camera to
+deal with challenging scenarios robustly. In recent years, RGB-D
+SLAM has further advanced in research, achieving high levels of
+real-time performance, robustness, accuracy, and various
+performance metrics. In addition, because of the capacity to create
+a dense environment map, RGB-D SLAM is widely used in the
+semantic VSLAM direction.
+However, it is universally acknowledged that RGB-D SLAM is not
+just an endeavor as a research thesis but also an application issue.
+In the context of applications, the requirements are no longer in
+pursuit of high accuracy or real-time independence but mandate the
+designer of the system to consider the performances, tasks,
+environments, etc., simultaneously. This intricate combination
+problem is unable to be ideally addressed, resulting from the
+natural paradox between different performances such as accuracy
+and real time. Hence, the objective of RGB-D SLAM, as with all
+SLAM methods, transforms into striving to achieve a balance for the
+requirements in applications. Of special note is that the adjustable
+range of the point is determined by the performance metrics
+required for the task, and the ability to keep the point in the range
+is the robustness of the system. The advantages of RGB-D SLAM
+facilitate resisting the outward impact, whereas the disadvantages
+of RGB-D SLAM, comprising limited depth measurement range,
+limited perception range, large resource footprint, motion blur, etc.,
+will be magnified under this condition. Dynamic objects [15], light
+fluctuation [16], and high vehicle velocity [17] pose robustness
+challenges for the SLAM system. It will render failure if the balance
+point is beyond the range after being impacted. Accordingly,
+various strategies (e.g., sensor fusion [18], feature extraction [19],
+dynamic object removal [20], back-end optimization [21], and
+mapping [22]) have been applied to alleviate these problems and
+maintain the necessary balance for task completion (Figure 1).
+Nevertheless, RGB-D SLAM techniques have not yet been
+systematically summarized, which motivates this review.
+Figure 1.
+[image]
+Open in a new tab
+The conceptual framework of RGB-D SLAM facing requirements.
+In this manuscript, we explore the state of the art in RGB-D SLAM
+and review classic frameworks and recent achievements in terms of
+requirements, demonstrating the trade-off between performances
+catering to specific scenes. The remainder of this review, which
+refers to RGB-D SLAM, is structured as follows: Initially, we
+introduce the core components of the RGB-D SLAM framework,
+ranging from sensors to the mapping module. State-of-the-art RGB-
+D SLAM approaches are elaborated on the basis of the manner of
+sensor fusion. Ultimately, a conclusion is drawn, and the
+advancement trend of RGB-D SLAM is discussed. It provides a
+preliminary insight for new researchers and can be used as a
+reference when leveraging RGB-D SLAM to solve practical
+problems.
+2. The Framework of RGB-D SLAM
+The integrated framework of RGB-D SLAM consists of five modules,
+including sensors, front end, back end, loop closing, and mapping,
+in a general manner, as depicted in Figure 2. Sensors, at the core of
+the RGB-D camera, are responsible for perceiving the outward
+environment and detecting the state of the system itself. The
+information channeled by sensors is processed into models suitable
+for localization and mapping in the front end. For the purpose of
+enhancing the accuracy of pose estimation and the consistency of
+mapping to the maximum extent, on one hand, the back end
+precisely estimates and updates the pose and map through
+optimization algorithms based on the outcome of the front end
+[20]. On the other hand, the cumulative error can be lessened
+substantially by means of loop closing. Eventually, the mapping
+module achieves mapping to the back for follow-up missions.
+Figure 2.
+[image]
+Open in a new tab
+The framework of RGB-D SLAM.
+These five modules form the typical closed loop of RGB-D SLAM.
+The choice of the sensor directly affects data quality in the front
+end, while the coordination among modules determines the overall
+performance trade-off.
+2.1. RGB-D Ca

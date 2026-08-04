@@ -1,0 +1,178 @@
+
+Methodology, Software, Validation, Visualization
+Find articles by Kun Xiang
+1, Yufei Gao
+Yufei Gao
+1Graduate School of Science and Engineering, Hosei University,
+Tokyo 184-8584, Japan; keren.he.6r@stu.hosei.ac.jp (K.H.);
+kun.xiang.68@hosei.ac.jp (K.X.); yufei.gao.8e@stu.hosei.ac.jp
+(Y.G.); yang.yu.3m@stu.hosei.ac.jp (Y.Y.)
+Writing – review & editing, Validation
+Find articles by Yufei Gao
+1, Yang Yu
+Yang Yu
+1Graduate School of Science and Engineering, Hosei University,
+Tokyo 184-8584, Japan; keren.he.6r@stu.hosei.ac.jp (K.H.);
+kun.xiang.68@hosei.ac.jp (K.X.); yufei.gao.8e@stu.hosei.ac.jp
+(Y.G.); yang.yu.3m@stu.hosei.ac.jp (Y.Y.)
+Writing – review & editing, Data curation
+Find articles by Yang Yu
+1, Jinjia Zhou
+Jinjia Zhou
+1Graduate School of Science and Engineering, Hosei University,
+Tokyo 184-8584, Japan; keren.he.6r@stu.hosei.ac.jp (K.H.);
+kun.xiang.68@hosei.ac.jp (K.X.); yufei.gao.8e@stu.hosei.ac.jp
+(Y.G.); yang.yu.3m@stu.hosei.ac.jp (Y.Y.)
+Conceptualization, Supervision, Resources, Project administration,
+Funding acquisition, Writing – review & editing
+Find articles by Jinjia Zhou
+1,*
+Editor: Miaohui Wang1
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC13258915  PMID: 42281009
+Abstract
+With the increasing demand for video processing in both human
+perception and machine vision applications, enhancing heavily
+compressed video has become a critical problem in practical
+multimedia systems. In many real-world scenarios, video data
+acquired by image sensors are often compressed for efficient
+transmission and storage, which introduces compression artifacts
+and degrades both visual quality and downstream task performance.
+This issue is especially significant in sensor-based systems such as
+surveillance cameras and mobile imaging devices. To address these
+challenges, we propose a novel joint human–machine video
+enhancement framework for compressed video enhancement that
+jointly targets human perceptual quality and machine vision
+performance. The framework integrates four complementary
+components: a Spatio-Temporal Fusion Module that leverages inter-
+frame correlations, a High-Frequency Semantic Fusion module for
+recovering structurally important details relevant to machine tasks,
+a Texture-Guided Model that enhances low-level visual features,
+and a Refined Attention Residual Quality Enhancement Module that
+adaptively emphasizes salient regions. By progressively combining
+these modules, the framework effectively restores compressed
+content while preserving task-relevant semantics. The experimental
+results demonstrate that our method consistently outperforms
+existing approaches, achieving higher PSNR and SSIM as well as
+improved object detection and video object segmentation
+performance. These results highlight the framework’s practical
+applicability for compressed video enhancement in sensor-based
+systems, including intelligent surveillance and autonomous imaging
+platforms.
+Keywords: video coding for machines (VCM), post-processing,
+object detection, object segmentation
+1. Introduction
+In recent years, deep learning has greatly advanced computer vision
+technology. Computer vision techniques are now widely used in
+many real-world applications, including medical image analysis,
+autonomous driving, video surveillance, and augmented reality [1].
+However, many of these applications rely on compressed and
+decoded images or video streams as input. Distortions introduced
+by image and video compression not only degrade perceptual
+quality for human viewing but also reduce the reliability of
+downstream machine vision systems operating on compressed
+visual content. Existing video codecs such as High Efficiency Video
+Coding (HEVC) [2] and Versatile Video Coding (VVC) [3] are
+mainly designed for human visual perception and primarily
+optimize perceptual fidelity for human observers. Consequently,
+they are not fully suitable for downstream machine vision tasks
+such as image classification, object detection, and semantic
+segmentation. To address this issue, the Moving Picture Experts
+Group introduced the concept of “Video Coding for Machines
+(VCM)” [4], aiming to jointly consider compression efficiency and
+downstream machine analysis performance.
+Recent advances in machine-oriented compression and feature
+coding have demonstrated remarkable efficiency in downstream
+machine vision tasks. Existing methods mainly preserve task-
+relevant semantic information through feature-level compression,
+semantic-aware coding, and bitrate allocation strategies
+[5,6,7,8,9,10,11,12,13,14]. Gao et al. [5] studied how to make
+video compression better for machine use and proposed a method
+to combine compression with intelligent processing. Recent studies
+[10,11,12] have proposed methods for feature-level enhancement of
+video compression for machine vision. Related work [6,7,8]
+proposed some feature compression-based methods that can jointly
+optimize the compression rate and the task objective of interest.
+The study in [6] reorganized the feature data into video input and
+used HEVC for compression, while [7,8] used neural networks to
+compress the input features. This study in [9] proposed a video
+feature compression system based on latent variable representation
+to support downstream machine reasoning tasks such as object
+detection and instance segmentation. More recently, machine-
+oriented image and video compression methods based on Just
+Recognizable Distortion (JRD) and machine vision redundancy
+(MVR) [13,14] further demonstrated that machine perception
+mainly relies on task-relevant semantic structures rather than global
+perceptual fidelity. These methods improve coding efficiency
+through semantic-aware bitrate allocation and machine-perceived
+redundancy suppression for downstream vision tasks. Although
+these machine-oriented compression methods are effective in
+preserving task-relevant semantic information for downstream
+vision tasks, they mainly focus on coding efficiency and semantic-
+aware bitrate allocation during compression. As a result, they often
+provide limited support for perceptual reconstruction quality for
+human observers. Strong compression and selective semantic
+preservation may cause permanent loss of important visual details
+such as textures, colors, and edge sharpness. Consequently, the
+reconstructed video may appear blurry, artifact-prone, and visually
+unnatural, especially under low-bitrate conditions, where only task-
+critical information is preserved for machine understanding rather
+than perceptual quality restoration.
+However, these observations indicate that optimizing compressed
+visual content solely for machine perception is insufficient for many
+real-world multimedia systems. In practical scenarios such as
+intelligent surveillance, autonomous driving, and sensor-based
+video analytics, compressed visual content is often simultaneously
+consumed by both human observers and machine vision systems.
+Consequently, recent research has gradually shifted from
+conventional human-oriented or machine-oriented visual
+optimization toward human–machine collaborative multimedia
+processing, where perceptual reconstruction quality and semantic
+representation quality are jointly optimized for both human
+observers and machine vision systems [15]. Recent studies have
+extensively explored joint human–machine visual optimization for
+compressed image and video processing [16,17,18,19,20]. Existing
+approaches generally attempt to establish unified representations
+that simultaneously support human perceptual reconstruction and
+downstream machine vision tasks. Early collaborative frameworks
+mainly relied on scalable coding and separate optimization
+pipelines for human and machine vision [18], which often
+introduced considerable bitrate redundancy and computational
+overhead. Subsequent works further investigated rate-distortion
+optimization for machine-oriented visual analysis [19], highlighting
+the fundamental inconsistency between perceptual fidelity and
+machine-oriented semantic representation. More recent methods
+attempted to improve compression efficiency through unified and
+compact feature representations shared across multiple tasks
+[16,17]. In particular, unified human–machine coding frameworks
+explored multi-path aggregation, conditional reconstruction, and
+task-oriented modulation strategies to jointly support perceptual
+reconstruction and downstream machine analysis. Furthermore,
+implicit neural representation-based collaborative compression
+methods [20] further demonstrated the potential of jointly
+optimizing perceptual quality and machine vision utility within a
+unified framework. Although these methods achieve promising
+performance for collaborative visual processing, they still suffer
+from the inherent difficulty of multi-objective optimization between
+perceptual fidelity and semantic representation quality.
+To alleviate these limitations, we investigate the problem from the
+perspective of post-compression enhancement rather than
+collaborative encoding optimization. Compared with encoding-side
+collaborative compression frameworks, post-processing-based
+enhancement methods provide greater flexibility for practical
+deployment because they can be directly integrated into existing
+compression and transmission pipelines without redesigning the
+codec architecture. More importantly, enhancement-based
+frameworks enable explicit restoration of texture details, high-
+frequency semantic structures, and task-oriented representations
+after compression, making them more suitable for jointly improving
+perceptual reconstruction quality and downstream machine vision
+performance.
+Existing compressed video enhancement and post-processing
+methods [21,22,23,24,25,26,27] mainly optimize pixel-level
+reconstruction quality using perceptual objectives such as PSNR and
+SSIM. Recent methods [28,29] further attempted to improve
+robustness across different compression levels. However, these
+enhancement-based approaches still m

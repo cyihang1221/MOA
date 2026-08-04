@@ -1,0 +1,177 @@
+
+Methodology, Software, Formal analysis, Investigation, Data
+curation, Writing – original draft, Visualization
+Find articles by Yinqing Huang
+1,*
+Editor: Silvia Liberata Ullo1
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC13301545  PMID: 42346923
+Abstract
+Image dehazing is a fundamental visual restoration task for
+improving visual perception under low-visibility weather
+conditions, especially in UAV-based remote sensing, traffic
+monitoring, and surveillance scenarios. Existing convolutional
+neural networks are effective in local feature extraction but remain
+limited in long-range dependency modeling, while Transformer-
+based methods improve global modeling at the cost of high
+computational complexity. To address these issues, this paper
+proposes an efficient image-dehazing framework termed FSSM,
+which integrates frequency-enhanced State Space Modeling with a
+hierarchical encoder–decoder architecture. Specifically, an FFT-
+based State Space Block (FFTSSB) is designed to reformulate state
+propagation as frequency-domain two-sided non-causal convolution,
+enabling efficient bidirectional global dependency modeling
+without explicit recursive scanning. Furthermore, a Frequency-
+Aware Discriminative Enhancement Block (FDEB) is introduced to
+enhance local textures, edges, and structural details through spatial
+gating and lightweight block-wise frequency modulation. Based on
+these two components, a Frequency-Aware State Interaction (FASI)
+block is constructed to progressively couple global state
+propagation and local frequency-aware enhancement. Experimental
+results on the HazyDet dataset demonstrate that FSSM achieves
+favorable restoration accuracy, structural consistency, and
+perceptual quality compared with representative dehazing methods.
+Ablation studies further validate the effectiveness of the proposed
+two-sided FFT-based state modeling, frequency-aware enhancement,
+and hierarchical multi-scale design.
+Keywords: image dehazing, state space model, FFT-based
+convolution, frequency-domain enhancement, UAV images
+1. Introduction
+Image dehazing is a fundamental visual perception task under
+adverse weather conditions and plays a critical role in a wide range
+of applications, including autonomous driving, video surveillance,
+and remote sensing [1,2]. In such scenarios, image dehazing not
+only improves visual quality but also enhances the stability and
+robustness of downstream vision systems. Traditional dehazing
+methods are typically derived from the atmospheric scattering
+model and benefit from clear physical interpretability. Although
+these prior-based methods can achieve satisfactory results in
+relatively controlled scenarios, their performance often deteriorates
+in complex real-world scenes with non-uniform illumination and
+spatially varying haze, thereby limiting their generalization
+capability [3,4].
+With the rapid development of deep learning, convolutional neural
+networks (CNNs) and vision Transformers have significantly
+advanced the performance of image dehazing. CNN-based methods
+mainly rely on sophisticated architectural designs and module
+innovations, such as residual connections [5], attention mechanisms
+[6], and large-kernel convolutions [7,8], to enhance feature
+representation. However, the inherently local receptive field of
+convolution limits the ability of CNNs to model long-range
+dependencies, often leading to insufficient global consistency and
+suboptimal detail recovery [9]. In contrast, Transformer-based
+models introduce self-attention mechanisms to capture global
+contextual information and have achieved remarkable progress in
+image dehazing [10,11]. Nevertheless, the quadratic computational
+complexity of self-attention with respect to input resolution severely
+restricts their efficiency, especially for high-resolution images and
+real-time or mobile deployment scenarios [12,13].
+Recently, State Space Models (SSMs) [14,15] have attracted
+considerable attention because of their ability to model long-range
+dependencies with linear computational complexity. By
+parameterizing sequence dynamics through exponential kernels,
+SSMs have demonstrated impressive performance in time-series
+modeling, natural language processing, and signal processing tasks.
+Notably, the improved SSM architecture Mamba [16,17] introduces
+a selective scanning mechanism that enables the model to
+efficiently retain task-relevant information while suppressing
+irrelevant components, offering an attractive balance between
+modeling capacity and computational efficiency. These properties
+motivate the exploration of SSMs for image restoration tasks,
+including image dehazing, where effective non-local modeling is
+crucial.
+However, directly applying SSMs to image dehazing poses several
+challenges. Naïve adaptations often introduce redundant
+computations and directional bias, particularly when modeling
+bidirectional spatial dependencies inherent in images [18,19,20].
+Moreover, existing SSM formulations are not explicitly designed to
+exploit frequency-domain characteristics, which are highly
+informative for haze-related degradation patterns.
+To address these limitations, this paper proposes a novel and
+efficient image-dehazing framework termed FSSM (Frequency-
+Enhanced State Space Model). The proposed approach integrates
+the continuous dynamic modeling capability of State Space Models
+with frequency-domain enhancement mechanisms, enabling
+collaborative optimization of global dependency modeling and local
+detail restoration. Specifically, the main contributions of this work
+are summarized as follows:
+•  We propose an FFT-based State Space Block (FFTSSB), which
+performs two-sided non-causal convolution in the frequency
+domain to replace conventional recursive state propagation.
+This design enables implicit state propagation with reduced
+computational redundancy, facilitating efficient global
+dependency modeling while preserving physical
+interpretability.
+•  We design a Frequency-Aware State Interaction (FASI) Block,
+which tightly couples FFTSSB with the Frequency-Aware
+Discriminative Enhancement Block (FDEB). This unified
+spatial–frequency modeling unit enhances texture and edge
+restoration and improves robustness to complex haze
+structures.
+•  We construct a hierarchical multi-scale encoder–decoder
+framework with skip connections, allowing effective cross-
+scale feature interaction and fusion. This design significantly
+improves detail recovery and structural consistency in
+dehazed images.
+•  Extensive experiments on the HazyDet dataset demonstrate
+that FSSM achieves favorable quantitative and qualitative
+dehazing performance, with improvements in PSNR and SSIM
+over representative comparison methods. Ablation studies
+further verify the effectiveness of the proposed FFTSSB and
+FDEB modules in enhancing global structural consistency and
+local detail restoration.
+2. Related Work
+2.1. Traditional Image-Dehazing Methods
+Traditional image-dehazing methods are mainly based on physical
+models or handcrafted statistical priors. The dark channel prior
+(DCP) proposed by He et al. [4] assumes that at least one color
+channel in non-sky regions has very low intensity, and has become
+a classical approach for single-image dehazing. Zhu et al. proposed
+the color attenuation prior (CAP) [21], which estimates scene depth
+via linear regression to recover haze-free images. In addition,
+Berman et al. introduced the non-local dehazing (NLD) method
+[22], which reconstructs the transmission map by exploiting color
+clustering properties in natural images.
+Although these prior-based methods exhibit strong physical
+interpretability and can produce visually pleasing results under
+certain conditions, they generally rely on idealized assumptions. As
+a result, their performance often degrades in complex
+environments, such as nighttime scenes, non-uniform haze, or
+strong illumination conditions [23]. Moreover, due to the lack of
+adaptive learning capability, these methods struggle to capture fine-
+grained texture details, frequently leading to over-smoothed results
+or color distortions, which limits their practical applicability and
+generalization ability.
+2.2. Deep Learning-Based Dehazing Methods
+Deep learning techniques have significantly advanced the
+development of image dehazing. AOD-Net [24] was among the first
+to embed the atmospheric scattering model into a neural network,
+enabling end-to-end haze removal. FFA-Net [25] introduced feature
+attention mechanisms to enhance texture restoration, while
+MixDehaze-Net [26] adopted multi-scale dense architectures to
+improve detail reconstruction. OKNet [27] proposed an omni-kernel
+module that integrates global, large-scale, and local branches,
+achieving effective multi-scale feature learning for image dehazing,
+desnowing, and deblurring tasks.
+Furthermore, DWTMA-Net [28] combined discrete wavelet
+transform (DWT) with multi-dimensional attention mechanisms to
+jointly recover spatial- and frequency-domain features, significantly
+improving detail fidelity and color consistency. Transformer-based
+methods, such as MB-TaylorFormer [29], U2-Former [30], and
+SelfPromer [31] leverage self-attention mechanisms to capture long-
+range dependencies and have achieved strong dehazing
+performance. However, their high computational complexity makes
+them difficult to deploy in real-time systems. Recently, hybrid
+architectures, including Trinity-Net [32] and Two-Branch Image
+Dehazing [33], have attempted to combine the local representation
+capability of CNNs with the global modeling strength of
+Transformers, achieving a more favorable trade-off between
+performance and efficiency.
+More recently, researchers have further explored real-world and
+diverse haze removal from the perspectives of domain adaptation,
+generative modeling, degradation diversity, and lightweight
+deployment. UCL-Dehaze [34] introduced an unsupervised
+contrastive learning paradigm to alleviate the domain gap between
+synthetic and real hazy

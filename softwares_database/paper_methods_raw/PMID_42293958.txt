@@ -1,0 +1,187 @@
+
+Methodology, Writing – review & editing
+Find articles by Tom Piercy
+, Kiera L Adams
+Kiera L Adams
+3Department of Experimental Psychology, University of Oxford,
+Oxford, United Kingdom
+Methodology, Writing – review & editing
+Find articles by Kiera L Adams
+3, Connor T Keating
+Connor T Keating
+3Department of Experimental Psychology, University of Oxford,
+Oxford, United Kingdom
+Methodology, Writing – review & editing
+Find articles by Connor T Keating
+3, Rachel Tam
+Rachel Tam
+3Department of Experimental Psychology, University of Oxford,
+Oxford, United Kingdom
+Methodology, Writing review editing
+Find articles by Rachel Tam
+3, David Plans
+David Plans
+4Department of Psychology, Royal Holloway University of London,
+Egham, United Kingdom
+Formal analysis, Methodology, Writing – review & editing
+Find articles by David Plans
+4, Davide Morelli
+Davide Morelli
+5Department of Engineering Science, Institute of Biomedical
+Engineering, University of Oxford, Oxford, United Kingdom
+Formal analysis, Writing – review & editing
+Find articles by Davide Morelli
+5, Adam Cunningham
+Adam Cunningham
+6Independent Researcher, London, United Kingdom
+Formal analysis, Writing – review & editing
+Find articles by Adam Cunningham
+6, Geoffrey Bird
+Geoffrey Bird
+3Department of Experimental Psychology, University of Oxford,
+Oxford, United Kingdom
+7Centre for Research in Autism and Education, Institute of
+Education, University College London, London, United Kingdom
+8European Research College London, London, United Kingdom
+9European Research University, Ostrava, Czechia
+Conceptualization, Formal analysis, Methodology, Supervision,
+Writing – original draft, Writing – review & editing
+Find articles by Geoffrey Bird
+3,7,8,9
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC13261906  PMID: 42293958
+Abstract
+In 2021 a new measure for the assessment of cardiac interoceptive
+accuracy—the Phase Adjustment Task (PAT)—was developed that
+overcomes several limitations of existing methods and can be
+administered using a smartphone application. In this report, we
+describe several refinements to the PAT. These include: (1)
+triggering tones from the detection of the heartbeat via the
+smartphone camera, rather than using an algorithm for predicting
+the occurrence of the next heartbeat; (2) technical amendments to
+enable implementation on iPhones with multiple cameras; (3)
+changes to instructions and (4) changes to the collection of
+confidence ratings to improve participant understanding and the
+utility of confidence ratings for interpretation of results; (5) the
+introduction of new practice trials to improve clarity; (6) changes to
+the analysis approach to identify cardiac phase-based heartbeat
+perceivers; (7) a review of the use of continuous scores; (8) a
+reanalysis of data comparing PAT performance in supervised
+laboratory settings and unsupervised remote settings using the new
+analysis method, and (9) the implementation of additional measures
+to discourage participants from checking their pulse. In this paper
+we outline our justification for these changes and provide details of
+where researchers can access the materials required for
+implementing the PAT and analyzing data. Finally, we provide
+further recommendations for implementation.
+Keywords: cardiac interoception, cardiac interoceptive accuracy,
+interoception, interoceptive accuracy, interoceptive awareness
+1. Introduction
+In recent years there has been an increased focus on the
+measurement of cardiac interoceptive accuracy, the perception of
+internal bodily signals arising from the heart (Brewer et al., 2021).
+Such increased focus has been driven by concerns regarding the
+validity of commonly used measures of cardiac interoceptive
+accuracy (Desmedt et al., 2023). For example, the heartbeat
+counting task (HCT; Dale and Anderson, 1978; Schandry, 1981),
+one of the most commonly used measures of cardiac interoceptive
+accuracy, suffers from the flaw that individuals who know their
+heart rate can falsely appear able to perceive their heartbeats (e.g.,
+Desmedt et al., 2018; Murphy et al., 2018). In addition, the
+heartbeat detection task (HDT; first proposed by Whitehead et al.,
+1977), also commonly used, has the flaw that it assumes that all
+participants perceive their heartbeat at the same point in the
+cardiac cycle—an assumption shown to be invalid (e.g., Yates et al.,
+1985; Ring and Brener, 1992).
+These concerns have given rise to the development of several new
+measures. The Phase Adjustment Task (PAT; Plans et al., 2021) has
+been described as one of the most promising of the new measures of
+cardiac interoceptive accuracy (Desmedt et al., 2023). In this task,
+tones are presented at a rate matching the participant’s heart rate,
+but out of phase with heartbeats. Participants are asked to turn a
+virtual dial to adjust the phase relationship between heartbeats and
+tones until they believe the tones to be synchronous with their
+heartbeat. As the starting phase is random across trials, the
+consistency of the participant’s response is taken as a measure of
+accuracy (as participants who are unable to feel their heartbeats
+should choose phase relationships at random across trials). Bayesian
+analyses were used to classify participants as interoceptive, non-
+interoceptive or unclassified, reflecting the degree of certainty
+surrounding evidence for cardiac perception at various thresholds.
+The PAT was originally programmed to be administered via a
+smartphone application (of course, it can also be implemented in a
+lab setting), providing opportunities to increase the size and
+diversity of samples in interoception research. Although the PAT
+overcomes several limitations of existing measures (chiefly that
+knowledge of heartrate is insufficient to provide above-chance
+performance in the absence of the ability to detect heartbeats, and
+no assumption is made about when in the cardiac cycle heartbeats
+are perceived; for discussion see Plans et al., 2021; Desmedt et al.,
+2023), the specific way it was implemented and analyzed could be
+improved, motivating the development of the updated
+implementation reported here (PAT 2.0). In brief (discussed in more
+detail throughout), issues existed with the presentation of tones
+relative to heartbeats, camera selection on multi-camera iPhones,
+task instructions and the collection of confidence ratings, and (in
+common with all other tasks to our knowledge) an analysis
+procedure which was unable to identify interoceptive individuals
+who perceived their heartbeat at a consistent phase of their cardiac
+cycle (rather than a consistent delay from the preceding heartbeat).
+The steps taken to address these issues are detailed in the following,
+with recommendations for implementation aimed at further
+optimizing the measurement of cardiac interoceptive accuracy.
+Code for implementing the revised tasks described below, alongside
+analysis scripts, can be found at https://osf.io/fp5sq/ and https://
+github.com/Interolab/Interoception.
+2. Methods
+2.1. Refinements
+2.1.1. Heartbeat detection
+In the original version of the task, detected heartbeats were not
+used to determine when tones occurred. Instead, the onset of tones
+was governed by the predicted occurrence of heartbeats derived
+from beat-to-beat intervals recorded every 3 s throughout the task.
+However, given that the accuracy of this prediction could vary both
+across participants and within participants on different testing
+occasions due to differences in heart rate variability, it is more
+desirable to use detected heartbeats to govern tone onset. The
+original decision to base tones on predicted heartbeats was due to
+the unfounded concern that participants may perceive their
+heartbeat before it was recorded at the finger due to the delay
+between the contraction of the heart and the arrival of the pulse at
+the finger. As analysis of the PAT focuses on consistency, however,
+it is not problematic for participants to perceive their heartbeat
+before the pulse wave is recorded at the finger. Even when a
+participant feels their heartbeat before it is detected at the finger,
+they would still be able to demonstrate perfect consistency by
+selecting the same phase relationship between tones and detected
+heartbeats across trials. As such, in PAT 2.0, detection of the
+heartbeat at the finger governs tone occurrence. This ensures that
+any potential differences in the accuracy of the prediction of
+heartbeats, within or across participants, cannot influence scores. As
+part of this change, the range of the dial is now set by the greater of
+either the running average period between heartbeats or last
+recorded period between heartbeats (“instant period” in the analysis
+script). This ensures that the dial always spans a physiologically
+plausible interval and reduces distortions arising from anomalous
+heartbeat period readings. The analysis script has been updated
+accordingly such that the dial range period used in the analysis
+script matches the new approach to setting the dial range in the
+task. However, similarity calculations (described in section 2.1.6.3)
+continue to use the last recorded heartbeat period, as these reflect
+heartbeat dynamics when participants submit their delay selection.
+2.1.2. Camera selection
+An issue was identified with the implementation of the PAT task on
+iPhone models that have multiple camera lenses—the iPhone
+automatically switched the active camera lens, and this interfered
+with data collection. We have now implemented edits to the code to
+ensure that one camera lens is selected by the app and used
+throughout the task, so that the task can be completed by
+participants using any existing iPhone model running iOS 15 and
+above (providing operability with 94% of iPhones in current use;
+Sherif, 2024).
+2.1.3. Changes to participant instructions and procedure
+To increase clarity for participants, we implemented various
+changes to the instructions and instruction procedure. Full details of
+changes to the instructions

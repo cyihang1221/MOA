@@ -1,0 +1,123 @@
+
+Materials and Methods
+Code modifications
+We modified the existing OpenMS C++ API to include a set of
+functions which allow efficient processing of large XML
+datastructures with minimal memory expenditure. Specifically, we
+added the IndexedMzMLFileLoader class to the API which
+allows loading of an indexed mzML file and returns an object of
+type OnDiscMSExperiment to the client. This provides random
+read access (“lazy loading”) to any spectrum or chromatogram
+present in the indexed mzML file by loading only the currently
+requested data structure into memory. In addition, we added the
+CachedmzML class to the API which is able to read a cached mzML
+file from disk. For event-driven data processing, we implemented
+transform functions (inspired by the std::transform concept
+in the C++ standard template library) for the MzMLHandler and
+the MzXMLHandler objects which apply a requested transformation
+to a given file on disk without ever fully loading the file into
+memory. The user can provide the transformation operation
+through a class derived from Interfaces::IMSDataConsumer
+(or in Python, a class that implements all four required functions,
+see online documentation and S1 Text).
+Several implementations of the Interfaces::IMSDataConsumer
+are provided and implement basic functions such as writing to the
+mzML format, writing to a cached mzML format, applying a given
+function pointer to all data, chaining consumers together to perform
+multiple operations in a pre-defined order or simply perform no
+operation (to be used at a place where a
+Interfaces::IMSDataConsumer object is expected but no
+operation is desired).
+Code analysis
+By dynamic analysis of the XML-parsing code of OpenMS using the
+“callgrind” profiling tool, we were able to identify critical
+performance bottlenecks. Specifically, we identified performance
+issues during conversion of Base64 encoded data strings (as found
+in the mzML and mzXML data formats) to floating point values as
+well as during the construction of MSSpectrum instances. We were
+able to improve the performance through optimized Base64 parsing
+and through parallelization of the critical code sections, achieving
+an overall performance boost of a factor of 4 or more compared to
+the default OpenMS 1.11 code.
+Performance measurement
+All measurements of speed and system memory were performed on
+the same Red Hat Enterprise Linux server using a custom built
+version of OpenMS which incorporated all the described patches
+and reporting code for speed and memory requirements. A small
+sample application, TICCalculator, was written to compare the
+speed and memory requirements of the different algorithms
+described in the text. To evaluate single-threaded parsing, the -
+threads command line parameter was set to 1 while it was set to
+16 for the multi-threaded comparisons. To measure the parsing
+speed of the ProteoWizard library, a sample program was built
+against the ProteoWizard software library (revision 7261,
+committed 2015-03-06); all related code can be found at https://
+github.com/hroest/pwiz_readspeed. Resident size was used for all
+memory measurements. All measurements were performed three
+times (after two burn-in runs) and averages are reported. As a test
+file, a single file from Röst et al. [14] was chosen and test files of
+different sizes were generated using the OpenMS FileFilter
+utility by selecting a retention time range of 100, 250, 500 and 750
+seconds from the original input file, starting 2000 seconds into the
+original file. The comparison of all algorithms was only performed
+on the small, filtered files since the memory inefficient algorithms
+could not handle the full file (60 GB size). We decided against
+reporting CPU time and in favor of walltime since walltime is closer
+to the user-experienced wait time which is relevant here. The
+source code for the TICCalculator sample application can be
+downloaded from https://github.com/hroest/OpenMS/tree/feature/
+measureMemoryConsumption. All comparisons shown in the main
+text refer to the C++ API, see S1 Text for performance benchmarks
+of the Python API.
+Availability
+All described is currently available through https://github.com/
+OpenMS/OpenMS and has been merged into the main OpenMS
+development branch. Documentation for the different file access
+modes by read and write use-case are provided through the
+OpenMS documentation including three fully functional and nightly
+tested sample programs (see documentation at http://ftp.mi.fu-
+berlin.de/OpenMS/documentation/html/tutorial_format.html).
+Results
+Here we present a fast and versatile C++ and Python library for
+reading and writing XML data formats used in MS-based proteomics
+which is based on the OpenMS framework. The library provides raw
+data access for different usage scenarios by allowing users to select
+from several access modes tailored for a specific use-case (see Table
+1). One access mode is optimized for sequential data processing
+(“event-driven”), one for frequent random access (“cache”), one for
+infrequent random access (“indexed”), while the original
+implementation suited for small-scale data (“in-memory”) is also
+still available. Specifically, the new features described here and
+implemented in OpenMS include:
+Table 1. Available access types of raw mass
+spectrometric data through OpenMS.
+This paper describes the implementation and use of the “random
+access on disk” (indexed mzML and cached mzML) and the “event-
+driven” access types and compares it to the previously available
+“random access in memory” method.
+Access Type
+Use case
+Random Access in
+Memory
+Read Fast access to small XML
+datastructures
+Write Fast storage of small XML
+datastructures
+Random Access on
+Disc (indexed)
+Read Access for infrequent random access
+Write Only sequential writing possible (see
+below)
+Random Access on
+Disc (cached)
+Read Ultra-fast access for frequent random
+access
+Write Only sequential writing possible (see
+below)
+Event-driven
+processing
+Read Sequential read access suitable for
+compressed or non-indexed files
+Write Sequential write interface for mzML,
+indexed mzML, cached mzML
+Open in a new tab

@@ -1,0 +1,174 @@
+
+Methodology, Validation, Resources, Writing – review & editing,
+Supervision, Project administration, Funding acquisition
+Find articles by David T Lau
+2, Jeffrey Erochko
+Jeffrey Erochko
+2Department of Civil and Environmental Engineering, Carleton
+University, Ottawa, ON K1S 5B6, Canada;
+cameronflude@cmail.carleton.ca (C.C.W.F.);
+davidlau@cunet.carleton.ca (D.T.L.); jeffrey.erochko@carleton.ca
+(J.E.)
+Resources, Writing – original draft, Supervision
+Find articles by Jeffrey Erochko
+2, Hung-Wei Liu
+Hung-Wei Liu
+1Department of Civil Engineering, National Taipei University of
+Technology, No. 1, Sec. 3, Zhongxiao E. Rd., Daan Dist., Taipei
+10608, Taiwan; t112429402@ntut.edu.tw (M.K.S.);
+Validation, Investigation
+Find articles by Hung-Wei Liu
+1
+Editors: Yoichi Kageyama, Lifeng Zhang
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC13364053  PMID: 42451256
+Abstract
+Suspended ceiling systems are among the most seismically
+vulnerable non-structural components in buildings, posing
+significant life-safety risks and economic losses, yet understanding
+their full-field kinematic behavior under seismic loading remains a
+major experimental challenge. Conventional contact sensors offer
+limited spatial coverage and can alter the dynamic properties of
+lightweight panels due to mass loading. In contrast, non-contact
+optical alternatives are rarely feasible in shake-table environments
+due to restricted viewing angles, extensive areal coverage
+requirements, and the risk of equipment damage from falling
+panels. This study proposes an end-to-end three-dimensional
+displacement measurement framework for large-scale shake-table
+testing of suspended ceiling systems, employing consumer-grade
+cameras with purpose-built tools that cover the complete
+experimental workflow, including motion-based video trimming,
+semi-automated calibration, a robust multi-stage image-tracking
+pipeline that maintains trajectory continuity under extreme inter-
+frame displacements, and a ceiling system motion visualization and
+analysis tool. The framework was validated through a full-scale
+shake-table experiment continuously tracking 324 spatial nodes
+across 81 ceiling panels, achieving an RMSE below 3 mm in all
+spatial directions and exact peak-frequency agreement in 9 out of
+10 test cases. A parallel processing architecture reduced total
+processing time from over 27 h to under 10 min without GPU
+acceleration, and six-degree-of-freedom rigid-body analysis resolved
+the complete panel failure sequence from constrained oscillation
+through multi-axis rotation to gravitational free fall, a level of
+kinematic detail unattainable with conventional instrumentation.
+This framework establishes a practical, scalable foundation for full-
+field seismic performance assessment of non-structural systems
+where conventional instrumentation is physically or logistically
+infeasible.
+Keywords: suspended ceiling, stereo vision, shaking table testing,
+3D displacement, measurement accuracy
+1. Introduction
+Suspended ceiling systems are among the most common non-
+structural components in modern buildings, serving functions that
+include acoustic control, fire resistance, concealment of building
+services, and interior finishing [1,2]. Despite their non-structural
+classification, they are highly vulnerable to earthquakes [3,4,5,6].
+Post-earthquake reconnaissance studies consistently identify them
+as the major contributors to building functional failure, occupant
+risk, and repair costs that frequently exceed those of the structural
+systems [7,8,9,10]. These failures arise from complex interactions
+between seismic loading, progressive degradation at grid
+connections, and the limited lateral and rotational stiffness of
+conventional lay-in ceiling configurations [9,11]. Understanding
+and quantifying these failure mechanisms is therefore essential to
+improving non-structural seismic design provisions and life-safety
+performance.
+Large-scale shake-table testing is the standard experimental
+approach for evaluating ceiling seismic performance [12,13,14]. It
+allows full-scale assemblies to be subjected to controlled, repeatable
+ground motions and enables researchers to observe the progress of
+damage, from elastic deformation to grid yielding, runner
+dislodgement, and panel collapse, across lay-in, continuous, and
+multi-elevation configurations [1,4,15]. The central instrumentation
+challenge is capturing the spatial and temporal response of the
+entire ceiling, not just isolated points [14,16]. Conventional contact
+sensors, LVDTs, wire potentiometers, and accelerometers are
+accurate but have significant limitations for this application [17].
+Their mass alters the dynamic behavior of the lightweight panels
+they measure, their cabling is difficult to route overhead, and
+deploying them at sufficient density across a large specimen is
+practically not feasible [18].
+Vision-based methods offer a non-contact measurement alternative
+[19,20,21]. Digital Image Correlation (DIC) and optical target
+tracking reconstruct displacement fields by tracking surface features
+or markers across image sequences without contacting the specimen
+[22,23]. These methods have been applied successfully to beam
+deflections [24], inter-story drift [25], multi-story building
+displacement [26,27], wall shear deformations [22], and bridge
+pier cracking [28,29,30]. Stereo-vision systems extend this to three-
+dimensional tracking via geometric triangulation from two
+synchronized cameras [31,32]. Recent technological improvements
+in affordable consumer cameras have made multi-camera
+deployments practical at full experimental scale [33,34]. Despite
+this track record, application to suspended ceilings remains limited.
+Guo et al. [35], Wang et al. [36], and Han et al. [37] use point
+cloud or semantic segmentation approaches to classify the ceiling
+condition as damaged or undamaged, rather than measuring
+continuous displacement fields.
+Furthermore, these methods are computationally costly, which
+limits their utility for time-series dynamic monitoring. While
+conventional DIC implementations are accurate and capable of
+continuous displacement tracking [19], they require a speckle-
+coated surface [28], uniform illumination [24], relatively small out-
+of-plane displacement, a near-perpendicular angle of sight [24], and
+high-quality images [21]. However, these optical and geometric
+prerequisites are rarely feasible within the physical constraints of
+large-scale ceiling shake-table experiments. These gaps arise from
+geometric, algorithmic, and computational challenges specific to
+ceiling testing environments: cameras must be positioned within
+potential debris zones with an oblique line of sight, inter-frame
+displacements during seismic events are large and rapid, lighting
+conditions are poor, and multi-camera systems generate substantial
+data volume.
+The primary challenge is algorithmic. The Enhanced Correlation
+Coefficient (ECC) algorithm [38] is a tool for aligning two images
+by finding the warp matrix that best matches them. It initializes
+each frame’s estimate from the previous frame to align, a strategy
+that works well for slow deformations but fails to converge when
+inter-frame displacements are large, placing the optimizer outside
+the basin of convergence of the true solution [39]. This failure
+mode is particularly critical in seismic testing, where large-
+amplitude, high-velocity motion is of primary interest. To address
+this, the present study proposes a multi-step warp initialization
+strategy based on kinematic extrapolation of the recent
+displacement history, combined with a cascaded fallback
+mechanism that is activated when convergence fails. This extends
+reliable tracking through the pre-failure and progressive
+connection-failure phases of panel behavior. However, tracking is
+ultimately lost when panel detachment induces large out-of-plane
+rotations, a limitation explicitly characterized in the results.
+This paper presents an end-to-end stereo-vision framework for full-
+field three-dimensional kinematic monitoring of suspended ceiling
+systems under seismic loading. The framework combines consumer-
+grade cameras with purpose-built algorithms covering the complete
+workflow: video trimming, calibration, fiducial marker-based
+correspondence, multi-stage ECC tracking, stereo synchronization,
+triangulation, and six-degree-of-freedom (6-DOF) motion extraction.
+The three primary contributions are: (1) the multi-step warp
+initialization and cascaded fallback pipeline, which extends reliable
+tracking well beyond conventional ECC and standard DIC
+implementations up to the limits of the planar template assumption;
+(2) a parallel processing architecture that reduces processing time
+from over a day to a few minutes without GPU acceleration, making
+dense stereo tracking practical within standard post-processing
+workflows; and (3) a comprehensive experimental demonstration of
+full-field three-dimensional kinematic monitoring of a complete
+suspended ceiling system, tracking hundreds of nodes across
+multiple panels through progressive failure and collapse, validated
+against independent accelerometer measurements with acceptable
+accuracy across all spatial axes.
+The rest of this paper is organized as follows. Section 2 details the
+complete methodological framework. Section 3 presents the
+experimental validation results and ceiling system displacement
+analysis. Section 4 provides concluding remarks, limitations, and
+directions for future research.
+2. Materials and Methods
+The proposed vision-based full-field displacement and rigid body
+kinematics measurement system for suspended ceilings follows a
+comprehensive multi-stage methodological workflow, as illustrated
+in Figure 1. The pipeline encompasses eight sequential stages: (1)
+experimental setup, (2) experimental data acquisition, (3) raw data
+processing, (4) camera calibration, (5) feature tracking and
+multiview matching, (6) stereo synchronization, (7) triangulation,

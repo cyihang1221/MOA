@@ -1,0 +1,185 @@
+
+Methodology, Validation, Formal analysis, Investigation, Resources,
+Data curation
+Find articles by Wanran Guo
+1, Jiake Meng
+Jiake Meng
+1School of Mathematical Sciences, Chengdu University of
+Technology, Chengdu 610059, China; 13171955930@163.com
+(W.G.); xueyuan07@cdut.edu.cn (Y.X.); 19980850361@163.com
+(Y.F.); 17882342474@163.com (Z.F.)
+Methodology, Validation, Formal analysis, Data curation, Project
+administration, Funding acquisition
+Find articles by Jiake Meng
+1,*, Yuan Xue
+Yuan Xue
+1School of Mathematical Sciences, Chengdu University of
+Technology, Chengdu 610059, China; 13171955930@163.com
+(W.G.); xueyuan07@cdut.edu.cn (Y.X.); 19980850361@163.com
+(Y.F.); 17882342474@163.com (Z.F.)
+2Geomathematics Key Laboratory of Sichuan Province, Chengdu
+610059, China
+Methodology, Formal analysis, Investigation, Resources, Data
+curation, Writing – original draft
+Find articles by Yuan Xue
+1,2, Yaxian Fan
+Yaxian Fan
+1School of Mathematical Sciences, Chengdu University of
+Technology, Chengdu 610059, China; 13171955930@163.com
+(W.G.); xueyuan07@cdut.edu.cn (Y.X.); 19980850361@163.com
+(Y.F.); 17882342474@163.com (Z.F.)
+Software, Validation, Formal analysis, Investigation, Resources,
+Supervision
+Find articles by Yaxian Fan
+1, Zhenyu Fang
+Zhenyu Fang
+1School of Mathematical Sciences, Chengdu University of
+Technology, Chengdu 610059, China; 13171955930@163.com
+(W.G.); xueyuan07@cdut.edu.cn (Y.X.); 19980850361@163.com
+(Y.F.); 17882342474@163.com (Z.F.)
+Methodology, Software, Validation, Formal analysis, Investigation,
+Writing – original draft
+Find articles by Zhenyu Fang
+1
+Editors: Honggang Chen, Chao Ren
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC13165571  PMID: 42122623
+Abstract
+Occluded person re-identification (Re-ID) aims to accurately match
+occluded pedestrian images against complete gallery images
+captured across multiple cameras, a task that is critical to public
+security and intelligent surveillance systems. Existing graph neural
+network (GNN)-based methods typically assign uniform aggregation
+weights to all nodes, failing to reflect the inherent reliability
+difference between visible and occluded body regions, which allows
+noise from low-confidence nodes to propagate freely and corrupt
+the final pedestrian representation. To address this, we propose the
+Self-Information-Driven Gated Graph Convolutional Network (SI-
+GCN). Keypoint detection confidence scores are transformed into
+logarithmic self-information measures as uncertainty priors for a
+learnable gating mechanism. The proposed SIG module enables
+visible nodes to dominate information diffusion while occluded
+nodes absorb more from neighbors, achieving efficient feature
+updating. A dynamic confidence calibration (DCC) strategy further
+synchronizes node reliability estimates with feature evolution across
+successive GCN layers. Extensive experiments on six public
+benchmarks covering occluded, partial, and holistic Re-ID scenarios
+demonstrate that SI-GCN achieves state-of-the-art performance,
+with Rank-1 accuracy and mAP improvements of 1.2% and 0.9%,
+respectively, over the strongest baseline on the Occluded-REID
+dataset, demonstrating its strong potential for deployment in real-
+world public security and urban surveillance applications where
+occlusion is pervasive.
+Keywords: person re-identification, occlusion, graph convolutional
+network (GCN), self-information, uncertainty modeling, gating
+mechanism
+1. Introduction
+Person re-identification (Re-ID) aims to retrieve specific individuals
+across time and multiple cameras and has been widely used in
+video surveillance, security, and smart cities [1]. However, in real-
+world deployment, limited camera fields of view, mutual occlusions
+between pedestrians, and scene obstacles result in a large number of
+captured images only showing partial regions of the target
+pedestrian body. How to achieve accurate cross-camera matching
+under severe feature missing conditions remains an important and
+unsolved challenge [2]. Therefore, occlusion is widely recognized as
+the primary bottleneck restricting the reliable deployment of Re-ID
+systems in real-world scenarios [3].
+Over the past decade, the rapid development of deep convolutional
+neural networks (CNNs) has significantly boosted the overall
+performance of Re-ID [1]. CNN-based methods extract global
+discriminative features of images through end-to-end learning and
+achieve remarkable results on standard benchmarks with the help
+of metric learning loss functions [4]. To address occlusion and pose
+variations, part-level methods divide the human body into several
+regions or stripes to extract features separately and then fuse them
+with global features to enhance detailed perception. Nevertheless,
+both types of methods lack an explicit mechanism to distinguish the
+feature reliability of different regions when handling severe
+occlusion, resulting in the equal treatment of noisy and effective
+features, which severely interferes with the final matching decision.
+Compared with CNNs, graph neural network (GNN)-based methods
+possess stronger structure awareness and contextual reasoning
+abilities by modeling the topological relationships among human
+keypoints [5]. In the Re-ID task, Zhang et al. [6] proposed the Part-
+Guided Graph Convolution Network (PGCN) to mine part
+relationships across images via graph convolution; Lian et al. [7]
+presented the Local Relation-Aware Graph Convolutional Network
+(LRGCN) to achieve the adaptive aggregation of local features by
+constructing overlapping graphs and similarity graphs. These
+methods effectively improve the model’s robustness to pose
+variations and partial occlusion, representing the mainstream
+paradigm of current graph-based Re-ID approaches.
+However, existing GNN methods suffer from two limitations in their
+information propagation mechanism. First, they assign equal
+aggregation weights to all nodes during message passing, failing to
+reflect the inherent differences in feature reliability between visible
+nodes and occluded nodes, leading to the diffusion of noise from
+low-confidence nodes in the graph structure. Second, they lack a
+reliability-aware weighting mechanism in the feature fusion stage,
+implicitly treating the contributions of all nodes to the final identity
+embedding as equal, which further weakens the model’s robustness.
+As shown in Figure 1a, classical GNNs treat high-confidence nodes
+(orange; light color denotes low uncertainty) and low-confidence
+occluded nodes (blue; dark color denotes high uncertainty) equally
+during information propagation and cannot effectively suppress
+noise diffusion.
+Figure 1.
+[image]
+Open in a new tab
+Comparison of information propagation mechanisms between
+traditional GNN and our proposed SI-GCN. (a) Occluded Images:
+Examples of input images with varying degrees of occlusion, where
+certain key regions (e.g., joints or object parts) are partially or fully
+invisible. (b) Pose Estimation: Corresponding pose estimation
+results, depicting the skeletal structure or keypoints of the human
+body/object derived from the occluded images. (c) Uniform
+propagation: All nodes are treated equally, and noise from low-
+confidence regions is diffused. (d) Self-information-driven gated
+graph convolution for adaptive propagation: High-confidence nodes
+(orange) output strongly; low-confidence nodes (blue) suppress
+output and aggregate contextual information. The thickness of the
+arrows indicates the information intensity.
+To address the above issues, this paper proposes the Self-
+Information-Driven Gated Graph Convolutional Network (SI-GCN).
+As illustrated in Figure 1b, SI-GCN converts the keypoint detection
+confidence output by the pose estimator into a self-information
+metric, which drives learnable gating coefficients to perform the
+asymmetric adaptive regulation of the information flow between
+nodes. Low-confidence occluded nodes actively aggregate semantic
+information from high-confidence neighbors to repair features while
+suppressing the outward propagation of their own noise. High-
+confidence visible nodes strengthen the dominant roles of their
+features with larger weights to avoid over-smoothing. In addition,
+the dynamic confidence calibration (DCC) strategy enables node
+reliability estimation to be updated synchronously with feature
+evolution across multi-layer graph convolutions, further enhancing
+the framework’s continuous perception of changing occlusion states.
+The main contributions of this paper are summarized as follows:
+(1) We propose the Self-Information-Driven Gated Graph
+Convolutional Network (SI-GCN) framework. From an information-
+theoretic perspective, we revisit the node feature propagation
+mechanism under occlusion, convert keypoint detection confidence
+into logarithmic self-information as an uncertainty prior, and
+construct an adaptive graph convolution learning framework for
+occluded person Re-ID.
+(2) We design the self-information gated graph convolution module
+(SIG) and the dynamic confidence calibration (DCC) strategy. SIG
+realizes asymmetric information flow regulation between nodes via
+learnable gating coefficients, effectively suppressing noise diffusion
+in the graph structure; DCC allows confidence information to
+propagate and update synchronously with feature information
+across graph layers, strengthening the framework’s continuous
+perception of occlusion states.
+(3) Extensive experiments on six public benchmark datasets
+covering occluded, partial, and holistic Re-ID scenarios demonstrate
+that SI-GCN achieves competitive performance. In particular, on the
+Occluded-REID dataset, its Rank-1 accuracy and mAP surpass those
+of the current strongest baseline by 1.2% and 0.9%, respectively.
+The remainder of this paper is organized as follows. Section 2
+reviews related works, covering CNN-based Re-ID methods, GNN-
+based Re-ID methods, and information-theoretic modeling
+approaches for graph neural networks. Section 3 presents the
+proposed SI-GCN framework in

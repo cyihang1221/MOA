@@ -1,0 +1,170 @@
+
+Methods
+A custom marker board incorporating four ArUco markers was
+created along with a custom camera holder that mounted onto the
+gantry head. OpenCV was utilized to automate tests for couch
+translation, collimator and table angles, collimator and table
+walkout, optical distance indicator (ODI), and field size detection. A
+GUI was created to guide users through the tests, determine passing
+status of measurements based on MPPG8.b criteria, and display
+image captures to allow users to troubleshoot if needed.
+Reproducibility tests were taken across four days. The system was
+tested against manual measurements by graph paper or digital level
+for each test. Field sizes and ODI were read by 12 different
+physicists to determine human variability and comparisons for
+CVQA.
+Results
+The CVQA system took 5 min to set up and 7 min to perform all
+tests. All field sizes, collimator/table angles, collimator/table
+walkout, and table translations were reproducible within 0.5 mm
+and 0.5°. ODI measurements were reproducible within 1 mm. Table
+travel, ODI, and walkout measurements agreed with manual
+measurements within 0.5 mm and 0.4°, except for vertical table
+motions that agreed within 0.9 mm due to the lens focus being
+optimized for the 100 cm SSD plane. The standard deviation
+between physicists for almost all symmetric and asymmetric jaws
+was larger than the reproducibility of CVQA. CVQA has been
+utilized for five years and has demonstrated ability to identify
+mechanical machine issues.
+Conclusions
+CVQA successfully automates mechanical QA tasks, providing an
+efficient and precise system. CVQA is open source and freely
+available for academic institutions. Its adoption can improve
+workflow efficiency and consistency in clinical environments.
+Keywords: computer vision, mechanical QA, quality assurance
+1. INTRODUCTION
+Quality assurance (QA) in radiation therapy is a critical component
+of ensuring accurate and consistent patient treatments. Modern
+linear accelerators (linacs) require extensive monthly mechanical
+QA tests as outlined by the American Association of Physicists in
+Medicine (AAPM) Task Group 142 (TG‐142) and updated by
+Medical Physics Practice Guideline 8.b (MPPG 8.b). 1 , 2 As the tests
+have action limits in millimeters, the accuracy should be sub‐
+millimeter in order to determine properly if the test is exceeded.
+Traditionally, these tests rely on the subjective visual assessment of
+physicists, which introduces inter‐ and intra‐user variability and
+limits reproducibility. The desired level of accuracy cannot always
+be maintained within sub‐millimeter by reliance on the human
+visual system. QA tools have been developed using digital sensors to
+measure gantry and collimator angle and ODI, 3 but many
+mechanical tests still rely on human visual interpretation of features
+of the field light.
+To overcome these limitations, researchers have explored
+automation using computer vision techniques. Jenkins et al. used a
+radio luminescent phantom with a gantry‐mounted camera and
+were able to automate light field and radiation coincidence, jaw
+position, cross‐hair walkout, couch lateral and longitudinal
+translations, and laser alignment. 4 However, the phantom was
+relatively small so the largest field size used was 10 cm x 10 cm.
+Shandiz et al. also used a gantry‐mounted camera and a 3D
+phantom similar to Jenkins et al. and were able to automate optical
+distance indicator (ODI) and gantry angle. 5 Kim et al. used a
+gantry‐mounted smartphone to automate detection of gantry angle,
+collimator angle, jaw position, crosshair walkout, and ODI. 6 Unlike
+the others, no calibration pattern was used, instead a coin was used
+for scaling and internal cell phone sensors such as the gyroscope,
+compass, and accelerometer were used for analysis. Due to the
+camera field of view, jaw position detection was limited to field
+sizes of 30 cm x 30 cm or less. Park et al. differed from these
+previous studies and used a couch‐mounted camera to focus on
+radiation fields primarily. 7 They were able to automate detection
+of linac isocenter, gantry rotation isocenter, collimator rotation
+isocenter, couch rotation isocenter, and couch position.
+In this study, we developed Computer Vision QA (CVQA), a system
+designed to automate various mechanical QA tests, including couch
+translation (lateral, longitudinal, and vertical), collimator and table
+angles, collimator and table walkout, ODI, and field size detection.
+Our system features a graphical user interface (GUI) to facilitate
+clinical adoption with minimal training. Unlike previously
+published methods, CVQA does not require a separate calibration
+plate for each session use and allows measurements of all field
+sizes. To the best of our knowledge, this is the first device of its
+kind to be clinically utilized, which we report on our findings of
+utilizing CVQA clinically for 5 years.
+2. METHODS
+2.1. CVQA system design
+We designed a CVQA marker board that was custom manufactured
+(Calib.io ApS, Svendborg, Denmark). The CVQA board incorporates
+four ArUco markers, crosshair alignment marks, and references for
+the gantry and collimator orientations (Figure 1a). The marker
+board was designed so that the spacing of the four uniquely coded
+ArUco markers does not interfere with the fields being measured.
+The ArUco markers are 30 mm square with the outer corners of the
+four markers 180 mm apart and centered on the crosshair marks.
+ArUco markers have a black border with an inner binary matrix
+that is specific to a given identifier. 8 These markers were chosen
+instead of the commonly used checkerboard pattern, as they can
+provide orientation information as well as on‐line camera
+calibration. Collimator and table angles at the cardinal angles
+would appear redundant if a standard checkerboard pattern was
+used. The CVQA cardinal angle measurements can be distinguished
+from each other due to the orientation information provided by the
+ArUco markers. The placement of the ArUco markers and alignment
+marks was chosen to avoid interference with the field light edges
+for the different field sizes measured.
+FIGURE 1.
+[image]
+Open in a new tab
+CVQA marker board and camera mount. (a) The marker board
+designed for the CVQA system, utilizing ArUco markers. (b) The
+CVQA camera mount attaches to the interface mount of a Varian
+TrueBeam. The CVQA marker board is shown on the table aligned
+to the crosshairs.
+A CVQA camera mount was developed to attach to the interface
+mount of a Varian TrueBeam (Varian Medical Systems, Palo Alto,
+CA), featuring an angled camera assembly optimized for capturing
+the entire 40 cm x 40 cm field of view at 100 cm source‐to‐surface
+distance (SSD) (Figure 1b). The camera mount and handle were 3D
+printed and attached to a TrueBeam interface mount tray via milled
+aluminum brackets. The system employs a Blackfly S GigE camera
+(FLIR Systems, Wilsonville, OR) with an 8.5 mm fixed focal length
+lens (model 58‐000, Edmund Optics, Barrington, New Jersey).
+Camera calibration is required during commissioning and after any
+change has been made to the aperture or focus adjustments of the
+lens. Annual camera calibration is recommended. Accurate
+measurements rely on proper aperture and focus setup before
+camera calibration. Guidance on setting aperture and focus can be
+found in the linked repository. Calibration was performed using a
+Calib.io (Calib.io ApS, Svendborg, Denmark) 200 mm x 300 mm
+9 × 14 ChArUco (OpenCV 3) (combination of a chessboard and
+ArUco) calibration board with 20 mm checkers, 15 mm markers,
+and ArUco dictionary DICT_5 × 5. A chessboard is a common
+OpenCV pattern. The ChArUco board has the advantage of more
+points than a conventional chessboard pattern and it is also robust
+to occluded and clipped images. Numerous images at different poses
+were acquired to ensure a good camera calibration.
+We calibrated the camera while installed in the TrueBeam Interface
+Mount just as with normal CVQA operation. We developed a
+treatment plan to move the gantry, collimator, and couch to
+different positions to create thirty different calibration poses. We
+used a calibration utility based on the OpenCV ChArUco camera
+calibration example. The result was a calibration file that contains
+the camera matrix and distortion coefficients. The focal length
+estimates in the camera matrix were fine tuned to produce accurate
+measurements for the table height. This was done by using CVQA to
+measure field size and couch vertical offsets and adjusting the focal
+lengths using trial and error to match a precision setup established
+with a front pointer and graph paper. The focal length is adjusted
+until the CVQA measurement agrees with the front pointer within
+the test tolerance. This tuning is specific to the CVQA device and
+must be repeated each time the camera is recalibrated.
+The image processing and computer vision measurement functions
+were implemented in C++ using the OpenCV library (version 4.1),
+which provided general image manipulation tools, computer vision‐
+specific functions such as camera calibration, and also access to
+ArUco functionality. Images are acquired using our application
+programming interface (API), which is based on Flir's Spinnaker
+(Teledyne FLIR, Wilsonville, OR) API. Our API has functions to
+convert and format the 2448 × 2048 pixel raw image from the
+Blackfly camera to an OpenCV Mat of the same resolution.
+Perspective transformed images have a resolution of 2000 × 2000
+pixels which provides a scale of 0.25 mm per pixel. After
+acquisition, the image is processed using our API to apply the
+camera calibration and measure image features as described in
+section 2.2.
+A GUI was created in C++ using Qt (Qt Creator version 4.12.4)
+that walks the user through necessary preparatory steps and then
+through each test. First, an initialization is performed that warms
+up the camera and checks that the ambient light is within the
+established bounds. The bottom of the CVQA menu displays the
+light level to aid in setup. Next, a referenc

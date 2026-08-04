@@ -1,0 +1,170 @@
+
+Methodologically, we applied this standardized protocol in 30
+independent analyzed test runs using six iPhone 14 Pro and three
+iPhone 13 Pro devices, and compared battery-life outcomes across
+predefined sensor conditions (idle, TrueDepth, GPS, accelerometer,
+pedometer, gyroscope, and rear camera), sampling rates, and
+sensor-specific settings. Key findings include: (i) Baseline battery
+life was approximately 10% higher on the 14 Pro versus the 13 Pro
+models under idle conditions. Sensor activation substantially
+reduced battery life, with GPS and camera usage exhibiting the
+strongest impact. (ii) Software parameters matter: the sampling rate
+change from 27 s to 3 s led to significantly decreased battery life in
+several scenarios, while reducing the location accuracy in GPS tests
+increased battery life by up to 20 h on the 13 Pro devices. (iii)
+Cross-device-generation consistency is heterogeneous. The iPhone
+14 Pro lasts up to 50% longer on GPS tests, yet drains about an
+hour faster than the 13 Pro in camera tests. This work introduces
+the first standardized, and fully reproducible protocol for
+quantifying sensor-specific battery consumption on iPhones,
+enabling consistent, comparable, and low-cost energy
+benchmarking across device generations.
+Keywords: power consumption in mobile phones, sensor power
+consumption, smartphone sensors, iphone hardware
+1. Introduction
+New smartphones with updated hardware and software components
+are released faster than ever [1]. Apple releases several new iPhone
+models each fall, each including a distinct combination of sensor
+hardware and underlying software. For example, the company
+released four new models in 2025: iPhone 17, iPhone 17 Air,
+iPhone 17 Pro, and iPhone 17 Pro Max. The Pro models differ
+significantly from the base model (iPhone 15), as they include
+improved hardware components and therefore additional software
+features. Each new generation tends to have different and upgraded
+components compared to the previous release. These new
+components are usually more efficient and faster, but might also
+have increased battery consumption, heat generation, or computing
+impact [2].
+iPhones typically include a variety of sensors [3], including
+frequently used ones like those described in this section.
+•  True Depth (TDS): The true depth sensor is embedded in the
+front of the iPhone and is mainly used for face recognition as
+part of iOS’ “Face ID” feature.
+•  GPS: GPS is used to determine a device’s current global
+position. Developers can set a desired accuracy for location
+updates received by the sensor, depending on the use case.
+•  Accelerometer (ACX): The accelerometer is used to measure
+forces acting on an iPhone through movement. This enables
+use cases like tracking the device’s current speed and its
+direction.
+•  Pedometer (PED): The pedometer is used by the operating
+system and HealthKit to passively count users’ steps
+throughout the day.
+•  Gyroscope (GYR): In addition to measuring movement
+through the accelerometer, developers have access to
+rotational forces acting on the device through the gyroscope.
+•  Camera (CAM): Although often not perceived as such, the
+camera module is also considered a sensor. Most iPhone
+models include either one front-facing and one back-facing
+camera (base models) or one front-facing and three back-
+facing cameras (pro models).
+1.1. Background
+1.1.1. Sensor Relevance in Mobile Applications
+Smartphone sensors have been used for a variety of medical
+applications. For example, the camera can be used to assess and
+monitor eye health and visual impairments [4,5,6]. It can also be
+used to monitor skin health [4]. As demonstrated in 2013, over ten
+years ago, combining smartphone cameras and neural networks is a
+valid option to detect skin diseases [7]. Even approaches without
+on-device processing can take advantage of the camera, as a 2015
+review on mobile apps for melanoma detection highlights [8]. The
+review also highlights the importance of the iPhone ecosystem in
+the vast smartphone landscape, as a majority of applications
+included in the review were only available on that system.
+Cardiovascular activity, movement, and falls can be monitored
+through the camera and motion sensors, including the
+accelerometer and gyroscope [4]. Reviews in 2019 and 2021 on
+human activity recognition using smartphone sensors highlight the
+broad landscape of such applications, including the variety of
+sampling rates and device positions on the user’s body [9,10]. These
+sensors are also often used to track sleep [4], but the recent trend
+for consumers is shifting towards using wearables, such as the
+Apple Watch [11] or the Whoop [12] band, instead. Mental health
+and illnesses such as neurodegenerative diseases can also be
+assessed through an array of mobile sensors [4].
+Developers use these hardware components to build various kinds
+of applications, but they are restricted by the operating system
+(iOS). iOS does not allow developers direct access to the hardware
+and instead provides an API to communicate with it. This means
+that developers do not usually have the fine-grained control that
+they would have on other operating systems, such as Android. The
+APIs represent a level of abstraction that often makes it opaque as
+to what is going on behind the scenes, and developers are unsure
+about how the sensors bring in data and how they are further
+processed. However, sensor APIs allow for configuration, making it
+increasingly complicated to judge battery impact as there is no one
+single implementation possibility [13].
+1.1.2. State of the Art in Mobile Energy Measurement
+In their 2015 paper on systems to detect and tackle battery
+consumption issues in smartphones, Naik and Chavan list “overuse
+or misuse of certain types or resources” and “changing
+configurations to be more power-consuming” as potential reasons
+for increased power consumption of consumer applications [14].
+These resources and configurations are likely linked to specific
+hardware components, which naturally use energy to function. To
+understand these sensor costs in detail, and to be able to make
+decisions about sensor usage, their power consumption must first be
+tested. This should happen in a standard laboratory setting,
+ensuring the environment is consistent and other variables are
+minimized. Such a protocol should also be low-cost and easy to set
+up, given that it might only be needed once a year when new
+devices are released.
+Prior work on mobile energy measurement can broadly be grouped
+into hardware-based instrumentation, software-based or model-
+based profiling, and application- or sensor-level runtime studies. At
+the hardware end of the spectrum, Carroll et al. measured
+smartphone component power with external circuitry and sense
+resistors, enabling high-fidelity observations of individual
+subsystems [15]. Likewise, GreenMiner was proposed as an
+automated hardware-based framework for repeatable mobile-energy
+experiments across software revisions [16]. These approaches
+provide strong experimental control and precise traces, but they
+also require dedicated equipment, hardware access, and substantial
+setup effort.
+Other work emphasizes software-based or model-based energy
+profiling. Zhang et al. proposed PowerBooter and PowerTutor to
+estimate smartphone power consumption online from built-in
+battery interfaces and learned component models, making profiling
+much easier to deploy in practice [17,18]. Similarly, DevScope
+supports non-intrusive online power analysis of smartphone
+hardware components, while Pathak et al.’s Eprof focuses on
+attributing energy consumption to application behavior and
+asynchronous execution patterns [19,20]. These tools improve
+observability for developers, but they typically rely on device-
+specific calibration, operating-system support, or platform
+assumptions that complicate direct reuse across smartphone
+generations.
+As visible through the usage of location-based augmented reality
+games like “Pokémon Go” (https://pokemongo.com/, last accessed
+5 February 2026) and simple location-based apps like “Maps”
+(https://apps.apple.com/de/app/maps/id915056765, last accessed
+5 February 2026), access to sensors usually leads to increased
+energy demands. Ultimately, this means that sensor-dependent apps
+cannot be used as long as other apps that do not need to access this
+hardware. In their review of over 9 million user comments on apps
+in the Google Play marketplace for Android applications, Wilke et
+al. tried to understand if users actually care about the impact on
+battery life of an app [21]. They found that over 18% of apps had
+comments with complaints about energy consumption.
+Unsurprisingly, games exhibited the most negative comments
+toward battery impact, which makes sense given their
+computational intensity. Even well-known apps from corporate
+developers showed a high percentage of negative comments
+regarding energy usage. This research highlights that developers
+should care about their apps’ battery impact. First though,
+developers need an understanding of each component’s energy
+consumption with respect to their concrete usage and
+implementation. A study carried out with an iPhone 5S running iOS
+9.0.2 with a custom SensingKit software (v0.5) already measured
+power consumption for various sensors (idle, accelerometer,
+gyroscope, magnetometer, device motion, GPS with best accuracy,
+microphone, and iBeacon). They found that GPS with the best
+location accuracy draws the most power, with the magnetometer
+and microphone being the most efficient aside from iBeacon tests,
+which are irrelevant to our work. In their setup, they used a custom
+“SensingKit” framework to read new sensor data as soon as they
+become available. The collected data were then stored locally on-
+device [22]. Another study by Perrucci et al. from 2011 looked at
+energy consumption of various smartphone sensors, including
+bluetooth, UMTS, and WiFi [23]. Abdesslem et al. also compared
+the battery impact of several m

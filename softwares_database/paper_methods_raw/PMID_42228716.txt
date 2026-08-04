@@ -1,0 +1,127 @@
+
+Methods
+Ethics
+This study was approved by the Conjoint Health Research Ethics
+Board of the University of Calgary (REB#:21-1497v4). Written
+informed consent was obtained from all participants prior to
+enrollment. Subjects were recruited and tested from July 1 2024 to
+September 1 2024. The individual in this manuscript (Fig 1) has
+given written informed consent (as outlined in PLOS consent form)
+to publish these case details.
+Fig 1. Experimental setup and validation experiment.
+[image]
+Open in a new tab
+A: Camera placement, with approximate distances relative to the
+left edge of the walkway. B: Experimental validation of step
+placements, using markers placed on the feet, sacrum and head. C:
+Validation of markerless data: step length, width and walking
+speed.
+Experimental designs
+We performed two experiments. First we established the validity of
+the opensource markerless motion capture system (FreeMoCap:
+Matthis et al., 2022) to record clinically-relevant metrics—step
+width, step length, and walking speed—by comparing markerless
+foot placement and the resulting step times and durations, to those
+from an active optical motion capture system commonly used in
+biomechanical studies (Phasespace Inc.). Next, we performed
+Functional Gait Assessment on Older adults [1]. We placed the
+analysis code in a repository for use by practitioners interested in
+performing their own analysis.
+Methods
+The markerless motion capture system used 3 (Jetaku Inc; Amazon)
+web cameras placed laterally to the walking direction along a 6
+meters distance which is used in FGA (Fig 1A). We also marked the
+hallway to denote a 6 m walkway, with a width of 0.3 m. A desktop
+PC (2018; 3.4 GHz; 4 Cores; 16 GB Ram) was used to record and
+process data. Total added cost of the cameras and USB extension
+cables was less than $200 (CAD).
+Experiment sessions required approximately 20 minutes of
+preparation time to 1) physically set-up cameras, 2) perform
+calibration and 3) compute capture volume orientation. To calibrate
+the system, the markerless motion capture system optimally
+estimates the 3D position of web cameras, and accounts for visual
+distortion of the camera optics. This is done by simultaneously
+recording video data from a Charuco board—a single black-and-
+white calibration image with known checkerboard pattern and
+dimension. To accommodate a 6m walking area that FGA requires,
+a large poster (square size: 15.7 cm) was used. Custom software
+optimizes the 3D position of the cameras to minimize the 3D-
+positional error of the detected checkerboard patterns (or “bundle
+adjustment [25]”). The software [24] reports the number of full
+boards detected from each camera, and provides some information
+about calibration accuracy; practically, we ensured that at least 400
+boards were recorded for from each of the web cameras for each of
+our recording sessions. This calibration process took 2 minutes of
+Charuco board positioning, and about 10 minutes of compute (no
+GPU acceleration; CPU processing only on our 2018 machine). To
+perform capture volume orientation, subjects stood in three
+locations to define a simple coordinate system: 1) at the beginning
+of the walkway; 2) at +5m (forward) along the pathway; and 3) at
+1 m right of the walkway. This procedure defined the plane of the
+walking area, allowing rotation of the recorded data. It also allowed
+us to perform linear correction for calibration bias, as these known
+magnitudes allowed rescaling data collected along each axis.
+Typically, FreeMoCap’s calibration procedure resulted in less than
+5% error in absolute estimate of walkway length.
+During data processing, key-point software makes estimates of the
+position of joints and other points of interest on the body (Google
+Mediapipe). The software performs a lowpass filter (25 Hz) to
+reduce the effect of joint misestimation, motion blur, and other
+artefacts.
+Experiment 1: Validation
+We performed our first experiment to determine the validity of the
+markerless motion capture system to compute three measures that
+are necessary and sufficient to automate FGA: step length, step
+width, and walking speed. To determine the accuracy of computer
+vision methods, we used marker-based motion capture and
+collected 6 markers per person to capture feet, torso, and head
+position of subjects (N = 3). While the markerless system we used
+reports several foot keypoints, throughout this study we will use the
+term “foot position” and “foot speed” to refer to Mediapipe’s
+detected “heel position” marker and its derivative. We
+simultaneously recorded walking trials of a 4 m distance with both
+systems, under two conditions chosen to span the range of
+empirically-observed step widths: normal preferred step width, and
+a ‘wide’ condition where subjects were asked to place footsteps
+along the edges of the 0.3 m marked path. We performed three
+replications of each condition.
+We time-aligned the two systems by determining the maximum
+cross-correlation (MATLAB: normxcorr2) of anterior-posterior (AP)
+foot speed between the two extracted walking bouts (Fig 2A). For
+each trial, we cross-correlated (MATLAB: normxcorr2), the
+summation of each system’s (markerless and markered) left and
+right foot speed (Fig 2B) and computed the maximum value of the
+cross correlation. This cross-correlation was done using linearly-
+interpolated data from the markerless system data (recorded at 30
+Hz) to match the markered system’s sample rate (240 Hz). To
+spatially align the two systems, we subtracted the initial (T = 0)
+position of each left foot to register the two systems at the
+beginning of the walking bout.
+Fig 2. Measurement of gait parameters.
+[image]
+Open in a new tab
+(A) Anterior-posterior (AP) left and right foot speed was used to
+identify walking bouts automatically. (B) Cross-correlation of the
+summed AP absolute foot speeds with a starting-bout template were
+used to extract gait start and end times. (C) The regions where foot
+speed was below a threshold of 0.15 m/s were identified as stance
+phase, and the middle of each step’s stance phase was taken as mid-
+stance. (D) Head speed was computed as the time derivative of the
+average position of the ear and nose markers locations. (E and F)
+step length and width vectors were computed based on the mid-
+stance instants of consecutive steps.
+To detect left and right stance periods, Foot speed was low-pass
+filtered at 3 Hz, and regions where foot speed was below the speed
+threshold of 0.15 m/s were identified. The average position of that
+stance region (the midstance instant, Carlisle and Kuo, 2023) was
+taken as the footstep location (Fig 2C–2F). We computed step
+length and width as the distance between two consecutive footstep
+locations in forward and lateral directions respectively (Fig 2F).
+We measured head speed (Fig 2D) as differentiating (time
+derivative) the forward position of the head marker (located
+centrally in the back of the head via headband), and for the
+markerless system we defined it as the time derivative of the
+average forward position of the left ear, right ear, and nose
+keypoints.
+Experiment 2: FGA
+Older adult subjects (N = 5; mean age: 69 years; Table 1) were

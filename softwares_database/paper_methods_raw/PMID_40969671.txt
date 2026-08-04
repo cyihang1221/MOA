@@ -1,0 +1,170 @@
+
+Methods
+The three imaging methods were applied to channel data from
+multidomain simulations with 757, 800, and 1064 nm wavelengths,
+11 target sizes (ranging 0.5 to 3 mm), 18 skin tones [ranging
+individual typology angles (ITAs), of –54 deg to 60 deg], and a
+previously validated realistic 3D breast model. The signal-to-noise
+ratio (SNR) and generalized contrast-to-noise ratio (gCNR) were
+measured to assess visibility.
+Results
+With 757 and 800 nm wavelengths, targets underlying dark skin
+tones (ITA range: −54  deg to −33  deg) with sizes ≤3  mm were
+poorly visible with ≤2.38 to 4.21 mean SNR and ≤0.46 to 0.74
+mean gCNR, with smaller targets generally being more visible with
+lighter skin tones. A 1064-nm transmit wavelength improved
+visualization with DAS and SLSC beamforming, relative to both FFT
+reconstruction with a 1064 nm wavelength and DAS or SLSC
+beamforming with 757 and 800 nm wavelengths. When combined
+with SLSC beamforming, the 1064-nm wavelength offered the
+greatest improvements, enabling visualization of simulated target
+sizes ranging from 0.5 to 3 mm underlying very light (ITA =
+60 deg) to dark (ITA=−54  deg) skin tones, with mean SNR
+≤10.01 and mean gCNR ≤1. Visualization of simulated vessel
+structures derived from in vivo photoacoustic images was consistent
+with simulation-based target size expectations.
+Conclusions
+Results are promising for advancing next-generation photoacoustic
+imaging systems for breast cancer diagnosis across the range of skin
+tones represented in healthcare systems throughout the world.
+Keywords: breast imaging, photoacoustic imaging, acoustic clutter,
+target visibility, coherence-based beamforming
+Statement of Discovery.
+This work provides the first known in silico demonstrations to
+support the benefits of 1064 nm transmit wavelength combined
+with short-lag spatial coherence (SLSC) beamforming when
+visualizing target sizes ranging 0.5–3 mm underlying very light
+(ITA = 60 deg) to dark (ITA = –54 deg) skin tones.
+1. Introduction
+Photoacoustic imaging is an emerging modality for non-invasive
+screening and detection of breast cancer.1 Photoacoustic imaging is
+based on the photoacoustic effect, by which optical energy is
+converted to acoustic energy.2 Biological tissues absorb energy from
+a laser light source which causes thermal expansion and the
+emission of acoustic waves3 that can be detected by conventional
+clinical ultrasound transducers and used to reconstruct an image.4
+X-ray mammography is the current standard for routine breast
+cancer screening, but the sensitivity of this imaging modality
+decreases in patients with greater breast density.5,6 Alternative
+screening methods include magnetic resonance imaging and
+ultrasound imaging, but these are limited by high cost and a high
+false positive rate, respectively.1,7,8 As the scattering of acoustic
+waves in tissue is significantly less than that of optical waves,9
+photoacoustic imaging can be used to generate high-resolution
+images of hemoglobin content, which is linked to the presence of
+cancer.
+Hemoglobin has high optical absorption in the near-infrared range
+relative to water and other tissues,1 which enables photoacoustic
+imaging systems to use this wavelength range to detect vascular
+structures. Tumor angiogenesis is a known indication of
+malignancy,10 and other reported indicators include hypoxia11 and
+elevated hemoglobin levels.12 Several photoacoustic imaging
+systems have been developed to differentiate between the
+vasculature of benign and malignant breast lesions.3 Abeyakoon
+et al.13 developed a feature set based on combined photoacoustic-
+ultrasound images that improved diagnostic accuracy of malignant
+lesions. However, these diagnostic vessels vary in size.13–17
+To non-invasively image these vascular structures, tissue
+illumination through the skin is required,18 yet it is limited by the
+high optical absorption coefficient of skin in the visible and near-
+infrared range due to the presence of melanin,19,20 which decreases
+optical penetration depths, particularly for vessels located deeper in
+the tissue. This high optical absorption can also result in acoustic
+wave emission from the skin into the tissue below, which are
+reflected by typical ultrasound scatterers and create artifacts and
+acoustic clutter, reducing image quality.21,22 As skin optical
+absorption coefficients increase with greater melanin content,20
+these two limitations significantly compromise photoacoustic image
+quality for individuals with darker skin tones, creating a skin tone
+bias in photoacoustic imaging systems.22–24 In addition, Fernandes
+et al.25 confirmed skin as the primary source of clutter in
+photoacoustic images of a 3D breast tissue model. However, the
+relationship between skin tone and target size detectability in
+photoacoustic imaging is currently unknown.
+Initially developed to predict the risk of sunburn and skin cancer,26
+the Fitzpatrick skin type scale has been widely used in dermatology
+to classify skin tone,27 although this scale is limited by inaccuracy
+and inconsistent use.28 The individual typology angle (ITA)
+provides a more objective evaluation that can be calculated based
+on the Commission Internationale de l’Eclairage L*a*b* color
+system.29 ITA is also reported to be highly correlated with melanin
+content in the skin30,31 and is related to the skin optical absorption
+coefficient and wavelength through the equation proposed by
+Junior et al.32
+Short-lag spatial coherence (SLSC) beamforming is an image
+reconstruction method shown to reduce clutter and improve
+photoacoustic image quality in noisy environments with low optical
+fluence.33,34 The SLSC beamformer computes and sums the spatial
+coherence between signals received at different transducer elements
+across the short spatial lag region to construct an image.35 Clutter
+sources have low spatial coherence, which enables the mitigation of
+clutter artifacts in SLSC images.36–38 Fernandes et al.34
+demonstrated a skin tone bias in photoacoustic imaging of the
+radial artery in human volunteers, which was successfully mitigated
+by SLSC beamforming, allowing for clear radial artery visualization
+in skin tones ranging from light to dark. We expect that SLSC
+beamforming will similarly improve target and vessel visualization
+in photoacoustic images used to determine the presence of breast
+cancer when considering a range of vessel sizes in both lighter and
+darker skin tones.
+In this paper, the impact of skin tone on target size detectability in
+photoacoustic breast imaging is investigated with multidomain
+simulations implemented using a previously validated realistic 3D
+breast model.39 Representative target sizes, skin tones, and
+wavelengths of interest were simulated to quantify target visibility
+for a range of imaging scenarios with two amplitude-based
+beamforming methods for comparison with SLSC beamforming. We
+additionally simulated vessels derived from previously published
+features of interest (i.e., splayed vessel and claw features13) and
+then compared results with existing in vivo data.
+2. Methods
+Eleven simulation volumes were constructed based on a realistic 3D
+breast model immersed in water, with breast tissue classified as
+extremely dense.39 The model volumes were 45×15×20  mm in
+the lateral, axial, and elevation directions, respectively, with a voxel
+size of 100  μm in each dimension. In each volume, a spherical
+photoacoustic target with diameters ranging from 0.5 to 3 mm was
+generated, in 0.25 increments. This range was chosen based on
+measurements of blood vessels and other diagnostic features from in
+vivo patient photoacoustic images,13–17 and the optical and acoustic
+properties of the targets were set to those of blood, which is an
+important component of tumor detection.10–13 The targets were
+centered in the lateral and elevation dimensions of the model, and
+the center of each target was placed at a depth of 8.6 mm from the
+skin surface (10 mm from the top surface of the volume in the axial
+direction), as shown in Fig. 1.
+Fig. 1.
+[image]
+Open in a new tab
+Cross-sectional view of the simulated volumes within the imaging
+plane, demonstrating various tissue components and ranges of
+simulated photoacoustic target sizes.
+Optical simulations were conducted using MCXLAB40 to compute
+the fluence of light in the volumes. A collimated Gaussian beam
+with a 4-mm waist radius (i.e., 50.3  mm2 illumination area)
+emitting 108 photons was centered in the lateral and elevation
+dimensions and placed at the top of the volume. Although the
+simulated fluence is reported as normalized values, any incident
+energy divided by the illumination area is expected to provide
+information about the fluence that can be expected in a real system.
+To assess the impact of skin tone on target size detectability, 18 ITA
+values were simulated (ranging from 60 deg to −54 deg, including
+three values per skin tone category, as defined in Refs. 29, 41, and
+42 and summarized in Table 1). These ITA values correspond to
+previously reported melanin content-to-basal length ratios ranging
+from ∼0  mm2/mm at an ITA of 60 deg to ∼2.1  mm2/mm at an ITA
+of −60 deg,43 melanosomes/μm2 ranging ∼20  μm−2 at an ITA of
+−36.1 deg to ∼100  μm−2 at an ITA of 57.4 deg,43 and melanin
+volume fractions (v/v) ranging from 3.6% at an ITA of 56 deg to
+40% at an ITA of −47 deg.23 We additionally acknowledge that
+although ITA quantifies perceived skin tone, this standalone metric
+does not include information about associated molecular or
+physiological origins (e.g., whether the skin tone perception is due
+to increases in melanin, blood flow, or veins near the skin
+surface),44 and a recent review article recommends the
+establishment of an effective melanosome volume fraction
+parameter based on an assumed epidermal thickness, which can
+otherwise vary when simply reporting the volume fraction.45 For
+each simulated target size and skin tone, three wavelengths were
+simulated (i.e., 757, 800, and 1064 nm). These wavelengths were
+chosen becau

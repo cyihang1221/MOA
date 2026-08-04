@@ -1,0 +1,176 @@
+
+Methods
+We conducted a structured evidence mapping and synthesis of
+published studies on image-based AI for chronic wound assessment.
+Records were identified through a structured database search and a
+targeted supplementary search performed during revision. Studies
+were screened using predefined eligibility criteria, and data were
+extracted on wound types, image-acquisition approaches, task
+domains, model architectures, performance measures, and
+deployment-related characteristics. Cross-study patterns were then
+used to construct a conceptual workflow framework spanning
+wound localization, segmentation, clinical interpretation, and
+longitudinal monitoring.
+Results
+A total of 44 studies were included in the final analysis. The
+evidence base was dominated by diabetic foot ulcer and general
+chronic wound imaging studies, with more limited representation of
+pressure injury, venous or vascular wound, and postoperative
+wound contexts. Camera-based acquisition was the most common
+imaging approach, while device-based and mobile-based acquisition
+were less frequently represented. When mapped to workflow-
+relevant task domains, classification/clinical interpretation and
+segmentation/measurement were the most strongly represented
+components, whereas localization/detection and monitoring/
+prediction were less consistently developed. Cross-study patterns
+also showed increasing representation of clinically meaningful
+interpretation tasks, including wound grading, tissue
+characterization, and infection/ischaemia recognition, as well as
+emerging use of explainability methods in wound-image analysis.
+These patterns informed the development of a four-stage clinically
+aligned multimodal workflow framework for chronic wound
+assessment.
+Conclusion
+Current wound-AI evidence supports a workflow-oriented
+conceptual model in which wound localization, segmentation,
+clinical interpretation, and longitudinal monitoring can be
+organized into a clinically meaningful assessment pathway. The
+proposed framework is intended as an evidence-informed
+conceptual structure to guide future multimodal system
+development, translational research, and prospective validation in
+real-world wound care settings.
+Keywords: artificial intelligence, chronic wounds, wound
+assessment, multimodal imaging, deep learning, computer vision,
+wound segmentation, wound detection, tissue classification, digital
+health
+Introduction
+Chronic wounds—including diabetic foot ulcers, venous leg ulcers,
+pressure injuries, and postoperative complications—constitute a
+major and escalating global health burden.1,2 These wounds affect
+tens of millions of patients worldwide, are a leading cause of lower-
+limb amputation, and account for billions of dollars in annual
+healthcare expenditure. Accurate wound assessment is central to
+preventing complications, yet routine evaluation still relies on
+subjective visual inspection and manual measurement.1,2 This
+subjectivity leads to substantial inter-observer variability, delayed
+recognition of infection or deterioration, and inconsistent
+monitoring across clinical and community-care settings.3,4
+Recent advances in digital health and computer vision have
+accelerated the development of artificial intelligence (AI) tools for
+wound detection, segmentation, tissue classification, and automated
+measurement.5–9 Deep learning architectures—including
+convolutional neural networks, U-Net variants, transformer-based
+models, and lightweight mobile detection systems—have shown
+promising technical performance across diverse wound types.
+Multimodal approaches integrating RGB, thermal, depth,
+hyperspectral data, and clinical metadata further enhance the
+capacity to capture physiologic wound characteristics that cannot
+be reliably assessed through traditional imaging alone.6,10,11
+Yet despite considerable methodological progress, real-world
+deployment of wound-AI systems remains limited. Many published
+models are developed on relatively small or homogeneous datasets,
+which constrains generalizability across devices, lighting conditions,
+skin tones, and care settings. In addition, many systems remain
+task-specific rather than being integrated into clinically aligned
+workflows spanning detection, segmentation, interpretation, and
+longitudinal monitoring. Heterogeneous evaluation metrics,
+inconsistent reporting, and limited transparency further hinder
+cross-study comparability and translational uptake, while broader
+interoperability and routine integration into primary-care and
+remote-monitoring ecosystems remain underdeveloped.6,10,11
+These challenges highlight a critical unmet need for an AI
+framework that is clinically aligned, interoperable, and better
+connected to the practical stages of wound assessment.6,10–12 To
+address this gap, we conducted a structured evidence mapping and
+revision-stage supplementary search to characterize recurrent
+design patterns across the wound-AI literature, resulting in a final
+evidence base of 44 included studies.3,5,6,8,9,12–50 Guided by these
+recurrent cross-study patterns, we inductively developed an
+evidence-informed conceptual multimodal workflow framework
+spanning wound localization, segmentation, clinical interpretation,
+and longitudinal monitoring.
+This study makes three main contributions. First, it provides a
+structured cross-study characterization of wound-AI research across
+heterogeneous imaging conditions, task types, and deployment
+contexts, helping to clarify a field that remains fragmented and
+methodologically inconsistent.10,11 Second, it presents a clinically
+aligned conceptual workflow framework that shifts the perspective
+from isolated model development toward workflow-oriented
+integration of AI functions in wound assessment.6,10–12 Third, by
+linking recurring technical patterns to clinically meaningful stages
+of assessment, this study offers a conceptual foundation to guide
+future multimodal system development, prospective validation, and
+digital wound-care translation.
+Methods
+Study aim and design
+This study was designed to develop an evidence-informed, clinically
+aligned multimodal workflow framework for chronic wound
+assessment through structured mapping and synthesis of the
+literature on image-based artificial intelligence (AI) applications.
+Rather than serving as a conventional summary of prior studies, the
+study aimed to identify recurring design patterns across wound-AI
+research and to translate these patterns into a conceptual workflow
+framework spanning wound localization, segmentation, clinical
+interpretation, and longitudinal monitoring.
+All information used in this study was derived from publicly
+available publications and related digital health reports or study
+records, where relevant. No patient-identifiable data were collected,
+and no direct human-subject interaction was involved. Therefore,
+ethical approval was not required.
+The study was guided by three objectives: (1) to characterize the
+major task types, imaging modalities, and technical design patterns
+represented in image-based AI studies of chronic wound assessment;
+(2) to identify recurrent cross-study features relevant to clinical
+deployment; and (3) to translate these mapped patterns into a
+clinically aligned conceptual workflow framework.
+Literature identification and data sources
+To support framework development, a structured literature search
+was conducted across Medline (PubMed), Embase, Scopus, Web of
+Science, CINAHL, ScienceDirect, IEEE Xplore, and Google Scholar.
+The original search strategy combined terms related to chronic
+wounds, wound imaging, artificial intelligence, machine learning,
+deep learning, detection, segmentation, classification, prediction,
+and remote wound monitoring, covering all available years through
+November 2025.
+The original structured search retrieved 579 records. After title and
+abstract screening, 74 studies underwent full-text review, of which
+34 were included in the initial-stage evidence mapping.
+During revision, a targeted supplementary search was conducted to
+improve coverage of image-based wound classification, clinical
+interpretation, explainable artificial intelligence, and clinically
+meaningful subtype-recognition studies. This supplementary search
+was performed across core databases using additional terms related
+to wound classification, infection, ischaemia/ischemia, explainable
+AI, vascular wounds, venous leg ulcers, pressure ulcers, and wound-
+image analysis. The supplementary search identified 634 additional
+records. After deduplication within the supplementary search set,
+403 records remained for screening, of which 371 were excluded
+after title and abstract review and 32 underwent full-text
+assessment. Of these, 21 were excluded and 11 additional studies
+were incorporated into the revised evidence mapping. Following
+reassessment of the initial set and supplementary inclusion, the
+final analysis comprised 44 studies.
+Title and abstract screening was performed by two authors
+independently, followed by full-text review using the same
+eligibility criteria. Disagreements were resolved through discussion
+and consensus. The overall identification and selection process is
+shown in Figure 1 and was reported with reference to PRISMA
+principles, with a completed checklist provided as a supplementary
+file.
+Figure 1.
+[image]
+Open in a new tab
+Study identification, reassessment, and final inclusion process.
+Flow diagram of the original structured search, revision-stage
+supplementary search, reassessment of initially included studies,
+and final study inclusion. The initial-stage mapping included 34
+studies; after exclusion of 1 study on verification and inclusion of
+11 supplementary studies, the final evidence base comprised 44
+studies.
+Eligibility criteria
+Studies were considered eligible if they met all of the following
+criteria:
+1. Applied machine learning or deep learning to chronic
+wound assessment;
+2. Used image-based or imaging-augmented inputs, including
+RGB, depth, thermal, hyperspectra

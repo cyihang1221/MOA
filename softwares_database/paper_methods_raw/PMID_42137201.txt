@@ -1,0 +1,167 @@
+
+Experimental results indicate that the system operates effectively
+under three preset plant spacings (15 cm, 20 cm, and 25 cm),
+achieving a keypoint-detection mAP@0.5 of 0.990 and an
+mAP@0.5:0.95 of 0.989. In sowing-quality evaluation, the qualified
+indices produced by the system were 77.83%, 80.36%, and 82.46%,
+respectively, and the Quality of Feed Index (QFI), Multiple Index
+(MUL), Miss Index (MI), and coefficient of variation showed trends
+consistent with manual measurements. The proposed method
+enables efficient, nondestructive detection of seedling-stage plant
+spacing and sowing quality, providing reliable technical support for
+precision sowing and field management.
+Keywords: 3D machine vision, keypoint detection, seedling-stage
+plant spacing, sowing quality, YOLOv11-pose
+1. Introduction
+Accurate detection and evaluation of corn sowing quality is a
+critical step for ensuring uniform field emergence and achieving
+high and stable corn yields. The spatial configuration of row
+spacing and plant spacing alters canopy structure and the
+distribution of light energy, thereby affecting photosynthetic
+productivity and yield formation (Ding et al., 2025). Measurements
+of actual plant spacing at the seedling stage can provide direct
+evidence for field operations such as thinning and replanting, and
+can also offer objective, quantitative data to support evaluations of
+planter operating performance and optimization of sowing
+parameters (Ren et al., 2024). Therefore, developing a rapid,
+accurate, and nondestructive automated method for measuring
+seedling-stage corn plant spacing is of substantial importance for
+improving sowing operation quality and advancing precision
+management in corn production.
+At present, inter-seedling spacing is still obtained primarily through
+manual field measurements, or by manually “digging seeds” after
+sowing to determine seed drop-point information. Such approaches
+are inefficient and labor-intensive, and they can readily disturb the
+soil cover structure and affect subsequent emergence, making them
+difficult to scale for large-area, precision-oriented agricultural
+management (Xie et al., 2025). From both industrial and academic
+perspectives, sowing-quality inspection technologies have evolved
+from single-sensor approaches (e.g., photoelectric/capacitive
+sensing) toward multi-sensor fusion and online monitoring driven
+by machine vision and artificial intelligence. For example, multi-
+sensor data fusion can improve the stability and accuracy of
+monitoring sowing depth under high-speed precision planting
+(Wang et al., 2025b), and variable-speed/variable-rate electronic
+seed-metering mechanisms, along with mis-sowing detection and re-
+sowing strategies, have also been explored in recent studies
+(Elwakeel et al., 2025). However, most existing systems evaluate
+sowing quality using seed passage states or seed drop points “at the
+moment of sowing,” implicitly assuming that the seed drop point is
+equivalent to the emergence location. As a result, they insufficiently
+account for factors such as in-field seed displacement, soil-cover
+disturbance, and variability in emergence rate (Nardon and Botta,
+2022; Xie et al., 2025).
+For monitoring during the sowing operation, extensive research in
+recent years has focused on seed spacing, seed-metering
+performance, and sowing-depth monitoring under high-speed
+conditions. (Gao et al., 2024) proposed a corn seed-spacing
+detection method based on image stitching and YOLOX, in which a
+speed–frame-rate linkage is used to generate a panoramic seedbed
+image and enable seed recognition and localization. (Zhao et al.,
+2025) combined an improved YOLOv5s with SiamRPN++ to track
+seed trajectories inside the seed-metering chamber and evaluate
+operational performance. For online measurement of plant-spacing
+parameters, (Xie et al., 2025), proposed a wireless remote real-time
+ranging system by fusing speed sensing and seed sensing, providing
+a new pathway for online sowing-quality assessment. Although
+these methods achieve strong monitoring performance at the seed
+level, they still struggle to directly bridge the discrepancy between
+“seed drop point” and “emergence location.” Consequently, their
+ability to faithfully represent seedling-stage population uniformity
+remains limited, as they inherently fail to account for post-planting
+dynamic errors induced by complex terrain variations and delayed
+emergence (Vong et al., 2022; Ren et al., 2024).
+In recent years, advances in computer vision and deep learning
+have made it increasingly feasible to directly identify corn
+seedlings, diagnose missing plants, and conduct spatial analyzes at
+the seedling stage. (Ren et al., 2024) combined an improved
+YOLOv8 model with Voronoi analysis on UAV imagery to evaluate
+seedling status quality. (Gao et al., 2025) proposed Corn YOLOv8n
+for detecting missing plants in UAV imagery, and (Yang et al.,
+2025) further integrated semi-supervised learning with geolocation
+to enable missing-plant monitoring and coordinate localization. To
+address complex near-ground backgrounds and weed interference,
+Wang et al. (2025) proposed a vision- and AI-based automatic
+thinning method for corn seedlings, achieving high-precision
+localization of plant centers via zero-sample annotation and an
+improved keypoint network (PCK = 97.66%). (Wu et al., 2025)
+performed seedling-stage classification based on H-RT-DETR; Feng
+et al. (2025b) designed a lightweight, field-deployable YOLOv8n for
+real-time seedling detection; (Chu et al., 2025) enhanced seedling-
+stage precise localization using CornStar YOLO; and (Wang et al.,
+2025a) achieved seedling detection and counting in complex field
+environments. Nevertheless, these existing references
+predominantly rely on two-dimensional measurements, which
+present significant limitations for precise spatial quantification
+under realistic field conditions. During actual agricultural
+operations, continuous mechanical vibrations and complex terrain
+variations dynamically alter the camera perspective, introducing
+severe scaling errors and geometric distortions in 2D imagery.
+Furthermore, the varying morphological postures and irregular leaf
+extensions of developing corn seedlings cause the geometric centers
+of traditional 2D bounding boxes to fluctuate significantly, making
+them unreliable for precise plant-to-plant distance calculations.
+Because 2D vision fundamentally lacks depth perception, it cannot
+correct these spatial artifacts. Therefore, incorporating 3D vision is
+strictly necessary to acquire absolute physical coordinates, mitigate
+vibration and posture-induced localization errors, and achieve
+accurate seedling-stage spatial measurements. To improve the
+robustness of within-row spatial-structure extraction, progress has
+also been made in crop-row detection and spatial-constraint
+modeling, such as the row–column attention end-to-end crop-row
+detection framework by (Li et al., 2024), the ALNet corn-row
+detection network by (Feng et al., 2025a), and row-structure
+extraction and spatial modeling approaches that fuse depth/3D
+information (Gong and Zhuang, 2024; Zhou et al., 2024; Afzaal
+et al., 2025; Ban et al., 2025). These efforts provide important
+methodological foundations for 3D localization and plant-spacing
+measurement at the seedling stage; however, automated 3D plant-
+spacing detection and a quantitative evaluation system for sowing
+quality under complex field conditions still require further
+refinement.
+To address the spatial discrepancy inherent in seed-drop monitoring
+and the dynamic measurement errors of two-dimensional vision,
+this study proposes an automated, non-contact method for
+measuring seedling-stage corn plant spacing based on three-
+dimensional machine vision. By employing an advanced object
+detection model to localize plant centers and synchronously fusing
+RGB imagery with real-time depth data, this method projects two-
+dimensional targets into a unified three-dimensional physical
+coordinate system, thereby mitigating systematic measurement
+errors. Furthermore, a sowing-quality evaluation framework is
+established to enable automated analysis of the Quality of Feed
+Index (QFI), Multiple Index (MUL), Miss Index (MI), and coefficient
+of variation directly from the three-dimensional spatial data.
+Ultimately, this approach advances the assessment paradigm from
+monitoring the mechanical sowing process to quantifying the
+established seedling population, providing reliable technical
+support for precision sowing and field management.
+2. Materials and methods
+2.1. Overall design and implementation of the
+detection system
+2.1.1. Overall design of the sowing scheme
+To enable automated and accurate detection of corn seedling plant
+spacing, this study developed a complete 3D machine vision–based
+detection system, as illustrated in Figure 1. The system is centered
+on a ZED 2i stereo camera mounted on a high-clearance robot. By
+acquiring top-view RGB images and depth information of corn
+seedlings synchronously along crop rows and applying standardized
+preprocessing, the system provides high-quality data for subsequent
+analysis.
+Figure 1.
+[image]
+Open in a new tab
+Flowchart overview of the proposed method.
+The core of the study lies in constructing a keypoint-detection
+model and accurately computing three-dimensional plant spacing.
+First, the centroid of each corn seedling was annotated as the
+keypoint, and a YOLOv11-Pose model was trained and deployed to
+achieve automated plant recognition and precise localization in
+field conditions. Building on these outputs, the system tightly
+integrates camera calibration parameters with depth information to
+back-project the two-dimensional keypoints into three-dimensional
+space. While mounting a camera vertically at a fixed height (e.g.,
+1.15 m) might suggest that a simpler 2D pixel-distance calculation
+with a fixed scale factor is feasible, this approach is fundamentally
+limited in dynamic field environments. In practice,
+microtopogr

@@ -1,0 +1,36 @@
+
+Methodology
+This section describes diagnostic techniques for estimating SoC,
+SoH, and detecting cell-level degradation in a 15S2P LiFePO4
+battery pack using real-time BMS data. The method combines
+advanced Coulomb Counting, EKF, machine learning techniques,
+and statistical diagnostics to create a cohesive hybrid framework.
+Conventional coulomb counting and its limitations
+The Coulomb Counting (CC) method is traditionally employed to
+estimate SOC by integrating the measured current over time, given
+in Eq. (1).
+[image] 1
+where Cn is rated battery capacity (Ah), t is measured current, and
+S(t0) is Initial SOC. While simple and computationally efficient, this
+method suffers from cumulative error drift, especially under
+dynamic conditions, due to Sensor bias, inaccurate initial SOC
+assumptions, Temperature-dependent capacity, and infrequent
+calibration resets. This results in an increasing deviation over time.
+Enhanced coulomb counting with corrections
+To improve accuracy, several modifications over the conventional
+CC are introduced, and the modifications to the conventional
+method are listed here.
+Temperature-based capacity correction
+The temperature-based Capacity Correction is included as given in
+Eq. (2). Battery capacity reduces at low or high temperatures.
+Hence, dynamic capacity Ceff is calculated as,
+[image] 2
+where α is the Empirical temperature coefficient, T is the measured
+cell temperature, and Tref is the Reference temperature. This
+correction recalibrates SOC estimation based on ambient and
+internal heat conditions.
+SOC reset at voltage thresholds
+To correct integration drift, the algorithm resets SOC at known full/
+empty voltage boundaries, which are listed in Eqs. (3) and (4).
+[image] 3
+[image] 4

@@ -1,0 +1,43 @@
+
+MATERIALS AND METHODS
+Modularization of Data Processing Tools
+msCompare was designed to interconnect different modules of
+independent open source LC-MS data analysis programs. We first
+divided all programs into two main modules: feature detection/
+quantification and feature alignment/matching. These two modules
+were implemented by writing wrappers around the data processing
+tools of OpenMS (version 1.2 and 1.5 for feature detection/
+quantification and version 1.5 for alignment/matching) (37, 51–53)
+and SuperHirn (version 0.05) (38), which execute the processing
+steps of the program for either feature detection/quantification or
+feature alignment/matching. MZmine (version 0.6) (36, 54, 55) can
+be only accessed via a graphical user interface. For that reason we
+implemented MZmine in msCompare by writing a program that
+encapsulates MZmine as a Java library. Additionally, a wrapper was
+written around our in-house feature alignment/matching tool based
+on the Warp2D algorithm (27) and around a feature detection/
+quantification module (N-M rules) that we implemented based on
+the approach published by Radulovic et al. (48). Two XML-based
+data formats were developed: one is the FeatureLists format, which
+stores the feature detection/quantification results, and the other is
+the FeatureMatrix format, which stores the resulting quantitative
+matrix obtained after feature alignment/matching. The formats are
+described in detail in the following section and were developed to
+enable bidirectional conversion between the different internal data
+formats of the various tools.
+We have implemented additional modules to extend the
+functionality of msCompare to perform filtering of the feature list
+by setting criteria for feature properties (e.g. deleting features with
+extreme width in the retention time and/or mass to charge ratio
+dimensions), to export feature lists or feature matrices into a tab-
+delimited or APML format, or to perform conversions between the
+different feature list formats. The latter module has the additional
+benefit of allowing the visualization of any feature list in the
+TOPPView program (53), which is part of the OpenMS TOPP
+framework, independently of the used feature detection/
+quantification module. msCompare uses mzXML (56) as input
+format, but mzData (57) and mzML (58) data formats are also
+supported through the use of the file converter of OpenMS.
+Data Integration
+Our data format for the feature list is generic and allows storage of
+the complete information of the feature lists provided by all

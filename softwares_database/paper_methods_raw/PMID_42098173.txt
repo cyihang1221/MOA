@@ -1,0 +1,180 @@
+
+Method
+Experimental design
+The previous version of this dataset, proposed in14, consisted of
+2160 video sequences recorded from five different camera angles
+with a resolution of 1280 × 720 pixels. It included 27 healthy
+subjects (20 males and 7 females; mean age 35.52 ± 10.58) who
+performed 16 different physical rehabilitation exercises for the
+lower and upper limbs, and was recorded from June to July 2022.
+The dataset was recorded in the Artificial Vision Applications lab at
+the University of Córdoba during the development of the RehApp
+project. The study protocol was approved by the Ethics Committee
+of the Reina Sofía University Hospital (Córdoba, Spain), with
+reference number 5071, under the HIP-CI project, version 1,
+entitled “ReHApp: Analysis by vision of postoperative evolution in
+surgical interventions”. All participants provided written informed
+consent for data collection and for the public release of anonymised
+derived data. The dataset shared in this work includes only non-
+identifiable representations, namely optical flow, silhouettes, and
+semantic segmentation masks, which do not allow participants re-
+identification. The subjects were recruited from the city of Córdoba,
+and the inclusion criteria were age (older than 18 years) and the
+ability to read, understand, and sign the corresponding informed
+consent to be recorded. In addition, subjects were informed about
+future methods for distributing data for scientific purposes. Subjects
+were recruited regardless of physical condition to ensure greater
+variability.
+The aim of the recording of this dataset was to compare the
+performance of state-of-the-art pose estimation models available at
+the time of the original study when applied to a specific use case:
+postoperative physical rehabilitation. This was addressed in the
+mentioned study14, where the authors evaluated how these models
+behave in the context of rehabilitation exercises, with a focus on
+their accuracy and reliability for assisting patients in their recovery
+process.
+Data acquisition
+In this new release, each participant is now associated with
+demographic metadata (sex and age), and every repetition of each
+exercise has been independently evaluated and scored by two PhD
+physiotherapist from the University Hospital of Jaén (Spain) and
+from the Federal University of São Carlos (Brasil), providing expert-
+based quality labels that can be used for automatic assessment of
+rehabilitation performance.
+The scoring process followed a structured 5-point ordinal scale
+based on three objective biomechanical pillars: Range of Motion
+(ROM), Postural Control, and Execution Velocity. The therapist
+evaluated whether the subject executed the full anatomical
+trajectory (e.g., reaching the vertical plane in shoulder flexion),
+maintained a stable spinal alignment without compensatory
+movements, and adhered to an optimal angular velocity (ω ≈ 45°/
+s) indicative of proper motor control. The complete grading criteria
+are detailed in Table 1.
+Table 1.
+Clinical Assessment Rubric for Movement Quality.
+Score Classification Biomechanical Criteria
+5
+Optimal
+Full ROM achieved according to individual
+baseline. Rigid postural stability with no
+compensatory movements. Target velocity
+(approx. 45 deg/s) throughout the cycle.
+4
+Functional
+Full or near-complete ROM. Minor postural
+sway without compromising the primary
+joint action. Consistent velocity with
+negligible fluctuations.
+3
+Sub-optimal
+Incomplete ROM. Moderate compensations
+(e.g., trunk leaning or spinal detachment
+from support). Irregular velocity or lack of
+fluid control.
+2
+Deficient
+Significant ROM limitation. Poor postural
+control; movement triggers global instability
+in the kinetic chain. Inadequate velocity
+(reliance on momentum).
+1
+Minimal
+Trace movement or null ROM. Inability to
+maintain baseline posture. Non-functional
+execution preventing kinematic evaluation.
+Open in a new tab
+To assess the reliability of the clinical annotations, two PhD
+physiotherapists independently scored the complete dataset
+following the rubric defined in Table 1. Both raters performed their
+annotations independently and were blinded to subject
+demographics and to each other’s scores. Inter-rater agreement was
+evaluated using the intraclass correlation coefficient (ICC)16 and
+Cohen’s weighted kappa17 The ICC(C,1) was
+0.41(95%CI: 0.38 − 0.45), and Cohen’s quadratic weighted kappa
+was 0.41, both indicating moderate agreement according to
+standard interpretation criteria16. Exact agreement between raters
+was observed in 64.1% of repetitions, and 97.0% of annotations
+differed by at most one score point on the 5-point ordinal scale. The
+moderate ICC value is consistent with the inherent subjectivity of
+clinical movement assessment, where fine-grained distinctions
+between adjacent score levels (e.g., 4 and 5) are particularly
+challenging even for trained specialists. The high proportion of
+annotations within one point of agreement (97.0%) reflects a solid
+practical consistency between raters, supporting the reliability of
+the dataset for training and evaluating machine learning models in
+rehabilitation contexts.
+Importantly, instead of generating separate video clips, the start and
+end frames of each repetition have been annotated in the metadata
+files, thus allowing researchers to isolate and analyze individual
+repetitions without altering the original recordings. The repetitions
+of the exercises have a minimum length of 15 frames (e.g., circular
+pendulum), a maximum length of 675 frames, and an average
+length of 151 frames.
+In addition, several new data modalities have been derived from the
+original RGB recordings, inspired by recent datasets such as
+Health&Gait12: Silhouettes, Optical Flow and Semantic
+Segmentation. Together with the previously available RGB videos
+and 3D ground-truth joint positions, these additions make the
+dataset a rich multi-modal resource for studying rehabilitation
+exercises.
+Data processing
+To ensure a reliable performance evaluation, we split each sequence
+into multiple repetitions of the same exercise. For that purpose, we
+monitored one key joint per exercise to identify its maximum and
+minimum ranges of motion within each sequence. A Fourier filter
+was applied to remove high-frequency noise, using an adaptive
+cutoff set to the dominant frequency of each signal (i.e., the
+frequency with the highest power in the spectrum), and peaks and
+valleys of the filtered signal were used to determine the start and
+end of each repetition. An example is shown in Figure 1. These split
+subsequences were then linked to the corresponding physiotherapist
+score in the metadata files. This strategy ensures that complete and
+isolated repetitions can be accurately retrieved without explicitly
+segmenting the video sequences.
+Fig. 1.
+[image]
+Open in a new tab
+Filtered plot using Fourier filtering for the Bending the knee with
+support while sitting exercise, highlighting the peaks and valleys used
+to clip repetitions from the videos in the dataset, four of which are
+shown in this example. (The individual shown in the images
+consented to their publication).
+From the original RGB sequences, three additional visual modalities
+were derived to enrich the dataset and facilitate multi-modal
+analyses. Specifically, we computed silhouettes using instance
+segmentation (YOLO11x-seg18) to capture the body outline while
+discarding background information; optical flow using both
+traditional (TV-L119) and learning-based (GMFlow20) methods to
+represent dense motion fields between consecutive frames; and
+semantic segmentation through DensePose-based models, assigning
+a body-part label to each pixel of the subject and thus enabling fine-
+grained motion and posture analysis. All the modalities can be
+visualized in the Figure 2.
+Fig. 2.
+[image]
+Open in a new tab
+Examples of the new modalities incorporated into the dataset. Each
+row corresponds to a different rehabilitation exercise, while each
+column shows one of the generated modalities: (a) RGB frame, (b)
+binary silhouette, (c) semantic segmentation, (d) optical flow
+computed with TV-L1, and (e) optical flow computed with GMFlow.
+It should be noted that the bands and markers visible on the
+participants’ limbs in the RGB modality are passive markers
+belonging to the OptiTrack motion-capture (MoCap) system. (The
+individual shown in the images consented to their publication).
+All processing steps were designed to ensure temporal alignment
+across modalities, so that each frame in the RGB sequences has its
+corresponding silhouette, optical flow, and semantic segmentation
+representation. The resulting data are stored in standard image
+formats to guarantee usability and easy integration with deep
+learning frameworks, with a complete resolution of 1280 × 720
+pixels. Due to storage constraints, the sequences have been
+compressed into MP4 format (preserving the original quality), but
+the corresponding source code is provided in the GitHub repository
+for decomposing them into separate frames and replicating the
+conditions of the experiments described in this article.
+Silhouettes
+Body silhouettes were extracted using an instance segmentation
+model (YOLO11x-seg pre-trained on COCO dataset21). This
+approach produces binary masks that capture the subject’s body
+outline while removing background information.

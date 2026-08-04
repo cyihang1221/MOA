@@ -1,0 +1,166 @@
+
+Methodology, Software, Validation, Formal analysis, Investigation,
+Data curation, Writing – original draft, Visualization
+Find articles by Wenjie Zheng
+1, Zurong Qiu
+Zurong Qiu
+1School of Precision Instrument and Opto-Electronics Engineering,
+Tianjin University, Tianjin 300072, China; tjbyzwj@163.com
+Conceptualization, Resources, Writing – review & editing,
+Supervision, Project administration, Funding acquisition
+Find articles by Zurong Qiu
+1,*
+Editor: Filippo Attivissimo1
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC13165977  PMID: 42122442
+Abstract
+In coaxial twin-rotor helicopters, the minimum blade tip distance
+may approach danger thresholds during rotor intersection under
+high-speed rotation and complex aerodynamic conditions, posing
+collision risks. This study proposes a multi-sensor fusion approach
+for measuring the blade collision warning parameter d, which maps
+the collision risk into a single evaluation metric and provides stable
+real-time outputs of phase, spatial position, and inter-blade distance
+under high-speed operational conditions. A collaborative
+measurement scheme integrating encoder-based phase detection,
+tip-tracking camera positioning, and millimeter-wave radar distance
+measurement was developed. A dynamic rotor motion simulation
+experimental platform with single-side rotation and rigid blades
+was constructed to validate the measurement performance under
+varying rotor speeds and blade tip distances. Experimental results
+indicate that measurement errors remain within ±1.87 mm,
+repeatability errors are below 0.67 mm, and the coefficient of
+variation is under 0.2%, confirming the accuracy and stability of
+the proposed method under dynamic conditions. Additional multi-
+speed experiments show that, over the tested rotational-speed
+range, the error of d remains within (−5.86 mm, 6.57 mm),
+although the fluctuation of the results increases moderately at
+higher speeds as the blade intersection duration becomes shorter.
+The proposed approach provides a laboratory-validated technical
+basis for blade collision risk assessment and future warning
+implementation in coaxial twin-rotor helicopters.
+Keywords: coaxial twin-rotor helicopter, blade collision early
+warning parameter, in situ dynamic measurement, multi-sensor
+fusion, millimeter-wave radar
+1. Introduction
+Coaxial rotor helicopters offer unique advantages in low-speed
+heavy-lift operations, confined-space takeoffs and landings, and
+high-attitude maneuvers due to their compact layout, elimination of
+tail rotors, and high lift utilization efficiency [1,2,3]. However,
+under complex aerodynamic conditions and elastic deformation, the
+blade tip distance between the upper and lower rotors exhibits
+strong time-varying characteristics influenced by phase differences,
+blade swing, and pitch changes [4]. Under extreme conditions, the
+minimum blade tip distance may approach danger thresholds
+during rotor intersection, posing collision risks. To proactively
+mitigate this risk, it is necessary to establish an in situ real-time
+collision avoidance warning system. This system quantifies the
+danger margin at the instant of blade intersection in real time, using
+this metric as the criterion for flight control system intervention and
+adjustment to achieve closed-loop safety control. Within this
+warning framework, the key technical challenge lies in accurately
+obtaining the distance between the upper and lower rotor blade tips
+at the moment of intersection. Blade clearance serves as the core
+physical parameter characterizing collision risk, with its
+measurement accuracy and timeliness directly determining the
+reliability of the warning criteria. Traditional safety strategies
+primarily rely on structural redundancy design and ground-based
+offline inspections, lacking the capability for direct, real-time
+quantification of actual minimum blade tip clearance during
+helicopter flight operations. This limitation hinders the fulfillment
+of dynamic safety assessment requirements. Existing technologies
+for online blade clearance measurement typically employ single-
+sensor solutions, such as pure visual positioning or ultrasonic
+ranging [5]. However, these methods are susceptible to factors like
+occlusion, varying illumination conditions, ranging cycle
+limitations, and complex meteorological environments. They
+struggle to simultaneously meet the comprehensive requirements of
+real-time performance, high accuracy, and engineering deployment
+constraints in scenarios involving high-speed rotation and brief
+intersection periods. Further analysis reveals that under high-speed
+counter-rotating blade conditions, the measurement system must
+not only capture intersection events within millisecond time scales
+but also synchronously acquire blade phase information and spatial
+position parameters to eliminate measurement uncertainties caused
+by random phase differences. Therefore, to support online early
+warning during flight, an in situ real-time measurement method is
+required that can stably output three types of information—“phase,
+position, and distance”—under high-speed rotational conditions and
+uniformly map blade collision risks into a single measurement
+parameter representation.
+The theory and methodology for in situ real-time measurement of
+blade collision early warning parameters not only provide scientific
+early warnings for dangerous approaches between upper and lower
+blades but also offer a critical basis for optimizing coaxial rotor
+structural design. The axial spacing between the upper and lower
+rotors [6] is a crucial parameter for coaxial rotor helicopters, and
+its optimization directly reflects the design level and performance
+refinement of the helicopter. Currently, the theoretical research on
+axial clearance design remains incomplete. Due to the inability to
+measure clearance at the moment of wingtip intersection during
+operation and the lack of operational experimental data, design
+relies largely on empirical formulas, incorporating sufficient
+redundant clearance to prevent blade collisions. This paper
+proposes an optimization objective for axial pitch: the minimum tip
+clearance during intersection to prevent collision and the maximum
+tip clearance during intersection to ensure reasonable clearance for
+the coaxial rotor structure. Achieving this objective requires not
+only theoretical analysis of blade deformation patterns under
+various complex operating conditions and improved structural
+stiffness, but most critically, the capability for real-time field
+monitoring of the distance between upper and lower blade tips
+during different flight conditions. This enables the acquisition of
+blade collision warning parameters. Therefore, real-time field
+measurement of wingtip distance is the key technological assurance
+for optimizing axial spacing, advancing helicopter design standards,
+and obtaining blade collision warning parameters.
+In addition to direct blade tip distance measurement, non-contact
+optical techniques and low-intrusiveness onboard sensing have also
+been investigated for rotor blade structural characterization and
+dynamic state monitoring. Bernardini et al. [7] employed
+photogrammetry for the experimental identification of structural
+and inertial properties of helicopter rotor blades, demonstrating the
+value of non-contact optical reconstruction for rotor-blade
+measurement. Serafini et al. [8] further developed a non-invasive
+dynamic measurement system for helicopter blades and evaluated
+its in-flight performance, showing the feasibility of low-
+intrusiveness onboard monitoring under operating conditions. These
+studies provide important support for rotor blade non-contact
+measurement and structural health monitoring, but they mainly
+focus on blade structural characterization and dynamic response
+monitoring rather than instantaneous blade tip distance estimation
+at rotor intersection. Recent studies also showed that reliable
+dynamic parameter identification under sweep-frequency and
+nonstationary excitation is important for structural response
+interpretation in aerospace applications [9]. In parallel, microwave-
+based sensing has been actively studied in high-speed rotating
+machinery for blade tip timing and tip distance measurement
+[10,11], owing to its non-contact nature, short response time, and
+adaptability to harsh environments. These developments suggest
+that microwave/radar sensing has clear potential for rotor blade tip
+distance measurement, although its application to coaxial rotor
+intersection scenarios still requires phase-locked triggering and
+coordinated use with position-related information.
+Current methods for measuring blade tip distance are primarily
+categorized into indirect and direct measurement techniques.
+Typical indirect measurement methods include strain measurement
+[12] and acceleration measurement. Strain measurement calculates
+the blade’s strain deflection curve by fitting and decoupling the
+strain values measured at different positions on the blade [13],
+providing a basis for blade structural evaluation and performance
+improvement. Computers perform strain continuity using
+demodulated finite-point measurements to derive strain variation
+equations, thereby calculating tip displacement to obtain blade tip
+distance. The acceleration measurement method involves installing
+an accelerometer at the blade tip. By measuring acceleration data at
+the tip and transmitting the signal via a slip ring to the airframe,
+the displacement value is obtained through secondary integration
+by the signal analysis and processing system. Direct measurement
+methods utilize distance sensors (cameras [14,15], ultrasonic,
+electromagnetic waves, etc.) to directly acquire the blade tip
+distance. André Bauknecht proposed a blade tip displacement
+measurement method based on onboard monocular vision [16]. By
+combining high-speed imaging with optical marker recognition, it
+enables non-contact acquisition of blade tip motion d

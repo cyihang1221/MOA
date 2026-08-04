@@ -1,0 +1,168 @@
+
+Experimental spectra are scored against search space lipids with
+similar precursor masses using a peak score based on the
+hypergeometric distribution and an intensity score utilizing the
+percentage of total ion intensity residing in matching peaks. The
+LipidLama component filters the results via mixture modelling and
+density estimation. We assess Greazy’s performance against the
+NIST 2014 metabolomics library, observing high accuracy in a
+search of multiple lipid classes. We compare Greazy/LipidLama
+against the commercial lipid identification software LipidSearch and
+show that the two platforms differ considerably in the sets of
+identified spectra while showing good agreement on those spectra
+identified by both. Lastly, we demonstrate the utility of Greazy/
+LipidLama with different instruments. We searched data from
+replicates of alveolar type 2 epithelial cells obtained with an
+Orbitrap and from human serum replicates generated on a Q-TOF.
+These findings substantiate the application of proteomics derived
+methods to the identification of lipids. The software is available
+from the ProteoWizard repository: [http://tiny.cc/bumbershoot-
+vc12-bin64].
+TOC image
+[image]
+Introduction
+The diversity of cellular functions and diseases in which lipids play
+a role substantiates their importance and the necessity of their
+study1–7. A complete understanding of these roles requires a
+comprehensive accounting of the lipidome, but this has proven an
+elusive goal. The study of complex lipid mixtures can be done with
+the help of rapidly scanning tandem mass spectrometers, producing
+overwhelming amounts of data that, in turn, require sophisticated
+software for interpretation. Proteomics has benefitted from well-
+developed software for years but the development of similar
+software for lipidomic analysis has been relatively slow.
+Current lipidomics tools often cater to specific applications. Some
+are designed for direct infusion lipidomics where the sample is
+subjected to electrospray without prior chromatographic
+separation8. AMDMS-SL9 and LipidView10 use this technique along
+with precursor ion and neutral loss scanning to search for ions that
+are characteristic of a head group or fatty acyl substituent. Tools
+such as LipidQA11, LipidExplorer12, and LipidInspector13 are
+designed for direct infusion experiments but with data-dependent
+acquisition scanning. The alternative to direct infusion is liquid
+chromatography, a method shared with shotgun proteomics. LC/MS
+can be used to identify a list of possible lipid identifications, often
+isomers from the same lipid class. Lipid specific software such as
+Lipid Data Analyzer14 as well as general metabolomics software like
+MZmine215 are designed for this type of analysis. LC-MS/MS allows
+for isomeric species to be distinguished through the fragments they
+produce. The commercial software LipidSearch16 can analyze such
+data.
+Although lipidomics software has advanced in recent years, several
+challenges bar the path to routine interpretation of these data sets.
+In proteomics, peptide sequences are routinely identified from MS/
+MS spectra through database search algorithms that employ simple
+rules for predicting peptide fragmentation patterns. Lipids exhibit
+greater structural diversity than peptides. The LIPID MAPS database
+categorizes more than 37000 lipids into eight lipid categories that
+are further divided into dozens of subclasses, each of which ionizes
+and fragments in a distinct manner17. As a result, predicting the
+appearance of MS/MS spectra for lipids requires greater attention
+than in proteomics, and the number of fragments seen for a given
+compound is generally smaller. Publically available MS/MS spectral
+libraries for lipids are also far less populated and diverse than those
+in proteomics, although there has been some recent work in this
+area with the development of LipidBlast18, a collection of predicted
+MS/MS spectra for many lipid classes. The literature detailing the
+MS/MS mechanisms for lipids is considerably less fully developed
+than it is for proteomics. In proteomics, extensive spectral libraries
+and sequence databases have yielded powerful statistical scoring
+algorithms and methods for estimating false discovery rates.
+Leveraging methods developed for proteomics to lipidomics may
+begin to address the shortage of tools in this space.
+We have developed the software “Greazy” for the high-throughput
+identification of phospholipid MS/MS data. Greazy employs a
+number of techniques borrowed from proteomics that have the
+potential to address many of the challenges that arise in lipidomics.
+Greazy incorporates Proteowizard19, enabling it to accept many
+vendor-specific and open file formats in use today. A set of user
+defined parameters define a phospholipid search space and a
+comprehensive literature-derived fragmentation model for each
+lipid in that space. These predicted spectra are compared to
+experimental ones through two probability-based scores. Lastly, a
+mixture modeling approach using density estimation is used to
+calculate the false discovery rate and to generate a cutoff score.
+Successful matches are written to the easily reviewed mzTab file
+format20.
+Experimental Section
+Data Sets
+NIST Tandem MS Library
+The 2014 release of the NIST small molecule MS/MS library
+consists of 193,119 spectra for a number of different compound
+types including metabolites, drugs, phospholipids, and more. The
+spectra for these compounds were acquired under a broad range of
+experimental conditions. Ion trap and collision cell instrument types
+were used; data were acquired in both positive and negative ion
+mode. A number of precursor adducts were used, along with a wide
+range of collision energies, resulting in differing degrees of
+fragmentation. This data set was split into two files based on the
+polarity of each entry resulting in a positive ion file containing
+161,355 entries and a negative ion file containing 31,764. Next,
+phospholipids were extracted from these files using a string search.
+Those entries containing the strings “glycero-3-phos,” “sphingosyl,”
+or “sphingenyl” were kept and the rest discarded. This reduced the
+positive ion file to 3,107 entries and the negative ion file to 1,232.
+Represented in these entries were 141 distinct compounds in the
+positive ion file and 175 in the negative. The total number of
+distinct compounds was 214. The resulting files were reformatted as
+MGF files for use with Greazy.
+Bone Marrow Stem Cells
+In the Department of Biochemistry at the University of Texas Health
+Science Center at San Antonio lipids were extracted from cultured
+bone marrow stem cells collected from wild-type mice. The lipid
+extracts were subjected to reversed-phase liquid chromatography
+coupled to a Thermo Fisher Q Exactive tandem mass spectrometer.
+Analysis was done in both positive and negative ion modes resulting
+in 13362 and 12438 MS/MS spectra respectively. Lipid
+identifications were made with LipidSearch software version 4.0.14
+(Thermo Scientific) and provided to us for comparison purposes.
+The raw files were converted to mzML files using Proteowizard’s
+MSconvertGUI tool for analysis with Greazy and LipidLama.
+Alveolar Type 2 Epithelial Cells
+At the Pacific Northwest National Laboratory lipids were extracted
+from sorted Type 2 epithelial cells obtained via magnetic bead
+sorting from lung tissue harvested from post-natal day 7 and post-
+natal day 28 C57BL/6 mice. Lungs from five post-natal day-7 and
+five post-natal day-28 mice were each pooled, sorted and
+partitioned into replicates. The replicates were each subjected to
+lipid extraction using chloroform/methanol (2:1, v/v), and the
+extracts were analyzed by ultra-performance reversed-phase liquid
+chromatography coupled to a Thermo Scientific LTQ Orbitrap Velos
+mass spectrometer. The extracts were analyzed in both positive and
+negative ion mode.
+Human Serum
+At the Mycobacteria Research Laboratories within the Department
+of Microbiology, Immunology and Pathology at Colorado State
+University - Fort Collins lipids were extracted from platelet poor
+human plasma (Sigma-Aldrich) derived serum using chloroform/
+methanol (2:1, v/v). The extract was analyzed by high-performance
+reversed-phase liquid chromatography coupled to an Agilent Q-TOF
+mass spectrometer. Ten technical replicates were produced with
+selection of 4 precursors per cycle, five at low collision energy (
+3∗(m/z)/100+2) and five at high collision energy ( 5∗(m/
+z)/100+2). All data was acquired in negative ion mode using
+Agilent’s MassHunter software. These data sets can be found at the
+MassIVE repository (ID: MSV000079377).
+Software
+Greazy is software for the high-throughput identification of
+phospholipids from MS/MS spectra. Proteowizard19 is integrated
+into the software, enabling Greazy to handle a number of open and
+vendor specific file formats. The experimental and search space
+parameters are input through a graphical user interface (Figure S1)
+and are used to build a list of phospholipid precursor ions that are
+then fragmented in silico for comparison to the experimental
+spectra. The software generates theoretical spectra for lipid classes
+from the glycerophospholipid and sphingolipid categories, each of
+which has its own structure and requires a distinct model when
+building the search space. Cardiolipins (CL), a member of the
+glycerophospholipids, require additional attention and are
+considered a separate category here. Details of the search space can
+be found in Supporting Text S1.
+Experimental Parameters and Precursors
+Following the construction of the lipid search space, predicted
+precursor ions are generated for each included lipid based on the
+detection polarity (positive or negative) and the adducts expected
+to be present. For positive ion mode, available adducts include
+sodium, potassium, lithium, and ammonium; chloride, acetate, and
+formate are included for negative ion mode. Sodium, potassium,
+and lithium adducted cardiolipin precursors are also predicted i

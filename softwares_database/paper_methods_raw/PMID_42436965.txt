@@ -1,0 +1,213 @@
+
+MethodsX
+. 2026 Jun 26;17:104017. doi: 10.1016/j.mex.2026.104017
+•  Search in PMC
+•  Search in PubMed
+•  View in NLM Catalog
+•  Add to search
+Development of an augmented
+virtuality framework using
+user-defined passthrough
+surfaces
+Abdul Hannan Bin Zulkarnain
+Abdul Hannan Bin Zulkarnain
+1Department of Postharvest, Supply Chain, Commerce and Sensory
+Science, Institute of Food Science and Technology, Hungarian
+University of Agriculture and Life Sciences, Villányi út 29-31,
+Budapest, H-1118, Hungary
+Find articles by Abdul Hannan Bin Zulkarnain
+1,⁎, Attila Gere
+Attila Gere
+1Department of Postharvest, Supply Chain, Commerce and Sensory
+Science, Institute of Food Science and Technology, Hungarian
+University of Agriculture and Life Sciences, Villányi út 29-31,
+Budapest, H-1118, Hungary
+Find articles by Attila Gere
+1
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC13355033  PMID: 42436965
+Abstract
+An augmented virtuality framework is presented in which the
+physical scene is admitted only through developer-defined
+geometric apertures, while all other pixels are rendered virtually.
+The scene initialises as a black field and uses surface-projected,
+overlay-style compositing so that the camera stream is visible only
+on circular or square meshes registered as projection surfaces.
+Tracking origin is configured to minimise unintended recentring,
+and the same method can operate either as a minimal black scene
+or within an optional three-dimensional environment.
+Main features of the framework are as follows:
+deterministic compositing that binds real imagery to user-defined
+meshes and prevents leakage outside apertures.
+stable alignment between virtual geometry and the physical
+workspace during head motion achieved through standard XR
+configuration.
+a flexible scene recipe that supports circular or square apertures and
+optional contextual environments without altering projection logic.
+The framework is intended for sensory and consumer studies that
+require real product interaction under controlled context and
+generalises to training, human factors, and rehabilitation scenarios
+requiring constrained visibility of the real world.
+Keywords: Virtual reality, Mixed reality, Passthrough, Unity,
+OpenXR
+Graphical abstract
+[image]
+Open in a new tab
+Specifications table
+Subject area
+Food Science
+More specific
+subject area
+Immersive Technology for Sensory Testing
+Name of your
+method
+Surface-Projected Augmented Virtuality with
+Circular or Square Passthrough Windows
+Name and
+reference of
+original
+method
+N/A
+Resource
+availability
+Suggested device: Meta Quest 3 s (tested).
+Compatible with Meta Quest Pro and 3 (full-color
+passthrough) and Meta Quest 2 (grayscale
+passthrough).
+Software needed: Unity 6000.1.12f1.
+Packages required (Unity Package Manager):
+– XR Plugin Management (enable OpenXR for
+Android)
+– OpenXR Plugin (com.unity.xr.openxr)
+– Meta XR SDK — All-in-One
+(com.meta.xr.sdk.allinone)
+Packages optional (for interaction/testing):
+– XR Interaction Toolkit
+(com.unity.xr.interaction.toolkit)
+– XR Hands (com.unity.xr.hands)
+– Universal Render Pipeline (URP)
+Build target / settings: Android, ARM64, Vulkan,
+Min API 29+.
+Software repository:https://github.com/
+matedigitalsensorylab/Raw_AV
+Developer documentation/manual:https://
+github.com/matedigitalsensorylab/Raw_AV/
+blob/main/README.md
+License: MIT (in repository).
+Open in a new tab
+Background
+Sensory and consumer evaluation needs both experimental control
+and ecological validity [1]. Highly controlled testing rooms reduce
+unwanted variation, but they can remove the cues that matter in
+everyday decisions, such as the look of the real product on a real
+table [2]. Fully virtual scenes give strong control but often replace
+real foods with digital models, and this can change how people
+combine sight, touch, smell, and taste [3]. Camera passthrough
+shows the real world directly, but it can also show distracting
+backgrounds and uncontrolled lighting [4].
+Augmented virtuality (AV) offers a balanced solution. In this
+approach, the virtual scene remains in charge, and only chosen
+parts of the real world are shown [5]. The framework here does
+that by projecting the live camera image onto specific meshes that
+act like windows. Everything outside the windows is drawn by the
+graphics engine and can be standardized. The simplest version is a
+black scene that removes all background context. A richer version
+uses a simple virtual room that offers orientation without
+introducing strong visual cues.
+This method follows the concept introduced in the related research
+article by Zulkarnain et al. [5]. That article explains why
+augmented virtuality can improve ecological validity in consumer
+studies. The present paper provides a clear implementation that
+researchers can use as a starting point for their own experiments.
+The central idea is straightforward: the compositor maps the
+camera image onto developer-selected meshes and draws it only on
+those surfaces, above the rest of the virtual scene. Circular and
+square windows are created from simple primitives, making their
+size and placement easy to report and reproduce. Because these are
+ordinary scene objects, researchers can vary window number, size,
+and spacing as experimental factors without changing the
+compositing logic (Fig. 1).
+Fig. 1.
+[image]
+Open in a new tab
+Scene overview showing OVRCameraRig, the OVR Passthrough
+Layer, and the circular and square meshes used as user-defined
+projection surfaces.
+In contrast to full scene passthrough setups that render the camera
+feed across the entire field of view, the present implementation
+constrains real-world imagery to explicitly defined apertures.
+Accordingly, the contribution of the present paper is a reproducible
+implementation recipe for aperture-constrained augmented
+virtuality, rather than a depth-aware occlusion system. Unlike
+depth-aware mixed-reality approaches that use depth or scene
+reconstruction to support occlusion, this framework treats
+passthrough visibility as a deterministic mask defined by developer-
+registered projection meshes. This prioritises controlled, reportable
+exposure of real-world imagery and reproducible experimental
+conditions over physically realistic depth-based blending.
+The present framework relates to mixed-reality techniques that
+selectively display real-world imagery. Modern VR SDKs support
+surface-projected passthrough or selective passthrough, where the
+headset projects camera video onto specified virtual surfaces rather
+than relying on automatic environment depth reconstruction [6]. In
+the present approach, user-defined meshes act as opaque windows
+into reality. This can be understood as a constrained form of
+computer-mediated reality because real-world video is composited
+only on predefined geometry without scene reconstruction [7].
+Unlike depth-aware mixed reality, the real-world image is overlaid
+at full opacity on the registered meshes, so virtual objects do not
+occlude real objects inside the apertures. This supports reproducible
+and deterministic apertures, but it does not provide physical
+occlusion, object-aware compositing, or scene reconstruction. The
+framework is therefore positioned as a constrained video-see-
+through augmented virtuality technique rather than a depth-aware
+mixed-reality system.
+Method details
+This implementation is specified for Unity 6000.1.12f1 (Unity
+Technologies, Unity Software Inc., San Francisco, California, US)
+with the Universal Render Pipeline (URP) and targets Android using
+IL2CPP, ARM64, and Vulkan. URP Global Settings and a URP
+Renderer are assigned in Project Settings → Graphics and mirrored
+in Quality so all tiers resolve to the same pipeline. To create a
+neutral visual baseline, the skybox is removed in Lighting and
+ambient light is set to a constant black. A single render camera (the
+CenterEyeAnchor under OVRCameraRig) is used and configured in
+URP with Background = Solid Colour (black) so pixels not filled by
+mesh rendering or camera composition remain black (Fig. 1).
+Tracking is configured to avoid automatic recentring during
+boundary prompts; this practical choice keeps the user-defined
+windows visually stable in the headset and prevents sudden origin
+jumps (Fig. 2). Because the projection surfaces are fixed in the
+tracked coordinate frame, the framework depends on stable
+coordinate-space behaviour between the headset tracking origin,
+the registered projection-surface meshes, and the physical
+workspace. Runtime reset, user-initiated recentring, boundary reset,
+environmental relocalisation, or visible cumulative drift may shift
+this coordinate frame and reduce aperture alignment quality. In
+practical deployment, aperture transforms should be checked after
+any recentring event, boundary reset, visible drift, or prolonged
+session, and recalibrated before data collection continues if
+alignment has changed. Software versioning and setup instructions
+are provided in the public repository and README listed in the
+Specifications table.
+Fig. 2.
+[image]
+Open in a new tab
+Unity Inspector view of the OVRCameraRig object showing the
+OVRManager component settings used in the present framework to
+support stable tracking during ordinary runtime use. This figure
+shows the practical tracking configuration underlying the spatial
+behaviour of the augmented virtuality system, including the
+selected tracking origin, enabled position tracking, and recentre-
+related options intended to reduce unintended spatial shifts of the
+user-defined passthrough apertures. Because the circular and square
+projection surfaces are registered in the same tracked coordinate
+frame, stable headset-to-scene alignment is important for
+maintaining the apparent position of the apertures during normal
+operation.
+Runtime support is then enabled in Project Settings → XR Plug-in
+Management by turning on OpenXR for Android and enabling the
+Meta features required for tracked input and camera passthrough.
+This ensures the application recei

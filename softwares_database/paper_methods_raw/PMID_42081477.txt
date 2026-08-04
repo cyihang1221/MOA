@@ -1,0 +1,181 @@
+
+Methodology, Supervision
+Find articles by Fatemeh Nafian
+5, Fatemeh Khatami
+Fatemeh Khatami
+4Urology Research Center, Tehran University of Medical Sciences,
+Tehran, Iran
+Conceptualization, Resources, Supervision
+Find articles by Fatemeh Khatami
+4, Mohammad Kazem Aghamir
+Mohammad Kazem Aghamir
+4Urology Research Center, Tehran University of Medical Sciences,
+Tehran, Iran
+Conceptualization, Resources, Supervision
+Find articles by Mohammad Kazem Aghamir
+4, Mohammadreza Kolahdouz
+Mohammadreza Kolahdouz
+1School of Electrical and Computer Engineering, College of
+Engineering, University of Tehran, Tehran, Iran
+Conceptualization
+Find articles by Mohammadreza Kolahdouz
+1,*
+Editor: Xiaohui Zhang6
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC13138666  PMID: 42081477
+Abstract
+Traditional cell counting in clinical and research settings often
+relies on hemocytometry, a manual technique that is labor-intensive
+and prone to human error. These limitations in precision and
+throughput can hinder the development of effective diagnostic and
+therapeutic strategies, particularly in the context of prostate cancer.
+Recent advances in machine learning have shown considerable
+promise in enhancing the accuracy and efficiency of cell
+enumeration. In this study, we present a novel software system for
+the automated counting of prostate cancer cells, integrating image
+processing with deep learning methodologies. Unique to our
+approach, the system robustly utilizes images acquired from
+conventional mobile phone cameras, offering a highly accessible
+and scalable solution. It applies a convolutional neural network
+(CNN) in conjunction with a selective search algorithm to
+accurately identify regions of interest (ROIs), followed by robust
+image analysis algorithms for precise cell detection and
+quantification. This two-stage pipeline addresses the inherent
+variability and extraneous content in mobile-captured images,
+which is a significant advancement over methods reliant on
+controlled microscopic environments. Experimental evaluations
+demonstrate that the proposed method achieves superior accuracy
+compared to conventional manual counting approaches. This
+automated framework offers a practical, scalable solution that may
+significantly improve the reliability and efficiency of cell counting
+in both research and clinical diagnostics.
+Introduction
+Prostate cancer (PCa) is the second most commonly diagnosed
+malignancy in men and the fifth leading cause of cancer-related
+mortality worldwide, with an estimated 400,000 deaths annually.
+Due to its asymptomatic nature in early stages, it often requires
+active clinical surveillance for timely intervention [1]. In prostate
+cancer research, three cell lines—LN-CaP, PC3, and DU145—are
+predominantly utilized to model different aspects of disease
+progression and treatment response [2]. LN-CaP cells, which are
+androgen-dependent, serve as a valuable model for studying early-
+stage, hormone-sensitive prostate cancer and for assessing the
+efficacy of hormonal therapies [3]. In contrast, PC3 cells, which
+originate from bone metastases and are androgen-independent, are
+commonly used to investigate aggressive and metastatic forms of
+the disease [4]. DU145 cells, recognized for their rapid
+proliferation, are employed in studies exploring tumor growth
+dynamics and metastatic behavior [5].
+Precise cell enumeration is essential for a wide range of
+experimental procedures and therapeutic evaluations. Applications
+such as routine cell culture maintenance, quantitative PCR,
+xenograft modeling, and cell therapy all require accurate cell counts
+to ensure experimental consistency and reproducibility [6]. The
+hemocytometer remains the conventional tool for cell counting,
+enabling manual quantification through chambers etched with grid
+patterns. Although it provides a standardized approach, this method
+is labor-intensive and inherently susceptible to observer variability
+[7]. Accurate cell quantification is crucial for ensuring reliable
+experimental setups, assessing treatment outcomes, and monitoring
+cellular behavior under varying conditions [8]. Inaccurate cell
+counts can compromise the validity of experimental findings and
+hinder the development of effective therapeutic strategies.
+Therefore, reliable and reproducible cell enumeration forms the
+foundation of both research and clinical decision-making [9].
+Despite its longstanding use, manual hemocytometry is time-
+consuming and vulnerable to human error. It requires the operator
+to visually count cells across chamber grids—an approach that is
+inefficient and not scalable for high-throughput studies [10]. To
+overcome these limitations, automated methods using image
+processing have been developed. Early approaches involved the use
+of hand-crafted features to distinguish cells based on geometric
+attributes such as shape and size [11]. These techniques, however,
+often require extensive preprocessing of microscopic images,
+especially when the images contain non-uniform regions unsuitable
+for analysis. Preparing such images for analysis is time-consuming
+and often necessitates manual cropping or adjustment, delaying
+processing workflows.
+The integration of image processing in cellular analysis has
+introduced numerous benefits, including enhanced speed, improved
+accuracy, and automation. These advantages are particularly
+valuable in cancer diagnostics and biomedical research, where high-
+throughput and reliable analysis are critical [12–14]. Several
+algorithms have been proposed for automated cell detection and
+counting, including watershed segmentation, thresholding, and
+machine learning-based methods [15]. While each algorithm
+presents specific strengths and limitations, many of them still
+require well-prepared input images and struggle with accuracy
+when processing complex or noisy data [16,17].
+Recent advances in deep learning have significantly improved cell
+counting capabilities. Deep learning algorithms, with their ability to
+extract high-level features from raw images, have shown excellent
+performance in detecting and classifying cells with minimal
+preprocessing [18,19]. These models are particularly useful in
+large-scale studies and clinical applications, where both accuracy
+and efficiency are paramount.
+In light of these developments, this study aims to develop an
+automated system for counting prostate cancer cell lines (PC3, LN-
+CaP, and DU145) using a two-stage pipeline involving image
+processing and deep learning. The first stage focuses on the
+automated extraction of the region of interest (ROI) using images
+captured via mobile phone cameras. The second stage applies
+advanced image processing and machine learning techniques to
+accurately detect and enumerate the cells within the selected ROI.
+The performance of the system is evaluated to assess its potential as
+a practical tool for laboratory and clinical applications. Crucially,
+this work distinguishes itself by developing a robust solution
+specifically tailored for images captured by common mobile phone
+cameras, which often present challenges such as varying
+illumination, non-uniform backgrounds, and the presence of
+extraneous non-ROI regions, unlike controlled microscope
+environments. Our novel contribution lies in the synergistic
+combination of a deep Convolutional Neural Network (CNN) for
+accurate ROI identification and alignment with a selective search
+algorithm, followed by a refined sequence of classical image
+processing techniques (morphological operations, Canny edge
+detection, and Hough Circle Transform) for precise cell
+enumeration. This integrated pipeline is designed to overcome the
+limitations of manual hemocytometry by providing a user-friendly,
+cost-efficient, and highly accurate automated alternative that is
+accessible in diverse clinical and research settings.
+Methodology
+Conventional cell counting is typically performed using a
+hemocytometer, a precision instrument consisting of four chambers
+etched with a grid pattern and overlaid by a coverslip (Fig 1). Each
+chamber contains a defined grid of 1 mm2, corresponding to a
+volume of 0.1 mm3. To estimate cell concentration, the operator
+manually counts the number of cells within the grid and calculates
+the average cell density based on the known chamber volume.
+Fig 1. A) A hemocytometer – B) Hemocytometer
+segmentations.
+[image]
+Open in a new tab
+In the present study, the general procedure for cell counting was
+automated through the development of a software platform capable
+of processing images captured by mobile phone or camera. The
+system employs a convolutional neural network (CNN) in
+combination with a selective search algorithm to identify and
+extract the region of interest (ROI) from the input image. Following
+ROI extraction, image processing techniques are applied to detect
+and enumerate the cells. Additionally, a web-based interface was
+developed to provide users with an accessible online platform for
+performing automated cell counting.
+ROI Extraction
+Accurate cell counting requires the precise identification of the
+region of interest (ROI) within each input image. This step is
+essential, particularly because images are captured using mobile
+devices, which may include extraneous areas that are not suitable
+for analysis. To automate ROI detection, a combination of a
+Convolutional Neural Network (CNN) and a selective search
+algorithm was employed to distinguish between ROI and non-ROI
+regions.
+CNNs are widely used in image classification, similarity-based
+image clustering (e.g., photo search), and object recognition in
+complex scenes. These networks are capable of recognizing diverse
+visual patterns such as facial features, tumors, and other structural
+components within image data [20]. The fundamental component
+of a CNN is the convolutional layer, which processes input data
+through a set of learnable filters or kernels. CNNs also incorporate
+fully connected layers that perform classification by assigning

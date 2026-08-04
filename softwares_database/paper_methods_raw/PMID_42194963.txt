@@ -1,0 +1,174 @@
+
+Methodology, Writing – review & editing
+Find articles by Haipeng Yu
+4, Gota Morota
+Gota Morota
+1School of Animal Sciences, Virginia Polytechnic Institute and State
+University, Blacksburg, VA 24061, USA; yebi@iastate.edu
+5Laboratory of Biometry and Bioinformatics, Department of
+Agricultural and Environmental Biology, Graduate School of
+Agricultural and Life Sciences, The University of Tokyo, Tokyo
+113-8657, Japan
+Conceptualization, Methodology, Formal analysis, Investigation,
+Data curation, Funding acquisition, Project administration,
+Supervision, Writing – original draft, Writing – review & editing
+Find articles by Gota Morota
+1,5,*
+•  Author information
+•  Article notes
+•  Copyright and License information
+PMCID: PMC13205377  PMID: 42194963
+Abstract
+Background: Quantitative genetic analysis of image- or video-
+derived phenotypes is increasingly being performed for a wide
+range of traits. Pig body weight values estimated by a conventional
+approach or a computer vision system can be considered two
+different measurements of the same trait but with different sources
+of phenotyping error. Previous studies have shown that trait
+measurement error, defined as the difference between manually
+collected phenotypes and image-derived phenotypes, can be
+influenced by genetics, suggesting that the error is systematic rather
+than random and is more likely to lead to misleading quantitative
+genetic analysis results. Therefore, we investigated the effect of trait
+measurement error on the genetic analysis of pig body weight (BW).
+Results: Calibrated scale-based and image-based BW showed high
+coefficients of determination and goodness of fit. Genomic
+heritability estimates for scale-based and image-based BW were
+mostly identical across growth periods. Genomic heritability
+estimates for trait measurement error were consistently negligible,
+regardless of the choice of computer vision algorithm. In addition,
+genome-wide association analysis revealed no overlap between the
+top markers identified for scale-based BW and those associated with
+trait measurement error. Overall, the deep learning-based
+regressions outperformed the adaptive thresholding segmentation
+methods. Conclusion: This study showed that manually measured
+scale-based and image-based BW phenotypes yielded the same
+quantitative genetic results. We found no evidence that BW trait
+measurement error could be influenced, at least in part, by genetic
+factors. This suggests that trait measurement error in pig BW does
+not contain systematic errors that could bias downstream genetic
+analysis.
+Keywords: body weight, camera, genome-wide association analysis,
+heritability, phenomics, swine
+1. Introduction
+The power of quantitative genetic analysis largely depends on the
+quality and quantity of available phenotypes. Computer vision
+approaches are rapidly being developed to generate phenotypes for
+genetic analysis in livestock [1]. Computer vision coupled with
+cameras is one of the precision livestock technologies to realize
+precision livestock farming, which aims to automate phenotyping or
+monitoring animals at the individual level on a continuous basis
+[2]. An advantage of computer vision systems is that they can be
+installed in a barn with minimal disruption to daily farm operations
+and are relatively inexpensive, requiring only one or a few off-the-
+shelf consumer cameras [3]. Pedigree-based or genomic-based
+genetic analysis of image- or video-derived traits is increasingly
+being performed on growth or morphological traits [4,5,6,7,8],
+carcass traits [9,10,11,12,13], behavior [5,14] and feed intake [7].
+Computer vision is the core engine for phenotyping these live
+animal traits, except for carcass traits, which are collected after
+slaughter.
+Computer vision is not necessarily always required to collect the
+above phenotypes, but traditional approaches often require
+additional hours of manual workload or the purchase of expensive
+equipment that requires careful maintenance. For example,
+collecting growth or morphological traits requires a digital scale
+with manual labor to restrain the animals or a costly walk-over
+weighing system. Similarly, manually monitoring individual feed
+intake requires constant observation and estimation of
+measurements by humans. Collecting behavioral traits requires
+many hours of behavioral video decoding by ethologists based on a
+formal ethogram. What distinguishes computer vision-based
+phenotyping from conventional phenotyping is the ability of the
+former to scale up and perform high-throughput phenotyping by
+automating all or part of the phenotyping procedures.
+Consider a scenario where we are interested in phenotyping a
+specific target trait. This target trait, collected using conventional
+and image- or video-based approaches, can be considered two
+different measurements of the same character because they have
+different phenotyping errors. In other words, two measurements of
+the target trait are controlled by the same set of causal loci, but the
+source of phenotyping error is different. Then, we can calculate a
+trait measurement error, which is defined as the difference between
+the conventional phenotypes and the image-derived phenotypes.
+Because these two measurements of the same trait have the same
+genetic architecture, it is assumed that trait measurement errors are
+random and nongenetic factors (Figure 1). However, previous
+research has shown that trait measurement error can be influenced,
+at least in part, by genetic factors. For example, maize biomass was
+quantified using manual measurements and image-based estimates
+[15]. Although they obtained the Pearson correlation coefficient of
+0.95 between the manual measurements and image-based estimates,
+58% of the trait measurement error in biomass was explained by
+genetic variation. Similarly, 27–59% of the trait measurement error
+variance was controlled by genetic variation using single-nucleotide
+polymorphism (SNP) data in sorghum height; the Pearson
+correlation coefficient between manual measurements and image-
+based estimates was 0.96 [16]. They also identified a few
+significant genomic regions when trait measurement errors were
+used as phenotypes in genome-wide association studies (GWAS).
+These results suggest that phenotypes of some individuals are
+systematically underestimated, and phenotypes of some other
+individuals are systematically overestimated. Because trait
+measurement error is systematic rather than random in these cases,
+if these image-derived phenotypes were used in quantitative genetic
+analysis, it could lead to misleading results.
+Figure 1.
+[image]
+Open in a new tab
+Concept of trait measurement error when using computer vision to
+generate image-derived phenotypes.
+This type of problem can also occur in livestock. For example, the
+live body weight (BW) of animals is often estimated from a single
+top-view depth sensor camera [17,18]. Height and volume
+information that can be estimated from a depth sensor camera is
+known to be highly correlated with scale-based BW in animals
+[19,20]. When estimating volumetric measures from a depth sensor
+camera, it is assumed that the distance from the ground to the
+ventral abdomen is constant for all animals. However, this
+assumption is not valid if some sires or boars carry genetics that
+increase the distance from the ground to the ventral abdomen in
+their offspring, resulting in a systematic error in image-derived BW
+estimates. Although an increasing number of animal phenotypes are
+generated by computer vision, the effect of trait measurement error
+on quantitative genetic analysis has not been investigated. In
+addition, it is unknown how the choice of computer vision
+algorithms can influence trait measurement error in downstream
+genetic analysis.
+Therefore, in this study, we investigated the impact of trait
+measurement error on the genetic analysis of pig BW. Specifically,
+the objectives of this study were (1) to estimate trait measurement
+error from manually collected and image-derived pig BW, (2) to
+evaluate how the choice of computer vision algorithms affects the
+genetic analysis of trait measurement error, and (3) to estimate
+genomic heritability and marker effects for trait measurement error.
+2. Materials and Methods
+2.1. Animals and Data Collection Design
+A subset of pig data analyzed in Bi et al. [20,21] was used in this
+study. In short, we analyzed data from more than 600 crossbred
+pigs raised on a farm in North Carolina, USA. The pigs were part of
+a commercial finishing operation at Smithfield and were regularly
+weighed during four farm visits or time points (T1 to T4) between
+July and September 2023. The number of pigs phenotyped varied at
+each visit, but it decreased at later time points, primarily due to
+market sales. Animals were fed a common diet and had unrestricted
+access to water. Pigs were weighed individually on a digital walk-in
+calibrated scale to ensure they were restrained and properly
+positioned for accurate measurements. Their BW ranged from 25 to
+154 kg. The average BW (kg) of pigs at T1, T2, T3, and T4 was 65
+(103), 78 (117), 92 (131), and 114 (159), respectively, where
+values in parentheses indicate average age (days).
+2.2. Video Acquisition Setup
+A depth video acquisition setup is detailed in our previous work
+[19,20,21]. Briefly, an Intel RealSense D435 camera (Intel, Santa
+Clara, CA, USA) connected via USB 3.1 was strategically positioned
+1.40 m above a one-way exit lane equipped with a stand-on
+weighing system to capture top-view video. The camera’s dual
+stereo image sensors, with a horizontal field of view of 87° and a
+vertical field of view of 58°, enabled depth estimation. Individual
+pigs were manually restrained to facilitate the collection of 10–12 s
+video segments at a frame rate of 30 frames per second and a
+resolution of 1280 × 720. While the pigs exhibited general stability
+in their body movements, their heads and tails exhibited a
+comparatively dynamic range of motion. Simultaneously with the
+video reco

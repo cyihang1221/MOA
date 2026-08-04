@@ -1,0 +1,130 @@
+
+Material and Methods
+Data Sources
+This study is reported in line with the STrengthening the Reporting
+of OBservational Studies in Epidemiology (STROBE) statement.20
+We conducted a retrospective cohort study of adult patients aged 18
+years and above who were admitted to the ICUs (coronary care
+unit, cardiac surgery recovery unit, surgical intensive care unit,
+trauma/surgical intensive care unit, and medical intensive care
+unit) of Beth Israel Deaconess Medical Center in Boston,
+Massachusetts (BIDMC) between 2001 and 2012.21 We utilized the
+Medical Information Mart for Intensive Care-III (MIMIC-III)
+database, which is a large, de-identified, comprehensive critical
+care database of patients admitted to BIDMC ICUs.21 MIMIC-III is
+freely available data with patient’s bedside information such as vital
+signs, laboratory data, prescriptions and medical charts, and
+procedural and diagnostic codes (International Classification of
+Diseases, Ninth Revision (ICD-9-CM) codes).21 Data contain about
+38,597 distinct adult patients with 49,785 admissions.21 The
+Laboratory for Computational Physiology at Massachusetts Institute
+of Technology utilized structured data cleansing and date shifting to
+de-identified data in accordance with the Health Insurance
+Portability and Accountability Act (HIPAA) standards.21
+Identification of Sepsis Patients Cohort
+Sepsis was defined in this study based on Angus abstraction criteria
+implementing the 2001 international consensus conference
+definition of severe sepsis using a set of ICD9-CM codes. The
+abstraction process followed two steps as described in Horng et al
+and Iwashyna et al.22, 23 First, we utilized a set of codes to identify
+infection and a set of acute organ dysfunction procedure codes to
+identify acute organ dysfunction. Based on these steps, we
+retrospectively identified patients with severe sepsis. We reviewed
+and updated the original Angus abstraction criteria and included
+additional new ICD-9-CM codes for sepsis, severe sepsis, septic
+shock, and codes indicative of viral meningitis, cholangitis, and
+orbital cellulitis.22, 23 We identified a total of 11,224 patients
+diagnosed with sepsis on admission into the ICU between 2001 and
+2012. In cases where patients had multiple sepsis episodes, only the
+first sepsis episode was considered. Patients with zero (0)
+Sequential Organ Failure Assessment (SOFA) score and patients less
+than 18 years of age were excluded. Patients with missing data or
+without documented laboratory tests and vital signs taken within
+the first 24 hours of ICU admission were excluded. Average vital
+signs or laboratory tests were used in the case of multiple records in
+the first 24 hours. A total of 8,200 patients with sepsis admitted in
+the ICU met the inclusion criteria and were used as the analytical
+sample for this study.24
+Medication Exposure
+We used the MIMIC-III v1.4 prescription drug file to identify
+medication exposure based on generic and brand names. To
+evaluate the impact of statin use on 30-day ICU mortality, ICU LOS,
+and 30-day in-hospital mortality, we categorized exposure status
+into statin users and non-users. Statin users include patients with
+record of prescription for atorvastatin, fluvastatin, lovastatin,
+pitavastatin, pravastatin, rosuvastatin, or simvastatin before ICU
+admission. We defined non-users as patients without pre-ICU
+prescription records for the above statins.
+Outcome Measures
+The two primary outcomes of interest are ICU LOS and 30-day ICU
+mortality, and a secondary outcome was 30-day all-cause in-
+hospital mortality. Date of death (“DOS”), “INTIME” (ICU admission
+date and time) and “OUTTIME” (ICU discharge date and time)
+variables were used to determined mortality within 30-days of
+admission in the ICU. Only patients with records of DOS between
+the “INTIME” and “OUTIME” were included for 30-day ICU
+mortality analysis. ICU LOS measured in fractional days is included
+in the ‘ICUSTAYS’ file where it is defined as “the length of stay for
+the patient for the given ICU stay.” 30-day in-hospital mortality was
+determined using the DOS in the hospital “DEATHTIME”, date of
+admission “ADMITTIME” and date of discharge “DISCHTIME” from
+the MIMIC v1.4 admission file to determine mortality within 30-
+days of hospital admission.
+Covariates
+Covariates included for adjustment were demographic
+characteristics such as age, gender, race category, and health
+insurance. Clinical characteristics included were vital signs,
+laboratory tests, body mass index (BMI), Charlson Comorbidity
+Index (CCI), and SOFA score. Severe sepsis and septic shock
+diagnostic codes were excluded in the calculation of CCI. Patient’s
+height measured during the hospital admission and the average of
+weight measured during the first 24 hours of patient’s first ICU stay
+were used to calculate the BMI measured in Kg/m2. Using the data
+obtained during the first 24 hours of a patient’s first ICU stay, we
+calculated the SOFA score by adapting with MIMIC v1.4 data with
+the SQL script retrieved from MIMIC GitHub, Inc website (https://
+github.com/MIT-LCP/mimic-code/blob/master/concepts/
+severityscores/sofa.sql). The following laboratory tests were
+included: hemoglobin, albumin, white blood cell, potassium,
+sodium, bicarbonate, total cholesterol, high density lipoproteins,
+low density lipoproteins, C-reactive protein, and lactate. Laboratory
+test parameters included in the SOFA score calculation were not
+included as a covariate in the multivariable modelling. Vital signs
+included as covariates were heart rates, systolic blood pressure,
+diastolic blood pressure, respiratory rates, and body temperature.
+Additionally, we added potential immunomodulatory medications
+such as steroids, which affect the health outcome of sepsis, as
+covariates for adjustment.25 ICU types were categorized into
+medical ICU, cardio-coronary ICU(coronary and cardiac surgery
+ICU), and surgical ICU (trauma and surgical ICU).
+Statistical analysis
+We presented baseline characteristics as frequencies and
+percentages for categorical variables, mean with standard deviation
+and median with interquartile range for continuous variable. In the
+multivariate analysis, we used a doubly robust estimation using
+augmented inverse probability weighting (AIPW) to estimate the
+average treatment effect (ATE) of statin prescription. We performed
+separate AIPW modelling for each of the three outcomes: 30-day
+ICU mortality, ICU LOS, and 30-day in-hospital mortality. AIPW
+combines the propensity score model and the model for the
+outcome variables to generate potential outcome means (POM) and
+ATEs.26
+The AIPW estimation method generates a doubly robust ATE
+estimate which is unbiased even if one of the models is mis-
+specified.26 AIPW includes propensity score modeling, which has a
+balancing score property thus, implying that weighting ensures that
+measured patient characteristics are balanced between statin users
+and non-statin users as in a RCT.26 Balanced characteristics across
+users and non-users is required to establish a causal interpretation
+of the effect of statin. Characteristics balance is assessed using
+standardized differences such that characteristics are considered
+balanced across treatment and control groups if the weighted
+standardized difference is closer to zero (0) compared to the
+unweighted standardized differences.26 Furthermore, using AIPW
+modelling approach, we performed stratification analysis examining
+ATE within various ICU sub-types (medical, surgical, and cardio-
+coronary units).
+In this study, the ATE is an estimate of the average causal effect of
+statin use on 30-day ICU mortality, ICU LOS, or 30-day in-hospital
+mortality and represents a calculated difference between the POM
+of statin users and non-users. ATEs were considered significant at

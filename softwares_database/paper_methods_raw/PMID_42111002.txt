@@ -1,0 +1,123 @@
+
+Methods reconstruct the full field Jones matrix from two holograms
+acquired with orthogonal incident linear polarizations (0°/90° or
+45°/135°). A motorized half wave plate sets the input states, and a
+polarization-sensitive CMOS camera with a 0°/45°/90°/135° micro
+polarizer mosaic records off-axis holograms containing four
+analyzer channels per exposure. This configuration removes
+analyzer rotation and avoids specialized multiplexing hardware,
+while retaining a simple, replicable setup.
+Despite the progress in single shot and few shot designs, a practical
+gap remains between single shot & multiplexed architectures that
+provide temporal simultaneity but often require specialized optical
+components, additional multiplexing channels, or tighter calibration
+and alignment, and simpler few shot approaches that are easier to
+replicate but remain sensitive to inter frame phase drift. The dual
+shot PDHM presented here targets this gap by retaining the
+simplicity and alignment tolerance of a standard off-axis DHM
+layout while reducing the acquisition burden to two exposures.
+Because the two frames are acquired sequentially, the measurement
+remains vulnerable to a time varying inter shot phase offset. We
+therefore introduce a phase bias equalization that leverages non
+birefringent (isotropic) regions to estimate and remove this offset,
+restoring phase consistency and amplitude accuracy across Jones
+matrix elements. This dual shot strategy explicitly trades temporal
+simultaneity for optical simplicity and is therefore best suited to
+static or quasi static specimens in its current implementation. We
+discuss the method’s scope and limitations (e.g., fully anisotropic
+fields lacking isotropic patches) and show that equalization
+improves reconstruction robustness under realistic drift. We
+validate the system on uniform birefringent samples, biaxially
+oriented polypropylene (BOPP) films [27], and then apply it to
+biological samples (mouse brain sections and human cornea),
+demonstrating utility for quantitative polarization microscopy in
+biomedical contexts.
+2. Methods
+2.1. Optical setup
+A modified off-axis Mach - Zehnder interferometer (Fig. 1(a)) was
+built around a 632.8 nm He-Ne laser. A fixed wire grid polarizer
+(Thorlabs WP25M-VIS) followed by a half wave plate (Thorlabs
+AHWP10M-600) in a motorized rotation mount (Thorlabs K10CR2/
+M) sets the incident linear polarization to 0°, 45°, 90°, or 135°. A
+non-polarizing beam splitter (Thorlabs CCM1-BS013/M) divides the
+polarized beam into object and reference arms with 50:50 splitting
+ratio. The object arm uses a Nikon 4×/0.13 NA objective and a
+500 mm focal length tube lens (Thorlabs AC254-500-A-ML),
+yielding an effective magnification of 10×. The reference arm
+includes a Keplerian telescope (f1 = 50 mm, Thorlabs LB1471-A; f2 
+= 500 mm, Thorlabs LA1908-A) for beam expansion and wavefront
+curvature matching. A second non-polarizing 50:50 beam splitter
+(Thorlabs BS016) recombines the object and reference beams at a
+small angle. This beam splitter was mounted on a kinematic cage
+cube platform (Thorlabs B4C/M and Thorlabs C6WR) allowing the
+fine adjustment of the angle between the two beams. Besides, the
+beam folding mirrors (Thorlabs BB1-E02) on both arms of the
+interferometer were mounted on kinematic mirror mounts
+(Thorlabs KCB1C/M and Thorlabs KM100) for further alignment of
+the angle and the overlap of the reference and the object beams on
+camera plane. This configuration allows flexible adjustments of the
+off-axis carrier spatial frequency to avoid aliasing of the DC and
+twin-image terms.
+Fig. 1.
+[image]
+Open in a new tab
+Dual-shot polarization digital holographic microscopy (PDHM). (a)
+Optical layout. M: mirrors, P: wire grid polarizer, HWP: motorized
+half wave plate, BS: non-polarizing beam splitters, L1 (f = 50 mm)
+and L2 (f = 500 mm) form a Keplerian telescope for reference beam
+expansion, MO: microscope objective (Nikon 4×/0.13 NA), L3:
+500 mm focal length tube lens, ND: neutral-density filter, PCMOS:
+polarization-sensitive CMOS camera with 2 × 2 micro-polarizers at
+0°, 45°, 90°, 135°. (b) Acquisition schematic. Two incident states
+(illustrated here as E1–E4 for 0°, 45°, 90°, 135°; either E1 and E3 or
+E2 and E4) are set by the HWP. For each incident state, the
+polarization camera records one exposure that is demosaiced into
+four analyzer resolved holograms I1n, I2n, I3n, and I4n. Two of these
+four holograms are used to reconstruct complex fields. Two
+complex fields from the two exposures are then used for full field
+Jones matrix reconstruction.
+Holograms are recorded with a polarization sensitive CMOS camera
+(The Imaging Source DZK-33UX250, Sony IMX250MZR, 3.45 µm
+pixels) featuring a 2 × 2 micro polarizer mosaic (0°, 45°, 90°, 135°).
+This provides four analyzer resolved channels per exposure. The
+incident polarization state angles are calibrated with respect to the
+camera’s analyzer axes by angle of linear polarization (AoLP)
+analysis from Stokes measurements without a sample, and the half
+wave plate was indexed to these axes (down to motor accuracy ±
+0.14°).
+2.2. Jones matrix reconstruction
+For each input linear polarization, we record one exposure on the
+polarization camera, which provides four analyzer orientations. We
+index analyzers by nϵ{1,2,3,4}≡{0∘,45∘,90∘,135∘} and input states
+by nϵ{1,2,3,4}≡{0∘,45∘,90∘,135∘} . The Jones vectors for the input
+states are defined as:
+E1=[10],E2=12[11],E3=[01],E4=12[1−1]. (1)
+The sample Jones matrix at each pixel is:
+Js=[JxxJxyJyxJyy] (2)
+Each analyzer on the polarization camera can be represented using
+its Jones matrix:
+P1=[1000],P2=12[1111],P3=[0001],P4=12[1−1−11]. (3)
+After analyzer m, object and reference fields at the sensor are
+defined by:
+Omn=Pm×JS×En,Rmn=Arefeiφref×Pm×En (4)
+where Arefeiφref is a scalar reference amplitude and phase.
+Eventually a recorded hologram intensity is given by:
+Imn=|Omn+Rmn|2=|Omn|2+|Rmn|
+2+OmnRmn∗+Omn∗Rmn
+(5)
+Here the complex field Om,n is reconstructed via numerical
+filtering:
+Omn=F−1{F{Imn}⋅M}F−1{F{Imnr}⋅M}whereOmn=|Omn|
+eiφmn
+(6)
+where M is the band pass filter mask, and Imnr refers to reference
+holograms without any sample. From these fields, the Jones matrix
+elements are calculated using one of the following two methods.
+Method I: Using linearly polarized incidence at 0° and 90° with
+analyzers at 45° and 135°:
+Jxx=|O21|eiφ21+|O41|eiφ41Jxy=|O23|eiφ23−|O43|
+eiφ43Jyx=|O21|eiφ21−|O41|eiφ41Jyy=|O23|eiφ23+|O43|
+eiφ43
+(7)
+Method II: Using linearly polarized incidence at 45° and 135° with
+analyzers at 0° and 90° [11]:

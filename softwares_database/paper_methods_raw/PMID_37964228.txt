@@ -1,0 +1,98 @@
+
+Methods
+Evaluation datasets
+We used the two public metabolomics benchmark datasets in [17],
+named as the TripleTOF 6600 dataset and the QE HF dataset. Both
+datasets were acquired with the full-scan method. The TripleTOF
+6600 dataset was acquired by AB SCIEX TripleTOF 6600 interfaced
+with Shimazu L30A UPLC, and the QE HF dataset was acquired by
+Thermo Q Exactive HF with Dionex UltiMate 3000 HPLC. A pair of
+standard mixtures (SA, SB) were prepared for both datasets, which
+were composed of seven differential groups of drugs and
+metabolites (Gd1, Gd2, Gd3, Gm, Gd4, Gd5, Gd6) prepared at
+different relative concentration ratios of (1/16, 1/4, 1/2, 1/1, 2/1,
+4/1, 16/1) in SB: SA. The TripleTOF 6600 dataset had four
+replicates for each mixture, with a total of eight runs. The QE HF
+dataset had five replicates for each mixture, with a total of ten runs.
+Benchmark libraries were provided along with the datasets,
+containing 970 and 836 analytes in the TripleTOF 6600 and the QE
+HF datasets. We further screened the benchmark libraries to remove
+duplicates and obtained 924 and 835 analytes, respectively. In both
+benchmark datasets, the retention times of mixed compounds have
+different drift trends due to large differences in physical and
+chemical properties (Additional file 1: Fig. S1). Even after retention
+time alignment across runs, the retention times of analyte features
+still had wide shifts, which increased the difficulty of feature
+alignment and made the dataset more suitable for feature alignment
+evaluation.
+Furthermore, to evaluate the performance of feature alignment
+methods on a bigger dataset, we used the dataset published in
+Metabolights MTBLS562 [18]. The MTBLS562 dataset was acquired
+with DDA method and acquired by AB SCIEX TripleTOF 6600 with
+Agilent 1290 UHPLC system. The MTBLS562 dataset contains 40
+LC–MS runs of 40 mice (C57BL/6J strain, SPF level) at 5 different
+ages (4, 12, 24, 32 to 52 weeks, n=8 in each group). Benchmark
+library was provided along with the dataset, containing 245
+analytes. We further screened the benchmark library to remove
+duplicates and noises and obtained 207 analytes. Some analytes in
+the library have low abundance in samples with feature intensity
+heights on the order of hundreds.
+Input preparation
+G-Aligner requires users to provide a list of extracted features for
+each LC–MS run. G-Aligner supports feature extraction results in csv
+and tsv formats, which can be exported from untargeted
+metabolomics software. As a general method, G-Aligner only
+requires users to provide basic feature information, including m/z,
+retention time and intensity. In case of using profile-based retention
+time alignment methods that require raw files (such as OBI-Warp),
+users need to convert raw files to mzML format by MSConvert [19]
+or aird format by AirdPro [20] for G-Aligner analysis.
+Retention time alignment
+To correct retention time drift and reduce the difficulty of
+subsequent feature matching, G-Aligner provides a feature-based
+retention time alignment method RANSAC (RANdom SAmple
+Consensus) and a profile-based method OBI-Warp (Ordered
+Bijective Interpolated Warping). RANSAC is an iterative method for
+fitting a model to data and is robust to outliers. In each iteration,
+the RANSAC method selects a random subset of points from the
+input data and fits a linear or nonlinear model to these points. The
+remaining points are then classified into inliers or outliers based on
+their consistency with the model. Among the iterations, the best-
+fitting model with the largest number of inliers is selected as the
+alignment result. OBI-Warp is an extension of dynamic time
+warping (DTW) for nonlinear retention time warping. For pairs of
+runs that need to be aligned, OBI-Warp first uses DTW to analyze
+the spectral similarity and obtain the optimal bijective warping
+function by dynamic programming. OBI-Warp combines the
+warping function output from DTW with piecewise cubic Hermitian
+interpolation and produces smooth warped functions. G-Aligner
+implemented OBI-Warp in Python for the first time and separated it
+as an independent installation package for importing by other
+Python-based software. These two algorithms were also applied in
+MZmine2 and XCMS, respectively, and their effectiveness and
+stability have been proven in long-term use. G-Aligner uses linear
+RANSAC as the default retention time alignment algorithm because
+it does not require additional raw file import and is faster and more
+stable.
+Feature matching
+Graph building
+Instead of matching features iteratively to a real or virtual reference
+run, G-Aligner comprehensively considers potential feature
+correspondences between all LC–MS runs and performs
+combinatorial optimization to obtain optimal solutions. After
+retention time coarse registration, the corresponding features of
+each analyte in different runs are relatively close in m/z and
+retention time coordinates. To find potential correspondences
+among all runs, G-Aligner superimposes the retention time aligned
+features in all runs on the same coordinate system consisting of m/z
+and retention time dimensions, searches neighborhoods for each
+feature according to the m/z and retention time tolerances set by
+the user, and builds an undirected relation graph containing
+features of all runs. Each node in the graph represents a feature,
+and each edge represents a potential feature correspondence
+between neighbor features.
+Graph splitting
+After graph building, spatially close feature nodes are connected
+into many connected components, which are maximal connected
+subgraphs of the relation graph. A connected component is the
+largest set of potentially corresponding features for each contained

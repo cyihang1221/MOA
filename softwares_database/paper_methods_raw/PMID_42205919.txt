@@ -1,0 +1,173 @@
+
+Methods
+We developed an AR-based assessment system using Microsoft
+HoloLens 2 and an external body-tracking camera to capture real-
+time gaze, hand, and body movements in an interactive
+environment. Multimodal data streams were temporally
+synchronized, fused, and filtered to enhance spatial accuracy and
+availability. Tracking performance was benchmarked against a
+traditional optical motion-capture system to validate reliability. In a
+study, 7 patients with right-brain lesions with mild to moderate
+USN and 8 healthy controls participated. Each performed a
+designed reaching task, stamping virtual sheets of paper that
+appeared randomly on a table. We analyzed participants’ search
+behavior patterns to assess attentional biases and examined gaze
+anchoring timing during targeted reaching motions to explore
+potential eye–hand coordination deficits.
+Results
+The fusion of hand-tracking data from the HoloLens 2 and external
+system reduced tracking loss from 25.7% to 2.4%, with an absolute
+trajectory error of 3.27 cm. The system demonstrated high usability
+and was well accepted by patients. Data from the control group
+confirmed the absence of intrinsic lateral biases in the system and
+task design. The USN group displayed typical search behavior
+through ipsilesional biases in gaze direction during visual
+exploration (median deviation 7.46 [1.61-9.48] deg, P<.05) and
+longer times to find contralesional targets (median difference 1.08
+[0.20-1.80] s, P=.02). Additionally, the eye–hand coordination
+analysis revealed lateral differences in gaze anchoring during
+targeted reaching motions in the USN group, with earlier fixation
+on contralesional targets (median difference 112 [71-146] ms,
+P=.02).
+Conclusions
+The proposed AR framework provides a novel, comprehensive data-
+driven method for capturing interaction behavior in a controlled,
+yet naturalistic environment. Our results demonstrated the system’s
+effectiveness in measuring hallmark USN symptoms, such as gaze
+and head orientation biases, and highlighted its potential to
+complement traditional assessments by offering deep insights into
+torso rotation and eye–hand coordination with a high resolution
+and accuracy. This data-driven approach shows promise for
+enhancing current USN assessment practices and gaining new
+insights into patients’ behaviors.
+Introduction
+Stroke represents a profound public health challenge, affecting one
+in four adults during their lifetimes [1]. Of the numerous poststroke
+impairments, unilateral spatial neglect (USN) is a particularly
+significant barrier to patient recovery: Evident in up to 43% of
+patients after a right-hemispherical brain lesion (RBL) [2], this
+condition is characterized by a reduced ability to attend to
+contralesional stimuli, impacting essential daily activities [3,4].
+Consequently, the rehabilitation journey is fraught with challenges,
+including heightened fall risks, poorer rehabilitation outcomes,
+extended hospitalization time, and reduced likelihood of being
+discharged home [5-7].
+In 75% of USN cases, patients present with egocentric visual USN
+[8], marked by a bias of visual exploration through head and eye
+movements toward the ipsilesional side [9]. However, USN is a
+heterogeneous condition, encompassing a spectrum of attentional
+deficits across visual, tactile, auditory, and proprioceptive domains
+[10-12]. Consequently, multiple tests are typically employed to
+measure the severity of USN. Paper-pencil tests such as the Bells/
+Stars Cancelation [13] and Line Bisection [14] are commonly used
+due to their good sensitivity among paper-pencil assessments [15].
+However, discrepancies between test results and patients’ real-world
+behavior are frequently reported [16].
+Behavioral assessments like the Catherine Bergego Scale address
+this gap by evaluating neglect during several activities of daily life,
+but they require labor-intensive direct observation and offer limited
+quantitative insight into task execution [17]. Technological
+approaches, such as gaze analysis during free visual exploration,
+provide quantitative insights but are restricted to specific test
+settings [18]. Evidence suggests that attentional biases in USN
+extend beyond eye movements, being influenced by motor acts and
+proprioceptive feedback. For instance, the orientation of the trunk
+mid-sagittal plane was shown to modulate the perceived forward
+direction and shift neglected space [19-22]. Moreover,
+proprioceptive cues, such as pointing, guide the direction of visual
+attention [23]. Accordingly, patients with USN exhibited biases of
+visual attention toward the ipsilesional sides of these cues [24].
+These findings highlight the need for a comprehensive behavioral
+tracking system that can capture eye, body, and hand movements
+during task execution in environments that closely mimic real-
+world conditions.
+Virtual reality (VR) or augmented reality (AR) systems that are able
+to track gaze and hand movements partially address these
+requirements. VR has been explored to simulate real-world
+interactions for studying USN [25]. However, immersive VR
+introduces new challenges such as user disconnection from the real
+environment, proprioceptive disconnection (eg, the inability to see
+one’s own hands), and motion sickness [26]. By contrast, AR
+overlays simulated elements onto the real world, creating a mixed
+reality experience, addressing aforementioned discomforts [26] and
+integrating both physical and virtual objects into experiments.
+Consequently, AR has recently seen a growing application in
+neuroscience and rehabilitation [27,28].
+However, despite these advantages, standalone AR systems still fall
+short of the comprehensive behavioral tracking requirements
+identified earlier. The inside-out tracking approach of typical AR
+systems like the Microsoft HoloLens 2 (where sensors on the
+headset track the environment) provides limited full-body tracking
+beyond hands and head position. Additionally, hand tracking can
+fail when users’ hands are not positioned directly in front of them
+or during complex object interactions.
+To address this gap, researchers have begun complementing inside-
+out tracking with external motion capture (Mocap) systems [29,30].
+In clinical settings, external tracking systems combined with AR
+have primarily been used to position virtual objects relative to
+physical ones, particularly for surgical guidance applications
+[31,32]. However, there is limited evidence of this combination
+being utilized to capture comprehensive behavioral data in clinical
+rehabilitation contexts [33].
+Accordingly, we propose a novel framework encompassing a head-
+mounted AR system (HoloLens 2, Microsoft USA [34]) and a single
+RGB-D camera (ZED 2i, Stereolabs USA), providing the following:
+•  A controlled environment allowing for a wide range of user
+interactions with both digital and real-world elements.
+•  Accurate tracking of gaze orientation, hand movements, and
+body posture during task execution, with improved hand-
+tracking accuracy and availability enabled by sensor fusion.
+•  Detailed digital reconstruction of interactions to enable
+comprehensive behavioral analysis.
+•  Automated data integration and metric extraction to enable
+quantitative analysis, with a focus on eye–hand coordination.
+The goal of this proof-of-concept study is to demonstrate the
+feasibility and utility of our tracking framework through a
+systematic validation approach. Our validation encompasses both a
+technical accuracy assessment against a marker-based VICON
+system and clinical validation through the detection of known USN
+symptoms. Beyond confirming that the framework captures
+established USN behavioral patterns, we explore lateral differences
+in eye–hand coordination during goal-directed actions as a novel
+behavioral marker. With this, our framework shows promise in
+enhancing current USN assessment practices and gaining new
+insights into patients’ behaviors.
+Methods
+System Overview
+The system (Figure 1) comprised three main parts. (1) A tracking
+system, which measures and records gaze direction, hand, and body
+movements. It enables interactions with (2) a simulated virtual
+environment, which is overlaid onto the real world using a head-
+mounted AR display. (3) An offline data-processing and data-
+reconstruction system creates a digital twin of the captured
+interactions, allowing for in-depth analysis.
+Figure 1. Overview of the system.
+[image]
+Open in a new tab
+Tracking System
+We obtained interaction data from multiple sources. The HoloLens
+2 provided gaze and hand-tracking data through the Mixed Reality
+Toolkit API [35]. These data were recorded alongside the state of
+the virtual environment, at a frequency of 40 Hz, capturing the
+users’ view at each moment. Additionally, an external RGB-D
+camera (ZED 2i, Stereolabs, USA) was set up in front of the users,
+facing them.
+The coordinate frame was aligned to that of the HoloLens during
+setup by taking a picture of a checkerboard with both cameras and
+extracting the relative transformation between the two. Using the
+manufacturer-provided body-tracking algorithms [36], body key
+points were extracted, including hand and shoulder joint positions.
+This pose information was recorded at a frequency of 30 Hz. The
+hand-tracking data were additionally streamed in real time to the
+HoloLens to complement the on-device hand tracking that was at
+times subject to tracking loss.
+Virtual Environment Design
+The virtual environment was designed to assess the hand- and eye-
+tracking capabilities of our system, specifically its ability to capture
+metrics relevant to USN. To encourage naturalistic behavior, it was
+structured as a game around a familiar, easy-to-learn task that
+required repeated, precise reaching motions: stamping virtual sheets
+of paper. For this task, users sat in front of a physical table overlaid
+with a holographic table. Two virtual ink pads, one orange and one
+violet, were shown to participants, positioned as shown in Figure 2.
+During the task, virtu

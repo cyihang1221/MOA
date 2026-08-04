@@ -1,0 +1,165 @@
+
+Methods
+Experimental data
+Reference head pose (ground-truth) and synchronised RGB video
+were obtained during a laboratory football heading protocol. All
+procedures satisfactorily completed the Research Ethics and
+Integrity Self-Assessment process at The University of Edinburgh’s
+School of Engineering, in accordance with UK Research Integrity
+Office (UKRIO) guidelines; participants were informed about study
+procedures and provided written consent.
+Ten participants (five male, five female) wore a head-mounted
+passive marker set (12.5 mm diameter) defining an anatomical
+coordinate system (ACS) consistent with the Frankfort plane. This
+plane passes through the lowest point of the eye socket (inferior
+orbital rim, IOR) and the upper margin of the external auditory
+meatus (EAM), representing the horizontal axis of the human
+head [40]. The ACS origin was the midpoint between external
+auditory meatus (EAM) markers, with the y-axis pointing left, the z-
+axis perpendicular to the Frankfort plane (superior), and the x-axis
+anterior along the plane, using markers placed on each inferior
+orbital rim (IOR) as the reference direction. This ACS has previously
+been adopted in HAE research [41, 42] and similar football heading
+protocols [43, 44]. An additional nasion (Skull-NAsion, or SNA)
+marker, placed according to standard skeletal landmark definitions
+provided redundancy under occlusion [45]. Figure 1 illustrates the
+marker configuration and camera layout.
+Fig. 1.
+[image]
+Open in a new tab
+a Definition of the marker set consisting of the external auditory
+meatus (EAM), inferior orbital rim (IOR) and nasion (SNA), used to
+construct the anatomical coordinate system based on the Frankfort
+plane. b 3D schematic of the experimental setup with reference
+coordinate systems, where the orange cameras denote the infrared
+motion capture system (Qualisys Oqus 700+) and the black
+cameras denote the RGB video cameras (Qualisys Oqus 210c). c
+Top-down view with key components labelled
+Marker trajectories were captured at 1000 Hz with ten Qualisys
+Oqus 700+ infrared cameras over a [image] m volume. Two
+synchronised RGB cameras (Qualisys Oqus 210c) recorded at 50 Hz
+and 1280 [image] 720 pixels with a 1/250 s per frame shutter
+speed, providing frontal (F) and side (S) views located at (5.0, –0.4,
+2.6) m and (–0.1, 3.0, 0.9) m in the global frame.
+The protocol complied with Football Association heading
+guidance [46], with each participant performing ten headers. Balls
+were launched from 10 m at [image] m/s (adjusted for ability)
+using a motorised, twin-wheel JUGS soccer ball launcher (JUGS
+Sports) to ensure consistent delivery. Participants directed five
+headers back toward the launcher (linear, L) and five toward a
+target 90[image] to the right (rotational, R). Trials were retained if
+head–ball contact occurred.
+For each trial, a 100 ms window (20 ms pre- and 80 ms post-
+impact) was extracted, consistent with recommended HAE
+windows [47, 48], yielding six RGB frames and 100 motion-capture
+frames per header. Marker trajectories were low-pass filtered with a
+fourth-order, zero-lag Butterworth filter; the cut-off (50 Hz) was
+chosen following residual analysis [13, 49] and frequency-domain
+inspection (fast Fourier transform magnitudes checked against a
+10% threshold [12]). Rigid body head orientation was
+reconstructed in Qualisys Track Manager using a 5 mm bone
+tolerance and 10 mm residual to reduce skin artefacts, and visually
+verified against the synchronised video to ensure tracking fidelity.
+All resulting orientations represent the rotation of the head relative
+to the global coordinate system, and therefore encapsulate both
+neck flexion/torsion and whole-body rotation during the heading
+motion. Figure 2 summarises the resulting Euler angle trajectories
+and pose distributions, highlighting the larger yaw angles observed
+by the side camera.
+Fig. 2.
+[image]
+Open in a new tab
+Summary of reference pose measurements obtained from motion
+capture: a Mean and standard deviation of head pose Euler angles
+for linear (L) and rotational (R) headers. b Distribution of ground-
+truth head pose angles across coordinate systems: global (G), frontal
+camera (F), and side camera (S)
+Models and inputs
+The selected deep learning models represent complementary
+approaches. 6DRepNet360 [39] is a lightweight convolutional
+neural network that directly regresses head pose using a
+360[image] formulation for extreme angles. VGGHeads [30] is a
+multi-task network that performs head detection and 3D face-mesh
+reconstruction, from which pose is inferred. SAM 3D Body [35] is a
+full-body human mesh recovery model that uses a promptable
+encoder–decoder and the Momentum Human Rig [32] to estimate
+coherent whole-body pose and shape, including global head
+orientation. Inputs followed each model’s expected format:
+VGGHeads on uncropped frames, 6DRepNet360 on loosely cropped
+head images, and SAM 3D on full-body crops.
+To ensure standardised inputs, detections were obtained prior to
+pose estimation. Full-body detections for SAM 3D were produced by
+a ViTDet-based detector [50], which successfully identified the
+participants in all frames. Head detection was more challenging
+because the face was frequently occluded by the ball, hands, or
+arms. Therefore, a small benchmarking experiment compared the
+performance of three detectors: RetinaFace, YOLOv8 trained on
+SCUT-HEAD [51, 52], and VGGHeads’ native head detector.
+Ground-truth head boxes were manually annotated and when the
+head was largely occluded, box positions were estimated using
+adjacent frames. Following Zhou et al. [53], a 50% context margin
+was added to all crops.
+Detection accuracy was then measured using intersection over
+union [54], with a lenient success threshold of an intersection over
+union of 0.3 to account for imperfect alignment between face and
+head crops. The best-performing head detections were then used as
+input to 6DRepNet360.
+Postprocessing
+Anatomical alignment
+Pose estimation models typically express head orientation relative
+to the camera coordinate system (C). To compare these predictions
+with the reference motion-capture orientations, camera-relative
+predictions of head rotation, [image] were converted to predicted
+rotation of the head in the global frame, [image], using the
+calibrated extrinsic parameters of each camera relative to the global
+frame, [image], as follows:
+[image] 1
+However, systematic discrepancies can still arise due to minor
+differences in anatomical coordinate system (ACS) definitions
+between deep learning model training datasets and the
+experimental ACS [55]. A process for removing such systematic
+offsets has been outlined by Cobo et al. [56], in which a single
+alignment rotation [image] is estimated and applied to the
+predicted rotation matrices. For a video sequence with ground-truth
+orientations [image] and corresponding predictions [image] (both
+in the global frame), framewise relative errors [image] were
+computed, and [image] was taken as the Karcher mean of [image]
+on [image] using an iterative log–exp averaging procedure [57–59].
+Aligned predictions, [image], were then obtained as:
+[image] 2
+ensuring that predictions and reference orientations share a
+common ACS.
+Temporal filtering
+All three models are trained for per-frame pose estimation, meaning
+that temporal sequences of raw predictions obtained from video can
+exhibit artefacts that are inconsistent with expected head dynamics.
+A simple temporal smoothing procedure that respects rotation
+geometry was therefore applied. Rotations were mapped to the Lie
+algebra [image] via the matrix logarithm. A Gaussian kernel with
+standard deviation [image] (frames) was applied in the tangent
+space, and filtered rotations were mapped back to [image] using the
+matrix exponential, following the approach detailed by Lee and
+Shin [60]. For each model, the value of [image] that minimised the
+chosen evaluation metrics (outlined in detail in Sect. 2.4) was used.
+Evaluation metrics
+Detection
+A head detection was considered correct if the intersection over
+union between the predicted and ground-truth bounding boxes
+exceeded a threshold of 0.3 (see Sect. 2.2). Then, for a given set of
+detections:
+[image] 3
+[image] 4
+where [image] denotes true positives, [image] false positives, and
+[image] false negatives. The F1 score is then used to provide a
+balanced measure of overall detection performance:
+[image] 5
+For all head detection models the precision, recall, F1 score and
+mean inference time are reported.
+Pose
+The mean absolute error of Euler angles is commonly used in head
+pose estimation [61] but is sensitive to angle conventions, gimbal
+lock, and rotation ordering [28, 53]. Therefore, performance was
+instead assessed using geodesic distance on [image], which provides
+a coordinate-free measure of rotational difference [56, 62]. For
+ground-truth and predicted rotations R and [image], the geodesic
+error (GE) is defined as the magnitude of the rotation required to

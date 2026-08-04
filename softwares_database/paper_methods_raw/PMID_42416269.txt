@@ -1,0 +1,169 @@
+
+Methods
+Nine commercially available fluorophores were included in the
+simulations, with emission maxima ranging from 519 nm (AF488)
+to 682 nm (CF660R) and experimentally measured photon outputs
+per 100 ms ranging from 2,073 to 17,653 photons (Supplementary
+Materials). Photon outputs accounted for differences in fluorophore
+absorption, given that the excitation source was fixed at 488, 560,
+or 640 nm, and were derived from experimental measurements of
+total fluorescence prior to photobleaching and performed using the
+same buffer (i.e., Trolox) [19]. These fluorophores were chosen to
+span the spectral range accessible with the 3 excitation wavelengths
+and to provide a representative set of fluorophores commonly used
+in multicolor super-resolution experiments.
+A virtual microscope was simulated in Python to replicate a typical
+experimental setup. The optical configuration consisted of a 3-color
+excitation source, which was directed through a 100×, 1.25
+numerical aperture objective lens. Emitted fluorescence was
+collected by the same objective, passed through a penta-band
+dichroic mirror (DI01-R405/488/561/635/800, Semrock) and a
+quad-band emission filter (FF01-446/523/600/677, Semrock), and
+finally focused via a 70-mm tube lens onto an RGB camera (Blackfly
+S BFS-U3-32S4C-BD, FLIR) to yield a final pixel size of 98.6 nm.
+The spectral response of each component, including the excitation
+sources, dichroic, emission filter, and camera quantum efficiency,
+was measured experimentally and combined with each
+fluorophore’s emission spectrum to generate a single compounded
+spectral response curve for each fluorophore. This curve determined
+the fraction of photons detected in each of the red, green, and blue
+channels of the RGB camera for a given fluorophore.
+Photon outputs for each emitter were sampled from a Poisson
+distribution around the experimentally determined values [19] to
+model realistic photophysical variation [20]. The point spread
+function was modeled as a Gaussian of standard deviation σ,
+defined by the objective numerical aperture (NA) and the
+fluorophore emission wavelength (λ), according to:
+σ=λ4NA (1)
+The resulting photon distributions were converted to electron
+counts and digitized into analog-to-digital units (ADUs) using
+experimentally measured camera parameter maps [21], accounting
+for pixel-wise variations in CMOS sensors: a baseline offset map
+(median: 128.2 ADU), a dark current map (median: 0.6 e−/pixel/s),
+a noise map accounting for thermal and read noise (median: 13.6
+ADU), and a gain map (median: 2.0 ADU/e−), with shot noise
+added to replicate realistic measurement conditions. Signals were
+then distributed across the RGB channels according to the
+compounded spectral response for each fluorophore, creating
+simulated images that closely matched those obtained in physical
+experiments.
+Simulated images were generated with a 512 × 512-pixel FoV
+(50.5 × 50.5 μm), containing 250 randomly distributed 2 × 3 DNA
+origami with binding sites separated by 20-nm distances. Per dye,
+100 binding events per frame were simulated over 1,000 frames.
+For each dye, 2 sets of 1,000-frame stacks were simulated: one used
+to build RGB intensity histograms for dye fingerprinting as
+described below, and one used to assess classification performance.
+We firstly processed the simulated images using the ImageJ plugin
+ThunderSTORM [22]. A B-Spline wavelet filter was applied with
+order 3 and scale 2. Approximate localization of molecules was
+performed via local maximum detection, using an intensity
+threshold equal to the standard deviation of the filtered image.
+Subpixel localization was performed by maximum likelihood fitting
+of a Gaussian, with a fitting radius of 3 pixels and an initial sigma
+of 1 pixel. Resulting localizations were filtered to retain PSF widths
+between 90 and 140 nm, and further filtered by intensity and
+localization precision, with thresholds adjusted per dye to remove
+outliers and signals arising from overlapping localizations
+(Supplementary Materials).
+After localization filtering, mean red, green, and blue pixel
+intensities were extracted from a 5 × 5-pixel region centered on the
+retained localizations, and histograms of these intensities were
+compiled to characterize the expected intensity distributions in each
+color channel. Identification regions were defined for each
+fluorophore to encompass 60% of the intensity values, although this
+fraction could be adjusted to optimize either specificity or
+sensitivity. An emitter was assigned to a fluorophore if its mean R
+and G intensities fell exclusively within the identification regions of
+that fluorophore; emitters falling outside all identification regions
+or within the identification regions for more than one fluorophore
+were labeled as unknown.
+To assess the performance of this classification method, we defined
+2 metrics. Given C correct identifications, I incorrect identifications,
+and U detections classified as unknown, classification precision (P)
+is defined as:
+P=CC+I (2)
+and abstention rate (A) as:
+A=UU+I+C (3)
+We also assessed localization precision and accuracy for each dye.
+Localization precision was calculated using measured photon
+outputs and PSF widths obtained in ThunderSTORM, following
+localization filtering (Supplementary Materials). Localization
+accuracy was assessed by simulating DNA origami images with
+larger binding site separations of 100 nm. After applying the same
+localization and filtering procedure used for the 20-nm origami
+(Supplementary Materials), super-resolved images were relocalized
+in ThunderSTORM using maximum likelihood Gaussian fitting to
+extract the spatial spread of repeated localizations around each
+binding site, taken as a measure of localization accuracy.
+Results
+Using experimentally determined photon budgets reported
+previously [19] (mean photon count of 7,035 for 100-ms exposures,
+Supplementary Materials) and defining an identification region
+spanning 60% of the spectral space, we first evaluated the
+performance of our classification framework across 6 dyes: Alexa
+Fluor 488 (AF488), Alexa Fluor 647 (AF647), ATTO 488 (AT488),
+Cy3B, CF640R, and JF585. Under these conditions, the system
+achieved a high mean classification precision of approximately
+99%. Notably, 5 dyes (AF488, AT488, AF647, Cy3B, and JF585)
+were classified with 100% precision, indicating near-perfect
+separability within the defined identification space (Fig. 1 and
+Supplementary Materials).
+Fig. 1.
+[image]
+Open in a new tab
+(A) The averaged spectral response of the blue, green, and red
+pixels of the camera (top) is compounded with the spectral response
+of the dichroic and emission filters (bottom). (B) Single emitters are
+convoluted with a Gaussian Point Spread Function (PSF) whose
+width is calculated using each fluorophore’s emission wavelength
+and the objective’s numerical aperture. Example image showing
+single ATTO 488 and Alexa 647 dyes simulated on a camera with
+an RGB Bayer filter. Scale bar = 1 μm. (C) The RGB intensity of
+each emitter is measured and plotted as histograms. An
+identification region (IR) is defined to include 60% of the
+intensities. An unknown emitter is assigned to a fluorophore if its
+RGB values fall within that fluorophore’s IR; otherwise, it is
+rejected. Intensities (I) of ATTO 488 (blue) and Alexa 647 (red) and
+their respective IRs are plotted in the green (top) and red (bottom)
+channels. (D) Classification precision (P), calculated as the number
+of correct identifications (C) divided by the sum of C and the
+number of incorrect identifications (I), is quantified for 6 dyes with
+realistic photon budgets extracted from Ref. [19] for DNA-PAINT
+experiments. Our results indicate an average classification precision
+of 99.3%. (E) Localization precision (LP), calculated from the
+measured photon count and PSF width of each localization in
+ThunderSTORM, is not worsened using an RGB camera, where Cy3B
+is localizable with a precision of 2.14 nm. (F) Localization accuracy
+(LA) was measured by simulating DNA origami with 100-nm
+separation of binding sites and measuring the spread of repeated
+localizations around each binding site. Our results indicate an
+average localization accuracy of 31.76 nm. (G) Super-resolved
+images of simulated DNA-origami structures for 2 example dyes,
+ATTO 488 (top) and Cy3B (bottom). Binding sites separated by 20
+nm are clearly resolved with Cy3B but not with ATTO 488, in
+agreement with our measured localization accuracies. Scale bar =
+20 nm. (H) P and the abstention rate (A), calculated as unknown
+identifications (U) divided by C + I + U, quantified against width
+of IR. (I) P and A quantified against the number of possible dyes
+(D). (J) P and A quantified against the average photon budget
+reduction factor (RF), where 1 represents an average of 7,035
+photons and 5 represents an average of 1,407 photons across the 6
+dyes. (K) LP quantified against RF.
+In parallel, we quantified the localization precision and accuracy
+achievable using an RGB camera under the same experimental
+constraints. Across those 6 dyes, an average localization precision of
+3.57 nm was obtained, with an average localization accuracy of
+31.76 nm. Among these, Cy3B, which is commonly employed in
+DNA-PAINT experiments, exhibited particularly high performance,
+achieving a localization precision of 2.14 nm and a localization
+accuracy of 6.80 nm, consistent with its favorable photophysical
+properties (Fig. 1 and Supplementary Materials).
+Having established baseline performance under realistic conditions,
+we next systematically challenged the framework by varying 2 key
+parameters: (a) the width of the identification region (ranging from
+20% to 80%), and (b) the number of distinguishable dyes
+(increasing from 6 to 9). Varying the identification region width
+had a relatively minor impact on classification precision, which
+decreased only modestly from 99.67% to 97.74%. However, this
+came at the expense of a substantial increase in the abstention rate

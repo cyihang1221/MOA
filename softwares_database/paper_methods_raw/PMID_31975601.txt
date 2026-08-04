@@ -1,0 +1,75 @@
+
+METHODS
+In the following section, we define the underlying probabilistic
+graphical model used to describe the protein inference problem
+including all of its conditional dependencies. Then, we present the
+inference algorithm, which allows one to efficiently calculate
+probabilities for peptides, proteins, and protein groups. In addition,
+we provide information on the pre- and postprocessing of the data.
+Model
+The model we chose for protein inference is based on a Bayesian
+network (BN) representation. The protein–peptide graph (Figure 1)
+encodes the conditional dependencies of proteins and their
+peptides. The advantage of this specification of conditional
+(in-)dependencies is the resulting factorization of the high-
+dimensional joint distribution into smaller distributions, namely,
+prior distributions for the proteins and conditional probability
+distributions (CPDs) for the peptides given their parents. In the case
+of the binary representation for every peptide and protein, these
+distributions are discrete and correspond to conditional probability
+tables (CPTs).
+Additionally, the Bayesian network needs to be para-metrized.
+Although the factorization into smaller distributions decreases the
+number of parameters, each CPT still needs 2p parameters, where p
+is the number of parent nodes, to be set or learned. By recognizing
+the fact that in the generative process from proteins to peptides the
+presence of any of the parent proteins is enough to potentially
+produce a peptide, we can reduce the number of parameters further
+when specifying the conditional probability according to a noisy-OR
+model.13 In its original form, the network using the noisy-OR model
+requires the following parameters:
+•  γρ prior for protein with index ρ
+•  αρ,ε noisy-OR emission probability of a protein ρ generating
+peptide ε and
+•  βε noisy-OR leak probability for a peptide ε being generated
+by chance.
+For now, we employ the same simplification used in the Fido10
+algorithm by assuming equality among all α and the presence of
+only one β. Additionally, a constant prior γ for all proteins prevents
+biases on the protein level when no further information is available.
+The parameters α, β, and γ either have to be specified manually or
+are by default selected from a grid of initial values based on target-
+decoy classification performance and probability calibration (see
+the Implementation subsection for details).
+One addition to the original model is an option to add prior
+probabilities for the random variables (RVs) that model the number
+of proteins that might produce a certain shared peptide. These
+priors were designed empirically to decrease with a rising number
+of present parents. In the course of inference, this results in a form
+of regularization on the number of parent proteins and a more
+uneven distribution of the evidence from shared peptides starting at
+the most likely producing proteins (based on their beliefs from the
+rest of the network), especially in conjunction with the so-called
+max-product inference. For a more detailed description of the
+parameterization including equations and an example, please refer
+to the Supplementary Methods (Section 25.1).
+Algorithm
+Once the protein inference problem is modelled as a (factorized)
+probability distribution, probabilities can be inferred on random
+variables of interest. Usually, probabilities of interest are the
+marginal probabilities of proteins, protein groups, or peptides,
+given the evidence on the PSM level, the so-called posterior
+probabilities.
+As peptide-level evidence, the algorithm first reads the PSM
+probabilities and the associations with their parent proteins from
+spectra searched with a peptide search engine. It then aggregates
+PSM probabilities at the peptide level by picking the maximum PSM
+probability per unmodified peptide sequence and filters out
+peptides with extremely small probabilities (e.g., below 0.001).
+A naive approach to inference in a Bayesian network would be to
+create a large joint probability table for each connected component
+of the network and marginalize each protein by aggregating the
+probabilities of all possible configurations leading to the same state
+of the current protein of interest. To make this approach viable for
+at least small to medium-sized problems, previous tools resorted to
+(Gibbs) sampling11 or sped up calculations by caching results and

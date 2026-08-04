@@ -1,0 +1,326 @@
+
+Methods
+Thirteen children aged 6 to 16 years (mean = 9.5 years, 9 girls)
+were surgically treated for bilateral congenital cataracts as part of
+Project Prakash in India. They were examined at 5 longitudinal time
+points: presurgery and 1 week, 1 month, 6 months, and 1 year
+postsurgery. Eye movements were recorded with a smartphone
+camera and macro lens. Pupil trajectories were extracted using
+computer vision techniques, analyzed in the frequency domain, and
+a nystagmus magnitude metric was defined as the mean magnitude
+of horizontal (0–5 hertz [Hz]) movements. This metric was
+examined longitudinally, and additional comparisons were made
+with 14 separate patients examined 4 years after surgery.
+Results
+Nystagmus magnitude in the longitudinal group decreased
+significantly (1.7-fold, P = 0.006) during the first postsurgical year.
+Cross-sectional comparisons indicate stabilization by approximately
+1 year postoperatively. Variability across individuals was not
+explained by visual acuity, age at surgery, or eye axial length.
+Binocular recordings revealed strong interocular coordination
+despite persistent nystagmus.
+Conclusions
+Sight restoration after prolonged congenital blindness yields
+significant but incomplete reductions in nystagmus, indicating
+notable but circumscribed neural plasticity in the oculomotor
+system beyond infancy. In addition to demonstrating the feasibility
+of smartphone-based quantification of nystagmus in resource-
+limited settings, these results reinforce the importance of early
+visual input for calibrating eye movements and highlight important
+paths for rehabilitation.
+Keywords: nystagmus, congenital blindness, late sight onset, visual
+development, computational analysis
+Nystagmus is characterized by involuntary rhythmic movements of
+the eyes.1 It can manifest in the first months of life as a result of
+several conditions, such as congenital cataracts, albinism, or retinal
+diseases, but may also be idiopathic. Nystagmus can also be
+acquired later in life and may occur in association with neurological
+disorders.1,2 Underlying nystagmus are disruptions in visual and
+oculomotor systems, impairing stable visual fixation and gaze
+control, resulting in oscillatory eye movements, often at frequencies
+up to approximately 5 hertz (Hz).3–5
+In individuals treated for early-onset blindness, such as due to
+bilateral congenital cataracts, the presence of nystagmus is well-
+established.6–10 In fact, the linkage between early visual
+deprivation and the development of nystagmus is so pronounced
+that the presence of nystagmus in an older blind child can serve as a
+useful clue to infer that the child's visual deprivation had onset at or
+near birth. Notwithstanding this categorical linkage, quantitative
+data on the longitudinal progression of nystagmus following sight
+surgery are lacking. Such data could have far-reaching implications
+because longitudinal changes in nystagmus would provide evidence
+of plasticity within oculomotor control systems late into childhood.
+In this study, we longitudinally examined the status of nystagmus in
+a unique group of children who were born blind and subsequently
+gained vision through surgical intervention as part of Project
+Prakash.11 Studying these children allowed us to address three
+research questions. First, does the intensity of nystagmus diminish
+following surgery, and if so, by when do improvements asymptote
+postsurgery? Second, to what extent can interindividual differences
+in nystagmus intensity be accounted for by factors such as visual
+acuity, age, or ocular morphology? Finally, are the neural
+generators of nystagmus in the Prakash children eye-specific or
+bilateral, leading to coordinated movement trajectories of the two
+eyes? Whereas nystagmus, including its infantile forms, usually
+involves conjugate eye movements,12–14 there are important
+exceptions. For instance, in see-saw nystagmus, often linked to
+tumors or lesions, one eye elevates as the other depresses, thereby
+inducing inherently disconjugate movements.15,16 Similarly, in
+spasmus nutans, which presents early in life, high-frequency
+oscillations vary between conjugate and disconjugate forms.17 In
+addition, strabismus introduces disconjugacy even during normal
+saccadic eye movements.18,19 Thus, whereas we expected the
+Prakash children to exhibit predominantly conjugate eye
+movements, as in classic forms of infantile nystagmus, we sought to
+confirm this empirically.
+In answering these questions, we also sought to address a
+methodological goal. Specifically, we demonstrate here the utility of
+frequency-based analyses derived from simple camera recordings
+for quantifying nystagmus. Although computational methods
+capable of accurately doing so exist, they typically require
+expensive, specialized equipment, such as infrared eye trackers or
+electronystagmography.20,21 Simple camera-based analyses,
+although inadequate for some of the more detailed
+characterizations, hold great promise for fieldwork or resource-
+limited clinical settings in which specialized equipment is
+unavailable.
+Methods
+Participant Information
+Our longitudinal patient group consisted of 13 individuals who, as
+part of Project Prakash, underwent surgery for congenital blindness
+due to bilateral congenital cataracts at ages 6 to 16 (mean age =
+9.5 years, 9 girls). Detailed patient data can be found in Table 1,
+and a qualitative, clinical description of individuals’ nystagmus is
+provided in Supplementary Table S1. Each participant was
+examined at five longitudinal time points: a few days prior to
+surgery (preoperative) as well as approximately 1 week, 1 month, 6
+months, and 1 year postoperatively (1–4).
+Table 1.
+Information on Individual Late-Sighted Prakash Patients Who Were
+Tracked Longitudinally Over the Course of Approximately 1 Year
+Participant
+Age at
+Time of
+Surgery
+Gender PreOperative
+Acuity
+1 Y Post-
+Operative
+Acuity
+Axial
+Length
+of
+Eyeball,
+in mm
+Patient 1
+9
+F
+20/3474**
+20/704
+RE
+21.41;
+LE 21.92
+Patient 2
+7
+F
+20/692*
+20/307
+RE
+20.44;
+LE 21.02
+Patient 3
+7
+F
+20/832*
+20/438
+RE
+21.01;
+LE 21.58
+Patient 4
+8
+F
+20/1297**
+20/221
+RE
+21.41;
+LE 21.30
+Patient 5
+6
+M
+20/3881**
+20/151
+RE
+22.43;
+LE 21.22
+Patient 6
+10
+M
+20/1851**
+20/473
+RE
+24.93;
+LE 25.00
+Patient 7
+6
+F
+20/1769**
+20/468
+RE
+21.83;
+LE 21.79
+Patient 8
+9
+F
+20/708*
+20/476
+LE 24.52
+(RE B
+scan did
+not
+happen)
+Patient 9
+6
+M
+20/406
+20/117
+RE
+23.68;
+LE 24.94
+Patient 10
+13
+F
+20/781*
+20/230
+RE
+22.02;
+LE 21.71
+Patient 11
+16
+M
+20/1725**
+20/777
+RE
+21.35;
+LE 20.30
+Patient 12
+15
+F
+20/838*
+20/202
+RE
+20.02;
+LE 20.11
+Patient 13
+11
+F
+20/567*
+20/489
+RE
+19.90;
+LE 19.91
+Open in a new tab
+LE, left eye; RE, right eye.
+Preoperative acuity is annotated based on American Foundation for
+the Blind standards.
+*
+Indicates “profound visual impairment” (20/500–20/1000 Snellen
+acuity).
+**
+Indicates “light perception/projection” (<20/1000 Snellen acuity).
+Acuity was measured binocularly.
+For cross-group comparisons, we included an additional cohort of
+14 Prakash patients (mean age at the time of surgery = 12.9 years;
+6 girls; see Table 2 for details and Supplementary Table S2 for
+qualitative nystagmus description) who had undergone sight-
+restoring surgery at least 4 years earlier, performed by the same
+surgeon and based on the same surgical protocol. This group served
+to assess whether the longitudinal reduction in nystagmus observed
+during the first postsurgical year plateaued or continued with
+extended visual experience.
+Table 2.
+Patient Details for Long-Term Follow-Up Late-Sighted Participants
+Participant
+Age at
+Time of
+Surgery
+Gender
+PreOperative
+Acuity
+Long-Term
+Follow-Up
+Acuity
+Patient 1
+13
+F
+20/4595**
+20/937
+Patient 2
+15
+M
+20/969*
+20/207
+Patient 3
+8
+F
+20/1477**
+20/646
+Patient 4
+8
+F
+20/9267**
+20/182
+Patient 5
+12
+F
+20/9267**
+20/1782
+Patient 6
+13
+F
+20/679*
+20/220
+Patient 7
+22
+M
+Less than Finger
+counting at 0.5 m*
+20/8365
+Patient 8
+13
+M
+Finger counting at
+0.5 m*
+20/241
+Patient 9
+16
+M
+20/440*
+20/265
+Patient 10
+11
+M
+Finger counting at
+0.5 m*
+20/943
+Patient 11
+11
+M
+20/839*
+20/182
+Patient 12
+13
+F
+20/853*
+20/195
+Patient 13
+8
+M
+Finger counting
+up to 2 m*
+20/236
+Patient 14
+17
+M
+20/208
+20/146
+Open in a new tab

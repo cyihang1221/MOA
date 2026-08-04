@@ -1,0 +1,32 @@
+
+Methods
+In this work, the methodology was divided into two complementary
+parts. (1) The first part evaluated the FFT as a general procedure for
+generating torsional potentials in AA models, using quantum-
+mechanical and molecular-mechanical potential energy surface
+scans (PES) as reference data. (2) In the second part, we extended
+the FFT workflow to the parametrization of torsional angles in CG
+models, where torsional parametrization is substantially more
+challenging because a well-defined PES scan cannot be obtained for
+the well-known atomistic rotatable bonds. , In CG models, PES
+scans are not straightforwardly defined because the reduced
+representation integrates out atomistic degrees of freedom, resulting
+in effective interactions that depend implicitly on multiple
+underlying configurations rather than a single well-defined set of
+coordinates. To address this limitation, we introduced a novel
+refinement strategy in which the FFT-derived torsional potentials in
+the coarse-grained model are optimized using Iterative Boltzmann
+Inversion (IBI), , allowing torsional terms to be refined directly
+from CG structural distributions while targeting the corresponding
+atomistic profiles. To our knowledge, this is the first
+implementation of a combined FFT and IBI framework capable of
+parametrizing asymmetric torsional potentials.
+In both cases, whether from PES scans in atomistic models or from
+IBI in coarse-grained representations, a target torsional potential V
+tors(ϕ k ) is obtained for the dihedral angles under study. The goal of
+our approach is to construct an analytical representation of this
+target potential. We determine the Fourier coefficients (A n ) and (ω
+n ) using the FFT. The resulting potential V tors (n,ϕ) provides a
+continuous description over the full angular domain, while
+retaining only a reduced set of relevant frequencies.
+Vtors(ϕk)≅VtorsFFT(n,ϕ) 8

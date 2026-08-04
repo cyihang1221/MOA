@@ -1,0 +1,154 @@
+
+Methods S1.
+2.1. Nuclei segmentation and consensus
+Per-nucleus colocalization of puncta requires accurate 3D
+segmentation to properly map puncta to their proper nuclei.
+zFISHer independently segments on the unregistered nuclear
+channels prior to registration to allow flexibility during manual
+puncta curation and inform downstream registration and warping.
+zFISHer provides a modified classical watershed pipeline consisting
+of downsampling, Gaussian smoothing, Otsu thresholding,
+anisotropy-corrected distance-transform peak finding, and over-
+segmentation merging (Otsu, 1979. Additionally, native integration
+of Cellpose is included for challenging fields (Stringer et al., 2021).
+Each segmentation mask is annotated with a unique ID and a
+centroid for downstream processing, such as puncta assignment
+(Section 2.2) and consensus nuclei mask generation following
+downstream cross-round z-stack alignment (Section 2.4). The
+interactive mask editor permits manual mask refinement, including
+painting, deletion, and z-dimensional extrusion. While the
+underlying segmentation algorithms (Otsu thresholding, watershed,
+Cellpose) are well-established, zFISHer’s contribution lies in
+anisotropy-aware modifications, over-segmentation merging, per-
+round mask editing, and downstream cross-round consensus
+generation in a unified environment.
+2.2. Detect-then-transform puncta processing
+A core design decision of zFISHer was to perform puncta detection
+on unaligned image inputs and then transform the coordinates into
+the unified canvas space. This approach allows detection on the
+original signal to avoid interpolation artifacts. Four 3D detection
+algorithms are included: local maxima, Laplacian of Gaussian (LoG),
+Difference of Gaussian (DoG), and a modified radial symmetry
+algorithm (Parthasarathy, 2012). The radial symmetry
+implementation was modified for 3D detection, and refines each
+candidate to sub-voxel precision via weighted least-squares
+gradient-ray intersection. LoG, DoG, and radial symmetry utilize
+anisotropic Gaussian kernels with sigma vectors (σ*dz/dx,σ,σ) to
+match the elongated geometry typical in FISH z-stacks. Pre-
+processing background subtraction is provided via a per-slice white
+top-hat filter. Each detected puncta is annotated with coordinates,
+intensity, SNR, and a unique ID.
+2.3. The Fishing Hook algorithm
+Manual annotation of puncta in 3D FISH volumes is a time-
+consuming step of the analysis. A common concession is to reduce
+the image volume to 2D maximum intensity projections. However,
+this fails to resolve puncta at similar XY positions but different Z
+depths typical in crowded fields. Navigating individual z-slices is
+slow, subjective, and imprecise, as puncta in FISH fields tend to
+span across adjacent slices, making the identification of the true
+signal centroid challenging, if not impossible. Automated detection
+is imperfect and requires manual verification in practice.
+Despite advances in 3D image processing and visualization,
+resolving 3D depth remains a challenge for 2D interactions because
+cursors do not have meaningful depth. Intensity-based depth
+resolution was popularized by Vaa3D (Peng et al, 2014) for tracing
+neurons in standalone C++ environments. It is available in
+commercial tools such as Imaris (Bitplane), but the functionality is
+lacking in modern, open-source, Python-native ecosystems for FISH
+analysis workflows. Contemporary Python-based tools such as
+napari-threedee (Yamauchi and Burt, 2023) focus on plane-based
+interactions and geometric intersections but do not leverage image
+data for coordinate snapping.
+The Fishing Hook algorithm was developed for zFISHer to provide a
+fast and intuitive method for users to identify unannotated puncta
+directly in the 3D image volume. The algorithm uses the camera
+orientation and cursor position to construct a multi-point ray
+through the volume that is normalized via anisotropy-aware voxel
+scaling. Intensities are sampled at each point position along the ray
+to identify the brightest voxel candidate. Then, an optional local 3D
+neighborhood search refines the candidate position to the highest
+intensity peak in a defined radius to correct for cursor offset.
+Redundant annotations are handled by an integrated collision
+detection threshold. The implementation is detailed in
+Supplementary Methods 1.6.
+2.4. Multi-round registration and warping
+Multiple rounds of sample processing between rounds of image
+acquisition produces inter-round drift. Global transformations can
+correct the rigid components, but elastic nonlinear deformation
+presents the greatest challenge for image alignment for accurate
+molecular spatial profiling. zFISHer addresses inter-round volume
+alignment with a three-phase process: RANSAC-based rigid
+alignment on nuclei centroids (Fischler and Bolles, 1981), channel-
+type-aware deformation for refinement, and coordinate-space
+unification of nuclei masks and puncta.
+Rigid alignment uses R1 and R2 nuclei centroid clouds to estimate a
+coarse shift by vector voting on all pairwise differences. Nearest-
+neighbor correspondences are identified with a 3D KD-tree. A
+custom 3-DOF translation model is then fit with RANSAC. A
+translation-only model was chosen to prevent overfitting
+characteristic of affine models fit to sparse correspondences, and
+excessive deviation triggers reversion to the coarse shift. Each
+round volume is then padded to a unified canvas space. The
+optional second-stage channel deformation applies B-spline
+transform (Rueckert et al., 1999) to the rigidly aligned R2 channel
+using 4-node mesh per axis, Mattes mutual information, and L-
+BFGS-B optimization. The transformation is applied to all R2 image
+channels with channel-type-aware interpolation: B-spline for
+nuclear channel and linear for the remaining image channels.
+Following alignment and warping, the per-round nuclei masks are
+unified to a consensus mask via KD-tree with an adaptive distance
+threshold. Masks can be merged in union or intersection, and nuclei
+centroids are recomputed upon completion. Puncta coordinates are
+transformed by applying the canvas offset, rigid shift, and an
+iterative inverse B-spline, and then re-indexed against the consensus
+nuclei masks. The implementation is detailed in Supplementary
+Methods 1.7–1.9.
+2.5. Colocalization and analysis
+Sequential FISH experiments are primarily performed to map
+molecular spatial profiles of multiple elements within the nucleus.
+Colocalization analysis in zFISHer is performed on puncta
+coordinates following registration and warping to ensure accurate
+inter-round calculation in unified nuclear space. To maintain
+consistency across datasets, resolutions, and acquisitions, all
+distance calculations operate in physical units (micrometers) using
+voxel scaling derived from the input dataset OME-XML metadata.
+Both pairwise and tri-channel colocalization modes are provided.
+Pairwise colocalization performs a bidirectional 3D radius search
+between two channels using a KD-tree. Every unique spot pair
+within a user-defined threshold is reported as a positive hit. Tri-
+channel colocalization uses a greedy assignment strategy on an
+anchor channel and two additional channels to mimic a biological
+model of multiple elements localizing to a single spatial locus.
+While more rigorous approaches for tri-channel colocalization exist,
+such as MultiMatch (Naas et al., 2024), the greedy strategy
+prioritizes interpretability and speed. All puncta of both child
+channels within the user-defined radius threshold of an anchor
+channel puncta are enumerated. The greedy algorithm iteratively
+picks pairs of channel A/B puncta that are closest to the anchor and
+removes them from the pool to prevent double counting until no
+valid triplets remain. For convenience, a separate nearest-neighbor
+distance list is compiled for every point in every channel against
+every other channel to produce a comprehensive background
+distribution. Metrics are compiled for reporting, including per-hit
+tables, per-nucleus aggregates, and summary statistics. The
+implementation is detailed in Supplementary Methods 1.10–1.11.
+2.6. Batch and headless processing
+Sequential FISH experiments generate multiple sets of image pairs
+per study, and manual analysis of each dataset through interactive
+GUIs is time-consuming and variable across multiple operators.
+zFISHer addresses this by enabling fully automated execution of all
+stages of analysis independent of user interaction. The headless
+architecture can be executed through custom scripting or CLI
+commands for implementation into larger workflow pipelines. For
+users without programming experience, a GUI-initiated batch
+processing mode provides the same automated execution. The
+multi-sheet input template allows full parameter configuration and
+definitions for all stages of the analysis. The templates are validated
+against each input dataset before execution to prevent mid-run
+failure. All outputs (masks, puncta CSVs, reports, session, logs) from
+each dataset pair are written to unique subdirectories under a batch
+parent output root directory for provenance. This enables overnight,
+unattended, and unbiased processing for large FISH datasets. The
+finished sessions can then be loaded into zFISHer for refinement,
+curation, and additional analysis if needed. The implementation is
+detailed in Supplementary Methods 1.1.

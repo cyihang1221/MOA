@@ -1,0 +1,117 @@
+
+METHODS
+RawConverter can be run in either GUI-based or command line-
+based mode. It is implemented by C# using Microsoft Visual Studio
+Express 2013 and uses Thermo MSFileReader library to parse RAW
+files. RawConverter is freely accessible at http://fields.scripps.edu/
+rawconv.
+In a DDA experiment, the tandem mass spectrometer selects and
+fragments target precursor ions based on abundance. Subsequent
+analysis by database searching assumes that the majority of
+fragment ions detected in a spectrum come from a single peptide
+precursor ion and thus can be matched to a single theoretical
+peptide spectrum. Other ionized peptide ions can occur within the
+user defined m/z isolation window (typically ±1 Da) and also be
+fragmented, but the small window size will limit the frequency of
+this occurrence.13,14 In contrast, in a DIA experiment all precursor
+ions within a wider isolation window (e.g., ±10 Da) are
+fragmented and detected as a mixed spectrum. Our assumption is
+that, in most cases, a more abundant peptide ion in an isolation
+window generates the dominant and more abundant fragment ions,
+although this assumption does not consider peptide related
+fragmentation efficiency. Based on this assumption, RawConverter
+is designed to accurately report information about the most
+abundant precursor ions in an isolation window. For DDA data, the
+m/z value of the precursor ion is corrected, and for DIA data, the
+m/z values and charge states of all abundant precursor ions in the
+isolation window are reported for a single MS/MS spectrum.
+Precursor peptide ions are recognized in an isolation window using
+two steps: (i) isotopic envelopes are constructed for all possible
+charge states for each peak, and (ii) each isotopic envelope is
+evaluated to filter out impossible matches. RawConverter generates
+all possible isotopic envelopes based on the observed m/z values
+and possible charge states (instrument-provided charge state in
+DDA data extraction and charge 1 to 6 in DIA data extraction in our
+experiments). The maximum monoisotopic precursor mass in the
+isotopic envelope construction is 8 kDa. The selection of this preset
+mass threshold is because above 8,000 Da the monoisotopic peak
+cannot be identified due to its negligible abundance according to
+the averagine lookup table,9 and RawConverter is not designed to
+retrieve peaks not present in the spectra. This also stays within the
+limits of typical bottom-up MS/MS-based shotgun proteomics
+experiment, where generating peptides larger than 8 kDa is unlikely
+and a threshold of 6 kDa is frequently used as the maximum peptide
+mass in database searches.
+The evaluation of isotopic envelopes can be treated as a linear
+programming problem. Let E be the set of envelopes, Ei ∈ E the ith
+envelope, and Eji the jth peak in envelope Ei. Let P be the set of
+peaks in the isolation window and Pi ∈ P be the ith peak. We define
+two functions, mz(·) and h(·), to get the m/z value and the intensity
+of a given peak, respectively. We use wi to denote the weight of
+envelope Ei and ε to measure the difference between the theoretical
+and observed peak intensity. Then the isotopic envelope evaluation
+problem can be represented as following:
+Minimize:∑iεiSubjectto:∑mz(Ekj)=mz(Pi)wjh(Ekj)-
+εi≤h(Pi)∑mz(Ekj)=mz(Pi)wjh(Ekj)+εi≥h(Pi)wj≥0εi≥0
+A weighted value is reported for each envelope by solving this
+linear programming problem. The peak intensities in each envelope
+are recalculated according to these weight values. Each envelope
+contains all possible isotopic peaks and the distribution of these
+intensities is called an observed isotope distribution (Eobsv). From
+the averagine lookup table,9 a theoretical isotope distribution
+(Etheo) can be retrieved using the mass of the target peptide. Two
+distributions are compared to calculate a distribution similarity
+score using Eq. (1):
+S(Eobsv,Etheo)=Imono(Eobsv)·Scos_sim(Eobsv,Etheo)D(Eobsv,Etheo)
+(1)
+Scos_sim(Eobsv,Etheo)=∑i(Eobsvi·Etheoi)∑i(Eobsvi)2·∑i(Etheoi)2(2)
+D(Eobsv,Etheo)=∑i(Eobsvi-Etheoi)2∑i(Etheoi)2 (3)
+where Imono(Eobsv) is the log-relative intensity of the first peak in
+Eobsv, Eobsvi denotes the intensity of the ith peak in Eobsv, and Etheoi
+denotes the intensity of the ith peak in Etheo.
+For DDA data, the observed envelope with the top similarity score
+relative to the theoretical one is considered to be the correct
+envelope and its first peak is selected as the monoisotopic peak. To
+improve accuracy, we also apply the same approach on the previous
+and next MS scans. The envelope selected at least twice from these
+three MS scans will be used to report the monoisotopic precursor
+information. For DIA data, the observed envelopes with top N
+similarity scores are selected and their corresponding monoisotopic
+m/z values and charge states are reported as precursor information
+of the given tandem mass spectrum. RawConverter dynamically
+determines the value of N according to the width of the isolation
+window.
+RESULTS
+RawConverter provides three types of conversions: (i) conversion of
+binary Thermo Fisher RAW files to text-based files in the form of
+MS1/MS2/MS3, MGF, or mzXML format, (ii) conversion of mzML
+or mzXML files to MS1/MS2/MS3 or MGF files, and (iii) conversion
+between MGF files and MS2 files. The resulting text-based files can
+be submitted directly to most current database search and de novo
+sequencing software tools. We evaluated the performance of
+RawConverter in two experiments, one that evaluated monoisotopic
+peak selection for DDA data and the other that evaluated precursor
+prediction for DIA data.
+1. Evaluation of Monoisotopic Peak Selection for DDA
+Data
+We compared RawConverter with RawXtract v1.9.9.2 1, pXtract
+v2.0 (with pParse 3), and ProteoWizard v3.0.7162 2. Since
+RawXtract cannot select monoisotopic peaks in data extraction, it
+was used as the baseline in the comparison. These four extraction
+tools were applied to a RAW file generated from a Thermo Velos
+LTQ Orbitrap mass spectrometer. Briefly, 10 ug of HEK293T cells
+were digested with trypsin after reduction and alkylation with
+iodoacetamide. The resulting peptides were separated and analyzed
+by MudPIT 15 and a single salt fraction was used for comparison of
+extraction tools. All programs extracted a total of 37532 tandem
+mass spectra and each set was searched against the UniProt 16
+human protein database using IP2.17 The database search tools in
+IP2, ProLuCID 18 and DTASelect 2 19, are used to process the search
+results. The precursor and fragment error tolerance were set as 50
+ppm and 600 ppm, respectively. Semi-tryptic peptides with one
+missed-cleavage site were considered. Carbami-domethylation (Cys)
+was set as a fixed modification. Oxidation (Met) and deamidation
+(Asn and Gln) were set as variable modifications, and at most one
+variable modification was allowed for each peptide. We used the
+target-decoy database search strategy to control the false discovery
+rate (FDR) and the FDR threshold was set as 1% at the peptide-

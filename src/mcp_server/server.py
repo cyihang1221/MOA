@@ -1,46 +1,30 @@
 from mcp.server.fastmcp import FastMCP
+import sys as _sys
+import builtins as _builtins
+import os
+import json as _json
+import csv as _csv
+import glob as _glob
+
+# ——————————————————————————————————————————————————————————
+# MCP 协议使用 stdout 传输 JSONRPC 消息。
+# 工具函数中的 print() 默认写入 stdout 会污染 MCP 通信通道，
+# 导致客户端解析失败（"Failed to parse JSONRPC message"）。
+# 这里将全局 print() 默认输出重定向到 stderr，
+# FastMCP 内部通过 anyio 原始 fd 写 JSONRPC，不受影响。
+# ——————————————————————————————————————————————————————————
+_print_original = _builtins.print
+
+def _print(*args, **kwargs):
+    kwargs.setdefault("file", _sys.stderr)
+    kwargs.setdefault("flush", True)
+    _print_original(*args, **kwargs)
+
+_builtins.print = _print
 # from src.tools.group_peaks import group_peaks_openms_PeakGroup_impl, group_peaks_xcms_groupChromPeaks_impl
 # from src.tools.isotope_annotation import identify_isotopes_openms_IsotopeTools_impl
 # from src.tools.mzmine_lcms import mzmine_lcms_datapreprocess_impl
-from src.tools.convert_raw_to_mzml import (
-    convert_raw_to_mzml_msconvert_impl,
-    convert_raw_to_mzml_ThermoRawFileParser_impl,
-    convert_raw_to_mzml_OpenMS_FileConverter_impl,
-    mzml_directory_to_mgf_impl,
-    data_transformation_proteowizard_impl,
-    data_transformation_proteowizard_batch_impl,
-)
-from src.tools.library_match import (
-    library_match_blink_impl,
-    library_match_cosine_impl,
-    library_match_jaccard_impl,
-    library_match_ms2deepscore_impl,
-    library_match_msbert_impl,
-    library_match_pair_from_mgf_impl,
-    library_match_full_workflow_impl,
-    library_match_spectral_entropy_impl,
-    library_match_spec2vec_impl,
-)
-from src.tools.identify_isotopes import identify_isotopes_openms_IsotopeTools_impl
-from src.tools.filter_redundant_features import (
-    filter_redundant_features_camera_impl,
-    filter_redundant_features_mzannotation_impl,
-    filter_redundant_features_ramclustr_impl,
-)
-from src.tools.peak_detection import (
-    peak_detection_kpic_impl,
-    peak_detection_openms_featurefinder_impl,
-    peak_detection_openms_peakpickerhires_impl,
-    peak_detection_xcms_centwave_impl,
-    peak_detection_peakonly_impl,
-)
-from src.tools.align_retention_time import (
-    align_retention_time_xcms_loess_impl,
-    align_retention_time_xcms_obiwarp_impl,
-)
-from src.tools.missing_peak_filling import fill_missing_peaks_xcms_fillChromPeaks_impl
-from src.tools.group_peaks import group_peaks_openms_PeakGroup_impl, group_peaks_xcms_groupChromPeaks_impl
-from src.tools.mzmine_lcms import mzmine_lcms_datapreprocess_impl
+from src.tools.convert_raw_to_mzml import convert_raw_to_mzml_msconvert_impl, convert_raw_to_mzml_ThermoRawFileParser_impl, convert_raw_to_mzml_OpenMS_FileConverter_impl, data_transformation_proteowizard_impl, data_transformation_proteowizard_batch_impl
 # from src.tools.peak_detection import peak_detection_kpic_impl, peak_detection_openms_featurefinder_impl, peak_detection_openms_peakpickerhires_impl, peak_detection_xcms_centwave_impl, peak_detection_peakonly_impl
 # from src.tools.align_retention_time import align_retention_time_xcms_loess_impl, align_retention_time_xcms_obiwarp_impl
 # from src.tools.missing_peak_filling import fill_missing_peaks_xcms_fillChromPeaks_impl
@@ -54,29 +38,118 @@ from src.tools.deepmass import deepmass_annotation_impl
 from src.tools.data_preprocessing import data_preprocessing_kpic_impl, data_preprocessing_pitracer_impl, data_preprocessing_tracmass_impl, data_preprocessing_peakonly_impl
 from src.tools.redundant_feature_filtering import redundant_feature_filtering_camera_impl, redundant_feature_filtering_ramclust_impl, redundant_feature_filtering_mzannotation_impl, redundant_feature_filtering_pipeline_impl
 
-# ——————————————————————————————————————————————————————————
-# MCP 协议使用 stdout 传输 JSONRPC 消息。
-# 工具函数中的 print() 默认写入 stdout 会污染 MCP 通信通道。
-# 必须在 matchms/numba 等依赖完成导入后再重定向 builtins.print，
-# 否则 numba 注册 print 时会因包装函数名变成 _print 而崩溃。
-# ——————————————————————————————————————————————————————————
-import sys as _sys
-import builtins as _builtins
-
-_print_original = _builtins.print
-
-
-def _print_to_stderr(*args, **kwargs):
-    kwargs.setdefault("file", _sys.stderr)
-    kwargs.setdefault("flush", True)
-    _print_original(*args, **kwargs)
-
-
-_print_to_stderr.__name__ = "print"
-_print_to_stderr.__qualname__ = "print"
-_builtins.print = _print_to_stderr
 
 mcp = FastMCP("MOA_tools")
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 工具返回结构化信息收集器
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+def _format_tool_result(tool_name, output_dirs, extra_metrics=None):
+    """
+    在工具 _impl 执行完后调用，扫描输出目录并生成结构化 JSON 返回值。
+
+    收集信息包括：
+    - 所有生成的文件列表（路径、大小、是否为空）
+    - 各类文件数量统计
+    - 摘要文件内容解析
+    - 关键 CSV 的行数/列数
+    - 空文件/缺失文件告警
+
+    Args:
+        tool_name: 工具名称
+        output_dirs: 输出目录列表（支持多个目录）
+        extra_metrics: 额外指标 dict（工具特有的指标）
+
+    Returns:
+        JSON 字符串，包含完整的结构化执行结果
+    """
+    result = {
+        "tool": tool_name,
+        "success": True,
+        "output_dirs": list(output_dirs),
+        "files_created": [],
+        "total_files": 0,
+        "total_size_bytes": 0,
+        "file_type_counts": {},
+        "csv_summaries": {},
+        "summary_contents": {},
+        "metrics": extra_metrics or {},
+        "warnings": [],
+        "errors": [],
+    }
+
+    total_size = 0
+    ext_counts = {}
+
+    for output_dir in output_dirs:
+        if not isinstance(output_dir, str) or not output_dir.strip():
+            continue
+        if not os.path.isdir(output_dir):
+            result["warnings"].append(f"Output directory not found: {output_dir}")
+            continue
+
+        for root, dirs, files in os.walk(output_dir):
+            for fname in files:
+                fpath = os.path.join(root, fname)
+                relpath = os.path.relpath(fpath, output_dir)
+                try:
+                    size = os.path.getsize(fpath)
+                except OSError:
+                    size = -1
+
+                total_size += max(size, 0)
+                ext = os.path.splitext(fname)[1] or "(no ext)"
+                ext_counts[ext] = ext_counts.get(ext, 0) + 1
+
+                file_entry = {
+                    "path": relpath,
+                    "size_bytes": size,
+                    "is_empty": size == 0,
+                    "directory": output_dir,
+                }
+                result["files_created"].append(file_entry)
+
+                # — 读取摘要文件 —
+                if "summary" in fname.lower() and fname.endswith(".txt"):
+                    try:
+                        with open(fpath, "r", encoding="utf-8", errors="replace") as sf:
+                            result["summary_contents"][relpath] = sf.read()[:3000]
+                    except Exception:
+                        pass
+
+                # — 解析关键 CSV —
+                if fname.endswith(".csv") and size > 0:
+                    try:
+                        with open(fpath, "r", encoding="utf-8", errors="replace") as cf:
+                            reader = _csv.reader(cf)
+                            headers = next(reader, [])
+                            rows = sum(1 for _ in reader)
+                        result["csv_summaries"][relpath] = {
+                            "columns": headers[:30],
+                            "column_count": len(headers),
+                            "row_count": rows,
+                        }
+                    except Exception:
+                        pass
+
+    result["total_files"] = len(result["files_created"])
+    result["total_size_bytes"] = total_size
+    result["file_type_counts"] = ext_counts
+
+    # — 告警：空输出 —
+    if result["total_files"] == 0:
+        result["success"] = False
+        result["errors"].append("No output files generated")
+
+    # — 告警：空文件 —
+    empty_files = [f["path"] for f in result["files_created"] if f["is_empty"]]
+    if empty_files:
+        result["warnings"].append(f"Zero-byte files: {empty_files}")
+
+    return _json.dumps(result, ensure_ascii=False, indent=2)
 
 
 
@@ -140,7 +213,7 @@ mcp = FastMCP("MOA_tools")
 )  
 async def convert_raw_to_mzml_ThermoRawFileParser_tool(input_dir: str, output_dir: str):
     convert_raw_to_mzml_ThermoRawFileParser_impl(input_dir, output_dir)
-    return f"已使用 ThermoRawFileParser 完成 .raw 转 .mzML 的转换，输入目录: {input_dir}, 输出目录: {output_dir}"
+    return _format_tool_result("convert_raw_to_mzml_ThermoRawFileParser", [output_dir])
 
 
 # msconvert
@@ -163,7 +236,7 @@ async def convert_raw_to_mzml_ThermoRawFileParser_tool(input_dir: str, output_di
 )  
 async def convert_raw_to_mzml_msconvert_tool(input_dir: str, output_dir: str):
     convert_raw_to_mzml_msconvert_impl(input_dir, output_dir)
-    return f"已使用 msconvert 完成 .raw 转 .mzML 的转换，输入目录: {input_dir}, 输出目录: {output_dir}"
+    return _format_tool_result("convert_raw_to_mzml_msconvert", [output_dir])
 
 
 # OpenMS FileConverter
@@ -185,9 +258,9 @@ async def convert_raw_to_mzml_msconvert_tool(input_dir: str, output_dir: str):
     - 转换得到的文件保存在指定输出路径
     """
 )
-async def convert_raw_to_mzml_OpenMS_FileConverter_tool(input_file: str, output_file: str):
-    convert_raw_to_mzml_OpenMS_FileConverter_impl(input_file, output_file)
-    return f"已使用 OpenMS FileConverter 完成转换，输入文件: {input_file}, 输出文件: {output_file}"
+async def convert_raw_to_mzml_OpenMS_FileConverter_tool(input_file: str, output_file: str, openms_path: str = ""):
+    convert_raw_to_mzml_OpenMS_FileConverter_impl(input_file, output_file, openms_path)
+    return _format_tool_result("convert_raw_to_mzml_OpenMS_FileConverter", [os.path.dirname(output_file)])
 
 
 
@@ -534,7 +607,7 @@ async def isotope_analysis_openms_tool(
         max_charge=max_charge,
         openms_path=openms_path,
     )
-    return f"已使用 OpenMS-IsotopeTools 完成同位素分析，输入目录: {input_dir}，输出目录: {output_dir}"
+    return _format_tool_result("isotope_analysis_openms", [output_dir])
 
 
 
@@ -946,7 +1019,7 @@ async def data_preprocessing_xcms_tool(
         min_samples=min_samples
     )
     
-    return f"已使用 xcms 完成数据预处理。输出文件: {output_dir}/feature_table.csv, {output_dir}/spectra.mgf"
+    return _format_tool_result("data_preprocessing_xcms", [output_dir])
 
 
 
@@ -961,14 +1034,15 @@ async def data_preprocessing_xcms_tool(
     2. Filter low-intensity features
     3. Apply KNN imputation to fill missing values
 
-    Input:
-    - Reads file: {input_dir}/feature_table.csv (output from data_preprocessing_xcms step, with columns: feature_id, mz, rt_med, sample1, sample2, ...)
+    Input (auto-detected in order):
+    - Reads file: {input_dir}/ramclust_compound_intensities.csv (preferred — output from Stage 3 redundant feature filtering, columns: compound, sample1, sample2, ...)
+    - Falls back to: {input_dir}/feature_table.csv (output from data_preprocessing_xcms step, columns: feature_id, mz, rt_med, sample1, sample2, ...)
 
     Parameters:
-    - input_dir: directory containing the input feature table CSV (must contain feature_table.csv)
+    - input_dir: directory containing the input feature table CSV (must contain ramclust_compound_intensities.csv or feature_table.csv)
     - output_dir: directory to save the filtered + imputed feature table and summary
-    - min_presence: minimum fraction of non-missing values per feature (default 0.5)
-    - min_intensity: minimum mean intensity threshold (default 0.0)
+    - min_presence: minimum fraction of non-missing values per feature (default 0.8, "80% rule")
+    - min_intensity: minimum mean integrated peak area threshold (default 1000.0; 0 disables)
     - n_neighbors: number of neighbors for KNN imputation (default 5)
 
     Output files (written to output_dir):
@@ -979,8 +1053,8 @@ async def data_preprocessing_xcms_tool(
 async def feature_filtering_and_missing_value_imputation_knn_tool(
     input_dir: str,
     output_dir: str,
-    min_presence: float = 0.5,
-    min_intensity: float = 0.0,
+    min_presence: float = 0.8,
+    min_intensity: float = 1000.0,
     n_neighbors: int = 5
 ):
     feature_filtering_and_missing_value_imputation_KNN_impl(
@@ -991,12 +1065,7 @@ async def feature_filtering_and_missing_value_imputation_knn_tool(
         n_neighbors=n_neighbors
     )
 
-    return (
-        f"Feature filtering and KNN imputation completed.\n"
-        f"Input: {input_dir}\n"
-        f"Output: {output_dir}\n"
-        f"Parameters: min_presence={min_presence}, min_intensity={min_intensity}, n_neighbors={n_neighbors}"
-    )
+    return _format_tool_result("feature_filtering_and_missing_value_imputation_knn", [output_dir])
 
 
 
@@ -1011,13 +1080,13 @@ async def feature_filtering_and_missing_value_imputation_knn_tool(
     - PLS-DA (supervised classification)
     - Cross-validation (Mfold)
     - VIP score calculation
-    - Volcano plot (2-group contrast; optional contrast_group1/contrast_group2)
+    - Volcano plot (2-group only)
     - Differential metabolite selection
     - Heatmap of top VIP features
 
     Input:
     - Reads file: {input_dir}/feature_table_filtered_imputed.csv (output from feature_filtering_and_missing_value_imputation_knn step)
-    - metadata_csv: full path to sample metadata CSV (must include Sample + group_column, default Group)
+    - metadata_csv: full path to sample metadata CSV file (columns: Sample, Group)
 
     Parameters:
     - input_dir: path to the input directory containing feature_table_filtered_imputed.csv
@@ -1032,10 +1101,7 @@ async def feature_filtering_and_missing_value_imputation_knn_tool(
     - pvalue_threshold: p-value threshold for differential analysis (default 0.05)
     - padj_threshold: adjusted p-value threshold (default 0.05)
     - log2fc_threshold: log2 fold change threshold for differential analysis (default 0.58, which corresponds to 1.5-fold change)
-    - use_fdr: whether to use FDR correction for p-values (default False)
-    - group_column: metadata column used as PLS-DA Y / plot grouping (default "Group")
-    - contrast_group1: volcano baseline group level (optional)
-    - contrast_group2: volcano treatment/contrast group level (optional); log2FC = mean(g2) - mean(g1)
+    - use_fdr: whether to use FDR correction for p-values (default True)
 
     Output files (written to output_dir):
     - differential_metabolites.csv — differential metabolites table (Feature, log2FC, pvalue, padj, VIP, mz, rt columns), used as input for extract_differential_features step
@@ -1067,10 +1133,7 @@ async def statistical_analysis_mixomics_tool(
     pvalue_threshold: float = 0.05,
     padj_threshold: float = 0.05,
     log2fc_threshold: float = 0.58,
-    use_fdr: bool = False,
-    group_column: str = "Group",
-    contrast_group1: str | None = None,
-    contrast_group2: str | None = None,
+    use_fdr: bool = True
 ):
     statistical_analysis_mixomics_impl(
         input_dir=input_dir,
@@ -1085,17 +1148,10 @@ async def statistical_analysis_mixomics_tool(
         pvalue_threshold=pvalue_threshold,
         padj_threshold=padj_threshold,
         log2fc_threshold=log2fc_threshold,
-        use_fdr=use_fdr,
-        group_column=group_column,
-        contrast_group1=contrast_group1,
-        contrast_group2=contrast_group2,
+        use_fdr=use_fdr
     )
 
-    return (
-        f"Statistical analysis completed using mixOmics.\n"
-        f"Key output: {output_dir}/differential_metabolites.csv, {output_dir}/vip_scores.csv, {output_dir}/volcano_results.csv\n"
-        f"Plots: {output_dir}/pca_plot.png, {output_dir}/plsda_plot.png, {output_dir}/volcano_plot.png, {output_dir}/heatmap_top_vip.png"
-    )
+    return _format_tool_result("statistical_analysis_mixomics", [output_dir])
 
 
 
@@ -1131,12 +1187,7 @@ async def extract_differential_features_tool(
         output_dir=output_dir
     )
 
-    return (
-        f"Differential feature extraction completed.\n"
-        f"Input differential metabolites: {differential_csv}\n"
-        f"Input MGF: {input_mgf}\n"
-        f"Output directory: {output_dir}"
-    )
+    return _format_tool_result("extract_differential_features", [output_dir])
 
 
 
@@ -1163,7 +1214,7 @@ async def extract_differential_features_tool(
     - precursor_ppm: precursor tolerance in ppm (default 100)
     - fragment_tol: fragment tolerance in Da (default 0.05)
     - min_cosine: minimum similarity score (default 0.5)
-    - include_precursor: if True, require precursor m/z match; default False for broader coverage
+    - include_precursor: if True, require precursor m/z match with parallel processing; default True
     - use_mona: if True, search MoNA libraries (828 MB pos + 246 MB neg); default True
     - use_spectraverse: if True, search spectraverse library (1.3 GB); default True
 
@@ -1178,7 +1229,7 @@ async def spectral_annotation_tool(
     precursor_ppm: float = 100,
     fragment_tol: float = 0.05,
     min_cosine: float = 0.5,
-    include_precursor: bool = False,
+    include_precursor: bool = True,
     use_mona: bool = True,
     use_spectraverse: bool = True
 ):
@@ -1193,11 +1244,7 @@ async def spectral_annotation_tool(
         use_spectraverse=use_spectraverse
     )
 
-    return (
-        f"Spectral annotation completed.\n"
-        f"Input directory: {input_dir}\n"
-        f"Output directory: {output_dir}\n"
-    )
+    return _format_tool_result("spectral_annotation", [output_dir])
 
 
 
@@ -1260,11 +1307,7 @@ async def kegg_compound_enrichment_tool(
         mzannotation_dir=mzannotation_dir
     )
 
-    return (
-        f"KEGG compound pathway enrichment completed.\n"
-        f"Input directory: {input_dir}\n"
-        f"Output directory: {output_dir}\n"
-    )
+    return _format_tool_result("kegg_compound_enrichment", [output_dir])
 
 
 
@@ -1329,13 +1372,7 @@ async def molecular_networking_gnps_tool(
         precursor_ppm=precursor_ppm
     )
 
-    return (
-        f"GNPS molecular networking completed.\n"
-        f"Input MGF: {input_mgf}\n"
-        f"Output directory: {output_dir}\n"
-        f"Parameters: min_cosine={min_cosine}, min_matched_peaks={min_matched_peaks}, "
-        f"fragment_tol={fragment_tol} Da, top_k={top_k}"
-    )
+    return _format_tool_result("molecular_networking_gnps", [output_dir])
 
 
 # ============================= FBMN 特征基分子网络 =============================
@@ -1396,12 +1433,7 @@ async def molecular_networking_fbmn_tool(
         min_correlation=min_correlation,
     )
 
-    return (
-        f"FBMN molecular networking completed.\n"
-        f"Input MGF: {input_mgf}\n"
-        f"Feature table: {input_feature_table}\n"
-        f"Output directory: {output_dir}"
-    )
+    return _format_tool_result("molecular_networking_fbmn", [output_dir])
 
 
 # ============================= MS2LDA Mass2Motif 发现 =============================
@@ -1460,12 +1492,7 @@ async def molecular_networking_ms2lda_tool(
         random_seed=random_seed,
     )
 
-    return (
-        f"MS2LDA Mass2Motif discovery completed.\n"
-        f"Input MGF: {input_mgf}\n"
-        f"Output directory: {output_dir}\n"
-        f"Parameters: n_motifs={n_motifs}, fragment_tol={fragment_tol} Da"
-    )
+    return _format_tool_result("molecular_networking_ms2lda", [output_dir])
 
 
 # ============================= MolNetEnhancer 增强注释 =============================
@@ -1491,6 +1518,7 @@ async def molecular_networking_ms2lda_tool(
     - annotation_csv: full path to spectral annotation result CSV from spectral_annotation step (specifically the file differential_feature_table_library_match_clean&add.csv)
     - output_dir: directory to save enhanced network and tables
     - annotation_col: column name for compound names in annotation_csv (default "compound_name")
+    - id_mapping_csv: optional path to feature_id -> compound_id mapping table. Bridges network node IDs (XCMS feature_id, e.g. FT00073) and annotation IDs (RAMClust compound_id, e.g. C0044). Usually the ramclust_clusters.csv from Stage 3 with columns: feature_id, cluster. If not provided, MolNetEnhancer assumes direct ID match between network nodes and annotation table.
 
     Output files (written to output_dir):
     - enhanced_network.graphml: network with chemical_category node attributes
@@ -1512,6 +1540,7 @@ async def molecular_networking_molnetenhancer_tool(
     annotation_csv: str | None,
     output_dir: str,
     annotation_col: str = "compound_name",
+    id_mapping_csv: str | None = None,
 ):
     molecular_networking_molnetenhancer_impl(
         network_edges_csv=network_edges_csv,
@@ -1519,14 +1548,10 @@ async def molecular_networking_molnetenhancer_tool(
         annotation_csv=annotation_csv,
         output_dir=output_dir,
         annotation_col=annotation_col,
+        id_mapping_csv=id_mapping_csv,
     )
 
-    return (
-        f"MolNetEnhancer completed.\n"
-        f"Network edges: {network_edges_csv}\n"
-        f"Network nodes: {network_nodes_csv}\n"
-        f"Output directory: {output_dir}"
-    )
+    return _format_tool_result("molecular_networking_molnetenhancer", [output_dir])
 
 
 # ======================================================================================================================================
@@ -1603,7 +1628,7 @@ async def data_transformation_proteowizard_tool(
         parallel=parallel,
         n_cores=n_cores,
     )
-    return f"Data transformation completed. Input: {input_dir}, Output: {output_dir}"
+    return _format_tool_result("data_transformation_proteowizard", [output_dir])
 
 
 @mcp.tool(
@@ -1638,7 +1663,7 @@ async def data_transformation_proteowizard_batch_tool(
         output_format=output_format,
         peak_picking=peak_picking,
     )
-    return f"Batch data transformation completed. Base output: {output_base_dir}"
+    return _format_tool_result("data_transformation_proteowizard_batch", [output_base_dir])
 
 
 # ============================= OpenMS 峰拾取 =============================
@@ -1699,7 +1724,7 @@ async def peak_picking_openms_tool(
         threads=threads,
         openms_path=openms_path,
     )
-    return f"OpenMS peak picking completed. Input: {input_dir}, Output: {output_dir}"
+    return _format_tool_result("peak_picking_openms", [output_dir])
 
 
 # ============================= OpenMS 特征检测 =============================
@@ -1760,11 +1785,50 @@ async def feature_detection_openms_tool(
         threads=threads,
         openms_path=openms_path,
     )
-    return f"OpenMS feature detection completed. Input: {input_dir}, Output: {output_dir}"
+    return _format_tool_result("feature_detection_openms", [output_dir])
 
 
 # ============================= OpenMS 同位素分析 =============================
+@mcp.tool(
+    name="isotope_analysis_openms",
+    description="""
+    [OpenMS 模块工具 - 步骤 3/4] 使用 OpenMS MetaboliteAdductDecharger 对已完成特征检测的数据进行电荷估计与加合物去卷积，识别同位素峰簇。
 
+    该工具识别同一化合物的同位素峰簇（M0, M+1, M+2 等），基于特征间 m/z 差和加合物/电荷模型进行匹配。
+
+    ⚠️ 工具选择：
+    - 如需完整预处理，请使用 data_preprocessing_openms（一键端到端）
+    - 本工具仅做同位素分析，输入需为 .featureXML 文件（来自 feature_detection_openms）
+    - 前置步骤：peak_picking_openms → feature_detection_openms；后续步骤：peak_group_alignment_openms
+
+    Parameters:
+    - input_dir: directory containing .featureXML files from feature detection
+    - output_dir: directory to save isotope analysis results
+    - file_pattern: glob pattern to match input files (default "*.featureXML")
+    - max_charge: maximum charge state to consider (default 3)
+    - openms_path: path to OpenMS bin directory (default "" uses system PATH)
+
+    Outputs:
+    - *_charged.featureXML — 带电荷信息的特征文件
+    - *_isotope_annotated.csv — 同位素注释特征表
+    """
+)
+async def isotope_analysis_openms_tool(
+    input_dir: str,
+    output_dir: str,
+    file_pattern: str = "*.featureXML",
+    max_charge: int = 3,
+):
+    isotope_analysis_openms_impl(
+        input_dir=input_dir,
+        output_dir=output_dir,
+        file_pattern=file_pattern,
+        max_charge=max_charge,
+    )
+    return _format_tool_result("isotope_analysis_openms", [output_dir])
+
+
+# ============================= OpenMS 峰组对齐 =============================
 @mcp.tool(
     name="peak_group_alignment_openms",
     description="""
@@ -1826,7 +1890,7 @@ async def peak_group_alignment_openms_tool(
         threads=threads,
         openms_path=openms_path,
     )
-    return f"OpenMS peak group alignment completed. Input: {input_dir}, Output: {output_dir}"
+    return _format_tool_result("peak_group_alignment_openms", [output_dir])
 
 
 # ============================= OpenMS 端到端全流程数据预处理 =============================
@@ -1889,7 +1953,7 @@ async def data_preprocessing_openms_tool(
         mass_error_ppm=mass_error_ppm,
         openms_path=openms_path,
     )
-    return f"OpenMS 端到端数据预处理完成。输出: {output_dir}/feature_table.csv, {output_dir}/mgf/"
+    return _format_tool_result("data_preprocessing_openms", [output_dir])
 
 
 # ============================= MZmine 峰检测 (GridMass) =============================
@@ -1946,7 +2010,7 @@ async def peak_detection_mzmine_gridmass_tool(
         threads=threads,
         mzmine_user=mzuser_file,
     )
-    return f"MZmine GridMass peak detection completed. Input: {input_dir}, Output: {output_dir}"
+    return _format_tool_result("peak_detection_mzmine_gridmass", [output_dir])
 
 
 # ============================= MZmine 峰检测 (ADAP) =============================
@@ -2006,7 +2070,7 @@ async def peak_detection_mzmine_adap_tool(
         threads=threads,
         mzmine_user=mzuser_file,
     )
-    return f"MZmine ADAP peak detection completed. Input: {input_dir}, Output: {output_dir}"
+    return _format_tool_result("peak_detection_mzmine_adap", [output_dir])
 
 
 # ============================= MZmine 全流程数据预处理 =============================
@@ -2067,7 +2131,7 @@ async def data_preprocessing_mzmine_tool(
         group_rt_tol=group_rt_tol,
         mzmine_user=mzuser_file,
     )
-    return f"MZmine LC-MS data preprocessing completed. Input: {input_dir}, Output: {output_dir}"
+    return _format_tool_result("data_preprocessing_mzmine", [output_dir])
 
 
 # ============================= MZmine Join Aligner 特征对齐 =============================
@@ -2129,7 +2193,7 @@ async def align_features_mzmine_joint_aligner_tool(
         threads=threads,
         mzmine_user=mzuser_file,
     )
-    return f"MZmine Join Aligner completed. Input: {input_dir}, Output: {output_dir}"
+    return _format_tool_result("align_features_mzmine_joint_aligner", [output_dir])
 
 
 # ============================= DeepMASS2 深度学习注释 =============================
@@ -2160,7 +2224,7 @@ async def deepmass_annotation_tool(
         input_dir=input_dir,
         output_dir=output_dir,
     )
-    return f"DeepMASS2 annotation completed. Input: {input_dir}, Output: {output_dir}"
+    return _format_tool_result("deepmass_annotation", [output_dir])
 
 
 # ============================= KPIC 基于核函数的峰检测 =============================
@@ -2217,7 +2281,7 @@ async def data_preprocessing_kpic_tool(
         min_scans=min_scans,
         kernel_sigma=kernel_sigma,
     )
-    return f"KPIC peak detection completed. Input: {input_dir}, Output: {output_dir}"
+    return _format_tool_result("data_preprocessing_kpic", [output_dir])
 
 
 # ============================= PITracer 纯离子示踪 =============================
@@ -2282,7 +2346,7 @@ async def data_preprocessing_pitracer_tool(
         min_peak_width=min_peak_width,
         max_peak_width=max_peak_width,
     )
-    return f"PITracer peak detection completed. Input: {input_dir}, Output: {output_dir}"
+    return _format_tool_result("data_preprocessing_pitracer", [output_dir])
 
 
 # ============================= TracMass 追踪算法峰检测 =============================
@@ -2347,7 +2411,7 @@ async def data_preprocessing_tracmass_tool(
         min_peak_width=min_peak_width,
         max_peak_width=max_peak_width,
     )
-    return f"TracMass peak detection completed. Input: {input_dir}, Output: {output_dir}"
+    return _format_tool_result("data_preprocessing_tracmass", [output_dir])
 
 
 # ============================= PeakOnly 深度学习峰检测 =============================
@@ -2412,7 +2476,7 @@ async def data_preprocessing_peakonly_tool(
         max_peak_width=max_peak_width,
         use_deep_learning=use_deep_learning,
     )
-    return f"PeakOnly peak detection completed. Input: {input_dir}, Output: {output_dir}"
+    return _format_tool_result("data_preprocessing_peakonly", [output_dir])
 
 
 # ============================= CAMERA 冗余特征过滤 =============================
@@ -2451,7 +2515,8 @@ async def data_preprocessing_peakonly_tool(
     - {sample}_camera_annotated.csv: peak table with pcgroup, isotopes, adduct, is_redundant columns
     - {sample}_camera_pcgroups.csv: pseudospectrum group summary
     - {sample}_camera_redundant.csv: list of redundant features
-    - all_camera_annotated.csv: merged annotated peak table
+    - all_camera_annotated.csv: merged annotated peak table (per-sample, all samples concatenated)
+    - feature_table_filtered.csv: ALIGNED-level feature table with redundant features removed (majority vote across samples). This is the primary input for downstream Stage 4 (Missing Value Imputation). Format matches XCMS feature_table.csv: feature_id, mz, rt_med, sample columns.
     - camera_summary.txt: statistics summary
     """
 )
@@ -2483,7 +2548,7 @@ async def redundant_feature_filtering_camera_tool(
         maxiso=maxiso,
         filter_by_ips=filter_by_ips,
     )
-    return f"CAMERA redundant feature filtering completed. Input: {input_dir}, Output: {output_dir}"
+    return _format_tool_result("redundant_feature_filtering_camera", [output_dir])
 
 
 # ============================= RAMClust 特征聚类 =============================
@@ -2578,7 +2643,7 @@ async def redundant_feature_filtering_ramclust_tool(
         collapse_method=collapse_method,
         max_features=max_features,
     )
-    return f"RAMClust feature clustering completed. Input: {input_dir}, Output: {output_dir}"
+    return _format_tool_result("redundant_feature_filtering_ramclust", [output_dir])
 
 
 # ============================= mzAnnotation 精确质量注释 =============================
@@ -2667,7 +2732,7 @@ async def redundant_feature_filtering_mzannotation_tool(
         min_oidscore=min_oidscore,
         max_features=max_features,
     )
-    return f"mzAnnotation putative annotation completed. Input: {input_dir}, Output: {output_dir}"
+    return _format_tool_result("redundant_feature_filtering_mzannotation", [output_dir])
 
 
 # ============================= 冗余特征过滤综合管线 =============================
@@ -2713,954 +2778,10 @@ async def redundant_feature_filtering_pipeline_tool(
         file_pattern=file_pattern,
         polarity=polarity,
     )
-    return f"Redundant feature filtering pipeline completed (CAMERA → mzAnnotation → RAMClust). Input: {input_dir}, Output: {output_dir}"
+    return _format_tool_result("redundant_feature_filtering_pipeline", [output_dir])
 
 
 # 用于挂起服务器，而非测试。这段代码的存在是必要的，不能注释掉
-@mcp.tool(
-    name="mzml_directory_to_mgf",
-    description="""
-    将某个目录下所有真实存在的 .mzML 文件批量转为 .mgf（每个 mzML 生成同名 .mgf，默认导出 MS2 谱）。
-    必须使用本工具完成「mzML → MGF」，禁止编造 sample.mzML 等不存在的文件名；应使用输入目录中实际列出的文件。
-
-    此工具适用于：
-    - raw 经 msconvert 转成 mzML 之后，再导出为 MGF 供 library_match_pair_from_mgf 使用
-    - 不依赖 Docker
-
-    参数：
-    - input_dir: 包含 .mzML 的目录（例如 workspace/converted_mzml）
-    - output_dir: 输出 .mgf 的目录（例如 workspace/converted_mgf）
-    - ms_level: 导出哪一级 MS，默认 2（MS2）
-
-    此工具执行结果：
-    - 返回每个文件写出谱图数量的摘要文本
-    """
-)
-async def mzml_directory_to_mgf_tool(input_dir: str, output_dir: str, ms_level: int = 2):
-    summary = mzml_directory_to_mgf_impl(input_dir, output_dir, ms_level=ms_level)
-    return f"已完成 mzML 批量转 MGF。\n{summary}"
-
-
-# OpenMS FileConverter
-
-
-@mcp.tool(
-    name="library_match_pair_from_mgf",
-    description="""
-    从两个 MGF 文件各读取一条谱图（按 spectrum_index），执行库匹配打分。优先于直接传 mz/intensity 列表，避免大模型传空数组。
-
-    此工具适用于：
-    - 查询谱图与参考谱库中某条谱图的快速对比
-    - 与 convert_raw_to_mzml 之后的流程衔接：可先将需比对的谱导出为 MGF，再调用本工具
-
-    参数：
-    - method: 打分方法，取其一（亦可写自然语言别名，将被映射为峰级实现：cosine / jaccard / spectral entropy）：
-      blink | spec2vec | ms2deepscore |
-      cosine_binned | spectral_entropy_binned | jaccard_binned |
-      cosine_peak | spectral_entropy_peak | jaccard_peak
-    - query_mgf_path: 查询谱图所在 MGF 的绝对路径
-    - reference_mgf_path: 参考谱图所在 MGF 的绝对路径
-    - query_spectrum_index: 查询 MGF 中的谱序号，从 0 开始，默认 0
-    - reference_spectrum_index: 参考 MGF 中的谱序号，从 0 开始，默认 0
-    - mz_tolerance: 仅用于 blink，默认 0.01
-    - bin_size: 用于 *_binned 方法的分箱宽度（Da），默认 0.1
-    - model_path: spec2vec/ms2deepscore 模型路径，可留空则从环境变量 SPEC2VEC_MODEL_PATH / MS2DEEPSCORE_MODEL_PATH 读取
-    - precursor_mz / reference_precursor_mz: 可选，覆盖从 MGF 元数据解析的前体 m/z
-    - output_dir: 可选，若提供则将本行结果追加写入该目录下的 library_match_pair_results.txt
-
-    此工具执行结果：
-    - 返回一行摘要字符串，包含 method、score、谱峰数等
-    """
-)
-async def library_match_pair_from_mgf_tool(
-    method: str,
-    query_mgf_path: str,
-    reference_mgf_path: str,
-    query_spectrum_index: int = 0,
-    reference_spectrum_index: int = 0,
-    mz_tolerance: float = 0.01,
-    bin_size: float = 0.1,
-    model_path: str = "",
-    precursor_mz: float | None = None,
-    reference_precursor_mz: float | None = None,
-    n_decimals: int = 2,
-    output_dir: str = "",
-):
-    summary = library_match_pair_from_mgf_impl(
-        method=method,
-        query_mgf_path=query_mgf_path,
-        reference_mgf_path=reference_mgf_path,
-        query_spectrum_index=query_spectrum_index,
-        reference_spectrum_index=reference_spectrum_index,
-        mz_tolerance=mz_tolerance,
-        bin_size=bin_size,
-        model_path=model_path or None,
-        precursor_mz=precursor_mz,
-        reference_precursor_mz=reference_precursor_mz,
-        n_decimals=n_decimals,
-        output_dir=output_dir or None,
-    )
-    return f"已完成库匹配（MGF 配对）: {summary}"
-
-
-@mcp.tool(
-    name="library_match_full_workflow",
-    description="""
-    【只使用 MS2DeepScore 的完整一站式库匹配工具】
-
-    此工具会自动完成以下全部步骤（严格只使用 MS2DeepScore，不再支持其他方法）：
-    1. raw → mzML (使用 ThermoRawFileParser)
-    2. mzML → MGF (只导出 MS2)
-    3. 使用 MS2DeepScore 模型对 query MGF 中的所有谱图与 reference 进行完整库匹配
-    4. 将结果保存为独立的 JSON 和总结文本文件（不会污染 library_match_pair_results.txt）
-
-    参数：
-    - raw_input_dir: 原始 .raw 文件所在目录
-    - mzml_output_dir: mzML 输出目录
-    - mgf_output_dir: MGF 输出目录
-    - reference_mgf_path: 参考谱库 MGF 文件的绝对路径
-    - model_path: MS2DeepScore 模型路径（可留空，从 .env 读取）
-    - output_dir: 结果输出目录（建议 workspace/library_match_results）
-    - query_spectrum_index / reference_spectrum_index: 通常保持默认 0
-
-    执行结果：
-    - 在 output_dir 下生成 ms2deepscore_full_match.json（完整结果）
-    - 生成 ms2deepscore_summary.txt（Top-10 匹配总结）
-    """
-)
-async def library_match_full_workflow_tool(
-    raw_input_dir: str,
-    mzml_output_dir: str,
-    mgf_output_dir: str,
-    reference_mgf_path: str,
-    model_path: str = "",
-    output_dir: str = "",
-    query_spectrum_index: int = 0,
-    reference_spectrum_index: int = 0,
-):
-    summary = library_match_full_workflow_impl(
-        raw_input_dir=raw_input_dir,
-        mzml_output_dir=mzml_output_dir,
-        mgf_output_dir=mgf_output_dir,
-        reference_mgf_path=reference_mgf_path,
-        method="ms2deepscore",
-        converter="thermo",
-        query_mgf_path=None,
-        query_spectrum_index=query_spectrum_index,
-        reference_spectrum_index=reference_spectrum_index,
-        model_path=model_path or None,
-        output_dir=output_dir or None,
-    )
-    return f"MS2DeepScore 完整库匹配完成！\n{summary}"
-
-
-# Cosine
-
-
-@mcp.tool(
-    name="identify_isotopes_openms_IsotopeTools",
-    description="""
-    使用 OpenMS-IsotopeTools 进行同位素识别。
-
-    适用于：
-    - 对已完成峰检测、冗余特征过滤的 LC-MS 代谢组学特征进行同位素标注
-    - 自动识别同一物质的同位素峰簇（M0、M+1、M+2）并分配分组ID
-
-    局限：
-    - 不做元素组成推断、仅做同位素峰分组
-    - 无法区分同分异构、仅依靠 mz/RT 二维信息
-
-    参数：
-    - input_rds: 输入的 RDS 文件（已过滤后的特征表）
-    - output_rds: 输出的 RDS 文件，添加了同位素分组注释结果
-
-    此工具执行结果：
-    - 新增 isotope_group、charge 等同位素注释列
-    - 保留所有原始特征，不删除、不修改原始定量数据
-    """
-)
-async def identify_isotopes_openms_IsotopeTools_tool(
-    input_rds: str,
-    output_rds: str
-):
-    identify_isotopes_openms_IsotopeTools_impl(input_rds, output_rds)
-    return f"已使用 OpenMS-IsotopeTools 完成同位素识别，输入文件: {input_rds}, 输出文件: {output_rds}"
-
-
-
-# ============================= 保留时间对齐 =============================
-# XCMS-Obiwarp
-
-
-@mcp.tool(
-    name="library_match_cosine",
-    description="""
-    使用 Cosine（余弦相似度）对两个**等长**数值向量打分。若谱图为 m/z+强度列表且长度不一致，请改用 library_match_pair_from_mgf（method=cosine_binned）或 library_match_blink。
-
-    此工具适用于：
-    - 计算查询谱图向量与参考谱图向量之间的相似度
-    - 作为库匹配定性的基础评分函数
-
-    参数：
-    - query_vector: 查询向量（数值列表，禁止传空列表）
-    - reference_vector: 参考向量（数值列表，禁止传空列表）
-
-    此工具执行结果：
-    - 返回两个向量的余弦相似度分数（范围 [-1, 1]）
-    """
-)
-async def library_match_cosine_tool(
-    query_vector: list[float],
-    reference_vector: list[float]
-):
-    score = library_match_cosine_impl(query_vector, reference_vector)
-    return f"已完成 Cosine 相似度计算，score={score:.6f}"
-
-
-# Jaccard
-
-
-@mcp.tool(
-    name="library_match_jaccard",
-    description="""
-    使用 Jaccard 相似度对两个向量进行相似度计算，适用于基于“特征是否出现”的库匹配定性任务。
-
-    此工具适用于：
-    - 计算查询向量与参考向量的特征重叠程度
-    - 作为二值化特征匹配的基础评分函数
-
-    参数：
-    - query_vector: 查询向量（数值列表，非零表示该特征出现）
-    - reference_vector: 参考向量（数值列表，非零表示该特征出现）
-
-    此工具执行结果：
-    - 返回两个向量的 Jaccard 相似度分数（范围 [0, 1]）
-    """
-)
-async def library_match_jaccard_tool(
-    query_vector: list[float],
-    reference_vector: list[float]
-):
-    score = library_match_jaccard_impl(query_vector, reference_vector)
-    return f"已完成 Jaccard 相似度计算，score={score:.6f}"
-
-
-# Spectral entropy
-
-
-@mcp.tool(
-    name="library_match_spectral_entropy",
-    description="""
-    使用真实 Spectral entropy 相似度对两个谱图向量进行匹配，适用于质谱库匹配定性任务。
-
-    此工具适用于：
-    - 计算查询谱图与参考谱图的谱熵相似度
-    - 作为谱图分布相似性的评分函数
-
-    参数：
-    - query_vector: 查询向量（数值列表，建议为非负强度）
-    - reference_vector: 参考向量（数值列表，建议为非负强度）
-
-    此工具执行结果：
-    - 返回两个向量的 Spectral entropy 相似度分数（范围 [0, 1]）
-    """
-)
-async def library_match_spectral_entropy_tool(
-    query_vector: list[float],
-    reference_vector: list[float]
-):
-    score = library_match_spectral_entropy_impl(query_vector, reference_vector)
-    return f"已完成 Spectral entropy 相似度计算，score={score:.6f}"
-
-
-# Spec2Vec
-
-
-@mcp.tool(
-    name="library_match_spec2vec",
-    description="""
-    使用真实 Spec2Vec 模型进行库匹配定性评分。
-
-    此工具适用于：
-    - 计算查询谱图与参考谱图的 Spec2Vec 相似度
-    - 通过 model_path 或环境变量 SPEC2VEC_MODEL_PATH 加载模型
-    - 若谱图在 MGF 文件中，优先使用 library_match_pair_from_mgf（method=spec2vec），勿传空 mz 列表
-
-    参数：
-    - query_mz: 查询谱图 m/z 列表
-    - query_intensity: 查询谱图强度列表
-    - reference_mz: 参考谱图 m/z 列表
-    - reference_intensity: 参考谱图强度列表
-    - model_path: Spec2Vec 模型路径（可选）
-    - precursor_mz: 查询谱图前体离子 m/z（可选）
-    - reference_precursor_mz: 参考谱图前体离子 m/z（可选）
-    - n_decimals: 生成 Spec2Vec token 时的保留小数位（默认 2）
-
-    此工具执行结果：
-    - 返回两个谱图的 Spec2Vec 相似度分数
-    """
-)
-async def library_match_spec2vec_tool(
-    query_mz: list[float],
-    query_intensity: list[float],
-    reference_mz: list[float],
-    reference_intensity: list[float],
-    model_path: str = "",
-    precursor_mz: float | None = None,
-    reference_precursor_mz: float | None = None,
-    n_decimals: int = 2
-):
-    score = library_match_spec2vec_impl(
-        query_mz,
-        query_intensity,
-        reference_mz,
-        reference_intensity,
-        model_path or None,
-        precursor_mz,
-        reference_precursor_mz,
-        n_decimals
-    )
-    return f"已完成 Spec2Vec 相似度计算，score={score:.6f}"
-
-
-# MS2DeepScore
-
-
-@mcp.tool(
-    name="library_match_ms2deepscore",
-    description="""
-    使用真实 MS2DeepScore 模型进行库匹配定性评分。
-
-    此工具适用于：
-    - 计算查询谱图与参考谱图的 MS2DeepScore 相似度
-    - 通过 model_path 或环境变量 MS2DEEPSCORE_MODEL_PATH 加载模型
-    - 若谱图在 MGF 文件中，优先使用 library_match_pair_from_mgf（method=ms2deepscore）
-
-    参数：
-    - query_mz: 查询谱图 m/z 列表
-    - query_intensity: 查询谱图强度列表
-    - reference_mz: 参考谱图 m/z 列表
-    - reference_intensity: 参考谱图强度列表
-    - model_path: MS2DeepScore 模型路径（可选）
-    - precursor_mz: 查询谱图前体离子 m/z（可选）
-    - reference_precursor_mz: 参考谱图前体离子 m/z（可选）
-
-    此工具执行结果：
-    - 返回两个谱图的 MS2DeepScore 相似度分数
-    """
-)
-async def library_match_ms2deepscore_tool(
-    query_mz: list[float],
-    query_intensity: list[float],
-    reference_mz: list[float],
-    reference_intensity: list[float],
-    model_path: str = "",
-    precursor_mz: float | None = None,
-    reference_precursor_mz: float | None = None
-):
-    score = library_match_ms2deepscore_impl(
-        query_mz,
-        query_intensity,
-        reference_mz,
-        reference_intensity,
-        model_path or None,
-        precursor_mz,
-        reference_precursor_mz
-    )
-    return f"已完成 MS2DeepScore 相似度计算，score={score:.6f}"
-
-
-# BLINK
-
-
-@mcp.tool(
-    name="library_match_blink",
-    description="""
-    使用真实BLINK快速匹配计算两条谱图的相似度。
-
-    此工具适用于：
-    - 在给定 m/z 容差下进行谱峰快速匹配
-    - 对查询谱图与参考谱图进行快速库匹配打分
-    - 若谱图在 MGF 中，优先使用 library_match_pair_from_mgf（method=blink）
-
-    参数：
-    - query_mz: 查询谱图 m/z 列表
-    - query_intensity: 查询谱图强度列表
-    - reference_mz: 参考谱图 m/z 列表
-    - reference_intensity: 参考谱图强度列表
-    - mz_tolerance: 峰匹配容差（默认 0.01）
-
-    此工具执行结果：
-    - 返回 BLINK 风格相似度分数（范围 [0, 1]）
-    """
-)
-async def library_match_blink_tool(
-    query_mz: list[float],
-    query_intensity: list[float],
-    reference_mz: list[float],
-    reference_intensity: list[float],
-    mz_tolerance: float = 0.01
-):
-    score = library_match_blink_impl(query_mz, query_intensity, reference_mz, reference_intensity, mz_tolerance)
-    return f"已完成 BLINK 相似度计算，score={score:.6f}"
-
-
-# MS-BERT
-
-
-@mcp.tool(
-    name="library_match_msbert",
-    description="""
-    使用外部脚本进行 MS-BERT 推理并返回相似度评分。
-
-    此工具适用于：
-    - 通过独立脚本对查询谱图和参考谱图进行 MS-BERT 推理
-    - 通过 script_path 或环境变量 MSBERT_INFER_SCRIPT 指定推理脚本
-
-    参数：
-    - query_mz: 查询谱图 m/z 列表
-    - query_intensity: 查询谱图强度列表
-    - reference_mz: 参考谱图 m/z 列表
-    - reference_intensity: 参考谱图强度列表
-    - script_path: MS-BERT 推理脚本路径（可选）
-    - model_path: MS-BERT 模型路径（可选）
-    - precursor_mz: 查询谱图前体离子 m/z（可选）
-    - reference_precursor_mz: 参考谱图前体离子 m/z（可选）
-    - timeout_sec: 脚本超时时间（秒）
-
-    此工具执行结果：
-    - 返回 MS-BERT 推理得到的相似度分数
-    """
-)
-async def library_match_msbert_tool(
-    query_mz: list[float],
-    query_intensity: list[float],
-    reference_mz: list[float],
-    reference_intensity: list[float],
-    script_path: str = "",
-    model_path: str = "",
-    precursor_mz: float | None = None,
-    reference_precursor_mz: float | None = None,
-    timeout_sec: int = 120
-):
-    score = library_match_msbert_impl(
-        query_mz,
-        query_intensity,
-        reference_mz,
-        reference_intensity,
-        script_path or None,
-        model_path or None,
-        precursor_mz,
-        reference_precursor_mz,
-        timeout_sec
-    )
-    return f"已完成 MS-BERT 相似度计算，score={score:.6f}"
-
-# ============================= xcms: data preprocessing =============================
-
-
-@mcp.tool(
-    name="mzmine_lcms_datapreprocess",
-    description="""
-    MZmine LC-MS 非靶向代谢组数据预处理流程: mzML原始数据 → 峰检测 → 冗余过滤 → 保留时间对齐 → 同位素注释 → 谱峰对齐 → 缺失峰填充
-
-    适用于 LC-MS，不适用于 GC-MS
-
-    输出：可直接用于多元统计、差异分析的完整定量峰表
-    """
-)
-async def mzmine_lcms_datapreprocess_tool(
-    input_dir: str,
-    output_dir: str,
-    file_pattern: str = "*.mzML",
-    mz_tolerance: float = 0.01,
-    rt_tolerance: float = 0.2,
-    min_intensity: float = 1000.0,
-    sn_threshold: float = 3.0,
-    min_matched_samples: int = 2,
-    min_peak_width: float = 0.05,
-    max_peak_width: float = 2.0
-):
-    mzmine_lcms_datapreprocess_impl(
-        input_dir,
-        output_dir,
-        file_pattern,
-        mz_tolerance,
-        rt_tolerance,
-        min_intensity,
-        sn_threshold,
-        min_matched_samples,
-        min_peak_width,
-        max_peak_width
-    )
-    return f"已使用 MZmine 完成非靶向代谢组 LC-MS 数据预处理，输入目录: {input_dir}, 输出目录: {output_dir}"
-
-
-
-# ============================= 数据转换 =============================
-# ThermoRawFileParser
-
-
-@mcp.tool(
-    name="peak_detection_xcms_centwave",
-    description="""
-    基于 xcms-CentWave 对 LC-MS 代谢组学数据进行峰检测（peak picking）。
-
-    此工具适用于：
-    - 分析 mzML 文件
-    - 进行质谱数据预处理
-    - 提取色谱峰（feature detection）
-
-    特点：
-    - 峰检测时自动完成解卷积
-
-    参数：
-    - input_dir: 输入目录，包含 mzML 文件
-    - output_dir: 输出目录，保存峰检测结果
-    - file_pattern: mzML 文件的匹配模式，默认为 "*.mzML"
-    - peakwidth_min: 峰宽的最小值，默认为 5
-    - peakwidth_max: 峰宽的最大值，默认为 30
-    - snthresh: 信噪比阈值，默认为 10
-    - ppm: 质量精度，默认为 10
-    - prefilter_n: 预过滤的最小峰数，默认为 3
-    - prefilter_intensity: 预过滤的最小强度，默认为 1000
-
-    此工具执行结果：
-    - .rds: xcms-CentWave 完整结果对象，可用于下游分析
-    - .csv: 通用峰表，可用于解卷积/下游分析
-    """
-)
-async def peak_detection_xcms_centwave_tool(input_dir: str, output_dir: str, file_pattern: str, peakwidth_min: int, peakwidth_max: int, snthresh: int, ppm: int, prefilter_n: int, prefilter_intensity: int):
-    peak_detection_xcms_centwave_impl(input_dir, output_dir, file_pattern, peakwidth_min, peakwidth_max, snthresh, ppm, prefilter_n, prefilter_intensity)
-    return f"已使用 xcms-CentWave 完成峰检测，输入目录: {input_dir}, 输出目录: {output_dir}"
-
-
-# OpenMS-PeakPickerHiRes
-
-
-@mcp.tool(
-    name="peak_detection_openms_peakpickerhires",
-    description="""
-    基于 OpenMS-PeakPickerHiRes 对 LC-MS/GC-MS 代谢组学数据进行高精度峰检测。
-
-    工具特点：
-    - 高精度、高稳定性
-    - 适合 Orbitrap / QE 等高分辨质谱
-    - 输出标准 CSV 峰表
-
-    参数：
-    - input_dir: 输入目录，包含 mzML 文件
-    - output_dir: 输出目录
-    - file_pattern: 文件匹配模式，默认 *.mzML
-    - peak_width: 预期峰宽度（分钟），默认 0.15
-    - snr_threshold: 信噪比阈值，默认 3.0
-    - mz_tol_ppm: 质量容差，默认 10 ppm
-    - intensity_threshold: 最小强度阈值，默认 1000
-
-    输出：
-    - CSV 标准峰表
-    - .featureXML OpenMS 峰对象，包含完整峰信息，可用于下游分析
-    """
-)
-async def peak_detection_openms_peakpickerhires_tool(
-    input_dir: str,
-    output_dir: str,
-    file_pattern: str = "*.mzML",
-    peak_width: float = 0.15,
-    snr_threshold: float = 3.0,
-    mz_tol_ppm: float = 10.0,
-    intensity_threshold: float = 1000.0
-):
-    peak_detection_openms_peakpickerhires_impl(
-        input_dir=input_dir,
-        output_dir=output_dir,
-        file_pattern=file_pattern,
-        peak_width=peak_width,
-        snr_threshold=snr_threshold,
-        mz_tol_ppm=mz_tol_ppm,
-        intensity_threshold=intensity_threshold
-    )
-    return f"已使用 OpenMS-PeakPickerHiRes 完成峰检测，输入目录: {input_dir}, 输出目录: {output_dir}"
-
-
-# OpenMS-FeatureFinderMetabo
-
-
-@mcp.tool(
-    name="peak_detection_openms_featurefinder",
-    description="""
-    基于 OpenMS-FeatureFinderMetabo 对 LC-MS 代谢组学非靶向数据进行峰检测。
-    
-    特点：
-    - OpenMS 官方专为代谢组学设计的核心峰检测算法
-    - 自动过滤同位素、加合物、噪声
-    - 高稳定性、高重复性
-    - 适合高分辨质谱（Orbitrap、QE、Fusion）
-
-    参数：
-    - input_dir: 输入目录，包含 mzML 文件
-    - output_dir: 输出目录
-    - file_pattern: mzML 文件匹配模式，默认 "*.mzML"
-    - mass_error: 质量偏差（ppm），默认 10.0
-    - intensity_threshold: 最小强度阈值，默认 1000.0
-    - min_peak_width: 最小峰宽度（分钟），默认 0.05
-    - max_peak_width: 最大峰宽度（分钟），默认 0.5
-    - snr_threshold: 信噪比阈值，默认 3.0
-
-    输出：
-    - CSV 标准代谢组学峰表（m/z、RT、强度、峰面积、SNR）
-    - .featureXML OpenMS 峰对象，包含完整峰信息，可用于下游分析
-    """
-)
-async def peak_detection_openms_featurefinder_tool(
-    input_dir: str,
-    output_dir: str,
-    file_pattern: str = "*.mzML",
-    mass_error: float = 10.0,
-    intensity_threshold: float = 1000.0,
-    min_peak_width: float = 0.05,
-    max_peak_width: float = 0.5,
-    snr_threshold: float = 3.0
-):
-    peak_detection_openms_featurefinder_impl(
-        input_dir=input_dir,
-        output_dir=output_dir,
-        file_pattern=file_pattern,
-        mass_error=mass_error,
-        intensity_threshold=intensity_threshold,
-        min_peak_width=min_peak_width,
-        max_peak_width=max_peak_width,
-        snr_threshold=snr_threshold
-    )
-    return f"已使用 OpenMS-FeatureFinderMetabo 完成代谢组学峰检测，输入目录: {input_dir}, 输出目录: {output_dir}"
-
-
-# KPIC
-
-
-@mcp.tool(
-    name="peak_detection_kpic",
-    description="""
-    基于 KPIC（Kernel-based Peak Identification）对 LC-MS 代谢组学数据进行峰检测。
-
-    特点：
-    - 基于核函数拟合，对噪声、基质效应更稳健
-    - 适合复杂基质、峰形较差、低信噪比数据
-    - 与 XCMS 对象兼容，可后续对齐/分组
-
-    适用：
-    - LC-MS 非靶向代谢组学
-    - 复杂基质（血清、植物、微生物样本）
-
-    参数：
-    - input_dir: 输入目录，包含 mzML 文件
-    - output_dir: 输出目录
-    - file_pattern: mzML 文件匹配模式，默认 "*.mzML"
-    - ppm: 质量偏差，默认 10.0
-    - peak_width: 预期峰宽（秒/点数），默认 10.0
-    - sn_thresh: 信噪比阈值，默认 3.0
-    - min_intensity: 最小强度阈值，默认 1000.0
-
-    输出：
-    - .rds: KPIC 完整结果对象
-    - .csv: 通用峰表，可用于解卷积/下游分析
-    """
-)
-async def peak_detection_kpic_tool(
-    input_dir: str,
-    output_dir: str,
-    file_pattern: str = "*.mzML",
-    ppm: float = 10.0,
-    peak_width: float = 10.0,
-    sn_thresh: float = 3.0,
-    min_intensity: float = 1000.0
-):
-    peak_detection_kpic_impl(
-        input_dir=input_dir,
-        output_dir=output_dir,
-        file_pattern=file_pattern,
-        ppm=ppm,
-        peak_width=peak_width,
-        sn_thresh=sn_thresh,
-        min_intensity=min_intensity
-    )
-    return f"已使用 KPIC 完成峰检测，结果保存为 .rds + .csv，输入目录: {input_dir}, 输出目录: {output_dir}"
-
-
-# peakonly
-
-
-@mcp.tool(
-    name="peak_detection_peakonly",
-    description="""
-    基于 peakonly 对 LC-MS 代谢组学数据进行峰检测（peak picking）。
-
-    此工具适用于：
-    - 分析 mzML 文件
-    - 进行质谱数据预处理
-    - 提取色谱峰（feature detection）
-
-    参数：
-    - input_dir: 输入目录，包含 mzML 文件，文件应包含质心化的 MS1 数据
-    - output_dir: 输出目录，保存峰检测结果
-    - file_pattern: mzML 文件的匹配模式，默认为 "*.mzML"
-    - model_dir: peakonly 模型文件所在目录，默认为 "workspace/models/
-
-    此工具执行结果：
-    - .csv: 通用峰表，可用于解卷积/下游分析
-    """
-)
-async def peak_detection_peakonly_tool(input_dir: str, output_dir: str, file_pattern: str = "*.mzML", model_dir: str = "workspace/models/"):
-    peak_detection_peakonly_impl(input_dir, output_dir, file_pattern, model_dir)
-    return f"已使用 peakonly 完成峰检测，输入目录: {input_dir}, 输出目录: {output_dir}"
-
-
-
-# ============================= 峰解卷积 =============================
-
-
-
-# ============================= 过滤冗余特征 =============================
-# CAMERA
-
-
-@mcp.tool(
-    name="filter_redundant_features_camera",
-    description="""
-    对 CentWave 峰检测结果（XCMSnExp .rds）做同位素/冗余特征注释与过滤。
-
-    工具特点：
-    - 输入须为峰检测输出的 .rds（XCMSnExp，xcms 3+）
-    - 使用 groupChromPeaks + findChromPeakFeatures(IsotopeParam)，兼容现代 xcms
-    - 旧版 xcmsSet 仍走 CAMERA xsAnnotate
-    
-    参数：
-    - input_rds: 输入的 RDS 文件，包含 XCMS 处理后的色谱峰数据
-    - output_rds: 输出的 RDS 文件，保存过滤后的结果
-
-    输出：
-    - 过滤后的 RDS 文件，包含去除冗余特征后的色谱峰数据
-    """
-)
-async def filter_redundant_features_camera_tool(
-    input_rds: str,
-    output_rds: str
-):
-    filter_redundant_features_camera_impl(input_rds, output_rds)
-    return f"已使用 CAMERA 完成冗余特征过滤，输入文件: {input_rds}, 输出文件: {output_rds}"
-
-
-# RAMClustR
-
-
-@mcp.tool(
-    name="filter_redundant_features_ramclustr",
-    description="""
-    使用 RAMClustR 进行冗余特征过滤。
-    
-    工具特点：
-    - RAMClustR 基于谱图相关性 + RT 进行特征聚类，去除同位素/加合物/碎片冗余
-    - 自动识别输入格式：XCMS的.rds格式，OpenMS的.featureXML格式，.csv通用峰表格式
-    
-    参数：
-    - input_rds: 输入的 .rds/.featureXML/.csv 文件，包含色谱峰数据
-    - output_rds: 输出的 RDS 文件，保存过滤后的结果
-
-    输出：
-    - 过滤后的 RDS 文件，包含去除冗余特征后的色谱峰数据
-    """
-)
-async def filter_redundant_features_ramclustr_tool(
-    input_rds: str,
-    output_rds: str
-):
-    filter_redundant_features_ramclustr_impl(input_rds, output_rds)
-    return f"已使用 RAMClustR 完成冗余特征过滤，输入文件: {input_rds}, 输出文件: {output_rds}"
-
-
-# mzAnnotation
-
-
-@mcp.tool(
-    name="filter_redundant_features_mzannotation",
-    description="""
-    使用 mzAnnotation 进行冗余特征过滤。
-    
-    工具特点：
-    - 自动识别输入格式：XCMS的.rds格式，OpenMS的.featureXML格式，.csv通用峰表格式
-    
-    参数：
-    - input_rds: 输入的 .rds/.featureXML/.csv 文件，包含色谱峰数据
-    - output_rds: 输出的 RDS 文件，保存过滤后的结果
-
-    输出：
-    - 过滤后的 RDS 文件，包含去除冗余特征后的色谱峰数据
-    """
-)
-async def filter_redundant_features_mzannotation_tool(
-    input_rds: str,
-    output_rds: str
-):
-    filter_redundant_features_mzannotation_impl(input_rds, output_rds)
-    return f"已使用 mzAnnotation 完成冗余特征过滤，输入文件: {input_rds}, 输出文件: {output_rds}"
-
-
-
-# ============================= 同位素识别 =============================
-# OpenMS-IsotopeTools
-
-
-@mcp.tool(
-    name="align_retention_time_xcms_obiwarp",
-    description="""
-    基于 XCMS 的 Obiwarp 方法进行保留时间（RT）对齐。
-
-    此工具适用于：
-    - 对 LC-MS 代谢组学数据进行保留时间对齐
-    - 解决不同样本之间的保留时间差异问题
-    
-    参数：
-    - input_rds: 输入的 RDS 文件，包含需要对齐的色谱峰数据
-    - output_rds: 输出的 RDS 文件，保存对齐后的结果
-
-    此工具执行结果：
-    - 对齐后的 RDS 文件，包含调整保留时间后的色谱峰数据
-    """
-)
-async def align_retention_time_xcms_obiwarp_tool(input_rds: str, output_rds: str):
-    align_retention_time_xcms_obiwarp_impl(input_rds, output_rds)
-    return f"已使用 XCMS_Obiwarp 完成保留时间（RT）对齐，输入文件: {input_rds}, 输出文件: {output_rds}"
-
-
-# XCMS-LOESS
-
-
-@mcp.tool(
-    name="align_retention_time_xcms_loess",
-    description="""
-    基于 XCMS 的 LOESS 方法进行保留时间（RT）对齐。
-
-    此工具适用于：
-    - 对 LC-MS 代谢组学数据进行保留时间校正
-    - 使用 LOESS 校正方法调整样本间的保留时间差异
-    
-    参数：
-    - input_rds: 输入的 RDS 文件，包含需要校正的色谱峰数据
-    - output_rds: 输出的 RDS 文件，保存校正后的结果
-
-    此工具执行结果：
-    - 校正后的 RDS 文件，包含调整保留时间后的色谱峰数据
-    """
-)
-async def align_retention_time_xcms_loess_tool(input_rds: str, output_rds: str):
-    align_retention_time_xcms_loess_impl(input_rds, output_rds)
-    return f"已使用 XCMS_LOESS 完成保留时间校正，输入文件: {input_rds}, 输出文件: {output_rds}"
-
-
-
-# ============================= 峰分组（谱峰对齐） =============================
-# XCMS-groupChromPeaks
-
-
-@mcp.tool(
-    name="group_peaks_xcms_groupChromPeaks",
-    description="""
-    基于 XCMS 的峰密度分组方法进行特征分组。
-
-    此工具适用于：
-    - 根据色谱峰的密度进行特征分组
-    - 对于具有多样本的 LC-MS 数据，进行相似特征的合并
-    
-    参数：
-    - input_rds: 输入的 RDS 文件，包含已检测到的色谱峰数据
-    - output_rds: 输出的 RDS 文件，保存分组后的结果
-    - groups: 样本组的定义（如果为空，将默认分为一组）
-    - bw: 带宽，默认值为 30
-    - min_fraction: 每个分组中需要至少的最小样本比例，默认值为 0.5
-    - min_samples: 每个分组中最少需要的样本数，默认值为 1
-
-    此工具执行结果：
-    - 分组后的 RDS 文件，包含分组信息的色谱峰数据
-    """
-)
-async def group_peaks_xcms_groupChromPeaks_tool(
-    input_rds: str,
-    output_rds: str,
-    bw: int,
-    min_fraction: float,
-    min_samples: int,
-    groups: list = None
-):
-    group_peaks_xcms_groupChromPeaks_impl(input_rds, output_rds, groups, bw, min_fraction, min_samples)
-    return f"已使用 XCMS_groupChromPeaks 完成峰分组，输入文件: {input_rds}, 输出文件: {output_rds}"
-
-
-# OpenMS-PeakGroup
-
-
-@mcp.tool(
-    name="group_peaks_openms_PeakGroup",
-    description="""
-    基于 OpenMS-PeakGroupFinder 进行多样品谱峰分组与保留时间对齐。
-
-    此工具适用于：
-    - 对已完成同位素注释的 LC-MS 特征进行跨样本峰对齐
-    - 解决不同样本间 m/z 和保留时间漂移导致的峰不匹配问题
-    
-    参数：
-    - input_rds: 输入的 RDS 文件（已完成同位素注释）
-    - output_rds: 输出的 RDS 文件，保存谱峰对齐结果
-
-    此工具执行结果：
-    - 新增 peak_group（峰组ID）、aligned_rt（对齐后保留时间）列
-    - 同一物质在不同样本中归属为同一组，实现标准化对齐
-    """
-)
-async def group_peaks_openms_PeakGroup_tool(input_rds: str, output_rds: str):
-    group_peaks_openms_PeakGroup_impl(input_rds, output_rds)
-    return f"已使用 OpenMS_PeakGroup 完成谱峰分组与保留时间对齐，输入文件: {input_rds}, 输出文件: {output_rds}"
-
-
-
-# ============================= 缺失峰填充 =============================
-# XCMS-fillChromPeaks
-
-
-@mcp.tool(
-    name="fill_missing_peaks_xcms_fillChromPeaks",
-    description="""
-    基于 XCMS 填补缺失的色谱峰数据。
-
-    此工具适用于：
-    - 填补因噪声或分辨率问题缺失的色谱峰
-    - 基于已知的保留时间和质量信息，填补缺失的数据
-    
-    参数：
-    - input_rds: 输入的 RDS 文件，包含检测到的色谱峰数据
-    - output_rds: 输出的 RDS 文件，保存填补后的结果
-    - expand_rt: 允许扩展的保留时间窗口，默认为 0.0
-    - expand_mz: 允许扩展的质量窗口，默认为 0.0
-
-    此工具执行结果：
-    - 填补后的 RDS 文件，包含原有色谱峰数据以及填补的色谱峰数据
-    """
-)
-async def fill_missing_peaks_xcms_fillChromPeaks_tool(
-    input_rds: str,
-    output_rds: str,
-    expand_rt: float = 0.0,
-    expand_mz: float = 0.0
-):
-    fill_missing_peaks_xcms_fillChromPeaks_impl(input_rds, output_rds, expand_rt, expand_mz)
-    return f"已使用 XCMS_fillChromPeaks 完成缺失峰填补，输入文件: {input_rds}, 输出文件: {output_rds}"
-
-
-
-# ============================= 库匹配定性 =============================
-# 推荐：从 MGF 路径配对打分（Agent 易用，勿传空列表）
-
-
-
 if __name__ == "__main__":
     mcp.run(transport="stdio")
     

@@ -1,0 +1,223 @@
+
+Methods
+Fourteen participants, comprising medical students and
+neurosurgical residents, were recorded performing an EVD on a
+trainer head. Five panoramic cameras were installed within the
+simulation suite. The model employed convolutional neural
+networks to track anatomical landmarks and assess task completion.
+Quantification of the learning curve was achieved by aggregating
+scores across three phases: preparation, insertion, and closing.
+Additional metrics included fluidity, a proxy for surgical finesse.
+Results
+The model successfully itemized parameters that characterize EVD
+placement. The study demonstrated a clear learning curve in EVD
+placement. The overall scores were 64.4/126 (51.1%), 99.6/126
+(79%), and 113/126 (89.7%) for the students, junior residents, and
+senior residents ( p  < 0.0001). Significant improvements were
+observed in the preparation, insertion, and closing phases. The
+mean scores for preparation were 16.4/37 (44.3%), 25.6/37 (69.2),
+and 30.5/37 (82.4) for the students, junior residents, and senior
+residents ( p  < 0.0001). The mean scores for insertion were
+26.2/44 (59.5%), 37.8/44 (85.9%), and 38.5/44 (87.5%) for the
+students, junior residents, and senior residents ( p  = 0.026). The
+mean scores during closing were 13/25 (52%), 22.2/25 (88.8%),
+and 25/25 (100%) for the students, junior residents, and senior
+residents ( p  = 0.0034). Fluidity improved significantly with
+training level ( p  = 0.0006).
+Conclusion
+Our platform effectively quantified the learning curve associated
+with EVD placement, underscoring the importance of objective
+feedback and AI's potential to facilitate skill acquisition.
+Keywords: artificial intelligence, vision systems, neurosurgery,
+skull base, EVD, machine learning
+Introduction
+Artificial intelligence (AI) has the capacity to transform
+neurosurgery. The coming decade could see AI significantly impact
+diagnosis, treatment selection, surgical planning, and surgical
+education. AI can be trained in visual detection to assess specific
+performance metrics for medical students and residents. 1
+Neurosurgical educators are constantly searching for novel methods
+to ensure that trainees are evolving accordingly. In light of duty
+hour restrictions, there was an increased number of complications
+reported on neurosurgical services. 2 3 4 AI and machine learning
+(ML) could augment the current educational paradigm to help
+supplement neurosurgical trainees' learning experiences. To date, AI
+in postgraduate surgical training has been limited to virtual reality
+tasks with narrow metrics. 5 Its limited application has been
+attributed to AI lacking the agility to passively integrate into the
+workflow for students, professors, and physicians. 6 7
+A potential role for AI and ML in neurosurgery is the assessment
+and grading of highly reproducible procedures (e.g., suturing or
+lumbar punctures) and ultimately applying it to tumor resection or
+aneurysm clipping. 8 Gonzalez-Romo et al 9 quantified a difference
+in the fidelity of hand motion in micro-suturing as categorized by
+experience level. However, no study has accurately translated
+“surgical finesse” into an AI model; the components responsible for
+the fluidity of a participant are elusive and are not easily captured
+by binary checklists. Current milestone evaluations rely on
+subjective assessment by senior staff. With the rapid advancements
+in vision systems and increased availability of versatile generative
+models, there is an opportunity for AI to transform medical
+education. We hypothesized that AI-driven vision systems would
+accurately quantify the efficiency and fluidity of moves during a
+procedure and differentiate between years of training.
+Here, we incorporated multiple overhead cameras equipped with a
+proprietary platform to quantify the learning curve associated with
+the placement of an external ventricular drain (EVD) on a trainer
+cranial model. This study was conducted as a noncommercial,
+proof-of-concept demonstration of AI-assisted assessment in a
+simulated environment.
+Methods
+Motion detection was achieved using an ML model capable of
+tracking landmarks without sensors. The foundational layer of our
+stack is composed of hardware (Synology Inc. cameras), followed by
+AI training and analytics (Appraiseye Inc. proprietary software).
+The model underwent training using a sequence of convolutional
+neural network models (CNN): a class of neural networks that
+incorporate convolution (specialized mathematical operations for
+processing grid-like data). The CNN has three layers: a
+convolutional layer, a pooling layer, and a final layer that performs
+a dot product between the restricted portion of the receptive field of
+a kernel matrix with learnable parameters.
+The stack consisted of a common hardware and software layer ( Fig.
+1 ). The neural network layer consisted of object detection and
+segmentation models. Certain instruments were identified using the
+existing One Shot, YOLO, and the COCO datasets. MediaPipe was
+used for pose estimation.
+Fig. 1.
+[image]
+Open in a new tab
+Schematic representation of AI stack architecture.
+The model identified the existence of a human with a head and
+torso and subsequently located human joints (including 22 hand
+landmarks). Existing Python 3.6 libraries (Pytorch, YOLO, Pyplot)
+were applied to assess binary task completion (i.e., wearing a mask,
+wearing a gown, and creating a burr hole) where qualitative scores
+of 1 or 0 could be applied. Time intervals with loss of tracking data
+were not included in performance calculations. Object detection
+was used in binary observations, while object segmentation was
+used in the efficiency of motion to identify various objects and their
+intersection ( Supplementary Fig. S1 , available in the online
+version only). To calculate the drill metrics, the drill bounding box
+was reduced to a line by making the box width 4 pixels; skull
+segmentation was used to identify the contours of the skull. Once
+the drill contacted the skull, a tangent was measured along the skull
+from the point of intersection → the angle was calculated using tan 
+= (a2.b1a1.b2)/(b1.b2 + a1.a2).
+Model Validation
+Supervised learning requires labeling large data sets to train neural
+networks with the goal of obtaining a model with predictive
+capability. We verified the accuracy of the annotation by
+individually watching each participant through a single
+macroscopic view (camera #4).
+The scoring criteria were derived from best practice guidelines for
+EVD placement. Although detailed annotation was performed to
+train and verify the accuracy of AI-driven event detection, no
+independent validation of procedure quality by a senior
+neurosurgeon was conducted. Future iterations should incorporate
+independent evaluations by neurosurgeons to validate AI scores
+against outcomes.
+Participants
+Fourteen participants were visually recorded completing an EVD
+catheter insertion from start to finish between September and
+October 2023. The cohorts were categorized according to
+experience level: five fourth-year medical students, five junior
+neurosurgical residents, and four senior neurosurgical residents.
+Junior residents were categorized as PGY-1 to PGY-3; senior
+residents as PGY-4 to PGY-8. The participants provided written and
+verbal consent to be visually recorded and assessed by AI. This
+study was exempted by the Institutional Review Board pursuant to
+Title 45 Code of Federal Regulations Part 46.101.
+EVD Procedure
+The simulated EVD placement was achieved by providing the
+participants with the equipment required to complete the task
+(surgical gloves, EVD kit, and EVD catheter) on an artificial trainer
+head (Artisan Medical Displays). 10 The participants were given a
+brief clinical scenario analogous to an Objective Structured Clinical
+Examination, performing an EVD from start to finish: gowning,
+gloving, kit unpacking onto a sterile field, drill installation, catheter
+insertion, tunnelling and suturing the drain in place.
+Ventriculostomy accuracy was assessed visually through a viewing
+window built into the trainer cranial model. Upon insertion, the tip
+of the catheter was confirmed within the simulated ventricle. Five
+panoramic cameras were installed in strategic locations within the
+simulation suite (birds-eye-view, equipment view, and oblique
+procedure views; Fig. 2 ).
+Fig. 2.
+[image]
+Open in a new tab
+Select images from the project setup. ( A ) Overview of the
+procedural area. ( B ) Lateral view of the positioned head. ( C )
+Oblique camera view demonstrating hand landmark tracking.
+Quantification of Scores
+To quantify the performance of the participants as they completed
+the procedure, we trained the model to assign points depending on
+whether a task was performed ( Table 1 ). Quantification of the
+learning curve between the cohorts was achieved by accumulating
+the points at each phase of the procedure: preparation, insertion,
+and closing. The algorithm extrapolated a checklist from a best
+practice guideline on EVD placement. 11 In qualitative tasks, scores
+of 1 or 0 were assigned; that is, 1 point was assigned for putting on
+a facemask during preparation or 1 point for tunnelling the catheter
+during closing. By contrast, during tasks with more granularity,
+quantitative scores of 1 to 10 were assigned; that is, during
+preparation, scoring for organization of the EVD kit onto the sterile
+instrument table was determined by how ergonomically the
+participant had arranged the necessary tools.
+Table 1. Algorithm used to score quantitative categories;
+qualitative categories were assigned 0 or 1.
+Gloves
+Kit
+organization
+Drill
+config.
+duration
+Preparation
+duration
+Catheter
+insert
+duration
+Drill
+angle
+Placem
+attem
+1 = 
+Gloves
+rip or
+break
+sterility
+>3
+times
+1 = Tools
+break
+sterility; 8
+components
+removed
+1 = 
+Installation 
+> 40 s; bit
+installed
+1 = 
+Duration
+>420 s
+1 = 
+Insertion
+>60 s
+1 = 
+Drill
+<50 
+degrees
+1 = >
+attemp
+2 = 
+Break
+sterility
+3 times
+2 = 8
+components
+removed
+2 = 
+Installation
+>40 s; no
+bit
+2 =
