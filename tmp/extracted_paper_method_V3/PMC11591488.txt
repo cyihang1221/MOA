@@ -1,0 +1,2834 @@
+
+<!DOCTYPE html>
+<html lang="en" >
+    <head >
+
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="HandheldFriendly" content="True" />
+        <meta name="MobileOptimized" content="320" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        
+        
+
+        
+        
+  <link  rel="stylesheet" href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/base_style-BxRs1iOp.css" />
+<script type="module" crossorigin="" src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/base_style-D-jH62-1.js"></script>
+
+  <link  rel="stylesheet" href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/article_style-B67IZFds.css" />
+<link  rel="stylesheet" href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/style-D77LS1kY.css" />
+<script type="module" crossorigin="" src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/article_style-CTAd1LmM.js"></script>
+
+  
+  
+    <style>
+  
+  
+  @media screen and (min-width: 64em) {
+    div.pmc-wm {
+      background: repeat-y;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='350' xmlns:xlink='http://www.w3.org/1999/xlink'%3E%3Cdefs%3E%3Cfilter x='-.02' y='0' width='1.05' height='1' id='c'%3E%3CfeFlood flood-color='%23FFF'/%3E%3CfeComposite in='SourceGraphic'/%3E%3C/filter%3E%3Ctext id='b' font-family='Helvetica' font-size='11pt' style='opacity:1;fill:%23005ea2;stroke:none;text-anchor:middle' x='175' y='14'%3E%3C/text%3E%3Cpath id='a' style='fill:%23005ea2' d='M0 8h350v3H0z'/%3E%3C/defs%3E%3Cuse xlink:href='%23a' transform='rotate(90 10 10)'/%3E%3Cuse xlink:href='%23b' transform='rotate(90 10 10)' filter='url(%23c)'/%3E%3C/svg%3E");
+      padding-left: 3rem;
+    }
+  }
+</style>
+
+  
+
+
+
+        
+            <link rel="apple-touch-icon"
+                  sizes="180x180"
+                  href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/favicons/apple-touch-icon.png" />
+            <link rel="icon"
+                  type="image/png"
+                  sizes="48x48"
+                  href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/favicons/favicon-48x48.png" />
+            <link rel="icon"
+                  type="image/png"
+                  sizes="32x32"
+                  href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/favicons/favicon-32x32.png" />
+            <link rel="icon"
+                  type="image/png"
+                  sizes="16x16"
+                  href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/favicons/favicon-16x16.png" />
+            <link rel="manifest" href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/favicons/site.webmanifest" />
+            <link rel="mask-icon"
+                  href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/favicons/safari-pinned-tab.svg"
+                  color="#0071bc" />
+            <meta name="msapplication-config"
+                  content="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/favicons/browserconfig.xml" />
+            <meta name="theme-color" content="#ffffff" />
+        
+
+        <title>
+            Deep Learning in Spinal Endoscopy: U-Net Models for Neural Tissue Detection - PMC
+        </title>
+
+        
+        
+  
+  <!-- Logging params: Pinger defaults -->
+<meta name="ncbi_app" content="cloudpmc-viewer" />
+<meta name="ncbi_db" content="pmc" />
+<meta name="ncbi_phid" content="4F6D0BEE9D132AC30B0BEE003E50AF35.m_1" />
+<meta name="ncbi_pinger_stat_url" content="https://pmc.ncbi.nlm.nih.gov/stat" />
+<!-- Logging params: Pinger custom -->
+<meta name="ncbi_pdid" content="article" />
+  
+    <link rel="preconnect" href="https://www.google-analytics.com" />
+
+    
+        <link rel="preconnect" href="https://cdn.ncbi.nlm.nih.gov" />
+    
+
+    <!-- Include USWDS Init Script -->
+    <script src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/uswds-init.js"></script>
+
+
+    <meta name="ncbi_domain" content="bioeng">
+<meta name="ncbi_type" content="fulltext">
+<meta name="ncbi_pcid" content="journal">
+<meta name="ncbi_feature" content="associated_data">
+<link rel="canonical" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11591488/">
+<meta name="robots" content="INDEX,NOFOLLOW,NOARCHIVE">
+<meta name="citation_journal_title" content="Bioengineering">
+<meta name="citation_title" content="Deep Learning in Spinal Endoscopy: U-Net Models for Neural Tissue Detection">
+<meta name="citation_author" content="Hyung Rae Lee">
+<meta name="citation_author_institution" content="Department of Orthopedic Surgery, Korea University Anam Hospital, Seoul 02841, Republic of Korea; drhrleeos@gmail.com">
+<meta name="citation_author" content="Wounsuk Rhee">
+<meta name="citation_author_institution" content="Ministry of Health and Welfare, Government of the Republic of Korea, Sejong 30113, Republic of Korea; rhee1998@snu.ac.kr">
+<meta name="citation_author" content="Sam Yeol Chang">
+<meta name="citation_author_institution" content="Department of Orthopedic Surgery, Seoul National University College of Medicine, Seoul 03080, Republic of Korea; sam310@seoul.ac.kr (S.Y.C.); bschang@snu.ac.kr (B.-S.C.)">
+<meta name="citation_author" content="Bong-Soon Chang">
+<meta name="citation_author_institution" content="Department of Orthopedic Surgery, Seoul National University College of Medicine, Seoul 03080, Republic of Korea; sam310@seoul.ac.kr (S.Y.C.); bschang@snu.ac.kr (B.-S.C.)">
+<meta name="citation_author" content="Hyoungmin Kim">
+<meta name="citation_author_institution" content="Department of Orthopedic Surgery, Seoul National University College of Medicine, Seoul 03080, Republic of Korea; sam310@seoul.ac.kr (S.Y.C.); bschang@snu.ac.kr (B.-S.C.)">
+<meta name="citation_publication_date" content="2024 Oct 29">
+<meta name="citation_volume" content="11">
+<meta name="citation_issue" content="11">
+<meta name="citation_firstpage" content="1082">
+<meta name="citation_doi" content="10.3390/bioengineering11111082">
+<meta name="citation_pmid" content="39593742">
+<meta name="citation_abstract_html_url" content="https://pmc.ncbi.nlm.nih.gov/articles/PMC11591488/">
+<meta name="citation_fulltext_html_url" content="https://pmc.ncbi.nlm.nih.gov/articles/PMC11591488/">
+<meta name="citation_pdf_url" content="https://pmc.ncbi.nlm.nih.gov/articles/PMC11591488/pdf/bioengineering-11-01082.pdf">
+<meta name="description" content="Biportal endoscopic spine surgery (BESS) is minimally invasive and therefore benefits both surgeons and patients. However, concerning complications include dural tears and neural tissue injuries. In this study, we aimed to develop a deep learning ...">
+<meta name="og:title" content="Deep Learning in Spinal Endoscopy: U-Net Models for Neural Tissue Detection">
+<meta name="og:type" content="article">
+<meta name="og:site_name" content="PubMed Central (PMC)">
+<meta name="og:description" content="Biportal endoscopic spine surgery (BESS) is minimally invasive and therefore benefits both surgeons and patients. However, concerning complications include dural tears and neural tissue injuries. In this study, we aimed to develop a deep learning ...">
+<meta name="og:url" content="https://pmc.ncbi.nlm.nih.gov/articles/PMC11591488/">
+<meta name="og:image" content="https://cdn.ncbi.nlm.nih.gov/pmc/cms/images/pmc-card-share.jpg?_=0">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@ncbi">
+    
+    
+
+    </head>
+    <body >
+        
+    <a class="usa-skipnav " href="#main-content">
+      Skip to main content
+    </a>
+
+
+        
+            
+
+<section class="usa-banner " aria-label="Official website of the United States government" >
+    <div class="usa-accordion">
+        <header class="usa-banner__header">
+            <div class="usa-banner__inner">
+                <div class="grid-col-auto">
+                    <img aria-hidden="true"
+                         class="usa-banner__header-flag"
+                         src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/us_flag.svg"
+                         alt="" />
+                </div>
+
+                <div class="grid-col-fill tablet:grid-col-auto" aria-hidden="true">
+                    <p class="usa-banner__header-text">
+                        An official website of the United States government
+                    </p>
+                    <span class="usa-banner__header-action">Here's how you know</span>
+                </div>
+
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="button"
+        
+    
+    class="usa-accordion__button usa-banner__button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           
+           "
+    aria-expanded="false"
+    aria-controls="gov-banner-default"
+    
+    data-testid="storybook-django-banner"
+    
+    >
+    
+        
+
+        
+                    <span class="usa-banner__button-text">Here's how you know</span>
+                
+
+        
+    
+        
+            </button>
+        
+
+
+            </div>
+        </header>
+
+        <div class="usa-banner__content usa-accordion__content"
+             id="gov-banner-default"
+             hidden>
+            <div class="grid-row grid-gap-lg">
+                <div class="usa-banner__guidance tablet:grid-col-6">
+                    <img class="usa-banner__icon usa-media-block__img"
+                         src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/icon-dot-gov.svg"
+                         alt=""
+                         aria-hidden="true" />
+                    <div class="usa-media-block__body">
+                        <p>
+                            <strong>Official websites use .gov</strong>
+                            <br />
+                            A
+                            <strong>.gov</strong> website belongs to an official
+                            government organization in the United States.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="usa-banner__guidance tablet:grid-col-6">
+                    <img class="usa-banner__icon usa-media-block__img"
+                         src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/icon-https.svg"
+                         alt=""
+                         aria-hidden="true" />
+
+                    <div class="usa-media-block__body">
+                        <p>
+                            <strong>Secure .gov websites use HTTPS</strong>
+                            <br />
+                            A <strong>lock</strong> (
+                            <span class="icon-lock">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     width="52"
+                                     height="64"
+                                     viewBox="0 0 52 64"
+                                     class="usa-banner__lock-image"
+                                     role="graphics-symbol"
+                                     aria-labelledby="banner-lock-description"
+                                     focusable="false">
+                                    <title id="banner-lock-title">Lock</title>
+                                    <desc id="banner-lock-description">
+                                    Locked padlock icon
+                                    </desc>
+                                    <path fill="#000000"
+                                          fill-rule="evenodd"
+                                          d="M26 0c10.493 0 19 8.507 19 19v9h3a4 4 0 0 1 4 4v28a4 4 0 0 1-4 4H4a4 4 0 0 1-4-4V32a4 4 0 0 1 4-4h3v-9C7 8.507 15.507 0 26 0zm0 8c-5.979 0-10.843 4.77-10.996 10.712L15 19v9h22v-9c0-6.075-4.925-11-11-11z" />
+                                </svg>
+</span>) or <strong>https://</strong> means you've safely
+                                connected to the .gov website. Share sensitive
+                                information only on official, secure websites.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+        
+
+        
+    
+    
+    
+
+<div class="usa-overlay">
+</div>
+
+
+
+<header class="usa-header usa-header--extended usa-header--wide" data-header data-testid="header"    >
+    <div class="ncbi-header">
+        <div class="ncbi-header__container">
+            <a class="ncbi-header__logo-container"
+               href="https://www.ncbi.nlm.nih.gov/">
+                <img alt="NCBI home page"
+                     class="ncbi-header__logo-image"
+                     src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/ncbi-logos/nih-nlm-ncbi--white.svg"
+                     width="410"
+                     height="100" />
+            </a>
+
+            <!-- Mobile menu hamburger button -->
+            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="button"
+        
+    
+    class="usa-menu-btn ncbi-header__hamburger-button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           
+           "
+    
+    
+    aria-label="Show menu"
+    data-testid="navMenuButton"
+    
+    >
+    
+        
+
+        
+                <svg aria-hidden="true"
+                     class="ncbi-hamburger-icon"
+                     fill="none"
+                     focusable="false"
+                     height="21"
+                     viewBox="0 0 31 21"
+                     width="31"
+                     xmlns="http://www.w3.org/2000/svg">
+                    <path clip-rule="evenodd"
+                          d="M0.125 20.75H30.875V17.3333H0.125V20.75ZM0.125 12.2083H30.875V8.79167H0.125V12.2083ZM0.125 0.25V3.66667H30.875V0.25H0.125Z"
+                          fill="#F1F1F1"
+                          fill-rule="evenodd" />
+                </svg>
+            
+
+        
+    
+        
+            </button>
+        
+
+
+
+            
+                <!-- Desktop buttons-->
+                <div class="ncbi-header__desktop-buttons">
+                    
+                        <!-- Desktop search button -->
+                        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="button"
+        
+    
+    class="usa-button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           usa-button--unstyled ncbi-header__desktop-button
+           "
+    aria-expanded="false"
+    aria-controls="search-field-desktop-navigation"
+    aria-label="Show search overlay"
+    data-testid="toggleSearchPanelButton"
+    data-toggle-search-panel-button
+    >
+    
+        
+
+        
+                            
+
+
+
+    <img
+        src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/search.svg"
+        class="usa-icon "
+        aria-hidden="true"
+        
+        
+    />
+
+
+                            Search
+                        
+
+        
+    
+        
+            </button>
+        
+
+
+                    
+
+                    <!-- Desktop login dropdown -->
+                    
+                        <div class="ncbi-header__login-dropdown">
+                            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="button"
+        
+    
+    class="usa-button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           usa-button--unstyled ncbi-header__desktop-button ncbi-header__login-dropdown-button
+           "
+    aria-expanded="false"
+    aria-controls="login-dropdown-menu"
+    aria-label="Show login menu"
+    data-testid="toggleLoginMenuDropdown"
+    data-desktop-login-button
+    >
+    
+        
+
+        
+                                
+
+
+
+    <img
+        src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/person.svg"
+        class="usa-icon "
+        aria-hidden="true"
+        
+        
+    />
+
+
+
+                                <span data-login-dropdown-text>Log in</span>
+
+                                <!-- Dropdown icon pointing up -->
+                                
+
+
+
+    <img
+        src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/expand_less.svg"
+        class="usa-icon ncbi-header__login-dropdown-icon ncbi-header__login-dropdown-icon--expand-less ncbi-header__login-dropdown-icon--hidden"
+        aria-hidden="true"
+        data-login-dropdown-up-arrow
+        
+    />
+
+
+
+                                <!-- Dropdown icon pointing down -->
+                                
+
+
+
+    <img
+        src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/expand_more.svg"
+        class="usa-icon ncbi-header__login-dropdown-icon ncbi-header__login-dropdown-icon--expand-more ncbi-header__login-dropdown-icon--hidden"
+        aria-hidden="true"
+        data-login-dropdown-down-arrow
+        
+    />
+
+
+                            
+
+        
+    
+        
+            </button>
+        
+
+
+
+                            <!-- Login dropdown menu -->
+                            <ul class="usa-nav__submenu ncbi-header__login-dropdown-menu"
+                                id="login-dropdown-menu"
+                                data-desktop-login-menu-dropdown
+                                hidden>
+                                
+                                    <li class="usa-nav__submenu-item">
+                                        <!-- Uses custom style overrides to render external and document links. -->
+                                        
+
+
+
+
+
+
+
+
+
+    <a href="https://www.ncbi.nlm.nih.gov/myncbi/" class="usa-link  "  >
+        
+
+        
+            Dashboard
+        
+
+        
+    </a>
+
+
+                                    </li>
+                                
+                                    <li class="usa-nav__submenu-item">
+                                        <!-- Uses custom style overrides to render external and document links. -->
+                                        
+
+
+
+
+
+
+
+
+
+    <a href="https://www.ncbi.nlm.nih.gov/myncbi/collections/bibliography/" class="usa-link  "  >
+        
+
+        
+            Publications
+        
+
+        
+    </a>
+
+
+                                    </li>
+                                
+                                    <li class="usa-nav__submenu-item">
+                                        <!-- Uses custom style overrides to render external and document links. -->
+                                        
+
+
+
+
+
+
+
+
+
+    <a href="https://www.ncbi.nlm.nih.gov/account/settings/" class="usa-link  "  >
+        
+
+        
+            Account settings
+        
+
+        
+    </a>
+
+
+                                    </li>
+                                
+                                <li class="usa-nav__submenu-item">
+                                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="button"
+        
+    
+    class="usa-button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           usa-button--outline ncbi-header__login-dropdown-logout-button
+           "
+    
+    
+    
+    data-testid="desktopLogoutButton"
+    data-desktop-logout-button
+    >
+    
+        
+
+        Log out
+
+        
+    
+        
+            </button>
+        
+
+
+                                </li>
+                            </ul>
+                        </div>
+                    
+                </div>
+            
+        </div>
+    </div>
+
+    <!-- Search panel -->
+    
+        <div class="ncbi-search-panel ncbi--show-only-at-desktop"
+             data-header-search-panel
+             hidden>
+            <div class="ncbi-search-panel__container">
+                <form action="https://www.ncbi.nlm.nih.gov/search/all/"
+                      
+                      autocomplete="off"
+                      class="usa-search usa-search--big ncbi-search-panel__form"
+                      data-testid="desktop-navigation-search-form"
+                      method="GET"
+                      role="search">
+                    <label class="usa-sr-only" for="search-field-desktop-navigation">
+                        Search…
+                    </label>
+                    <input class="usa-input"
+                           id="search-field-desktop-navigation"
+                           name="term"
+                           
+                               placeholder="Search NCBI"
+                           
+                           type="search"
+                           value="" />
+                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="submit"
+        
+    
+    class="usa-button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           
+           "
+    
+    
+    
+    
+    
+    >
+    
+        
+
+        
+                        <span class="usa-search__submit-text">
+                            Search NCBI
+                        </span>
+                    
+
+        
+    
+        
+            </button>
+        
+
+
+                </form>
+
+                
+            </div>
+        </div>
+    
+
+    <nav aria-label="Primary navigation" class="usa-nav">
+        <p class="usa-sr-only" id="primary-navigation-sr-only-title">
+            Primary site navigation
+        </p>
+
+        <!-- Mobile menu close button -->
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="button"
+        
+    
+    class="usa-nav__close ncbi-nav__close-button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           
+           "
+    
+    
+    aria-label="Close navigation menu"
+    data-testid="navCloseButton"
+    
+    >
+    
+        
+
+        
+            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/usa-icons/close.svg" alt="Close" />
+        
+
+        
+    
+        
+            </button>
+        
+
+
+
+        
+            <!-- Mobile search component -->
+            <form class="usa-search usa-search--small ncbi--hide-at-desktop"
+                  action="https://www.ncbi.nlm.nih.gov/search/all/"
+                  
+                  autocomplete="off"
+                  data-testid="mobile-navigation-search-form"
+                  method="GET"
+                  role="search">
+                <label class="usa-sr-only" for="search-field-mobile-navigation">
+                    Search
+                </label>
+
+                <input class="usa-input"
+                       id="search-field-mobile-navigation"
+                       type="search"
+                       
+                           placeholder="Search NCBI"
+                       
+                       name="term" />
+
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="submit"
+        
+    
+    class="usa-button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           
+           "
+    
+    
+    
+    
+    
+    >
+    
+        
+
+        
+                    <!-- This SVG should be kept inline and not replaced with a link to the icon as otherwise it will render in the wrong color -->
+                    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjI0Ij48cGF0aCBkPSJNMCAwaDI0djI0SDB6IiBmaWxsPSJub25lIi8+PHBhdGggZmlsbD0iI2ZmZiIgZD0iTTE1LjUgMTRoLS43OWwtLjI4LS4yN0E2LjQ3MSA2LjQ3MSAwIDAgMCAxNiA5LjUgNi41IDYuNSAwIDEgMCA5LjUgMTZjMS42MSAwIDMuMDktLjU5IDQuMjMtMS41N2wuMjcuMjh2Ljc5bDUgNC45OUwyMC40OSAxOWwtNC45OS01em0tNiAwQzcuMDEgMTQgNSAxMS45OSA1IDkuNVM3LjAxIDUgOS41IDUgMTQgNy4wMSAxNCA5LjUgMTEuOTkgMTQgOS41IDE0eiIvPjwvc3ZnPg=="
+                         class="usa-search__submit-icon"
+                         alt="Search" />
+                
+
+        
+    
+        
+            </button>
+        
+
+
+            </form>
+
+            
+        
+
+        <!-- Primary navigation menu items -->
+        <!-- This usa-nav__inner wrapper is required to correctly style the navigation items on Desktop -->
+        
+
+        
+            <div class="ncbi-nav__mobile-login-menu ncbi--hide-at-desktop"
+                 data-mobile-login-menu
+                 hidden>
+                <p class="ncbi-nav__mobile-login-menu-status">
+                    Logged in as:
+                    <strong class="ncbi-nav__mobile-login-menu-email"
+                            data-mobile-login-email-text></strong>
+                </p>
+                <ul class="usa-nav__primary usa-accordion">
+                    
+                        <li class="usa-nav__primary-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.ncbi.nlm.nih.gov/myncbi/" class="usa-link  "  >
+        
+
+        
+            Dashboard
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="usa-nav__primary-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.ncbi.nlm.nih.gov/myncbi/collections/bibliography/" class="usa-link  "  >
+        
+
+        
+            Publications
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="usa-nav__primary-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.ncbi.nlm.nih.gov/account/settings/" class="usa-link  "  >
+        
+
+        
+            Account settings
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                </ul>
+            </div>
+        
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="button"
+        
+    
+    class="usa-button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           ncbi-nav__mobile-login-button ncbi--hide-at-desktop
+           "
+    
+    
+    
+    data-testid="mobileLoginButton"
+    data-mobile-login-button
+    >
+    
+        
+
+        Log in
+
+        
+    
+        
+            </button>
+        
+
+
+    </nav>
+</header>
+
+    
+    
+        
+
+<section class="pmc-header pmc-header--basic" aria-label="PMC Header with search box">
+    <div class="pmc-nav-container">
+        <div class="pmc-header__bar">
+           <div class="pmc-header__logo">
+               <a href="/" title="Home" aria-label="PMC Home"></a>
+           </div>
+            <button
+                    type="button"
+                    class="usa-button usa-button--unstyled pmc-header__search__button"
+                    aria-label="Open search"
+                    data-ga-category="search"
+                    data-ga-action="PMC"
+                    data-ga-label="pmc_search_panel_mobile"
+            >
+                <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/search.svg" alt="PMC search open icon" aria-hidden="true" class="usa-icon usa-icon--size-4 pmc-icon__open" />
+                <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/close.svg" alt="PMC search close ison" aria-hidden="true" class="usa-icon usa-icon--size-4 pmc-icon__close" />
+            </button>
+        </div>
+        <div class="pmc-header__search">
+            
+
+
+<form class="usa-search usa-search--extra usa-search--article-right-column  pmc-header__search__form" id="pmc-search-form" autocomplete="off" role="search">
+<label class="usa-sr-only" for="pmc-search">Search PMC Full-Text Archive</label>
+<span class="autoComplete_wrapper flex-1">
+<input class="usa-input width-full maxw-none" required="required" placeholder="Search PMC Full-Text Archive" id="pmc-search"  type="search" name="term" data-autocomplete-url="https://pmc.ncbi.nlm.nih.gov/autocomp/search/autocomp/"/>
+</span>
+<button
+class="usa-button"
+type="submit"
+formaction="https://pmc.ncbi.nlm.nih.gov/search/"
+data-ga-category="search"
+data-ga-action="PMC"
+data-ga-label="PMC_search_button"
+>
+<span class="usa-search__submit-text">Search in PMC</span>
+<img
+src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/usa-icons-bg/search--white.svg"
+class="usa-search__submit-icon"
+alt="Search"
+/>
+</button>
+</form>
+            <div class="display-flex flex-column tablet:flex-row tablet:flex-justify flex-justify-center flex-align-center width-full desktop:maxw-44">
+                <ul class="pmc-header__search__menu">
+                    <li>
+                        
+                            <a class="usa-link" href="/journals/" data-ga-action="featured_link" data-ga-label="journal list">
+                                Journal List
+                            </a>
+                        
+                    </li>
+                    <li>
+                        
+                            <a class="usa-link" href="/about/userguide/" data-ga-action="featured_link"
+                            data-ga-label="user guide">
+                                User Guide
+                            </a>
+                        
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+    
+
+
+        
+        
+
+       
+  <div class="usa-section padding-top-0 desktop:padding-top-6 pmc-article-section" data-article-db="pmc" data-article-id="11591488">
+
+    
+
+   
+
+
+
+<div class="grid-container pmc-actions-bar" aria-label="Actions bar" role="complementary">
+    <div class="grid-row">
+        <div class="grid-col-fill display-flex">
+             <div class="display-flex">
+                <ul class="usa-list usa-list--unstyled usa-list--horizontal">
+                    <li class="margin-right-2 mobile-lg:margin-right-4 display-flex mob">
+                        <button
+                                type="button"
+                                class="usa-button pmc-sidenav__container__open usa-button--unstyled width-auto display-flex"
+                                aria-label="Open resources"
+                                data-extra-class="is-visible-resources"
+                                data-ga-category="resources_accordion"
+                                data-ga-action="click"
+                                data-ga-label="mobile_icon"
+                        >
+                            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/more_vert.svg" alt="Open resources icon" class="usa-icon usa-icon--size-4 usa-icon--link" />
+                        </button>
+                    </li>
+                    
+                    <li class="margin-right-2 mobile-lg:margin-right-4 display-flex mob">
+                        <a
+                                href="https://doi.org/10.3390/bioengineering11111082"
+                                class="usa-link display-flex usa-tooltip"
+                                role="button"
+                                target="_blank"
+                                rel="noreferrer noopener"
+                                title="View on publisher site"
+                                data-position="bottom"
+                                aria-label="View on publisher site"
+                                data-ga-category="actions"
+                                data-ga-action="click"
+                                data-ga-label="publisher_link_mobile"
+                        >
+                                <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/launch.svg" alt="View on publisher site icon" class="usa-icon usa-icon--size-4 usa-icon--link" />
+                        </a>
+                    </li>
+                    
+                    
+                        <li class="margin-right-2 mobile-lg:margin-right-4 display-flex">
+                             <a
+                                     href="pdf/bioengineering-11-01082.pdf"
+                                     class="usa-link display-flex usa-tooltip"
+                                     role="button"
+                                     title="Download PDF"
+                                     data-position="bottom"
+                                     aria-label="Download PDF"
+                                     data-ga-category="actions"
+                                     data-ga-action="click"
+                                     data-ga-label="pdf_download_mobile"
+                             >
+
+                                 <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/file_download.svg" alt="Download PDF icon" aria-hidden="true" class="usa-icon usa-icon--size-4 usa-icon--link" />
+                            </a>
+                        </li>
+                    
+                    <li class="margin-right-2 mobile-lg:margin-right-4 display-flex">
+                        <button
+                            class="usa-button usa-button--unstyled  usa-tooltip collections-dialog-trigger collections-button display-flex collections-button-empty"
+                            title="Add to Collections"
+                            data-position="bottom"
+                            aria-label="Save article in MyNCBI collections."
+                            data-ga-category="actions"
+                            data-ga-action="click"
+                            data-ga-label="collections_button_mobile"
+                            data-collections-open-dialog-enabled="false"
+                            data-collections-open-dialog-url="https://account.ncbi.nlm.nih.gov/?back_url=https%3A%2F%2Fpmc.ncbi.nlm.nih.gov%2Farticles%2FPMC11591488%2F%23open-collections-dialog"
+                            data-in-collections="false"
+                        >
+                            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/action-bookmark-full.svg" alt="Collections icon" aria-hidden="true" class="usa-icon usa-icon--size-4 usa-icon--link usa-icon--bookmark-full" />
+                            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/action-bookmark-empty.svg" alt="Collections icon" aria-hidden="true" class="usa-icon usa-icon--size-4 usa-icon--link usa-icon--bookmark-empty" />
+                        </button>
+                    </li>
+                    
+                    <li class="margin-right-2 mobile-lg:margin-right-4 display-flex">
+                        <button role="button" class="usa-button usa-button--unstyled usa-tooltip citation-dialog-trigger display-flex"
+                            aria-label="Open dialog with citation text in different styles"
+                            title="Cite"
+                            data-position="bottom"
+                            data-ga-category="actions"
+                            data-ga-action="open"
+                            data-ga-label="cite_mobile"
+                            data-all-citations-url="/resources/citations/11591488/"
+                            data-citation-style="nlm"
+                            data-download-format-link="/resources/citations/11591488/export/"
+                        >
+                            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/format_quote.svg" alt="Cite icon" aria-hidden="true" class="usa-icon usa-icon--size-4 usa-icon--link" />
+                        </button>
+                    </li>
+                    
+                    <li class="pmc-permalink display-flex" >
+                         <button
+                                 type="button"
+                                 title="Permalink"
+                                 data-position="bottom"
+                                 class="usa-button usa-button--unstyled display-flex usa-tooltip"
+                                 aria-label="Show article permalink"
+                                 aria-expanded="false"
+                                 aria-haspopup="true"
+                                 data-ga-category="actions"
+                                 data-ga-action="open"
+                                 data-ga-label="permalink_mobile"
+                         >
+                            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/share.svg" alt="Show article permalink icon" aria-hidden="true" class="usa-icon usa-icon--size-4 usa-icon--link" />
+                        </button>
+                        
+
+<div class="pmc-permalink__dropdown" hidden>
+    <div class="pmc-permalink__dropdown__container">
+          <h2 class="usa-modal__heading margin-top-0 margin-bottom-2 text-uppercase font-sans-xs">PERMALINK</h2>
+          <div class="pmc-permalink__dropdown__content">
+              <input type="text" class="usa-input" value="https://pmc.ncbi.nlm.nih.gov/articles/PMC11591488/" aria-label="Article permalink">
+              <button class="usa-button display-inline-flex pmc-permalink__dropdown__copy__btn margin-right-0" title="Copy article permalink" data-ga-category="save_share" data-ga-action="link" data-ga-label="copy_link">
+                  <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/content_copy.svg" alt="Copy icon" aria-hidden="true" class="usa-icon usa-icon--white" />
+                  <span class="margin-left-1">Copy</span>
+              </button>
+          </div>
+    </div>
+</div>
+                    </li>
+                </ul>
+            </div>
+            <button
+                    type="button"
+                    class="usa-button pmc-sidenav__container__open usa-button--unstyled width-auto display-flex"
+                    aria-label="Open article navigation"
+                    data-extra-class="is-visible-in-page"
+                    data-ga-category="actions"
+                    data-ga-action="open"
+                    data-ga-label="article_nav_mobile"
+            >
+                <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/list.svg" alt="Open article navigation icon" aria-hidden="true" class="usa-icon usa-icon--size-4 usa-icon--link" />
+            </button>
+        </div>
+    </div>
+</div>
+    <div class="grid-container desktop:padding-left-6">
+      <div id="article-container" class="grid-row grid-gap">
+        <div class="grid-col-12 desktop:grid-col-8 order-2 pmc-layout__content">
+            <div class="grid-container padding-left-0 padding-right-0">
+                <div class="grid-row desktop:margin-left-neg-6">
+                    <div class="grid-col-12">
+                        <div class="pmc-layout__disclaimer" role="complementary" aria-label="Disclaimer note">
+    As a library, NLM provides access to scientific literature. Inclusion in an NLM database does not imply endorsement of, or agreement with,
+    the contents by NLM or the National Institutes of Health.<br/>
+    Learn more:
+    <a class="usa-link" data-ga-category="Link click" data-ga-action="Disclaimer" data-ga-label="New disclaimer box" href="/about/disclaimer/">PMC Disclaimer</a>
+    |
+    <a class="usa-link" data-ga-category="Link click" data-ga-action="PMC Copyright Notice" data-ga-label="New disclaimer box" href="/about/copyright/">
+        PMC Copyright Notice
+    </a>
+</div>
+                    </div>
+                </div>
+                <div class="grid-row pmc-wm desktop:margin-left-neg-6">
+                    <!-- Main content -->
+                    <main
+                      id="main-content"
+                      class="usa-layout-docs__main usa-layout-docs grid-col-12 pmc-layout pmc-prose padding-0"
+                    >
+
+                      
+                        <section class="pmc-journal-banner text-center line-height-none" aria-label="Journal banner"><img src="https://cdn.ncbi.nlm.nih.gov/pmc/banners/logo-bioeng.png" alt="Bioengineering logo" usemap="#pmc-banner-imagemap" width="500" height="75"><map name="pmc-banner-imagemap"><area alt="Link to Bioengineering" title="Link to Bioengineering" shape="default" href="http://www.mdpi.com/journal/bioengineering" target="_blank" rel="noopener noreferrer"></map></section><article lang="en"><section aria-label="Article citation and metadata"><section class="pmc-layout__citation font-secondary font-xs"><div>
+<div class="display-inline-block"><button type="button" class="cursor-pointer text-no-underline bg-transparent border-0 padding-0 text-left margin-0 text-normal text-primary" aria-controls="journal_context_menu">Bioengineering (Basel)</button></div>. 2024 Oct 29;11(11):1082. doi: <a href="https://doi.org/10.3390/bioengineering11111082" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">10.3390/bioengineering11111082</a>
+</div>
+<nav id="journal_context_menu" hidden="hidden"><ul class="menu-list font-family-ui" role="menu">
+<li role="presentation"><a href='https://pmc.ncbi.nlm.nih.gov/search/?term="Bioengineering%20(Basel)"[jour]' class="usa-link" role="menuitem">Search in PMC</a></li>
+<li role="presentation"><a href='https://pubmed.ncbi.nlm.nih.gov/?term="Bioengineering%20(Basel)"[jour]' lang="en" class="usa-link" role="menuitem">Search in PubMed</a></li>
+<li role="presentation"><a href='https://www.ncbi.nlm.nih.gov/nlmcatalog?term="Bioengineering%20(Basel)"[Title%20Abbreviation]' class="usa-link" role="menuitem">View in NLM Catalog</a></li>
+<li role="presentation"><a href='?term="Bioengineering%20(Basel)"[jour]' class="usa-link" role="menuitem" data-add-to-search="true">Add to search</a></li>
+</ul></nav></section><section class="front-matter"><div class="ameta p font-secondary font-xs">
+<hgroup><h1>Deep Learning in Spinal Endoscopy: U-Net Models for Neural Tissue Detection</h1></hgroup><div class="cg p">
+<a href='https://pubmed.ncbi.nlm.nih.gov/?term="Lee%20HR"[Author]' class="usa-link" aria-describedby="id1"><span class="name western">Hyung Rae Lee</span></a><div hidden="hidden" id="id1">
+<h3><span class="name western">Hyung Rae Lee</span></h3>
+<div class="p">
+<sup>1</sup>Department of Orthopedic Surgery, Korea University Anam Hospital, Seoul 02841, Republic of Korea; drhrleeos@gmail.com</div>
+<div>Formal analysis, Writing – original draft, Writing – review &amp; editing</div>
+<div class="p">Find articles by <a href='https://pubmed.ncbi.nlm.nih.gov/?term="Lee%20HR"[Author]' class="usa-link"><span class="name western">Hyung Rae Lee</span></a>
+</div>
+</div>
+<sup>1</sup>, <a href='https://pubmed.ncbi.nlm.nih.gov/?term="Rhee%20W"[Author]' class="usa-link" aria-describedby="id2"><span class="name western">Wounsuk Rhee</span></a><div hidden="hidden" id="id2">
+<h3><span class="name western">Wounsuk Rhee</span></h3>
+<div class="p">
+<sup>2</sup>Ministry of Health and Welfare, Government of the Republic of Korea, Sejong 30113, Republic of Korea; rhee1998@snu.ac.kr</div>
+<div>Investigation, Writing – review &amp; editing</div>
+<div class="p">Find articles by <a href='https://pubmed.ncbi.nlm.nih.gov/?term="Rhee%20W"[Author]' class="usa-link"><span class="name western">Wounsuk Rhee</span></a>
+</div>
+</div>
+<sup>2</sup>, <a href='https://pubmed.ncbi.nlm.nih.gov/?term="Chang%20SY"[Author]' class="usa-link" aria-describedby="id3"><span class="name western">Sam Yeol Chang</span></a><div hidden="hidden" id="id3">
+<h3><span class="name western">Sam Yeol Chang</span></h3>
+<div class="p">
+<sup>3</sup>Department of Orthopedic Surgery, Seoul National University College of Medicine, Seoul 03080, Republic of Korea; sam310@seoul.ac.kr (S.Y.C.); bschang@snu.ac.kr (B.-S.C.)</div>
+<div>Writing – original draft, Writing – review &amp; editing</div>
+<div class="p">Find articles by <a href='https://pubmed.ncbi.nlm.nih.gov/?term="Chang%20SY"[Author]' class="usa-link"><span class="name western">Sam Yeol Chang</span></a>
+</div>
+</div>
+<sup>3</sup>, <a href='https://pubmed.ncbi.nlm.nih.gov/?term="Chang%20BS"[Author]' class="usa-link" aria-describedby="id4"><span class="name western">Bong-Soon Chang</span></a><div hidden="hidden" id="id4">
+<h3><span class="name western">Bong-Soon Chang</span></h3>
+<div class="p">
+<sup>3</sup>Department of Orthopedic Surgery, Seoul National University College of Medicine, Seoul 03080, Republic of Korea; sam310@seoul.ac.kr (S.Y.C.); bschang@snu.ac.kr (B.-S.C.)</div>
+<div>Writing – review &amp; editing</div>
+<div class="p">Find articles by <a href='https://pubmed.ncbi.nlm.nih.gov/?term="Chang%20BS"[Author]' class="usa-link"><span class="name western">Bong-Soon Chang</span></a>
+</div>
+</div>
+<sup>3</sup>, <a href='https://pubmed.ncbi.nlm.nih.gov/?term="Kim%20H"[Author]' class="usa-link" aria-describedby="id5"><span class="name western">Hyoungmin Kim</span></a><div hidden="hidden" id="id5">
+<h3><span class="name western">Hyoungmin Kim</span></h3>
+<div class="p">
+<sup>3</sup>Department of Orthopedic Surgery, Seoul National University College of Medicine, Seoul 03080, Republic of Korea; sam310@seoul.ac.kr (S.Y.C.); bschang@snu.ac.kr (B.-S.C.)</div>
+<div>Conceptualization, Writing – original draft, Writing – review &amp; editing</div>
+<div class="p">Find articles by <a href='https://pubmed.ncbi.nlm.nih.gov/?term="Kim%20H"[Author]' class="usa-link"><span class="name western">Hyoungmin Kim</span></a>
+</div>
+</div>
+<sup>3,</sup><sup>*</sup>
+</div>
+<div class="cg p">Editor: <span class="name western">Andrea Cataldo</span>
+</div>
+<ul class="d-buttons inline-list">
+<li><button class="d-button" aria-controls="aip_a" aria-expanded="false">Author information</button></li>
+<li><button class="d-button" aria-controls="anp_a" aria-expanded="false">Article notes</button></li>
+<li><button class="d-button" aria-controls="clp_a" aria-expanded="false">Copyright and License information</button></li>
+</ul>
+<div class="d-panels font-secondary-light">
+<div id="aip_a" class="d-panel p" style="display: none">
+<div class="p" id="af1-bioengineering-11-01082">
+<sup>1</sup>Department of Orthopedic Surgery, Korea University Anam Hospital, Seoul 02841, Republic of Korea; drhrleeos@gmail.com</div>
+<div id="af2-bioengineering-11-01082">
+<sup>2</sup>Ministry of Health and Welfare, Government of the Republic of Korea, Sejong 30113, Republic of Korea; rhee1998@snu.ac.kr</div>
+<div id="af3-bioengineering-11-01082">
+<sup>3</sup>Department of Orthopedic Surgery, Seoul National University College of Medicine, Seoul 03080, Republic of Korea; sam310@seoul.ac.kr (S.Y.C.); bschang@snu.ac.kr (B.-S.C.)</div>
+<div class="author-notes p"><div class="fn" id="c1-bioengineering-11-01082">
+<sup>*</sup><p class="display-inline">Correspondence: <span>hmkhm@snu.ac.kr</span></p>
+</div></div>
+<h4 class="font-secondary">Roles</h4>
+<div class="p">
+<strong class="contrib"><span class="name western">Hyung Rae Lee</span></strong>: <span class="role">Formal analysis, Writing – original draft, Writing – review &amp; editing</span>
+</div>
+<div>
+<strong class="contrib"><span class="name western">Wounsuk Rhee</span></strong>: <span class="role">Investigation, Writing – review &amp; editing</span>
+</div>
+<div>
+<strong class="contrib"><span class="name western">Sam Yeol Chang</span></strong>: <span class="role">Writing – original draft, Writing – review &amp; editing</span>
+</div>
+<div>
+<strong class="contrib"><span class="name western">Bong-Soon Chang</span></strong>: <span class="role">Writing – review &amp; editing</span>
+</div>
+<div>
+<strong class="contrib"><span class="name western">Hyoungmin Kim</span></strong>: <span class="role">Conceptualization, Writing – original draft, Writing – review &amp; editing</span>
+</div>
+<div class="p">
+<strong class="contrib"><span class="name western">Andrea Cataldo</span></strong>: <span class="role">Academic Editor</span>
+</div>
+</div>
+<div id="anp_a" class="d-panel p" style="display: none"><div class="notes p"><section id="historyarticle-meta1" class="history"><p>Received 2024 Sep 20; Revised 2024 Oct 23; Accepted 2024 Oct 26; Collection date 2024 Nov.</p></section></div></div>
+<div id="clp_a" class="d-panel p" style="display: none">
+<div>© 2024 by the authors.</div>
+<p>Licensee MDPI, Basel, Switzerland. This article is an open access article distributed under the terms and conditions of the Creative Commons Attribution (CC BY) license (<a href="https://creativecommons.org/licenses/by/4.0/" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">https://creativecommons.org/licenses/by/4.0/</a>).</p>
+<div class="p"><a href="/about/copyright/" class="usa-link">PMC Copyright notice</a></div>
+</div>
+</div>
+<div>PMCID: PMC11591488  PMID: <a href="https://pubmed.ncbi.nlm.nih.gov/39593742/" class="usa-link">39593742</a>
+</div>
+</div></section></section><section aria-label="Article content"><section class="body main-article-body"><section class="abstract" id="abstract1"><h2>Abstract</h2>
+<p>Biportal endoscopic spine surgery (BESS) is minimally invasive and therefore benefits both surgeons and patients. However, concerning complications include dural tears and neural tissue injuries. In this study, we aimed to develop a deep learning model for neural tissue segmentation to enhance the safety and efficacy of endoscopic spinal surgery. We used frames extracted from videos of 28 endoscopic spine surgeries, comprising 2307 images for training and 635 images for validation. A U-Net-like architecture is employed for neural tissue segmentation. Quantitative assessments include the Dice-Sorensen coefficient, Jaccard index, precision, recall, average precision, and image-processing time. Our findings revealed that the best-performing model achieved a Dice-Sorensen coefficient of 0.824 and a Jaccard index of 0.701. The precision and recall values were 0.810 and 0.839, respectively, with an average precision of 0.890. The model processed images at 43 ms per frame, equating to 23.3 frames per second. Qualitative evaluations indicated the effective identification of neural tissue features. Our U-Net-based model robustly performed neural tissue segmentation, indicating its potential to support spine surgeons, especially those with less experience, and improve surgical outcomes in endoscopic procedures. Therefore, further advancements may enhance the clinical applicability of this technique.</p>
+<section id="kwd-group1" class="kwd-group"><p><strong>Keywords:</strong> endoscopic spine surgery, neural tissue, image segmentation, computer vision, deep learning</p></section></section><section id="sec1-bioengineering-11-01082"><h2 class="pmc_sec_title">1. Introduction</h2>
+<p>In spinal surgery, biportal endoscopic spine surgery (BESS) is a significant advancement over conventional open surgery owing to its advantages [<a href="#B1-bioengineering-11-01082" class="usa-link" aria-describedby="B1-bioengineering-11-01082">1</a>,<a href="#B2-bioengineering-11-01082" class="usa-link" aria-describedby="B2-bioengineering-11-01082">2</a>,<a href="#B3-bioengineering-11-01082" class="usa-link" aria-describedby="B3-bioengineering-11-01082">3</a>], which include smaller incisions, reduced muscle and bone damage, less postoperative pain, and shorter recovery times [<a href="#B4-bioengineering-11-01082" class="usa-link" aria-describedby="B4-bioengineering-11-01082">4</a>]. High-quality endoscopic equipment markedly enhances image clarity and provides significant assistance to surgeons during procedures. The increased magnification in modern endoscopy allows for the more detailed visualization of critical structures, further enhancing surgical precision. However, despite these advancements, complications, such as dural tears and neural tissue injuries, persist and pose significant challenges during surgery [<a href="#B5-bioengineering-11-01082" class="usa-link" aria-describedby="B5-bioengineering-11-01082">5</a>,<a href="#B6-bioengineering-11-01082" class="usa-link" aria-describedby="B6-bioengineering-11-01082">6</a>]. These complications are particularly common among younger surgeons who have not yet reached the learning curve. Among these, dural tears remain the most common and significant complication of endoscopic spinal surgery [<a href="#B5-bioengineering-11-01082" class="usa-link" aria-describedby="B5-bioengineering-11-01082">5</a>]. The rate of dural tears is reported to be approximately 2.7% [<a href="#B5-bioengineering-11-01082" class="usa-link" aria-describedby="B5-bioengineering-11-01082">5</a>]. These tears are often managed during surgery by suturing or sealing with specialized products. However, if unnoticed, patients may experience postoperative headaches, nausea, prolonged bed rest, and increased hospitalization and, in severe cases, may require revision surgery. The steep learning curve associated with these complications further limits their widespread clinical adoption, necessitating more experience and skills from surgeons.</p>
+<p>Recently, the incorporation of artificial intelligence (AI) into healthcare has been promising, particularly in medical imaging analysis. Deep learning, a subset of AI, has demonstrated remarkable performance in clinical diagnosis and treatment owing to its self-learning capabilities and the ability to extract key features from large datasets [<a href="#B7-bioengineering-11-01082" class="usa-link" aria-describedby="B7-bioengineering-11-01082">7</a>,<a href="#B8-bioengineering-11-01082" class="usa-link" aria-describedby="B8-bioengineering-11-01082">8</a>,<a href="#B9-bioengineering-11-01082" class="usa-link" aria-describedby="B9-bioengineering-11-01082">9</a>]. Semantic segmentation, which is one of the most actively studied fields in computer vision, classifies each pixel of an image into a predefined class. Architectures such as fully convolutional networks (FCN), DeepLab, and Mask R-CNN have been developed and have shown promising results for image datasets comprising common objects [<a href="#B10-bioengineering-11-01082" class="usa-link" aria-describedby="B10-bioengineering-11-01082">10</a>,<a href="#B11-bioengineering-11-01082" class="usa-link" aria-describedby="B11-bioengineering-11-01082">11</a>,<a href="#B12-bioengineering-11-01082" class="usa-link" aria-describedby="B12-bioengineering-11-01082">12</a>]. Studies have demonstrated the effectiveness of deep learning-based segmentation in various medical imaging domains, such as retinal vessel segmentation, tumor detection [<a href="#B13-bioengineering-11-01082" class="usa-link" aria-describedby="B13-bioengineering-11-01082">13</a>], and instrument tip recognition in spinal surgery [<a href="#B14-bioengineering-11-01082" class="usa-link" aria-describedby="B14-bioengineering-11-01082">14</a>]. These studies established the foundation for our approach by illustrating the potential of U-Net and similar models for precise segmentation in challenging imaging scenarios [<a href="#B9-bioengineering-11-01082" class="usa-link" aria-describedby="B9-bioengineering-11-01082">9</a>,<a href="#B13-bioengineering-11-01082" class="usa-link" aria-describedby="B13-bioengineering-11-01082">13</a>,<a href="#B15-bioengineering-11-01082" class="usa-link" aria-describedby="B15-bioengineering-11-01082">15</a>].</p>
+<p>Despite these advancements, research on the application of deep learning in spinal endoscopy remains limited. Given the critical need to minimize complications, such as dural tears and neural tissue injuries, it is necessary to develop and implement deep learning algorithms for neural tissue recognition in spinal endoscopy. In particular, U-Net and its variants have been widely adopted in biomedical imaging, particularly for small datasets [<a href="#B16-bioengineering-11-01082" class="usa-link" aria-describedby="B16-bioengineering-11-01082">16</a>,<a href="#B17-bioengineering-11-01082" class="usa-link" aria-describedby="B17-bioengineering-11-01082">17</a>]. FCN have laid the foundation for pixel-wise segmentation, whereas DeepLab and Mask R-CNN have shown robust performance in handling complex images and multi-object segmentation [<a href="#B15-bioengineering-11-01082" class="usa-link" aria-describedby="B15-bioengineering-11-01082">15</a>,<a href="#B17-bioengineering-11-01082" class="usa-link" aria-describedby="B17-bioengineering-11-01082">17</a>,<a href="#B18-bioengineering-11-01082" class="usa-link" aria-describedby="B18-bioengineering-11-01082">18</a>,<a href="#B19-bioengineering-11-01082" class="usa-link" aria-describedby="B19-bioengineering-11-01082">19</a>]. We chose U-Net owing to its effectiveness with small biomedical datasets and its capability to capture fine details, thereby making it suitable for neural tissue segmentation in spinal endoscopy [<a href="#B17-bioengineering-11-01082" class="usa-link" aria-describedby="B17-bioengineering-11-01082">17</a>,<a href="#B20-bioengineering-11-01082" class="usa-link" aria-describedby="B20-bioengineering-11-01082">20</a>,<a href="#B21-bioengineering-11-01082" class="usa-link" aria-describedby="B21-bioengineering-11-01082">21</a>]. </p>
+<p>The use of deep learning in spinal endoscopy is relatively new. Studies such as that of Cho et al. [<a href="#B14-bioengineering-11-01082" class="usa-link" aria-describedby="B14-bioengineering-11-01082">14</a>] focused on the automatic detection of surgical instrument tips to achieve high precision. However, challenges such as differentiating between neural tissues and surrounding structures have not been addressed. Studies on other biomedical images [<a href="#B16-bioengineering-11-01082" class="usa-link" aria-describedby="B16-bioengineering-11-01082">16</a>,<a href="#B17-bioengineering-11-01082" class="usa-link" aria-describedby="B17-bioengineering-11-01082">17</a>] have demonstrated the efficacy of U-Net architectures for segmentation, which motivated our choice of model. This study aimed to explore the feasibility of deep learning for neural tissue recognition during spinal endoscopy. By establishing a foundational understanding of how effectively deep learning can identify neural tissues, we hope to pave the way for advancements in real-time tissue recognition, ultimately enhancing the safety and efficacy of endoscopic spinal surgery. </p></section><section id="sec2-bioengineering-11-01082"><h2 class="pmc_sec_title">2. Materials and Methods</h2>
+<section id="sec2dot1-bioengineering-11-01082"><h3 class="pmc_sec_title">2.1. Dataset</h3>
+<p>The patient cohort comprised 28 patients, including 21 with lumbar interlaminar decompressions, 5 with lumbar foraminal decompressions, and 3 with cervical foraminotomies. The procedures involved levels 1–2, with six cases involving 2-level surgeries. This dataset is diverse and encompasses a range of demographic profiles, including sex and age. Frames were extracted from each video at 10 s intervals, resulting in approximately 4000 frames. Among these, 2942 frames contained neural tissues that could be detected at the human level. Segmentation labeling was performed using LabelMe by a spinal surgeon (H.R.L., one of the authors.) with &gt;4 years of experience in spinal endoscopic surgery. The dataset was then divided into training, validation, and test sets, with 2307 images (78%) from 22 patients (79%) and 635 images (22%) from 6 patients (21%). We performed a threefold cross-validation on the training/validation set, with each fold comprising 1538 images (52%) for training and 769 images (26%) for internal validation.</p>
+<p>The patient demographics for each set are listed in <a href="#bioengineering-11-01082-t001" class="usa-link">Table 1</a>. The training/validation and test sets did not have overlapping patients, ensuring appropriate validation and preventing the overestimation of performance measures. This study was approved by the Public Institutional Review Board (IRB) of the National Bioethics Policy Institute through the public e-IRB system. The IRB approval number and approval date for this study is “2024-1010-001” and 16 August 2024. The requirement for informed consent was waived by the IRB because of the retrospective nature of this study.</p>
+<section class="tw xbox font-sm" id="bioengineering-11-01082-t001"><h4 class="obj_head">Table 1.</h4>
+<div class="caption p"><p>Patient demographics for training/validation and test sets.</p></div>
+<div class="tbl-box p" tabindex="0"><table class="content" frame="hsides" rules="groups">
+<thead><tr>
+<th align="center" valign="middle" style="border-top:solid thin;border-bottom:solid thin" rowspan="1" colspan="1">
+</th>
+<th align="center" valign="middle" style="border-top:solid thin;border-bottom:solid thin" rowspan="1" colspan="1">Training/Validation Set</th>
+<th align="center" valign="middle" style="border-top:solid thin;border-bottom:solid thin" rowspan="1" colspan="1">Test Set</th>
+</tr></thead>
+<tbody>
+<tr>
+<td align="center" valign="middle" rowspan="1" colspan="1">Number of images</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">2307 (78%)</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">635 (22%)</td>
+</tr>
+<tr>
+<td align="center" valign="middle" rowspan="1" colspan="1">Number of patients</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">22 (79%)</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">6 (21%)</td>
+</tr>
+<tr>
+<td align="center" valign="middle" rowspan="1" colspan="1">Age (years)</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">65.4 ± 10.7</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">63.8 ± 14.1</td>
+</tr>
+<tr>
+<td align="center" valign="middle" rowspan="1" colspan="1">Sex</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">
+</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">
+</td>
+</tr>
+<tr>
+<td align="center" valign="middle" rowspan="1" colspan="1">Male</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">9</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">3</td>
+</tr>
+<tr>
+<td align="center" valign="middle" style="border-bottom:solid thin" rowspan="1" colspan="1">Female</td>
+<td align="center" valign="middle" style="border-bottom:solid thin" rowspan="1" colspan="1">13</td>
+<td align="center" valign="middle" style="border-bottom:solid thin" rowspan="1" colspan="1">3</td>
+</tr>
+</tbody>
+</table></div>
+<div class="p text-right font-secondary"><a href="table/bioengineering-11-01082-t001/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div></section></section><section id="sec2dot2-bioengineering-11-01082"><h3 class="pmc_sec_title">2.2. The U-Net Architecture</h3>
+<p>In this study, we trained a deep neural network resembling the U-Net architecture, which has been reported to perform well on the segmentation tasks of small image datasets [<a href="#B16-bioengineering-11-01082" class="usa-link" aria-describedby="B16-bioengineering-11-01082">16</a>,<a href="#B17-bioengineering-11-01082" class="usa-link" aria-describedby="B17-bioengineering-11-01082">17</a>]. We selected a U-Net-like architecture based on its demonstrated effectiveness in medical image segmentation, particularly with small datasets [<a href="#B16-bioengineering-11-01082" class="usa-link" aria-describedby="B16-bioengineering-11-01082">16</a>,<a href="#B17-bioengineering-11-01082" class="usa-link" aria-describedby="B17-bioengineering-11-01082">17</a>]. U-Net variants can effectively handle limited labeled data, making them suitable for application in spinal endoscopy. As shown in <a href="#bioengineering-11-01082-f001" class="usa-link">Figure 1</a>, the model had an input shape of (256, 256, and 3) and an output shape of (256, 256, and 1). An input image first undergoes a down-sampling process, also known as the left branch, to extract the features. The bottommost layer or bridge of the network contains the most compressed images with the thickest layers. Subsequently, an upsampling step, or right branch, was performed to recover the original resolution and provide a set of segmentation masks. Skip connections at each level allow for the faster convergence and stability of the deep learning models.</p>
+<figure class="fig xbox font-sm" id="bioengineering-11-01082-f001"><h4 class="obj_head">Figure 1.</h4>
+<p class="img-box line-height-none margin-x-neg-2 tablet:margin-x-0 text-center"><a class="tileshop" target="_blank" href="https://www.ncbi.nlm.nih.gov/core/lw/2.0/html/tileshop_pmc/tileshop_pmc_inline.html?title=Click%20on%20image%20to%20zoom&amp;p=PMC3&amp;id=11591488_bioengineering-11-01082-g001.jpg"><img class="graphic zoom-in" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/d1af/11591488/4a7ae2c04650/bioengineering-11-01082-g001.jpg" loading="lazy" height="662" width="751" alt="Figure 1"></a></p>
+<div class="p text-right font-secondary"><a href="figure/bioengineering-11-01082-f001/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div>
+<figcaption><p>Architecture of the deep learning model. The model accepts an input of shape (256, 256, 3) and produces an output of shape (256, 256, 1). The number of channels is indicated above each block. This architecture is a modified version of the original U-Net, designed to reduce the number of parameters and enable faster learning.</p></figcaption></figure></section><section id="sec2dot3-bioengineering-11-01082"><h3 class="pmc_sec_title">2.3. Model Training</h3>
+<p>No preprocessing methods other than resizing or rescaling were applied. We aimed to evaluate the performance of the model under raw conditions to provide more generalized applicability across diverse clinical settings. Data augmentation, which consists of random rotation from −180 degrees to +180 degrees, random flip, and random zoom from 1.0 times to 1.2 times, was applied only during the training of each fold. No augmentation was applied during the internal validation and testing. Unlike common practice, where the training set is expanded by fivefold to tenfold, we did not expand the training set but instead applied random image transforms for each epoch, as illustrated in <a href="#bioengineering-11-01082-f002" class="usa-link">Figure 2</a>, allowing the model to experience multiple random variations of the original training sample. </p>
+<figure class="fig xbox font-sm" id="bioengineering-11-01082-f002"><h4 class="obj_head">Figure 2.</h4>
+<p class="img-box line-height-none margin-x-neg-2 tablet:margin-x-0 text-center"><a class="tileshop" target="_blank" href="https://www.ncbi.nlm.nih.gov/core/lw/2.0/html/tileshop_pmc/tileshop_pmc_inline.html?title=Click%20on%20image%20to%20zoom&amp;p=PMC3&amp;id=11591488_bioengineering-11-01082-g002.jpg"><img class="graphic zoom-in" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/d1af/11591488/ff382da622a2/bioengineering-11-01082-g002.jpg" loading="lazy" height="638" width="707" alt="Figure 2"></a></p>
+<div class="p text-right font-secondary"><a href="figure/bioengineering-11-01082-f002/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div>
+<figcaption><p>Threefold cross-validation and data augmentation processes with random transform are illustrated.</p></figcaption></figure><p>The convolutional layers are randomly initialized with a uniform Glorot distribution, with batch normalization applied before nonlinear activation [<a href="#B22-bioengineering-11-01082" class="usa-link" aria-describedby="B22-bioengineering-11-01082">22</a>,<a href="#B23-bioengineering-11-01082" class="usa-link" aria-describedby="B23-bioengineering-11-01082">23</a>]. The full neural network aimed to minimize dice loss, defined as Equation (1), where indices i and j refer to the indices of the rows and columns of pixels, and it was trained for a maximum of 100 epochs (the maximum number of epochs was determined empirically because most trials were terminated before completing 100 epochs owing to early stopping mechanisms) [<a href="#B24-bioengineering-11-01082" class="usa-link" aria-describedby="B24-bioengineering-11-01082">24</a>]. To prevent overfitting and promote adequate convergence, we incorporated early stopping and learning rate reduction mechanisms. Hyperparameter optimization was performed through a random search of 25 trials, and the search space summarized in <a href="#bioengineering-11-01082-t002" class="usa-link">Table 2</a> was determined based on initial experimentation and commonly accepted practices [<a href="#B25-bioengineering-11-01082" class="usa-link" aria-describedby="B25-bioengineering-11-01082">25</a>].
+</p>
+<table class="disp-formula p" id="FD1-bioengineering-11-01082"><tr>
+<td class="formula"><math id="mm1" display="block" overflow="linebreak"><mrow><mrow><mi>D</mi><mi>i</mi><mi>c</mi><mi>e</mi><mo> </mo><mi>L</mi><mi>o</mi><mi>s</mi><mi>s</mi><mo>=</mo><mn>1</mn><mo>−</mo><mstyle scriptlevel="0" displaystyle="true"><mfrac><mrow><mn>2</mn><mo>×</mo><mrow><msub><mo stretchy="false">∑</mo><mrow><mi>i</mi><mo>,</mo><mi>j</mi></mrow></msub><mrow><msub><mrow><mi>y</mi></mrow><mrow><mi>i</mi><mi>j</mi></mrow></msub><msub><mrow><mover accent="true"><mrow><mi>y</mi></mrow><mo>^</mo></mover></mrow><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow></mrow></mrow><mrow><mrow><msub><mo stretchy="false">∑</mo><mrow><mi>i</mi><mo>,</mo><mo> </mo><mi>j</mi></mrow></msub><mrow><msub><mrow><mi>y</mi></mrow><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>+</mo><msub><mrow><mover accent="true"><mrow><mi>y</mi></mrow><mo>^</mo></mover></mrow><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow></mrow></mrow></mfrac></mstyle></mrow></mrow></math></td>
+<td class="label">(1)</td>
+</tr></table>
+<section class="tw xbox font-sm" id="bioengineering-11-01082-t002"><h4 class="obj_head">Table 2.</h4>
+<div class="caption p"><p>The search space for a random search of hyperparameters is summarized.</p></div>
+<div class="tbl-box p" tabindex="0"><table class="content" frame="hsides" rules="groups">
+<thead><tr>
+<th align="center" valign="middle" style="border-top:solid thin;border-bottom:solid thin" rowspan="1" colspan="1">Hyperparameter</th>
+<th align="center" valign="middle" style="border-top:solid thin;border-bottom:solid thin" rowspan="1" colspan="1">Search Space</th>
+</tr></thead>
+<tbody>
+<tr>
+<td align="center" valign="middle" rowspan="1" colspan="1">Batch size</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">{4, 8, 12, 16}</td>
+</tr>
+<tr>
+<td align="center" valign="middle" rowspan="1" colspan="1">Initial learning rate</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">loguniform (0.001, 0.1)</td>
+</tr>
+<tr>
+<td align="center" valign="middle" rowspan="1" colspan="1">Optimizer</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">{Adam, SGD}</td>
+</tr>
+<tr>
+<td align="center" valign="middle" rowspan="1" colspan="1">Patience for learning rate reduction</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">{3, 4, 5, 6, 7}</td>
+</tr>
+<tr>
+<td align="center" valign="middle" style="border-bottom:solid thin" rowspan="1" colspan="1">Reducing factor for learning rate reduction</td>
+<td align="center" valign="middle" style="border-bottom:solid thin" rowspan="1" colspan="1">uniform (0.05, 0.15)</td>
+</tr>
+</tbody>
+</table></div>
+<div class="p text-right font-secondary"><a href="table/bioengineering-11-01082-t002/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div></section><p>After training the models for each fold in the threefold cross-validation process, we generated an ensemble model that averaged the outputs of the models and measured their final performance. All training and testing were performed with TensorFlow 2.14 and Python 3.11, running on a PC with an Intel(R) Core(TM) i9-14900KF CPU, an NVIDIA RTX 4090 24GB graphics card, and 64GB of DDR5 RAM.</p></section><section id="sec2dot4-bioengineering-11-01082"><h3 class="pmc_sec_title">2.4. Performance Assessment</h3>
+<p>The performance of the trained model was evaluated using various methods, each of which is described in the following subsections. In this context, a true positive (TP) refers to the intersecting area of the ground truth and predicted masks, a false positive (FP) is defined as the region inside the predicted mask but outside the ground truth mask, and a false negative is the region inside the ground truth mask but outside the predicted mask. In this study, the Dice–Sorensen coefficient (DSC), Jaccard index (IoU), precision, and recall were evaluated for the test set. The image-processing time was also measured to assess the feasibility of the model for analyzing real-time video frames.</p>
+<section id="sec2dot4dot1-bioengineering-11-01082"><h4 class="pmc_sec_title">2.4.1. Dice–Sorensen Coefficient</h4>
+<p>The DSC is defined in Equation (2) and is equivalent to the F1-score of a typical two-by-two contingency table. The DSC ranged between 0 and 1, with higher values indicating better performance as the TP increased. Notably, the dice loss is a continuous analog of the negative DSC, and the Dice Loss decreases as the model performance increases.
+</p>
+<table class="disp-formula p" id="FD2-bioengineering-11-01082"><tr>
+<td class="formula"><math id="mm2" display="block" overflow="linebreak"><mrow><mrow><mi>D</mi><mi>S</mi><mi>C</mi><mo>=</mo><mstyle scriptlevel="0" displaystyle="true"><mfrac><mrow><mn>2</mn><mo>×</mo><mi>T</mi><mi>P</mi></mrow><mrow><mn>2</mn><mo>×</mo><mi>T</mi><mi>P</mi><mo>+</mo><mi>F</mi><mi>P</mi><mo>+</mo><mi>F</mi><mi>N</mi></mrow></mfrac></mstyle></mrow></mrow></math></td>
+<td class="label">(2)</td>
+</tr></table></section><section id="sec2dot4dot2-bioengineering-11-01082"><h4 class="pmc_sec_title">2.4.2. Jaccard Index</h4>
+<p>The intersection over union (IoU), defined in Equation (3), is the ratio of the intersecting area of the ground truth and prediction masks to their union. Similar to the DSC, its value is always between 0 and 1, and a higher score indicates better performance.
+</p>
+<table class="disp-formula p" id="FD3-bioengineering-11-01082"><tr>
+<td class="formula"><math id="mm3" display="block" overflow="linebreak"><mrow><mrow><mi>I</mi><mi>o</mi><mi>U</mi><mo>=</mo><mstyle scriptlevel="0" displaystyle="true"><mfrac><mrow><mi>T</mi><mi>P</mi></mrow><mrow><mi>T</mi><mi>P</mi><mo>+</mo><mi>F</mi><mi>P</mi><mo>+</mo><mi>F</mi><mi>N</mi></mrow></mfrac></mstyle></mrow></mrow></math></td>
+<td class="label">(3)</td>
+</tr></table></section><section id="sec2dot4dot3-bioengineering-11-01082"><h4 class="pmc_sec_title">2.4.3. Precision and Recall</h4>
+<p>Precision and recall are defined in Equations (4) and (5) and are widely adopted to measure a model’s performance. Given that their values are dependent on the decision boundaries, the precision–recall curve and the area underneath were also assessed. The area under the precision–recall curve (AUPRC) is also known as average precision (AP).
+</p>
+<table class="disp-formula p" id="FD4-bioengineering-11-01082"><tr>
+<td class="formula"><math id="mm4" display="block" overflow="linebreak"><mrow><mrow><mi>P</mi><mi>r</mi><mi>e</mi><mi>c</mi><mi>i</mi><mi>s</mi><mi>i</mi><mi>o</mi><mi>n</mi><mo>=</mo><mstyle scriptlevel="0" displaystyle="true"><mfrac><mrow><mi>T</mi><mi>P</mi></mrow><mrow><mi>T</mi><mi>P</mi><mo>+</mo><mi>F</mi><mi>P</mi></mrow></mfrac></mstyle></mrow></mrow></math></td>
+<td class="label">(4)</td>
+</tr></table>
+<table class="disp-formula p" id="FD5-bioengineering-11-01082"><tr>
+<td class="formula"><math id="mm5" display="block" overflow="linebreak"><mrow><mrow><mi>R</mi><mi>e</mi><mi>c</mi><mi>a</mi><mi>l</mi><mi>l</mi><mo>=</mo><mstyle scriptlevel="0" displaystyle="true"><mfrac><mrow><mi>T</mi><mi>P</mi></mrow><mrow><mi>T</mi><mi>P</mi><mo>+</mo><mi>F</mi><mi>N</mi></mrow></mfrac></mstyle></mrow></mrow></math></td>
+<td class="label">(5)</td>
+</tr></table></section><section id="sec2dot4dot4-bioengineering-11-01082"><h4 class="pmc_sec_title">2.4.4. Qualitative Assessment</h4>
+<p>The model performance was qualitatively assessed by exploring the prediction masks obtained from the test set images. This analysis aimed to identify the strengths and weaknesses of our model and discuss strategies for improving its performance in the future.</p></section></section></section><section id="sec3-bioengineering-11-01082"><h2 class="pmc_sec_title">3. Results</h2>
+<section id="sec3dot1-bioengineering-11-01082"><h3 class="pmc_sec_title">3.1. Quantitative Results</h3>
+<p><a href="#bioengineering-11-01082-t003" class="usa-link">Table 3</a> lists the sets of hyperparameters that resulted in the top-10 DSC during the holdout validation with their respective ensemble models. The model that performed the best was trained with a batch size of 12 on an Adam optimizer, with an initial learning rate of 0.00136. The learning rate was reduced by a factor of 0.079 when the loss did not decrease after 7 epochs, and the entire process was terminated when the loss did not decrease after 21 epochs. This set of hyperparameters is in line with commonly accepted practices in medical image segmentation tasks.</p>
+<section class="tw xbox font-sm" id="bioengineering-11-01082-t003"><h4 class="obj_head">Table 3.</h4>
+<div class="caption p"><p>Sets of hyperparameters that resulted in top-10 DSC in the holdout validation of the ensemble model are shown. Boldfaced numbers indicate the best performance among all trials.</p></div>
+<div class="tbl-box p" tabindex="0"><table class="content" frame="hsides" rules="groups">
+<thead>
+<tr>
+<th rowspan="2" align="center" valign="middle" style="border-top:solid thin;border-bottom:solid thin" colspan="1">Trial</th>
+<th colspan="5" align="center" valign="middle" style="border-top:solid thin;border-bottom:solid thin" rowspan="1">Hyperparameters</th>
+<th colspan="5" align="center" valign="middle" style="border-top:solid thin;border-bottom:solid thin" rowspan="1">Performance Measures (Holdout Validation)</th>
+</tr>
+<tr>
+<th align="center" valign="middle" style="border-bottom:solid thin" rowspan="1" colspan="1">Batch Size</th>
+<th align="center" valign="middle" style="border-bottom:solid thin" rowspan="1" colspan="1">Initial LR</th>
+<th align="center" valign="middle" style="border-bottom:solid thin" rowspan="1" colspan="1">Optimizer</th>
+<th align="center" valign="middle" style="border-bottom:solid thin" rowspan="1" colspan="1">Patience</th>
+<th align="center" valign="middle" style="border-bottom:solid thin" rowspan="1" colspan="1">Reduce<br>Factor</th>
+<th align="center" valign="middle" style="border-bottom:solid thin" rowspan="1" colspan="1">DSC</th>
+<th align="center" valign="middle" style="border-bottom:solid thin" rowspan="1" colspan="1">IoU</th>
+<th align="center" valign="middle" style="border-bottom:solid thin" rowspan="1" colspan="1">Precision</th>
+<th align="center" valign="middle" style="border-bottom:solid thin" rowspan="1" colspan="1">Recall</th>
+<th align="center" valign="middle" style="border-bottom:solid thin" rowspan="1" colspan="1">mAP</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center" valign="middle" rowspan="1" colspan="1">1</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">12</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.00136</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">Adam</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">7</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.079</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.824</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.701</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.810</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.839</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.890</td>
+</tr>
+<tr>
+<td align="center" valign="middle" rowspan="1" colspan="1">2</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">16</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.00868</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">Adam</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">7</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.123</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.817</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.690</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.790</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.845</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.844</td>
+</tr>
+<tr>
+<td align="center" valign="middle" rowspan="1" colspan="1">3</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">16</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.00108</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">Adam</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">7</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.079</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.815</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.687</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.814</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.815</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.894</td>
+</tr>
+<tr>
+<td align="center" valign="middle" rowspan="1" colspan="1">4</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">4</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.01101</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">SGD</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">7</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.107</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.814</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.687</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.786</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.845</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.864</td>
+</tr>
+<tr>
+<td align="center" valign="middle" rowspan="1" colspan="1">5</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">12</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.00183</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">Adam</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">6</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.083</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.809</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.679</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.779</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.842</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.877</td>
+</tr>
+<tr>
+<td align="center" valign="middle" rowspan="1" colspan="1">6</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">8</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.09321</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">SGD</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">5</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.090</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.809</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.679</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.766</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.857</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.846</td>
+</tr>
+<tr>
+<td align="center" valign="middle" rowspan="1" colspan="1">7</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">8</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.03990</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">SGD</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">5</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.105</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.803</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.670</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.756</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.856</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.839</td>
+</tr>
+<tr>
+<td align="center" valign="middle" rowspan="1" colspan="1">8</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">12</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.00711</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">Adam</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">6</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.149</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.798</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.664</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.759</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.842</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.820</td>
+</tr>
+<tr>
+<td align="center" valign="middle" rowspan="1" colspan="1">9</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">12</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.01099</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">Adam</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">7</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.122</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.797</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.663</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.756</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.845</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.855</td>
+</tr>
+<tr>
+<td align="center" valign="middle" style="border-bottom:solid thin" rowspan="1" colspan="1">10</td>
+<td align="center" valign="middle" style="border-bottom:solid thin" rowspan="1" colspan="1">4</td>
+<td align="center" valign="middle" style="border-bottom:solid thin" rowspan="1" colspan="1">0.00103</td>
+<td align="center" valign="middle" style="border-bottom:solid thin" rowspan="1" colspan="1">Adam</td>
+<td align="center" valign="middle" style="border-bottom:solid thin" rowspan="1" colspan="1">3</td>
+<td align="center" valign="middle" style="border-bottom:solid thin" rowspan="1" colspan="1">0.146</td>
+<td align="center" valign="middle" style="border-bottom:solid thin" rowspan="1" colspan="1">0.794</td>
+<td align="center" valign="middle" style="border-bottom:solid thin" rowspan="1" colspan="1">0.659</td>
+<td align="center" valign="middle" style="border-bottom:solid thin" rowspan="1" colspan="1">0.746</td>
+<td align="center" valign="middle" style="border-bottom:solid thin" rowspan="1" colspan="1">0.849</td>
+<td align="center" valign="middle" style="border-bottom:solid thin" rowspan="1" colspan="1">0.865</td>
+</tr>
+</tbody>
+</table></div>
+<div class="p text-right font-secondary"><a href="table/bioengineering-11-01082-t003/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div></section><p><a href="#bioengineering-11-01082-t004" class="usa-link">Table 4</a> lists the performance measures evaluated from internal and holdout validation, including the performance of all three folds, as well as the ensemble model. The holdout validation performance of each fold did not significantly differ from that of internal validation, and we confirmed that the ensemble model, which is defined by averaging the outputs of models from each fold, generally outperforms each model. The ensemble model exhibited a test DSC and test IoU of 0.824 and 0.701, respectively, and a test precision and test recall of 0.810 and 0.839, respectively. <a href="#bioengineering-11-01082-f003" class="usa-link">Figure 3</a> depicts the plotting of the precision–recall curve and AUPRC of the ensemble model and models obtained from each fold.</p>
+<section class="tw xbox font-sm" id="bioengineering-11-01082-t004"><h4 class="obj_head">Table 4.</h4>
+<div class="caption p"><p>Internal validation and holdout validation results of the trial with the best DSC are shown. Results of models trained from each fold as well as the ensemble model are provided.</p></div>
+<div class="tbl-box p" tabindex="0"><table class="content" frame="hsides" rules="groups">
+<thead><tr>
+<th align="center" valign="middle" style="border-top:solid thin;border-bottom:solid thin" rowspan="1" colspan="1">Internal Validation</th>
+<th align="center" valign="middle" style="border-top:solid thin;border-bottom:solid thin" rowspan="1" colspan="1">DSC</th>
+<th align="center" valign="middle" style="border-top:solid thin;border-bottom:solid thin" rowspan="1" colspan="1">IoU</th>
+<th align="center" valign="middle" style="border-top:solid thin;border-bottom:solid thin" rowspan="1" colspan="1">Precision</th>
+<th align="center" valign="middle" style="border-top:solid thin;border-bottom:solid thin" rowspan="1" colspan="1">Recall</th>
+<th align="center" valign="middle" style="border-top:solid thin;border-bottom:solid thin" rowspan="1" colspan="1">AUPRC</th>
+</tr></thead>
+<tbody>
+<tr>
+<td align="center" valign="middle" rowspan="1" colspan="1">Fold 1</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.818</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.692</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.808</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.828</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.849</td>
+</tr>
+<tr>
+<td align="center" valign="middle" rowspan="1" colspan="1">Fold 2</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.815</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.688</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.821</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.809</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.868</td>
+</tr>
+<tr>
+<td align="center" valign="middle" style="border-bottom:solid thin" rowspan="1" colspan="1">Fold 3</td>
+<td align="center" valign="middle" style="border-bottom:solid thin" rowspan="1" colspan="1">0.810</td>
+<td align="center" valign="middle" style="border-bottom:solid thin" rowspan="1" colspan="1">0.680</td>
+<td align="center" valign="middle" style="border-bottom:solid thin" rowspan="1" colspan="1">0.805</td>
+<td align="center" valign="middle" style="border-bottom:solid thin" rowspan="1" colspan="1">0.814</td>
+<td align="center" valign="middle" style="border-bottom:solid thin" rowspan="1" colspan="1">0.870</td>
+</tr>
+<tr>
+<td align="center" valign="middle" rowspan="1" colspan="1">Holdout validation</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">DSC</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">IoU</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">Precision</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">Recall</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">mAP</td>
+</tr>
+<tr>
+<td align="center" valign="middle" style="border-top:solid thin" rowspan="1" colspan="1">Fold 1</td>
+<td align="center" valign="middle" style="border-top:solid thin" rowspan="1" colspan="1">0.827</td>
+<td align="center" valign="middle" style="border-top:solid thin" rowspan="1" colspan="1">0.705</td>
+<td align="center" valign="middle" style="border-top:solid thin" rowspan="1" colspan="1">0.813</td>
+<td align="center" valign="middle" style="border-top:solid thin" rowspan="1" colspan="1">0.841</td>
+<td align="center" valign="middle" style="border-top:solid thin" rowspan="1" colspan="1">0.865</td>
+</tr>
+<tr>
+<td align="center" valign="middle" rowspan="1" colspan="1">Fold 2</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.820</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.694</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.810</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.829</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.871</td>
+</tr>
+<tr>
+<td align="center" valign="middle" rowspan="1" colspan="1">Fold 3</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.792</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.656</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.806</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.780</td>
+<td align="center" valign="middle" rowspan="1" colspan="1">0.841</td>
+</tr>
+<tr>
+<td align="center" valign="middle" style="border-bottom:solid thin" rowspan="1" colspan="1">Ensemble</td>
+<td align="center" valign="middle" style="border-bottom:solid thin" rowspan="1" colspan="1">0.824</td>
+<td align="center" valign="middle" style="border-bottom:solid thin" rowspan="1" colspan="1">0.701</td>
+<td align="center" valign="middle" style="border-bottom:solid thin" rowspan="1" colspan="1">0.810</td>
+<td align="center" valign="middle" style="border-bottom:solid thin" rowspan="1" colspan="1">0.839</td>
+<td align="center" valign="middle" style="border-bottom:solid thin" rowspan="1" colspan="1">0.890</td>
+</tr>
+</tbody>
+</table></div>
+<div class="p text-right font-secondary"><a href="table/bioengineering-11-01082-t004/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div></section><figure class="fig xbox font-sm" id="bioengineering-11-01082-f003"><h4 class="obj_head">Figure 3.</h4>
+<p class="img-box line-height-none margin-x-neg-2 tablet:margin-x-0 text-center"><a class="tileshop" target="_blank" href="https://www.ncbi.nlm.nih.gov/core/lw/2.0/html/tileshop_pmc/tileshop_pmc_inline.html?title=Click%20on%20image%20to%20zoom&amp;p=PMC3&amp;id=11591488_bioengineering-11-01082-g003.jpg"><img class="graphic zoom-in" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/d1af/11591488/dbef3871315e/bioengineering-11-01082-g003.jpg" loading="lazy" height="685" width="711" alt="Figure 3"></a></p>
+<div class="p text-right font-secondary"><a href="figure/bioengineering-11-01082-f003/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div>
+<figcaption><p>Precision–recall curve obtained from the best-performing trial is shown. Narrow lines indicate the performance of the models trained from each fold on the test set, and the thick line indicates that of the ensemble model.</p></figcaption></figure></section><section id="sec3dot2-bioengineering-11-01082"><h3 class="pmc_sec_title">3.2. Qualitative Results</h3>
+<section id="sec3dot2dot1-bioengineering-11-01082"><h4 class="pmc_sec_title">3.2.1. Well-Performing Samples</h4>
+<p><a href="#bioengineering-11-01082-f004" class="usa-link">Figure 4</a> shows a few well-performing test samples. In contrast to the rigid and relatively crude polygon-shaped ground truth masks generated manually using LabelMe, the prediction masks tended to be smoother and more descriptive. Moreover, <a href="#bioengineering-11-01082-f004" class="usa-link">Figure 4</a>a–c show that the deep learning model effectively learned to exclude perineural fat, which often overlaps with neural tissue. Additionally, the model performed well on challenging samples, where only a small portion of the neural tissue was observed, as depicted in <a href="#bioengineering-11-01082-f004" class="usa-link">Figure 4</a>d,e. Therefore, it can be concluded that the model successfully learned the distinct features of the neural tissues during spinal endoscopic surgery.</p>
+<figure class="fig xbox font-sm" id="bioengineering-11-01082-f004"><h5 class="obj_head">Figure 4.</h5>
+<p class="img-box line-height-none margin-x-neg-2 tablet:margin-x-0 text-center"><a class="tileshop" target="_blank" href="https://www.ncbi.nlm.nih.gov/core/lw/2.0/html/tileshop_pmc/tileshop_pmc_inline.html?title=Click%20on%20image%20to%20zoom&amp;p=PMC3&amp;id=11591488_bioengineering-11-01082-g004.jpg"><img class="graphic zoom-in" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/d1af/11591488/bee272022306/bioengineering-11-01082-g004.jpg" loading="lazy" height="725" width="714" alt="Figure 4"></a></p>
+<div class="p text-right font-secondary"><a href="figure/bioengineering-11-01082-f004/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div>
+<figcaption><p>Well-performing test samples. For each sample, the input raw image, ground truth mask, overlapped image of the ground truth mask, prediction mask, and overlapped image of the prediction mask are shown from left to right (<strong>a</strong>–<strong>c</strong>). The deep learning model demonstrated superior accuracy and precision compared to manual annotations. The boundaries predicted by the model are significantly smoother and more precise. Notably, the model accurately identifies epidural fat tissue as non-neural tissue, a distinction that manual annotations often fail to make. This accuracy is evident in the predicted masks (<strong>d</strong>,<strong>e</strong>). Despite the neural tissue being only partially visible in the endoscopic images, the deep learning model accurately detects and represents these small segments of neural tissue. This highlights the model’s impressive performance in recognizing neural tissue in challenging scenarios.</p></figcaption></figure></section><section id="sec3dot2dot2-bioengineering-11-01082"><h4 class="pmc_sec_title">3.2.2. Poorly Performing Samples</h4>
+<p>To illustrate the limitations of the deep learning model, we present a few poorly performing samples in <a href="#bioengineering-11-01082-f005" class="usa-link">Figure 5</a>. As shown in <a href="#bioengineering-11-01082-f005" class="usa-link">Figure 5</a>a,b, the model mistakenly classified some parts of the surgical instruments as neural tissue. Interestingly, the FP regions often correspond to reflections of the neural tissue, suggesting that the model struggled to distinguish between the true neural tissue and its reflections, as both display similar positive features. Similar issues were observed in <a href="#bioengineering-11-01082-f005" class="usa-link">Figure 5</a>c, where areas with similar morphology and texture to the neural tissue were incorrectly identified. Additionally, as shown in <a href="#bioengineering-11-01082-f005" class="usa-link">Figure 5</a>d, certain surgical instruments with smooth and tubular shapes, which are typical characteristics of neural tissue, were also misidentified by the model. Furthermore, the model exhibited reduced effectiveness in scenarios with excessive bleeding, as shown in <a href="#bioengineering-11-01082-f005" class="usa-link">Figure 5</a>e, which affected its overall accuracy in these exceptional cases.</p>
+<figure class="fig xbox font-sm" id="bioengineering-11-01082-f005"><h5 class="obj_head">Figure 5.</h5>
+<p class="img-box line-height-none margin-x-neg-2 tablet:margin-x-0 text-center"><a class="tileshop" target="_blank" href="https://www.ncbi.nlm.nih.gov/core/lw/2.0/html/tileshop_pmc/tileshop_pmc_inline.html?title=Click%20on%20image%20to%20zoom&amp;p=PMC3&amp;id=11591488_bioengineering-11-01082-g005.jpg"><img class="graphic zoom-in" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/d1af/11591488/bf43b809c863/bioengineering-11-01082-g005.jpg" loading="lazy" height="720" width="716" alt="Figure 5"></a></p>
+<div class="p text-right font-secondary"><a href="figure/bioengineering-11-01082-f005/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div>
+<figcaption><p>Poorly performing test samples. For each sample, the sequence of images is presented from left to right: the input raw image, ground truth mask, overlapped image of the ground truth mask, prediction mask, and overlapped image of the prediction mask (<strong>a</strong>,<strong>b</strong>). The model misclassified metallic surgical instruments as neural tissue owing to reflections of neural tissue on the metal surfaces (<strong>c</strong>). The model incorrectly identified bloody cancellous bone as neural tissue (<strong>d</strong>). A white instrument used for ablation was also misclassified as neural tissue (<strong>e</strong>). In a highly bloody surgical field, the model failed to detect neural tissue.</p></figcaption></figure></section></section></section><section id="sec4-bioengineering-11-01082"><h2 class="pmc_sec_title">4. Discussion</h2>
+<section id="sec4dot1-bioengineering-11-01082"><h3 class="pmc_sec_title">4.1. Comparison with Related Studies</h3>
+<p>Our study highlights the potential of U-Net-based deep learning models for segmenting neural tissues in endoscopic spinal images. With a test DSC of 0.824 and IoU of 0.701, our model demonstrated competitive performance, particularly given the complexity of neural tissue recognition. In comparison to the previous study by Bu et al. [<a href="#B26-bioengineering-11-01082" class="usa-link" aria-describedby="B26-bioengineering-11-01082">26</a>], which employed Mask R-CNN for tissue segmentation, our U-Net-based approach achieved a higher DSC, which indicates superior neural tissue detection capabilities in endoscopic images. Despite the more challenging context of neural tissue segmentation, the higher AP in our model underscores the efficacy of our methodology. In contrast to the aforementioned study, our deep learning model identified neural tissue, which was more challenging owing to overlapping features with other tissues; therefore, we consider our results notable. Additionally, in clinical settings, accurately distinguishing neural tissue from other soft tissues, such as ligaments and fat, is crucial because they can be confused during surgery. Given the complexity of this task and the clinical necessity of accurately differentiating neural tissue from the surrounding tissues, our study is highly significant as a pilot study, highlighting the feasibility and importance of neural tissue recognition for improving surgical precision and patient outcomes.</p>
+<p>Another study utilized Solov2 and Mask R-CNN for tissue and instrument segmentation in spinal endoscopic images, with the best mean AP of 0.735 at approximately 28 frames per second. Our model achieved a better AP with a comparable computational burden, although it may not be a fair comparison considering the differences in task objectives and image resolution. While the 23.2 frames per second achieved by our model may not be sufficient for real-time videos at 30 fps, it could be effective for videos with low sampling rates, such as 15 or 20 fps. Therefore, we conclude that the proposed model can robustly segment neural tissues in real time. Implementing such technology could greatly benefit less-experienced spinal surgeons by providing enhanced guidance during procedures, ultimately serving as an educational tool for junior surgeons.</p></section><section id="sec4dot2-bioengineering-11-01082"><h3 class="pmc_sec_title">4.2. Clinical Significance</h3>
+<p>Our qualitative analysis provides valuable insights into the ability of the model to distinguish neural tissues from other tissues, even in scenarios with limited tissue visibility. The deep learning model, trained on manually labeled ground truth masks using LabelMe, demonstrated superior accuracy by correctly excluding fat tissue, which is often mislabeled as neural tissue in manual annotations, as shown in <a href="#bioengineering-11-01082-f004" class="usa-link">Figure 4</a>a–c. It also performed impressively in recognizing small segments of the neural tissue that are only partially visible in the surgical field. However, the model exhibited limitations, as shown in <a href="#bioengineering-11-01082-f005" class="usa-link">Figure 5</a>a,b, where metallic surgical instruments were misclassified as neural tissue owing to the reflections of the neural tissue on the metal surfaces. This misclassification, although a shortcoming, indicates that the model has the potential to recognize complex visual patterns, including neural tissue reflections on metals, which extend beyond direct visual cues. These observations highlight the model’s advanced capability in feature detection but also underscore the need for further refinement to reduce false positives associated with instrument reflections and similar tubular structures.</p>
+<p>The high positive predictive value (PPV) demonstrates its effectiveness in accurately identifying true neural tissues, which is crucial to ensuring that neural structures are not overlooked during surgery. Our results may not be immediately acceptable for direct application in routine clinical settings. However, this study represents an early exploration of applying deep learning to neural tissue detection, a complex task with high variability in endoscopic images. Even the most skilled surgeons experience fatigue or face challenging surgical environments, which can increase the risk of errors. Our model aims to provide an additional layer of support, ultimately serving as a tool to assist surgeons in reducing preventable mistakes. With further development, including improved model performance and real-time implementation, we believe that such AI-based assistance can complement a surgeon’s expertise and contribute significantly to enhancing patient safety. This high PPV is encouraged, as it reduces the risk of surgeons overlooking critical neural tissues. Therefore, despite the need for improvement in reducing false positives, as highlighted by the challenges associated with the negative predictive value (NPV), the model’s current ability to reliably identify neural tissue remains clinically significant. Its existing capabilities suggest that the model is sufficiently robust to be considered for deployment in clinical settings, offering valuable support during surgical procedures.</p>
+<p>Neural tissue recognition during surgery is particularly crucial because many surgical complications, such as dural tears or direct neural injuries, often occur when surgeons fail to detect small, partially obscured neural fibers. The ability of our model to recognize these critical but minimally visible neural structures suggests that it has substantial potential to reduce such surgical risks. Surgeons are more likely to make fewer mistakes when neural structures are fully visible and distinct from the surrounding tissues. However, errors are more common when neural structures are only slightly visible or overlap with other tissues. The success of our model in these nuanced detection tasks highlights its significance, suggesting that it can serve as a valuable tool for enhancing surgical accuracy and reducing the likelihood of complications associated with misidentification.</p></section><section id="sec4dot3-bioengineering-11-01082"><h3 class="pmc_sec_title">4.3. Limitations and Future Work</h3>
+<p>A notable limitation of our model was the low NPV, despite the high PPV. We hypothesized that this issue may be influenced by the loss function used during training. Specifically, the dice loss places a greater emphasis on TP regions and does not account for true negative (TN) areas. As a result, TN pixels may not have been adequately trained, potentially leading to a reduced NPV. Implementing binary cross-entropy loss instead of dice loss could potentially improve the NPV, although this might occur at the expense of decreased PPV. Another drawback was the relatively small dataset, which may have affected the generalizability of the model. The current focus on neural tissues limits their applicability in more complex scenarios. Enlarging the dataset by expanding the cohort is the preferred option. However, improvements can also be achieved through enhanced data preprocessing and augmentation techniques. For instance, histogram equalization methods, such as global histogram equalization and contrast-limited adaptive histogram equalization, emphasize the borders of different tissues more prominently, which can result in the improved learning of important features. Additionally, extensive augmentation techniques, such as CutMix and color jittering, may contribute to improved performance because they aid the model in learning more generalized features [<a href="#B24-bioengineering-11-01082" class="usa-link" aria-describedby="B24-bioengineering-11-01082">24</a>]. Diversifying label entities not only confined to neural tissue may positively affect the model’s performance, because it would be able to learn complicated spatial and temporal relations among different types of objects, allowing them to “think” more like surgeons, who are also heavily dependent on anatomical clues, to distinguish between different types of tissue.</p>
+<p>We present this study as a baseline reference and plan to extensively investigate other architectures in the future. Since the publication of U-Net, many of its variants have emerged and have produced better results in segmentation tasks [<a href="#B17-bioengineering-11-01082" class="usa-link" aria-describedby="B17-bioengineering-11-01082">17</a>]. Residual U-Nets manipulate skip connections within the network to enhance gradient propagation, and the utilization of recurrent convolutional blocks has been reported to improve the performance [<a href="#B25-bioengineering-11-01082" class="usa-link" aria-describedby="B25-bioengineering-11-01082">25</a>,<a href="#B27-bioengineering-11-01082" class="usa-link" aria-describedby="B27-bioengineering-11-01082">27</a>]. R2U-Net incorporates these two concepts to achieve superior results [<a href="#B20-bioengineering-11-01082" class="usa-link" aria-describedby="B20-bioengineering-11-01082">20</a>]. Another variant, named Attention U-Net, uses an attention mechanism to aid the neural network in learning where to “pay attention,” and this method allows the model to have more explainability, which is a crucial aspect of AI, especially in the clinical setting [<a href="#B21-bioengineering-11-01082" class="usa-link" aria-describedby="B21-bioengineering-11-01082">21</a>].</p>
+<p>In this study, we chose not to include preprocessing steps because our primary objective was to develop a model that could perform robustly under raw surgical conditions, thereby increasing its generalizability across diverse clinical environments. By using raw input data, we aimed to validate the model’s effectiveness without relying on preprocessing, which might introduce biases or dependencies that are difficult to standardize in practice. However, in certain scenarios, preprocessing methods such as image normalization, contrast enhancement, or noise reduction could enhance the model performance, particularly for challenging or inconsistent imaging conditions. Future research could explore the addition of preprocessing techniques for specific applications where standardized imaging environments are available, and these methods could help to further improve segmentation accuracy and reduce variability.</p></section></section><section id="sec5-bioengineering-11-01082"><h2 class="pmc_sec_title">5. Conclusions</h2>
+<p>Our study demonstrates the promising potential of U-Net-based deep learning models for neural tissue recognition in spinal endoscopy, achieving a DSC of 0.824 and a Jaccard index of 0.701. These metrics indicate competitive performance compared to similar medical image segmentation tasks. The precision and recall scores of 0.810 and 0.839, respectively, further demonstrate the robustness of our model in accurately identifying neural tissues, even in challenging surgical environments. While the results are encouraging, further research is necessary to enhance the model performance and expand its applicability to diverse tissue types. These advancements could provide significant support to spine surgeons, particularly those with less experience, and ultimately improve the surgical outcomes and patient safety during endoscopic procedures.</p></section><section id="ack1" class="ack"><h2 class="pmc_sec_title">Acknowledgments</h2>
+<p>We thank Kuk-Jin Yoon and the graduate students of the Visual Intelligence Laboratory at the Korea Advanced Institute of Science and Technology for their efforts to review our manuscript prior to submission.</p></section><section id="notes1"><h2 class="pmc_sec_title">Author Contributions</h2>
+<p>Conceptualization, H.K.; formal analysis, H.R.L.; investigation, W.R.; writing—original draft preparation, H.R.L., W.R., S.Y.C. and H.K.; writing—review and editing, H.K., H.R.L., W.R., S.Y.C. and B.-S.C. All authors have read and agreed to the published version of the manuscript.</p></section><section id="notes2"><h2 class="pmc_sec_title">Institutional Review Board Statement</h2>
+<p>This study has been approved by the Public Institutional Review Board (IRB) of the National Bioethics Policy Institute through the public e-IRB system. The IRB approval number and approval date for this study are “2024-1010-001” and 16 August 2024.</p></section><section id="notes3"><h2 class="pmc_sec_title">Informed Consent Statement</h2>
+<p>Informed consent was waived by the IRB due to the retrospective nature of this study.</p></section><section id="notes4"><h2 class="pmc_sec_title">Data Availability Statement</h2>
+<p>Data related to the findings of this study are available from the corresponding author upon reasonable request.</p></section><section id="notes5"><h2 class="pmc_sec_title">Conflicts of Interest</h2>
+<p>The authors declare no conflicts of interest.</p></section><section id="funding-statement1" lang="en"><h2 class="pmc_sec_title">Funding Statement</h2>
+<p>This research received no external funding.</p></section><section id="fn-group1" class="fn-group"><h2 class="pmc_sec_title">Footnotes</h2>
+<div class="fn-group p font-secondary-light font-sm"><div class="fn p" id="fn1"><p><strong>Disclaimer/Publisher’s Note:</strong> The statements, opinions and data contained in all publications are solely those of the individual author(s) and contributor(s) and not of MDPI and/or the editor(s). MDPI and/or the editor(s) disclaim responsibility for any injury to people or property resulting from any ideas, methods, instructions or products referred to in the content.</p></div></div></section><section id="ref-list1" class="ref-list"><h2 class="pmc_sec_title">References</h2>
+<section id="ref-list1_sec2"><ul class="ref-list font-sm" style="list-style-type:none">
+<li id="B1-bioengineering-11-01082">
+<span class="label">1.</span><cite>Junjie L., Jiheng Y., Jun L., haixiong L., Haifeng Y. Comparison of Unilateral Biportal Endoscopy Decompression and Microscopic Decompression Effectiveness in Lumbar Spinal Stenosis Treatment: A Systematic Review and Meta-analysis. Asian Spine J. 2023;17:418–430. doi: 10.31616/asj.2021.0527.</cite> [<a href="https://doi.org/10.31616/asj.2021.0527" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC10151631/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/36740930/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Asian%20Spine%20J.&amp;title=Comparison%20of%20Unilateral%20Biportal%20Endoscopy%20Decompression%20and%20Microscopic%20Decompression%20Effectiveness%20in%20Lumbar%20Spinal%20Stenosis%20Treatment:%20A%20Systematic%20Review%20and%20Meta-analysis&amp;author=L.%20Junjie&amp;author=Y.%20Jiheng&amp;author=L.%20Jun&amp;author=L.%20haixiong&amp;author=Y.%20Haifeng&amp;volume=17&amp;publication_year=2023&amp;pages=418-430&amp;pmid=36740930&amp;doi=10.31616/asj.2021.0527&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B2-bioengineering-11-01082">
+<span class="label">2.</span><cite>Kim J.-E., Choi D.-J., Park E.J.J., Lee H.-J., Hwang J.-H., Kim M.-C., Oh J.-S. Biportal Endoscopic Spinal Surgery for Lumbar Spinal Stenosis. Asian Spine J. 2019;13:334–342. doi: 10.31616/asj.2018.0210.</cite> [<a href="https://doi.org/10.31616/asj.2018.0210" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC6454273/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/30959588/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Asian%20Spine%20J.&amp;title=Biportal%20Endoscopic%20Spinal%20Surgery%20for%20Lumbar%20Spinal%20Stenosis&amp;author=J.-E.%20Kim&amp;author=D.-J.%20Choi&amp;author=E.J.J.%20Park&amp;author=H.-J.%20Lee&amp;author=J.-H.%20Hwang&amp;volume=13&amp;publication_year=2019&amp;pages=334-342&amp;pmid=30959588&amp;doi=10.31616/asj.2018.0210&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B3-bioengineering-11-01082">
+<span class="label">3.</span><cite>Kim S.-K., Kang S.-S., Hong Y.-H., Park S.-W., Lee S.-C. Clinical comparison of unilateral biportal endoscopic technique versus open microdiscectomy for single-level lumbar discectomy: A multicenter, retrospective analysis. J. Orthop. Surg. Res. 2018;13:22. doi: 10.1186/s13018-018-0725-1.</cite> [<a href="https://doi.org/10.1186/s13018-018-0725-1" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC5793344/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/29386033/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=J.%20Orthop.%20Surg.%20Res.&amp;title=Clinical%20comparison%20of%20unilateral%20biportal%20endoscopic%20technique%20versus%20open%20microdiscectomy%20for%20single-level%20lumbar%20discectomy:%20A%20multicenter,%20retrospective%20analysis&amp;author=S.-K.%20Kim&amp;author=S.-S.%20Kang&amp;author=Y.-H.%20Hong&amp;author=S.-W.%20Park&amp;author=S.-C.%20Lee&amp;volume=13&amp;publication_year=2018&amp;pages=22&amp;pmid=29386033&amp;doi=10.1186/s13018-018-0725-1&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B4-bioengineering-11-01082">
+<span class="label">4.</span><cite>Kwon J.-W., Moon S.-H., Park S.-Y., Park S.-J., Park S.-R., Suk K.-S., Kim H.-S., Lee B.H. Lumbar Spinal Stenosis: Review Update 2022. Asian Spine J. 2022;16:789–798. doi: 10.31616/asj.2022.0366.</cite> [<a href="https://doi.org/10.31616/asj.2022.0366" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC9633250/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/36266248/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Asian%20Spine%20J.&amp;title=Lumbar%20Spinal%20Stenosis:%20Review%20Update%202022&amp;author=J.-W.%20Kwon&amp;author=S.-H.%20Moon&amp;author=S.-Y.%20Park&amp;author=S.-J.%20Park&amp;author=S.-R.%20Park&amp;volume=16&amp;publication_year=2022&amp;pages=789-798&amp;pmid=36266248&amp;doi=10.31616/asj.2022.0366&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B5-bioengineering-11-01082">
+<span class="label">5.</span><cite>Lewandrowski K.-U., Hellinger S., De Carvalho P.S.T., Freitas Ramos M.R., Soriano-SáNchez J.-A., Xifeng Z., Calderaro A.L., Dos Santos T.S., Ramírez León J.F., de Lima e SilvA M.S., et al.  Dural Tears During Lumbar Spinal Endoscopy: Surgeon Skill, Training, Incidence, Risk Factors, and Management. Int. J. Spine Surg. 2021;15:280. doi: 10.14444/8038.</cite> [<a href="https://doi.org/10.14444/8038" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC8059391/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/33900986/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Int.%20J.%20Spine%20Surg.&amp;title=Dural%20Tears%20During%20Lumbar%20Spinal%20Endoscopy:%20Surgeon%20Skill,%20Training,%20Incidence,%20Risk%20Factors,%20and%20Management&amp;author=K.-U.%20Lewandrowski&amp;author=S.%20Hellinger&amp;author=P.S.T.%20De%20Carvalho&amp;author=M.R.%20Freitas%20Ramos&amp;author=J.-A.%20Soriano-S%C3%A1Nchez&amp;volume=15&amp;publication_year=2021&amp;pages=280&amp;pmid=33900986&amp;doi=10.14444/8038&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B6-bioengineering-11-01082">
+<span class="label">6.</span><cite>Park H.-J., Kim S.-K., Lee S.-C., Kim W., Han S., Kang S.-S. Dural Tears in Percutaneous Biportal Endoscopic Spine Surgery: Anatomical Location and Management. World Neurosurg. 2020;136:e578–e585. doi: 10.1016/j.wneu.2020.01.080.</cite> [<a href="https://doi.org/10.1016/j.wneu.2020.01.080" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/31958589/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=World%20Neurosurg.&amp;title=Dural%20Tears%20in%20Percutaneous%20Biportal%20Endoscopic%20Spine%20Surgery:%20Anatomical%20Location%20and%20Management&amp;author=H.-J.%20Park&amp;author=S.-K.%20Kim&amp;author=S.-C.%20Lee&amp;author=W.%20Kim&amp;author=S.%20Han&amp;volume=136&amp;publication_year=2020&amp;pages=e578-e585&amp;pmid=31958589&amp;doi=10.1016/j.wneu.2020.01.080&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B7-bioengineering-11-01082">
+<span class="label">7.</span><cite>Ryu K., Kitaguchi D., Nakajima K., Ishikawa Y., Harai Y., Yamada A., Lee Y., Hayashi K., Kosugi N., Hasegawa H., et al.  Deep learning-based vessel automatic recognition for laparoscopic right hemicolectomy. Surg. Endosc. 2024;38:171–178. doi: 10.1007/s00464-023-10524-w.</cite> [<a href="https://doi.org/10.1007/s00464-023-10524-w" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/37950028/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Surg.%20Endosc.&amp;title=Deep%20learning-based%20vessel%20automatic%20recognition%20for%20laparoscopic%20right%20hemicolectomy&amp;author=K.%20Ryu&amp;author=D.%20Kitaguchi&amp;author=K.%20Nakajima&amp;author=Y.%20Ishikawa&amp;author=Y.%20Harai&amp;volume=38&amp;publication_year=2024&amp;pages=171-178&amp;pmid=37950028&amp;doi=10.1007/s00464-023-10524-w&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B8-bioengineering-11-01082">
+<span class="label">8.</span><cite>Chan H.-P., Samala R.K., Hadjiiski L.M., Zhou C.  Deep Learning in Medical Image Analysis. In: Lee G., Fujita H., editors. Deep Learning in Medical Image Analysis: Challenges and Applications. Springer International Publishing; Cham, Switzerland: 2020. pp. 3–21.</cite> [<a href="https://scholar.google.com/scholar_lookup?title=Deep%20Learning%20in%20Medical%20Image%20Analysis:%20Challenges%20and%20Applications&amp;author=H.-P.%20Chan&amp;author=R.K.%20Samala&amp;author=L.M.%20Hadjiiski&amp;author=C.%20Zhou&amp;publication_year=2020&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B9-bioengineering-11-01082">
+<span class="label">9.</span><cite>Chen D., Yang W., Wang L., Tan S., Lin J., Bu W. PCAT-UNet: UNet-like network fused convolution and transformer for retinal vessel segmentation. PLoS ONE. 2022;17:e0262689.  doi: 10.1371/journal.pone.0262689.</cite> [<a href="https://doi.org/10.1371/journal.pone.0262689" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC8786152/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/35073371/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=PLoS%20ONE&amp;title=PCAT-UNet:%20UNet-like%20network%20fused%20convolution%20and%20transformer%20for%20retinal%20vessel%20segmentation&amp;author=D.%20Chen&amp;author=W.%20Yang&amp;author=L.%20Wang&amp;author=S.%20Tan&amp;author=J.%20Lin&amp;volume=17&amp;publication_year=2022&amp;pages=e0262689&amp;pmid=35073371&amp;doi=10.1371/journal.pone.0262689&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B10-bioengineering-11-01082">
+<span class="label">10.</span><cite>Chen L.C., Papandreou G., Kokkinos I., Murphy K., Yuille A.L. DeepLab: Semantic Image Segmentation with Deep Convolutional Nets, Atrous Convolution, and Fully Connected CRFs. IEEE Trans. Pattern Anal. Mach. Intell. 2018;40:834–848. doi: 10.1109/TPAMI.2017.2699184.</cite> [<a href="https://doi.org/10.1109/TPAMI.2017.2699184" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/28463186/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=IEEE%20Trans.%20Pattern%20Anal.%20Mach.%20Intell.&amp;title=DeepLab:%20Semantic%20Image%20Segmentation%20with%20Deep%20Convolutional%20Nets,%20Atrous%20Convolution,%20and%20Fully%20Connected%20CRFs&amp;author=L.C.%20Chen&amp;author=G.%20Papandreou&amp;author=I.%20Kokkinos&amp;author=K.%20Murphy&amp;author=A.L.%20Yuille&amp;volume=40&amp;publication_year=2018&amp;pages=834-848&amp;pmid=28463186&amp;doi=10.1109/TPAMI.2017.2699184&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B11-bioengineering-11-01082">
+<span class="label">11.</span><cite>Shelhamer E., Long J., Darrell T. Fully Convolutional Networks for Semantic Segmentation. IEEE Trans. Pattern Anal. Mach. Intell. 2017;39:640–651. doi: 10.1109/TPAMI.2016.2572683.</cite> [<a href="https://doi.org/10.1109/TPAMI.2016.2572683" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/27244717/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=IEEE%20Trans.%20Pattern%20Anal.%20Mach.%20Intell.&amp;title=Fully%20Convolutional%20Networks%20for%20Semantic%20Segmentation&amp;author=E.%20Shelhamer&amp;author=J.%20Long&amp;author=T.%20Darrell&amp;volume=39&amp;publication_year=2017&amp;pages=640-651&amp;pmid=27244717&amp;doi=10.1109/TPAMI.2016.2572683&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B12-bioengineering-11-01082">
+<span class="label">12.</span><cite>He K., Gkioxari G., Dollár P., Girshick R. Mask R-CNN; Proceedings of the 2017 IEEE International Conference on Computer Vision (ICCV); Venice, Italy. 22–29 October 2017; pp. 2980–2988.</cite> [<a href="https://scholar.google.com/scholar_lookup?journal=Proceedings%20of%20the%202017%20IEEE%20International%20Conference%20on%20Computer%20Vision%20(ICCV)&amp;title=Mask%20R-CNN&amp;author=K.%20He&amp;author=G.%20Gkioxari&amp;author=P.%20Doll%C3%A1r&amp;author=R.%20Girshick&amp;pages=2980-2988&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B13-bioengineering-11-01082">
+<span class="label">13.</span><cite>Feng X., Yang J., Laine A.F., Angelini E.D. Discriminative Localization in CNNs for Weakly-Supervised Segmentation of Pulmonary Nodules; Proceedings of the Medical Image Computing and Computer Assisted Intervention−MICCAI 2017: 20th International Conference; Quebec City, QC, Canada. 11–13 September 2017; pp. 568–576.</cite> [<a href="https://doi.org/10.1007/978-3-319-66179-7_65" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC5753796/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/29308456/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Proceedings%20of%20the%20Medical%20Image%20Computing%20and%20Computer%20Assisted%20Intervention%E2%88%92MICCAI%202017:%2020th%20International%20Conference&amp;title=Discriminative%20Localization%20in%20CNNs%20for%20Weakly-Supervised%20Segmentation%20of%20Pulmonary%20Nodules&amp;author=X.%20Feng&amp;author=J.%20Yang&amp;author=A.F.%20Laine&amp;author=E.D.%20Angelini&amp;volume=Volume%2010435&amp;pages=568-576&amp;pmid=29308456&amp;doi=10.1007/978-3-319-66179-7_65&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B14-bioengineering-11-01082">
+<span class="label">14.</span><cite>Cho S.M., Kim Y.G., Jeong J., Kim I., Lee H.J., Kim N. Automatic tip detection of surgical instruments in biportal endoscopic spine surgery. Comput. Biol. Med. 2021;133:104384.  doi: 10.1016/j.compbiomed.2021.104384.</cite> [<a href="https://doi.org/10.1016/j.compbiomed.2021.104384" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/33864974/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Comput.%20Biol.%20Med.&amp;title=Automatic%20tip%20detection%20of%20surgical%20instruments%20in%20biportal%20endoscopic%20spine%20surgery&amp;author=S.M.%20Cho&amp;author=Y.G.%20Kim&amp;author=J.%20Jeong&amp;author=I.%20Kim&amp;author=H.J.%20Lee&amp;volume=133&amp;publication_year=2021&amp;pages=104384&amp;pmid=33864974&amp;doi=10.1016/j.compbiomed.2021.104384&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B15-bioengineering-11-01082">
+<span class="label">15.</span><cite>Niha A., Muhammad H., Khurram K., Fatima F., Fahad U. An Artificial Intelligence model for implant segmentation on periapical radiographs. J. Pak. Med. Assoc. 2024;74:S-5–S-9. doi: 10.47391/JPMA.AKU-9S-02.</cite> [<a href="https://doi.org/10.47391/JPMA.AKU-9S-02" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/38712403/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=J.%20Pak.%20Med.%20Assoc.&amp;title=An%20Artificial%20Intelligence%20model%20for%20implant%20segmentation%20on%20periapical%20radiographs&amp;author=A.%20Niha&amp;author=H.%20Muhammad&amp;author=K.%20Khurram&amp;author=F.%20Fatima&amp;author=U.%20Fahad&amp;volume=74&amp;publication_year=2024&amp;pages=S-5-S-9&amp;pmid=38712403&amp;doi=10.47391/JPMA.AKU-9S-02&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B16-bioengineering-11-01082">
+<span class="label">16.</span><cite>Ronneberger O., Fischer P., Brox T. U-Net: Convolutional Networks for Biomedical Image Segmentation; Proceedings of the Medical Image Computing and Computer-Assisted Intervention–MICCAI 2015; Cham, Switzerland. 5–9 October 2015; pp. 234–241.</cite> [<a href="https://scholar.google.com/scholar_lookup?journal=Proceedings%20of%20the%20Medical%20Image%20Computing%20and%20Computer-Assisted%20Intervention%E2%80%93MICCAI%202015&amp;title=U-Net:%20Convolutional%20Networks%20for%20Biomedical%20Image%20Segmentation&amp;author=O.%20Ronneberger&amp;author=P.%20Fischer&amp;author=T.%20Brox&amp;pages=234-241&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B17-bioengineering-11-01082">
+<span class="label">17.</span><cite>Siddique N., Paheding S., Elkin C.P., Devabhaktuni V. U-Net and Its Variants for Medical Image Segmentation: A Review of Theory and Applications. IEEE Access. 2021;9:82031–82057. doi: 10.1109/ACCESS.2021.3086020.</cite> [<a href="https://doi.org/10.1109/ACCESS.2021.3086020" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=IEEE%20Access&amp;title=U-Net%20and%20Its%20Variants%20for%20Medical%20Image%20Segmentation:%20A%20Review%20of%20Theory%20and%20Applications&amp;author=N.%20Siddique&amp;author=S.%20Paheding&amp;author=C.P.%20Elkin&amp;author=V.%20Devabhaktuni&amp;volume=9&amp;publication_year=2021&amp;pages=82031-82057&amp;doi=10.1109/ACCESS.2021.3086020&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B18-bioengineering-11-01082">
+<span class="label">18.</span><cite>He K., Gkioxari G., Dollar P., Girshick R. Mask R-CNN. IEEE Trans. Pattern Anal. Mach. Intell. 2020;42:386–397. doi: 10.1109/TPAMI.2018.2844175.</cite> [<a href="https://doi.org/10.1109/TPAMI.2018.2844175" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/29994331/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=IEEE%20Trans.%20Pattern%20Anal.%20Mach.%20Intell.&amp;title=Mask%20R-CNN&amp;author=K.%20He&amp;author=G.%20Gkioxari&amp;author=P.%20Dollar&amp;author=R.%20Girshick&amp;volume=42&amp;publication_year=2020&amp;pages=386-397&amp;pmid=29994331&amp;doi=10.1109/TPAMI.2018.2844175&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B19-bioengineering-11-01082">
+<span class="label">19.</span><cite>Kundu S., Karale V., Ghorai G., Sarkar G., Ghosh S., Dhara A.K. Nested U-Net for Segmentation of Red Lesions in Retinal Fundus Images and Sub-image Classification for Removal of False Positives. J. Digit. Imaging. 2022;35:1111–1119. doi: 10.1007/s10278-022-00629-4.</cite> [<a href="https://doi.org/10.1007/s10278-022-00629-4" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC9582103/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/35474556/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=J.%20Digit.%20Imaging&amp;title=Nested%20U-Net%20for%20Segmentation%20of%20Red%20Lesions%20in%20Retinal%20Fundus%20Images%20and%20Sub-image%20Classification%20for%20Removal%20of%20False%20Positives&amp;author=S.%20Kundu&amp;author=V.%20Karale&amp;author=G.%20Ghorai&amp;author=G.%20Sarkar&amp;author=S.%20Ghosh&amp;volume=35&amp;publication_year=2022&amp;pages=1111-1119&amp;pmid=35474556&amp;doi=10.1007/s10278-022-00629-4&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B20-bioengineering-11-01082">
+<span class="label">20.</span><cite>Md Zahangir A., Chris Y., Mahmudul H., Tarek M.T., Vijayan K.A. Recurrent residual U-Net for medical image segmentation. J. Med. Imaging. 2019;6:014006. doi: 10.1117/1.JMI.6.1.014006.</cite> [<a href="https://doi.org/10.1117/1.JMI.6.1.014006" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC6435980/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/30944843/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=J.%20Med.%20Imaging&amp;title=Recurrent%20residual%20U-Net%20for%20medical%20image%20segmentation&amp;author=A.%20Md%20Zahangir&amp;author=Y.%20Chris&amp;author=H.%20Mahmudul&amp;author=M.T.%20Tarek&amp;author=K.A.%20Vijayan&amp;volume=6&amp;publication_year=2019&amp;pages=014006&amp;pmid=30944843&amp;doi=10.1117/1.JMI.6.1.014006&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B21-bioengineering-11-01082">
+<span class="label">21.</span><cite>Oktay O., Schlemper J., Folgoc L.L., Lee M., Heinrich M., Misawa K., Mori K., McDonagh S., Hammerla N.Y., Kainz B. Attention u-net: Learning where to look for the pancreas. arXiv. 20181804.03999</cite> [<a href="https://scholar.google.com/scholar_lookup?journal=arXiv&amp;title=Attention%20u-net:%20Learning%20where%20to%20look%20for%20the%20pancreas&amp;author=O.%20Oktay&amp;author=J.%20Schlemper&amp;author=L.L.%20Folgoc&amp;author=M.%20Lee&amp;author=M.%20Heinrich&amp;publication_year=2018&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B22-bioengineering-11-01082">
+<span class="label">22.</span><cite>Xavier G., Yoshua B. Understanding the difficulty of training deep feedforward neural networks; Proceedings of the Thirteenth International Conference on Artificial Intelligence and Statistics; Sardinia, Italy. 31 March 2010; pp. 249–256.</cite> [<a href="https://scholar.google.com/scholar_lookup?journal=Proceedings%20of%20the%20Thirteenth%20International%20Conference%20on%20Artificial%20Intelligence%20and%20Statistics&amp;title=Understanding%20the%20difficulty%20of%20training%20deep%20feedforward%20neural%20networks&amp;author=G.%20Xavier&amp;author=B.%20Yoshua&amp;pages=249-256&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B23-bioengineering-11-01082">
+<span class="label">23.</span><cite>Ioffe S., Szegedy C. Batch normalization: Accelerating deep network training by reducing internal covariate shift; Proceedings of the 32nd International Conference on International Conference on Machine Learning; Lille, France. 7–9 July 2015; pp. 448–456.</cite> [<a href="https://scholar.google.com/scholar_lookup?journal=Proceedings%20of%20the%2032nd%20International%20Conference%20on%20International%20Conference%20on%20Machine%20Learning&amp;title=Batch%20normalization:%20Accelerating%20deep%20network%20training%20by%20reducing%20internal%20covariate%20shift&amp;author=S.%20Ioffe&amp;author=C.%20Szegedy&amp;volume=Volume%2037&amp;pages=448-456&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B24-bioengineering-11-01082">
+<span class="label">24.</span><cite>Yun S., Han D., Chun S., Oh S.J., Yoo Y., Choe J. CutMix: Regularization Strategy to Train Strong Classifiers With Localizable Features; Proceedings of the 2019 IEEE/CVF International Conference on Computer Vision (ICCV); Seoul, Republic of Korea. 27 October–2 November 2019; pp. 6022–6031.</cite> [<a href="https://scholar.google.com/scholar_lookup?journal=Proceedings%20of%20the%202019%20IEEE/CVF%20International%20Conference%20on%20Computer%20Vision%20(ICCV)&amp;title=CutMix:%20Regularization%20Strategy%20to%20Train%20Strong%20Classifiers%20With%20Localizable%20Features&amp;author=S.%20Yun&amp;author=D.%20Han&amp;author=S.%20Chun&amp;author=S.J.%20Oh&amp;author=Y.%20Yoo&amp;pages=6022-6031&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B25-bioengineering-11-01082">
+<span class="label">25.</span><cite>Zhang Z., Liu Q., Wang Y. Road Extraction by Deep Residual U-Net. IEEE Geosci. Remote Sens. Lett. 2018;15:749–753. doi: 10.1109/LGRS.2018.2802944.</cite> [<a href="https://doi.org/10.1109/LGRS.2018.2802944" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=IEEE%20Geosci.%20Remote%20Sens.%20Lett.&amp;title=Road%20Extraction%20by%20Deep%20Residual%20U-Net&amp;author=Z.%20Zhang&amp;author=Q.%20Liu&amp;author=Y.%20Wang&amp;volume=15&amp;publication_year=2018&amp;pages=749-753&amp;doi=10.1109/LGRS.2018.2802944&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B26-bioengineering-11-01082">
+<span class="label">26.</span><cite>Bu J., Lei Y., Wang Y., Zhao J., Huang S., Liang J., Wang Z., Xu L., He B., Dong M., et al.  A Multi-Element Identification System Based on Deep Learning for the Visual Field of Percutaneous Endoscopic Spine Surgery. Indian J. Orthop. 2024;58:587–597. doi: 10.1007/s43465-024-01134-2.</cite> [<a href="https://doi.org/10.1007/s43465-024-01134-2" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC11058141/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/38694692/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Indian%20J.%20Orthop.&amp;title=A%20Multi-Element%20Identification%20System%20Based%20on%20Deep%20Learning%20for%20the%20Visual%20Field%20of%20Percutaneous%20Endoscopic%20Spine%20Surgery&amp;author=J.%20Bu&amp;author=Y.%20Lei&amp;author=Y.%20Wang&amp;author=J.%20Zhao&amp;author=S.%20Huang&amp;volume=58&amp;publication_year=2024&amp;pages=587-597&amp;pmid=38694692&amp;doi=10.1007/s43465-024-01134-2&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B27-bioengineering-11-01082">
+<span class="label">27.</span><cite>Wang W., Yu K., Hugonot J., Fua P., Salzmann M. Recurrent U-Net for Resource-Constrained Segmentation; Proceedings of the 2019 IEEE/CVF International Conference on Computer Vision (ICCV); Seoul, Republic of Korea. 27 October–2 November 2019; pp. 2142–2151.</cite> [<a href="https://scholar.google.com/scholar_lookup?journal=Proceedings%20of%20the%202019%20IEEE/CVF%20International%20Conference%20on%20Computer%20Vision%20(ICCV)&amp;title=Recurrent%20U-Net%20for%20Resource-Constrained%20Segmentation&amp;author=W.%20Wang&amp;author=K.%20Yu&amp;author=J.%20Hugonot&amp;author=P.%20Fua&amp;author=M.%20Salzmann&amp;pages=2142-2151&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+</ul></section></section><section id="_ad93_" lang="en" class="associated-data"><h2 class="pmc_sec_title">Associated Data</h2>
+<p class="font-secondary"><em>This section collects any data citations, data availability statements, or supplementary materials included in this article.</em></p>
+<section id="_adda93_" lang="en" class="data-availability-statement"><h3 class="pmc_sec_title">Data Availability Statement</h3>
+<p>Data related to the findings of this study are available from the corresponding author upon reasonable request.</p></section></section></section><footer class="p courtesy-note font-secondary font-sm text-center"><hr class="headless">
+<p>Articles from Bioengineering are provided here courtesy of <strong>Multidisciplinary Digital Publishing Institute  (MDPI)</strong></p></footer></section></article>
+
+                      
+
+                    </main>
+                </div>
+            </div>
+        </div>
+
+        
+
+
+
+<!-- Secondary navigation placeholder -->
+<div class="pmc-sidenav desktop:grid-col-4 display-flex">
+    <section class="pmc-sidenav__container" aria-label="Article resources and navigation">
+        <button type="button" class="pmc-sidenav__container__close">
+            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/usa-icons/close.svg" role="img" alt="Close" />
+        </button>
+    <div class="display-none desktop:display-block">
+       <section class="margin-top-4 desktop:margin-top-0">
+              <h2 class="margin-top-0">ACTIONS</h2>
+           <ul class="usa-list usa-list--unstyled usa-list--actions">
+               
+               <li>
+                     <a
+                             href="https://doi.org/10.3390/bioengineering11111082"
+                             class="usa-button usa-button--outline width-24 font-xs display-inline-flex flex-align-center flex-justify-start padding-left-1"
+                             target="_blank"
+                             rel="noreferrer noopener"
+                             data-ga-category="actions"
+                             data-ga-action="click"
+                             data-ga-label="publisher_link_desktop"
+                     >
+                         <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/launch.svg" alt="View on publisher site icon" class="usa-icon usa-icon--size-3 usa-icon--link"/>
+                         <span class="display-inline-flex flex-justify-center flex-1 padding-right-2">View on publisher site</span>
+                     </a>
+               </li>
+               
+               
+               <li>
+                    <a
+                            href="pdf/bioengineering-11-01082.pdf"
+                            class="usa-button usa-button--outline width-24 display-inline-flex flex-align-center flex-justify-start padding-left-1"
+                            data-ga-category="actions"
+                            data-ga-action="click"
+                            data-ga-label="pdf_download_desktop"
+                    >
+                         <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/file_download.svg" alt="Download PDF icon" class="usa-icon usa-icon--size-3 usa-icon--link"/>
+                        <span class="display-inline-flex flex-justify-center flex-1">PDF (2.4 MB)</span>
+                    </a>
+               </li>
+               
+                
+               <li>
+                   <button role="button" class="usa-button width-24 citation-dialog-trigger display-inline-flex flex-align-center flex-justify-start padding-left-1"
+                        aria-label="Open dialog with citation text in different styles"
+                        data-ga-category="actions"
+                        data-ga-action="open"
+                        data-ga-label="cite_desktop"
+                        data-all-citations-url="/resources/citations/11591488/"
+                        data-citation-style="nlm"
+                        data-download-format-link="/resources/citations/11591488/export/"
+                    >
+                       <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/format_quote.svg" alt="Cite icon" class="usa-icon usa-icon--size-3 usa-icon--white"/>
+                       <span class="display-inline-flex flex-justify-center flex-1 button-label">Cite</span>
+                    </button>
+               </li>
+                
+               <li>
+
+                        <button class="usa-button width-24 collections-dialog-trigger collections-button display-inline-flex flex-align-center flex-justify-start padding-left-1 collections-button-empty"
+                              aria-label="Save article in MyNCBI collections."
+                              data-ga-category="actions"
+                              data-ga-action="click"
+                              data-ga-label="collections_button_desktop"
+                              data-collections-open-dialog-enabled="false"
+                              data-collections-open-dialog-url="https://account.ncbi.nlm.nih.gov/?back_url=https%3A%2F%2Fpmc.ncbi.nlm.nih.gov%2Farticles%2FPMC11591488%2F%23open-collections-dialog"
+                              data-in-collections="false">
+                            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/action-bookmark-full.svg" alt="Collections icon" class="usa-icon usa-icon--size-3 usa-icon--white usa-icon--bookmark-full" hidden />
+                            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/action-bookmark-empty.svg" alt="Collections icon" class="usa-icon usa-icon--size-3 usa-icon--white usa-icon--bookmark-empty" hidden />
+                            <span class="display-inline-flex flex-justify-center flex-1">Collections</span>
+                       </button>
+               </li>
+               <li class="pmc-permalink">
+                    <button
+                            type="button"
+                            class="usa-button width-24 display-inline-flex flex-align-center flex-justify padding-left-1 shadow-none"
+                            aria-label="Show article permalink"
+                            aria-expanded="false"
+                            aria-haspopup="true"
+                            data-ga-category="actions"
+                            data-ga-action="open"
+                            data-ga-label="permalink_desktop"
+                    >
+                        <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/share.svg" alt="Permalink icon" class="usa-icon usa-icon--size-3 usa-icon--white"/>
+                        <span class="display-inline-flex flex-justify-center flex-1 button-label">Permalink</span>
+                    </button>
+                   
+
+<div class="pmc-permalink__dropdown" hidden>
+    <div class="pmc-permalink__dropdown__container">
+          <h2 class="usa-modal__heading margin-top-0 margin-bottom-2 text-uppercase font-sans-xs">PERMALINK</h2>
+          <div class="pmc-permalink__dropdown__content">
+              <input type="text" class="usa-input" value="https://pmc.ncbi.nlm.nih.gov/articles/PMC11591488/" aria-label="Article permalink">
+              <button class="usa-button display-inline-flex pmc-permalink__dropdown__copy__btn margin-right-0" title="Copy article permalink" data-ga-category="save_share" data-ga-action="link" data-ga-label="copy_link">
+                  <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/content_copy.svg" alt="Copy icon" aria-hidden="true" class="usa-icon usa-icon--white" />
+                  <span class="margin-left-1">Copy</span>
+              </button>
+          </div>
+    </div>
+</div>
+               </li>
+           </ul>
+       </section>
+     </div>
+
+        <section class="pmc-resources margin-top-6 desktop:margin-top-4" data-page-path="/articles/PMC11591488/">
+            <h2 class="margin-top-0">RESOURCES</h2>
+            
+                <div class="usa-accordion usa-accordion--multiselectable" data-allow-multiple>
+                    <h3 class="usa-accordion__heading">
+                        <button
+                        type="button"
+                        class="usa-accordion__button"
+                        aria-expanded="false"
+                        aria-controls="resources-similar-articles"
+                        data-ga-category="resources_accordion"
+                        data-ga-action="open_similar_articles"
+                        data-ga-label="/articles/PMC11591488/"
+                        data-action-open="open_similar_articles"
+                        data-action-close="close_similar_articles"
+                        >
+                            Similar articles
+                        </button>
+                    </h3>
+                    <div
+                            id="resources-similar-articles"
+                            class="usa-accordion__content usa-prose"
+                            
+                                data-source-url="/resources/similar-article-links/39593742/"
+                            
+                    >
+                        
+                    </div>
+                    <h3 class="usa-accordion__heading">
+                        <button
+                        type="button"
+                        class="usa-accordion__button"
+                        aria-expanded="false"
+                        aria-controls="resources-cited-by-other-articles"
+                        data-ga-category="resources_accordion"
+                        data-ga-action="open_cited_by"
+                        data-ga-label="/articles/PMC11591488/"
+                        data-action-open="open_cited_by"
+                        data-action-close="close_cited_by"
+                        >
+                             Cited by other articles
+                        </button>
+                    </h3>
+                    <div
+                            id="resources-cited-by-other-articles"
+                            class="usa-accordion__content usa-prose"
+                            
+                                data-source-url="/resources/cited-by-links/39593742/"
+                            
+                    >
+                          
+                    </div>
+                    
+                        <h3 class="usa-accordion__heading">
+                            <button
+                            type="button"
+                            class="usa-accordion__button"
+                            aria-expanded="false"
+                            aria-controls="resources-links-to-ncbi-databases"
+                            data-ga-category="resources_accordion"
+                            data-ga-action="open_NCBI_links"
+                            data-ga-label="/articles/PMC11591488/"
+                            data-action-open="open_NCBI_links"
+                            data-action-close="close_NCBI_link"
+                            >
+                                 Links to NCBI Databases
+                            </button>
+                        </h3>
+                        <div
+                                id="resources-links-to-ncbi-databases"
+                                class="usa-accordion__content usa-prose"
+                                data-source-url="/resources/db-links/11591488/"
+                        >
+                        </div>
+                    
+                    
+                </div>
+            
+        </section>
+
+
+        <section
+        class="usa-in-page-nav usa-in-page-nav--wide margin-top-6 desktop:margin-top-4"
+        data-title-text="On this page"
+        data-title-heading-level="h2"
+        data-scroll-offset="0"
+        data-root-margin="-10% 0px -80% 0px"
+        data-main-content-selector="main"
+        data-threshold="1"
+        hidden
+        ></section>
+    </section>
+</div>
+
+        
+
+<div class="overlay" role="dialog" aria-label="Citation Dialog" hidden>
+    <div class="dialog citation-dialog" aria-hidden="true">
+        <div class="display-inline-flex flex-align-center flex-justify width-full margin-bottom-2">
+            <h2 class="usa-modal__heading margin-0">Cite</h2>
+             <button type="button" class="usa-button usa-button--unstyled close-overlay text-black width-auto"  tabindex="1">
+                 <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/close.svg" alt="Close icon" class="usa-icon usa-icon--size-3 usa-icon--button" />
+             </button>
+        </div>
+
+        
+
+<div class="citation-text-block">
+  <div class="citation-text margin-bottom-2"></div>
+  <ul class="usa-list usa-list--unstyled display-inline-flex flex-justify width-full flex-align-center">
+      <li>
+        <button
+          class="usa-button usa-button--unstyled text-no-underline display-flex flex-align-center copy-button dialog-focus"
+          data-ga-category="save_share"
+          data-ga-action="cite"
+          data-ga-label="copy"
+          tabindex="2">
+            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/content_copy.svg" alt="Copy icon" class="usa-icon usa-icon--size-3 usa-icon--link" />
+            <span>Copy</span>
+        </button>
+      </li>
+      <li>
+          <a
+              href="#"
+              role="button"
+              class="usa-button usa-button--unstyled text-no-underline display-flex flex-align-center export-button"
+              data-ga-category="save_share"
+              data-ga-action="cite"
+              data-ga-label="download"
+              title="Download a file for external citation management software"
+              tabindex="3">
+                <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/file_download.svg" alt="Download icon" aria-hidden="true" class="usa-icon usa-icon--size-3 usa-icon--link" />
+                <span class="display-none mobile-lg:display-inline">Download .nbib</span>
+                <span class="display-inline mobile-lg:display-none">.nbib</span>
+            </a>
+      </li>
+      <li>
+          
+
+<div class="display-inline-flex flex-align-center">
+  <label class="usa-label margin-top-0">Format:</label>
+  <select aria-label="Format" class="usa-select citation-style-selector padding-1 margin-top-0 border-0 padding-right-4" tabindex="4" >
+    
+      <option data-style-url-name="ama"
+              value="AMA"
+              >
+        AMA
+      </option>
+    
+      <option data-style-url-name="apa"
+              value="APA"
+              >
+        APA
+      </option>
+    
+      <option data-style-url-name="mla"
+              value="MLA"
+              >
+        MLA
+      </option>
+    
+      <option data-style-url-name="nlm"
+              value="NLM"
+              selected="selected">
+        NLM
+      </option>
+    
+  </select>
+</div>
+      </li>
+  </ul>
+</div>
+    </div>
+</div>
+
+        <div class="overlay" role="dialog" hidden>
+  <div id="collections-action-dialog" class="dialog collections-dialog" aria-hidden="true">
+   <div class="display-inline-flex flex-align-center flex-justify width-full margin-bottom-2">
+        <h2 class="usa-modal__heading margin-0">Add to Collections</h2>
+    </div>
+    <div class="collections-action-panel action-panel">
+      
+
+
+<form id="collections-action-dialog-form"
+      class="usa-form maxw-full collections-action-panel-form action-panel-content action-form action-panel-smaller-selectors"
+      data-existing-collections-url="/list-existing-collections/"
+      data-add-to-existing-collection-url="/add-to-existing-collection/"
+      data-create-and-add-to-new-collection-url="/create-and-add-to-new-collection/"
+      data-myncbi-max-collection-name-length="100"
+      data-collections-root-url="https://www.ncbi.nlm.nih.gov/myncbi/collections/">
+
+    <input type="hidden" name="csrfmiddlewaretoken" value="dj5Cv5tGnRy3cuxmO68lKOiFffDmEZjyPFctjLM17osERNHt0z5gRXjQHTtTBjN4">
+
+    <fieldset class="usa-fieldset margin-bottom-2">
+        <div class="usa-radio">
+            <input type="radio"
+            id="collections-action-dialog-new"
+            class="usa-radio__input usa-radio__input--tile collections-new  margin-top-0"
+            name="collections"
+            value="new"
+            data-ga-category="collections_button"
+            data-ga-action="click"
+            data-ga-label="collections_radio_new" />
+            <label class="usa-radio__label" for="collections-action-dialog-new">Create a new collection</label>
+        </div>
+        <div class="usa-radio">
+            <input type="radio"
+            id="collections-action-dialog-existing"
+            class="usa-radio__input usa-radio__input--tile collections-existing"
+            name="collections"
+            value="existing"
+            checked="true"
+            data-ga-category="collections_button"
+            data-ga-action="click"
+            data-ga-label="collections_radio_existing" />
+            <label class="usa-radio__label" for="collections-action-dialog-existing">Add to an existing collection</label>
+        </div>
+    </fieldset>
+
+    <fieldset class="usa-fieldset margin-bottom-2">
+        <div class="action-panel-control-wrap new-collections-controls">
+           <label for="collections-action-dialog-add-to-new" class="usa-label margin-top-0">
+                Name your collection
+               <abbr title="required" class="usa-hint usa-hint--required text-no-underline">*</abbr>
+          </label>
+          <input
+            type="text"
+            name="add-to-new-collection"
+            id="collections-action-dialog-add-to-new"
+            class="usa-input collections-action-add-to-new"
+            pattern="[^&quot;&amp;=&lt;&gt;/]*" title="The following characters are not allowed in the Name field: &quot;&amp;=&lt;&gt;/"
+            maxlength=""
+            data-ga-category="collections_button"
+            data-ga-action="create_collection"
+            data-ga-label="non_favorties_collection"
+            required
+          />
+        </div>
+        <div class="action-panel-control-wrap existing-collections-controls">
+             <label for="collections-action-dialog-add-to-existing" class="usa-label margin-top-0">
+                Choose a collection
+              </label>
+              <select id="collections-action-dialog-add-to-existing"
+                      class="usa-select collections-action-add-to-existing"
+                      data-ga-category="collections_button"
+                      data-ga-action="select_collection"
+                      data-ga-label="($('.collections-action-add-to-existing').val() === 'Favorites') ? 'Favorites' : 'non_favorites_collection'">
+              </select>
+              <div class="collections-retry-load-on-error usa-input-error-message selection-validation-message">
+                Unable to load your collection due to an error<br>
+                <a href="#">Please try again</a>
+              </div>
+        </div>
+    </fieldset>
+
+    <div class="display-inline-flex">
+        <button class="usa-button margin-top-0 action-panel-submit"
+            type="submit"
+            data-loading-label="Adding..."
+            data-pinger-ignore
+            data-ga-category="collections_button"
+            data-ga-action="click"
+            data-ga-label="add">
+          Add
+        </button>
+        <button class="usa-button usa-button--outline margin-top-0 action-panel-cancel"
+                aria-label="Close 'Add to Collections' panel"
+                ref="linksrc=close_collections_panel"
+                data-ga-category="collections_button"
+                data-ga-action="click"
+                data-ga-label="cancel">
+          Cancel
+        </button>
+    </div>
+</form>
+    </div>
+  </div>
+</div>
+
+        
+
+      </div>
+    </div>
+  </div>
+
+
+
+        
+    
+    
+
+<footer class="ncbi-footer ncbi-dark-background " >
+    
+        <div class="ncbi-footer__icon-section">
+            <div class="ncbi-footer__social-header">
+                Follow NCBI
+            </div>
+
+            <div class="grid-container ncbi-footer__ncbi-social-icons-container">
+                
+                    <a href="https://twitter.com/ncbi"
+                       class="ncbi-footer__social-icon ncbi-footer__social-icon--gray"
+                       target="_blank"
+                       rel="noreferrer noopener">
+                        <svg width="40"
+                             height="40"
+                             viewBox="0 0 40 40"
+                             fill="none"
+                             xmlns="http://www.w3.org/2000/svg"
+                             focusable="false"
+                             aria-hidden="true">
+                            <path d="m6.067 8 10.81 13.9L6 33.2h4.2l8.4-9.1 7.068 9.1H34L22.8 18.5 31.9 8h-3.5l-7.7 8.4L14.401 8H6.067Zm3.6 1.734h3.266l16.8 21.732H26.57L9.668 9.734Z">
+                            </path>
+                        </svg>
+                        <span class="usa-sr-only">NCBI on X (formerly known as Twitter)</span>
+                    </a>
+                
+
+                
+                    <a href="https://www.facebook.com/ncbi.nlm"
+                       class="ncbi-footer__social-icon ncbi-footer__social-icon--gray"
+                       target="_blank"
+                       rel="noreferrer noopener">
+                        <svg width="16"
+                             height="29"
+                             focusable="false"
+                             aria-hidden="true"
+                             viewBox="0 0 16 29"
+                             fill="none"
+                             xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3.8809 21.4002C3.8809 19.0932 3.8809 16.7876 3.8809 14.478C3.8809 14.2117 3.80103 14.1452 3.54278 14.1492C2.53372 14.1638 1.52334 14.1492 0.514288 14.1598C0.302626 14.1598 0.248047 14.0972 0.248047 13.8936C0.256034 12.4585 0.256034 11.0239 0.248047 9.58978C0.248047 9.37013 0.302626 9.30224 0.528931 9.3049C1.53798 9.31688 2.54837 9.3049 3.55742 9.31555C3.80103 9.31555 3.8809 9.26097 3.87957 9.00272C3.87158 8.00565 3.85428 7.00592 3.90753 6.00884C3.97142 4.83339 4.31487 3.73115 5.04437 2.78467C5.93095 1.63318 7.15699 1.09005 8.56141 0.967577C10.5582 0.79319 12.555 0.982221 14.5518 0.927641C14.7102 0.927641 14.7462 0.99287 14.7449 1.13664C14.7449 2.581 14.7449 4.02668 14.7449 5.47104C14.7449 5.67604 14.6517 5.68669 14.4946 5.68669C13.4523 5.68669 12.4113 5.68669 11.3703 5.68669C10.3506 5.68669 9.92057 6.10868 9.90593 7.13904C9.89661 7.7647 9.91525 8.39303 9.89794 9.01869C9.88995 9.26364 9.96583 9.31822 10.2015 9.31688C11.7204 9.30623 13.2393 9.31688 14.7595 9.3049C15.0257 9.3049 15.0723 9.3728 15.0444 9.62439C14.89 10.9849 14.7515 12.3467 14.6144 13.7085C14.5691 14.1571 14.5785 14.1585 14.1458 14.1585C12.8386 14.1585 11.5313 14.1665 10.2254 14.1518C9.95119 14.1518 9.89794 14.2317 9.89794 14.4899C9.90593 19.0799 9.89794 23.6752 9.91125 28.2612C9.91125 28.5674 9.8407 28.646 9.53186 28.6433C7.77866 28.6273 6.02414 28.6366 4.27094 28.634C3.82499 28.634 3.87158 28.6992 3.87158 28.22C3.87602 25.9472 3.87913 23.6739 3.8809 21.4002Z">
+                            </path>
+                        </svg>
+                        <span class="usa-sr-only">NCBI on Facebook</span>
+                    </a>
+                
+
+                
+                    <a href="https://www.linkedin.com/company/ncbinlm"
+                       class="ncbi-footer__social-icon ncbi-footer__social-icon--gray"
+                       target="_blank"
+                       rel="noreferrer noopener">
+                        <svg width="25"
+                             height="23"
+                             viewBox="0 0 26 24"
+                             fill="none"
+                             xmlns="http://www.w3.org/2000/svg"
+                             focusable="false"
+                             aria-hidden="true">
+                            <path d="M14.6983 9.98423C15.6302 9.24808 16.5926 8.74754 17.6762 8.51991C19.673 8.09126 21.554 8.30824 23.1262 9.7526C24.2351 10.7723 24.7529 12.1115 25.0165 13.5612C25.1486 14.3363 25.2105 15.1218 25.2015 15.9081C25.2015 18.3043 25.2015 20.6898 25.2082 23.0806C25.2082 23.3468 25.1549 23.444 24.8621 23.4414C23.1297 23.4272 21.3992 23.4272 19.6704 23.4414C19.4041 23.4414 19.3429 23.3588 19.3442 23.1019C19.3535 20.5194 19.3442 17.9368 19.3442 15.3543C19.3442 14.0005 18.3258 12.9448 17.0266 12.9488C15.7273 12.9528 14.6983 14.0071 14.6983 15.361C14.6983 17.9328 14.6917 20.5047 14.6983 23.0753C14.6983 23.3708 14.6198 23.444 14.3296 23.4427C12.6185 23.4294 10.9079 23.4294 9.19779 23.4427C8.93155 23.4427 8.86099 23.3735 8.86232 23.1086C8.8783 19.7619 8.88628 16.4144 8.88628 13.066C8.88628 11.5688 8.87874 10.0708 8.86365 8.57182C8.86365 8.3575 8.90758 8.27896 9.14054 8.28029C10.9048 8.29094 12.6687 8.29094 14.4321 8.28029C14.6464 8.28029 14.6983 8.34818 14.6983 8.54653C14.6903 9.00047 14.6983 9.45441 14.6983 9.98423Z">
+                            </path>
+                            <path d="M6.55316 15.8443C6.55316 18.2564 6.55316 20.6699 6.55316 23.082C6.55316 23.3629 6.48127 23.4388 6.19906 23.4374C4.47737 23.4241 2.75568 23.4241 1.03399 23.4374C0.767751 23.4374 0.69986 23.3629 0.701191 23.1006C0.709178 18.2648 0.709178 13.4281 0.701191 8.59053C0.701191 8.34026 0.765089 8.27237 1.01669 8.2737C2.74991 8.28435 4.48048 8.28435 6.20838 8.2737C6.47462 8.2737 6.5465 8.33627 6.54517 8.6065C6.54783 11.0186 6.55316 13.4308 6.55316 15.8443Z">
+                            </path>
+                            <path d="M3.65878 0.243898C5.36804 0.243898 6.58743 1.45529 6.58743 3.1406C6.58743 4.75801 5.32145 5.95742 3.60819 5.96807C3.22177 5.97614 2.83768 5.90639 2.47877 5.76299C2.11985 5.61959 1.79344 5.40546 1.51897 5.13334C1.24449 4.86123 1.02755 4.53668 0.881058 4.17902C0.734563 3.82136 0.661505 3.43788 0.666231 3.05141C0.67555 1.42601 1.9362 0.242566 3.65878 0.243898Z">
+                            </path>
+                        </svg>
+                        <span class="usa-sr-only">NCBI on LinkedIn</span>
+                    </a>
+                
+
+                
+                    <a href="https://github.com/ncbi"
+                       class="ncbi-footer__social-icon ncbi-footer__social-icon--gray"
+                       target="_blank"
+                       rel="noreferrer noopener">
+                        <svg width="28"
+                             height="27"
+                             viewBox="0 0 28 28"
+                             fill="none"
+                             xmlns="http://www.w3.org/2000/svg"
+                             focusable="false"
+                             aria-hidden="true">
+                            <path d="M16.7228 20.6334C17.5057 20.5527 18.2786 20.3944 19.0301 20.1608C21.3108 19.4193 22.5822 17.8259 22.963 15.4909C23.1228 14.5112 23.1814 13.5287 22.9883 12.5437C22.8106 11.6423 22.4013 10.8028 21.8007 10.1076C21.7526 10.0605 21.7197 10 21.7064 9.934C21.6931 9.86799 21.7 9.79952 21.7262 9.73748C22.0856 8.6206 21.9711 7.51969 21.601 6.42677C21.582 6.3497 21.5345 6.2827 21.468 6.23923C21.4016 6.19577 21.3211 6.17906 21.2429 6.19248C20.7329 6.21649 20.2313 6.33051 19.7611 6.52928C19.1103 6.7908 18.4899 7.12198 17.9104 7.51703C17.84 7.56996 17.7581 7.60551 17.6713 7.62078C17.5846 7.63605 17.4954 7.6306 17.4112 7.60489C15.2596 7.05882 13.0054 7.06203 10.8554 7.61421C10.7806 7.63586 10.7018 7.63967 10.6253 7.62534C10.5487 7.611 10.4766 7.57892 10.4148 7.53167C9.64788 7.03247 8.85171 6.58918 7.96368 6.33359C7.65781 6.24338 7.34123 6.19458 7.02239 6.18849C6.94879 6.17986 6.87462 6.19893 6.81432 6.242C6.75402 6.28507 6.71191 6.34904 6.69621 6.42145C6.32342 7.51437 6.2209 8.61527 6.56307 9.73348C6.59635 9.84264 6.64694 9.93316 6.54177 10.0516C5.47666 11.2604 5.09988 12.6834 5.19574 14.2676C5.2663 15.4244 5.46201 16.5466 6.01454 17.5769C6.84399 19.1171 8.21664 19.9119 9.85158 20.3352C10.3938 20.4706 10.9444 20.5698 11.4998 20.632C11.5384 20.7492 11.4506 20.7798 11.408 20.8291C11.1734 21.1179 10.9894 21.4441 10.8634 21.7942C10.7622 22.0458 10.8315 22.4039 10.6065 22.5516C10.263 22.7766 9.83827 22.8485 9.42421 22.8871C8.17936 23.0056 7.26471 22.4877 6.6283 21.4348C6.25552 20.8184 5.76956 20.3325 5.08523 20.0663C4.76981 19.9325 4.42139 19.8967 4.08537 19.9638C3.7898 20.029 3.73788 20.1901 3.93891 20.4111C4.03639 20.5234 4.14989 20.6207 4.27575 20.6999C4.9796 21.1318 5.51717 21.7884 5.80152 22.5636C6.37002 23.9973 7.48039 24.5697 8.93825 24.6323C9.43741 24.6575 9.93768 24.615 10.4254 24.5058C10.5892 24.4672 10.6531 24.4872 10.6517 24.6762C10.6451 25.4936 10.6637 26.3123 10.6517 27.131C10.6517 27.6635 10.1684 27.9297 9.58663 27.7393C8.17396 27.2671 6.84977 26.5631 5.66838 25.656C2.59555 23.2891 0.720966 20.1861 0.217704 16.3376C-0.357453 11.9127 0.911353 8.00824 3.98551 4.73881C6.11909 2.42656 8.99932 0.939975 12.1203 0.540191C16.5351 -0.0601815 20.4347 1.14323 23.7232 4.16373C26.2449 6.47869 27.724 9.37672 28.1048 12.7726C28.5828 17.0325 27.3686 20.7945 24.4768 23.9827C22.9762 25.6323 21.0956 26.8908 18.9982 27.6488C18.8783 27.6927 18.7585 27.738 18.636 27.7726C18.0356 27.9404 17.6189 27.6395 17.6189 27.0098C17.6189 25.7452 17.6308 24.4806 17.6295 23.2159C17.6329 22.9506 17.6128 22.6856 17.5696 22.4238C17.4325 21.6664 17.3419 21.484 16.7228 20.6334Z">
+                            </path>
+                        </svg>
+                        <span class="usa-sr-only">NCBI on GitHub</span>
+                    </a>
+                
+
+                
+                    <a href="https://ncbiinsights.ncbi.nlm.nih.gov/"
+                       class="ncbi-footer__social-icon ncbi-footer__social-icon--gray"
+                       target="_blank"
+                       rel="noreferrer noopener">
+                        <svg width="26"
+                             height="26"
+                             viewBox="0 0 27 27"
+                             fill="none"
+                             xmlns="http://www.w3.org/2000/svg"
+                             focusable="false"
+                             aria-hidden="true">
+                            <path d="M23.7778 26.4574C23.1354 26.3913 22.0856 26.8024 21.636 26.3087C21.212 25.8444 21.4359 24.8111 21.324 24.0347C19.9933 14.8323 14.8727 8.80132 6.09057 5.85008C4.37689 5.28406 2.58381 4.99533 0.779072 4.99481C0.202773 4.99481 -0.0229751 4.83146 0.00455514 4.21479C0.0660406 3.08627 0.0660406 1.95525 0.00455514 0.826734C-0.0413285 0.0815827 0.259669 -0.0193618 0.896534 0.00266238C6.96236 0.222904 12.3693 2.24179 16.9889 6.16209C22.9794 11.2478 26.1271 17.7688 26.4372 25.648C26.4629 26.294 26.3179 26.5271 25.6609 26.4684C25.0827 26.417 24.4991 26.4574 23.7778 26.4574Z">
+                            </path>
+                            <path d="M14.8265 26.441C14.0924 26.441 13.2371 26.6795 12.6626 26.3786C12.0092 26.0372 12.3781 25.0644 12.246 24.378C11.1154 18.5324 6.6849 14.5497 0.74755 14.1001C0.217135 14.0615 -0.0104482 13.9422 0.0134113 13.3659C0.0519536 12.1454 0.0482829 10.9213 0.0134113 9.69524C-0.00127145 9.14464 0.196946 9.03268 0.703502 9.04736C9.21217 9.27128 16.5994 16.2511 17.2804 24.7231C17.418 26.4446 17.418 26.4446 15.6579 26.4446H14.832L14.8265 26.441Z">
+                            </path>
+                            <path d="M3.58928 26.4555C2.64447 26.4618 1.73584 26.0925 1.06329 25.4289C0.39073 24.7653 0.00933763 23.8617 0.0030097 22.9169C-0.00331824 21.9721 0.365937 21.0635 1.02954 20.3909C1.69315 19.7184 2.59675 19.337 3.54156 19.3306C4.48637 19.3243 5.39499 19.6936 6.06755 20.3572C6.7401 21.0208 7.1215 21.9244 7.12782 22.8692C7.13415 23.814 6.7649 24.7226 6.10129 25.3952C5.43768 26.0677 4.53409 26.4491 3.58928 26.4555Z">
+                            </path>
+                        </svg>
+                        <span class="usa-sr-only">NCBI RSS feed</span>
+                    </a>
+                
+            </div>
+        </div>
+    
+
+    <div data-testid="gridContainer"
+         class="grid-container ncbi-footer__container">
+        <div class="grid-row ncbi-footer__main-content-container"
+             data-testid="grid">
+            
+                <div class="ncbi-footer__column">
+                    
+                        <p class="ncbi-footer__circled-icons-heading">
+                            Connect with NLM
+                        </p>
+                    
+
+                    <div class="ncbi-footer__circled-icons-list">
+                        
+                            <a href=https://twitter.com/nlm_nih class="ncbi-footer__social-icon ncbi-footer__social-icon--circled" target="_blank" rel="noreferrer noopener">
+                                <svg width="32"
+                                     height="32"
+                                     viewBox="0 0 40 40"
+                                     fill="none"
+                                     xmlns="http://www.w3.org/2000/svg"
+                                     focusable="false"
+                                     aria-hidden="true">
+                                    <path d="m6.067 8 10.81 13.9L6 33.2h4.2l8.4-9.1 7.068 9.1H34L22.8 18.5 31.9 8h-3.5l-7.7 8.4L14.401 8H6.067Zm3.6 1.734h3.266l16.8 21.732H26.57L9.668 9.734Z">
+                                    </path>
+                                </svg>
+                                <span class="usa-sr-only">NLM on X (formerly known as Twitter)</span>
+                            </a>
+                        
+
+                        
+                            <a href=https://www.facebook.com/nationallibraryofmedicine class="ncbi-footer__social-icon ncbi-footer__social-icon--circled" target="_blank" rel="noreferrer noopener">
+                                <svg width="13"
+                                     height="24"
+                                     viewBox="0 0 13 24"
+                                     fill="none"
+                                     xmlns="http://www.w3.org/2000/svg"
+                                     focusable="false"
+                                     aria-hidden="true">
+                                    <path d="M4.11371 23.1369C4.11371 23.082 4.11371 23.0294 4.11371 22.9745V12.9411H0.817305C0.6709 12.9411 0.670898 12.9411 0.670898 12.8016C0.670898 11.564 0.670898 10.3287 0.670898 9.09341C0.670898 8.97903 0.705213 8.95158 0.815017 8.95158C1.8673 8.95158 2.91959 8.95158 3.97417 8.95158H4.12057V8.83263C4.12057 7.8055 4.12057 6.7738 4.12057 5.74897C4.1264 4.92595 4.31387 4.11437 4.66959 3.37217C5.12916 2.38246 5.94651 1.60353 6.95717 1.1921C7.64827 0.905008 8.3913 0.764035 9.13953 0.778051C10.0019 0.791777 10.8644 0.830666 11.7268 0.860404C11.8869 0.860404 12.047 0.894717 12.2072 0.90158C12.2964 0.90158 12.3261 0.940469 12.3261 1.02968C12.3261 1.5421 12.3261 2.05452 12.3261 2.56465C12.3261 3.16857 12.3261 3.7725 12.3261 4.37642C12.3261 4.48165 12.2964 4.51367 12.1912 4.51138C11.5369 4.51138 10.8804 4.51138 10.2261 4.51138C9.92772 4.51814 9.63058 4.5526 9.33855 4.61433C9.08125 4.6617 8.84537 4.78881 8.66431 4.97766C8.48326 5.16652 8.3662 5.40755 8.32972 5.66661C8.28476 5.89271 8.26027 6.1224 8.25652 6.35289C8.25652 7.19014 8.25652 8.02969 8.25652 8.86923C8.25652 8.89439 8.25652 8.91955 8.25652 8.95615H12.0219C12.1797 8.95615 12.182 8.95616 12.1614 9.10714C12.0768 9.76596 11.9876 10.4248 11.9029 11.0813C11.8312 11.6319 11.7626 12.1824 11.697 12.733C11.6719 12.9434 11.6787 12.9434 11.4683 12.9434H8.26338V22.899C8.26338 22.979 8.26338 23.0591 8.26338 23.1392L4.11371 23.1369Z">
+                                    </path>
+                                </svg>
+                                <span class="usa-sr-only">NLM on Facebook</span>
+                            </a>
+                        
+
+                        
+                            <a href=https://www.youtube.com/user/NLMNIH class="ncbi-footer__social-icon ncbi-footer__social-icon--circled" target="_blank" rel="noreferrer noopener">
+                                <svg width="21"
+                                     height="15"
+                                     viewBox="0 0 21 15"
+                                     fill="none"
+                                     xmlns="http://www.w3.org/2000/svg"
+                                     focusable="false"
+                                     aria-hidden="true">
+                                    <path d="M19.2561 1.47914C18.9016 1.15888 18.5699 0.957569 17.2271 0.834039C15.5503 0.678484 13.2787 0.655608 11.563 0.65332H9.43556C7.71987 0.65332 5.4483 0.678484 3.77151 0.834039C2.43098 0.957569 2.097 1.15888 1.74242 1.47914C0.813665 2.32097 0.619221 4.62685 0.598633 6.89384C0.598633 7.31781 0.598633 7.74101 0.598633 8.16345C0.626084 10.4121 0.827391 12.686 1.74242 13.521C2.097 13.8412 2.4287 14.0425 3.77151 14.1661C5.4483 14.3216 7.71987 14.3445 9.43556 14.3468H11.563C13.2787 14.3468 15.5503 14.3216 17.2271 14.1661C18.5676 14.0425 18.9016 13.8412 19.2561 13.521C20.1712 12.6929 20.3725 10.451 20.3999 8.22064C20.3999 7.74025 20.3999 7.25986 20.3999 6.77946C20.3725 4.54907 20.1689 2.30724 19.2561 1.47914ZM8.55942 10.5311V4.65201L13.5601 7.50005L8.55942 10.5311Z"
+                                          fill="white" />
+                                </svg>
+                                <span class="usa-sr-only">NLM on YouTube</span>
+                            </a>
+                        
+                    </div>
+                </div>
+            
+
+            
+                <address class="ncbi-footer__address ncbi-footer__column">
+                    
+        <p>
+            <a class="usa-link usa-link--external"
+            href="https://www.google.com/maps/place/8600+Rockville+Pike,+Bethesda,+MD+20894/%4038.9959508,
+            -77.101021,17z/data%3D!3m1!4b1!4m5!3m4!1s0x89b7c95e25765ddb%3A0x19156f88b27635b8!8m2!3d38.9959508!
+            4d-77.0988323"
+            rel="noopener noreferrer" target="_blank">National Library of Medicine
+            <br/> 8600 Rockville Pike<br/> Bethesda, MD 20894</a>
+        </p>
+    
+                </address>
+            
+
+            
+                <ul class="usa-list usa-list--unstyled ncbi-footer__vertical-list ncbi-footer__column">
+                    
+                        <li class="ncbi-footer__vertical-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.nlm.nih.gov/web_policies.html" class="usa-link  usa-link--alt ncbi-footer__link"  >
+        
+
+        
+            Web Policies
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="ncbi-footer__vertical-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.nih.gov/institutes-nih/nih-office-director/office-communications-public-liaison/freedom-information-act-office" class="usa-link  usa-link--alt ncbi-footer__link"  >
+        
+
+        
+            FOIA
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="ncbi-footer__vertical-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.hhs.gov/vulnerability-disclosure-policy/index.html" class="usa-link usa-link--external usa-link--alt ncbi-footer__link" rel="noreferrer noopener" target='_blank' >
+        
+
+        
+            HHS Vulnerability Disclosure
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                </ul>
+            
+
+            
+                <ul class="usa-list usa-list--unstyled ncbi-footer__vertical-list ncbi-footer__column">
+                    
+                        <li class="ncbi-footer__vertical-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://support.nlm.nih.gov/" class="usa-link  usa-link--alt ncbi-footer__link"  >
+        
+
+        
+            Help
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="ncbi-footer__vertical-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.nlm.nih.gov/accessibility.html" class="usa-link  usa-link--alt ncbi-footer__link"  >
+        
+
+        
+            Accessibility
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="ncbi-footer__vertical-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.nlm.nih.gov/careers/careers.html" class="usa-link  usa-link--alt ncbi-footer__link"  >
+        
+
+        
+            Careers
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                </ul>
+            
+        </div>
+
+        
+            <div class="grid-row grid-col-12" data-testid="grid">
+                <ul class="ncbi-footer__bottom-links-list">
+                    
+                        <li class="ncbi-footer__bottom-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.nlm.nih.gov/" class="usa-link  usa-link--alt ncbi-footer__link"  >
+        
+
+        
+            NLM
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="ncbi-footer__bottom-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.nih.gov/" class="usa-link  usa-link--alt ncbi-footer__link"  >
+        
+
+        
+            NIH
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="ncbi-footer__bottom-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.hhs.gov/" class="usa-link usa-link--external usa-link--alt ncbi-footer__link" rel="noreferrer noopener" target='_blank' >
+        
+
+        
+            HHS
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="ncbi-footer__bottom-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.usa.gov/" class="usa-link usa-link--external usa-link--alt ncbi-footer__link" rel="noreferrer noopener" target='_blank' >
+        
+
+        
+            USA.gov
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                </ul>
+            </div>
+        
+    </div>
+</footer>
+
+    
+
+
+        
+        
+    
+  <script  type="text/javascript" src="https://cdn.ncbi.nlm.nih.gov/core/pinger/pinger.js"> </script>
+
+
+    
+        
+
+<button class="back-to-top" data-ga-category="pagination" data-ga-action="back_to_top">
+    <label>Back to Top</label>
+    <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/arrow_upward.svg" alt="back to top icon" class="usa-icon usa-icon--size-3 order-0 usa-icon--white" />
+</button>
+    
+
+
+        
+    
+    <div id="icon-container" style="display: none;"></div>
+    
+    
+        
+    <script type="application/javascript">
+    window.ncbi = window.ncbi || {};
+    window.ncbi.pmc = window.ncbi.pmc || {};
+    window.ncbi.pmc.options = {
+        logLevel: 'INFO',
+        
+        staticEndpoint: 'https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/',
+        
+        citeCookieName: 'pmc-cf',
+    };
+</script>
+    <script type="module" crossorigin="" src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/base-Cp_Il6gk.js"></script>
+<link href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/vendor-Co8Vdmw2.js" type="text/javascript" crossorigin="anonymous" rel="modulepreload" as="script" />
+    
+    <script type="text/javascript" src="https://cdn.ncbi.nlm.nih.gov/core/jquery/jquery-3.6.0.min.js">&#xA0;</script>
+    <script type="text/javascript">
+        jQuery.getScript("https://cdn.ncbi.nlm.nih.gov/core/alerts/alerts.js", function () {
+            galert(['div.nav_and_browser', 'div.header', '#universal_header', '.usa-banner', 'body > *:nth-child(1)'])
+        });
+    </script>
+
+
+    <script type="text/javascript">var exports = {};</script>
+     <script src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/CACHE/js/output.4e25b6297b38.js"></script>
+
+    <script type="module" crossorigin="" src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/article-BxyWTbsj.js"></script>
+<link href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/vendor-Co8Vdmw2.js" type="text/javascript" crossorigin="anonymous" rel="modulepreload" as="script" />
+<link href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/index-DXSA0fsx.js" type="text/javascript" crossorigin="anonymous" rel="modulepreload" as="script" />
+<link href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/secure-cookie-Br6x5jtB.js" type="text/javascript" crossorigin="anonymous" rel="modulepreload" as="script" />
+    
+        <script type="module" crossorigin="" src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/math-CjjrG8hn.js"></script>
+<link href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/vendor-Co8Vdmw2.js" type="text/javascript" crossorigin="anonymous" rel="modulepreload" as="script" />
+    
+    
+
+    </body>
+</html>

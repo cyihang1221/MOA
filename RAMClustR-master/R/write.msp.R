@@ -1,0 +1,131 @@
+#' write.msp
+#'
+#' export spectra to .msp formatted files for use in other programs. 
+#'
+#' @param ramclustObj ramclustR object to annotate. 
+#' @param out.dir valid directory path describing output directory/file location.
+#' @param one.file logical, should all msp spectra be written to one file? If false, each spectrum is an individual file.
+#' @details exports files to a directory called 'spectra'.  If one.file = FALSE, a new directory 'spectra/msp' is created to hold the individual msp files. if do.findman has been run, spectra are written as ms2 spectra, else as ms1. 
+#' @return nothing, just exports files to the working directory
+#' @concept ramclustR
+#' @concept RAMClustR
+#' @concept metabolomics
+#' @concept mass spectrometry
+#' @concept clustering
+#' @concept interpretMSSpectrum
+#' @concept xcms
+#' @author Corey Broeckling
+#' @importFrom methods is
+#' @export 
+#' 
+
+write.msp <- function(
+    ramclustObj = NULL,
+    out.dir = NULL,
+    one.file = FALSE
+) {
+  
+  if(is.null(out.dir)) {
+    warning("output files will be written to temp directory:", tempdir(), '\n')
+    out.dir <- tempdir()
+  }
+  
+  if(!is(ramclustObj, "hclus") & 
+     ramclustObj$dist.method != "RAMClustR") {
+    stop("this is not a RAMClustR object")
+  }
+  
+  if(is.null(ramclustObj$precursor.mz)) {
+    ms2 <- FALSE
+  } else {
+    ms2 <- TRUE
+  }
+  
+  if(!dir.exists(paste0(out.dir, '/spectra'))) {
+    dir.create(paste0(out.dir, '/spectra'))
+  }
+  
+  if(!one.file) {
+    if(!dir.exists(paste0(out.dir, '/spectra/msp'))) {
+      dir.create(paste0(out.dir, '/spectra/msp'))
+    }
+  }
+  ion.mode <- as.character(ramclustObj$ExpDes[[2]][which(row.names(ramclustObj$ExpDes[[2]]) == "msmode"),1])
+  if(toupper(substring(ion.mode, 1, 1)) == "P") {
+    ion.mode = "Positive"
+  } else {
+    ion.mode = "Negative"
+  }
+  
+  out.list <- as.list(rep(NA, length(ramclustObj$cmpd)))
+  
+  for(i in 1:length(ramclustObj$cmpd)) {
+    ions <- which(ramclustObj$featclus == i)
+    
+    if(ms2) {
+      spectrum <- data.frame(
+        'mz' = ramclustObj$fmz[ions],
+        'int' = ramclustObj$msmsint[ions]
+      )
+    } else {
+      spectrum <- data.frame(
+        'mz' = ramclustObj$fmz[ions],
+        'int' = ramclustObj$msint[ions]
+      )
+    }
+    
+    spectrum <- spectrum[order(spectrum[,"int"], decreasing = TRUE), ]
+    
+    out <- paste0(
+      "NAME:", ramclustObj$cmpd[i], '\n', 
+      "IONMODE:", ion.mode, '\n',
+      "SPECTRUMTYPE:Centroid", '\n',
+      "RETENTIONTIME:", round(ramclustObj$clrt[i], 2), '\n'
+    )
+    
+    ## bug fix
+    if(any(names(ramclustObj)=="clri")) {
+      out <- paste0(
+        out,
+        "RETENTIONINDEX:", round(ramclustObj$clri[i], 2),  '\n'
+      )
+    }
+    
+    if(ms2) {
+      out <- paste0(out, 
+                    "PRECURSORMZ:", ramclustObj$precursor.mz[i],'\n', 
+                    "PRECURSORTYPE:", ramclustObj$precursor.type[i], '\n'
+      )
+    }
+    out <- paste0(out,
+                  "Num Peaks:", nrow(spectrum), '\n'
+                  # m/z intensity pair (tab, comma, space can be used as the delimiter.)
+    )
+    for(j in 1:nrow(spectrum)) {
+      out <- paste0(out, 
+                    spectrum[j,"mz"], 
+                    " ", 
+                    round(spectrum[j,"int"]),
+                    '\n'
+      )
+    }
+    out.list[[i]] <- out
+  }
+  
+  if(one.file) {
+    out <- vector(mode = "character")
+    for(i in 1:length(out.list)) {
+      out <- paste0(out, out.list[[i]], '\n')
+    }
+    exp.name <- ramclustObj$ExpDes[[1]][which(row.names(ramclustObj$ExpDes[[1]]) == "Experiment"),1]
+    if(nchar(exp.name) == 0) {
+      exp.name <- "spectra"
+    }
+    writeLines(out, con = paste0(out.dir, '/spectra/', exp.name, ".msp"))
+  } else {
+    for(i in 1:length(out.list)) {
+      writeLines(out.list[[i]], '\n', con = paste0(out.dir, "/spectra/msp/", ramclustObj$cmpd[[i]], ".msp"))
+    }
+  }
+  
+}

@@ -1,0 +1,2843 @@
+
+<!DOCTYPE html>
+<html lang="en" >
+    <head >
+
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="HandheldFriendly" content="True" />
+        <meta name="MobileOptimized" content="320" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        
+        
+
+        
+        
+  <link  rel="stylesheet" href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/base_style-BxRs1iOp.css" />
+<script type="module" crossorigin="" src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/base_style-D-jH62-1.js"></script>
+
+  <link  rel="stylesheet" href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/article_style-B67IZFds.css" />
+<link  rel="stylesheet" href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/style-D77LS1kY.css" />
+<script type="module" crossorigin="" src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/article_style-CTAd1LmM.js"></script>
+
+  
+  
+    <style>
+  
+  
+  @media screen and (min-width: 64em) {
+    div.pmc-wm {
+      background: repeat-y;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='350' xmlns:xlink='http://www.w3.org/1999/xlink'%3E%3Cdefs%3E%3Cfilter x='-.02' y='0' width='1.05' height='1' id='c'%3E%3CfeFlood flood-color='%23FFF'/%3E%3CfeComposite in='SourceGraphic'/%3E%3C/filter%3E%3Ctext id='b' font-family='Helvetica' font-size='11pt' style='opacity:1;fill:%23005ea2;stroke:none;text-anchor:middle' x='175' y='14'%3E%3C/text%3E%3Cpath id='a' style='fill:%23005ea2' d='M0 8h350v3H0z'/%3E%3C/defs%3E%3Cuse xlink:href='%23a' transform='rotate(90 10 10)'/%3E%3Cuse xlink:href='%23b' transform='rotate(90 10 10)' filter='url(%23c)'/%3E%3C/svg%3E");
+      padding-left: 3rem;
+    }
+  }
+</style>
+
+  
+
+
+
+        
+            <link rel="apple-touch-icon"
+                  sizes="180x180"
+                  href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/favicons/apple-touch-icon.png" />
+            <link rel="icon"
+                  type="image/png"
+                  sizes="48x48"
+                  href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/favicons/favicon-48x48.png" />
+            <link rel="icon"
+                  type="image/png"
+                  sizes="32x32"
+                  href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/favicons/favicon-32x32.png" />
+            <link rel="icon"
+                  type="image/png"
+                  sizes="16x16"
+                  href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/favicons/favicon-16x16.png" />
+            <link rel="manifest" href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/favicons/site.webmanifest" />
+            <link rel="mask-icon"
+                  href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/favicons/safari-pinned-tab.svg"
+                  color="#0071bc" />
+            <meta name="msapplication-config"
+                  content="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/favicons/browserconfig.xml" />
+            <meta name="theme-color" content="#ffffff" />
+        
+
+        <title>
+            Framework to Segment and Evaluate Multiple Sclerosis Lesion in MRI Slices Using VGG-UNet - PMC
+        </title>
+
+        
+        
+  
+  <!-- Logging params: Pinger defaults -->
+<meta name="ncbi_app" content="cloudpmc-viewer" />
+<meta name="ncbi_db" content="pmc" />
+<meta name="ncbi_phid" content="321F0A2D9D12D3330B0A2D009BFB442C.m_1" />
+<meta name="ncbi_pinger_stat_url" content="https://pmc.ncbi.nlm.nih.gov/stat" />
+<!-- Logging params: Pinger custom -->
+<meta name="ncbi_pdid" content="article" />
+  
+    <link rel="preconnect" href="https://www.google-analytics.com" />
+
+    
+        <link rel="preconnect" href="https://cdn.ncbi.nlm.nih.gov" />
+    
+
+    <!-- Include USWDS Init Script -->
+    <script src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/uswds-init.js"></script>
+
+
+    <meta name="ncbi_domain" content="cin">
+<meta name="ncbi_type" content="fulltext">
+<meta name="ncbi_pcid" content="journal">
+<meta name="ncbi_feature" content="associated_data">
+<link rel="canonical" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC9184172/">
+<meta name="robots" content="INDEX,NOFOLLOW,NOARCHIVE">
+<meta name="citation_journal_title" content="Computational Intelligence and Neuroscience">
+<meta name="citation_title" content="Framework to Segment and Evaluate Multiple Sclerosis Lesion in MRI Slices Using VGG-UNet">
+<meta name="citation_author" content="Sujatha Krishnamoorthy">
+<meta name="citation_author_institution" content="Zhejiang Bioinformatics International Science and Technology Cooperation Center, Wenzhou-Kean University, Wenzhou, Zhejiang Province, China">
+<meta name="citation_author_institution" content="Wenzhou Municipal Key Lab of Applied Biomedical and Biopharmaceutical Informatics, Wenzhou-Kean University, Wenzhou, Zhejiang Province, China">
+<meta name="citation_author" content="Yaxi Zhang">
+<meta name="citation_author_institution" content="Department of Neurology, Wenzhou Central Hospital Medical Group, Wenzhou 325000, China">
+<meta name="citation_author" content="Seifedine Kadry">
+<meta name="citation_author_institution" content="Faculty of Applied Computing and Technology, Noroff University College, Kristiansand 94612, Norway">
+<meta name="citation_author" content="Weifeng Yu">
+<meta name="citation_author_institution" content="Wenzhou-Kean University, School of Science and Technology, Wenzhou, Zhejiang Province, China">
+<meta name="citation_publication_date" content="2022 Jun 2">
+<meta name="citation_volume" content="2022">
+<meta name="citation_firstpage" content="4928096">
+<meta name="citation_doi" content="10.1155/2022/4928096">
+<meta name="citation_pmid" content="35694573">
+<meta name="citation_abstract_html_url" content="https://pmc.ncbi.nlm.nih.gov/articles/PMC9184172/">
+<meta name="citation_fulltext_html_url" content="https://pmc.ncbi.nlm.nih.gov/articles/PMC9184172/">
+<meta name="citation_pdf_url" content="https://pmc.ncbi.nlm.nih.gov/articles/PMC9184172/pdf/CIN2022-4928096.pdf">
+<meta name="description" content="Multiple sclerosis (MS) is an autoimmune disease that causes mild to severe issues in the central nervous system (CNS). Early detection and treatment are necessary to reduce the harshness of the disease in individuals. The proposed work aims to ...">
+<meta name="og:title" content="Framework to Segment and Evaluate Multiple Sclerosis Lesion in MRI Slices Using VGG-UNet">
+<meta name="og:type" content="article">
+<meta name="og:site_name" content="PubMed Central (PMC)">
+<meta name="og:description" content="Multiple sclerosis (MS) is an autoimmune disease that causes mild to severe issues in the central nervous system (CNS). Early detection and treatment are necessary to reduce the harshness of the disease in individuals. The proposed work aims to ...">
+<meta name="og:url" content="https://pmc.ncbi.nlm.nih.gov/articles/PMC9184172/">
+<meta name="og:image" content="https://cdn.ncbi.nlm.nih.gov/pmc/cms/images/pmc-card-share.jpg?_=0">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@ncbi">
+    
+    
+
+    </head>
+    <body >
+        
+    <a class="usa-skipnav " href="#main-content">
+      Skip to main content
+    </a>
+
+
+        
+            
+
+<section class="usa-banner " aria-label="Official website of the United States government" >
+    <div class="usa-accordion">
+        <header class="usa-banner__header">
+            <div class="usa-banner__inner">
+                <div class="grid-col-auto">
+                    <img aria-hidden="true"
+                         class="usa-banner__header-flag"
+                         src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/us_flag.svg"
+                         alt="" />
+                </div>
+
+                <div class="grid-col-fill tablet:grid-col-auto" aria-hidden="true">
+                    <p class="usa-banner__header-text">
+                        An official website of the United States government
+                    </p>
+                    <span class="usa-banner__header-action">Here's how you know</span>
+                </div>
+
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="button"
+        
+    
+    class="usa-accordion__button usa-banner__button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           
+           "
+    aria-expanded="false"
+    aria-controls="gov-banner-default"
+    
+    data-testid="storybook-django-banner"
+    
+    >
+    
+        
+
+        
+                    <span class="usa-banner__button-text">Here's how you know</span>
+                
+
+        
+    
+        
+            </button>
+        
+
+
+            </div>
+        </header>
+
+        <div class="usa-banner__content usa-accordion__content"
+             id="gov-banner-default"
+             hidden>
+            <div class="grid-row grid-gap-lg">
+                <div class="usa-banner__guidance tablet:grid-col-6">
+                    <img class="usa-banner__icon usa-media-block__img"
+                         src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/icon-dot-gov.svg"
+                         alt=""
+                         aria-hidden="true" />
+                    <div class="usa-media-block__body">
+                        <p>
+                            <strong>Official websites use .gov</strong>
+                            <br />
+                            A
+                            <strong>.gov</strong> website belongs to an official
+                            government organization in the United States.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="usa-banner__guidance tablet:grid-col-6">
+                    <img class="usa-banner__icon usa-media-block__img"
+                         src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/icon-https.svg"
+                         alt=""
+                         aria-hidden="true" />
+
+                    <div class="usa-media-block__body">
+                        <p>
+                            <strong>Secure .gov websites use HTTPS</strong>
+                            <br />
+                            A <strong>lock</strong> (
+                            <span class="icon-lock">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     width="52"
+                                     height="64"
+                                     viewBox="0 0 52 64"
+                                     class="usa-banner__lock-image"
+                                     role="graphics-symbol"
+                                     aria-labelledby="banner-lock-description"
+                                     focusable="false">
+                                    <title id="banner-lock-title">Lock</title>
+                                    <desc id="banner-lock-description">
+                                    Locked padlock icon
+                                    </desc>
+                                    <path fill="#000000"
+                                          fill-rule="evenodd"
+                                          d="M26 0c10.493 0 19 8.507 19 19v9h3a4 4 0 0 1 4 4v28a4 4 0 0 1-4 4H4a4 4 0 0 1-4-4V32a4 4 0 0 1 4-4h3v-9C7 8.507 15.507 0 26 0zm0 8c-5.979 0-10.843 4.77-10.996 10.712L15 19v9h22v-9c0-6.075-4.925-11-11-11z" />
+                                </svg>
+</span>) or <strong>https://</strong> means you've safely
+                                connected to the .gov website. Share sensitive
+                                information only on official, secure websites.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+        
+
+        
+    
+    
+    
+
+<div class="usa-overlay">
+</div>
+
+
+
+<header class="usa-header usa-header--extended usa-header--wide" data-header data-testid="header"    >
+    <div class="ncbi-header">
+        <div class="ncbi-header__container">
+            <a class="ncbi-header__logo-container"
+               href="https://www.ncbi.nlm.nih.gov/">
+                <img alt="NCBI home page"
+                     class="ncbi-header__logo-image"
+                     src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/ncbi-logos/nih-nlm-ncbi--white.svg"
+                     width="410"
+                     height="100" />
+            </a>
+
+            <!-- Mobile menu hamburger button -->
+            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="button"
+        
+    
+    class="usa-menu-btn ncbi-header__hamburger-button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           
+           "
+    
+    
+    aria-label="Show menu"
+    data-testid="navMenuButton"
+    
+    >
+    
+        
+
+        
+                <svg aria-hidden="true"
+                     class="ncbi-hamburger-icon"
+                     fill="none"
+                     focusable="false"
+                     height="21"
+                     viewBox="0 0 31 21"
+                     width="31"
+                     xmlns="http://www.w3.org/2000/svg">
+                    <path clip-rule="evenodd"
+                          d="M0.125 20.75H30.875V17.3333H0.125V20.75ZM0.125 12.2083H30.875V8.79167H0.125V12.2083ZM0.125 0.25V3.66667H30.875V0.25H0.125Z"
+                          fill="#F1F1F1"
+                          fill-rule="evenodd" />
+                </svg>
+            
+
+        
+    
+        
+            </button>
+        
+
+
+
+            
+                <!-- Desktop buttons-->
+                <div class="ncbi-header__desktop-buttons">
+                    
+                        <!-- Desktop search button -->
+                        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="button"
+        
+    
+    class="usa-button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           usa-button--unstyled ncbi-header__desktop-button
+           "
+    aria-expanded="false"
+    aria-controls="search-field-desktop-navigation"
+    aria-label="Show search overlay"
+    data-testid="toggleSearchPanelButton"
+    data-toggle-search-panel-button
+    >
+    
+        
+
+        
+                            
+
+
+
+    <img
+        src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/search.svg"
+        class="usa-icon "
+        aria-hidden="true"
+        
+        
+    />
+
+
+                            Search
+                        
+
+        
+    
+        
+            </button>
+        
+
+
+                    
+
+                    <!-- Desktop login dropdown -->
+                    
+                        <div class="ncbi-header__login-dropdown">
+                            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="button"
+        
+    
+    class="usa-button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           usa-button--unstyled ncbi-header__desktop-button ncbi-header__login-dropdown-button
+           "
+    aria-expanded="false"
+    aria-controls="login-dropdown-menu"
+    aria-label="Show login menu"
+    data-testid="toggleLoginMenuDropdown"
+    data-desktop-login-button
+    >
+    
+        
+
+        
+                                
+
+
+
+    <img
+        src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/person.svg"
+        class="usa-icon "
+        aria-hidden="true"
+        
+        
+    />
+
+
+
+                                <span data-login-dropdown-text>Log in</span>
+
+                                <!-- Dropdown icon pointing up -->
+                                
+
+
+
+    <img
+        src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/expand_less.svg"
+        class="usa-icon ncbi-header__login-dropdown-icon ncbi-header__login-dropdown-icon--expand-less ncbi-header__login-dropdown-icon--hidden"
+        aria-hidden="true"
+        data-login-dropdown-up-arrow
+        
+    />
+
+
+
+                                <!-- Dropdown icon pointing down -->
+                                
+
+
+
+    <img
+        src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/expand_more.svg"
+        class="usa-icon ncbi-header__login-dropdown-icon ncbi-header__login-dropdown-icon--expand-more ncbi-header__login-dropdown-icon--hidden"
+        aria-hidden="true"
+        data-login-dropdown-down-arrow
+        
+    />
+
+
+                            
+
+        
+    
+        
+            </button>
+        
+
+
+
+                            <!-- Login dropdown menu -->
+                            <ul class="usa-nav__submenu ncbi-header__login-dropdown-menu"
+                                id="login-dropdown-menu"
+                                data-desktop-login-menu-dropdown
+                                hidden>
+                                
+                                    <li class="usa-nav__submenu-item">
+                                        <!-- Uses custom style overrides to render external and document links. -->
+                                        
+
+
+
+
+
+
+
+
+
+    <a href="https://www.ncbi.nlm.nih.gov/myncbi/" class="usa-link  "  >
+        
+
+        
+            Dashboard
+        
+
+        
+    </a>
+
+
+                                    </li>
+                                
+                                    <li class="usa-nav__submenu-item">
+                                        <!-- Uses custom style overrides to render external and document links. -->
+                                        
+
+
+
+
+
+
+
+
+
+    <a href="https://www.ncbi.nlm.nih.gov/myncbi/collections/bibliography/" class="usa-link  "  >
+        
+
+        
+            Publications
+        
+
+        
+    </a>
+
+
+                                    </li>
+                                
+                                    <li class="usa-nav__submenu-item">
+                                        <!-- Uses custom style overrides to render external and document links. -->
+                                        
+
+
+
+
+
+
+
+
+
+    <a href="https://www.ncbi.nlm.nih.gov/account/settings/" class="usa-link  "  >
+        
+
+        
+            Account settings
+        
+
+        
+    </a>
+
+
+                                    </li>
+                                
+                                <li class="usa-nav__submenu-item">
+                                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="button"
+        
+    
+    class="usa-button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           usa-button--outline ncbi-header__login-dropdown-logout-button
+           "
+    
+    
+    
+    data-testid="desktopLogoutButton"
+    data-desktop-logout-button
+    >
+    
+        
+
+        Log out
+
+        
+    
+        
+            </button>
+        
+
+
+                                </li>
+                            </ul>
+                        </div>
+                    
+                </div>
+            
+        </div>
+    </div>
+
+    <!-- Search panel -->
+    
+        <div class="ncbi-search-panel ncbi--show-only-at-desktop"
+             data-header-search-panel
+             hidden>
+            <div class="ncbi-search-panel__container">
+                <form action="https://www.ncbi.nlm.nih.gov/search/all/"
+                      
+                      autocomplete="off"
+                      class="usa-search usa-search--big ncbi-search-panel__form"
+                      data-testid="desktop-navigation-search-form"
+                      method="GET"
+                      role="search">
+                    <label class="usa-sr-only" for="search-field-desktop-navigation">
+                        Search…
+                    </label>
+                    <input class="usa-input"
+                           id="search-field-desktop-navigation"
+                           name="term"
+                           
+                               placeholder="Search NCBI"
+                           
+                           type="search"
+                           value="" />
+                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="submit"
+        
+    
+    class="usa-button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           
+           "
+    
+    
+    
+    
+    
+    >
+    
+        
+
+        
+                        <span class="usa-search__submit-text">
+                            Search NCBI
+                        </span>
+                    
+
+        
+    
+        
+            </button>
+        
+
+
+                </form>
+
+                
+            </div>
+        </div>
+    
+
+    <nav aria-label="Primary navigation" class="usa-nav">
+        <p class="usa-sr-only" id="primary-navigation-sr-only-title">
+            Primary site navigation
+        </p>
+
+        <!-- Mobile menu close button -->
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="button"
+        
+    
+    class="usa-nav__close ncbi-nav__close-button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           
+           "
+    
+    
+    aria-label="Close navigation menu"
+    data-testid="navCloseButton"
+    
+    >
+    
+        
+
+        
+            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/usa-icons/close.svg" alt="Close" />
+        
+
+        
+    
+        
+            </button>
+        
+
+
+
+        
+            <!-- Mobile search component -->
+            <form class="usa-search usa-search--small ncbi--hide-at-desktop"
+                  action="https://www.ncbi.nlm.nih.gov/search/all/"
+                  
+                  autocomplete="off"
+                  data-testid="mobile-navigation-search-form"
+                  method="GET"
+                  role="search">
+                <label class="usa-sr-only" for="search-field-mobile-navigation">
+                    Search
+                </label>
+
+                <input class="usa-input"
+                       id="search-field-mobile-navigation"
+                       type="search"
+                       
+                           placeholder="Search NCBI"
+                       
+                       name="term" />
+
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="submit"
+        
+    
+    class="usa-button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           
+           "
+    
+    
+    
+    
+    
+    >
+    
+        
+
+        
+                    <!-- This SVG should be kept inline and not replaced with a link to the icon as otherwise it will render in the wrong color -->
+                    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjI0Ij48cGF0aCBkPSJNMCAwaDI0djI0SDB6IiBmaWxsPSJub25lIi8+PHBhdGggZmlsbD0iI2ZmZiIgZD0iTTE1LjUgMTRoLS43OWwtLjI4LS4yN0E2LjQ3MSA2LjQ3MSAwIDAgMCAxNiA5LjUgNi41IDYuNSAwIDEgMCA5LjUgMTZjMS42MSAwIDMuMDktLjU5IDQuMjMtMS41N2wuMjcuMjh2Ljc5bDUgNC45OUwyMC40OSAxOWwtNC45OS01em0tNiAwQzcuMDEgMTQgNSAxMS45OSA1IDkuNVM3LjAxIDUgOS41IDUgMTQgNy4wMSAxNCA5LjUgMTEuOTkgMTQgOS41IDE0eiIvPjwvc3ZnPg=="
+                         class="usa-search__submit-icon"
+                         alt="Search" />
+                
+
+        
+    
+        
+            </button>
+        
+
+
+            </form>
+
+            
+        
+
+        <!-- Primary navigation menu items -->
+        <!-- This usa-nav__inner wrapper is required to correctly style the navigation items on Desktop -->
+        
+
+        
+            <div class="ncbi-nav__mobile-login-menu ncbi--hide-at-desktop"
+                 data-mobile-login-menu
+                 hidden>
+                <p class="ncbi-nav__mobile-login-menu-status">
+                    Logged in as:
+                    <strong class="ncbi-nav__mobile-login-menu-email"
+                            data-mobile-login-email-text></strong>
+                </p>
+                <ul class="usa-nav__primary usa-accordion">
+                    
+                        <li class="usa-nav__primary-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.ncbi.nlm.nih.gov/myncbi/" class="usa-link  "  >
+        
+
+        
+            Dashboard
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="usa-nav__primary-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.ncbi.nlm.nih.gov/myncbi/collections/bibliography/" class="usa-link  "  >
+        
+
+        
+            Publications
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="usa-nav__primary-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.ncbi.nlm.nih.gov/account/settings/" class="usa-link  "  >
+        
+
+        
+            Account settings
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                </ul>
+            </div>
+        
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="button"
+        
+    
+    class="usa-button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           ncbi-nav__mobile-login-button ncbi--hide-at-desktop
+           "
+    
+    
+    
+    data-testid="mobileLoginButton"
+    data-mobile-login-button
+    >
+    
+        
+
+        Log in
+
+        
+    
+        
+            </button>
+        
+
+
+    </nav>
+</header>
+
+    
+    
+        
+
+<section class="pmc-header pmc-header--basic" aria-label="PMC Header with search box">
+    <div class="pmc-nav-container">
+        <div class="pmc-header__bar">
+           <div class="pmc-header__logo">
+               <a href="/" title="Home" aria-label="PMC Home"></a>
+           </div>
+            <button
+                    type="button"
+                    class="usa-button usa-button--unstyled pmc-header__search__button"
+                    aria-label="Open search"
+                    data-ga-category="search"
+                    data-ga-action="PMC"
+                    data-ga-label="pmc_search_panel_mobile"
+            >
+                <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/search.svg" alt="PMC search open icon" aria-hidden="true" class="usa-icon usa-icon--size-4 pmc-icon__open" />
+                <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/close.svg" alt="PMC search close ison" aria-hidden="true" class="usa-icon usa-icon--size-4 pmc-icon__close" />
+            </button>
+        </div>
+        <div class="pmc-header__search">
+            
+
+
+<form class="usa-search usa-search--extra usa-search--article-right-column  pmc-header__search__form" id="pmc-search-form" autocomplete="off" role="search">
+<label class="usa-sr-only" for="pmc-search">Search PMC Full-Text Archive</label>
+<span class="autoComplete_wrapper flex-1">
+<input class="usa-input width-full maxw-none" required="required" placeholder="Search PMC Full-Text Archive" id="pmc-search"  type="search" name="term" data-autocomplete-url="https://pmc.ncbi.nlm.nih.gov/autocomp/search/autocomp/"/>
+</span>
+<button
+class="usa-button"
+type="submit"
+formaction="https://pmc.ncbi.nlm.nih.gov/search/"
+data-ga-category="search"
+data-ga-action="PMC"
+data-ga-label="PMC_search_button"
+>
+<span class="usa-search__submit-text">Search in PMC</span>
+<img
+src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/usa-icons-bg/search--white.svg"
+class="usa-search__submit-icon"
+alt="Search"
+/>
+</button>
+</form>
+            <div class="display-flex flex-column tablet:flex-row tablet:flex-justify flex-justify-center flex-align-center width-full desktop:maxw-44">
+                <ul class="pmc-header__search__menu">
+                    <li>
+                        
+                            <a class="usa-link" href="/journals/" data-ga-action="featured_link" data-ga-label="journal list">
+                                Journal List
+                            </a>
+                        
+                    </li>
+                    <li>
+                        
+                            <a class="usa-link" href="/about/userguide/" data-ga-action="featured_link"
+                            data-ga-label="user guide">
+                                User Guide
+                            </a>
+                        
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+    
+
+
+        
+        
+
+       
+  <div class="usa-section padding-top-0 desktop:padding-top-6 pmc-article-section" data-article-db="pmc" data-article-id="9184172">
+
+    
+
+   
+
+
+
+<div class="grid-container pmc-actions-bar" aria-label="Actions bar" role="complementary">
+    <div class="grid-row">
+        <div class="grid-col-fill display-flex">
+             <div class="display-flex">
+                <ul class="usa-list usa-list--unstyled usa-list--horizontal">
+                    <li class="margin-right-2 mobile-lg:margin-right-4 display-flex mob">
+                        <button
+                                type="button"
+                                class="usa-button pmc-sidenav__container__open usa-button--unstyled width-auto display-flex"
+                                aria-label="Open resources"
+                                data-extra-class="is-visible-resources"
+                                data-ga-category="resources_accordion"
+                                data-ga-action="click"
+                                data-ga-label="mobile_icon"
+                        >
+                            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/more_vert.svg" alt="Open resources icon" class="usa-icon usa-icon--size-4 usa-icon--link" />
+                        </button>
+                    </li>
+                    
+                    <li class="margin-right-2 mobile-lg:margin-right-4 display-flex mob">
+                        <a
+                                href="https://doi.org/10.1155/2022/4928096"
+                                class="usa-link display-flex usa-tooltip"
+                                role="button"
+                                target="_blank"
+                                rel="noreferrer noopener"
+                                title="View on publisher site"
+                                data-position="bottom"
+                                aria-label="View on publisher site"
+                                data-ga-category="actions"
+                                data-ga-action="click"
+                                data-ga-label="publisher_link_mobile"
+                        >
+                                <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/launch.svg" alt="View on publisher site icon" class="usa-icon usa-icon--size-4 usa-icon--link" />
+                        </a>
+                    </li>
+                    
+                    
+                        <li class="margin-right-2 mobile-lg:margin-right-4 display-flex">
+                             <a
+                                     href="pdf/CIN2022-4928096.pdf"
+                                     class="usa-link display-flex usa-tooltip"
+                                     role="button"
+                                     title="Download PDF"
+                                     data-position="bottom"
+                                     aria-label="Download PDF"
+                                     data-ga-category="actions"
+                                     data-ga-action="click"
+                                     data-ga-label="pdf_download_mobile"
+                             >
+
+                                 <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/file_download.svg" alt="Download PDF icon" aria-hidden="true" class="usa-icon usa-icon--size-4 usa-icon--link" />
+                            </a>
+                        </li>
+                    
+                    <li class="margin-right-2 mobile-lg:margin-right-4 display-flex">
+                        <button
+                            class="usa-button usa-button--unstyled  usa-tooltip collections-dialog-trigger collections-button display-flex collections-button-empty"
+                            title="Add to Collections"
+                            data-position="bottom"
+                            aria-label="Save article in MyNCBI collections."
+                            data-ga-category="actions"
+                            data-ga-action="click"
+                            data-ga-label="collections_button_mobile"
+                            data-collections-open-dialog-enabled="false"
+                            data-collections-open-dialog-url="https://account.ncbi.nlm.nih.gov/?back_url=https%3A%2F%2Fpmc.ncbi.nlm.nih.gov%2Farticles%2FPMC9184172%2F%23open-collections-dialog"
+                            data-in-collections="false"
+                        >
+                            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/action-bookmark-full.svg" alt="Collections icon" aria-hidden="true" class="usa-icon usa-icon--size-4 usa-icon--link usa-icon--bookmark-full" />
+                            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/action-bookmark-empty.svg" alt="Collections icon" aria-hidden="true" class="usa-icon usa-icon--size-4 usa-icon--link usa-icon--bookmark-empty" />
+                        </button>
+                    </li>
+                    
+                    <li class="margin-right-2 mobile-lg:margin-right-4 display-flex">
+                        <button role="button" class="usa-button usa-button--unstyled usa-tooltip citation-dialog-trigger display-flex"
+                            aria-label="Open dialog with citation text in different styles"
+                            title="Cite"
+                            data-position="bottom"
+                            data-ga-category="actions"
+                            data-ga-action="open"
+                            data-ga-label="cite_mobile"
+                            data-all-citations-url="/resources/citations/9184172/"
+                            data-citation-style="nlm"
+                            data-download-format-link="/resources/citations/9184172/export/"
+                        >
+                            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/format_quote.svg" alt="Cite icon" aria-hidden="true" class="usa-icon usa-icon--size-4 usa-icon--link" />
+                        </button>
+                    </li>
+                    
+                    <li class="pmc-permalink display-flex" >
+                         <button
+                                 type="button"
+                                 title="Permalink"
+                                 data-position="bottom"
+                                 class="usa-button usa-button--unstyled display-flex usa-tooltip"
+                                 aria-label="Show article permalink"
+                                 aria-expanded="false"
+                                 aria-haspopup="true"
+                                 data-ga-category="actions"
+                                 data-ga-action="open"
+                                 data-ga-label="permalink_mobile"
+                         >
+                            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/share.svg" alt="Show article permalink icon" aria-hidden="true" class="usa-icon usa-icon--size-4 usa-icon--link" />
+                        </button>
+                        
+
+<div class="pmc-permalink__dropdown" hidden>
+    <div class="pmc-permalink__dropdown__container">
+          <h2 class="usa-modal__heading margin-top-0 margin-bottom-2 text-uppercase font-sans-xs">PERMALINK</h2>
+          <div class="pmc-permalink__dropdown__content">
+              <input type="text" class="usa-input" value="https://pmc.ncbi.nlm.nih.gov/articles/PMC9184172/" aria-label="Article permalink">
+              <button class="usa-button display-inline-flex pmc-permalink__dropdown__copy__btn margin-right-0" title="Copy article permalink" data-ga-category="save_share" data-ga-action="link" data-ga-label="copy_link">
+                  <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/content_copy.svg" alt="Copy icon" aria-hidden="true" class="usa-icon usa-icon--white" />
+                  <span class="margin-left-1">Copy</span>
+              </button>
+          </div>
+    </div>
+</div>
+                    </li>
+                </ul>
+            </div>
+            <button
+                    type="button"
+                    class="usa-button pmc-sidenav__container__open usa-button--unstyled width-auto display-flex"
+                    aria-label="Open article navigation"
+                    data-extra-class="is-visible-in-page"
+                    data-ga-category="actions"
+                    data-ga-action="open"
+                    data-ga-label="article_nav_mobile"
+            >
+                <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/list.svg" alt="Open article navigation icon" aria-hidden="true" class="usa-icon usa-icon--size-4 usa-icon--link" />
+            </button>
+        </div>
+    </div>
+</div>
+    <div class="grid-container desktop:padding-left-6">
+      <div id="article-container" class="grid-row grid-gap">
+        <div class="grid-col-12 desktop:grid-col-8 order-2 pmc-layout__content">
+            <div class="grid-container padding-left-0 padding-right-0">
+                <div class="grid-row desktop:margin-left-neg-6">
+                    <div class="grid-col-12">
+                        <div class="pmc-layout__disclaimer" role="complementary" aria-label="Disclaimer note">
+    As a library, NLM provides access to scientific literature. Inclusion in an NLM database does not imply endorsement of, or agreement with,
+    the contents by NLM or the National Institutes of Health.<br/>
+    Learn more:
+    <a class="usa-link" data-ga-category="Link click" data-ga-action="Disclaimer" data-ga-label="New disclaimer box" href="/about/disclaimer/">PMC Disclaimer</a>
+    |
+    <a class="usa-link" data-ga-category="Link click" data-ga-action="PMC Copyright Notice" data-ga-label="New disclaimer box" href="/about/copyright/">
+        PMC Copyright Notice
+    </a>
+</div>
+                    </div>
+                </div>
+                <div class="grid-row pmc-wm desktop:margin-left-neg-6">
+                    <!-- Main content -->
+                    <main
+                      id="main-content"
+                      class="usa-layout-docs__main usa-layout-docs grid-col-12 pmc-layout pmc-prose padding-0"
+                    >
+
+                      
+                        <section class="pmc-journal-banner text-center line-height-none" aria-label="Journal banner"><img src="https://cdn.ncbi.nlm.nih.gov/pmc/banners/logo-cin.png" alt="Computational Intelligence and Neuroscience logo" usemap="#pmc-banner-imagemap" width="500" height="75"><map name="pmc-banner-imagemap"><area alt="Link to Computational Intelligence and Neuroscience" title="Link to Computational Intelligence and Neuroscience" shape="default" href="https://onlinelibrary.wiley.com/journal/8483" target="_blank" rel="noopener noreferrer"></map></section><article lang="en"><section aria-label="Article citation and metadata"><section class="pmc-layout__citation font-secondary font-xs"><div>
+<div class="display-inline-block"><button type="button" class="cursor-pointer text-no-underline bg-transparent border-0 padding-0 text-left margin-0 text-normal text-primary" aria-controls="journal_context_menu">Comput Intell Neurosci</button></div>. 2022 Jun 2;2022:4928096. doi: <a href="https://doi.org/10.1155/2022/4928096" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">10.1155/2022/4928096</a>
+</div>
+<nav id="journal_context_menu" hidden="hidden"><ul class="menu-list font-family-ui" role="menu">
+<li role="presentation"><a href='https://pmc.ncbi.nlm.nih.gov/search/?term="Comput%20Intell%20Neurosci"[jour]' class="usa-link" role="menuitem">Search in PMC</a></li>
+<li role="presentation"><a href='https://pubmed.ncbi.nlm.nih.gov/?term="Comput%20Intell%20Neurosci"[jour]' lang="en" class="usa-link" role="menuitem">Search in PubMed</a></li>
+<li role="presentation"><a href='https://www.ncbi.nlm.nih.gov/nlmcatalog?term="Comput%20Intell%20Neurosci"[Title%20Abbreviation]' class="usa-link" role="menuitem">View in NLM Catalog</a></li>
+<li role="presentation"><a href='?term="Comput%20Intell%20Neurosci"[jour]' class="usa-link" role="menuitem" data-add-to-search="true">Add to search</a></li>
+</ul></nav></section><section class="front-matter"><div class="ameta p font-secondary font-xs">
+<hgroup><h1>Framework to Segment and Evaluate Multiple Sclerosis Lesion in MRI Slices Using VGG-UNet</h1></hgroup><div class="cg p">
+<a href='https://pubmed.ncbi.nlm.nih.gov/?term="Krishnamoorthy%20S"[Author]' class="usa-link" aria-describedby="id1"><span class="name western">Sujatha Krishnamoorthy</span></a><div hidden="hidden" id="id1">
+<h3><span class="name western">Sujatha Krishnamoorthy</span></h3>
+<div class="p">
+<sup>1</sup>Zhejiang Bioinformatics International Science and Technology Cooperation Center, Wenzhou-Kean University, Wenzhou, Zhejiang Province, China</div>
+<div class="p">
+<sup>2</sup>Wenzhou Municipal Key Lab of Applied Biomedical and Biopharmaceutical Informatics, Wenzhou-Kean University, Wenzhou, Zhejiang Province, China</div>
+<div class="p">Find articles by <a href='https://pubmed.ncbi.nlm.nih.gov/?term="Krishnamoorthy%20S"[Author]' class="usa-link"><span class="name western">Sujatha Krishnamoorthy</span></a>
+</div>
+</div>
+<sup>1,</sup><sup>2,</sup><sup>✉</sup>, <a href='https://pubmed.ncbi.nlm.nih.gov/?term="Zhang%20Y"[Author]' class="usa-link" aria-describedby="id2"><span class="name western">Yaxi Zhang</span></a><div hidden="hidden" id="id2">
+<h3><span class="name western">Yaxi Zhang</span></h3>
+<div class="p">
+<sup>3</sup>Department of Neurology, Wenzhou Central Hospital Medical Group, Wenzhou 325000, China</div>
+<div class="p">Find articles by <a href='https://pubmed.ncbi.nlm.nih.gov/?term="Zhang%20Y"[Author]' class="usa-link"><span class="name western">Yaxi Zhang</span></a>
+</div>
+</div>
+<sup>3</sup>, <a href='https://pubmed.ncbi.nlm.nih.gov/?term="Kadry%20S"[Author]' class="usa-link" aria-describedby="id3"><span class="name western">Seifedine Kadry</span></a><div hidden="hidden" id="id3">
+<h3><span class="name western">Seifedine Kadry</span></h3>
+<div class="p">
+<sup>4</sup>Faculty of Applied Computing and Technology, Noroff University College, Kristiansand 94612, Norway</div>
+<div class="p">Find articles by <a href='https://pubmed.ncbi.nlm.nih.gov/?term="Kadry%20S"[Author]' class="usa-link"><span class="name western">Seifedine Kadry</span></a>
+</div>
+</div>
+<sup>4</sup>, <a href='https://pubmed.ncbi.nlm.nih.gov/?term="Yu%20W"[Author]' class="usa-link" aria-describedby="id4"><span class="name western">Weifeng Yu</span></a><div hidden="hidden" id="id4">
+<h3><span class="name western">Weifeng Yu</span></h3>
+<div class="p">
+<sup>5</sup>Wenzhou-Kean University, School of Science and Technology, Wenzhou, Zhejiang Province, China</div>
+<div class="p">Find articles by <a href='https://pubmed.ncbi.nlm.nih.gov/?term="Yu%20W"[Author]' class="usa-link"><span class="name western">Weifeng Yu</span></a>
+</div>
+</div>
+<sup>5</sup>
+</div>
+<ul class="d-buttons inline-list">
+<li><button class="d-button" aria-controls="aip_a" aria-expanded="false">Author information</button></li>
+<li><button class="d-button" aria-controls="anp_a" aria-expanded="false">Article notes</button></li>
+<li><button class="d-button" aria-controls="clp_a" aria-expanded="false">Copyright and License information</button></li>
+</ul>
+<div class="d-panels font-secondary-light">
+<div id="aip_a" class="d-panel p" style="display: none">
+<div class="p" id="I1">
+<sup>1</sup>Zhejiang Bioinformatics International Science and Technology Cooperation Center, Wenzhou-Kean University, Wenzhou, Zhejiang Province, China</div>
+<div id="I2">
+<sup>2</sup>Wenzhou Municipal Key Lab of Applied Biomedical and Biopharmaceutical Informatics, Wenzhou-Kean University, Wenzhou, Zhejiang Province, China</div>
+<div id="I3">
+<sup>3</sup>Department of Neurology, Wenzhou Central Hospital Medical Group, Wenzhou 325000, China</div>
+<div id="I4">
+<sup>4</sup>Faculty of Applied Computing and Technology, Noroff University College, Kristiansand 94612, Norway</div>
+<div id="I5">
+<sup>5</sup>Wenzhou-Kean University, School of Science and Technology, Wenzhou, Zhejiang Province, China</div>
+<div class="author-notes p">
+<div class="fn" id="fn1"><p>Academic Editor: Abdul Rehman Javed</p></div>
+<div class="fn" id="_fncrsp93pmc__">
+<sup>✉</sup><p class="display-inline">Corresponding author.</p>
+</div>
+</div>
+</div>
+<div id="anp_a" class="d-panel p" style="display: none"><div class="notes p"><section id="historyarticle-meta1" class="history"><p>Received 2022 Apr 13; Accepted 2022 May 19; Collection date 2022.</p></section></div></div>
+<div id="clp_a" class="d-panel p" style="display: none">
+<div>Copyright © 2022 Sujatha Krishnamoorthy et al.</div>
+<p>This is an open access article distributed under the Creative Commons Attribution License, which permits unrestricted use, distribution, and reproduction in any medium, provided the original work is properly cited.</p>
+<div class="p"><a href="/about/copyright/" class="usa-link">PMC Copyright notice</a></div>
+</div>
+</div>
+<div>PMCID: PMC9184172  PMID: <a href="https://pubmed.ncbi.nlm.nih.gov/35694573/" class="usa-link">35694573</a>
+</div>
+</div></section></section><section aria-label="Article content"><section class="body main-article-body"><section class="abstract" id="abstract1"><h2>Abstract</h2>
+<p>Multiple sclerosis (MS) is an autoimmune disease that causes mild to severe issues in the central nervous system (CNS). Early detection and treatment are necessary to reduce the harshness of the disease in individuals. The proposed work aims to implement a convolutional neural network (CNN) segmentation scheme to extract the MS lesion in a 2D brain MRI slice. To achieve a better MS detection, this work implemented the VGG-UNet scheme in which the pretrained VGG19 is considered as the encoder section. This scheme is tested on 30 patient images (600 images with dimension 512 × 512 × 3 pixels), and the experimental outcome confirms that this scheme provides a better result compared to traditional UNet, SegNet, VGG-UNet, and VGG-SegNet. The experimental investigation implemented on axial, coronal and sagittal plane 2D slices of Flair modality confirms that this work provides a better value of Jaccard (&gt;85%), Dice (&gt;92%), and accuracy (&gt;98%).</p></section><section id="sec1"><h2 class="pmc_sec_title">1. Introduction</h2>
+<p>The brain is one of the prime internal organs in human physiology, and the abnormality in the brain is a major medical emergency. The abnormality in the brain causes various behavioural disorders, and appropriate diagnosis and treatment will help to reduce these issues [<a href="#B1" class="usa-link" aria-describedby="B1">1</a>, <a href="#B2" class="usa-link" aria-describedby="B2">2</a>]. Multiple sclerosis (MS) is one of the brain-connected diseases that happens mainly in the central nervous system (CNS) [<a href="#B3" class="usa-link" aria-describedby="B3">3</a>–<a href="#B5" class="usa-link" aria-describedby="B5">5</a>].</p>
+<p>The major cause of MS is the damage to the myelin of the nerve fibres, which creates mild to severe communication issues between the brain and other body organs. The individuals who are affected with MS will experience one or all of the following issues based on the severity of the disease, vision-related issues, speech issues, body muscle-related, and dizziness. Furthermore, the individuals affected with MS may develop epilepsy frequently compared to healthy individuals. The major cause of MS is due to the malfunction in the immune system, and other factors include age, race, climatic conditions, and vitamin-D deficiency [<a href="#B6" class="usa-link" aria-describedby="B6">6</a>, <a href="#B7" class="usa-link" aria-describedby="B7">7</a>]. A recent survey confirms that around 2.8 million individuals are affected with MS globally, and nearly 1 million individuals are living in the United States [<a href="#B8" class="usa-link" aria-describedby="B8">8</a>, <a href="#B9" class="usa-link" aria-describedby="B9">9</a>]. Furthermore, this survey also confirms that every five minutes, an individual is diagnosed with MS globally, and hence, the number of infected persons is steadily rising. Due to its rapid happening rate, a number of research works are proposed to detect MS in its early phase.</p>
+<p>The clinical level diagnosis of MS is commonly performed with the help of magnetic resonance imaging (MRI) recorded using a chosen modality. After recording the image, a personal check by the doctor or a chosen computer algorithm is employed to inspect the MS lesion in the brain. In most of the earlier works, the computer algorithm-based examination is implemented to segment and evaluate the MS lesion from the chosen brain MRI slice [<a href="#B10" class="usa-link" aria-describedby="B10">10</a>–<a href="#B14" class="usa-link" aria-describedby="B14">14</a>].</p>
+<p>The earlier MS examination works confirm that the convolutional neural network (CNN) schemes perform well in detecting the disease with appropriate accuracy [<a href="#B15" class="usa-link" aria-describedby="B15">15</a>, <a href="#B16" class="usa-link" aria-describedby="B16">16</a>]. The proposed work in this study aims to implement a CNN-supported MS detection framework to examine the 2D brain slices with axial, coronal, and sagittal planes. In this work, initially, the performance of the pretrained CNN segmentation schemes, such as UNet, SegNet, VGG-UNet, and VGG-SegNet, are analyzed. This experimental investigation confirms that the UNet scheme helps to achieve better MS detection compared to SegNet, and hence, VGG-UNet developed using the VGG19 architecture is considered and its performance is verified.</p>
+<p>The proposed VGG-UNet scheme is considered to segment the MS lesion from the chosen brain MRI slices. During this task, the CNN segmentation system is trained with the test images and the ground truth (GT) images of the chosen MS database. After segmentation, the segmented image is then compared with GT, and the necessary performance metrics, such as Jaccard, Dice, accuracy, precision, sensitivity, and specificity, are computed, and based on these values, the merit of the proposed framework is verified. The proposed work is implemented using Python®, and the outcome of the proposed work confirms that this scheme works well on axial, coronal, and sagittal plane 2D MRI slices.</p>
+<p>The main contributions of the proposed work are as follows:</p>
+<ol class="list" style="list-style-type:lower-roman">
+<li><p>VGG19 supported CNN segmentation scheme is developed and executed to achieve an improved result over the existing VGG-UNet scheme</p></li>
+<li><p>This work considered the Flair modality brain MRI slices for the examination, and the experiment is executed separately on axial, coronal, and sagittal planes.</p></li>
+</ol>
+<p>The remaining part of this research is organized as follows: Sections <a href="#sec2" class="usa-link">2</a> and <a href="#sec3" class="usa-link">3</a> demonstrate the related earlier works and methodology. Sections <a href="#sec4" class="usa-link">4</a> and <a href="#sec5" class="usa-link">5</a> present the experimental outcome and conclusion, respectively.</p></section><section id="sec2"><h2 class="pmc_sec_title">2. Related Work</h2>
+<p>The happening rate of MS is steadily increasing globally, and well-organized screening and treatment are essential to detect the disease in its early phase. Because of its significance, a number of MS detection schemes are proposed to support the efficient segmentation of the MS lesion from the brain MRI slice of chosen modality. The earlier works in the literature also confirm that the CNN segmentation procedures help to achieve a better result compared to the conventional methods. Existing MS lesion detection methods and its outcome are summarised in this section to demonstrate the existing methods, their merits, and limitations. This section presents the CNN segmentation supported extraction and examination of the MS lesions in the earlier works.</p>
+<p>Ghosh et al. presented a CNN segmentation scheme to extract the MS lesion in a brain MRI slice [<a href="#B10" class="usa-link" aria-describedby="B10">10</a>]. This work implemented CNN schemes such as UNet and UNet++ to extract the MS lesion in 2D MRI slices with modalities <em>T</em>1, <em>T</em>2, and Flair and achieved a Dice score &gt;75%. Birenbaum and Greenspan implemented a multiview long CNN scheme to extract the MS lesion from ISBI2015 benchmark test images and achieved an overall Dice value of 62.7% [<a href="#B11" class="usa-link" aria-describedby="B11">11</a>]. Gabr et al. performed fully convolutional neural network- (FCNN-) based segmentation of the MS lesion on clinical images and confirmed that the proposed scheme helps to achieve 82% of the Dice score during MS lesion extraction [<a href="#B12" class="usa-link" aria-describedby="B12">12</a>]. Aslani et al. presented a customized encoder-decoder CNN scheme to extract the MS lesion and achieved a maximum Dice score of 50.01% on the chosen test images [<a href="#B13" class="usa-link" aria-describedby="B13">13</a>]. Ansari et al. discussed the segmentation of the MS lesion using the CNN scheme and achieved a Dice score of 63.06% [<a href="#B14" class="usa-link" aria-describedby="B14">14</a>, <a href="#B15" class="usa-link" aria-describedby="B15">15</a>].</p>
+<p>Weeda et al. presented a detailed review of the segmentation procedures implemented for MS lesion extraction and confirmed that the CNN schemes help to achieve a better result compared to the alternatives [<a href="#B15" class="usa-link" aria-describedby="B15">15</a>]. Zeng et al. presented a detailed review of the MS lesion segmentation methods existing in the literature for ISBI and MICCAI challenge datasets and confirmed the merit of the CNN segmentation to examine the MS lesion in the MRI slices [<a href="#B16" class="usa-link" aria-describedby="B16">16</a>].</p>
+<p>All these works confirm that CNN segmentation provides better results when MRI slices are considered to examine the MS lesions. Furthermore, in all these works, the Dice score achieved is less, and hence, it is necessary to implement a chosen CNN scheme to segment the MS lesion in the chosen test image with better performance metrics. To overcome this problem, a novel VGG-UNet is proposed and implemented to extract the MS lesion in Flair modality MRI. The experimental result confirms that the proposed scheme helps to achieve a better Dice value on axial, coronal, and sagittal planes.</p></section><section id="sec3"><h2 class="pmc_sec_title">3. Methodology</h2>
+<p>This research aims to implement a CNN segmentation scheme to extract the MS lesion from the 2D MRI slices. The procedure implemented in this scheme is shown in <a href="#fig1" class="usa-link">Figure 1</a>. Usually, the brain MRI collected from a patient is in the form of 3D, and hence, a 3D to 2D conversion is initially implemented using ITK-SNAP, and the extracted 2D slice is then resized into 512 × 512 × 3 pixels. A similar procedure is then implemented for the ground truth (GT) image. The image slice along with GT is then considered to train and test the segmentation performance of the chosen CNN scheme. In the proposed work, the segmentation task is implemented with UNet, SegNet, VGG-UNet (with VGG16 encoder), VGG-SegNet (with VGG16 encoder), and VGG-UNet using the VGG19 encoder. After segmentation, a comparative assessment is then employed to compute the necessary image measures, and based on this value, the MS lesion detection performance is verified.</p>
+<figure class="fig xbox font-sm" id="fig1"><h3 class="obj_head">Figure 1.</h3>
+<p class="img-box line-height-none margin-x-neg-2 tablet:margin-x-0 text-center"><img class="graphic" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/9991/9184172/58bd26da644d/CIN2022-4928096.001.jpg" loading="lazy" height="517" width="679" alt="Figure 1"></p>
+<div class="p text-right font-secondary"><a href="figure/fig1/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div>
+<figcaption><p>Structure of the proposed MS lesion segmentation work.</p></figcaption></figure><section id="sec3.1"><h3 class="pmc_sec_title">3.1. Image Database</h3>
+<p>The necessary images for this research work are collected from [<a href="#B17" class="usa-link" aria-describedby="B17">17</a>]. In this work, 30 patients' Flair modality database is considered for the assessment. These images are in 3D form, and the 3D to 2D conversion is achieved using ITK-SNAP [<a href="#B18" class="usa-link" aria-describedby="B18">18</a>, <a href="#B19" class="usa-link" aria-describedby="B19">19</a>], which helped to extract 20 slices from every patient. After extraction, these 2D images are resized to 512 × 512 × 3 pixels. In this work, 600 images along with their related ground truth (GT) are separately collected from axial, coronal, and sagittal planes, and these images are individually tested on the considered MS detection framework. The sample test images and the associated GT are shown in <a href="#fig2" class="usa-link">Figure 2</a>.</p>
+<figure class="fig xbox font-sm" id="fig2"><h4 class="obj_head">Figure 2.</h4>
+<p class="img-box line-height-none margin-x-neg-2 tablet:margin-x-0 text-center"><img class="graphic" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/9991/9184172/4b1e7ecdb33d/CIN2022-4928096.002.jpg" loading="lazy" height="328" width="691" alt="Figure 2"></p>
+<div class="p text-right font-secondary"><a href="figure/fig2/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div>
+<figcaption><p>Sample test images and related GT.</p></figcaption></figure></section><section id="sec3.2"><h3 class="pmc_sec_title">3.2. CNN Scheme</h3>
+<p>Extraction of the MS lesion from the MRI slice is necessary to identify the severity of the disease, which plays a key role during the clinical level treatment planning process. In this work, pretrained CNN schemes such as UNet [<a href="#B20" class="usa-link" aria-describedby="B20">20</a>], SegNet [<a href="#B21" class="usa-link" aria-describedby="B21">21</a>], VGG-UNet [<a href="#B22" class="usa-link" aria-describedby="B22">22</a>, <a href="#B23" class="usa-link" aria-describedby="B23">23</a>], and VGG-SegNet [<a href="#B24" class="usa-link" aria-describedby="B24">24</a>] are initially employed, and the segmentation performance is then verified. Later, VGG-UNet is then enhanced by considering the VGG19 encoder and decoder section, and its merit in detecting the MS lesion is verified. <a href="#fig3" class="usa-link"> Figure 3</a> shows the proposed scheme and the concept behind this scheme, and the discussion can be found in [<a href="#B25" class="usa-link" aria-describedby="B25">25</a>].</p>
+<figure class="fig xbox font-sm" id="fig3"><h4 class="obj_head">Figure 3.</h4>
+<p class="img-box line-height-none margin-x-neg-2 tablet:margin-x-0 text-center"><img class="graphic" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/9991/9184172/357a9d93c4f5/CIN2022-4928096.003.jpg" loading="lazy" height="347" width="590" alt="Figure 3"></p>
+<div class="p text-right font-secondary"><a href="figure/fig3/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div>
+<figcaption><p>Proposed VGG-SegNet scheme to evaluate MS lesion.</p></figcaption></figure><p>In this work, the MRI slice and associated GT are considered to train and validate the CNN segmentation scheme. The initial parameters assigned to the CNN scheme are as follows: initial weights = ImageNet, optimizer = Adam, pooling = average, hidden layer activation = ReLU, classifier activation = sigmoid, learning rate = 0.001, monitoring metric = Dice and accuracy, training images = 480, and testing images = 120.</p>
+<p>All the CNN models help to get a binary version of the MS lesion image, and after extraction, a pixelwise comparative analysis is implemented with GT, and the necessary performance metrics are computed. Based on the achieved performance metric value, the merit of the proposed scheme is verified.</p></section><section id="sec3.3"><h3 class="pmc_sec_title">3.3. Execution</h3>
+<p>The proposed framework is implemented using Python® using a workstation of Intel i7 processor with 24 GB RAM and 4 GB VRAM. Every CNN scheme is separately tested and verified. During execution, the test images (512 × 512 × 3 pixels) and GT (512 × 512 × 3 pixels) are considered to train the network using 80% of the input data (480 images), and the remaining 20% of input data (120 images) are considered to validate the segmentation performance of the CNN scheme.</p>
+<p>
+<a href="#fig4" class="usa-link">Figure 4</a> shows the results achieved for the proposed VGG-UNet scheme in which <a href="#fig4" class="usa-link">Figure 4(a)</a> shows the training images, <a href="#fig4" class="usa-link">Figure 4(b)</a> shows the convergence of the training and validation outcomes with respect to epochs, and <a href="#fig4" class="usa-link">Figure 4(c)</a> shows the segmented image. In this image, the first and second columns denote the test image and its GT and the third column depicts the extracted (predicted) MS lesion. To present the images with better visibility, the JET color map is considered in this demonstration. After training, the proposed scheme helps to extract the MS lesions from all 600 images and stores them as binary images. In the binary image, the MS lesion is assigned with a value of 1 (white in color), and the background is assigned with a value of 0 (dark color). This binary image is then compared with GT, and the necessary performance metrics are computed.</p>
+<figure class="fig xbox font-sm" id="fig4"><h4 class="obj_head">Figure 4.</h4>
+<p class="img-box line-height-none margin-x-neg-2 tablet:margin-x-0 text-center"><img class="graphic" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/9991/9184172/9ca6282285f8/CIN2022-4928096.004.jpg" loading="lazy" height="805" width="621" alt="Figure 4"></p>
+<div class="p text-right font-secondary"><a href="figure/fig4/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div>
+<figcaption><p>An experimental result achieved with the proposed VGG-UNet. (a) Training data. (b) Convergence of VGG-UNet training. (c) Validation outcome.</p></figcaption></figure></section><section id="sec3.4"><h3 class="pmc_sec_title">3.4. Performance Evaluation</h3>
+<p>The merit of the automatic MS detection system is verified by computing the necessary image metrics. During this comparison, the common measures such as true positive (TP), false positive (FP), true negative (TN), and false negative (FN) are initially computed.</p>
+<ol class="list" style="list-style-type:lower-roman">
+<li><p>TP is the number of binary 1's correctly predicted as 1</p></li>
+<li><p>TN is the number of binary 0's correctly predicted as 0</p></li>
+<li><p>FP is the number of binary 0's predicted as 1</p></li>
+<li><p>FN is the number of binary 1's predicted as 0</p></li>
+</ol>
+<p>The above measures help to get the related values, such as the true positive rate (TPR), true negative rate (TNR), false positive rate (FPR), and false negative rate (FNR) as discussed in [<a href="#B26" class="usa-link" aria-describedby="B26">26</a>–<a href="#B30" class="usa-link" aria-describedby="B30">30</a>]. Along with these measures, the other vital metrics, such as Jaccard, Dice, accuracy, precision, sensitivity, specificity, and negative predictive values (NPV), are also computed, and based on these values, the merit of the CNN is confirmed.</p>
+<p>The measures considered in this work are presented in equations (<a href="#EEq1" class="usa-link">1</a>)–(<a href="#EEq9" class="usa-link">9</a>):</p>
+<table class="disp-formula p" id="EEq1"><tr>
+<td class="formula"><math id="M1" display="block" overflow="linebreak"><mtable><mtr><mtd><mtext>TPR</mtext><mo>=</mo><mtext>sensitivity</mtext><mo>=</mo><mfrac><mrow><mtext>TP</mtext></mrow><mrow><mtext>TP</mtext><mo>+</mo><mtext>FN</mtext></mrow></mfrac><mo>,</mo></mtd></mtr></mtable></math></td>
+<td class="label">(1)</td>
+</tr></table>
+<table class="disp-formula p" id="EEq2"><tr>
+<td class="formula"><math id="EEq2EHAAAAACCA" display="block" overflow="linebreak"><mtable><mtr><mtd><mtext>TNR</mtext><mo>=</mo><mtext>specificity</mtext><mo>=</mo><mfrac><mrow><mtext>TN</mtext></mrow><mrow><mtext>TN</mtext><mo>+</mo><mtext>FP</mtext></mrow></mfrac><mo>,</mo></mtd></mtr></mtable></math></td>
+<td class="label">(2)</td>
+</tr></table>
+<table class="disp-formula p" id="EEq3"><tr>
+<td class="formula"><math id="EEq3EGAAAAACCA" display="block" overflow="linebreak"><mtable><mtr><mtd><mtext>FPR</mtext><mo>=</mo><mfrac><mrow><mtext>FP</mtext></mrow><mrow><mtext>FP</mtext><mo>+</mo><mtext>TN</mtext></mrow></mfrac><mo>,</mo></mtd></mtr></mtable></math></td>
+<td class="label">(3)</td>
+</tr></table>
+<table class="disp-formula p" id="EEq4"><tr>
+<td class="formula"><math id="EEq4EFAAAAACCA" display="block" overflow="linebreak"><mtable><mtr><mtd><mtext>FNR</mtext><mo>=</mo><mfrac><mrow><mtext>FN</mtext></mrow><mrow><mtext>FN</mtext><mo>+</mo><mtext>TP</mtext></mrow></mfrac><mo>,</mo></mtd></mtr></mtable></math></td>
+<td class="label">(4)</td>
+</tr></table>
+<table class="disp-formula p" id="EEq5"><tr>
+<td class="formula"><math id="EEq5EEAAAAACCA" display="block" overflow="linebreak"><mtable><mtr><mtd><mtext>Jaccard</mtext><mo>=</mo><mfrac><mrow><mtext>TP</mtext></mrow><mrow><mtext>TP</mtext><mo>+</mo><mtext>FP</mtext><mo>+</mo><mtext>FN</mtext></mrow></mfrac><mo>,</mo></mtd></mtr></mtable></math></td>
+<td class="label">(5)</td>
+</tr></table>
+<table class="disp-formula p" id="EEq6"><tr>
+<td class="formula"><math id="EEq6EDAAAAACCA" display="block" overflow="linebreak"><mtable><mtr><mtd><mtext>Dice</mtext><mo>=</mo><mfrac><mrow><mn>2</mn><mtext>TP</mtext></mrow><mrow><mn>2</mn><mtext>TP</mtext><mo>+</mo><mtext>FP</mtext><mo>+</mo><mtext>FN</mtext></mrow></mfrac><mo>,</mo></mtd></mtr></mtable></math></td>
+<td class="label">(6)</td>
+</tr></table>
+<table class="disp-formula p" id="EEq7"><tr>
+<td class="formula"><math id="EEq7ECAAAAACCA" display="block" overflow="linebreak"><mtable><mtr><mtd><mtext>Accuracy</mtext><mo>=</mo><mfrac><mrow><mtext>TP</mtext><mo>+</mo><mtext>TN</mtext></mrow><mrow><mtext>TP</mtext><mo>+</mo><mtext>TN</mtext><mo>+</mo><mtext>FP</mtext><mo>+</mo><mtext>FN</mtext></mrow></mfrac><mo>,</mo></mtd></mtr></mtable></math></td>
+<td class="label">(7)</td>
+</tr></table>
+<table class="disp-formula p" id="EEq8"><tr>
+<td class="formula"><math id="EEq8EBAAAAACCA" display="block" overflow="linebreak"><mtable><mtr><mtd><mtext>Precision</mtext><mo>=</mo><mfrac><mrow><mtext>TP</mtext></mrow><mrow><mtext>TP</mtext><mo>+</mo><mtext>FP</mtext></mrow></mfrac><mo>,</mo></mtd></mtr></mtable></math></td>
+<td class="label">(8)</td>
+</tr></table>
+<table class="disp-formula p" id="EEq9"><tr>
+<td class="formula"><math id="EEq9EAAAAAACCA" display="block" overflow="linebreak"><mtable><mtr><mtd><mtext>NPV</mtext><mo>=</mo><mfrac><mrow><mtext>TN</mtext></mrow><mrow><mtext>TN</mtext><mo>+</mo><mtext>FN</mtext></mrow></mfrac><mo>.</mo></mtd></mtr></mtable></math></td>
+<td class="label">(9)</td>
+</tr></table></section></section><section id="sec4"><h2 class="pmc_sec_title">4. Results and Discussion</h2>
+<p>This section presents the experimental outcomes and their discussion. Initially, the proposed work is executed using the pretrained CNN schemes, such as UNet, SegNet, VGG-UNet, and VGG-SegNet, using the 2D MRI slices and GT with a dimension of 512 × 512 × 3 pixels. Every CNN scheme is individually trained and validated using axial, coronal, and sagittal plane 2D slices, and the achieved outcomes are recorded. Later, a comparative assessment is executed between the predicted MS lesion with GT, and the performance metrics are computed.</p>
+<p>
+<a href="#fig5" class="usa-link">Figure 5</a> shows the sample test image, GT, and extracted MS lesion for chosen 2D MRI slices of Flair modality achieved using the proposed VGG-UNet scheme. Figures <a href="#fig5" class="usa-link">5(a)</a>–<a href="#fig5" class="usa-link">5(c)</a> show the 2D planes, such as axial, coronal, and sagittal, respectively. A visual comparison confirms that the segmented image is similar to GT. The pixelwise evaluation of the segmented and GT provided the necessary performance metrics, and these values are given in Tables <a href="#tab1" class="usa-link">1</a> and <a href="#tab2" class="usa-link">2</a>.</p>
+<figure class="fig xbox font-sm" id="fig5"><h3 class="obj_head">Figure 5.</h3>
+<p class="img-box line-height-none margin-x-neg-2 tablet:margin-x-0 text-center"><img class="graphic" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/9991/9184172/73727f4f49a2/CIN2022-4928096.005.jpg" loading="lazy" height="433" width="498" alt="Figure 5"></p>
+<div class="p text-right font-secondary"><a href="figure/fig5/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div>
+<figcaption><p>Sample test images and the segmented MS lesion with VGG-UNet. (a) Sagittal. (b) Axial. (c) Coronal.</p></figcaption></figure><section class="tw xbox font-sm" id="tab1"><h3 class="obj_head">Table 1.</h3>
+<div class="caption p"><p>Initial performance metrics achieved for the sample test image.</p></div>
+<div class="tbl-box p" tabindex="0"><table class="content" frame="hsides" rules="groups">
+<thead><tr>
+<th align="left" rowspan="1" colspan="1">2D plane</th>
+<th align="center" rowspan="1" colspan="1">TP</th>
+<th align="center" rowspan="1" colspan="1">FN</th>
+<th align="center" rowspan="1" colspan="1">TN</th>
+<th align="center" rowspan="1" colspan="1">FP</th>
+<th align="center" rowspan="1" colspan="1">TPR</th>
+<th align="center" rowspan="1" colspan="1">FNR</th>
+<th align="center" rowspan="1" colspan="1">TNR</th>
+<th align="center" rowspan="1" colspan="1">FPR</th>
+</tr></thead>
+<tbody>
+<tr>
+<td align="left" rowspan="1" colspan="1">Sagittal</td>
+<td align="center" rowspan="1" colspan="1">7552</td>
+<td align="center" rowspan="1" colspan="1">819</td>
+<td align="center" rowspan="1" colspan="1">253229</td>
+<td align="center" rowspan="1" colspan="1">544</td>
+<td align="center" rowspan="1" colspan="1">0.9022</td>
+<td align="center" rowspan="1" colspan="1">0.0978</td>
+<td align="center" rowspan="1" colspan="1">0.9979</td>
+<td align="center" rowspan="1" colspan="1">0.0021</td>
+</tr>
+<tr>
+<td align="left" rowspan="1" colspan="1">Axial</td>
+<td align="center" rowspan="1" colspan="1">4691</td>
+<td align="center" rowspan="1" colspan="1">106</td>
+<td align="center" rowspan="1" colspan="1">256854</td>
+<td align="center" rowspan="1" colspan="1">493</td>
+<td align="center" rowspan="1" colspan="1">0.9779</td>
+<td align="center" rowspan="1" colspan="1">0.0221</td>
+<td align="center" rowspan="1" colspan="1">0.9981</td>
+<td align="center" rowspan="1" colspan="1">0.0019</td>
+</tr>
+<tr>
+<td align="left" rowspan="1" colspan="1">Coronal</td>
+<td align="center" rowspan="1" colspan="1">7745</td>
+<td align="center" rowspan="1" colspan="1">162</td>
+<td align="center" rowspan="1" colspan="1">253582</td>
+<td align="center" rowspan="1" colspan="1">655</td>
+<td align="center" rowspan="1" colspan="1">0.9795</td>
+<td align="center" rowspan="1" colspan="1">0.0205</td>
+<td align="center" rowspan="1" colspan="1">0.9974</td>
+<td align="center" rowspan="1" colspan="1">0.0026</td>
+</tr>
+</tbody>
+</table></div>
+<div class="p text-right font-secondary"><a href="table/tab1/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div></section><section class="tw xbox font-sm" id="tab2"><h3 class="obj_head">Table 2.</h3>
+<div class="caption p"><p>Prime performance metrics computed for the sample test image.</p></div>
+<div class="tbl-box p" tabindex="0"><table class="content" frame="hsides" rules="groups">
+<thead><tr>
+<th align="left" rowspan="1" colspan="1">2D plane</th>
+<th align="center" rowspan="1" colspan="1">Jaccard</th>
+<th align="center" rowspan="1" colspan="1">Dice</th>
+<th align="center" rowspan="1" colspan="1">Accuracy</th>
+<th align="center" rowspan="1" colspan="1">Precision</th>
+<th align="center" rowspan="1" colspan="1">Sensitivity</th>
+<th align="center" rowspan="1" colspan="1">Specificity</th>
+<th align="center" rowspan="1" colspan="1">NPV</th>
+</tr></thead>
+<tbody>
+<tr>
+<td align="left" rowspan="1" colspan="1">Sagittal</td>
+<td align="center" rowspan="1" colspan="1">84.7112</td>
+<td align="center" rowspan="1" colspan="1">91.7228</td>
+<td align="center" rowspan="1" colspan="1">99.4801</td>
+<td align="center" rowspan="1" colspan="1">93.2806</td>
+<td align="center" rowspan="1" colspan="1">90.2162</td>
+<td align="center" rowspan="1" colspan="1">99.7856</td>
+<td align="center" rowspan="1" colspan="1">99.6776</td>
+</tr>
+<tr>
+<td align="left" rowspan="1" colspan="1">Axial</td>
+<td align="center" rowspan="1" colspan="1">88.6767</td>
+<td align="center" rowspan="1" colspan="1">93.9986</td>
+<td align="center" rowspan="1" colspan="1">99.7715</td>
+<td align="center" rowspan="1" colspan="1">90.4900</td>
+<td align="center" rowspan="1" colspan="1">97.7903</td>
+<td align="center" rowspan="1" colspan="1">99.8084</td>
+<td align="center" rowspan="1" colspan="1">99.9587</td>
+</tr>
+<tr>
+<td align="left" rowspan="1" colspan="1">Coronal</td>
+<td align="center" rowspan="1" colspan="1">90.4578</td>
+<td align="center" rowspan="1" colspan="1">94.9899</td>
+<td align="center" rowspan="1" colspan="1">99.6883</td>
+<td align="center" rowspan="1" colspan="1">92.2024</td>
+<td align="center" rowspan="1" colspan="1">97.9512</td>
+<td align="center" rowspan="1" colspan="1">99.7424</td>
+<td align="center" rowspan="1" colspan="1">99.9362</td>
+</tr>
+</tbody>
+</table></div>
+<div class="p text-right font-secondary"><a href="table/tab2/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div></section><p>
+<a href="#tab1" class="usa-link">Table 1</a> provides the initial metrics in which TPR and TNR are better and FPR and FNR are having a lesser value for all the 2D planes shown in <a href="#fig5" class="usa-link">Figure 5</a>. The result of <a href="#tab2" class="usa-link">Table 2</a> confirms that the proposed approach helps to get a segmentation accuracy of &gt;99% on the considered 2D Flair modality MRI slices. In order to confirm the overall performance of the CNN segmentation scheme, a glyph plot is constructed as shown in <a href="#fig6" class="usa-link">Figure 6</a>, and this confirms that the overall metrics achieved with axial and coronal planes is better compared to the sagittal plane.</p>
+<figure class="fig xbox font-sm" id="fig6"><h3 class="obj_head">Figure 6.</h3>
+<p class="img-box line-height-none margin-x-neg-2 tablet:margin-x-0 text-center"><img class="graphic" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/9991/9184172/75f3576fee42/CIN2022-4928096.006.jpg" loading="lazy" height="220" width="476" alt="Figure 6"></p>
+<div class="p text-right font-secondary"><a href="figure/fig6/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div>
+<figcaption><p>Glyph plot demonstrating the overall performance.</p></figcaption></figure><p>The proposed investigation is implemented on all 600 numbers of test images with axial, coronal, and sagittal planes, and the performance metrics are individually computed, and the overall value (mean and standard deviation) is then considered to validate the merit of the considered CNN segmentation schemes. <a href="#tab3" class="usa-link"> Table 3</a> provides the average metrics achieved with every approach, and to represent this comparison graphically, a spider plot is constructed as shown in <a href="#fig7" class="usa-link">Figure 7</a>. <a href="#fig7" class="usa-link"> Figure 7(a)</a> shows the plot for sagittal plane images and Figures <a href="#fig7" class="usa-link">7(b)</a> and <a href="#fig7" class="usa-link">7(c)</a> show the plots for axial and coronal planes. All these results confirm that the overall result achieved with the proposed CNN segmentation scheme (VGG19 based VGG-UNet) helps to achieve a better result compared to the traditional UNet, SegNet, VGG-UNet, and VGG-SegNet.</p>
+<section class="tw xbox font-sm" id="tab3"><h3 class="obj_head">Table 3.</h3>
+<div class="caption p"><p>Overall performance metrics computed for the test images of this study.</p></div>
+<div class="tbl-box p" tabindex="0"><table class="content" frame="hsides" rules="groups">
+<thead><tr>
+<th align="left" rowspan="1" colspan="1">CNN scheme</th>
+<th align="center" rowspan="1" colspan="1">2D plane</th>
+<th align="center" rowspan="1" colspan="1">Jaccard</th>
+<th align="center" rowspan="1" colspan="1">Dice</th>
+<th align="center" rowspan="1" colspan="1">Accuracy</th>
+<th align="center" rowspan="1" colspan="1">Precision</th>
+<th align="center" rowspan="1" colspan="1">Sensitivity</th>
+<th align="center" rowspan="1" colspan="1">Specificity</th>
+</tr></thead>
+<tbody>
+<tr>
+<td align="left" rowspan="3" colspan="1">UNet</td>
+<td align="center" rowspan="1" colspan="1">Sagittal</td>
+<td align="center" rowspan="1" colspan="1">82 ± 1.18</td>
+<td align="center" rowspan="1" colspan="1">87 ± 2.61</td>
+<td align="center" rowspan="1" colspan="1">98 ± 0.64</td>
+<td align="center" rowspan="1" colspan="1">91 ± 2.92</td>
+<td align="center" rowspan="1" colspan="1">88 ± 2.77</td>
+<td align="center" rowspan="1" colspan="1">97 ± 1.08</td>
+</tr>
+<tr>
+<td align="center" rowspan="1" colspan="1">Axial</td>
+<td align="center" rowspan="1" colspan="1">81 ± 2.14</td>
+<td align="center" rowspan="1" colspan="1">88 ± 3.06</td>
+<td align="center" rowspan="1" colspan="1">98 ± 0.71</td>
+<td align="center" rowspan="1" colspan="1">91 ± 3.52</td>
+<td align="center" rowspan="1" colspan="1">88 ± 3.08</td>
+<td align="center" rowspan="1" colspan="1">98 ± 0.51</td>
+</tr>
+<tr>
+<td align="center" rowspan="1" colspan="1">Coronal</td>
+<td align="center" rowspan="1" colspan="1">85 ± 2.29</td>
+<td align="center" rowspan="1" colspan="1">88 ± 2.05</td>
+<td align="center" rowspan="1" colspan="1">98 ± 0.32</td>
+<td align="center" rowspan="1" colspan="1">91 ± 1.55</td>
+<td align="center" rowspan="1" colspan="1">87 ± 4.16</td>
+<td align="center" rowspan="1" colspan="1">97 ± 0.96</td>
+</tr>
+<tr><td align="left" colspan="8" rowspan="1">
+<hr>
+</td></tr>
+<tr>
+<td align="left" rowspan="3" colspan="1">SegNet</td>
+<td align="center" rowspan="1" colspan="1">Sagittal</td>
+<td align="center" rowspan="1" colspan="1">82 ± 1.84</td>
+<td align="center" rowspan="1" colspan="1">89 ± 1.16</td>
+<td align="center" rowspan="1" colspan="1">97 ± 0.72</td>
+<td align="center" rowspan="1" colspan="1">91 ± 2.37</td>
+<td align="center" rowspan="1" colspan="1">87 ± 2.84</td>
+<td align="center" rowspan="1" colspan="1">96 ± 1.38</td>
+</tr>
+<tr>
+<td align="center" rowspan="1" colspan="1">Axial</td>
+<td align="center" rowspan="1" colspan="1">83 ± 3.06</td>
+<td align="center" rowspan="1" colspan="1">89 ± 1.55</td>
+<td align="center" rowspan="1" colspan="1">96 ± 1.28</td>
+<td align="center" rowspan="1" colspan="1">93 ± 2.16</td>
+<td align="center" rowspan="1" colspan="1">88 ± 3.06</td>
+<td align="center" rowspan="1" colspan="1">97 ± 0.52</td>
+</tr>
+<tr>
+<td align="center" rowspan="1" colspan="1">Coronal</td>
+<td align="center" rowspan="1" colspan="1">85 ± 1.16</td>
+<td align="center" rowspan="1" colspan="1">89 ± 2.73</td>
+<td align="center" rowspan="1" colspan="1">98 ± 0.51</td>
+<td align="center" rowspan="1" colspan="1">91 ± 1.37</td>
+<td align="center" rowspan="1" colspan="1">87 ± 3.33</td>
+<td align="center" rowspan="1" colspan="1">97 ± 0.68</td>
+</tr>
+<tr><td align="left" colspan="8" rowspan="1">
+<hr>
+</td></tr>
+<tr>
+<td align="left" rowspan="3" colspan="1">VGG-UNet</td>
+<td align="center" rowspan="1" colspan="1">Sagittal</td>
+<td align="center" rowspan="1" colspan="1">83 ± 1.22</td>
+<td align="center" rowspan="1" colspan="1">91 ± 2.47</td>
+<td align="center" rowspan="1" colspan="1">98 ± 0.38</td>
+<td align="center" rowspan="1" colspan="1">91 ± 1.57</td>
+<td align="center" rowspan="1" colspan="1">89 ± 3.03</td>
+<td align="center" rowspan="1" colspan="1">98 ± 0.49</td>
+</tr>
+<tr>
+<td align="center" rowspan="1" colspan="1">Axial</td>
+<td align="center" rowspan="1" colspan="1">88 ± 1.06</td>
+<td align="center" rowspan="1" colspan="1">92 ± 2.18</td>
+<td align="center" rowspan="1" colspan="1">98 ± 0.18</td>
+<td align="center" rowspan="1" colspan="1">90 ± 2.55</td>
+<td align="center" rowspan="1" colspan="1">93 ± 1.68</td>
+<td align="center" rowspan="1" colspan="1">98 ± 0.52</td>
+</tr>
+<tr>
+<td align="center" rowspan="1" colspan="1">Coronal</td>
+<td align="center" rowspan="1" colspan="1">89 ± 1.84</td>
+<td align="center" rowspan="1" colspan="1">92 ± 3.17</td>
+<td align="center" rowspan="1" colspan="1">98 ± 0.22</td>
+<td align="center" rowspan="1" colspan="1">93 ± 2.07</td>
+<td align="center" rowspan="1" colspan="1">94 ± 2.49</td>
+<td align="center" rowspan="1" colspan="1">99 ± 0.06</td>
+</tr>
+<tr><td align="left" colspan="8" rowspan="1">
+<hr>
+</td></tr>
+<tr>
+<td align="left" rowspan="3" colspan="1">VGG-SegNet</td>
+<td align="center" rowspan="1" colspan="1">Sagittal</td>
+<td align="center" rowspan="1" colspan="1">82 ± 2.05</td>
+<td align="center" rowspan="1" colspan="1">90 ± 2.22</td>
+<td align="center" rowspan="1" colspan="1">98 ± 0.27</td>
+<td align="center" rowspan="1" colspan="1">90 ± 2.07</td>
+<td align="center" rowspan="1" colspan="1">89 ± 2.55</td>
+<td align="center" rowspan="1" colspan="1">98 ± 0.28</td>
+</tr>
+<tr>
+<td align="center" rowspan="1" colspan="1">Axial</td>
+<td align="center" rowspan="1" colspan="1">87 ± 2.53</td>
+<td align="center" rowspan="1" colspan="1">91 ± 2.71</td>
+<td align="center" rowspan="1" colspan="1">98 ± 0.31</td>
+<td align="center" rowspan="1" colspan="1">90 ± 2.32</td>
+<td align="center" rowspan="1" colspan="1">91 ± 2.16</td>
+<td align="center" rowspan="1" colspan="1">98 ± 0.14</td>
+</tr>
+<tr>
+<td align="center" rowspan="1" colspan="1">Coronal</td>
+<td align="center" rowspan="1" colspan="1">87 ± 3.15</td>
+<td align="center" rowspan="1" colspan="1">91 ± 1.45</td>
+<td align="center" rowspan="1" colspan="1">98 ± 0.16</td>
+<td align="center" rowspan="1" colspan="1">91 ± 2.17</td>
+<td align="center" rowspan="1" colspan="1">92 ± 1.18</td>
+<td align="center" rowspan="1" colspan="1">98 ± 0.23</td>
+</tr>
+<tr><td align="left" colspan="8" rowspan="1">
+<hr>
+</td></tr>
+<tr>
+<td align="left" rowspan="3" colspan="1">VGG-UNet (proposed)</td>
+<td align="center" rowspan="1" colspan="1">Sagittal</td>
+<td align="center" rowspan="1" colspan="1">85 ± 3.05</td>
+<td align="center" rowspan="1" colspan="1">92 ± 2.18</td>
+<td align="center" rowspan="1" colspan="1">99 ± 0.04</td>
+<td align="center" rowspan="1" colspan="1">92 ± 2.17</td>
+<td align="center" rowspan="1" colspan="1">95 ± 0.48</td>
+<td align="center" rowspan="1" colspan="1">99 ± 0.03</td>
+</tr>
+<tr>
+<td align="center" rowspan="1" colspan="1">Axial</td>
+<td align="center" rowspan="1" colspan="1">91 ± 2.21</td>
+<td align="center" rowspan="1" colspan="1">94 ± 1.05</td>
+<td align="center" rowspan="1" colspan="1">99 ± 0.10</td>
+<td align="center" rowspan="1" colspan="1">94 ± 1.26</td>
+<td align="center" rowspan="1" colspan="1">98 ± 0.12</td>
+<td align="center" rowspan="1" colspan="1">99 ± 0.11</td>
+</tr>
+<tr>
+<td align="center" rowspan="1" colspan="1">Coronal</td>
+<td align="center" rowspan="1" colspan="1">90 ± 2.62</td>
+<td align="center" rowspan="1" colspan="1">93 ± 1.11</td>
+<td align="center" rowspan="1" colspan="1">99 ± 0.03</td>
+<td align="center" rowspan="1" colspan="1">93 ± 1.94</td>
+<td align="center" rowspan="1" colspan="1">97 ± 1.05</td>
+<td align="center" rowspan="1" colspan="1">99 ± 0.08</td>
+</tr>
+</tbody>
+</table></div>
+<div class="p text-right font-secondary"><a href="table/tab3/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div></section><figure class="fig xbox font-sm" id="fig7"><h3 class="obj_head">Figure 7.</h3>
+<p class="img-box line-height-none margin-x-neg-2 tablet:margin-x-0 text-center"><img class="graphic" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/9991/9184172/463585c1cc57/CIN2022-4928096.007.jpg" loading="lazy" height="596" width="537" alt="Figure 7"></p>
+<div class="p text-right font-secondary"><a href="figure/fig7/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div>
+<figcaption><p>Spider plot demonstrating the overall performance of the CNN segmentation schemes on the chosen images. (a) Sagittal plane images. (b) Axial plane images. (c) Coronal plane images.</p></figcaption></figure><p>In order to validate the merit of the proposed scheme with the existing work, the Dice score is considered and is then compared with the dice value available in other earlier works in the literature [<a href="#B10" class="usa-link" aria-describedby="B10">10</a>–<a href="#B14" class="usa-link" aria-describedby="B14">14</a>]. <a href="#fig8" class="usa-link"> Figure 8</a> confirms that the Dice score achieved with the proposed scheme is better compared to other works found in the literature, and this comparison confirms the significance of the proposed VGG-UNet in detecting the MS lesion from MRI slices.</p>
+<figure class="fig xbox font-sm" id="fig8"><h3 class="obj_head">Figure 8.</h3>
+<p class="img-box line-height-none margin-x-neg-2 tablet:margin-x-0 text-center"><img class="graphic" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/9991/9184172/39c38e1ff868/CIN2022-4928096.008.jpg" loading="lazy" height="351" width="683" alt="Figure 8"></p>
+<div class="p text-right font-secondary"><a href="figure/fig8/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div>
+<figcaption><p>Comparison of Dice score of VGG-UNet with other schemes.</p></figcaption></figure><p>In this work, the Flair modality MRI without skull section is considered for examination, and better values of image metrics, such as Jaccard, Dice, accuracy, precision, sensitivity, and specificity, are achieved for all the 2D planes with the proposed CNN segmentation scheme. In the future, this VGG-UNet can be considered to examine the MS lesion in Flair modality image with skull section and other MRI modalities available in the considered image database.</p></section><section id="sec5"><h2 class="pmc_sec_title">5. Conclusion</h2>
+<p>Early detection of the MS lesion is necessary to plan the treatment to reduce its harshness. In this work, the CNN segmentation approach is implemented to extract and evaluate the MS lesion from the Flair modality MRI slice. During this study, the various 2D MRI slices, such as axial, coronal, and sagittal planes, are separately evaluated. VGG19 supported VGG-UNet is implemented in this research to enhance the segmentation performance. The result of the proposed scheme is verified with the pretrained schemes, such as UNet, SegNet, VGG-UNet, and VGG-SegNet. The experimental result of the proposed scheme is implemented on 30 patient images (600 images in each 2D plane), and the proposed scheme helps to achieve Jaccard of &gt;85%, Dice of &gt;92%, and accuracy of &gt;98%. In the future, the proposed VGG-UNet can be tested on other MRI modalities, such as <em>T</em>1 and <em>T</em>2, and it also can be considered to extract the MS lesion in images with skull section.</p></section><section id="ack1" class="ack"><h2 class="pmc_sec_title">Acknowledgments</h2>
+<p>This research was funded by “Wenzhou-Kean University” in Wenzhou, Zhejiang Province, China (ICRP202204).</p></section><section id="sec10"><h2 class="pmc_sec_title">Data Availability</h2>
+<p>The MRI data used to support this study are available at <a href="https://github.com/muschellij2/open_ms_data" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">https://github.com/muschellij2/open_ms_data</a>.</p></section><section id="sec11"><h2 class="pmc_sec_title">Conflicts of Interest</h2>
+<p>The authors declare that they have no conflicts of interest.</p></section><section id="ref-list1" class="ref-list"><h2 class="pmc_sec_title">References</h2>
+<section id="ref-list1_sec2"><ul class="ref-list font-sm" style="list-style-type:none">
+<li id="B1">
+<span class="label">1.</span><cite>Rajinikanth V., Kadry S., Nam Y. Convolutional-neural-network assisted segmentation and SVM classification of brain tumor in clinical MRI slices. 
+Information Technology and Control
+. 2021;50(2):342–356. doi: 10.5755/j01.itc.50.2.28087.</cite> [<a href="https://doi.org/10.5755/j01.itc.50.2.28087" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Information%20Technology%20and%20Control&amp;title=Convolutional-neural-network%20assisted%20segmentation%20and%20SVM%20classification%20of%20brain%20tumor%20in%20clinical%20MRI%20slices&amp;author=V.%20Rajinikanth&amp;author=S.%20Kadry&amp;author=Y.%20Nam&amp;volume=50&amp;issue=2&amp;publication_year=2021&amp;pages=342-356&amp;doi=10.5755/j01.itc.50.2.28087&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B2">
+<span class="label">2.</span><cite>Kadry S., Damaševičius R., Taniar D., Rajinikanth V., Lawal I. A. U-net supported segmentation of ischemic-stroke-lesion from brain MRI slices. Proceedings of the 2021 Seventh International Conference on Bio Signals, Images, and Instrumentation (ICBSII); March 2021; Chennai, India. IEEE; pp. 1–5.</cite> [<a href="https://scholar.google.com/scholar_lookup?Kadry%20S.,%20Dama%C5%A1evi%C4%8Dius%20R.,%20Taniar%20D.,%20Rajinikanth%20V.,%20Lawal%20I.%20A.%20U-net%20supported%20segmentation%20of%20ischemic-stroke-lesion%20from%20brain%20MRI%20slices.%20Proceedings%20of%20the%202021%20Seventh%20International%20Conference%20on%20Bio%20Signals,%20Images,%20and%20Instrumentation%20(ICBSII);%20March%202021;%20Chennai,%20India.%20IEEE;%20pp.%201%E2%80%935." class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B3">
+<span class="label">3.</span><cite>Bjornevik K., Cortese M., Healy B. C., et al.  Longitudinal analysis reveals high prevalence of Epstein-Barr virus associated with multiple sclerosis. 
+Science
+. 2022;375(6578):296–301. doi: 10.1126/science.abj8222.</cite> [<a href="https://doi.org/10.1126/science.abj8222" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/35025605/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Science&amp;title=Longitudinal%20analysis%20reveals%20high%20prevalence%20of%20Epstein-Barr%20virus%20associated%20with%20multiple%20sclerosis&amp;author=K.%20Bjornevik&amp;author=M.%20Cortese&amp;author=B.%20C.%20Healy&amp;volume=375&amp;issue=6578&amp;publication_year=2022&amp;pages=296-301&amp;pmid=35025605&amp;doi=10.1126/science.abj8222&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B4">
+<span class="label">4.</span><cite>Bischof A., Papinutto N., Keshavan A., et al.  Spinal cord atrophy predicts progressive disease in relapsing multiple sclerosis. 
+Annals of Neurology
+. 2022;91(2):268–281. doi: 10.1002/ana.26281.</cite> [<a href="https://doi.org/10.1002/ana.26281" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC8916838/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/34878197/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Annals%20of%20Neurology&amp;title=Spinal%20cord%20atrophy%20predicts%20progressive%20disease%20in%20relapsing%20multiple%20sclerosis&amp;author=A.%20Bischof&amp;author=N.%20Papinutto&amp;author=A.%20Keshavan&amp;volume=91&amp;issue=2&amp;publication_year=2022&amp;pages=268-281&amp;pmid=34878197&amp;doi=10.1002/ana.26281&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B5">
+<span class="label">5.</span><cite>Heckova E., Dal-Bianco A., Strasser B., et al.  Extensive brain pathologic alterations detected with 7.0-T MR spectroscopic imaging associated with disability in multiple sclerosis. 
+Radiology
+. 2022;303(1):141–150. doi: 10.1148/radiol.210614.</cite> [<a href="https://doi.org/10.1148/radiol.210614" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/34981978/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Radiology&amp;title=Extensive%20brain%20pathologic%20alterations%20detected%20with%207.0-T%20MR%20spectroscopic%20imaging%20associated%20with%20disability%20in%20multiple%20sclerosis&amp;author=E.%20Heckova&amp;author=A.%20Dal-Bianco&amp;author=B.%20Strasser&amp;volume=303&amp;issue=1&amp;publication_year=2022&amp;pages=141-150&amp;pmid=34981978&amp;doi=10.1148/radiol.210614&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B6">
+<span class="label">6.</span><cite>Dunn N., Kharlamova N., Fogdell Hahn A. The role of herpesvirus 6A and 6B in multiple sclerosis and epilepsy. 
+Scandinavian Journal of Immunology
+. 2020;92(6) doi: 10.1111/sji.12984.e12984</cite> [<a href="https://doi.org/10.1111/sji.12984" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC7757173/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/33037649/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Scandinavian%20Journal%20of%20Immunology&amp;title=The%20role%20of%20herpesvirus%206A%20and%206B%20in%20multiple%20sclerosis%20and%20epilepsy&amp;author=N.%20Dunn&amp;author=N.%20Kharlamova&amp;author=A.%20Fogdell%20Hahn&amp;volume=92&amp;issue=6&amp;publication_year=2020&amp;pmid=33037649&amp;doi=10.1111/sji.12984&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B7">
+<span class="label">7.</span><cite>Drenthen G. S., Backes W. H., Aldenkamp A. P., Vermeulen R. J., Klinkenberg S., Jansen J. F. On the merits of non-invasive myelin imaging in epilepsy, a literature review. 
+Journal of Neuroscience Methods
+. 2020;338 doi: 10.1016/j.jneumeth.2020.108687.108687</cite> [<a href="https://doi.org/10.1016/j.jneumeth.2020.108687" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/32173402/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Journal%20of%20Neuroscience%20Methods&amp;title=On%20the%20merits%20of%20non-invasive%20myelin%20imaging%20in%20epilepsy,%20a%20literature%20review&amp;author=G.%20S.%20Drenthen&amp;author=W.%20H.%20Backes&amp;author=A.%20P.%20Aldenkamp&amp;author=R.%20J.%20Vermeulen&amp;author=S.%20Klinkenberg&amp;volume=338&amp;publication_year=2020&amp;pmid=32173402&amp;doi=10.1016/j.jneumeth.2020.108687&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B8">
+<span class="label">8.</span><cite>Feigin V. L., Vos T., Alahdab F., et al.  Burden of neurological disorders across the US from 1990-2017: a global burden of disease study. 
+JAMA Neurology
+. 2021;78(2):165–176. doi: 10.1001/jamaneurol.2020.4152.</cite> [<a href="https://doi.org/10.1001/jamaneurol.2020.4152" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC7607495/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/33136137/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=JAMA%20Neurology&amp;title=Burden%20of%20neurological%20disorders%20across%20the%20US%20from%201990-2017:%20a%20global%20burden%20of%20disease%20study&amp;author=V.%20L.%20Feigin&amp;author=T.%20Vos&amp;author=F.%20Alahdab&amp;volume=78&amp;issue=2&amp;publication_year=2021&amp;pages=165-176&amp;pmid=33136137&amp;doi=10.1001/jamaneurol.2020.4152&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B9">
+<span class="label">9.</span><cite>Walton C., King R., Rechtman L., et al.  Rising prevalence of multiple sclerosis worldwide: insights from the Atlas of MS, third edition. 
+Multiple Sclerosis Journal
+. 2020;26(14):1816–1821. doi: 10.1177/1352458520970841.</cite> [<a href="https://doi.org/10.1177/1352458520970841" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC7720355/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/33174475/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Multiple%20Sclerosis%20Journal&amp;title=Rising%20prevalence%20of%20multiple%20sclerosis%20worldwide:%20insights%20from%20the%20Atlas%20of%20MS,%20third%20edition&amp;author=C.%20Walton&amp;author=R.%20King&amp;author=L.%20Rechtman&amp;volume=26&amp;issue=14&amp;publication_year=2020&amp;pages=1816-1821&amp;pmid=33174475&amp;doi=10.1177/1352458520970841&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B10">
+<span class="label">10.</span><cite>Ghosh S., Huo M., Shawkat M. S. A., McCalla S. Using convolutional encoder networks to determine the optimal magnetic resonance image for the automatic segmentation of multiple sclerosis. 
+Applied Sciences
+. 2021;11(18):8335. doi: 10.3390/app11188335.</cite> [<a href="https://doi.org/10.3390/app11188335" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Applied%20Sciences&amp;title=Using%20convolutional%20encoder%20networks%20to%20determine%20the%20optimal%20magnetic%20resonance%20image%20for%20the%20automatic%20segmentation%20of%20multiple%20sclerosis&amp;author=S.%20Ghosh&amp;author=M.%20Huo&amp;author=M.%20S.%20A.%20Shawkat&amp;author=S.%20McCalla&amp;volume=11&amp;issue=18&amp;publication_year=2021&amp;pages=8335&amp;doi=10.3390/app11188335&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B11">
+<span class="label">11.</span><cite>Birenbaum A., Greenspan H. Multi-view longitudinal CNN for multiple sclerosis lesion segmentation. 
+Engineering Applications of Artificial Intelligence
+. 2017;65:111–118. doi: 10.1016/j.engappai.2017.06.006.</cite> [<a href="https://doi.org/10.1016/j.engappai.2017.06.006" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Engineering%20Applications%20of%20Artificial%20Intelligence&amp;title=Multi-view%20longitudinal%20CNN%20for%20multiple%20sclerosis%20lesion%20segmentation&amp;author=A.%20Birenbaum&amp;author=H.%20Greenspan&amp;volume=65&amp;publication_year=2017&amp;pages=111-118&amp;doi=10.1016/j.engappai.2017.06.006&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B12">
+<span class="label">12.</span><cite>Gabr R. E., Coronado I., Robinson M., et al.  Brain and lesion segmentation in multiple sclerosis using fully convolutional neural networks: a large-scale study. 
+Multiple Sclerosis Journal
+. 2020;26(10):1217–1226. doi: 10.1177/1352458519856843.</cite> [<a href="https://doi.org/10.1177/1352458519856843" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC6908772/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/31190607/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Multiple%20Sclerosis%20Journal&amp;title=Brain%20and%20lesion%20segmentation%20in%20multiple%20sclerosis%20using%20fully%20convolutional%20neural%20networks:%20a%20large-scale%20study&amp;author=R.%20E.%20Gabr&amp;author=I.%20Coronado&amp;author=M.%20Robinson&amp;volume=26&amp;issue=10&amp;publication_year=2020&amp;pages=1217-1226&amp;pmid=31190607&amp;doi=10.1177/1352458519856843&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B13">
+<span class="label">13.</span><cite>Aslani S., Murino V., Dayan M., Tam R., Sona D., Hamarneh G. Scanner invariant multiple sclerosis lesion segmentation from MRI. Proceedings of the 2020 IEEE 17th International Symposium on Biomedical Imaging (ISBI); 2020 April; Iowa City, IA, USA. IEEE; pp. 781–785.</cite> [<a href="https://scholar.google.com/scholar_lookup?Aslani%20S.,%20Murino%20V.,%20Dayan%20M.,%20Tam%20R.,%20Sona%20D.,%20Hamarneh%20G.%20Scanner%20invariant%20multiple%20sclerosis%20lesion%20segmentation%20from%20MRI.%20Proceedings%20of%20the%202020%20IEEE%2017th%20International%20Symposium%20on%20Biomedical%20Imaging%20(ISBI);%202020%20April;%20Iowa%20City,%20IA,%20USA.%20IEEE;%20pp.%20781%E2%80%93785." class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B14">
+<span class="label">14.</span><cite>Ansari S. U., Javed K., Qaisar S. M., Jillani R., Haider U. Multiple sclerosis lesion segmentation in brain MRI using inception modules embedded in a convolutional neural network. 
+Journal of Healthcare Engineering
+. 2021;2021 doi: 10.1155/2021/4138137.4138137</cite> [<a href="https://doi.org/10.1155/2021/4138137" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC8410443/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/34484652/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Journal%20of%20Healthcare%20Engineering&amp;title=Multiple%20sclerosis%20lesion%20segmentation%20in%20brain%20MRI%20using%20inception%20modules%20embedded%20in%20a%20convolutional%20neural%20network&amp;author=S.%20U.%20Ansari&amp;author=K.%20Javed&amp;author=S.%20M.%20Qaisar&amp;author=R.%20Jillani&amp;author=U.%20Haider&amp;volume=2021&amp;publication_year=2021&amp;pmid=34484652&amp;doi=10.1155/2021/4138137&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B15">
+<span class="label">15.</span><cite>Weeda M. M., Brouwer I., de Vos M. L., et al.  Comparing lesion segmentation methods in multiple sclerosis: input from one manually delineated subject is sufficient for accurate lesion segmentation. 
+NeuroImage: Clinica
+. 2019;24 doi: 10.1016/j.nicl.2019.102074.102074</cite> [<a href="https://doi.org/10.1016/j.nicl.2019.102074" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC6861662/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/31734527/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=NeuroImage:%20Clinica&amp;title=Comparing%20lesion%20segmentation%20methods%20in%20multiple%20sclerosis:%20input%20from%20one%20manually%20delineated%20subject%20is%20sufficient%20for%20accurate%20lesion%20segmentation&amp;author=M.%20M.%20Weeda&amp;author=I.%20Brouwer&amp;author=M.%20L.%20de%20Vos&amp;volume=24&amp;publication_year=2019&amp;pmid=31734527&amp;doi=10.1016/j.nicl.2019.102074&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B16">
+<span class="label">16.</span><cite>Zeng C., Gu L., Liu Z., Zhao S. Review of deep learning approaches for the segmentation of multiple sclerosis lesions on brain MRI. 
+Frontiers in Neuroinformatics
+. 2020;14 doi: 10.3389/fninf.2020.610967.610967</cite> [<a href="https://doi.org/10.3389/fninf.2020.610967" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC7714963/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/33328949/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Frontiers%20in%20Neuroinformatics&amp;title=Review%20of%20deep%20learning%20approaches%20for%20the%20segmentation%20of%20multiple%20sclerosis%20lesions%20on%20brain%20MRI&amp;author=C.%20Zeng&amp;author=L.%20Gu&amp;author=Z.%20Liu&amp;author=S.%20Zhao&amp;volume=14&amp;publication_year=2020&amp;pmid=33328949&amp;doi=10.3389/fninf.2020.610967&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B17">
+<span class="label">17.</span><cite>Lesjak Ž., Pernuš F., Likar B., Špiclin Ž. Validation of white-matter lesion change detection methods on a novel publicly available MRI image database. 
+Neuroinformatics
+. 2016;14(4):403–420. doi: 10.1007/s12021-016-9301-1.</cite> [<a href="https://doi.org/10.1007/s12021-016-9301-1" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/27207310/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Neuroinformatics&amp;title=Validation%20of%20white-matter%20lesion%20change%20detection%20methods%20on%20a%20novel%20publicly%20available%20MRI%20image%20database&amp;author=%C5%BD.%20Lesjak&amp;author=F.%20Pernu%C5%A1&amp;author=B.%20Likar&amp;author=%C5%BD.%20%C5%A0piclin&amp;volume=14&amp;issue=4&amp;publication_year=2016&amp;pages=403-420&amp;pmid=27207310&amp;doi=10.1007/s12021-016-9301-1&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B18">
+<span class="label">18.</span><cite>ITK-SNAP. 2018.  
+ <a href="http://www.itksnap.org/pmwiki/pmwiki.php" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">http://www.itksnap.org/pmwiki/pmwiki.php</a>
+.</cite>
+</li>
+<li id="B19">
+<span class="label">19.</span><cite>Yushkevich P. A., Piven J., Hazlett H. C., et al.  User-guided 3D active contour segmentation of anatomical structures: significantly improved efficiency and reliability. 
+NeuroImage
+. 2006;31(3):1116–1128. doi: 10.1016/j.neuroimage.2006.01.015.</cite> [<a href="https://doi.org/10.1016/j.neuroimage.2006.01.015" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/16545965/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=NeuroImage&amp;title=User-guided%203D%20active%20contour%20segmentation%20of%20anatomical%20structures:%20significantly%20improved%20efficiency%20and%20reliability&amp;author=P.%20A.%20Yushkevich&amp;author=J.%20Piven&amp;author=H.%20C.%20Hazlett&amp;volume=31&amp;issue=3&amp;publication_year=2006&amp;pages=1116-1128&amp;pmid=16545965&amp;doi=10.1016/j.neuroimage.2006.01.015&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B20">
+<span class="label">20.</span><cite>Ronneberger O., Fischer P., Brox T. U-net: convolutional networks for biomedical image segmentation. Proceedings of the International Conference on Medical Image Computing and Computer-Assisted Intervention; 2015, October; Munich, Germany. pp. 234–241.</cite> [<a href="https://scholar.google.com/scholar_lookup?Ronneberger%20O.,%20Fischer%20P.,%20Brox%20T.%20U-net:%20convolutional%20networks%20for%20biomedical%20image%20segmentation.%20Proceedings%20of%20the%20International%20Conference%20on%20Medical%20Image%20Computing%20and%20Computer-Assisted%20Intervention;%202015,%20October;%20Munich,%20Germany.%20pp.%20234%E2%80%93241." class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B21">
+<span class="label">21.</span><cite>Badrinarayanan V., Kendall A., Cipolla R. Segnet: a deep convolutional encoder-decoder architecture for image segmentation. 
+IEEE Transactions on Pattern Analysis and Machine Intelligence
+. 2017;39(12):2481–2495. doi: 10.1109/tpami.2016.2644615.</cite> [<a href="https://doi.org/10.1109/tpami.2016.2644615" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/28060704/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=IEEE%20Transactions%20on%20Pattern%20Analysis%20and%20Machine%20Intelligence&amp;title=Segnet:%20a%20deep%20convolutional%20encoder-decoder%20architecture%20for%20image%20segmentation&amp;author=V.%20Badrinarayanan&amp;author=A.%20Kendall&amp;author=R.%20Cipolla&amp;volume=39&amp;issue=12&amp;publication_year=2017&amp;pages=2481-2495&amp;pmid=28060704&amp;doi=10.1109/tpami.2016.2644615&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B22">
+<span class="label">22.</span><cite>Shi J., Dang J., Cui M., et al.  Improvement of damage segmentation based on pixel-level data balance using vgg-unet. 
+Applied Sciences
+. 2021;11(2):518. doi: 10.3390/app11020518.</cite> [<a href="https://doi.org/10.3390/app11020518" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Applied%20Sciences&amp;title=Improvement%20of%20damage%20segmentation%20based%20on%20pixel-level%20data%20balance%20using%20vgg-unet&amp;author=J.%20Shi&amp;author=J.%20Dang&amp;author=M.%20Cui&amp;volume=11&amp;issue=2&amp;publication_year=2021&amp;pages=518&amp;doi=10.3390/app11020518&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B23">
+<span class="label">23.</span><cite>Arunmozhi S., Sarojini V. S. S., Pavithra T., Varghese V., Deepti V., Rajinikanth V. Automated detection of COVID-19 lesion in lung CT slices with VGG-UNet and handcrafted features. Proceedings of the Digital Future of Healthcare; June 2021; Florida, FL, USA. CRC Press; pp. 185–200.</cite> [<a href="https://scholar.google.com/scholar_lookup?Arunmozhi%20S.,%20Sarojini%20V.%20S.%20S.,%20Pavithra%20T.,%20Varghese%20V.,%20Deepti%20V.,%20Rajinikanth%20V.%20Automated%20detection%20of%20COVID-19%20lesion%20in%20lung%20CT%20slices%20with%20VGG-UNet%20and%20handcrafted%20features.%20Proceedings%20of%20the%20Digital%20Future%20of%20Healthcare;%20June%202021;%20Florida,%20FL,%20USA.%20CRC%20Press;%20pp.%20185%E2%80%93200." class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B24">
+<span class="label">24.</span><cite>Appathurai A. Jerusalin C., Raja C., Kumar S. N., Daniel A. V. Malare J. G., Fred L., Krishnamoorthy S. “A study on ECG signal characterization and practical implementation of some ECG characterization techniques. 
+Measurement
+. 2019;147 doi: 10.1016/j.measurement.2019.02.040.106384</cite> [<a href="https://doi.org/10.1016/j.measurement.2019.02.040" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Measurement&amp;title=%E2%80%9CA%20study%20on%20ECG%20signal%20characterization%20and%20practical%20implementation%20of%20some%20ECG%20characterization%20techniques&amp;author=A.%20Appathurai&amp;author=C.%20Jerusalin&amp;author=C.%20Raja&amp;author=S.%20N.%20Kumar&amp;author=A.%20V.%20Daniel&amp;volume=147&amp;publication_year=2019&amp;doi=10.1016/j.measurement.2019.02.040&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B25">
+<span class="label">25.</span><cite>Jabeen K., Khan M. A., Alhaisoni M., et al.  Breast cancer classification from ultrasound images using probability-based optimal deep learning feature fusion. 
+Sensors
+. 2022;22(3):807. doi: 10.3390/s22030807.</cite> [<a href="https://doi.org/10.3390/s22030807" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC8840464/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/35161552/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Sensors&amp;title=Breast%20cancer%20classification%20from%20ultrasound%20images%20using%20probability-based%20optimal%20deep%20learning%20feature%20fusion&amp;author=K.%20Jabeen&amp;author=M.%20A.%20Khan&amp;author=M.%20Alhaisoni&amp;volume=22&amp;issue=3&amp;publication_year=2022&amp;pages=807&amp;pmid=35161552&amp;doi=10.3390/s22030807&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B26">
+<span class="label">26.</span><cite>Maqsood S., Damasevicius R., Shah F. M. An efficient approach for the detection of brain tumor using fuzzy logic and U-NET CNN classification. Proceedings of the International Conference on Computational Science and its Applications; 2021 September; Cagliari, Italy. Springer; pp. 105–118.</cite> [<a href="https://scholar.google.com/scholar_lookup?Maqsood%20S.,%20Damasevicius%20R.,%20Shah%20F.%20M.%20An%20efficient%20approach%20for%20the%20detection%20of%20brain%20tumor%20using%20fuzzy%20logic%20and%20U-NET%20CNN%20classification.%20Proceedings%20of%20the%20International%20Conference%20on%20Computational%20Science%20and%20its%20Applications;%202021%20September;%20Cagliari,%20Italy.%20Springer;%20pp.%20105%E2%80%93118." class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B27">
+<span class="label">27.</span><cite>Kassem M. A., Hosny K. M., Damaševičius R., Eltoukhy M. M. Machine learning and deep learning methods for skin lesion classification and diagnosis: a systematic review. 
+Diagnostics
+. 2021;11(8):1390. doi: 10.3390/diagnostics11081390.</cite> [<a href="https://doi.org/10.3390/diagnostics11081390" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC8391467/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/34441324/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Diagnostics&amp;title=Machine%20learning%20and%20deep%20learning%20methods%20for%20skin%20lesion%20classification%20and%20diagnosis:%20a%20systematic%20review&amp;author=M.%20A.%20Kassem&amp;author=K.%20M.%20Hosny&amp;author=R.%20Dama%C5%A1evi%C4%8Dius&amp;author=M.%20M.%20Eltoukhy&amp;volume=11&amp;issue=8&amp;publication_year=2021&amp;pages=1390&amp;pmid=34441324&amp;doi=10.3390/diagnostics11081390&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B28">
+<span class="label">28.</span><cite>Khan M. A., Sharif M., Akram T., Damaševičius R., Maskeliūnas R. Skin lesion segmentation and multiclass classification using deep learning features and improved moth flame optimization. 
+Diagnostics
+. 2021;11(5):811. doi: 10.3390/diagnostics11050811.</cite> [<a href="https://doi.org/10.3390/diagnostics11050811" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC8145295/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/33947117/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Diagnostics&amp;title=Skin%20lesion%20segmentation%20and%20multiclass%20classification%20using%20deep%20learning%20features%20and%20improved%20moth%20flame%20optimization&amp;author=M.%20A.%20Khan&amp;author=M.%20Sharif&amp;author=T.%20Akram&amp;author=R.%20Dama%C5%A1evi%C4%8Dius&amp;author=R.%20Maskeli%C5%ABnas&amp;volume=11&amp;issue=5&amp;publication_year=2021&amp;pages=811&amp;pmid=33947117&amp;doi=10.3390/diagnostics11050811&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B29">
+<span class="label">29.</span><cite>Akhtar S. M., Nazir M., Saleem K., et al.  A multi-agent formalism based on contextual defeasible logic for healthcare systems. 
+Frontiers in Public Health
+. 2022;10 doi: 10.3389/fpubh.2022.849185.849185</cite> [<a href="https://doi.org/10.3389/fpubh.2022.849185" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC8927623/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/35309219/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Frontiers%20in%20Public%20Health&amp;title=A%20multi-agent%20formalism%20based%20on%20contextual%20defeasible%20logic%20for%20healthcare%20systems&amp;author=S.%20M.%20Akhtar&amp;author=M.%20Nazir&amp;author=K.%20Saleem&amp;volume=10&amp;publication_year=2022&amp;pmid=35309219&amp;doi=10.3389/fpubh.2022.849185&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="B30">
+<span class="label">30.</span><cite>Saleem K., Haque U. l. Context-aware systems and applications, and nature of computation and communication. 
+Springer International
+. 2021;343:169–181. doi: 10.1007/978-3-030-67101-3_14.</cite> [<a href="https://doi.org/10.1007/978-3-030-67101-3_14" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Springer%20International&amp;title=Context-aware%20systems%20and%20applications,%20and%20nature%20of%20computation%20and%20communication&amp;author=K.%20Saleem&amp;author=U.%20l.%20Haque&amp;volume=343&amp;publication_year=2021&amp;pages=169-181&amp;doi=10.1007/978-3-030-67101-3_14&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+</ul></section></section><section id="_ad93_" lang="en" class="associated-data"><h2 class="pmc_sec_title">Associated Data</h2>
+<p class="font-secondary"><em>This section collects any data citations, data availability statements, or supplementary materials included in this article.</em></p>
+<section id="_adda93_" lang="en" class="data-availability-statement"><h3 class="pmc_sec_title">Data Availability Statement</h3>
+<p>The MRI data used to support this study are available at <a href="https://github.com/muschellij2/open_ms_data" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">https://github.com/muschellij2/open_ms_data</a>.</p></section></section></section><footer class="p courtesy-note font-secondary font-sm text-center"><hr class="headless">
+<p>Articles from Computational Intelligence and Neuroscience are provided here courtesy of <strong>Wiley</strong></p></footer></section></article>
+
+                      
+
+                    </main>
+                </div>
+            </div>
+        </div>
+
+        
+
+
+
+<!-- Secondary navigation placeholder -->
+<div class="pmc-sidenav desktop:grid-col-4 display-flex">
+    <section class="pmc-sidenav__container" aria-label="Article resources and navigation">
+        <button type="button" class="pmc-sidenav__container__close">
+            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/usa-icons/close.svg" role="img" alt="Close" />
+        </button>
+    <div class="display-none desktop:display-block">
+       <section class="margin-top-4 desktop:margin-top-0">
+              <h2 class="margin-top-0">ACTIONS</h2>
+           <ul class="usa-list usa-list--unstyled usa-list--actions">
+               
+               <li>
+                     <a
+                             href="https://doi.org/10.1155/2022/4928096"
+                             class="usa-button usa-button--outline width-24 font-xs display-inline-flex flex-align-center flex-justify-start padding-left-1"
+                             target="_blank"
+                             rel="noreferrer noopener"
+                             data-ga-category="actions"
+                             data-ga-action="click"
+                             data-ga-label="publisher_link_desktop"
+                     >
+                         <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/launch.svg" alt="View on publisher site icon" class="usa-icon usa-icon--size-3 usa-icon--link"/>
+                         <span class="display-inline-flex flex-justify-center flex-1 padding-right-2">View on publisher site</span>
+                     </a>
+               </li>
+               
+               
+               <li>
+                    <a
+                            href="pdf/CIN2022-4928096.pdf"
+                            class="usa-button usa-button--outline width-24 display-inline-flex flex-align-center flex-justify-start padding-left-1"
+                            data-ga-category="actions"
+                            data-ga-action="click"
+                            data-ga-label="pdf_download_desktop"
+                    >
+                         <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/file_download.svg" alt="Download PDF icon" class="usa-icon usa-icon--size-3 usa-icon--link"/>
+                        <span class="display-inline-flex flex-justify-center flex-1">PDF (1.7 MB)</span>
+                    </a>
+               </li>
+               
+                
+               <li>
+                   <button role="button" class="usa-button width-24 citation-dialog-trigger display-inline-flex flex-align-center flex-justify-start padding-left-1"
+                        aria-label="Open dialog with citation text in different styles"
+                        data-ga-category="actions"
+                        data-ga-action="open"
+                        data-ga-label="cite_desktop"
+                        data-all-citations-url="/resources/citations/9184172/"
+                        data-citation-style="nlm"
+                        data-download-format-link="/resources/citations/9184172/export/"
+                    >
+                       <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/format_quote.svg" alt="Cite icon" class="usa-icon usa-icon--size-3 usa-icon--white"/>
+                       <span class="display-inline-flex flex-justify-center flex-1 button-label">Cite</span>
+                    </button>
+               </li>
+                
+               <li>
+
+                        <button class="usa-button width-24 collections-dialog-trigger collections-button display-inline-flex flex-align-center flex-justify-start padding-left-1 collections-button-empty"
+                              aria-label="Save article in MyNCBI collections."
+                              data-ga-category="actions"
+                              data-ga-action="click"
+                              data-ga-label="collections_button_desktop"
+                              data-collections-open-dialog-enabled="false"
+                              data-collections-open-dialog-url="https://account.ncbi.nlm.nih.gov/?back_url=https%3A%2F%2Fpmc.ncbi.nlm.nih.gov%2Farticles%2FPMC9184172%2F%23open-collections-dialog"
+                              data-in-collections="false">
+                            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/action-bookmark-full.svg" alt="Collections icon" class="usa-icon usa-icon--size-3 usa-icon--white usa-icon--bookmark-full" hidden />
+                            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/action-bookmark-empty.svg" alt="Collections icon" class="usa-icon usa-icon--size-3 usa-icon--white usa-icon--bookmark-empty" hidden />
+                            <span class="display-inline-flex flex-justify-center flex-1">Collections</span>
+                       </button>
+               </li>
+               <li class="pmc-permalink">
+                    <button
+                            type="button"
+                            class="usa-button width-24 display-inline-flex flex-align-center flex-justify padding-left-1 shadow-none"
+                            aria-label="Show article permalink"
+                            aria-expanded="false"
+                            aria-haspopup="true"
+                            data-ga-category="actions"
+                            data-ga-action="open"
+                            data-ga-label="permalink_desktop"
+                    >
+                        <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/share.svg" alt="Permalink icon" class="usa-icon usa-icon--size-3 usa-icon--white"/>
+                        <span class="display-inline-flex flex-justify-center flex-1 button-label">Permalink</span>
+                    </button>
+                   
+
+<div class="pmc-permalink__dropdown" hidden>
+    <div class="pmc-permalink__dropdown__container">
+          <h2 class="usa-modal__heading margin-top-0 margin-bottom-2 text-uppercase font-sans-xs">PERMALINK</h2>
+          <div class="pmc-permalink__dropdown__content">
+              <input type="text" class="usa-input" value="https://pmc.ncbi.nlm.nih.gov/articles/PMC9184172/" aria-label="Article permalink">
+              <button class="usa-button display-inline-flex pmc-permalink__dropdown__copy__btn margin-right-0" title="Copy article permalink" data-ga-category="save_share" data-ga-action="link" data-ga-label="copy_link">
+                  <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/content_copy.svg" alt="Copy icon" aria-hidden="true" class="usa-icon usa-icon--white" />
+                  <span class="margin-left-1">Copy</span>
+              </button>
+          </div>
+    </div>
+</div>
+               </li>
+           </ul>
+       </section>
+     </div>
+
+        <section class="pmc-resources margin-top-6 desktop:margin-top-4" data-page-path="/articles/PMC9184172/">
+            <h2 class="margin-top-0">RESOURCES</h2>
+            
+                <div class="usa-accordion usa-accordion--multiselectable" data-allow-multiple>
+                    <h3 class="usa-accordion__heading">
+                        <button
+                        type="button"
+                        class="usa-accordion__button"
+                        aria-expanded="false"
+                        aria-controls="resources-similar-articles"
+                        data-ga-category="resources_accordion"
+                        data-ga-action="open_similar_articles"
+                        data-ga-label="/articles/PMC9184172/"
+                        data-action-open="open_similar_articles"
+                        data-action-close="close_similar_articles"
+                        >
+                            Similar articles
+                        </button>
+                    </h3>
+                    <div
+                            id="resources-similar-articles"
+                            class="usa-accordion__content usa-prose"
+                            
+                                data-source-url="/resources/similar-article-links/35694573/"
+                            
+                    >
+                        
+                    </div>
+                    <h3 class="usa-accordion__heading">
+                        <button
+                        type="button"
+                        class="usa-accordion__button"
+                        aria-expanded="false"
+                        aria-controls="resources-cited-by-other-articles"
+                        data-ga-category="resources_accordion"
+                        data-ga-action="open_cited_by"
+                        data-ga-label="/articles/PMC9184172/"
+                        data-action-open="open_cited_by"
+                        data-action-close="close_cited_by"
+                        >
+                             Cited by other articles
+                        </button>
+                    </h3>
+                    <div
+                            id="resources-cited-by-other-articles"
+                            class="usa-accordion__content usa-prose"
+                            
+                                data-source-url="/resources/cited-by-links/35694573/"
+                            
+                    >
+                          
+                    </div>
+                    
+                        <h3 class="usa-accordion__heading">
+                            <button
+                            type="button"
+                            class="usa-accordion__button"
+                            aria-expanded="false"
+                            aria-controls="resources-links-to-ncbi-databases"
+                            data-ga-category="resources_accordion"
+                            data-ga-action="open_NCBI_links"
+                            data-ga-label="/articles/PMC9184172/"
+                            data-action-open="open_NCBI_links"
+                            data-action-close="close_NCBI_link"
+                            >
+                                 Links to NCBI Databases
+                            </button>
+                        </h3>
+                        <div
+                                id="resources-links-to-ncbi-databases"
+                                class="usa-accordion__content usa-prose"
+                                data-source-url="/resources/db-links/9184172/"
+                        >
+                        </div>
+                    
+                    
+                </div>
+            
+        </section>
+
+
+        <section
+        class="usa-in-page-nav usa-in-page-nav--wide margin-top-6 desktop:margin-top-4"
+        data-title-text="On this page"
+        data-title-heading-level="h2"
+        data-scroll-offset="0"
+        data-root-margin="-10% 0px -80% 0px"
+        data-main-content-selector="main"
+        data-threshold="1"
+        hidden
+        ></section>
+    </section>
+</div>
+
+        
+
+<div class="overlay" role="dialog" aria-label="Citation Dialog" hidden>
+    <div class="dialog citation-dialog" aria-hidden="true">
+        <div class="display-inline-flex flex-align-center flex-justify width-full margin-bottom-2">
+            <h2 class="usa-modal__heading margin-0">Cite</h2>
+             <button type="button" class="usa-button usa-button--unstyled close-overlay text-black width-auto"  tabindex="1">
+                 <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/close.svg" alt="Close icon" class="usa-icon usa-icon--size-3 usa-icon--button" />
+             </button>
+        </div>
+
+        
+
+<div class="citation-text-block">
+  <div class="citation-text margin-bottom-2"></div>
+  <ul class="usa-list usa-list--unstyled display-inline-flex flex-justify width-full flex-align-center">
+      <li>
+        <button
+          class="usa-button usa-button--unstyled text-no-underline display-flex flex-align-center copy-button dialog-focus"
+          data-ga-category="save_share"
+          data-ga-action="cite"
+          data-ga-label="copy"
+          tabindex="2">
+            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/content_copy.svg" alt="Copy icon" class="usa-icon usa-icon--size-3 usa-icon--link" />
+            <span>Copy</span>
+        </button>
+      </li>
+      <li>
+          <a
+              href="#"
+              role="button"
+              class="usa-button usa-button--unstyled text-no-underline display-flex flex-align-center export-button"
+              data-ga-category="save_share"
+              data-ga-action="cite"
+              data-ga-label="download"
+              title="Download a file for external citation management software"
+              tabindex="3">
+                <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/file_download.svg" alt="Download icon" aria-hidden="true" class="usa-icon usa-icon--size-3 usa-icon--link" />
+                <span class="display-none mobile-lg:display-inline">Download .nbib</span>
+                <span class="display-inline mobile-lg:display-none">.nbib</span>
+            </a>
+      </li>
+      <li>
+          
+
+<div class="display-inline-flex flex-align-center">
+  <label class="usa-label margin-top-0">Format:</label>
+  <select aria-label="Format" class="usa-select citation-style-selector padding-1 margin-top-0 border-0 padding-right-4" tabindex="4" >
+    
+      <option data-style-url-name="ama"
+              value="AMA"
+              >
+        AMA
+      </option>
+    
+      <option data-style-url-name="apa"
+              value="APA"
+              >
+        APA
+      </option>
+    
+      <option data-style-url-name="mla"
+              value="MLA"
+              >
+        MLA
+      </option>
+    
+      <option data-style-url-name="nlm"
+              value="NLM"
+              selected="selected">
+        NLM
+      </option>
+    
+  </select>
+</div>
+      </li>
+  </ul>
+</div>
+    </div>
+</div>
+
+        <div class="overlay" role="dialog" hidden>
+  <div id="collections-action-dialog" class="dialog collections-dialog" aria-hidden="true">
+   <div class="display-inline-flex flex-align-center flex-justify width-full margin-bottom-2">
+        <h2 class="usa-modal__heading margin-0">Add to Collections</h2>
+    </div>
+    <div class="collections-action-panel action-panel">
+      
+
+
+<form id="collections-action-dialog-form"
+      class="usa-form maxw-full collections-action-panel-form action-panel-content action-form action-panel-smaller-selectors"
+      data-existing-collections-url="/list-existing-collections/"
+      data-add-to-existing-collection-url="/add-to-existing-collection/"
+      data-create-and-add-to-new-collection-url="/create-and-add-to-new-collection/"
+      data-myncbi-max-collection-name-length="100"
+      data-collections-root-url="https://www.ncbi.nlm.nih.gov/myncbi/collections/">
+
+    <input type="hidden" name="csrfmiddlewaretoken" value="6rvElRmFtDwA8eWEcezooNOFDs7JPXa63WlpymmB6EvjSZkIH7Y7iUzY0ghJFwdg">
+
+    <fieldset class="usa-fieldset margin-bottom-2">
+        <div class="usa-radio">
+            <input type="radio"
+            id="collections-action-dialog-new"
+            class="usa-radio__input usa-radio__input--tile collections-new  margin-top-0"
+            name="collections"
+            value="new"
+            data-ga-category="collections_button"
+            data-ga-action="click"
+            data-ga-label="collections_radio_new" />
+            <label class="usa-radio__label" for="collections-action-dialog-new">Create a new collection</label>
+        </div>
+        <div class="usa-radio">
+            <input type="radio"
+            id="collections-action-dialog-existing"
+            class="usa-radio__input usa-radio__input--tile collections-existing"
+            name="collections"
+            value="existing"
+            checked="true"
+            data-ga-category="collections_button"
+            data-ga-action="click"
+            data-ga-label="collections_radio_existing" />
+            <label class="usa-radio__label" for="collections-action-dialog-existing">Add to an existing collection</label>
+        </div>
+    </fieldset>
+
+    <fieldset class="usa-fieldset margin-bottom-2">
+        <div class="action-panel-control-wrap new-collections-controls">
+           <label for="collections-action-dialog-add-to-new" class="usa-label margin-top-0">
+                Name your collection
+               <abbr title="required" class="usa-hint usa-hint--required text-no-underline">*</abbr>
+          </label>
+          <input
+            type="text"
+            name="add-to-new-collection"
+            id="collections-action-dialog-add-to-new"
+            class="usa-input collections-action-add-to-new"
+            pattern="[^&quot;&amp;=&lt;&gt;/]*" title="The following characters are not allowed in the Name field: &quot;&amp;=&lt;&gt;/"
+            maxlength=""
+            data-ga-category="collections_button"
+            data-ga-action="create_collection"
+            data-ga-label="non_favorties_collection"
+            required
+          />
+        </div>
+        <div class="action-panel-control-wrap existing-collections-controls">
+             <label for="collections-action-dialog-add-to-existing" class="usa-label margin-top-0">
+                Choose a collection
+              </label>
+              <select id="collections-action-dialog-add-to-existing"
+                      class="usa-select collections-action-add-to-existing"
+                      data-ga-category="collections_button"
+                      data-ga-action="select_collection"
+                      data-ga-label="($('.collections-action-add-to-existing').val() === 'Favorites') ? 'Favorites' : 'non_favorites_collection'">
+              </select>
+              <div class="collections-retry-load-on-error usa-input-error-message selection-validation-message">
+                Unable to load your collection due to an error<br>
+                <a href="#">Please try again</a>
+              </div>
+        </div>
+    </fieldset>
+
+    <div class="display-inline-flex">
+        <button class="usa-button margin-top-0 action-panel-submit"
+            type="submit"
+            data-loading-label="Adding..."
+            data-pinger-ignore
+            data-ga-category="collections_button"
+            data-ga-action="click"
+            data-ga-label="add">
+          Add
+        </button>
+        <button class="usa-button usa-button--outline margin-top-0 action-panel-cancel"
+                aria-label="Close 'Add to Collections' panel"
+                ref="linksrc=close_collections_panel"
+                data-ga-category="collections_button"
+                data-ga-action="click"
+                data-ga-label="cancel">
+          Cancel
+        </button>
+    </div>
+</form>
+    </div>
+  </div>
+</div>
+
+        
+
+      </div>
+    </div>
+  </div>
+
+
+
+        
+    
+    
+
+<footer class="ncbi-footer ncbi-dark-background " >
+    
+        <div class="ncbi-footer__icon-section">
+            <div class="ncbi-footer__social-header">
+                Follow NCBI
+            </div>
+
+            <div class="grid-container ncbi-footer__ncbi-social-icons-container">
+                
+                    <a href="https://twitter.com/ncbi"
+                       class="ncbi-footer__social-icon ncbi-footer__social-icon--gray"
+                       target="_blank"
+                       rel="noreferrer noopener">
+                        <svg width="40"
+                             height="40"
+                             viewBox="0 0 40 40"
+                             fill="none"
+                             xmlns="http://www.w3.org/2000/svg"
+                             focusable="false"
+                             aria-hidden="true">
+                            <path d="m6.067 8 10.81 13.9L6 33.2h4.2l8.4-9.1 7.068 9.1H34L22.8 18.5 31.9 8h-3.5l-7.7 8.4L14.401 8H6.067Zm3.6 1.734h3.266l16.8 21.732H26.57L9.668 9.734Z">
+                            </path>
+                        </svg>
+                        <span class="usa-sr-only">NCBI on X (formerly known as Twitter)</span>
+                    </a>
+                
+
+                
+                    <a href="https://www.facebook.com/ncbi.nlm"
+                       class="ncbi-footer__social-icon ncbi-footer__social-icon--gray"
+                       target="_blank"
+                       rel="noreferrer noopener">
+                        <svg width="16"
+                             height="29"
+                             focusable="false"
+                             aria-hidden="true"
+                             viewBox="0 0 16 29"
+                             fill="none"
+                             xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3.8809 21.4002C3.8809 19.0932 3.8809 16.7876 3.8809 14.478C3.8809 14.2117 3.80103 14.1452 3.54278 14.1492C2.53372 14.1638 1.52334 14.1492 0.514288 14.1598C0.302626 14.1598 0.248047 14.0972 0.248047 13.8936C0.256034 12.4585 0.256034 11.0239 0.248047 9.58978C0.248047 9.37013 0.302626 9.30224 0.528931 9.3049C1.53798 9.31688 2.54837 9.3049 3.55742 9.31555C3.80103 9.31555 3.8809 9.26097 3.87957 9.00272C3.87158 8.00565 3.85428 7.00592 3.90753 6.00884C3.97142 4.83339 4.31487 3.73115 5.04437 2.78467C5.93095 1.63318 7.15699 1.09005 8.56141 0.967577C10.5582 0.79319 12.555 0.982221 14.5518 0.927641C14.7102 0.927641 14.7462 0.99287 14.7449 1.13664C14.7449 2.581 14.7449 4.02668 14.7449 5.47104C14.7449 5.67604 14.6517 5.68669 14.4946 5.68669C13.4523 5.68669 12.4113 5.68669 11.3703 5.68669C10.3506 5.68669 9.92057 6.10868 9.90593 7.13904C9.89661 7.7647 9.91525 8.39303 9.89794 9.01869C9.88995 9.26364 9.96583 9.31822 10.2015 9.31688C11.7204 9.30623 13.2393 9.31688 14.7595 9.3049C15.0257 9.3049 15.0723 9.3728 15.0444 9.62439C14.89 10.9849 14.7515 12.3467 14.6144 13.7085C14.5691 14.1571 14.5785 14.1585 14.1458 14.1585C12.8386 14.1585 11.5313 14.1665 10.2254 14.1518C9.95119 14.1518 9.89794 14.2317 9.89794 14.4899C9.90593 19.0799 9.89794 23.6752 9.91125 28.2612C9.91125 28.5674 9.8407 28.646 9.53186 28.6433C7.77866 28.6273 6.02414 28.6366 4.27094 28.634C3.82499 28.634 3.87158 28.6992 3.87158 28.22C3.87602 25.9472 3.87913 23.6739 3.8809 21.4002Z">
+                            </path>
+                        </svg>
+                        <span class="usa-sr-only">NCBI on Facebook</span>
+                    </a>
+                
+
+                
+                    <a href="https://www.linkedin.com/company/ncbinlm"
+                       class="ncbi-footer__social-icon ncbi-footer__social-icon--gray"
+                       target="_blank"
+                       rel="noreferrer noopener">
+                        <svg width="25"
+                             height="23"
+                             viewBox="0 0 26 24"
+                             fill="none"
+                             xmlns="http://www.w3.org/2000/svg"
+                             focusable="false"
+                             aria-hidden="true">
+                            <path d="M14.6983 9.98423C15.6302 9.24808 16.5926 8.74754 17.6762 8.51991C19.673 8.09126 21.554 8.30824 23.1262 9.7526C24.2351 10.7723 24.7529 12.1115 25.0165 13.5612C25.1486 14.3363 25.2105 15.1218 25.2015 15.9081C25.2015 18.3043 25.2015 20.6898 25.2082 23.0806C25.2082 23.3468 25.1549 23.444 24.8621 23.4414C23.1297 23.4272 21.3992 23.4272 19.6704 23.4414C19.4041 23.4414 19.3429 23.3588 19.3442 23.1019C19.3535 20.5194 19.3442 17.9368 19.3442 15.3543C19.3442 14.0005 18.3258 12.9448 17.0266 12.9488C15.7273 12.9528 14.6983 14.0071 14.6983 15.361C14.6983 17.9328 14.6917 20.5047 14.6983 23.0753C14.6983 23.3708 14.6198 23.444 14.3296 23.4427C12.6185 23.4294 10.9079 23.4294 9.19779 23.4427C8.93155 23.4427 8.86099 23.3735 8.86232 23.1086C8.8783 19.7619 8.88628 16.4144 8.88628 13.066C8.88628 11.5688 8.87874 10.0708 8.86365 8.57182C8.86365 8.3575 8.90758 8.27896 9.14054 8.28029C10.9048 8.29094 12.6687 8.29094 14.4321 8.28029C14.6464 8.28029 14.6983 8.34818 14.6983 8.54653C14.6903 9.00047 14.6983 9.45441 14.6983 9.98423Z">
+                            </path>
+                            <path d="M6.55316 15.8443C6.55316 18.2564 6.55316 20.6699 6.55316 23.082C6.55316 23.3629 6.48127 23.4388 6.19906 23.4374C4.47737 23.4241 2.75568 23.4241 1.03399 23.4374C0.767751 23.4374 0.69986 23.3629 0.701191 23.1006C0.709178 18.2648 0.709178 13.4281 0.701191 8.59053C0.701191 8.34026 0.765089 8.27237 1.01669 8.2737C2.74991 8.28435 4.48048 8.28435 6.20838 8.2737C6.47462 8.2737 6.5465 8.33627 6.54517 8.6065C6.54783 11.0186 6.55316 13.4308 6.55316 15.8443Z">
+                            </path>
+                            <path d="M3.65878 0.243898C5.36804 0.243898 6.58743 1.45529 6.58743 3.1406C6.58743 4.75801 5.32145 5.95742 3.60819 5.96807C3.22177 5.97614 2.83768 5.90639 2.47877 5.76299C2.11985 5.61959 1.79344 5.40546 1.51897 5.13334C1.24449 4.86123 1.02755 4.53668 0.881058 4.17902C0.734563 3.82136 0.661505 3.43788 0.666231 3.05141C0.67555 1.42601 1.9362 0.242566 3.65878 0.243898Z">
+                            </path>
+                        </svg>
+                        <span class="usa-sr-only">NCBI on LinkedIn</span>
+                    </a>
+                
+
+                
+                    <a href="https://github.com/ncbi"
+                       class="ncbi-footer__social-icon ncbi-footer__social-icon--gray"
+                       target="_blank"
+                       rel="noreferrer noopener">
+                        <svg width="28"
+                             height="27"
+                             viewBox="0 0 28 28"
+                             fill="none"
+                             xmlns="http://www.w3.org/2000/svg"
+                             focusable="false"
+                             aria-hidden="true">
+                            <path d="M16.7228 20.6334C17.5057 20.5527 18.2786 20.3944 19.0301 20.1608C21.3108 19.4193 22.5822 17.8259 22.963 15.4909C23.1228 14.5112 23.1814 13.5287 22.9883 12.5437C22.8106 11.6423 22.4013 10.8028 21.8007 10.1076C21.7526 10.0605 21.7197 10 21.7064 9.934C21.6931 9.86799 21.7 9.79952 21.7262 9.73748C22.0856 8.6206 21.9711 7.51969 21.601 6.42677C21.582 6.3497 21.5345 6.2827 21.468 6.23923C21.4016 6.19577 21.3211 6.17906 21.2429 6.19248C20.7329 6.21649 20.2313 6.33051 19.7611 6.52928C19.1103 6.7908 18.4899 7.12198 17.9104 7.51703C17.84 7.56996 17.7581 7.60551 17.6713 7.62078C17.5846 7.63605 17.4954 7.6306 17.4112 7.60489C15.2596 7.05882 13.0054 7.06203 10.8554 7.61421C10.7806 7.63586 10.7018 7.63967 10.6253 7.62534C10.5487 7.611 10.4766 7.57892 10.4148 7.53167C9.64788 7.03247 8.85171 6.58918 7.96368 6.33359C7.65781 6.24338 7.34123 6.19458 7.02239 6.18849C6.94879 6.17986 6.87462 6.19893 6.81432 6.242C6.75402 6.28507 6.71191 6.34904 6.69621 6.42145C6.32342 7.51437 6.2209 8.61527 6.56307 9.73348C6.59635 9.84264 6.64694 9.93316 6.54177 10.0516C5.47666 11.2604 5.09988 12.6834 5.19574 14.2676C5.2663 15.4244 5.46201 16.5466 6.01454 17.5769C6.84399 19.1171 8.21664 19.9119 9.85158 20.3352C10.3938 20.4706 10.9444 20.5698 11.4998 20.632C11.5384 20.7492 11.4506 20.7798 11.408 20.8291C11.1734 21.1179 10.9894 21.4441 10.8634 21.7942C10.7622 22.0458 10.8315 22.4039 10.6065 22.5516C10.263 22.7766 9.83827 22.8485 9.42421 22.8871C8.17936 23.0056 7.26471 22.4877 6.6283 21.4348C6.25552 20.8184 5.76956 20.3325 5.08523 20.0663C4.76981 19.9325 4.42139 19.8967 4.08537 19.9638C3.7898 20.029 3.73788 20.1901 3.93891 20.4111C4.03639 20.5234 4.14989 20.6207 4.27575 20.6999C4.9796 21.1318 5.51717 21.7884 5.80152 22.5636C6.37002 23.9973 7.48039 24.5697 8.93825 24.6323C9.43741 24.6575 9.93768 24.615 10.4254 24.5058C10.5892 24.4672 10.6531 24.4872 10.6517 24.6762C10.6451 25.4936 10.6637 26.3123 10.6517 27.131C10.6517 27.6635 10.1684 27.9297 9.58663 27.7393C8.17396 27.2671 6.84977 26.5631 5.66838 25.656C2.59555 23.2891 0.720966 20.1861 0.217704 16.3376C-0.357453 11.9127 0.911353 8.00824 3.98551 4.73881C6.11909 2.42656 8.99932 0.939975 12.1203 0.540191C16.5351 -0.0601815 20.4347 1.14323 23.7232 4.16373C26.2449 6.47869 27.724 9.37672 28.1048 12.7726C28.5828 17.0325 27.3686 20.7945 24.4768 23.9827C22.9762 25.6323 21.0956 26.8908 18.9982 27.6488C18.8783 27.6927 18.7585 27.738 18.636 27.7726C18.0356 27.9404 17.6189 27.6395 17.6189 27.0098C17.6189 25.7452 17.6308 24.4806 17.6295 23.2159C17.6329 22.9506 17.6128 22.6856 17.5696 22.4238C17.4325 21.6664 17.3419 21.484 16.7228 20.6334Z">
+                            </path>
+                        </svg>
+                        <span class="usa-sr-only">NCBI on GitHub</span>
+                    </a>
+                
+
+                
+                    <a href="https://ncbiinsights.ncbi.nlm.nih.gov/"
+                       class="ncbi-footer__social-icon ncbi-footer__social-icon--gray"
+                       target="_blank"
+                       rel="noreferrer noopener">
+                        <svg width="26"
+                             height="26"
+                             viewBox="0 0 27 27"
+                             fill="none"
+                             xmlns="http://www.w3.org/2000/svg"
+                             focusable="false"
+                             aria-hidden="true">
+                            <path d="M23.7778 26.4574C23.1354 26.3913 22.0856 26.8024 21.636 26.3087C21.212 25.8444 21.4359 24.8111 21.324 24.0347C19.9933 14.8323 14.8727 8.80132 6.09057 5.85008C4.37689 5.28406 2.58381 4.99533 0.779072 4.99481C0.202773 4.99481 -0.0229751 4.83146 0.00455514 4.21479C0.0660406 3.08627 0.0660406 1.95525 0.00455514 0.826734C-0.0413285 0.0815827 0.259669 -0.0193618 0.896534 0.00266238C6.96236 0.222904 12.3693 2.24179 16.9889 6.16209C22.9794 11.2478 26.1271 17.7688 26.4372 25.648C26.4629 26.294 26.3179 26.5271 25.6609 26.4684C25.0827 26.417 24.4991 26.4574 23.7778 26.4574Z">
+                            </path>
+                            <path d="M14.8265 26.441C14.0924 26.441 13.2371 26.6795 12.6626 26.3786C12.0092 26.0372 12.3781 25.0644 12.246 24.378C11.1154 18.5324 6.6849 14.5497 0.74755 14.1001C0.217135 14.0615 -0.0104482 13.9422 0.0134113 13.3659C0.0519536 12.1454 0.0482829 10.9213 0.0134113 9.69524C-0.00127145 9.14464 0.196946 9.03268 0.703502 9.04736C9.21217 9.27128 16.5994 16.2511 17.2804 24.7231C17.418 26.4446 17.418 26.4446 15.6579 26.4446H14.832L14.8265 26.441Z">
+                            </path>
+                            <path d="M3.58928 26.4555C2.64447 26.4618 1.73584 26.0925 1.06329 25.4289C0.39073 24.7653 0.00933763 23.8617 0.0030097 22.9169C-0.00331824 21.9721 0.365937 21.0635 1.02954 20.3909C1.69315 19.7184 2.59675 19.337 3.54156 19.3306C4.48637 19.3243 5.39499 19.6936 6.06755 20.3572C6.7401 21.0208 7.1215 21.9244 7.12782 22.8692C7.13415 23.814 6.7649 24.7226 6.10129 25.3952C5.43768 26.0677 4.53409 26.4491 3.58928 26.4555Z">
+                            </path>
+                        </svg>
+                        <span class="usa-sr-only">NCBI RSS feed</span>
+                    </a>
+                
+            </div>
+        </div>
+    
+
+    <div data-testid="gridContainer"
+         class="grid-container ncbi-footer__container">
+        <div class="grid-row ncbi-footer__main-content-container"
+             data-testid="grid">
+            
+                <div class="ncbi-footer__column">
+                    
+                        <p class="ncbi-footer__circled-icons-heading">
+                            Connect with NLM
+                        </p>
+                    
+
+                    <div class="ncbi-footer__circled-icons-list">
+                        
+                            <a href=https://twitter.com/nlm_nih class="ncbi-footer__social-icon ncbi-footer__social-icon--circled" target="_blank" rel="noreferrer noopener">
+                                <svg width="32"
+                                     height="32"
+                                     viewBox="0 0 40 40"
+                                     fill="none"
+                                     xmlns="http://www.w3.org/2000/svg"
+                                     focusable="false"
+                                     aria-hidden="true">
+                                    <path d="m6.067 8 10.81 13.9L6 33.2h4.2l8.4-9.1 7.068 9.1H34L22.8 18.5 31.9 8h-3.5l-7.7 8.4L14.401 8H6.067Zm3.6 1.734h3.266l16.8 21.732H26.57L9.668 9.734Z">
+                                    </path>
+                                </svg>
+                                <span class="usa-sr-only">NLM on X (formerly known as Twitter)</span>
+                            </a>
+                        
+
+                        
+                            <a href=https://www.facebook.com/nationallibraryofmedicine class="ncbi-footer__social-icon ncbi-footer__social-icon--circled" target="_blank" rel="noreferrer noopener">
+                                <svg width="13"
+                                     height="24"
+                                     viewBox="0 0 13 24"
+                                     fill="none"
+                                     xmlns="http://www.w3.org/2000/svg"
+                                     focusable="false"
+                                     aria-hidden="true">
+                                    <path d="M4.11371 23.1369C4.11371 23.082 4.11371 23.0294 4.11371 22.9745V12.9411H0.817305C0.6709 12.9411 0.670898 12.9411 0.670898 12.8016C0.670898 11.564 0.670898 10.3287 0.670898 9.09341C0.670898 8.97903 0.705213 8.95158 0.815017 8.95158C1.8673 8.95158 2.91959 8.95158 3.97417 8.95158H4.12057V8.83263C4.12057 7.8055 4.12057 6.7738 4.12057 5.74897C4.1264 4.92595 4.31387 4.11437 4.66959 3.37217C5.12916 2.38246 5.94651 1.60353 6.95717 1.1921C7.64827 0.905008 8.3913 0.764035 9.13953 0.778051C10.0019 0.791777 10.8644 0.830666 11.7268 0.860404C11.8869 0.860404 12.047 0.894717 12.2072 0.90158C12.2964 0.90158 12.3261 0.940469 12.3261 1.02968C12.3261 1.5421 12.3261 2.05452 12.3261 2.56465C12.3261 3.16857 12.3261 3.7725 12.3261 4.37642C12.3261 4.48165 12.2964 4.51367 12.1912 4.51138C11.5369 4.51138 10.8804 4.51138 10.2261 4.51138C9.92772 4.51814 9.63058 4.5526 9.33855 4.61433C9.08125 4.6617 8.84537 4.78881 8.66431 4.97766C8.48326 5.16652 8.3662 5.40755 8.32972 5.66661C8.28476 5.89271 8.26027 6.1224 8.25652 6.35289C8.25652 7.19014 8.25652 8.02969 8.25652 8.86923C8.25652 8.89439 8.25652 8.91955 8.25652 8.95615H12.0219C12.1797 8.95615 12.182 8.95616 12.1614 9.10714C12.0768 9.76596 11.9876 10.4248 11.9029 11.0813C11.8312 11.6319 11.7626 12.1824 11.697 12.733C11.6719 12.9434 11.6787 12.9434 11.4683 12.9434H8.26338V22.899C8.26338 22.979 8.26338 23.0591 8.26338 23.1392L4.11371 23.1369Z">
+                                    </path>
+                                </svg>
+                                <span class="usa-sr-only">NLM on Facebook</span>
+                            </a>
+                        
+
+                        
+                            <a href=https://www.youtube.com/user/NLMNIH class="ncbi-footer__social-icon ncbi-footer__social-icon--circled" target="_blank" rel="noreferrer noopener">
+                                <svg width="21"
+                                     height="15"
+                                     viewBox="0 0 21 15"
+                                     fill="none"
+                                     xmlns="http://www.w3.org/2000/svg"
+                                     focusable="false"
+                                     aria-hidden="true">
+                                    <path d="M19.2561 1.47914C18.9016 1.15888 18.5699 0.957569 17.2271 0.834039C15.5503 0.678484 13.2787 0.655608 11.563 0.65332H9.43556C7.71987 0.65332 5.4483 0.678484 3.77151 0.834039C2.43098 0.957569 2.097 1.15888 1.74242 1.47914C0.813665 2.32097 0.619221 4.62685 0.598633 6.89384C0.598633 7.31781 0.598633 7.74101 0.598633 8.16345C0.626084 10.4121 0.827391 12.686 1.74242 13.521C2.097 13.8412 2.4287 14.0425 3.77151 14.1661C5.4483 14.3216 7.71987 14.3445 9.43556 14.3468H11.563C13.2787 14.3468 15.5503 14.3216 17.2271 14.1661C18.5676 14.0425 18.9016 13.8412 19.2561 13.521C20.1712 12.6929 20.3725 10.451 20.3999 8.22064C20.3999 7.74025 20.3999 7.25986 20.3999 6.77946C20.3725 4.54907 20.1689 2.30724 19.2561 1.47914ZM8.55942 10.5311V4.65201L13.5601 7.50005L8.55942 10.5311Z"
+                                          fill="white" />
+                                </svg>
+                                <span class="usa-sr-only">NLM on YouTube</span>
+                            </a>
+                        
+                    </div>
+                </div>
+            
+
+            
+                <address class="ncbi-footer__address ncbi-footer__column">
+                    
+        <p>
+            <a class="usa-link usa-link--external"
+            href="https://www.google.com/maps/place/8600+Rockville+Pike,+Bethesda,+MD+20894/%4038.9959508,
+            -77.101021,17z/data%3D!3m1!4b1!4m5!3m4!1s0x89b7c95e25765ddb%3A0x19156f88b27635b8!8m2!3d38.9959508!
+            4d-77.0988323"
+            rel="noopener noreferrer" target="_blank">National Library of Medicine
+            <br/> 8600 Rockville Pike<br/> Bethesda, MD 20894</a>
+        </p>
+    
+                </address>
+            
+
+            
+                <ul class="usa-list usa-list--unstyled ncbi-footer__vertical-list ncbi-footer__column">
+                    
+                        <li class="ncbi-footer__vertical-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.nlm.nih.gov/web_policies.html" class="usa-link  usa-link--alt ncbi-footer__link"  >
+        
+
+        
+            Web Policies
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="ncbi-footer__vertical-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.nih.gov/institutes-nih/nih-office-director/office-communications-public-liaison/freedom-information-act-office" class="usa-link  usa-link--alt ncbi-footer__link"  >
+        
+
+        
+            FOIA
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="ncbi-footer__vertical-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.hhs.gov/vulnerability-disclosure-policy/index.html" class="usa-link usa-link--external usa-link--alt ncbi-footer__link" rel="noreferrer noopener" target='_blank' >
+        
+
+        
+            HHS Vulnerability Disclosure
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                </ul>
+            
+
+            
+                <ul class="usa-list usa-list--unstyled ncbi-footer__vertical-list ncbi-footer__column">
+                    
+                        <li class="ncbi-footer__vertical-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://support.nlm.nih.gov/" class="usa-link  usa-link--alt ncbi-footer__link"  >
+        
+
+        
+            Help
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="ncbi-footer__vertical-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.nlm.nih.gov/accessibility.html" class="usa-link  usa-link--alt ncbi-footer__link"  >
+        
+
+        
+            Accessibility
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="ncbi-footer__vertical-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.nlm.nih.gov/careers/careers.html" class="usa-link  usa-link--alt ncbi-footer__link"  >
+        
+
+        
+            Careers
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                </ul>
+            
+        </div>
+
+        
+            <div class="grid-row grid-col-12" data-testid="grid">
+                <ul class="ncbi-footer__bottom-links-list">
+                    
+                        <li class="ncbi-footer__bottom-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.nlm.nih.gov/" class="usa-link  usa-link--alt ncbi-footer__link"  >
+        
+
+        
+            NLM
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="ncbi-footer__bottom-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.nih.gov/" class="usa-link  usa-link--alt ncbi-footer__link"  >
+        
+
+        
+            NIH
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="ncbi-footer__bottom-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.hhs.gov/" class="usa-link usa-link--external usa-link--alt ncbi-footer__link" rel="noreferrer noopener" target='_blank' >
+        
+
+        
+            HHS
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="ncbi-footer__bottom-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.usa.gov/" class="usa-link usa-link--external usa-link--alt ncbi-footer__link" rel="noreferrer noopener" target='_blank' >
+        
+
+        
+            USA.gov
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                </ul>
+            </div>
+        
+    </div>
+</footer>
+
+    
+
+
+        
+        
+    
+  <script  type="text/javascript" src="https://cdn.ncbi.nlm.nih.gov/core/pinger/pinger.js"> </script>
+
+
+    
+        
+
+<button class="back-to-top" data-ga-category="pagination" data-ga-action="back_to_top">
+    <label>Back to Top</label>
+    <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/arrow_upward.svg" alt="back to top icon" class="usa-icon usa-icon--size-3 order-0 usa-icon--white" />
+</button>
+    
+
+
+        
+    
+    <div id="icon-container" style="display: none;"></div>
+    
+    
+        
+    <script type="application/javascript">
+    window.ncbi = window.ncbi || {};
+    window.ncbi.pmc = window.ncbi.pmc || {};
+    window.ncbi.pmc.options = {
+        logLevel: 'INFO',
+        
+        staticEndpoint: 'https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/',
+        
+        citeCookieName: 'pmc-cf',
+    };
+</script>
+    <script type="module" crossorigin="" src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/base-Cp_Il6gk.js"></script>
+<link href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/vendor-Co8Vdmw2.js" type="text/javascript" crossorigin="anonymous" rel="modulepreload" as="script" />
+    
+    <script type="text/javascript" src="https://cdn.ncbi.nlm.nih.gov/core/jquery/jquery-3.6.0.min.js">&#xA0;</script>
+    <script type="text/javascript">
+        jQuery.getScript("https://cdn.ncbi.nlm.nih.gov/core/alerts/alerts.js", function () {
+            galert(['div.nav_and_browser', 'div.header', '#universal_header', '.usa-banner', 'body > *:nth-child(1)'])
+        });
+    </script>
+
+
+    <script type="text/javascript">var exports = {};</script>
+     <script src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/CACHE/js/output.4e25b6297b38.js"></script>
+
+    <script type="module" crossorigin="" src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/article-BxyWTbsj.js"></script>
+<link href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/vendor-Co8Vdmw2.js" type="text/javascript" crossorigin="anonymous" rel="modulepreload" as="script" />
+<link href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/index-DXSA0fsx.js" type="text/javascript" crossorigin="anonymous" rel="modulepreload" as="script" />
+<link href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/secure-cookie-Br6x5jtB.js" type="text/javascript" crossorigin="anonymous" rel="modulepreload" as="script" />
+    
+        <script type="module" crossorigin="" src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/math-CjjrG8hn.js"></script>
+<link href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/vendor-Co8Vdmw2.js" type="text/javascript" crossorigin="anonymous" rel="modulepreload" as="script" />
+    
+    
+
+    </body>
+</html>
