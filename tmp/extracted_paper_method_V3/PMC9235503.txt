@@ -1,0 +1,2804 @@
+
+<!DOCTYPE html>
+<html lang="en" >
+    <head >
+
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="HandheldFriendly" content="True" />
+        <meta name="MobileOptimized" content="320" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        
+        
+
+        
+        
+  <link  rel="stylesheet" href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/base_style-BxRs1iOp.css" />
+<script type="module" crossorigin="" src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/base_style-D-jH62-1.js"></script>
+
+  <link  rel="stylesheet" href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/article_style-B67IZFds.css" />
+<link  rel="stylesheet" href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/style-D77LS1kY.css" />
+<script type="module" crossorigin="" src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/article_style-CTAd1LmM.js"></script>
+
+  
+  
+    <style>
+  
+  
+  @media screen and (min-width: 64em) {
+    div.pmc-wm {
+      background: repeat-y;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='350' xmlns:xlink='http://www.w3.org/1999/xlink'%3E%3Cdefs%3E%3Cfilter x='-.02' y='0' width='1.05' height='1' id='c'%3E%3CfeFlood flood-color='%23FFF'/%3E%3CfeComposite in='SourceGraphic'/%3E%3C/filter%3E%3Ctext id='b' font-family='Helvetica' font-size='11pt' style='opacity:1;fill:%23005ea2;stroke:none;text-anchor:middle' x='175' y='14'%3E%3C/text%3E%3Cpath id='a' style='fill:%23005ea2' d='M0 8h350v3H0z'/%3E%3C/defs%3E%3Cuse xlink:href='%23a' transform='rotate(90 10 10)'/%3E%3Cuse xlink:href='%23b' transform='rotate(90 10 10)' filter='url(%23c)'/%3E%3C/svg%3E");
+      padding-left: 3rem;
+    }
+  }
+</style>
+
+  
+
+
+
+        
+            <link rel="apple-touch-icon"
+                  sizes="180x180"
+                  href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/favicons/apple-touch-icon.png" />
+            <link rel="icon"
+                  type="image/png"
+                  sizes="48x48"
+                  href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/favicons/favicon-48x48.png" />
+            <link rel="icon"
+                  type="image/png"
+                  sizes="32x32"
+                  href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/favicons/favicon-32x32.png" />
+            <link rel="icon"
+                  type="image/png"
+                  sizes="16x16"
+                  href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/favicons/favicon-16x16.png" />
+            <link rel="manifest" href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/favicons/site.webmanifest" />
+            <link rel="mask-icon"
+                  href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/favicons/safari-pinned-tab.svg"
+                  color="#0071bc" />
+            <meta name="msapplication-config"
+                  content="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/favicons/browserconfig.xml" />
+            <meta name="theme-color" content="#ffffff" />
+        
+
+        <title>
+            Deep kernel learning improves molecular fingerprint prediction from tandem mass spectra - PMC
+        </title>
+
+        
+        
+  
+  <!-- Logging params: Pinger defaults -->
+<meta name="ncbi_app" content="cloudpmc-viewer" />
+<meta name="ncbi_db" content="pmc" />
+<meta name="ncbi_phid" content="4F6D14CA9D15C4F30B14CA0036C640E7.m_1" />
+<meta name="ncbi_pinger_stat_url" content="https://pmc.ncbi.nlm.nih.gov/stat" />
+<!-- Logging params: Pinger custom -->
+<meta name="ncbi_pdid" content="article" />
+  
+    <link rel="preconnect" href="https://www.google-analytics.com" />
+
+    
+        <link rel="preconnect" href="https://cdn.ncbi.nlm.nih.gov" />
+    
+
+    <!-- Include USWDS Init Script -->
+    <script src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/uswds-init.js"></script>
+
+
+    <meta name="ncbi_domain" content="bioinfo">
+<meta name="ncbi_type" content="fulltext">
+<meta name="ncbi_pcid" content="journal">
+<meta name="ncbi_feature" content="associated_data">
+<link rel="canonical" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC9235503/">
+<meta name="robots" content="INDEX,NOFOLLOW,NOARCHIVE">
+<meta name="citation_journal_title" content="Bioinformatics">
+<meta name="citation_title" content="Deep kernel learning improves molecular fingerprint prediction from tandem mass spectra">
+<meta name="citation_author" content="Kai Dührkop">
+<meta name="citation_author_institution" content="Department of Bioinformatics, Friedrich Schiller University, Jena 07743, Germany">
+<meta name="citation_publication_date" content="2022 Jun 27">
+<meta name="citation_volume" content="38">
+<meta name="citation_issue" content="Suppl 1">
+<meta name="citation_firstpage" content="i342">
+<meta name="citation_doi" content="10.1093/bioinformatics/btac260">
+<meta name="citation_pmid" content="35758813">
+<meta name="citation_abstract_html_url" content="https://pmc.ncbi.nlm.nih.gov/articles/PMC9235503/">
+<meta name="citation_fulltext_html_url" content="https://pmc.ncbi.nlm.nih.gov/articles/PMC9235503/">
+<meta name="citation_pdf_url" content="https://pmc.ncbi.nlm.nih.gov/articles/PMC9235503/pdf/btac260.pdf">
+<meta name="description" content="Untargeted metabolomics experiments rely on spectral libraries for structure annotation, but these libraries are vastly incomplete; in silico methods search in structure databases, allowing us to overcome this limitation. The best-performing in ...">
+<meta name="og:title" content="Deep kernel learning improves molecular fingerprint prediction from tandem mass spectra">
+<meta name="og:type" content="article">
+<meta name="og:site_name" content="PubMed Central (PMC)">
+<meta name="og:description" content="Untargeted metabolomics experiments rely on spectral libraries for structure annotation, but these libraries are vastly incomplete; in silico methods search in structure databases, allowing us to overcome this limitation. The best-performing in ...">
+<meta name="og:url" content="https://pmc.ncbi.nlm.nih.gov/articles/PMC9235503/">
+<meta name="og:image" content="https://cdn.ncbi.nlm.nih.gov/pmc/cms/images/pmc-card-share.jpg?_=0">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@ncbi">
+    
+    
+
+    </head>
+    <body >
+        
+    <a class="usa-skipnav " href="#main-content">
+      Skip to main content
+    </a>
+
+
+        
+            
+
+<section class="usa-banner " aria-label="Official website of the United States government" >
+    <div class="usa-accordion">
+        <header class="usa-banner__header">
+            <div class="usa-banner__inner">
+                <div class="grid-col-auto">
+                    <img aria-hidden="true"
+                         class="usa-banner__header-flag"
+                         src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/us_flag.svg"
+                         alt="" />
+                </div>
+
+                <div class="grid-col-fill tablet:grid-col-auto" aria-hidden="true">
+                    <p class="usa-banner__header-text">
+                        An official website of the United States government
+                    </p>
+                    <span class="usa-banner__header-action">Here's how you know</span>
+                </div>
+
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="button"
+        
+    
+    class="usa-accordion__button usa-banner__button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           
+           "
+    aria-expanded="false"
+    aria-controls="gov-banner-default"
+    
+    data-testid="storybook-django-banner"
+    
+    >
+    
+        
+
+        
+                    <span class="usa-banner__button-text">Here's how you know</span>
+                
+
+        
+    
+        
+            </button>
+        
+
+
+            </div>
+        </header>
+
+        <div class="usa-banner__content usa-accordion__content"
+             id="gov-banner-default"
+             hidden>
+            <div class="grid-row grid-gap-lg">
+                <div class="usa-banner__guidance tablet:grid-col-6">
+                    <img class="usa-banner__icon usa-media-block__img"
+                         src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/icon-dot-gov.svg"
+                         alt=""
+                         aria-hidden="true" />
+                    <div class="usa-media-block__body">
+                        <p>
+                            <strong>Official websites use .gov</strong>
+                            <br />
+                            A
+                            <strong>.gov</strong> website belongs to an official
+                            government organization in the United States.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="usa-banner__guidance tablet:grid-col-6">
+                    <img class="usa-banner__icon usa-media-block__img"
+                         src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/icon-https.svg"
+                         alt=""
+                         aria-hidden="true" />
+
+                    <div class="usa-media-block__body">
+                        <p>
+                            <strong>Secure .gov websites use HTTPS</strong>
+                            <br />
+                            A <strong>lock</strong> (
+                            <span class="icon-lock">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     width="52"
+                                     height="64"
+                                     viewBox="0 0 52 64"
+                                     class="usa-banner__lock-image"
+                                     role="graphics-symbol"
+                                     aria-labelledby="banner-lock-description"
+                                     focusable="false">
+                                    <title id="banner-lock-title">Lock</title>
+                                    <desc id="banner-lock-description">
+                                    Locked padlock icon
+                                    </desc>
+                                    <path fill="#000000"
+                                          fill-rule="evenodd"
+                                          d="M26 0c10.493 0 19 8.507 19 19v9h3a4 4 0 0 1 4 4v28a4 4 0 0 1-4 4H4a4 4 0 0 1-4-4V32a4 4 0 0 1 4-4h3v-9C7 8.507 15.507 0 26 0zm0 8c-5.979 0-10.843 4.77-10.996 10.712L15 19v9h22v-9c0-6.075-4.925-11-11-11z" />
+                                </svg>
+</span>) or <strong>https://</strong> means you've safely
+                                connected to the .gov website. Share sensitive
+                                information only on official, secure websites.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+        
+
+        
+    
+    
+    
+
+<div class="usa-overlay">
+</div>
+
+
+
+<header class="usa-header usa-header--extended usa-header--wide" data-header data-testid="header"    >
+    <div class="ncbi-header">
+        <div class="ncbi-header__container">
+            <a class="ncbi-header__logo-container"
+               href="https://www.ncbi.nlm.nih.gov/">
+                <img alt="NCBI home page"
+                     class="ncbi-header__logo-image"
+                     src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/ncbi-logos/nih-nlm-ncbi--white.svg"
+                     width="410"
+                     height="100" />
+            </a>
+
+            <!-- Mobile menu hamburger button -->
+            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="button"
+        
+    
+    class="usa-menu-btn ncbi-header__hamburger-button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           
+           "
+    
+    
+    aria-label="Show menu"
+    data-testid="navMenuButton"
+    
+    >
+    
+        
+
+        
+                <svg aria-hidden="true"
+                     class="ncbi-hamburger-icon"
+                     fill="none"
+                     focusable="false"
+                     height="21"
+                     viewBox="0 0 31 21"
+                     width="31"
+                     xmlns="http://www.w3.org/2000/svg">
+                    <path clip-rule="evenodd"
+                          d="M0.125 20.75H30.875V17.3333H0.125V20.75ZM0.125 12.2083H30.875V8.79167H0.125V12.2083ZM0.125 0.25V3.66667H30.875V0.25H0.125Z"
+                          fill="#F1F1F1"
+                          fill-rule="evenodd" />
+                </svg>
+            
+
+        
+    
+        
+            </button>
+        
+
+
+
+            
+                <!-- Desktop buttons-->
+                <div class="ncbi-header__desktop-buttons">
+                    
+                        <!-- Desktop search button -->
+                        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="button"
+        
+    
+    class="usa-button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           usa-button--unstyled ncbi-header__desktop-button
+           "
+    aria-expanded="false"
+    aria-controls="search-field-desktop-navigation"
+    aria-label="Show search overlay"
+    data-testid="toggleSearchPanelButton"
+    data-toggle-search-panel-button
+    >
+    
+        
+
+        
+                            
+
+
+
+    <img
+        src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/search.svg"
+        class="usa-icon "
+        aria-hidden="true"
+        
+        
+    />
+
+
+                            Search
+                        
+
+        
+    
+        
+            </button>
+        
+
+
+                    
+
+                    <!-- Desktop login dropdown -->
+                    
+                        <div class="ncbi-header__login-dropdown">
+                            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="button"
+        
+    
+    class="usa-button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           usa-button--unstyled ncbi-header__desktop-button ncbi-header__login-dropdown-button
+           "
+    aria-expanded="false"
+    aria-controls="login-dropdown-menu"
+    aria-label="Show login menu"
+    data-testid="toggleLoginMenuDropdown"
+    data-desktop-login-button
+    >
+    
+        
+
+        
+                                
+
+
+
+    <img
+        src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/person.svg"
+        class="usa-icon "
+        aria-hidden="true"
+        
+        
+    />
+
+
+
+                                <span data-login-dropdown-text>Log in</span>
+
+                                <!-- Dropdown icon pointing up -->
+                                
+
+
+
+    <img
+        src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/expand_less.svg"
+        class="usa-icon ncbi-header__login-dropdown-icon ncbi-header__login-dropdown-icon--expand-less ncbi-header__login-dropdown-icon--hidden"
+        aria-hidden="true"
+        data-login-dropdown-up-arrow
+        
+    />
+
+
+
+                                <!-- Dropdown icon pointing down -->
+                                
+
+
+
+    <img
+        src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/expand_more.svg"
+        class="usa-icon ncbi-header__login-dropdown-icon ncbi-header__login-dropdown-icon--expand-more ncbi-header__login-dropdown-icon--hidden"
+        aria-hidden="true"
+        data-login-dropdown-down-arrow
+        
+    />
+
+
+                            
+
+        
+    
+        
+            </button>
+        
+
+
+
+                            <!-- Login dropdown menu -->
+                            <ul class="usa-nav__submenu ncbi-header__login-dropdown-menu"
+                                id="login-dropdown-menu"
+                                data-desktop-login-menu-dropdown
+                                hidden>
+                                
+                                    <li class="usa-nav__submenu-item">
+                                        <!-- Uses custom style overrides to render external and document links. -->
+                                        
+
+
+
+
+
+
+
+
+
+    <a href="https://www.ncbi.nlm.nih.gov/myncbi/" class="usa-link  "  >
+        
+
+        
+            Dashboard
+        
+
+        
+    </a>
+
+
+                                    </li>
+                                
+                                    <li class="usa-nav__submenu-item">
+                                        <!-- Uses custom style overrides to render external and document links. -->
+                                        
+
+
+
+
+
+
+
+
+
+    <a href="https://www.ncbi.nlm.nih.gov/myncbi/collections/bibliography/" class="usa-link  "  >
+        
+
+        
+            Publications
+        
+
+        
+    </a>
+
+
+                                    </li>
+                                
+                                    <li class="usa-nav__submenu-item">
+                                        <!-- Uses custom style overrides to render external and document links. -->
+                                        
+
+
+
+
+
+
+
+
+
+    <a href="https://www.ncbi.nlm.nih.gov/account/settings/" class="usa-link  "  >
+        
+
+        
+            Account settings
+        
+
+        
+    </a>
+
+
+                                    </li>
+                                
+                                <li class="usa-nav__submenu-item">
+                                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="button"
+        
+    
+    class="usa-button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           usa-button--outline ncbi-header__login-dropdown-logout-button
+           "
+    
+    
+    
+    data-testid="desktopLogoutButton"
+    data-desktop-logout-button
+    >
+    
+        
+
+        Log out
+
+        
+    
+        
+            </button>
+        
+
+
+                                </li>
+                            </ul>
+                        </div>
+                    
+                </div>
+            
+        </div>
+    </div>
+
+    <!-- Search panel -->
+    
+        <div class="ncbi-search-panel ncbi--show-only-at-desktop"
+             data-header-search-panel
+             hidden>
+            <div class="ncbi-search-panel__container">
+                <form action="https://www.ncbi.nlm.nih.gov/search/all/"
+                      
+                      autocomplete="off"
+                      class="usa-search usa-search--big ncbi-search-panel__form"
+                      data-testid="desktop-navigation-search-form"
+                      method="GET"
+                      role="search">
+                    <label class="usa-sr-only" for="search-field-desktop-navigation">
+                        Search…
+                    </label>
+                    <input class="usa-input"
+                           id="search-field-desktop-navigation"
+                           name="term"
+                           
+                               placeholder="Search NCBI"
+                           
+                           type="search"
+                           value="" />
+                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="submit"
+        
+    
+    class="usa-button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           
+           "
+    
+    
+    
+    
+    
+    >
+    
+        
+
+        
+                        <span class="usa-search__submit-text">
+                            Search NCBI
+                        </span>
+                    
+
+        
+    
+        
+            </button>
+        
+
+
+                </form>
+
+                
+            </div>
+        </div>
+    
+
+    <nav aria-label="Primary navigation" class="usa-nav">
+        <p class="usa-sr-only" id="primary-navigation-sr-only-title">
+            Primary site navigation
+        </p>
+
+        <!-- Mobile menu close button -->
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="button"
+        
+    
+    class="usa-nav__close ncbi-nav__close-button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           
+           "
+    
+    
+    aria-label="Close navigation menu"
+    data-testid="navCloseButton"
+    
+    >
+    
+        
+
+        
+            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/usa-icons/close.svg" alt="Close" />
+        
+
+        
+    
+        
+            </button>
+        
+
+
+
+        
+            <!-- Mobile search component -->
+            <form class="usa-search usa-search--small ncbi--hide-at-desktop"
+                  action="https://www.ncbi.nlm.nih.gov/search/all/"
+                  
+                  autocomplete="off"
+                  data-testid="mobile-navigation-search-form"
+                  method="GET"
+                  role="search">
+                <label class="usa-sr-only" for="search-field-mobile-navigation">
+                    Search
+                </label>
+
+                <input class="usa-input"
+                       id="search-field-mobile-navigation"
+                       type="search"
+                       
+                           placeholder="Search NCBI"
+                       
+                       name="term" />
+
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="submit"
+        
+    
+    class="usa-button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           
+           "
+    
+    
+    
+    
+    
+    >
+    
+        
+
+        
+                    <!-- This SVG should be kept inline and not replaced with a link to the icon as otherwise it will render in the wrong color -->
+                    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjI0Ij48cGF0aCBkPSJNMCAwaDI0djI0SDB6IiBmaWxsPSJub25lIi8+PHBhdGggZmlsbD0iI2ZmZiIgZD0iTTE1LjUgMTRoLS43OWwtLjI4LS4yN0E2LjQ3MSA2LjQ3MSAwIDAgMCAxNiA5LjUgNi41IDYuNSAwIDEgMCA5LjUgMTZjMS42MSAwIDMuMDktLjU5IDQuMjMtMS41N2wuMjcuMjh2Ljc5bDUgNC45OUwyMC40OSAxOWwtNC45OS01em0tNiAwQzcuMDEgMTQgNSAxMS45OSA1IDkuNVM3LjAxIDUgOS41IDUgMTQgNy4wMSAxNCA5LjUgMTEuOTkgMTQgOS41IDE0eiIvPjwvc3ZnPg=="
+                         class="usa-search__submit-icon"
+                         alt="Search" />
+                
+
+        
+    
+        
+            </button>
+        
+
+
+            </form>
+
+            
+        
+
+        <!-- Primary navigation menu items -->
+        <!-- This usa-nav__inner wrapper is required to correctly style the navigation items on Desktop -->
+        
+
+        
+            <div class="ncbi-nav__mobile-login-menu ncbi--hide-at-desktop"
+                 data-mobile-login-menu
+                 hidden>
+                <p class="ncbi-nav__mobile-login-menu-status">
+                    Logged in as:
+                    <strong class="ncbi-nav__mobile-login-menu-email"
+                            data-mobile-login-email-text></strong>
+                </p>
+                <ul class="usa-nav__primary usa-accordion">
+                    
+                        <li class="usa-nav__primary-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.ncbi.nlm.nih.gov/myncbi/" class="usa-link  "  >
+        
+
+        
+            Dashboard
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="usa-nav__primary-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.ncbi.nlm.nih.gov/myncbi/collections/bibliography/" class="usa-link  "  >
+        
+
+        
+            Publications
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="usa-nav__primary-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.ncbi.nlm.nih.gov/account/settings/" class="usa-link  "  >
+        
+
+        
+            Account settings
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                </ul>
+            </div>
+        
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="button"
+        
+    
+    class="usa-button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           ncbi-nav__mobile-login-button ncbi--hide-at-desktop
+           "
+    
+    
+    
+    data-testid="mobileLoginButton"
+    data-mobile-login-button
+    >
+    
+        
+
+        Log in
+
+        
+    
+        
+            </button>
+        
+
+
+    </nav>
+</header>
+
+    
+    
+        
+
+<section class="pmc-header pmc-header--basic" aria-label="PMC Header with search box">
+    <div class="pmc-nav-container">
+        <div class="pmc-header__bar">
+           <div class="pmc-header__logo">
+               <a href="/" title="Home" aria-label="PMC Home"></a>
+           </div>
+            <button
+                    type="button"
+                    class="usa-button usa-button--unstyled pmc-header__search__button"
+                    aria-label="Open search"
+                    data-ga-category="search"
+                    data-ga-action="PMC"
+                    data-ga-label="pmc_search_panel_mobile"
+            >
+                <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/search.svg" alt="PMC search open icon" aria-hidden="true" class="usa-icon usa-icon--size-4 pmc-icon__open" />
+                <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/close.svg" alt="PMC search close ison" aria-hidden="true" class="usa-icon usa-icon--size-4 pmc-icon__close" />
+            </button>
+        </div>
+        <div class="pmc-header__search">
+            
+
+
+<form class="usa-search usa-search--extra usa-search--article-right-column  pmc-header__search__form" id="pmc-search-form" autocomplete="off" role="search">
+<label class="usa-sr-only" for="pmc-search">Search PMC Full-Text Archive</label>
+<span class="autoComplete_wrapper flex-1">
+<input class="usa-input width-full maxw-none" required="required" placeholder="Search PMC Full-Text Archive" id="pmc-search"  type="search" name="term" data-autocomplete-url="https://pmc.ncbi.nlm.nih.gov/autocomp/search/autocomp/"/>
+</span>
+<button
+class="usa-button"
+type="submit"
+formaction="https://pmc.ncbi.nlm.nih.gov/search/"
+data-ga-category="search"
+data-ga-action="PMC"
+data-ga-label="PMC_search_button"
+>
+<span class="usa-search__submit-text">Search in PMC</span>
+<img
+src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/usa-icons-bg/search--white.svg"
+class="usa-search__submit-icon"
+alt="Search"
+/>
+</button>
+</form>
+            <div class="display-flex flex-column tablet:flex-row tablet:flex-justify flex-justify-center flex-align-center width-full desktop:maxw-44">
+                <ul class="pmc-header__search__menu">
+                    <li>
+                        
+                            <a class="usa-link" href="/journals/" data-ga-action="featured_link" data-ga-label="journal list">
+                                Journal List
+                            </a>
+                        
+                    </li>
+                    <li>
+                        
+                            <a class="usa-link" href="/about/userguide/" data-ga-action="featured_link"
+                            data-ga-label="user guide">
+                                User Guide
+                            </a>
+                        
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+    
+
+
+        
+        
+
+       
+  <div class="usa-section padding-top-0 desktop:padding-top-6 pmc-article-section" data-article-db="pmc" data-article-id="9235503">
+
+    
+
+   
+
+
+
+<div class="grid-container pmc-actions-bar" aria-label="Actions bar" role="complementary">
+    <div class="grid-row">
+        <div class="grid-col-fill display-flex">
+             <div class="display-flex">
+                <ul class="usa-list usa-list--unstyled usa-list--horizontal">
+                    <li class="margin-right-2 mobile-lg:margin-right-4 display-flex mob">
+                        <button
+                                type="button"
+                                class="usa-button pmc-sidenav__container__open usa-button--unstyled width-auto display-flex"
+                                aria-label="Open resources"
+                                data-extra-class="is-visible-resources"
+                                data-ga-category="resources_accordion"
+                                data-ga-action="click"
+                                data-ga-label="mobile_icon"
+                        >
+                            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/more_vert.svg" alt="Open resources icon" class="usa-icon usa-icon--size-4 usa-icon--link" />
+                        </button>
+                    </li>
+                    
+                    <li class="margin-right-2 mobile-lg:margin-right-4 display-flex mob">
+                        <a
+                                href="https://doi.org/10.1093/bioinformatics/btac260"
+                                class="usa-link display-flex usa-tooltip"
+                                role="button"
+                                target="_blank"
+                                rel="noreferrer noopener"
+                                title="View on publisher site"
+                                data-position="bottom"
+                                aria-label="View on publisher site"
+                                data-ga-category="actions"
+                                data-ga-action="click"
+                                data-ga-label="publisher_link_mobile"
+                        >
+                                <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/launch.svg" alt="View on publisher site icon" class="usa-icon usa-icon--size-4 usa-icon--link" />
+                        </a>
+                    </li>
+                    
+                    
+                        <li class="margin-right-2 mobile-lg:margin-right-4 display-flex">
+                             <a
+                                     href="pdf/btac260.pdf"
+                                     class="usa-link display-flex usa-tooltip"
+                                     role="button"
+                                     title="Download PDF"
+                                     data-position="bottom"
+                                     aria-label="Download PDF"
+                                     data-ga-category="actions"
+                                     data-ga-action="click"
+                                     data-ga-label="pdf_download_mobile"
+                             >
+
+                                 <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/file_download.svg" alt="Download PDF icon" aria-hidden="true" class="usa-icon usa-icon--size-4 usa-icon--link" />
+                            </a>
+                        </li>
+                    
+                    <li class="margin-right-2 mobile-lg:margin-right-4 display-flex">
+                        <button
+                            class="usa-button usa-button--unstyled  usa-tooltip collections-dialog-trigger collections-button display-flex collections-button-empty"
+                            title="Add to Collections"
+                            data-position="bottom"
+                            aria-label="Save article in MyNCBI collections."
+                            data-ga-category="actions"
+                            data-ga-action="click"
+                            data-ga-label="collections_button_mobile"
+                            data-collections-open-dialog-enabled="false"
+                            data-collections-open-dialog-url="https://account.ncbi.nlm.nih.gov/?back_url=https%3A%2F%2Fpmc.ncbi.nlm.nih.gov%2Farticles%2FPMC9235503%2F%23open-collections-dialog"
+                            data-in-collections="false"
+                        >
+                            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/action-bookmark-full.svg" alt="Collections icon" aria-hidden="true" class="usa-icon usa-icon--size-4 usa-icon--link usa-icon--bookmark-full" />
+                            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/action-bookmark-empty.svg" alt="Collections icon" aria-hidden="true" class="usa-icon usa-icon--size-4 usa-icon--link usa-icon--bookmark-empty" />
+                        </button>
+                    </li>
+                    
+                    <li class="margin-right-2 mobile-lg:margin-right-4 display-flex">
+                        <button role="button" class="usa-button usa-button--unstyled usa-tooltip citation-dialog-trigger display-flex"
+                            aria-label="Open dialog with citation text in different styles"
+                            title="Cite"
+                            data-position="bottom"
+                            data-ga-category="actions"
+                            data-ga-action="open"
+                            data-ga-label="cite_mobile"
+                            data-all-citations-url="/resources/citations/9235503/"
+                            data-citation-style="nlm"
+                            data-download-format-link="/resources/citations/9235503/export/"
+                        >
+                            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/format_quote.svg" alt="Cite icon" aria-hidden="true" class="usa-icon usa-icon--size-4 usa-icon--link" />
+                        </button>
+                    </li>
+                    
+                    <li class="pmc-permalink display-flex" >
+                         <button
+                                 type="button"
+                                 title="Permalink"
+                                 data-position="bottom"
+                                 class="usa-button usa-button--unstyled display-flex usa-tooltip"
+                                 aria-label="Show article permalink"
+                                 aria-expanded="false"
+                                 aria-haspopup="true"
+                                 data-ga-category="actions"
+                                 data-ga-action="open"
+                                 data-ga-label="permalink_mobile"
+                         >
+                            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/share.svg" alt="Show article permalink icon" aria-hidden="true" class="usa-icon usa-icon--size-4 usa-icon--link" />
+                        </button>
+                        
+
+<div class="pmc-permalink__dropdown" hidden>
+    <div class="pmc-permalink__dropdown__container">
+          <h2 class="usa-modal__heading margin-top-0 margin-bottom-2 text-uppercase font-sans-xs">PERMALINK</h2>
+          <div class="pmc-permalink__dropdown__content">
+              <input type="text" class="usa-input" value="https://pmc.ncbi.nlm.nih.gov/articles/PMC9235503/" aria-label="Article permalink">
+              <button class="usa-button display-inline-flex pmc-permalink__dropdown__copy__btn margin-right-0" title="Copy article permalink" data-ga-category="save_share" data-ga-action="link" data-ga-label="copy_link">
+                  <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/content_copy.svg" alt="Copy icon" aria-hidden="true" class="usa-icon usa-icon--white" />
+                  <span class="margin-left-1">Copy</span>
+              </button>
+          </div>
+    </div>
+</div>
+                    </li>
+                </ul>
+            </div>
+            <button
+                    type="button"
+                    class="usa-button pmc-sidenav__container__open usa-button--unstyled width-auto display-flex"
+                    aria-label="Open article navigation"
+                    data-extra-class="is-visible-in-page"
+                    data-ga-category="actions"
+                    data-ga-action="open"
+                    data-ga-label="article_nav_mobile"
+            >
+                <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/list.svg" alt="Open article navigation icon" aria-hidden="true" class="usa-icon usa-icon--size-4 usa-icon--link" />
+            </button>
+        </div>
+    </div>
+</div>
+    <div class="grid-container desktop:padding-left-6">
+      <div id="article-container" class="grid-row grid-gap">
+        <div class="grid-col-12 desktop:grid-col-8 order-2 pmc-layout__content">
+            <div class="grid-container padding-left-0 padding-right-0">
+                <div class="grid-row desktop:margin-left-neg-6">
+                    <div class="grid-col-12">
+                        <div class="pmc-layout__disclaimer" role="complementary" aria-label="Disclaimer note">
+    As a library, NLM provides access to scientific literature. Inclusion in an NLM database does not imply endorsement of, or agreement with,
+    the contents by NLM or the National Institutes of Health.<br/>
+    Learn more:
+    <a class="usa-link" data-ga-category="Link click" data-ga-action="Disclaimer" data-ga-label="New disclaimer box" href="/about/disclaimer/">PMC Disclaimer</a>
+    |
+    <a class="usa-link" data-ga-category="Link click" data-ga-action="PMC Copyright Notice" data-ga-label="New disclaimer box" href="/about/copyright/">
+        PMC Copyright Notice
+    </a>
+</div>
+                    </div>
+                </div>
+                <div class="grid-row pmc-wm desktop:margin-left-neg-6">
+                    <!-- Main content -->
+                    <main
+                      id="main-content"
+                      class="usa-layout-docs__main usa-layout-docs grid-col-12 pmc-layout pmc-prose padding-0"
+                    >
+
+                      
+                        <section class="pmc-journal-banner text-center line-height-none" aria-label="Journal banner"><img src="https://cdn.ncbi.nlm.nih.gov/pmc/banners/logo-bioinfo.png" alt="Bioinformatics logo" usemap="#pmc-banner-imagemap" width="500" height="75"><map name="pmc-banner-imagemap"><area alt="Link to Bioinformatics" title="Link to Bioinformatics" shape="default" href="http://academic.oup.com/bioinformatics" target="_blank" rel="noopener noreferrer"></map></section><article lang="en"><section aria-label="Article citation and metadata"><section class="pmc-layout__citation font-secondary font-xs"><div>
+<div class="display-inline-block"><button type="button" class="cursor-pointer text-no-underline bg-transparent border-0 padding-0 text-left margin-0 text-normal text-primary" aria-controls="journal_context_menu">Bioinformatics</button></div>. 2022 Jun 27;38(Suppl 1):i342–i349. doi: <a href="https://doi.org/10.1093/bioinformatics/btac260" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">10.1093/bioinformatics/btac260</a>
+</div>
+<nav id="journal_context_menu" hidden="hidden"><ul class="menu-list font-family-ui" role="menu">
+<li role="presentation"><a href='https://pmc.ncbi.nlm.nih.gov/search/?term="Bioinformatics"[jour]' class="usa-link" role="menuitem">Search in PMC</a></li>
+<li role="presentation"><a href='https://pubmed.ncbi.nlm.nih.gov/?term="Bioinformatics"[jour]' lang="en" class="usa-link" role="menuitem">Search in PubMed</a></li>
+<li role="presentation"><a href='https://www.ncbi.nlm.nih.gov/nlmcatalog?term="Bioinformatics"[Title%20Abbreviation]' class="usa-link" role="menuitem">View in NLM Catalog</a></li>
+<li role="presentation"><a href='?term="Bioinformatics"[jour]' class="usa-link" role="menuitem" data-add-to-search="true">Add to search</a></li>
+</ul></nav></section><section class="front-matter"><div class="ameta p font-secondary font-xs">
+<hgroup><h1>Deep kernel learning improves molecular fingerprint prediction from tandem mass spectra</h1></hgroup><div class="cg p">
+<a href='https://pubmed.ncbi.nlm.nih.gov/?term="D%C3%BChrkop%20K"[Author]' class="usa-link" aria-describedby="id1"><span class="name western">Kai Dührkop</span></a><div hidden="hidden" id="id1">
+<h3><span class="name western">Kai Dührkop</span></h3>
+<div class="p">
+<sup>1</sup>
+Department of Bioinformatics, Friedrich Schiller University, Jena 07743, Germany</div>
+<div class="p">Find articles by <a href='https://pubmed.ncbi.nlm.nih.gov/?term="D%C3%BChrkop%20K"[Author]' class="usa-link"><span class="name western">Kai Dührkop</span></a>
+</div>
+</div>
+<sup>1,</sup><sup>✉</sup>
+</div>
+<ul class="d-buttons inline-list">
+<li><button class="d-button" aria-controls="aip_a" aria-expanded="false">Author information</button></li>
+<li><button class="d-button" aria-controls="anp_a" aria-expanded="false">Article notes</button></li>
+<li><button class="d-button" aria-controls="clp_a" aria-expanded="false">Copyright and License information</button></li>
+</ul>
+<div class="d-panels font-secondary-light">
+<div id="aip_a" class="d-panel p" style="display: none">
+<div class="p" id="aff1">
+<sup>1</sup>
+Department of Bioinformatics, Friedrich Schiller University, Jena 07743, Germany</div>
+<div class="author-notes p"><div class="fn" id="btac260-cor1">
+<sup>✉</sup><p class="display-inline">To whom correspondence should be addressed. E-mail: <span>kai.duehrkop@uni-jena.de</span></p>
+</div></div>
+</div>
+<div id="anp_a" class="d-panel p" style="display: none"><div class="notes p"><section id="historyarticle-meta1" class="history"><p>Collection date 2022 Jul.</p></section></div></div>
+<div id="clp_a" class="d-panel p" style="display: none">
+<div>© The Author(s) 2022. Published by Oxford University Press.</div>
+<p>This is an Open Access article distributed under the terms of the Creative Commons Attribution License (<a href="https://creativecommons.org/licenses/by/4.0/" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">https://creativecommons.org/licenses/by/4.0/</a>), which permits unrestricted reuse, distribution, and reproduction in any medium, provided the original work is properly cited.</p>
+<div class="p"><a href="/about/copyright/" class="usa-link">PMC Copyright notice</a></div>
+</div>
+</div>
+<div>PMCID: PMC9235503  PMID: <a href="https://pubmed.ncbi.nlm.nih.gov/35758813/" class="usa-link">35758813</a>
+</div>
+</div></section></section><section aria-label="Article content"><section class="body main-article-body"><section class="abstract" id="abstract1"><h2>Abstract</h2>
+<section id="s1"><h3 class="pmc_sec_title">Motivation</h3>
+<p>Untargeted metabolomics experiments rely on spectral libraries for structure annotation, but these libraries are vastly incomplete; <em>in silico</em> methods search in structure databases, allowing us to overcome this limitation. The best-performing <em>in silico</em> methods use machine learning to predict a molecular fingerprint from tandem mass spectra, then use the predicted fingerprint to search in a molecular structure database. Predicted molecular fingerprints are also of great interest for compound class annotation, <em>de novo</em> structure elucidation, and other tasks. So far, kernel support vector machines are the best tool for fingerprint prediction. However, they cannot be trained on all publicly available reference spectra because their training time scales cubically with the number of training data.</p></section><section id="s2"><h3 class="pmc_sec_title">Results</h3>
+<p>We use the Nyström approximation to transform the kernel into a linear feature map. We evaluate two methods that use this feature map as input: a linear support vector machine and a deep neural network (DNN). For evaluation, we use a cross-validated dataset of 156 017 compounds and three independent datasets with 1734 compounds. We show that the combination of kernel method and DNN outperforms the kernel support vector machine, which is the current gold standard, as well as a DNN on tandem mass spectra on all evaluation datasets.</p></section><section id="s3"><h3 class="pmc_sec_title">Availability and implementation</h3>
+<p>The deep kernel learning method for fingerprint prediction is part of the SIRIUS software, available at <a href="https://bio.informatik.uni-jena.de/software/sirius" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">https://bio.informatik.uni-jena.de/software/sirius</a>.</p></section></section><section id="sec4"><h2 class="pmc_sec_title">1 Introduction</h2>
+<p>Liquid chromatography coupled to mass spectrometry (LC-MS) allows a relatively comprehensive analysis of the metabolome of a biological system. LC-MS analysis can detect hundreds to thousands of metabolites from only small amounts of sample; tandem mass spectrometry (MS/MS) individually fragments the observed metabolites and records their fragment masses. Public repositories containing metabolomic LC-MS/MS data (<a href="#btac260-B16" class="usa-link" aria-describedby="btac260-B16">Haug <em>et al.</em>, 2019</a>; <a href="#btac260-B34" class="usa-link" aria-describedby="btac260-B34">Nothias <em>et al.</em>, 2020</a>; <a href="#btac260-B44" class="usa-link" aria-describedby="btac260-B44">Sud <em>et al.</em>, 2016</a>) are growing quickly, but repurposing these data at a repository scale remains non-trivial.</p>
+<p>Structural annotation via MS/MS has historically been carried out by spectral library search; resulting annotations are intrinsically restricted to compounds for which a reference spectrum (usually based on commercially available chemicals) is present in the library. During the last decade, <em>in silico</em> methods were developed that allow to search in substantially more comprehensive molecular structure databases (<a href="#btac260-B2" class="usa-link" aria-describedby="btac260-B2">Allen <em>et al.</em>, 2015</a>; <a href="#btac260-B4" class="usa-link" aria-describedby="btac260-B4">Brouard <em>et al.</em>, 2016</a>; <a href="#btac260-B12" class="usa-link" aria-describedby="btac260-B12">Dührkop <em>et al.</em>, 2015</a>; <a href="#btac260-B15" class="usa-link" aria-describedby="btac260-B15">Fan <em>et al.</em>, 2020</a>; <a href="#btac260-B39" class="usa-link" aria-describedby="btac260-B39">Schymanski <em>et al.</em>, 2017</a>; <a href="#btac260-B48" class="usa-link" aria-describedby="btac260-B48">Verdegem <em>et al.</em>, 2016</a>; <a href="#btac260-B54" class="usa-link" aria-describedby="btac260-B54">Wolf <em>et al.</em>, 2010</a>). Numerous molecular structure databases exist that may be searched by these <em>in silico</em> methods (<a href="#btac260-B22" class="usa-link" aria-describedby="btac260-B22">Kanehisa <em>et al.</em>, 2016</a>; <a href="#btac260-B23" class="usa-link" aria-describedby="btac260-B23">Kim <em>et al.</em>, 2016</a>; <a href="#btac260-B53" class="usa-link" aria-describedby="btac260-B53">Wishart <em>et al.</em>, 2018</a>). Besides searching in databases with ‘established’ molecular structures, <em>in silico</em> methods can also be used to search in databases containing hypothetical structures, thereby overcoming the boundaries of known (bio-)chemistry; this recently resulted in the annotation of eleven novel bile acid conjugates (<a href="#btac260-B18" class="usa-link" aria-describedby="btac260-B18">Hoffmann <em>et al.</em>, 2022</a>).</p>
+<p>The best-performing <em>in silico</em> methods (<a href="#btac260-B39" class="usa-link" aria-describedby="btac260-B39">Schymanski <em>et al.</em>, 2017</a>) use machine learning to predict a molecular fingerprint of the query compound then use the predicted fingerprint to search in a molecular structure database. Molecular fingerprints are either explicitly predicted using an array of support vector machines (SVMs) (<a href="#btac260-B12" class="usa-link" aria-describedby="btac260-B12">Dührkop <em>et al.</em>, 2015</a>; <a href="#btac260-B17" class="usa-link" aria-describedby="btac260-B17">Heinonen <em>et al.</em>, 2012</a>; <a href="#btac260-B41" class="usa-link" aria-describedby="btac260-B41">Shen <em>et al.</em>, 2014</a>), or implicitly using kernel regression (<a href="#btac260-B4" class="usa-link" aria-describedby="btac260-B4">Brouard <em>et al.</em>, 2016</a>, <a href="#btac260-B5" class="usa-link" aria-describedby="btac260-B5">2017</a>, <a href="#btac260-B6" class="usa-link" aria-describedby="btac260-B6">2019</a>). Implicit use of molecular fingerprints via Input Output Kernel Regression usually outperforms explicit prediction by a small margin; also, training times become extremely fast. On the downside, running times for searching in large structure databases increase substantially. But most importantly, explicitly predicted fingerprints can be used for related tasks such as compound similarity estimation (<a href="#btac260-B47" class="usa-link" aria-describedby="btac260-B47">Tripathi <em>et al.</em>, 2021</a>), compound class prediction (<a href="#btac260-B14" class="usa-link" aria-describedby="btac260-B14">Dührkop <em>et al.</em>, 2021</a>) or <em>de novo</em> structural elucidation (<a href="#btac260-B43" class="usa-link" aria-describedby="btac260-B43">Stravs <em>et al.</em>, 2021</a>), opening up a whole new area of possible research questions.</p>
+<p>Whereas the predecessor FingerID exclusively used spectrum-based kernels (<a href="#btac260-B17" class="usa-link" aria-describedby="btac260-B17">Heinonen <em>et al.</em>, 2012</a>), all CSI:FingerID variants use multiple kernel learning and combinatorial kernels on fragmentation trees (<a href="#btac260-B3" class="usa-link" aria-describedby="btac260-B3">Böcker and Rasche, 2008</a>; <a href="#btac260-B41" class="usa-link" aria-describedby="btac260-B41">Shen <em>et al.</em>, 2014</a>). These combinatorial kernels are responsible not only for the major improvement in search performance (<a href="#btac260-B12" class="usa-link" aria-describedby="btac260-B12">Dührkop <em>et al.</em>, 2015</a>) but also for the high generalization performance of the machine learning models (<a href="#btac260-B11" class="usa-link" aria-describedby="btac260-B11">Dührkop, 2018</a>).</p>
+<p>Deep neural networks (DNNs) learn an embedding directly from raw data, but this often requires a large amount of training data. Although there are hundred thousands of spectra available in public reference libraries, these are just multiple recordings of a rather small number of compounds. So far, DNNs are mainly used for low-resolution EI-MS data, where transforming the spectrum into a vector is a trivial task (<a href="#btac260-B21" class="usa-link" aria-describedby="btac260-B21">Ji <em>et al.</em>, 2020</a>). For high-resolution MS/MS data, DNN methods usually bin the spectrum (<a href="#btac260-B15" class="usa-link" aria-describedby="btac260-B15">Fan <em>et al.</em>, 2020</a>).</p>
+<p>Kernel methods show great generalization performance even when trained on a small number of spectra, but training them on large datasets is difficult due to cubic time and quadratic space requirement on the number of training data. DNNs, on the other hand, perform well when a large amount of training data is available, and their training time scales linearly with the number of training data when stochastic gradient descent is used. For the metabolite identification task, the training data consist of a large number of spectra measured from a small number of compounds. Training on multiple measurements of the same compound will probably not contribute much to the generalization performance of the predictor but might improve its robustness against noise. Here, we present two kernel-based methods that can utilize the large amount of available spectral training data. We use the Nyström method to embed the kernel into a finite-dimensional feature space. The Nyström method is a common trick to apply SVMs and other kernel methods on large datasets (<a href="#btac260-B10" class="usa-link" aria-describedby="btac260-B10">Cuevas <em>et al.</em>, 2020</a>; <a href="#btac260-B30" class="usa-link" aria-describedby="btac260-B30">Lopez-Martin <em>et al.</em>, 2019</a>; <a href="#btac260-B33" class="usa-link" aria-describedby="btac260-B33">Meanti <em>et al.</em>, 2020</a>; <a href="#btac260-B55" class="usa-link" aria-describedby="btac260-B55">Zhang <em>et al.</em>, 2012</a>). The first method is using a linear SVM on this feature embedding. The second method is using a DNN on the Nyström embedding and, thus, combines the strength of kernel learning and deep learning.</p>
+<p>Previous research on deep kernel learning focuses mostly on learning better data embeddings with DNNs while relying on the general-purpose radial basis function kernel (<a href="#btac260-B35" class="usa-link" aria-describedby="btac260-B35">Ober <em>et al.</em>, 2021</a>; <a href="#btac260-B46" class="usa-link" aria-describedby="btac260-B46">Tossou <em>et al.</em>, 2020</a>; <a href="#btac260-B52" class="usa-link" aria-describedby="btac260-B52">Wilson <em>et al.</em>, 2016</a>). For the fingerprint prediction task, we already have hand-crafted, highly specialized kernels. Therefore, our deep kernel learning method is using these kernels as input of a DNN.</p></section><section id="sec5"><h2 class="pmc_sec_title">2 Materials and methods</h2>
+<section id="sec6"><h3 class="pmc_sec_title">2.1 Training data</h3>
+<p>To train our models, we use a combined dataset from MassBank (<a href="#btac260-B19" class="usa-link" aria-describedby="btac260-B19">Horai <em>et al.</em>, 2010</a>), GNPS (<a href="#btac260-B49" class="usa-link" aria-describedby="btac260-B49">Wang <em>et al.</em>, 2016</a>) and the NIST 2020 database (National Institute of Standards and Technology). We limit ourselves to MS/MS spectra recorded in positive ion mode, as there are more such spectra available. To the best of our knowledge, this constitutes practically all data available for training machine learning models. Certain libraries contain a large number of simulated fragmentation spectra, usually for certain lipid classes; core fragmentation of these lipids is relatively easy to simulate using a simple rule-based approach. Clearly, simulated spectra do not carry any useful information for training our machine learning models.</p>
+<p>Notably, stereoisomers (say, L/D-threose and L/D-erythrose) often result in highly similar fragmentation spectra. The (2D) <em>structure</em> of a compound ignores the stereo-configuration for asymmetric centers and double bonds, and only considers atoms and their connectivity. To avoid overestimating a model’s performance, we must ensure <em>structure-disjoint evaluation</em>: Data from the same structure must never be present in training and evaluation data. We ensure this by removing all data of the corresponding structures from the training (holdout) or evaluation datasets.</p>
+<p>Spectral libraries often contain several spectra of the same structure measured at different collision energies. In the following, we will call the input of the machine learning methods a <em>compound</em>, which is either an MS/MS spectrum recorded at a single-collision energy, a merge of several MS/MS spectra from different collision energies, or an MS/MS spectrum recorded at varying collision energies (ramp spectrum).</p>
+<p>We use two separate training datasets: The ‘main training’ dataset contains 21 191 structures with 28 000 compounds and 197 832 individual spectra. For this dataset, we merged all spectra of the same structure if they are measured on the same instrument and have the same adduct.</p>
+<p>The ‘additional training’ dataset consists of 128 017 compounds. It contains 13 335 additional structures that are not already contained in the ‘main training’ dataset. For the ‘additional training’ dataset, we do not merge any spectra. 47 369 spectra of this dataset are already part of the merged spectra in ‘main training’. The number of recorded spectra per compound can be highly variable: for Isomitraphylline there are 85 spectra in ‘additional training’, for 15-Lipoxygenase Inhibitor I there are only 3 recorded spectra. To avoid that this imbalance affects the training, we weight each structure in the ‘additional training’ dataset by the reciprocal of the square root of its occurrences. By using the square root, we downweight instances with many measurements, but still, recognize that multiple measurements provide additional information.</p></section><section id="sec7"><h3 class="pmc_sec_title">2.2 Molecular fingerprints</h3>
+<p>Molecular fingerprint prediction is a multi-label classification task on a total of 8925 binary labels, including fingerprints from CDK substructure (<a href="#btac260-B51" class="usa-link" aria-describedby="btac260-B51">Willighagen <em>et al.</em>, 2017</a>), PubChem CACTVS (<a href="#btac260-B23" class="usa-link" aria-describedby="btac260-B23">Kim <em>et al.</em>, 2016</a>), Klekotha-Roth (<a href="#btac260-B26" class="usa-link" aria-describedby="btac260-B26">Klekota and Roth, 2008</a>), FP3, MACCS, extended connectivity fingerprints (<a href="#btac260-B38" class="usa-link" aria-describedby="btac260-B38">Rogers and Hahn, 2010</a>), and a fingerprint defined from 746 custom SMARTS that describe common patterns and ring structures in biomolecules (<a href="#btac260-B14" class="usa-link" aria-describedby="btac260-B14">Dührkop <em>et al.</em>, 2021</a>). Of these 8925 binary labels, we selected 5220 labels that occur in at least 20 training structures for the fingerprint prediction task.</p>
+<p>Molecular fingerprints are computed with the Chemical Development Kit version 2.3 (<a href="#btac260-B51" class="usa-link" aria-describedby="btac260-B51">Willighagen <em>et al.</em>, 2017</a>). Before computing molecular fingerprints, all molecular structures were standardized using the PubChem standardization procedure (<a href="#btac260-B23" class="usa-link" aria-describedby="btac260-B23">Kim <em>et al.</em>, 2016</a>) as described in (<a href="#btac260-B18" class="usa-link" aria-describedby="btac260-B18">Hoffmann <em>et al.</em>, 2022</a>). In particular, a canonical tautomeric form was chosen, as solvent, temperature and pH in the sample influence the dominating tautomeric species. Without standardization, a molecular property may be simultaneously present or absent for the same compound.</p>
+<p>We do not hash fingerprints (as is it is common for extended connectivity fingerprints or other topological fingerprints); each single label corresponds to a substructure.</p></section><section id="sec8"><h3 class="pmc_sec_title">2.3 Kernels</h3>
+<p>We use domain-specific combinatorial kernels on fragmentation trees and the probability product kernel on MS/MS spectra as described in <a href="#btac260-B13" class="usa-link" aria-describedby="btac260-B13">Dührkop <em>et al.</em> (2019</a>, <a href="#btac260-B12" class="usa-link" aria-describedby="btac260-B12">2015</a>) and <a href="#btac260-B41" class="usa-link" aria-describedby="btac260-B41">Shen <em>et al.</em> (2014)</a>. Kernels are combined via multiple kernel learning (<a href="#btac260-B9" class="usa-link" aria-describedby="btac260-B9">Cortes <em>et al.</em>, 2012</a>). In total, 14 kernels are selected and combined by the multiple kernel learning.</p></section><section id="sec9"><h3 class="pmc_sec_title">2.4 State-of-the-art</h3>
+<p>As state-of-art method to evaluate against, we trained an array of SVMs for fingerprint prediction from MS/MS data as described in <a href="#btac260-B12" class="usa-link" aria-describedby="btac260-B12">Dührkop <em>et al.</em> (2015)</a>. Here, training was carried out solely on the smaller ‘main training’ dataset; computing the kernel for all the training data would require 176 gigabytes of memory just to store the kernel matrix, as well as an immense amount of computing time. We map decision values to posterior probability estimates using Platt probabilities (<a href="#btac260-B36" class="usa-link" aria-describedby="btac260-B36">Platt, 2000</a>), as described in <a href="#btac260-B12" class="usa-link" aria-describedby="btac260-B12">Dührkop <em>et al.</em> (2015)</a>. The <em>kernel SVM</em> has only one hyperparameter per label (the regularization parameter C) which was optimized in a nested cross-validation.</p>
+<p>As a second method to evaluate against, we trained a DNN on tandem mass spectra similarly to MetFID (<a href="#btac260-B15" class="usa-link" aria-describedby="btac260-B15">Fan <em>et al.</em>, 2020</a>) and conceptually similar to <a href="#btac260-B21" class="usa-link" aria-describedby="btac260-B21">Ji <em>et al.</em> (2020)</a>: a mass spectrum is transformed into a feature vector by binning all <em>m</em>/<em>z</em> values. A second feature vector is obtained by subtracting each <em>m</em>/<em>z</em> value from the precursor mass. Both feature vectors are concatenated and used as input to a DNN. Since our data have high mass accuracy, we used a smaller binning size of 0.005 Da than <a href="#btac260-B15" class="usa-link" aria-describedby="btac260-B15">Fan <em>et al.</em> (2020)</a>, resulting in 102 093 features. We did the same noise removal procedure as in MetFID but used the square root of relative peak intensities as a feature. Furthermore, we found that we could improve the prediction quality by adding a <span xmlns:mml="http://www.w3.org/1998/Math/MathML" id="IE1"><math id="IM1" display="inline" overflow="linebreak"><mrow><mn>50</mn><mo>%</mo></mrow></math></span> dropout and larger hidden layers (2500 and 8000 neurons instead of 800 and 600 neurons as in MetFID). To ensure a fair comparison with the kernel-based methods, we also added the molecular formula vector to the DNN input; this information is implicitly encoded in our kernel framework. The molecular formula vector was normalized by dividing each feature by its standard deviation in the training dataset. Peak intensity features are already between 0.0 and 1.0 and were stored in a sparse vector. Hyperparameters of the DNN were optimized on the validation set. In the following, this method is called <em>spectrum DNN</em>.</p></section><section id="sec10"><h3 class="pmc_sec_title">2.5 Nyström approximation</h3>
+<p>The Nyström approximation is a method for approximating an <em>n </em>×<em> n</em> kernel matrix <em>K</em> using only a subset of <em>m </em>&lt;<em> n</em> columns (<a href="#btac260-B50" class="usa-link" aria-describedby="btac260-B50">Williams and Seeger, 2001</a>). Without loss of generality, we assume that we select the first <em>m</em> columns of <em>K</em>. We can divide <em>K</em> into four blocks
+</p>
+<table class="disp-formula p" id="E1"><tr><td class="formula"><math id="M1" display="block" overflow="linebreak"><mrow><mi>K</mi><mo>=</mo><mrow><mo stretchy="true">[</mo><mrow><mtable><mtr><mtd><mrow><msub><mrow><mi>K</mi></mrow><mrow><mi>A</mi><mi>A</mi></mrow></msub></mrow></mtd><mtd><mrow><msub><mrow><mi>K</mi></mrow><mrow><mi>A</mi><mi>B</mi></mrow></msub></mrow></mtd></mtr><mtr><mtd><mrow><msubsup><mrow><mi>K</mi></mrow><mrow><mi>A</mi><mi>B</mi></mrow><mi>T</mi></msubsup></mrow></mtd><mtd><mrow><msub><mrow><mi>K</mi></mrow><mrow><mi>B</mi><mi>B</mi></mrow></msub></mrow></mtd></mtr></mtable></mrow><mo stretchy="true">]</mo></mrow></mrow></math></td></tr></table>
+<p>with <em>K<sub>AA</sub></em> is an <em>m </em>×<em> m</em> and <em>K<sub>AB</sub></em> an <em>m </em>×(<em>n-m</em>) submatrix of <em>K</em>. The Nyström approximation allows to approximate <em>K</em> by using only <em>K<sub>AA</sub></em> and <em>K<sub>AB</sub></em>:
+</p>
+<table class="disp-formula p" id="E2"><tr><td class="formula"><math id="M2" display="block" overflow="linebreak"><mrow><mi>K</mi><mo>≈</mo><mrow><mover accent="true"><mi>K</mi><mo>˜</mo></mover></mrow><mo>=</mo><mrow><mo stretchy="true">[</mo><mrow><mtable><mtr><mtd><mrow><msub><mrow><mi>K</mi></mrow><mrow><mi>A</mi><mi>A</mi></mrow></msub></mrow></mtd></mtr><mtr><mtd><mrow><msubsup><mrow><mi>K</mi></mrow><mrow><mi>A</mi><mi>B</mi></mrow><mi>T</mi></msubsup></mrow></mtd></mtr></mtable></mrow><mo stretchy="true">]</mo></mrow><msubsup><mrow><mi>K</mi></mrow><mrow><mi>A</mi><mi>A</mi></mrow><mrow><mo>−</mo><mn>1</mn></mrow></msubsup><msup><mrow><mrow><mrow><mo stretchy="true">[</mo><mrow><mtable><mtr><mtd><mrow><msub><mrow><mi>K</mi></mrow><mrow><mi>A</mi><mi>A</mi></mrow></msub></mrow></mtd></mtr><mtr><mtd><mrow><msubsup><mrow><mi>K</mi></mrow><mrow><mi>A</mi><mi>B</mi></mrow><mi>T</mi></msubsup></mrow></mtd></mtr></mtable></mrow><mo stretchy="true">]</mo></mrow></mrow></mrow><mi>T</mi></msup></mrow><mo>.</mo></math></td></tr></table>
+<p>As a side effect, this approximation provides a feature embedding for the approximated kernel (<a href="#btac260-B50" class="usa-link" aria-describedby="btac260-B50">Williams and Seeger, 2001</a>). To obtain the feature embedding, we use the eigenvector decomposition of <em>K<sub>AA</sub></em> with <span xmlns:mml="http://www.w3.org/1998/Math/MathML" id="IE2"><math id="IM2" display="inline" overflow="linebreak"><mrow><msub><mrow><mi>K</mi></mrow><mrow><mi>A</mi><mi>A</mi></mrow></msub><mo>=</mo><mi>U</mi><mo>Σ</mo><msup><mrow><mi>U</mi></mrow><mi>T</mi></msup></mrow></math></span>. Here, <em>U</em> is the matrix of eigenvectors of <em>K<sub>AA</sub></em> and Σ is the diagonal matrix of the corresponding eigenvalues. From
+</p>
+<table class="disp-formula p" id="E3"><tr><td class="formula"><math id="M3" display="block" overflow="linebreak"><mtable><mtr><mtd><mrow><mover accent="true"><mi>K</mi><mo>˜</mo></mover></mrow><mo>=</mo><mrow><mo stretchy="true">[</mo><mrow><mtable><mtr><mtd><mrow><msub><mrow><mi>K</mi></mrow><mrow><mi>A</mi><mi>A</mi></mrow></msub></mrow></mtd></mtr><mtr><mtd><mrow><msubsup><mrow><mi>K</mi></mrow><mrow><mi>A</mi><mi>B</mi></mrow><mi>T</mi></msubsup></mrow></mtd></mtr></mtable></mrow><mo stretchy="true">]</mo></mrow><msubsup><mrow><mi>K</mi></mrow><mrow><mi>A</mi><mi>A</mi></mrow><mrow><mo>−</mo><mn>1</mn></mrow></msubsup><msup><mrow><mrow><mo stretchy="true">[</mo><mrow><mtable><mtr><mtd><mrow><msub><mrow><mi>K</mi></mrow><mrow><mi>A</mi><mi>A</mi></mrow></msub></mrow></mtd></mtr><mtr><mtd><mrow><msubsup><mrow><mi>K</mi></mrow><mrow><mi>A</mi><mi>B</mi></mrow><mi>T</mi></msubsup></mrow></mtd></mtr></mtable></mrow><mo stretchy="true">]</mo></mrow></mrow><mi>T</mi></msup><mo>=</mo><mrow><mo stretchy="true">[</mo><mrow><mtable><mtr><mtd><mrow><msub><mrow><mi>K</mi></mrow><mrow><mi>A</mi><mi>A</mi></mrow></msub></mrow></mtd></mtr><mtr><mtd><mrow><msubsup><mrow><mi>K</mi></mrow><mrow><mi>A</mi><mi>B</mi></mrow><mi>T</mi></msubsup></mrow></mtd></mtr></mtable></mrow><mo stretchy="true">]</mo></mrow><mi>U</mi><msup><mrow><mo>Σ</mo></mrow><mrow><mo>−</mo><mn>1</mn></mrow></msup><msup><mrow><mi>U</mi></mrow><mi>T</mi></msup><msup><mrow><mrow><mo stretchy="true">[</mo><mrow><mtable><mtr><mtd><mrow><msub><mrow><mi>K</mi></mrow><mrow><mi>A</mi><mi>A</mi></mrow></msub></mrow></mtd></mtr><mtr><mtd><mrow><msubsup><mrow><mi>K</mi></mrow><mrow><mi>A</mi><mi>B</mi></mrow><mi>T</mi></msubsup></mrow></mtd></mtr></mtable></mrow><mo stretchy="true">]</mo></mrow></mrow><mi>T</mi></msup></mtd></mtr><mtr><mtd><mo>=</mo><mrow><mo stretchy="true">[</mo><mrow><mtable><mtr><mtd><mrow><msub><mrow><mi>K</mi></mrow><mrow><mi>A</mi><mi>A</mi></mrow></msub></mrow></mtd></mtr><mtr><mtd><mrow><msubsup><mrow><mi>K</mi></mrow><mrow><mi>A</mi><mi>B</mi></mrow><mi>T</mi></msubsup></mrow></mtd></mtr></mtable></mrow><mo stretchy="true">]</mo></mrow><mi>U</mi><msup><mrow><mo>Σ</mo></mrow><mrow><mo>−</mo><mfrac><mrow><mn>1</mn></mrow><mrow><mn>2</mn></mrow></mfrac></mrow></msup><msup><mrow><mo>Σ</mo></mrow><mrow><mo>−</mo><mfrac><mrow><mn>1</mn></mrow><mrow><mn>2</mn></mrow></mfrac></mrow></msup><msup><mrow><mi>U</mi></mrow><mi>T</mi></msup><msup><mrow><mrow><mo stretchy="true">[</mo><mrow><mtable><mtr><mtd><mrow><msub><mrow><mi>K</mi></mrow><mrow><mi>A</mi><mi>A</mi></mrow></msub></mrow></mtd></mtr><mtr><mtd><mrow><msubsup><mrow><mi>K</mi></mrow><mrow><mi>A</mi><mi>B</mi></mrow><mi>T</mi></msubsup></mrow></mtd></mtr></mtable></mrow><mo stretchy="true">]</mo></mrow></mrow><mi>T</mi></msup></mtd></mtr><mtr><mtd><mo>=</mo><mrow><mo>(</mo><mrow><mrow><mo stretchy="true">[</mo><mrow><mtable><mtr><mtd><mrow><msub><mrow><mi>K</mi></mrow><mrow><mi>A</mi><mi>A</mi></mrow></msub></mrow></mtd></mtr><mtr><mtd><mrow><msubsup><mrow><mi>K</mi></mrow><mrow><mi>A</mi><mi>B</mi></mrow><mi>T</mi></msubsup></mrow></mtd></mtr></mtable></mrow><mo stretchy="true">]</mo></mrow><mi>U</mi><msup><mrow><mo>Σ</mo></mrow><mrow><mo>−</mo><mfrac><mrow><mn>1</mn></mrow><mrow><mn>2</mn></mrow></mfrac></mrow></msup></mrow><mo>)</mo></mrow><msup><mrow><mrow><mo>(</mo><mrow><mrow><mo stretchy="true">[</mo><mrow><mtable><mtr><mtd><mrow><msub><mrow><mi>K</mi></mrow><mrow><mi>A</mi><mi>A</mi></mrow></msub></mrow></mtd></mtr><mtr><mtd><mrow><msubsup><mrow><mi>K</mi></mrow><mrow><mi>A</mi><mi>B</mi></mrow><mi>T</mi></msubsup></mrow></mtd></mtr></mtable></mrow><mo stretchy="true">]</mo></mrow><mi>U</mi><msup><mrow><mo>Σ</mo></mrow><mrow><mo>−</mo><mfrac><mrow><mn>1</mn></mrow><mrow><mn>2</mn></mrow></mfrac></mrow></msup></mrow><mo>)</mo></mrow></mrow><mi>T</mi></msup><mo>=</mo><mrow><mover accent="true"><mi>X</mi><mo>^</mo></mover></mrow><msup><mrow><mrow><mover accent="true"><mi>X</mi><mo>^</mo></mover></mrow></mrow><mi>T</mi></msup></mtd></mtr></mtable><mo>,</mo></math></td></tr></table>
+<p>we can compute the feature embedding <span xmlns:mml="http://www.w3.org/1998/Math/MathML" id="IE3"><math id="IM3" display="inline" overflow="linebreak"><mrow><mrow><mover accent="true"><mi>X</mi><mo>^</mo></mover></mrow><mo>=</mo><mrow><mo stretchy="true">[</mo><mrow><mtable><mtr><mtd><mrow><msub><mrow><mi>K</mi></mrow><mrow><mi>A</mi><mi>A</mi></mrow></msub></mrow></mtd></mtr><mtr><mtd><mrow><msubsup><mrow><mi>K</mi></mrow><mrow><mi>A</mi><mi>B</mi></mrow><mi>T</mi></msubsup></mrow></mtd></mtr></mtable></mrow><mo stretchy="true">]</mo></mrow><mo>Γ</mo></mrow></math></span> with <span xmlns:mml="http://www.w3.org/1998/Math/MathML" id="IE4"><math id="IM4" display="inline" overflow="linebreak"><mrow><mo>Γ</mo><mo>=</mo><mi>U</mi><msup><mrow><mo>Σ</mo></mrow><mrow><mo>−</mo><mfrac><mrow><mn>1</mn></mrow><mrow><mn>2</mn></mrow></mfrac></mrow></msup></mrow></math></span> is the projection matrix that computes the feature map for a given kernel matrix.</p>
+<p>During training, the matrix <em>K<sub>AB</sub></em> is the kernel matrix between the ‘main training’ dataset and the ‘additional training’ dataset. For prediction, <em>K<sub>AB</sub></em> is the kernel vector between the ‘main training’ dataset and the test compound.</p>
+<p>Using the feature embedding, we can plugin the kernel framework into any machine learning method that accepts a feature vector as input. In the context of kernel learning, the Nyström approximation is usually used to train kernel methods with stochastic gradient descent on large amount of data. Training a kernel SVM scales cubically with the number of training data. When using the Nyström method and stochastic gradient descent, the method scales linearly with the number of training data. However, the eigenvector decomposition has complexity <span xmlns:mml="http://www.w3.org/1998/Math/MathML" id="IE5"><math id="IM5" display="inline" overflow="linebreak"><mrow><mi>O</mi><mo stretchy="false">(</mo><msup><mrow><mi>m</mi></mrow><mn>3</mn></msup><mo stretchy="false">)</mo></mrow></math></span>, and the computation of the feature map involves vector-matrix multiplications. The overall complexity of training a Nyström SVM with stochastic gradient descent is <span xmlns:mml="http://www.w3.org/1998/Math/MathML" id="IE6"><math id="IM6" display="inline" overflow="linebreak"><mrow><mi>O</mi><mo stretchy="false">(</mo><msup><mrow><mi>m</mi></mrow><mn>3</mn></msup><mo>+</mo><msup><mrow><mi>m</mi></mrow><mn>2</mn></msup><mi>n</mi><mo stretchy="false">)</mo></mrow></math></span>.</p>
+<p>We train the kernel SVM on the complete training dataset using minibatch stochastic gradient descent with the tensorflow library (<a href="#btac260-B1" class="usa-link" aria-describedby="btac260-B1">Abadi <em>et al.</em>, 2016</a>). We refer to this machine learning model as <em>Nyström SVM</em>. When we multiply Γ with the learned weight matrix (the coefficients of the primal problem) and center the resulting matrix, we get the support vector coefficients for the dual problem. Thus, for prediction, the Nyström SVM does not differ from the kernel SVM and does not require any code changes. We map the Nyström SVM decision values to posterior probability estimates using Platt probabilities (<a href="#btac260-B36" class="usa-link" aria-describedby="btac260-B36">Platt, 2000</a>), as it was done for the kernel SVM.</p></section><section id="sec11"><h3 class="pmc_sec_title">2.6 Combining kernels and DNNs</h3>
+<p>As the second method, we use the feature embedding of the Nyström approximation as input to a DNN with two hidden layers with 2500 and 8000 neurons (<a href="#btac260-F1" class="usa-link">Fig. 1</a>). We evaluated the effect of dropout (<a href="#btac260-B42" class="usa-link" aria-describedby="btac260-B42">Srivastava <em>et al.</em>, 2014</a>), batch normalization (<a href="#btac260-B20" class="usa-link" aria-describedby="btac260-B20">Ioffe and Szegedy, 2015</a>) and independent-component layer (<a href="#btac260-B7" class="usa-link" aria-describedby="btac260-B7">Chen <em>et al.</em>, 2019</a>) and found that using dropout with a rate of 50% works best. We applied <em>l</em><sub>2</sub> regularization on the output layer with <span xmlns:mml="http://www.w3.org/1998/Math/MathML" id="IE7"><math id="IM7" display="inline" overflow="linebreak"><mrow><mo>λ</mo><mo>=</mo><msup><mrow><mrow><mn>10</mn></mrow></mrow><mrow><mo>−</mo><mn>7</mn></mrow></msup></mrow></math></span>. We trained the weight parameters with the Adam optimizer (<a href="#btac260-B24" class="usa-link" aria-describedby="btac260-B24">Kingma and Ba, 2015</a>) on a minibatch of size 200 and with a learning rate of <span xmlns:mml="http://www.w3.org/1998/Math/MathML" id="IE8"><math id="IM8" display="inline" overflow="linebreak"><mrow><msup><mrow><mrow><mn>10</mn></mrow></mrow><mrow><mo>−</mo><mn>3</mn></mrow></msup></mrow></math></span>. We used the sigmoid cross-entropy as a loss function. We trained the model on the complete training data for 25 epochs using the tensorflow library. All hyperparameters of the DNN were optimized on the validation set. We will call this machine learning model <em>deep kernel learning</em>, or, in short, deep kernel.</p>
+<figure class="fig xbox font-sm" id="btac260-F1"><h4 class="obj_head">Fig. 1.</h4>
+<p class="img-box line-height-none margin-x-neg-2 tablet:margin-x-0 text-center"><a class="tileshop" target="_blank" href="https://www.ncbi.nlm.nih.gov/core/lw/2.0/html/tileshop_pmc/tileshop_pmc_inline.html?title=Click%20on%20image%20to%20zoom&amp;p=PMC3&amp;id=9235503_btac260f1.jpg"><img class="graphic zoom-in" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/391b/9235503/f1d934c23ebe/btac260f1.jpg" loading="lazy" height="196" width="753" alt="Fig. 1."></a></p>
+<div class="p text-right font-secondary"><a href="figure/btac260-F1/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div>
+<figcaption><p>Architecture of deep kernel learning. Here, the input matrix <em>K<sub>AB</sub></em> contains the kernel evaluation on the ‘main training’ dataset (A) against the ‘additional training’ dataset (B). At prediction time, the input matrix would contain the kernel evaluation between the ‘main training’ dataset and the test data. The projection matrix Γ can be multiplied with <em>W</em><sub>1</sub> into an updated weight matrix; afterwards, the projection matrix is not necessary anymore. ReLU denotes a dense layer with a <em>rectified linear activation</em> function</p></figcaption></figure><p>The deep kernel has 131 760 000 parameters. This is less than the 146 160 000 parameters of the kernel SVM and Nyström SVM, but also much less than the 316 992 500 parameters of the DNN on mass spectra.</p></section></section><section id="sec12"><h2 class="pmc_sec_title">3 Results</h2>
+<section id="sec13"><h3 class="pmc_sec_title">3.1 Evaluation metrics</h3>
+<p>We use the Matthews Correlation Coefficient (MCC, also known as Yule’s phi), Bookmakers Informedness (BM, also known as Youden’s J statistic) and Tanimoto (also known as Jaccard Index) as measures of quality for the binary classifiers (<a href="#btac260-B32" class="usa-link" aria-describedby="btac260-B32">Matthews, 1975</a>; <a href="#btac260-B37" class="usa-link" aria-describedby="btac260-B37">Powers, 2003</a>; <a href="#btac260-B45" class="usa-link" aria-describedby="btac260-B45">Tanimoto, 1958</a>). MCC and BM have advantages and disadvantages (<a href="#btac260-B8" class="usa-link" aria-describedby="btac260-B8">Chicco <em>et al.</em>, 2021</a>; <a href="#btac260-B56" class="usa-link" aria-describedby="btac260-B56">Zhu, 2020</a>), so we argue it is reasonable to report both. Both measures return values between –1 and + 1, and equal zero for a random classifier. Since we have a multi-label classification problem, we have to average across all MCC and BM values for each single label. Some labels may have a very small number of positive examples or even no positive examples at all. For the latter, neither MCC nor BM is defined. We group all labels with less than 10 positive examples together, sum up the entries in their confusion matrices, and compute a single MCC and BM for them; this strategy is called micro averaging. The Tanimoto is not a measure for the prediction quality of each label, but for the prediction quality of all labels for a single compound.</p></section><section id="sec14"><h3 class="pmc_sec_title">3.2 Hyperparameter estimation</h3>
+<p>The <em>C</em> parameter of the kernel SVM is trained within a nested cross-validation, as it is implemented in CSI:FingerID. The DNNs, however, have much more hyperparameters. For the deep kernel and the spectrum DNN, we evaluated several hyperparameter combinations on the validation set and decided for the hyperparameters that yield the best mean MCC; see <a href="#btac260-T1" class="usa-link">Table 1</a>. We found that dropout with a high-dropout rate works better than independent-component layers or batch normalization. Furthermore, increasing the size of the last hidden layer improves the mean MCC, while increasing the size of the first hidden layer is not beneficial. Adding more layers resulted in a degradation of the prediction performance: We trained a deep kernel with 2500, 1500 and 6000 neurons in each hidden layer. Such a network with three hidden layers has a similar number of parameters as the two hidden layer network with 2500 and 8000 neurons in each layer. However, the deep kernel with three hidden layers performed substantial worse with an MCC of 0.5641, compared to an MCC of 0.5909 for the best deep kernel with two hidden layers. The MCC dropped to 0.5164 after adding another intermediate hidden layer with 1500 neurons.</p>
+<section class="tw xbox font-sm" id="btac260-T1"><h4 class="obj_head">Table 1.</h4>
+<div class="caption p"><p>Mean Matthews Correlation Coefficient (MCC) for different hyperparameter combinations on the validation set</p></div>
+<div class="tbl-box p" tabindex="0"><table class="content" frame="hsides" rules="groups">
+<colgroup span="1">
+<col valign="top" align="left" span="1">
+<col valign="top" align="center" span="1">
+<col valign="top" align="center" span="1">
+<col valign="top" align="center" span="1">
+<col valign="top" align="center" span="1">
+<col valign="top" align="center" span="1">
+<col valign="top" align="center" span="1">
+</colgroup>
+<tbody>
+<tr>
+<td rowspan="1" colspan="1">First hidden layer</td>
+<td colspan="4" rowspan="1">2500</td>
+<td rowspan="1" colspan="1">5000</td>
+<td rowspan="1" colspan="1">2500</td>
+</tr>
+<tr>
+<td rowspan="1" colspan="1">Second hidden layer</td>
+<td colspan="4" rowspan="1">4000</td>
+<td rowspan="1" colspan="1">4000</td>
+<td rowspan="1" colspan="1">8000</td>
+</tr>
+<tr>
+<td rowspan="1" colspan="1">Dropout rate</td>
+<td rowspan="1" colspan="1">0%</td>
+<td rowspan="1" colspan="1">50%</td>
+<td rowspan="1" colspan="1">33%</td>
+<td rowspan="1" colspan="1">50%</td>
+<td rowspan="1" colspan="1">50%</td>
+<td rowspan="1" colspan="1">50%</td>
+</tr>
+<tr>
+<td rowspan="1" colspan="1">Batch normalization</td>
+<td rowspan="1" colspan="1">Yes</td>
+<td rowspan="1" colspan="1">Yes</td>
+<td colspan="4" rowspan="1">No</td>
+</tr>
+<tr>
+<td rowspan="1" colspan="1">Mean MCC</td>
+<td rowspan="1" colspan="1">0.5642</td>
+<td rowspan="1" colspan="1">0.5856</td>
+<td rowspan="1" colspan="1">0.5861</td>
+<td rowspan="1" colspan="1">0.5899</td>
+<td rowspan="1" colspan="1">0.5883</td>
+<td rowspan="1" colspan="1">
+<strong>0.5909</strong>
+</td>
+</tr>
+</tbody>
+</table></div>
+<div class="p text-right font-secondary"><a href="table/btac260-T1/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div>
+<div class="tw-foot p"><div class="fn" id="tblfn1"><p>
+<em>Note</em>: The first two columns describe the number of neurons in the first and second hidden layer. When batch normalization and dropout are applied together, batch normalization happens before the dropout as described in <a href="#btac260-B7" class="usa-link" aria-describedby="btac260-B7">Chen <em>et al.</em> (2019)</a>. The bold font indicates the highest value in a row.</p></div></div></section></section><section id="sec15"><h3 class="pmc_sec_title">3.3 Cross-validation results</h3>
+<p>We performed a structure-disjoint 5-fold cross-validation for all four methods. The kernel SVM was trained solely on the much smaller ‘main training’ dataset, while the Nyström SVM, spectrum DNN and deep kernel were trained on both training datasets. Yet, the kernel SVM has a higher mean MCC on both training datasets than the spectrum DNN (<a href="#btac260-T2" class="usa-link">Table 2</a>). For the mean Tanimoto, it outperforms the spectrum DNN on the smaller training set (0.726 versus 0.708) but not on the larger training set (0.673 versus 0.681). The kernel SVM and the Nyström SVM both have low mean BM on both datasets. The deep kernel learning clearly outperforms all other methods on all three metrics. The deep kernel learning reaches a mean MCC of 0.639 on the ‘main training’ dataset and a mean MCC of 0.598 on the ‘additional training’ dataset. The mean MCC difference between both datasets, one containing high-quality merged spectra and the other containing lower quality single-collision energy spectra, is 0.040 for the deep kernel learning, 0.053 for the Nyström SVM, 0.054 for the spectrum DNN and 0.094 for the kernel SVM. For both datasets, the deep kernel learning predicts more labels with high MCC and BM than the competing methods (<a href="#btac260-F2" class="usa-link">Fig. 2</a>). In particular, the deep kernel learning predicts 25.286% of the compounds in the smaller and 22.822% of the compounds in the larger dataset with a Tanimoto above 0.9. To evaluate how much the additional training data contribute to the improved performance of the deep kernel, we retrained the deep kernel on the smaller ‘main training’ dataset. Even with less training data, the deep kernel outperforms all other methods in all benchmarks and is only outperformed by the deep kernel trained on the larger training dataset (<a href="#btac260-T2" class="usa-link">Table 2</a>).</p>
+<section class="tw xbox font-sm" id="btac260-T2"><h4 class="obj_head">Table 2.</h4>
+<div class="caption p"><p>Mean Matthews Correlation Coefficient (MCC), Bookmarker informedness (BM) and Tanimoto on the two cross-validation datasets and on the three independent evaluation datasets</p></div>
+<div class="tbl-box p" tabindex="0"><table class="content" frame="hsides" rules="groups">
+<colgroup span="1">
+<col valign="top" align="left" span="1">
+<col valign="top" align="left" span="1">
+<col valign="top" align="char" char="." span="1">
+<col valign="top" align="char" char="." span="1">
+<col valign="top" align="char" char="." span="1">
+<col valign="top" align="char" char="." span="1">
+<col valign="top" align="char" char="." span="1">
+</colgroup>
+<thead><tr>
+<th rowspan="1" colspan="1"></th>
+<th rowspan="1" colspan="1"></th>
+<th rowspan="1" colspan="1">Kernel SVM small dataset</th>
+<th rowspan="1" colspan="1">Spectrum DNN</th>
+<th rowspan="1" colspan="1">Nyström SVM</th>
+<th rowspan="1" colspan="1">Deep kernel</th>
+<th rowspan="1" colspan="1">Deep kernel small dataset</th>
+</tr></thead>
+<tbody>
+<tr>
+<td rowspan="1" colspan="1">MCC</td>
+<td rowspan="1" colspan="1">Main training</td>
+<td rowspan="1" colspan="1">0.608</td>
+<td rowspan="1" colspan="1">0.563</td>
+<td rowspan="1" colspan="1">0.621</td>
+<td rowspan="1" colspan="1">
+<strong>0.639</strong>
+</td>
+<td rowspan="1" colspan="1">0.622</td>
+</tr>
+<tr>
+<td rowspan="1" colspan="1"></td>
+<td rowspan="1" colspan="1">Additional training</td>
+<td rowspan="1" colspan="1">0.513</td>
+<td rowspan="1" colspan="1">0.509</td>
+<td rowspan="1" colspan="1">0.568</td>
+<td rowspan="1" colspan="1">
+<strong>0.598</strong>
+</td>
+<td rowspan="1" colspan="1">0.580</td>
+</tr>
+<tr>
+<td rowspan="1" colspan="1"></td>
+<td rowspan="1" colspan="1">Independent merged</td>
+<td rowspan="1" colspan="1">0.594</td>
+<td rowspan="1" colspan="1">0.573</td>
+<td rowspan="1" colspan="1">0.614</td>
+<td rowspan="1" colspan="1">
+<strong>0.656</strong>
+</td>
+<td rowspan="1" colspan="1">0.625</td>
+</tr>
+<tr>
+<td rowspan="1" colspan="1"></td>
+<td rowspan="1" colspan="1">Agilent single-ce</td>
+<td rowspan="1" colspan="1">0.519</td>
+<td rowspan="1" colspan="1">0.496</td>
+<td rowspan="1" colspan="1">0.546</td>
+<td rowspan="1" colspan="1">
+<strong>0.607</strong>
+</td>
+<td rowspan="1" colspan="1">0.560</td>
+</tr>
+<tr>
+<td rowspan="1" colspan="1"></td>
+<td rowspan="1" colspan="1">Independent noisy</td>
+<td rowspan="1" colspan="1">0.415</td>
+<td rowspan="1" colspan="1">0.415</td>
+<td rowspan="1" colspan="1">0.451</td>
+<td rowspan="1" colspan="1">
+<strong>0.511</strong>
+</td>
+<td rowspan="1" colspan="1">0.456</td>
+</tr>
+<tr>
+<td rowspan="1" colspan="1">BM</td>
+<td rowspan="1" colspan="1">Main training</td>
+<td rowspan="1" colspan="1">0.505</td>
+<td rowspan="1" colspan="1">0.535</td>
+<td rowspan="1" colspan="1">0.468</td>
+<td rowspan="1" colspan="1">
+<strong>0.616</strong>
+</td>
+<td rowspan="1" colspan="1">0.534</td>
+</tr>
+<tr>
+<td rowspan="1" colspan="1"></td>
+<td rowspan="1" colspan="1">Additional training</td>
+<td rowspan="1" colspan="1">0.403</td>
+<td rowspan="1" colspan="1">0.480</td>
+<td rowspan="1" colspan="1">0.410</td>
+<td rowspan="1" colspan="1">
+<strong>0.572</strong>
+</td>
+<td rowspan="1" colspan="1">0.491</td>
+</tr>
+<tr>
+<td rowspan="1" colspan="1"></td>
+<td rowspan="1" colspan="1">Independent merged</td>
+<td rowspan="1" colspan="1">0.512</td>
+<td rowspan="1" colspan="1">0.535</td>
+<td rowspan="1" colspan="1">0.533</td>
+<td rowspan="1" colspan="1">
+<strong>0.628</strong>
+</td>
+<td rowspan="1" colspan="1">0.593</td>
+</tr>
+<tr>
+<td rowspan="1" colspan="1"></td>
+<td rowspan="1" colspan="1">Agilent single-ce</td>
+<td rowspan="1" colspan="1">0.430</td>
+<td rowspan="1" colspan="1">0.453</td>
+<td rowspan="1" colspan="1">0.460</td>
+<td rowspan="1" colspan="1">
+<strong>0.574</strong>
+</td>
+<td rowspan="1" colspan="1">0.517</td>
+</tr>
+<tr>
+<td rowspan="1" colspan="1"></td>
+<td rowspan="1" colspan="1">Independent noisy</td>
+<td rowspan="1" colspan="1">0.317</td>
+<td rowspan="1" colspan="1">0.371</td>
+<td rowspan="1" colspan="1">0.357</td>
+<td rowspan="1" colspan="1">
+<strong>0.472</strong>
+</td>
+<td rowspan="1" colspan="1">0.408</td>
+</tr>
+<tr>
+<td rowspan="1" colspan="1">Tanimoto</td>
+<td rowspan="1" colspan="1">Main training</td>
+<td rowspan="1" colspan="1">0.726</td>
+<td rowspan="1" colspan="1">0.708</td>
+<td rowspan="1" colspan="1">0.730</td>
+<td rowspan="1" colspan="1">0.766</td>
+<td rowspan="1" colspan="1">
+<strong>0.768</strong>
+</td>
+</tr>
+<tr>
+<td rowspan="1" colspan="1"></td>
+<td rowspan="1" colspan="1">Additional training</td>
+<td rowspan="1" colspan="1">0.673</td>
+<td rowspan="1" colspan="1">0.681</td>
+<td rowspan="1" colspan="1">0.704</td>
+<td rowspan="1" colspan="1">0.744</td>
+<td rowspan="1" colspan="1">
+<strong>0.745</strong>
+</td>
+</tr>
+<tr>
+<td rowspan="1" colspan="1"></td>
+<td rowspan="1" colspan="1">Independent merged</td>
+<td rowspan="1" colspan="1">0.683</td>
+<td rowspan="1" colspan="1">0.668</td>
+<td rowspan="1" colspan="1">0.695</td>
+<td rowspan="1" colspan="1">
+<strong>0.731</strong>
+</td>
+<td rowspan="1" colspan="1">0.708</td>
+</tr>
+<tr>
+<td rowspan="1" colspan="1"></td>
+<td rowspan="1" colspan="1">Agilent single-ce</td>
+<td rowspan="1" colspan="1">0.651</td>
+<td rowspan="1" colspan="1">0.629</td>
+<td rowspan="1" colspan="1">0.664</td>
+<td rowspan="1" colspan="1">
+<strong>0.710</strong>
+</td>
+<td rowspan="1" colspan="1">0.681</td>
+</tr>
+<tr>
+<td rowspan="1" colspan="1"></td>
+<td rowspan="1" colspan="1">Independent noisy</td>
+<td rowspan="1" colspan="1">0.598</td>
+<td rowspan="1" colspan="1">0.595</td>
+<td rowspan="1" colspan="1">0.620</td>
+<td rowspan="1" colspan="1">
+<strong>0.661</strong>
+</td>
+<td rowspan="1" colspan="1">0.624</td>
+</tr>
+</tbody>
+</table></div>
+<div class="p text-right font-secondary"><a href="table/btac260-T2/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div>
+<div class="tw-foot p"><div class="fn" id="tblfn2"><p>
+<em>Note</em>: Nyström SVM and deep kernel are the two methods introduced in this article, whereas kernel SVM and spectrum DNN are the methods we evaluate against. ‘deep kernel small dataset’ refers to the deep kernel method trained solely on the ‘main training’ dataset. The kernel SVM is trained on ‘main training’, too; all other methods are trained on ‘main training’ and ‘additional training’. The bold font indicates the highest value in a row.</p></div></div></section><figure class="fig xbox font-sm" id="btac260-F2"><h4 class="obj_head">Fig. 2.</h4>
+<p class="img-box line-height-none margin-x-neg-2 tablet:margin-x-0 text-center"><a class="tileshop" target="_blank" href="https://www.ncbi.nlm.nih.gov/core/lw/2.0/html/tileshop_pmc/tileshop_pmc_inline.html?title=Click%20on%20image%20to%20zoom&amp;p=PMC3&amp;id=9235503_btac260f2.jpg"><img class="graphic zoom-in" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/391b/9235503/648019e56807/btac260f2.jpg" loading="lazy" height="380" width="680" alt="Fig. 2."></a></p>
+<div class="p text-right font-secondary"><a href="figure/btac260-F2/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div>
+<figcaption><p>Histogram of MCC (left) and BM (middle) and Tanimoto (right) for individual labels on the ‘main training’ and ‘additional training’ datasets. Predictions are carried out in a structure-disjoint cross-validation. MCC and BM are metrics on the 5220 labels. Tanimoto is a metric on the compounds</p></figcaption></figure></section><section id="sec16"><h3 class="pmc_sec_title">3.4 Independent evaluation datasets</h3>
+<p>For further evaluations, we used three independent datasets. The CASMI 2016 evaluation dataset is the positive ion mode data from the CASMI 2016 contest (<a href="#btac260-B39" class="usa-link" aria-describedby="btac260-B39">Schymanski <em>et al.</em>, 2017</a>). MS/MS spectra were measured on a Q Exactive Plus Orbitrap (Thermo Fisher Scientific) with 20/35/50 higher-energy C-trap dissociation nominal collision energies. MS/MS data of 127 compounds measured in positive ion mode were provided as part of the contest. Fragmentation spectra from different collision energies were merged. We removed all structures from the CASMI 2016 dataset from both training datasets to ensure that training and evaluation datasets are structure-disjoint.</p>
+<p>The Agilent evaluation dataset is the commercial MassHunter Forensics/Toxicology PCDL library (Agilent Technologies, Inc.) with 3243 structures and 3462 independent MS/MS measurements, all measured on an Agilent QTOF instrument with CID fragmentation. Unlike the commercially available library, these mass spectra were not curated. From these spectra, 973 structures were not already part of our training data and were selected for the evaluation.</p>
+<p>The WEIZMASS evaluation dataset contains MS/MS data from a structurally diverse set of 3540 plant metabolites, isolated from more than 1400 different plant species (<a href="#btac260-B40" class="usa-link" aria-describedby="btac260-B40">Shahaf <em>et al.</em>, 2016</a>). MS/MS data were recorded in ramp mode using collision-induced dissociation fragmentation. We selected 634 compounds from this dataset for evaluation, because the remaining structures were already part of our training dataset.</p>
+<p>In total, all independent datasets contain 1734 compounds and 1609 structures. Evaluations of <em>in silico</em> methods are often carried out using merged or ramp fragmentation spectra (<a href="#btac260-B39" class="usa-link" aria-describedby="btac260-B39">Schymanski <em>et al.</em>, 2017</a>), as these carry the most information. Here, we also evaluate our method’s power if query spectra are recorded at a single-collision energy, since LC-MS/MS datasets are usually recorded in this way. The CASMI 2016 dataset is only available with merged spectra. Similarly, WEIZMASS spectra were recorded as ramp spectra, and no individual collision energy spectra are available. For most compounds in the Agilent dataset, three collision energies (10 eV, 20 eV and 40 eV) were recorded individually. Some compounds were also measured with 1 eV, 4 eV or 8 eV.</p>
+<p>The ‘independent merge’ dataset consists of the 1734 compounds from all three independent datasets; spectra of different collision energies are merged together. The ‘Agilent single-ce’ dataset contains the 2977 individual spectra recorded at a single-collision energy from the Agilent dataset. Fragmentation spectra in reference libraries often have much better quality (more signal peaks, fewer noise peaks, better signal-to-noise) than fragmentation spectra from a biological LC-MS/MS run. To simulate this effect in our reference datasets, we ‘added noise’ to each fragmentation spectrum. We use the method of <a href="#btac260-B18" class="usa-link" aria-describedby="btac260-B18">Hoffmann <em>et al.</em> (2022)</a> which modifies peak intensities, removes certain peaks and adds ‘noise peaks’. The method avoids simulating noisy spectra that can easily be spotted as artificial: For example, adding noise peaks with (uniform) random mass will result in spectra notably different from experimental ones; so, noise peaks are instead given masses randomly drawn from other measured spectra. The ‘independent noisy’ dataset consists of 4364 compounds from CASMI-2016, WEIZMASS and the single-collision energy spectra from Agilent with noise added according to <a href="#btac260-B18" class="usa-link" aria-describedby="btac260-B18">Hoffmann <em>et al.</em> (2022</a>).</p>
+<p>Although the three datasets are structural disjoint and independent of the training datasets, they are not mutually independent. Instead, the three datasets represent three different scenarios: having high-quality library spectra, having spectra measured at single-collision energy, and having low quality and noisy spectra.</p></section><section id="sec17"><h3 class="pmc_sec_title">3.5 Fingerprint prediction</h3>
+<p>Again, we evaluate the quality of the molecular fingerprint predictions using MCC, BM and Tanimoto as evaluation metrics (<a href="#btac260-T2" class="usa-link">Table 2</a>). We found that on all evaluation datasets, the deep kernel learning clearly outperforms the kernel SVM in all three metrics (<a href="#btac260-F3" class="usa-link">Fig. 3</a>). For the ‘independent merge’ dataset, the deep kernel has a mean MCC of 0.656 and a mean BM of 0.628. On the same data, the kernel SVM has a mean MCC of 0.594 and a mean BM of 0.512. The gap between deep kernel and kernel SVM increases with decreasing quality of the data: For the ‘Agilent single-ce’ dataset, the mean MCC and BM is 0.607 and 0.574 for the deep kernel and 0.519, 0.430 for the kernel SVM. The ‘independent noisy’ dataset has the lowest quality spectra; for this dataset, deep kernel learning has a mean MCC of 0.511 and a mean BM of 0.472. The kernel SVM has a mean MCC of 0.415 and a mean BM of 0.317.</p>
+<figure class="fig xbox font-sm" id="btac260-F3"><h4 class="obj_head">Fig. 3.</h4>
+<p class="img-box line-height-none margin-x-neg-2 tablet:margin-x-0 text-center"><a class="tileshop" target="_blank" href="https://www.ncbi.nlm.nih.gov/core/lw/2.0/html/tileshop_pmc/tileshop_pmc_inline.html?title=Click%20on%20image%20to%20zoom&amp;p=PMC3&amp;id=9235503_btac260f3.jpg"><img class="graphic zoom-in" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/391b/9235503/8a10fef52545/btac260f3.jpg" loading="lazy" height="444" width="760" alt="Fig. 3."></a></p>
+<div class="p text-right font-secondary"><a href="figure/btac260-F3/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div>
+<figcaption><p>Histogram of MCC (left) and BM (middle) and Tanimoto (right) for individual labels on the ‘independent merge’, ‘Agilent single-ce’, and ‘independent noisy’ datasets. MCC and BM are metrics on the 5220 labels. Tanimoto is a metric on the compounds. Undefined MCC and BM values (for label that do not occur in the dataset) are left out</p></figcaption></figure></section><section id="sec18"><h3 class="pmc_sec_title">3.6 Structure database search</h3>
+<p>For the task of metabolite identification, we search the predicted molecular fingerprints in our in-house mirror of the <em>PubChem structure database</em> (<a href="#btac260-B23" class="usa-link" aria-describedby="btac260-B23">Kim <em>et al.</em>, 2016</a>). PubChem was downloaded at January 16, 2019 and contains 97 168 905 compounds, and 77 190 484 unique covalently bonded structures with mass up to 2000 Da.</p>
+<p>When searching in a structure database, only the exact structure is regarded as correct. Recall that establishing the stereochemistry of a compound from fragmentation spectra is beyond the power of automated search engines and, hence, ignored in evaluations. As scores, we evaluate the covariance score from <a href="#btac260-B31" class="usa-link" aria-describedby="btac260-B31">Ludwig <em>et al.</em> (2018)</a>, and the Tanimoto score suggested by <a href="#btac260-B28" class="usa-link" aria-describedby="btac260-B28">Laponogov <em>et al.</em> (2018)</a> and <a href="#btac260-B21" class="usa-link" aria-describedby="btac260-B21">Ji <em>et al.</em> (2020)</a>. For a query compound, we assume to know its molecular formula, and we obtained candidates from the structure databases using this molecular formula.</p>
+<p>In <a href="#btac260-F4" class="usa-link">Figure 4</a>, we report the identification rates on PubChem. The identification rate is the fraction of compounds for which the correct structure is found within the <em>k</em> highest-ranked candidates of the database search. A compound is correctly annotated if its structure is the candidate with the highest score. Again, we found that the deep kernel learning and the Nyström SVM perform better than competing methods when the data quality deteriorates. For the ‘independent merge’ dataset, the improvement in correct identifications from using the kernel SVM to using deep kernel learning is 0.119 percentage points. This improvement is higher on the ‘Agilent single-ce’ dataset (0.197 percentage points) and on the ‘independent noisy’ dataset (1.720 percentage points). When using the Tanimoto scoring instead of the covariance scoring, the difference between kernel SVM and deep kernel learning becomes more apparent (<a href="#btac260-F4" class="usa-link">Fig. 4</a>). For all scorings and all datasets, the spectrum DNN performs substantially worse than all other methods. For the ‘independent merge’ dataset and the covariance scoring, the spectrum DNN correctly identifies 24.635% of the compounds (33.894% for the kernel SVM, 34.0134% for deep kernel learning and 34.095% for the Nyström SVM).</p>
+<figure class="fig xbox font-sm" id="btac260-F4"><h4 class="obj_head">Fig. 4.</h4>
+<p class="img-box line-height-none margin-x-neg-2 tablet:margin-x-0 text-center"><a class="tileshop" target="_blank" href="https://www.ncbi.nlm.nih.gov/core/lw/2.0/html/tileshop_pmc/tileshop_pmc_inline.html?title=Click%20on%20image%20to%20zoom&amp;p=PMC3&amp;id=9235503_btac260f4.jpg"><img class="graphic zoom-in" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/391b/9235503/6d6ced69e37e/btac260f4.jpg" loading="lazy" height="265" width="680" alt="Fig. 4."></a></p>
+<div class="p text-right font-secondary"><a href="figure/btac260-F4/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div>
+<figcaption><p>Identification rates on the ‘independent merge’ (<strong>a</strong>), ‘Agilent single-ce’ (<strong>b</strong>) and ‘independent noisy’ (<strong>c</strong>) datasets when using the covariance scoring (solid lines) and the Tanimoto scoring (dashed lines). We report the percentage of instances where the correct structure was identified in the top <em>k</em>, for varying <em>k</em></p></figcaption></figure></section></section><section id="sec19"><h2 class="pmc_sec_title">4 Discussion</h2>
+<p>Both the Nyström approximation and deep kernel learning considerably improved molecular fingerprint prediction. This improvement is higher when the data quality is low, as it is the case for the ‘additional training’ and the ‘independent noisy’ datasets. Both methods become more robust to noise when trained on a large number of spectra, even though these spectra are only duplicate measurements of structures that are already part of the training data. This becomes particularly noticeable when comparing the results of the deep kernel trained on the small dataset with those of the deep kernel trained on the full training dataset. The latter performs substantially better on noisy spectra. The deep kernel learning outperforms the Nyström SVM in most evaluations. A deep architecture together with the dropout regularization technique yields higher MCC, BM and Tanimotos on all evaluation datasets. This is remarkable, considering that both methods work on exactly the same input. It is noteworthy that the kernel SVM consistently performs worse than all other methods in the BM metric. Bookmarker informedness is known to behave equally well even with highly imbalanced data (<a href="#btac260-B56" class="usa-link" aria-describedby="btac260-B56">Zhu, 2020</a>). Thus, it is possible that the kernel SVM is not capable of learning these very rare labels, while the deep kernel can learn more local and non-linear decision boundaries for rare labels.</p>
+<p>Unfortunately, these substantial improvements in fingerprint prediction quality do not translate into higher database search identification rates. This is not as surprising as it may seem: Currently, the most severe limitation restricting performance improvements are the available training data. Individual measurements of the same structure—at different collision energies or on different instruments—increase the available information, as we have demonstrated both for Nyström approximation and deep kernel learning. But a 10-fold difference between spectra and structures does not correspond to 10-fold more information: In fact, all spectra recorded at different collision energies from one compound, carry only slightly more information than a single ramp spectrum. Be reminded that only the exact structure was regarded as correct; yet, small structure modifications are hard and potentially impossible to tell apart using MS/MS data alone. This is an intrinsic limitation of small molecule MS/MS; yet, such incorrect annotations may contain viable structure information.</p>
+<p>One advantage of deep kernel learning is that it learns all labels together and can thus exploit dependencies between labels. This is noticeable in the high number of compounds predicted by deep kernel learning with almost optimal Tanimoto. The kernel SVM, on the other hand, learns each label independently. It appears that the covariance scoring, which downweights labels that provide little additional information, cancels out this advantage. This might explain why the deep kernel learning improves identification rates for the Tanimoto scoring but shows only modest improvements for the covariance scoring.</p>
+<p>The relatively good performance of the spectrum DNN on the three evaluation metrics (MCC, BM and Tanimoto) indicates that the DNN is also capable of learning these label dependencies. However, when searching in structure databases, the spectrum DNN performs significantly worse than all other methods, including the kernel SVM. In fact, the difference between spectrum DNN and kernel SVM seems comparable to the difference between kernels on spectra and kernels on fragmentation trees in <a href="#btac260-B11" class="usa-link" aria-describedby="btac260-B11">Dührkop (2018)</a>. However, the deep kernel learning performs well on all three fingerprint prediction metrics as well as in the database search, thus combining the strengths of both approaches.</p>
+<p>The improvements in fingerprint prediction performance become important as soon as we leave the application of structure database search: For compound similarity estimation (<a href="#btac260-B47" class="usa-link" aria-describedby="btac260-B47">Tripathi <em>et al.</em>, 2021</a>), compound class prediction (<a href="#btac260-B14" class="usa-link" aria-describedby="btac260-B14">Dührkop <em>et al.</em>, 2021</a>) and <em>de novo</em> structure elucidation (<a href="#btac260-B43" class="usa-link" aria-describedby="btac260-B43">Stravs <em>et al.</em>, 2021</a>), we cannot rely on the ‘correctional power’ of a structure database. We expect that our deep kernel learning method will greatly improve these and many other methods that rely on the prediction of molecular fingerprints. Deep kernel learning will replace the kernel SVM in SIRIUS 5.0.</p>
+<p>For future development, we see a great potential in pre-training the hidden layers of the deep kernel using variational autoencoders (<a href="#btac260-B25" class="usa-link" aria-describedby="btac260-B25">Kingma and Welling, 2014</a>) or kernel autoencoders (<a href="#btac260-B27" class="usa-link" aria-describedby="btac260-B27">Laforgue <em>et al.</em>, 2019</a>), as well as using semi-supervised learning methods, such as self-training (<a href="#btac260-B29" class="usa-link" aria-describedby="btac260-B29">Lee <em>et al.</em>, 2017</a>). There are millions of unlabeled spectra in public repositories that can be used to learn a better data embedding. Millions of structures in structure databases can be utilized for learning the relationships and interactions between the labels.</p></section><section id="ack1" class="ack"><h2 class="pmc_sec_title">Acknowledgements</h2>
+<p>I thank Nir Shahaf and Asaph Aharoni for providing the WEIZMASS dataset as well as Agilent Technologies, Inc. for providing the Agilent dataset. I further thank Sebastian Böcker for valuable discussions and Markus Fleischauer for help with the compute cluster.</p>
+<section id="sec20"><h3 class="pmc_sec_title">Data availability</h3>
+<p>Some of the data underlying this article were provided by the National Institute of Standards and Technology (NIST) under NIST 20 MS/MS library licence, by Nir Shahaf and Asaph Aharoni from the Weizmann Institute of Science by permission, and by Agilent Technologies by permission. Data will be shared on request to the corresponding author with permission of these third parties. All other data will be shared on request to the corresponding author.</p></section><section id="sec21"><h3 class="pmc_sec_title">Funding</h3>
+<p>This work was supported by Deutsche Forschungsgemeinschaft [BO 1910/20 and 1910/23 to K.D.].</p>
+<p>
+<em>Conflict of Interest</em>: K.D. is cofounder of Bright Giant GmbH.</p></section></section><section id="ref1" class="ref-list"><h2 class="pmc_sec_title">References</h2>
+<section id="ref1_sec2"><ol class="ref-list font-sm">
+<li id="btac260-B1"><cite>
+Abadi M.  et al.  (2016). Tensorflow: a system for large-scale machine learning. In: <em>12th USENIX Symposium on Operating Systems Design and Implementation (OSDI 16), Savannah, Georgia, USA.</em> pp. 265–283.</cite></li>
+<li id="btac260-B2">
+<cite>
+Allen F.  et al.  (2015) Competitive fragmentation modeling of ESI-MS/MS spectra for putative metabolite identification. Metabolomics, 11, 98–110.</cite> [<a href="https://scholar.google.com/scholar_lookup?journal=Metabolomics&amp;title=Competitive%20fragmentation%20modeling%20of%20ESI-MS/MS%20spectra%20for%20putative%20metabolite%20identification&amp;volume=11&amp;publication_year=2015&amp;pages=98-110&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B3">
+<cite>
+Böcker S., Rasche F. (2008) Towards de novo identification of metabolites by analyzing tandem mass spectra. Bioinformatics, 24, I49–I55.</cite> [<a href="https://doi.org/10.1093/bioinformatics/btn270" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/18689839/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Bioinformatics&amp;title=Towards%20de%20novo%20identification%20of%20metabolites%20by%20analyzing%20tandem%20mass%20spectra&amp;volume=24&amp;publication_year=2008&amp;pages=I49-I55&amp;pmid=18689839&amp;doi=10.1093/bioinformatics/btn270&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B4">
+<cite>
+Brouard C.  et al.  (2016) Fast metabolite identification with input output kernel regression. Bioinformatics, 32, i28–i36.</cite> [<a href="https://doi.org/10.1093/bioinformatics/btw246" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC4908330/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/27307628/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Bioinformatics&amp;title=Fast%20metabolite%20identification%20with%20input%20output%20kernel%20regression&amp;volume=32&amp;publication_year=2016&amp;pages=i28-i36&amp;pmid=27307628&amp;doi=10.1093/bioinformatics/btw246&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B5"><cite>
+Brouard C.  et al.  (2017). Magnitude-preserving ranking for structured outputs. In: <em>Proceedings of Asian Conference on Machine Learning</em>, volume 77 of <em>Proceedings of Machine Learning Research, Seoul, Korea, PMLR,</em> pp. 407–422.</cite></li>
+<li id="btac260-B6">
+<cite>
+Brouard C.  et al.  (2019) Improved small molecule identification through learning combinations of kernel regression models. Metabolites, 9, 160.</cite> [<a href="https://doi.org/10.3390/metabo9080160" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC6724104/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/31374904/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Metabolites&amp;title=Improved%20small%20molecule%20identification%20through%20learning%20combinations%20of%20kernel%20regression%20models&amp;volume=9&amp;publication_year=2019&amp;pages=160&amp;pmid=31374904&amp;doi=10.3390/metabo9080160&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B7"><cite>
+Chen G.  et al.  (2019). Rethinking the usage of batch normalization and dropout in the training of deep neural networks. <em>Technical report</em>.</cite></li>
+<li id="btac260-B8">
+<cite>
+Chicco D.  et al.  (2021) The Matthews correlation coefficient (MCC) is more reliable than balanced accuracy, bookmaker informedness, and markedness in two-class confusion matrix evaluation. BioData Min., 14, 13.</cite> [<a href="https://doi.org/10.1186/s13040-021-00244-z" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC7863449/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/33541410/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=BioData%20Min&amp;title=The%20Matthews%20correlation%20coefficient%20(MCC)%20is%20more%20reliable%20than%20balanced%20accuracy,%20bookmaker%20informedness,%20and%20markedness%20in%20two-class%20confusion%20matrix%20evaluation&amp;volume=14&amp;publication_year=2021&amp;pages=13&amp;pmid=33541410&amp;doi=10.1186/s13040-021-00244-z&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B9">
+<cite>
+Cortes C.  et al.  (2012) Algorithms for learning kernels based on centered alignment. J. Mach. Learn. Res., 13, 795–828.</cite> [<a href="https://scholar.google.com/scholar_lookup?journal=J.%20Mach.%20Learn.%20Res&amp;title=Algorithms%20for%20learning%20kernels%20based%20on%20centered%20alignment&amp;volume=13&amp;publication_year=2012&amp;pages=795-828&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B10">
+<cite>
+Cuevas J.  et al.  (2020) Approximate genome-based kernel models for large data sets including main effects and interactions. Front. Genet., 11, 1128.</cite> [<a href="https://doi.org/10.3389/fgene.2020.567757" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC7594507/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/33193659/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Front.%20Genet&amp;title=Approximate%20genome-based%20kernel%20models%20for%20large%20data%20sets%20including%20main%20effects%20and%20interactions&amp;volume=11&amp;publication_year=2020&amp;pages=1128&amp;pmid=33193659&amp;doi=10.3389/fgene.2020.567757&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B11"><cite>
+Dührkop K. (2018). Computational methods for small molecule identification. PhD Thesis, Friedrich-Schiller-Universität Jena, Jena, Germany.</cite></li>
+<li id="btac260-B12">
+<cite>
+Dührkop K.  et al.  (2015) Searching molecular structure databases with tandem mass spectra using CSI: fingerID. Proc. Natl. Acad. Sci. USA, 112, 12580–12585.</cite> [<a href="https://doi.org/10.1073/pnas.1509788112" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC4611636/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/26392543/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Proc.%20Natl.%20Acad.%20Sci.%20USA&amp;title=Searching%20molecular%20structure%20databases%20with%20tandem%20mass%20spectra%20using%20CSI:%20fingerID&amp;volume=112&amp;publication_year=2015&amp;pages=12580-12585&amp;pmid=26392543&amp;doi=10.1073/pnas.1509788112&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B13">
+<cite>
+Dührkop K.  et al.  (2019) SIRIUS 4: a rapid tool for turning tandem mass spectra into metabolite structure information. Nat. Methods, 16, 299–302.</cite> [<a href="https://doi.org/10.1038/s41592-019-0344-8" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/30886413/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Nat.%20Methods&amp;title=SIRIUS%204:%20a%20rapid%20tool%20for%20turning%20tandem%20mass%20spectra%20into%20metabolite%20structure%20information&amp;volume=16&amp;publication_year=2019&amp;pages=299-302&amp;pmid=30886413&amp;doi=10.1038/s41592-019-0344-8&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B14">
+<cite>
+Dührkop K.  et al.  (2021) Systematic classification of unknown metabolites using high-resolution fragmentation mass spectra. Nat. Biotechnol., 39, 462–471.</cite> [<a href="https://doi.org/10.1038/s41587-020-0740-8" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/33230292/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Nat.%20Biotechnol&amp;title=Systematic%20classification%20of%20unknown%20metabolites%20using%20high-resolution%20fragmentation%20mass%20spectra&amp;volume=39&amp;publication_year=2021&amp;pages=462-471&amp;pmid=33230292&amp;doi=10.1038/s41587-020-0740-8&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B15">
+<cite>
+Fan Z.  et al.  (2020) MetFID: artificial neural network-based compound fingerprint prediction for metabolite annotation. Metabolomics, 16, 104.</cite> [<a href="https://doi.org/10.1007/s11306-020-01726-7" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC9547616/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/32997169/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Metabolomics&amp;title=MetFID:%20artificial%20neural%20network-based%20compound%20fingerprint%20prediction%20for%20metabolite%20annotation&amp;volume=16&amp;publication_year=2020&amp;pages=104&amp;pmid=32997169&amp;doi=10.1007/s11306-020-01726-7&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B16">
+<cite>
+Haug K.  et al.  (2019) MetaboLights: a resource evolving in response to the needs of its scientific community. Nucleic Acids Res., 48, D440–D444.</cite> [<a href="https://doi.org/10.1093/nar/gkz1019" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC7145518/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/31691833/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Nucleic%20Acids%20Res&amp;title=MetaboLights:%20a%20resource%20evolving%20in%20response%20to%20the%20needs%20of%20its%20scientific%20community&amp;volume=48&amp;publication_year=2019&amp;pages=D440-D444&amp;pmid=31691833&amp;doi=10.1093/nar/gkz1019&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B17">
+<cite>
+Heinonen M.  et al.  (2012) Metabolite identification and molecular fingerprint prediction via machine learning. Bioinformatics, 28, 2333–2341.</cite> [<a href="https://doi.org/10.1093/bioinformatics/bts437" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/22815355/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Bioinformatics&amp;title=Metabolite%20identification%20and%20molecular%20fingerprint%20prediction%20via%20machine%20learning&amp;volume=28&amp;publication_year=2012&amp;pages=2333-2341&amp;pmid=22815355&amp;doi=10.1093/bioinformatics/bts437&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B18">
+<cite>
+Hoffmann M.A.  et al.  (2022) High-confidence structural annotation of metabolites absent from spectral libraries. Nat. Biotechnol., 40, 411–421.</cite> [<a href="https://doi.org/10.1038/s41587-021-01045-9" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC8926923/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/34650271/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Nat.%20Biotechnol&amp;title=High-confidence%20structural%20annotation%20of%20metabolites%20absent%20from%20spectral%20libraries&amp;volume=40&amp;publication_year=2022&amp;pages=411-421&amp;pmid=34650271&amp;doi=10.1038/s41587-021-01045-9&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B19">
+<cite>
+Horai H.  et al.  (2010) MassBank: a public repository for sharing mass spectral data for life sciences. J. Mass Spectrom., 45, 703–714.</cite> [<a href="https://doi.org/10.1002/jms.1777" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/20623627/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=J.%20Mass%20Spectrom&amp;title=MassBank:%20a%20public%20repository%20for%20sharing%20mass%20spectral%20data%20for%20life%20sciences&amp;volume=45&amp;publication_year=2010&amp;pages=703-714&amp;pmid=20623627&amp;doi=10.1002/jms.1777&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B20"><cite>
+Ioffe S., Szegedy C. (2015). Batch normalization: accelerating deep network training by reducing internal covariate shift. In: <em>Proceedings of International Conference on Machine Learning (ICML 2015), Lille, France</em>, page arXiv:1502.03167.</cite></li>
+<li id="btac260-B21">
+<cite>
+Ji H.  et al.  (2020) Predicting a molecular fingerprint from an electron ionization mass spectrum with deep neural networks. Anal. Chem., 92, 8649–8653.</cite> [<a href="https://doi.org/10.1021/acs.analchem.0c01450" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/32584545/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Anal.%20Chem&amp;title=Predicting%20a%20molecular%20fingerprint%20from%20an%20electron%20ionization%20mass%20spectrum%20with%20deep%20neural%20networks&amp;volume=92&amp;publication_year=2020&amp;pages=8649-8653&amp;pmid=32584545&amp;doi=10.1021/acs.analchem.0c01450&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B22">
+<cite>
+Kanehisa M.  et al.  (2016) KEGG as a reference resource for gene and protein annotation. Nucleic Acids Res., 44, D457–D462.</cite> [<a href="https://doi.org/10.1093/nar/gkv1070" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC4702792/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/26476454/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Nucleic%20Acids%20Res&amp;title=KEGG%20as%20a%20reference%20resource%20for%20gene%20and%20protein%20annotation&amp;volume=44&amp;publication_year=2016&amp;pages=D457-D462&amp;pmid=26476454&amp;doi=10.1093/nar/gkv1070&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B23">
+<cite>
+Kim S.  et al.  (2016) PubChem substance and compound databases. Nucleic Acids Res., 44, D1202–D1213.</cite> [<a href="https://doi.org/10.1093/nar/gkv951" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC4702940/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/26400175/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Nucleic%20Acids%20Res&amp;title=PubChem%20substance%20and%20compound%20databases&amp;volume=44&amp;publication_year=2016&amp;pages=D1202-D1213&amp;pmid=26400175&amp;doi=10.1093/nar/gkv951&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B24"><cite>
+Kingma D.P., Ba J. (2015). Adam: a method for stochastic optimization. In: <em>Proceedings of International Conference on Learning Representations (ICLR 2015).</em></cite></li>
+<li id="btac260-B25"><cite>
+Kingma D.P., Welling M. (2014). Auto-encoding variational Bayes. arXiv:1312.6114 [stat.ML].</cite></li>
+<li id="btac260-B26">
+<cite>
+Klekota J., Roth F.P. (2008) Chemical substructures that enrich for biological activity. Bioinformatics, 24, 2518–2525.</cite> [<a href="https://doi.org/10.1093/bioinformatics/btn479" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC2732283/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/18784118/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Bioinformatics&amp;title=Chemical%20substructures%20that%20enrich%20for%20biological%20activity&amp;volume=24&amp;publication_year=2008&amp;pages=2518-2525&amp;pmid=18784118&amp;doi=10.1093/bioinformatics/btn479&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B27">
+<cite>
+Laforgue P.  et al.  (2019). Autoencoding any data through kernel autoencoders. In: Chaudhuri K., Sugiyama M. (eds) Proceedings of Machine Learning Research, Volume 89 of Proceedings of Machine Learning Research, Naha, Okinawa, Japan, PMLR. pp. 1061–1069.</cite> [<a href="https://scholar.google.com/scholar_lookup?title=Proceedings%20of%20Machine%20Learning%20Research,%20Volume%2089%20of%20Proceedings%20of%20Machine%20Learning%20Research&amp;publication_year=2019&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B28">
+<cite>
+Laponogov I.  et al.  (2018) Chemdistiller: an engine for metabolite annotation in mass spectrometry. Bioinformatics, 34, 2096–2102.</cite> [<a href="https://doi.org/10.1093/bioinformatics/bty080" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC9881669/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/29447341/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Bioinformatics&amp;title=Chemdistiller:%20an%20engine%20for%20metabolite%20annotation%20in%20mass%20spectrometry&amp;volume=34&amp;publication_year=2018&amp;pages=2096-2102&amp;pmid=29447341&amp;doi=10.1093/bioinformatics/bty080&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B29">
+<cite>
+Lee H.-W.  et al.  (2017) Deep neural network self-training based on unsupervised learning and dropout. Int. J. Fuzzy Log Intell. Syst., 17, 1–9.</cite> [<a href="https://scholar.google.com/scholar_lookup?journal=Int.%20J.%20Fuzzy%20Log%20Intell.%20Syst&amp;title=Deep%20neural%20network%20self-training%20based%20on%20unsupervised%20learning%20and%20dropout&amp;volume=17&amp;publication_year=2017&amp;pages=1-9&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B30">
+<cite>
+Lopez-Martin M.  et al.  (2019) Shallow neural network with kernel approximation for prediction problems in highly demanding data networks. Expert Syst. Appl., 124, 196–208.</cite> [<a href="https://scholar.google.com/scholar_lookup?journal=Expert%20Syst.%20Appl&amp;title=Shallow%20neural%20network%20with%20kernel%20approximation%20for%20prediction%20problems%20in%20highly%20demanding%20data%20networks&amp;volume=124&amp;publication_year=2019&amp;pages=196-208&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B31">
+<cite>
+Ludwig M.  et al.  (2018) Bayesian networks for mass spectrometric metabolite identification via molecular fingerprints. Bioinformatics, 34, i333–i340.</cite> [<a href="https://doi.org/10.1093/bioinformatics/bty245" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC6022630/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/29949965/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Bioinformatics&amp;title=Bayesian%20networks%20for%20mass%20spectrometric%20metabolite%20identification%20via%20molecular%20fingerprints&amp;volume=34&amp;publication_year=2018&amp;pages=i333-i340&amp;pmid=29949965&amp;doi=10.1093/bioinformatics/bty245&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B32">
+<cite>
+Matthews B.W. (1975) Comparison of the predicted and observed secondary structure of T4 phage lysozyme. Biochim. Biophys. Acta., 405, 442–451.</cite> [<a href="https://doi.org/10.1016/0005-2795(75)90109-9" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/1180967/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Biochim.%20Biophys.%20Acta&amp;title=Comparison%20of%20the%20predicted%20and%20observed%20secondary%20structure%20of%20T4%20phage%20lysozyme&amp;volume=405&amp;publication_year=1975&amp;pages=442-451&amp;pmid=1180967&amp;doi=10.1016/0005-2795(75)90109-9&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B33">
+<cite>
+Meanti G.  et al.  (2020). Kernel methods through the roof: handling billions of points efficiently. In: Larochelle H.  et al.  (eds) Advances in Neural Information Processing Systems, vol. 33. Curran Associates, Inc., pp. 14410–14422.</cite> [<a href="https://scholar.google.com/scholar_lookup?title=Advances%20in%20Neural%20Information%20Processing%20Systems&amp;publication_year=2020&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B34">
+<cite>
+Nothias L.-F.  et al.  (2020) Feature-based molecular networking in the GNPS analysis environment. Nat. Methods, 17, 905–908.</cite> [<a href="https://doi.org/10.1038/s41592-020-0933-6" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC7885687/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/32839597/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Nat.%20Methods&amp;title=Feature-based%20molecular%20networking%20in%20the%20GNPS%20analysis%20environment&amp;volume=17&amp;publication_year=2020&amp;pages=905-908&amp;pmid=32839597&amp;doi=10.1038/s41592-020-0933-6&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B35"><cite>
+Ober S.W.  et al.  (2021). The promises and pitfalls of deep kernel learning. In: <em>37th Conference on Uncertainty in Artificial Intelligence (UAI 2021).</em></cite></li>
+<li id="btac260-B36">
+<cite>
+Platt J.C. (2000). Probabilistic outputs for support vector machines and comparisons to regularized likelihood methods. In: Smola,AJ. <em>et al</em>. (eds) Advances in Large Margin Classifiers, Chapter 5. MIT Press, Cambridge, MA.</cite> [<a href="https://scholar.google.com/scholar_lookup?title=Advances%20in%20Large%20Margin%20Classifiers,%20Chapter%205&amp;publication_year=2000&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B37"><cite>
+Powers D. (2003). Recall and precision versus the bookmaker. In: <em>Proceedings of Cognitive Science Conference (COGSCI 2003), Boston, Massachusetts, USA</em>. pp. 529–534.</cite></li>
+<li id="btac260-B38">
+<cite>
+Rogers D., Hahn M. (2010) Extended-connectivity fingerprints. J. Chem. Inf. Model., 50, 742–754.</cite> [<a href="https://doi.org/10.1021/ci100050t" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/20426451/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=J.%20Chem.%20Inf.%20Model&amp;title=Extended-connectivity%20fingerprints&amp;volume=50&amp;publication_year=2010&amp;pages=742-754&amp;pmid=20426451&amp;doi=10.1021/ci100050t&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B39">
+<cite>
+Schymanski E.L.  et al.  (2017) Critical assessment of small molecule identification 2016: automated methods. J. Cheminform., 9, 22.</cite> [<a href="https://doi.org/10.1186/s13321-017-0207-1" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC5368104/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/29086042/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=J.%20Cheminform&amp;title=Critical%20assessment%20of%20small%20molecule%20identification%202016:%20automated%20methods&amp;volume=9&amp;publication_year=2017&amp;pages=22&amp;pmid=29086042&amp;doi=10.1186/s13321-017-0207-1&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B40">
+<cite>
+Shahaf N.  et al.  (2016) The WEIZMASS spectral library for high-confidence metabolite identification. Nat. Commun., 7, 12423.</cite> [<a href="https://doi.org/10.1038/ncomms12423" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC5013563/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/27571918/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Nat.%20Commun&amp;title=The%20WEIZMASS%20spectral%20library%20for%20high-confidence%20metabolite%20identification&amp;volume=7&amp;publication_year=2016&amp;pages=12423&amp;pmid=27571918&amp;doi=10.1038/ncomms12423&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B41">
+<cite>
+Shen H.  et al.  (2014) Metabolite identification through multiple kernel learning on fragmentation trees. Bioinformatics, 30, i157–i164.</cite> [<a href="https://doi.org/10.1093/bioinformatics/btu275" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC4058957/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/24931979/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Bioinformatics&amp;title=Metabolite%20identification%20through%20multiple%20kernel%20learning%20on%20fragmentation%20trees&amp;volume=30&amp;publication_year=2014&amp;pages=i157-i164&amp;pmid=24931979&amp;doi=10.1093/bioinformatics/btu275&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B42">
+<cite>
+Srivastava N.  et al.  (2014) Dropout: a simple way to prevent neural networks from overfitting. J Mach. Learn. Res., 15, 1929–1958.</cite> [<a href="https://scholar.google.com/scholar_lookup?journal=J%20Mach.%20Learn.%20Res&amp;title=Dropout:%20a%20simple%20way%20to%20prevent%20neural%20networks%20from%20overfitting&amp;volume=15&amp;publication_year=2014&amp;pages=1929-1958&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B43">
+<cite>
+Stravs M.A.  et al.  (2021). MSNovelist: de novo structure generation from mass spectra. bioRxiv 2021.07.06.450875. </cite> [<a href="https://doi.org/10.1038/s41592-022-01486-3" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC9262714/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/35637304/" class="usa-link">PubMed</a>]</li>
+<li id="btac260-B44">
+<cite>
+Sud M.  et al.  (2016) Metabolomics workbench: an international repository for metabolomics data and metadata, metabolite standards, protocols, tutorials and training, and analysis tools. Nucleic Acids Res., 44, D463–D470.</cite> [<a href="https://doi.org/10.1093/nar/gkv1042" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC4702780/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/26467476/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Nucleic%20Acids%20Res&amp;title=Metabolomics%20workbench:%20an%20international%20repository%20for%20metabolomics%20data%20and%20metadata,%20metabolite%20standards,%20protocols,%20tutorials%20and%20training,%20and%20analysis%20tools&amp;volume=44&amp;publication_year=2016&amp;pages=D463-D470&amp;pmid=26467476&amp;doi=10.1093/nar/gkv1042&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B45"><cite>
+Tanimoto T.T. (1958). An elementary mathematical theory of classification and prediction. <em>Technical report</em>. International Business Machines Corporation, New York.</cite></li>
+<li id="btac260-B46"><cite>
+Tossou P.  et al.  (2020). Adaptive deep kernel learning. <em>Technical report</em>.</cite></li>
+<li id="btac260-B47">
+<cite>
+Tripathi A.  et al.  (2021) Chemically-informed analyses of metabolomics mass spectrometry data with qemistree. Nat. Chem. Biol., 17, 146–151.</cite> [<a href="https://doi.org/10.1038/s41589-020-00677-3" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC8189545/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/33199911/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Nat.%20Chem.%20Biol&amp;title=Chemically-informed%20analyses%20of%20metabolomics%20mass%20spectrometry%20data%20with%20qemistree&amp;volume=17&amp;publication_year=2021&amp;pages=146-151&amp;pmid=33199911&amp;doi=10.1038/s41589-020-00677-3&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B48">
+<cite>
+Verdegem D.  et al.  (2016) Improved metabolite identification with MIDAS and MAGMa through MS/MS spectral dataset-driven parameter optimization. Metabolomics, 12, 1–16.</cite> [<a href="https://scholar.google.com/scholar_lookup?journal=Metabolomics&amp;title=Improved%20metabolite%20identification%20with%20MIDAS%20and%20MAGMa%20through%20MS/MS%20spectral%20dataset-driven%20parameter%20optimization&amp;volume=12&amp;publication_year=2016&amp;pages=1-16&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B49">
+<cite>
+Wang M.  et al.  (2016) Sharing and community curation of mass spectrometry data with global natural products social molecular networking. Nat. Biotechnol., 34, 828–837.</cite> [<a href="https://doi.org/10.1038/nbt.3597" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC5321674/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/27504778/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Nat.%20Biotechnol&amp;title=Sharing%20and%20community%20curation%20of%20mass%20spectrometry%20data%20with%20global%20natural%20products%20social%20molecular%20networking&amp;volume=34&amp;publication_year=2016&amp;pages=828-837&amp;pmid=27504778&amp;doi=10.1038/nbt.3597&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B50">
+<cite>
+Williams C., Seeger M. (2001). Using the nyström method to speed up kernel machines. In: Leen T.  et al.  (eds) Advances in Neural Information Processing Systems, vol. 13. MIT Press.</cite> [<a href="https://scholar.google.com/scholar_lookup?title=Advances%20in%20Neural%20Information%20Processing%20Systems&amp;publication_year=2001&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B51">
+<cite>
+Willighagen E.L.  et al.  (2017) The chemistry development kit (CDK) v2.0: atom typing, depiction, molecular formulas, and substructure searching. J. Cheminform., 9, 33.</cite> [<a href="https://doi.org/10.1186/s13321-017-0220-4" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC5461230/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/29086040/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=J.%20Cheminform&amp;title=The%20chemistry%20development%20kit%20(CDK)%20v2.0:%20atom%20typing,%20depiction,%20molecular%20formulas,%20and%20substructure%20searching&amp;volume=9&amp;publication_year=2017&amp;pages=33&amp;pmid=29086040&amp;doi=10.1186/s13321-017-0220-4&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B52"><cite>
+Wilson A.G.  et al.  (2016). Stochastic variational deep kernel learning. In: <em>Proceedings of the 30th International Conference on Neural Information Processing Systems</em>, NIPS’16, Barcelona Spain. Curran Associates Inc., pp. 25942602.</cite></li>
+<li id="btac260-B53">
+<cite>
+Wishart D.S.  et al.  (2018) HMDB 4.0: the human metabolome database for 2018. Nucleic Acids Res., 46, D608–D617.</cite> [<a href="https://doi.org/10.1093/nar/gkx1089" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC5753273/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/29140435/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Nucleic%20Acids%20Res&amp;title=HMDB%204.0:%20the%20human%20metabolome%20database%20for%202018&amp;volume=46&amp;publication_year=2018&amp;pages=D608-D617&amp;pmid=29140435&amp;doi=10.1093/nar/gkx1089&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B54">
+<cite>
+Wolf S.  et al.  (2010) In silico fragmentation for computer assisted identification of metabolite mass spectra. BMC Bioinformatics, 11, 148.</cite> [<a href="https://doi.org/10.1186/1471-2105-11-148" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC2853470/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/20307295/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=BMC%20Bioinformatics&amp;title=In%20silico%20fragmentation%20for%20computer%20assisted%20identification%20of%20metabolite%20mass%20spectra&amp;volume=11&amp;publication_year=2010&amp;pages=148&amp;pmid=20307295&amp;doi=10.1186/1471-2105-11-148&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B55">
+<cite>
+Zhang K.  et al.  (2012). Scaling up kernel SVM on limited resources: a low-rank linearization approach. In: Lawrence N.D., Girolami M. (eds) Proceedings of the Fifteenth International Conference on Artificial Intelligence and Statistics, Volume 22 of Proceedings of Machine Learning Research, PMLR. La Palma, Canary Islands, pp. 1425–1434.</cite> [<a href="https://scholar.google.com/scholar_lookup?title=Proceedings%20of%20the%20Fifteenth%20International%20Conference%20on%20Artificial%20Intelligence%20and%20Statistics,%20Volume%2022%20of%20Proceedings%20of%20Machine%20Learning%20Research&amp;publication_year=2012&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="btac260-B56">
+<cite>
+Zhu Q. (2020) On the performance of Matthews correlation coefficient (MCC) for imbalanced dataset. Patt. Recog. Lett., 136, 71–80.</cite> [<a href="https://scholar.google.com/scholar_lookup?journal=Patt.%20Recog.%20Lett&amp;title=On%20the%20performance%20of%20Matthews%20correlation%20coefficient%20(MCC)%20for%20imbalanced%20dataset&amp;volume=136&amp;publication_year=2020&amp;pages=71-80&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+</ol></section></section><section id="_ad93_" lang="en" class="associated-data"><h2 class="pmc_sec_title">Associated Data</h2>
+<p class="font-secondary"><em>This section collects any data citations, data availability statements, or supplementary materials included in this article.</em></p>
+<section id="_adda93_" lang="en" class="data-availability-statement"><h3 class="pmc_sec_title">Data Availability Statement</h3>
+<p>Some of the data underlying this article were provided by the National Institute of Standards and Technology (NIST) under NIST 20 MS/MS library licence, by Nir Shahaf and Asaph Aharoni from the Weizmann Institute of Science by permission, and by Agilent Technologies by permission. Data will be shared on request to the corresponding author with permission of these third parties. All other data will be shared on request to the corresponding author.</p></section></section></section><footer class="p courtesy-note font-secondary font-sm text-center"><hr class="headless">
+<p>Articles from Bioinformatics are provided here courtesy of <strong>Oxford University Press</strong></p></footer></section></article>
+
+                      
+
+                    </main>
+                </div>
+            </div>
+        </div>
+
+        
+
+
+
+<!-- Secondary navigation placeholder -->
+<div class="pmc-sidenav desktop:grid-col-4 display-flex">
+    <section class="pmc-sidenav__container" aria-label="Article resources and navigation">
+        <button type="button" class="pmc-sidenav__container__close">
+            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/usa-icons/close.svg" role="img" alt="Close" />
+        </button>
+    <div class="display-none desktop:display-block">
+       <section class="margin-top-4 desktop:margin-top-0">
+              <h2 class="margin-top-0">ACTIONS</h2>
+           <ul class="usa-list usa-list--unstyled usa-list--actions">
+               
+               <li>
+                     <a
+                             href="https://doi.org/10.1093/bioinformatics/btac260"
+                             class="usa-button usa-button--outline width-24 font-xs display-inline-flex flex-align-center flex-justify-start padding-left-1"
+                             target="_blank"
+                             rel="noreferrer noopener"
+                             data-ga-category="actions"
+                             data-ga-action="click"
+                             data-ga-label="publisher_link_desktop"
+                     >
+                         <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/launch.svg" alt="View on publisher site icon" class="usa-icon usa-icon--size-3 usa-icon--link"/>
+                         <span class="display-inline-flex flex-justify-center flex-1 padding-right-2">View on publisher site</span>
+                     </a>
+               </li>
+               
+               
+               <li>
+                    <a
+                            href="pdf/btac260.pdf"
+                            class="usa-button usa-button--outline width-24 display-inline-flex flex-align-center flex-justify-start padding-left-1"
+                            data-ga-category="actions"
+                            data-ga-action="click"
+                            data-ga-label="pdf_download_desktop"
+                    >
+                         <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/file_download.svg" alt="Download PDF icon" class="usa-icon usa-icon--size-3 usa-icon--link"/>
+                        <span class="display-inline-flex flex-justify-center flex-1">PDF (726.5 KB)</span>
+                    </a>
+               </li>
+               
+                
+               <li>
+                   <button role="button" class="usa-button width-24 citation-dialog-trigger display-inline-flex flex-align-center flex-justify-start padding-left-1"
+                        aria-label="Open dialog with citation text in different styles"
+                        data-ga-category="actions"
+                        data-ga-action="open"
+                        data-ga-label="cite_desktop"
+                        data-all-citations-url="/resources/citations/9235503/"
+                        data-citation-style="nlm"
+                        data-download-format-link="/resources/citations/9235503/export/"
+                    >
+                       <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/format_quote.svg" alt="Cite icon" class="usa-icon usa-icon--size-3 usa-icon--white"/>
+                       <span class="display-inline-flex flex-justify-center flex-1 button-label">Cite</span>
+                    </button>
+               </li>
+                
+               <li>
+
+                        <button class="usa-button width-24 collections-dialog-trigger collections-button display-inline-flex flex-align-center flex-justify-start padding-left-1 collections-button-empty"
+                              aria-label="Save article in MyNCBI collections."
+                              data-ga-category="actions"
+                              data-ga-action="click"
+                              data-ga-label="collections_button_desktop"
+                              data-collections-open-dialog-enabled="false"
+                              data-collections-open-dialog-url="https://account.ncbi.nlm.nih.gov/?back_url=https%3A%2F%2Fpmc.ncbi.nlm.nih.gov%2Farticles%2FPMC9235503%2F%23open-collections-dialog"
+                              data-in-collections="false">
+                            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/action-bookmark-full.svg" alt="Collections icon" class="usa-icon usa-icon--size-3 usa-icon--white usa-icon--bookmark-full" hidden />
+                            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/action-bookmark-empty.svg" alt="Collections icon" class="usa-icon usa-icon--size-3 usa-icon--white usa-icon--bookmark-empty" hidden />
+                            <span class="display-inline-flex flex-justify-center flex-1">Collections</span>
+                       </button>
+               </li>
+               <li class="pmc-permalink">
+                    <button
+                            type="button"
+                            class="usa-button width-24 display-inline-flex flex-align-center flex-justify padding-left-1 shadow-none"
+                            aria-label="Show article permalink"
+                            aria-expanded="false"
+                            aria-haspopup="true"
+                            data-ga-category="actions"
+                            data-ga-action="open"
+                            data-ga-label="permalink_desktop"
+                    >
+                        <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/share.svg" alt="Permalink icon" class="usa-icon usa-icon--size-3 usa-icon--white"/>
+                        <span class="display-inline-flex flex-justify-center flex-1 button-label">Permalink</span>
+                    </button>
+                   
+
+<div class="pmc-permalink__dropdown" hidden>
+    <div class="pmc-permalink__dropdown__container">
+          <h2 class="usa-modal__heading margin-top-0 margin-bottom-2 text-uppercase font-sans-xs">PERMALINK</h2>
+          <div class="pmc-permalink__dropdown__content">
+              <input type="text" class="usa-input" value="https://pmc.ncbi.nlm.nih.gov/articles/PMC9235503/" aria-label="Article permalink">
+              <button class="usa-button display-inline-flex pmc-permalink__dropdown__copy__btn margin-right-0" title="Copy article permalink" data-ga-category="save_share" data-ga-action="link" data-ga-label="copy_link">
+                  <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/content_copy.svg" alt="Copy icon" aria-hidden="true" class="usa-icon usa-icon--white" />
+                  <span class="margin-left-1">Copy</span>
+              </button>
+          </div>
+    </div>
+</div>
+               </li>
+           </ul>
+       </section>
+     </div>
+
+        <section class="pmc-resources margin-top-6 desktop:margin-top-4" data-page-path="/articles/PMC9235503/">
+            <h2 class="margin-top-0">RESOURCES</h2>
+            
+                <div class="usa-accordion usa-accordion--multiselectable" data-allow-multiple>
+                    <h3 class="usa-accordion__heading">
+                        <button
+                        type="button"
+                        class="usa-accordion__button"
+                        aria-expanded="false"
+                        aria-controls="resources-similar-articles"
+                        data-ga-category="resources_accordion"
+                        data-ga-action="open_similar_articles"
+                        data-ga-label="/articles/PMC9235503/"
+                        data-action-open="open_similar_articles"
+                        data-action-close="close_similar_articles"
+                        >
+                            Similar articles
+                        </button>
+                    </h3>
+                    <div
+                            id="resources-similar-articles"
+                            class="usa-accordion__content usa-prose"
+                            
+                                data-source-url="/resources/similar-article-links/35758813/"
+                            
+                    >
+                        
+                    </div>
+                    <h3 class="usa-accordion__heading">
+                        <button
+                        type="button"
+                        class="usa-accordion__button"
+                        aria-expanded="false"
+                        aria-controls="resources-cited-by-other-articles"
+                        data-ga-category="resources_accordion"
+                        data-ga-action="open_cited_by"
+                        data-ga-label="/articles/PMC9235503/"
+                        data-action-open="open_cited_by"
+                        data-action-close="close_cited_by"
+                        >
+                             Cited by other articles
+                        </button>
+                    </h3>
+                    <div
+                            id="resources-cited-by-other-articles"
+                            class="usa-accordion__content usa-prose"
+                            
+                                data-source-url="/resources/cited-by-links/35758813/"
+                            
+                    >
+                          
+                    </div>
+                    
+                        <h3 class="usa-accordion__heading">
+                            <button
+                            type="button"
+                            class="usa-accordion__button"
+                            aria-expanded="false"
+                            aria-controls="resources-links-to-ncbi-databases"
+                            data-ga-category="resources_accordion"
+                            data-ga-action="open_NCBI_links"
+                            data-ga-label="/articles/PMC9235503/"
+                            data-action-open="open_NCBI_links"
+                            data-action-close="close_NCBI_link"
+                            >
+                                 Links to NCBI Databases
+                            </button>
+                        </h3>
+                        <div
+                                id="resources-links-to-ncbi-databases"
+                                class="usa-accordion__content usa-prose"
+                                data-source-url="/resources/db-links/9235503/"
+                        >
+                        </div>
+                    
+                    
+                </div>
+            
+        </section>
+
+
+        <section
+        class="usa-in-page-nav usa-in-page-nav--wide margin-top-6 desktop:margin-top-4"
+        data-title-text="On this page"
+        data-title-heading-level="h2"
+        data-scroll-offset="0"
+        data-root-margin="-10% 0px -80% 0px"
+        data-main-content-selector="main"
+        data-threshold="1"
+        hidden
+        ></section>
+    </section>
+</div>
+
+        
+
+<div class="overlay" role="dialog" aria-label="Citation Dialog" hidden>
+    <div class="dialog citation-dialog" aria-hidden="true">
+        <div class="display-inline-flex flex-align-center flex-justify width-full margin-bottom-2">
+            <h2 class="usa-modal__heading margin-0">Cite</h2>
+             <button type="button" class="usa-button usa-button--unstyled close-overlay text-black width-auto"  tabindex="1">
+                 <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/close.svg" alt="Close icon" class="usa-icon usa-icon--size-3 usa-icon--button" />
+             </button>
+        </div>
+
+        
+
+<div class="citation-text-block">
+  <div class="citation-text margin-bottom-2"></div>
+  <ul class="usa-list usa-list--unstyled display-inline-flex flex-justify width-full flex-align-center">
+      <li>
+        <button
+          class="usa-button usa-button--unstyled text-no-underline display-flex flex-align-center copy-button dialog-focus"
+          data-ga-category="save_share"
+          data-ga-action="cite"
+          data-ga-label="copy"
+          tabindex="2">
+            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/content_copy.svg" alt="Copy icon" class="usa-icon usa-icon--size-3 usa-icon--link" />
+            <span>Copy</span>
+        </button>
+      </li>
+      <li>
+          <a
+              href="#"
+              role="button"
+              class="usa-button usa-button--unstyled text-no-underline display-flex flex-align-center export-button"
+              data-ga-category="save_share"
+              data-ga-action="cite"
+              data-ga-label="download"
+              title="Download a file for external citation management software"
+              tabindex="3">
+                <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/file_download.svg" alt="Download icon" aria-hidden="true" class="usa-icon usa-icon--size-3 usa-icon--link" />
+                <span class="display-none mobile-lg:display-inline">Download .nbib</span>
+                <span class="display-inline mobile-lg:display-none">.nbib</span>
+            </a>
+      </li>
+      <li>
+          
+
+<div class="display-inline-flex flex-align-center">
+  <label class="usa-label margin-top-0">Format:</label>
+  <select aria-label="Format" class="usa-select citation-style-selector padding-1 margin-top-0 border-0 padding-right-4" tabindex="4" >
+    
+      <option data-style-url-name="ama"
+              value="AMA"
+              >
+        AMA
+      </option>
+    
+      <option data-style-url-name="apa"
+              value="APA"
+              >
+        APA
+      </option>
+    
+      <option data-style-url-name="mla"
+              value="MLA"
+              >
+        MLA
+      </option>
+    
+      <option data-style-url-name="nlm"
+              value="NLM"
+              selected="selected">
+        NLM
+      </option>
+    
+  </select>
+</div>
+      </li>
+  </ul>
+</div>
+    </div>
+</div>
+
+        <div class="overlay" role="dialog" hidden>
+  <div id="collections-action-dialog" class="dialog collections-dialog" aria-hidden="true">
+   <div class="display-inline-flex flex-align-center flex-justify width-full margin-bottom-2">
+        <h2 class="usa-modal__heading margin-0">Add to Collections</h2>
+    </div>
+    <div class="collections-action-panel action-panel">
+      
+
+
+<form id="collections-action-dialog-form"
+      class="usa-form maxw-full collections-action-panel-form action-panel-content action-form action-panel-smaller-selectors"
+      data-existing-collections-url="/list-existing-collections/"
+      data-add-to-existing-collection-url="/add-to-existing-collection/"
+      data-create-and-add-to-new-collection-url="/create-and-add-to-new-collection/"
+      data-myncbi-max-collection-name-length="100"
+      data-collections-root-url="https://www.ncbi.nlm.nih.gov/myncbi/collections/">
+
+    <input type="hidden" name="csrfmiddlewaretoken" value="jiA1prjhwUIziDJuVRtPQ0FypWodRpJjBrvNqD4WTTIYUwjl3UKnHPlaIafEGrF4">
+
+    <fieldset class="usa-fieldset margin-bottom-2">
+        <div class="usa-radio">
+            <input type="radio"
+            id="collections-action-dialog-new"
+            class="usa-radio__input usa-radio__input--tile collections-new  margin-top-0"
+            name="collections"
+            value="new"
+            data-ga-category="collections_button"
+            data-ga-action="click"
+            data-ga-label="collections_radio_new" />
+            <label class="usa-radio__label" for="collections-action-dialog-new">Create a new collection</label>
+        </div>
+        <div class="usa-radio">
+            <input type="radio"
+            id="collections-action-dialog-existing"
+            class="usa-radio__input usa-radio__input--tile collections-existing"
+            name="collections"
+            value="existing"
+            checked="true"
+            data-ga-category="collections_button"
+            data-ga-action="click"
+            data-ga-label="collections_radio_existing" />
+            <label class="usa-radio__label" for="collections-action-dialog-existing">Add to an existing collection</label>
+        </div>
+    </fieldset>
+
+    <fieldset class="usa-fieldset margin-bottom-2">
+        <div class="action-panel-control-wrap new-collections-controls">
+           <label for="collections-action-dialog-add-to-new" class="usa-label margin-top-0">
+                Name your collection
+               <abbr title="required" class="usa-hint usa-hint--required text-no-underline">*</abbr>
+          </label>
+          <input
+            type="text"
+            name="add-to-new-collection"
+            id="collections-action-dialog-add-to-new"
+            class="usa-input collections-action-add-to-new"
+            pattern="[^&quot;&amp;=&lt;&gt;/]*" title="The following characters are not allowed in the Name field: &quot;&amp;=&lt;&gt;/"
+            maxlength=""
+            data-ga-category="collections_button"
+            data-ga-action="create_collection"
+            data-ga-label="non_favorties_collection"
+            required
+          />
+        </div>
+        <div class="action-panel-control-wrap existing-collections-controls">
+             <label for="collections-action-dialog-add-to-existing" class="usa-label margin-top-0">
+                Choose a collection
+              </label>
+              <select id="collections-action-dialog-add-to-existing"
+                      class="usa-select collections-action-add-to-existing"
+                      data-ga-category="collections_button"
+                      data-ga-action="select_collection"
+                      data-ga-label="($('.collections-action-add-to-existing').val() === 'Favorites') ? 'Favorites' : 'non_favorites_collection'">
+              </select>
+              <div class="collections-retry-load-on-error usa-input-error-message selection-validation-message">
+                Unable to load your collection due to an error<br>
+                <a href="#">Please try again</a>
+              </div>
+        </div>
+    </fieldset>
+
+    <div class="display-inline-flex">
+        <button class="usa-button margin-top-0 action-panel-submit"
+            type="submit"
+            data-loading-label="Adding..."
+            data-pinger-ignore
+            data-ga-category="collections_button"
+            data-ga-action="click"
+            data-ga-label="add">
+          Add
+        </button>
+        <button class="usa-button usa-button--outline margin-top-0 action-panel-cancel"
+                aria-label="Close 'Add to Collections' panel"
+                ref="linksrc=close_collections_panel"
+                data-ga-category="collections_button"
+                data-ga-action="click"
+                data-ga-label="cancel">
+          Cancel
+        </button>
+    </div>
+</form>
+    </div>
+  </div>
+</div>
+
+        
+
+      </div>
+    </div>
+  </div>
+
+
+
+        
+    
+    
+
+<footer class="ncbi-footer ncbi-dark-background " >
+    
+        <div class="ncbi-footer__icon-section">
+            <div class="ncbi-footer__social-header">
+                Follow NCBI
+            </div>
+
+            <div class="grid-container ncbi-footer__ncbi-social-icons-container">
+                
+                    <a href="https://twitter.com/ncbi"
+                       class="ncbi-footer__social-icon ncbi-footer__social-icon--gray"
+                       target="_blank"
+                       rel="noreferrer noopener">
+                        <svg width="40"
+                             height="40"
+                             viewBox="0 0 40 40"
+                             fill="none"
+                             xmlns="http://www.w3.org/2000/svg"
+                             focusable="false"
+                             aria-hidden="true">
+                            <path d="m6.067 8 10.81 13.9L6 33.2h4.2l8.4-9.1 7.068 9.1H34L22.8 18.5 31.9 8h-3.5l-7.7 8.4L14.401 8H6.067Zm3.6 1.734h3.266l16.8 21.732H26.57L9.668 9.734Z">
+                            </path>
+                        </svg>
+                        <span class="usa-sr-only">NCBI on X (formerly known as Twitter)</span>
+                    </a>
+                
+
+                
+                    <a href="https://www.facebook.com/ncbi.nlm"
+                       class="ncbi-footer__social-icon ncbi-footer__social-icon--gray"
+                       target="_blank"
+                       rel="noreferrer noopener">
+                        <svg width="16"
+                             height="29"
+                             focusable="false"
+                             aria-hidden="true"
+                             viewBox="0 0 16 29"
+                             fill="none"
+                             xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3.8809 21.4002C3.8809 19.0932 3.8809 16.7876 3.8809 14.478C3.8809 14.2117 3.80103 14.1452 3.54278 14.1492C2.53372 14.1638 1.52334 14.1492 0.514288 14.1598C0.302626 14.1598 0.248047 14.0972 0.248047 13.8936C0.256034 12.4585 0.256034 11.0239 0.248047 9.58978C0.248047 9.37013 0.302626 9.30224 0.528931 9.3049C1.53798 9.31688 2.54837 9.3049 3.55742 9.31555C3.80103 9.31555 3.8809 9.26097 3.87957 9.00272C3.87158 8.00565 3.85428 7.00592 3.90753 6.00884C3.97142 4.83339 4.31487 3.73115 5.04437 2.78467C5.93095 1.63318 7.15699 1.09005 8.56141 0.967577C10.5582 0.79319 12.555 0.982221 14.5518 0.927641C14.7102 0.927641 14.7462 0.99287 14.7449 1.13664C14.7449 2.581 14.7449 4.02668 14.7449 5.47104C14.7449 5.67604 14.6517 5.68669 14.4946 5.68669C13.4523 5.68669 12.4113 5.68669 11.3703 5.68669C10.3506 5.68669 9.92057 6.10868 9.90593 7.13904C9.89661 7.7647 9.91525 8.39303 9.89794 9.01869C9.88995 9.26364 9.96583 9.31822 10.2015 9.31688C11.7204 9.30623 13.2393 9.31688 14.7595 9.3049C15.0257 9.3049 15.0723 9.3728 15.0444 9.62439C14.89 10.9849 14.7515 12.3467 14.6144 13.7085C14.5691 14.1571 14.5785 14.1585 14.1458 14.1585C12.8386 14.1585 11.5313 14.1665 10.2254 14.1518C9.95119 14.1518 9.89794 14.2317 9.89794 14.4899C9.90593 19.0799 9.89794 23.6752 9.91125 28.2612C9.91125 28.5674 9.8407 28.646 9.53186 28.6433C7.77866 28.6273 6.02414 28.6366 4.27094 28.634C3.82499 28.634 3.87158 28.6992 3.87158 28.22C3.87602 25.9472 3.87913 23.6739 3.8809 21.4002Z">
+                            </path>
+                        </svg>
+                        <span class="usa-sr-only">NCBI on Facebook</span>
+                    </a>
+                
+
+                
+                    <a href="https://www.linkedin.com/company/ncbinlm"
+                       class="ncbi-footer__social-icon ncbi-footer__social-icon--gray"
+                       target="_blank"
+                       rel="noreferrer noopener">
+                        <svg width="25"
+                             height="23"
+                             viewBox="0 0 26 24"
+                             fill="none"
+                             xmlns="http://www.w3.org/2000/svg"
+                             focusable="false"
+                             aria-hidden="true">
+                            <path d="M14.6983 9.98423C15.6302 9.24808 16.5926 8.74754 17.6762 8.51991C19.673 8.09126 21.554 8.30824 23.1262 9.7526C24.2351 10.7723 24.7529 12.1115 25.0165 13.5612C25.1486 14.3363 25.2105 15.1218 25.2015 15.9081C25.2015 18.3043 25.2015 20.6898 25.2082 23.0806C25.2082 23.3468 25.1549 23.444 24.8621 23.4414C23.1297 23.4272 21.3992 23.4272 19.6704 23.4414C19.4041 23.4414 19.3429 23.3588 19.3442 23.1019C19.3535 20.5194 19.3442 17.9368 19.3442 15.3543C19.3442 14.0005 18.3258 12.9448 17.0266 12.9488C15.7273 12.9528 14.6983 14.0071 14.6983 15.361C14.6983 17.9328 14.6917 20.5047 14.6983 23.0753C14.6983 23.3708 14.6198 23.444 14.3296 23.4427C12.6185 23.4294 10.9079 23.4294 9.19779 23.4427C8.93155 23.4427 8.86099 23.3735 8.86232 23.1086C8.8783 19.7619 8.88628 16.4144 8.88628 13.066C8.88628 11.5688 8.87874 10.0708 8.86365 8.57182C8.86365 8.3575 8.90758 8.27896 9.14054 8.28029C10.9048 8.29094 12.6687 8.29094 14.4321 8.28029C14.6464 8.28029 14.6983 8.34818 14.6983 8.54653C14.6903 9.00047 14.6983 9.45441 14.6983 9.98423Z">
+                            </path>
+                            <path d="M6.55316 15.8443C6.55316 18.2564 6.55316 20.6699 6.55316 23.082C6.55316 23.3629 6.48127 23.4388 6.19906 23.4374C4.47737 23.4241 2.75568 23.4241 1.03399 23.4374C0.767751 23.4374 0.69986 23.3629 0.701191 23.1006C0.709178 18.2648 0.709178 13.4281 0.701191 8.59053C0.701191 8.34026 0.765089 8.27237 1.01669 8.2737C2.74991 8.28435 4.48048 8.28435 6.20838 8.2737C6.47462 8.2737 6.5465 8.33627 6.54517 8.6065C6.54783 11.0186 6.55316 13.4308 6.55316 15.8443Z">
+                            </path>
+                            <path d="M3.65878 0.243898C5.36804 0.243898 6.58743 1.45529 6.58743 3.1406C6.58743 4.75801 5.32145 5.95742 3.60819 5.96807C3.22177 5.97614 2.83768 5.90639 2.47877 5.76299C2.11985 5.61959 1.79344 5.40546 1.51897 5.13334C1.24449 4.86123 1.02755 4.53668 0.881058 4.17902C0.734563 3.82136 0.661505 3.43788 0.666231 3.05141C0.67555 1.42601 1.9362 0.242566 3.65878 0.243898Z">
+                            </path>
+                        </svg>
+                        <span class="usa-sr-only">NCBI on LinkedIn</span>
+                    </a>
+                
+
+                
+                    <a href="https://github.com/ncbi"
+                       class="ncbi-footer__social-icon ncbi-footer__social-icon--gray"
+                       target="_blank"
+                       rel="noreferrer noopener">
+                        <svg width="28"
+                             height="27"
+                             viewBox="0 0 28 28"
+                             fill="none"
+                             xmlns="http://www.w3.org/2000/svg"
+                             focusable="false"
+                             aria-hidden="true">
+                            <path d="M16.7228 20.6334C17.5057 20.5527 18.2786 20.3944 19.0301 20.1608C21.3108 19.4193 22.5822 17.8259 22.963 15.4909C23.1228 14.5112 23.1814 13.5287 22.9883 12.5437C22.8106 11.6423 22.4013 10.8028 21.8007 10.1076C21.7526 10.0605 21.7197 10 21.7064 9.934C21.6931 9.86799 21.7 9.79952 21.7262 9.73748C22.0856 8.6206 21.9711 7.51969 21.601 6.42677C21.582 6.3497 21.5345 6.2827 21.468 6.23923C21.4016 6.19577 21.3211 6.17906 21.2429 6.19248C20.7329 6.21649 20.2313 6.33051 19.7611 6.52928C19.1103 6.7908 18.4899 7.12198 17.9104 7.51703C17.84 7.56996 17.7581 7.60551 17.6713 7.62078C17.5846 7.63605 17.4954 7.6306 17.4112 7.60489C15.2596 7.05882 13.0054 7.06203 10.8554 7.61421C10.7806 7.63586 10.7018 7.63967 10.6253 7.62534C10.5487 7.611 10.4766 7.57892 10.4148 7.53167C9.64788 7.03247 8.85171 6.58918 7.96368 6.33359C7.65781 6.24338 7.34123 6.19458 7.02239 6.18849C6.94879 6.17986 6.87462 6.19893 6.81432 6.242C6.75402 6.28507 6.71191 6.34904 6.69621 6.42145C6.32342 7.51437 6.2209 8.61527 6.56307 9.73348C6.59635 9.84264 6.64694 9.93316 6.54177 10.0516C5.47666 11.2604 5.09988 12.6834 5.19574 14.2676C5.2663 15.4244 5.46201 16.5466 6.01454 17.5769C6.84399 19.1171 8.21664 19.9119 9.85158 20.3352C10.3938 20.4706 10.9444 20.5698 11.4998 20.632C11.5384 20.7492 11.4506 20.7798 11.408 20.8291C11.1734 21.1179 10.9894 21.4441 10.8634 21.7942C10.7622 22.0458 10.8315 22.4039 10.6065 22.5516C10.263 22.7766 9.83827 22.8485 9.42421 22.8871C8.17936 23.0056 7.26471 22.4877 6.6283 21.4348C6.25552 20.8184 5.76956 20.3325 5.08523 20.0663C4.76981 19.9325 4.42139 19.8967 4.08537 19.9638C3.7898 20.029 3.73788 20.1901 3.93891 20.4111C4.03639 20.5234 4.14989 20.6207 4.27575 20.6999C4.9796 21.1318 5.51717 21.7884 5.80152 22.5636C6.37002 23.9973 7.48039 24.5697 8.93825 24.6323C9.43741 24.6575 9.93768 24.615 10.4254 24.5058C10.5892 24.4672 10.6531 24.4872 10.6517 24.6762C10.6451 25.4936 10.6637 26.3123 10.6517 27.131C10.6517 27.6635 10.1684 27.9297 9.58663 27.7393C8.17396 27.2671 6.84977 26.5631 5.66838 25.656C2.59555 23.2891 0.720966 20.1861 0.217704 16.3376C-0.357453 11.9127 0.911353 8.00824 3.98551 4.73881C6.11909 2.42656 8.99932 0.939975 12.1203 0.540191C16.5351 -0.0601815 20.4347 1.14323 23.7232 4.16373C26.2449 6.47869 27.724 9.37672 28.1048 12.7726C28.5828 17.0325 27.3686 20.7945 24.4768 23.9827C22.9762 25.6323 21.0956 26.8908 18.9982 27.6488C18.8783 27.6927 18.7585 27.738 18.636 27.7726C18.0356 27.9404 17.6189 27.6395 17.6189 27.0098C17.6189 25.7452 17.6308 24.4806 17.6295 23.2159C17.6329 22.9506 17.6128 22.6856 17.5696 22.4238C17.4325 21.6664 17.3419 21.484 16.7228 20.6334Z">
+                            </path>
+                        </svg>
+                        <span class="usa-sr-only">NCBI on GitHub</span>
+                    </a>
+                
+
+                
+                    <a href="https://ncbiinsights.ncbi.nlm.nih.gov/"
+                       class="ncbi-footer__social-icon ncbi-footer__social-icon--gray"
+                       target="_blank"
+                       rel="noreferrer noopener">
+                        <svg width="26"
+                             height="26"
+                             viewBox="0 0 27 27"
+                             fill="none"
+                             xmlns="http://www.w3.org/2000/svg"
+                             focusable="false"
+                             aria-hidden="true">
+                            <path d="M23.7778 26.4574C23.1354 26.3913 22.0856 26.8024 21.636 26.3087C21.212 25.8444 21.4359 24.8111 21.324 24.0347C19.9933 14.8323 14.8727 8.80132 6.09057 5.85008C4.37689 5.28406 2.58381 4.99533 0.779072 4.99481C0.202773 4.99481 -0.0229751 4.83146 0.00455514 4.21479C0.0660406 3.08627 0.0660406 1.95525 0.00455514 0.826734C-0.0413285 0.0815827 0.259669 -0.0193618 0.896534 0.00266238C6.96236 0.222904 12.3693 2.24179 16.9889 6.16209C22.9794 11.2478 26.1271 17.7688 26.4372 25.648C26.4629 26.294 26.3179 26.5271 25.6609 26.4684C25.0827 26.417 24.4991 26.4574 23.7778 26.4574Z">
+                            </path>
+                            <path d="M14.8265 26.441C14.0924 26.441 13.2371 26.6795 12.6626 26.3786C12.0092 26.0372 12.3781 25.0644 12.246 24.378C11.1154 18.5324 6.6849 14.5497 0.74755 14.1001C0.217135 14.0615 -0.0104482 13.9422 0.0134113 13.3659C0.0519536 12.1454 0.0482829 10.9213 0.0134113 9.69524C-0.00127145 9.14464 0.196946 9.03268 0.703502 9.04736C9.21217 9.27128 16.5994 16.2511 17.2804 24.7231C17.418 26.4446 17.418 26.4446 15.6579 26.4446H14.832L14.8265 26.441Z">
+                            </path>
+                            <path d="M3.58928 26.4555C2.64447 26.4618 1.73584 26.0925 1.06329 25.4289C0.39073 24.7653 0.00933763 23.8617 0.0030097 22.9169C-0.00331824 21.9721 0.365937 21.0635 1.02954 20.3909C1.69315 19.7184 2.59675 19.337 3.54156 19.3306C4.48637 19.3243 5.39499 19.6936 6.06755 20.3572C6.7401 21.0208 7.1215 21.9244 7.12782 22.8692C7.13415 23.814 6.7649 24.7226 6.10129 25.3952C5.43768 26.0677 4.53409 26.4491 3.58928 26.4555Z">
+                            </path>
+                        </svg>
+                        <span class="usa-sr-only">NCBI RSS feed</span>
+                    </a>
+                
+            </div>
+        </div>
+    
+
+    <div data-testid="gridContainer"
+         class="grid-container ncbi-footer__container">
+        <div class="grid-row ncbi-footer__main-content-container"
+             data-testid="grid">
+            
+                <div class="ncbi-footer__column">
+                    
+                        <p class="ncbi-footer__circled-icons-heading">
+                            Connect with NLM
+                        </p>
+                    
+
+                    <div class="ncbi-footer__circled-icons-list">
+                        
+                            <a href=https://twitter.com/nlm_nih class="ncbi-footer__social-icon ncbi-footer__social-icon--circled" target="_blank" rel="noreferrer noopener">
+                                <svg width="32"
+                                     height="32"
+                                     viewBox="0 0 40 40"
+                                     fill="none"
+                                     xmlns="http://www.w3.org/2000/svg"
+                                     focusable="false"
+                                     aria-hidden="true">
+                                    <path d="m6.067 8 10.81 13.9L6 33.2h4.2l8.4-9.1 7.068 9.1H34L22.8 18.5 31.9 8h-3.5l-7.7 8.4L14.401 8H6.067Zm3.6 1.734h3.266l16.8 21.732H26.57L9.668 9.734Z">
+                                    </path>
+                                </svg>
+                                <span class="usa-sr-only">NLM on X (formerly known as Twitter)</span>
+                            </a>
+                        
+
+                        
+                            <a href=https://www.facebook.com/nationallibraryofmedicine class="ncbi-footer__social-icon ncbi-footer__social-icon--circled" target="_blank" rel="noreferrer noopener">
+                                <svg width="13"
+                                     height="24"
+                                     viewBox="0 0 13 24"
+                                     fill="none"
+                                     xmlns="http://www.w3.org/2000/svg"
+                                     focusable="false"
+                                     aria-hidden="true">
+                                    <path d="M4.11371 23.1369C4.11371 23.082 4.11371 23.0294 4.11371 22.9745V12.9411H0.817305C0.6709 12.9411 0.670898 12.9411 0.670898 12.8016C0.670898 11.564 0.670898 10.3287 0.670898 9.09341C0.670898 8.97903 0.705213 8.95158 0.815017 8.95158C1.8673 8.95158 2.91959 8.95158 3.97417 8.95158H4.12057V8.83263C4.12057 7.8055 4.12057 6.7738 4.12057 5.74897C4.1264 4.92595 4.31387 4.11437 4.66959 3.37217C5.12916 2.38246 5.94651 1.60353 6.95717 1.1921C7.64827 0.905008 8.3913 0.764035 9.13953 0.778051C10.0019 0.791777 10.8644 0.830666 11.7268 0.860404C11.8869 0.860404 12.047 0.894717 12.2072 0.90158C12.2964 0.90158 12.3261 0.940469 12.3261 1.02968C12.3261 1.5421 12.3261 2.05452 12.3261 2.56465C12.3261 3.16857 12.3261 3.7725 12.3261 4.37642C12.3261 4.48165 12.2964 4.51367 12.1912 4.51138C11.5369 4.51138 10.8804 4.51138 10.2261 4.51138C9.92772 4.51814 9.63058 4.5526 9.33855 4.61433C9.08125 4.6617 8.84537 4.78881 8.66431 4.97766C8.48326 5.16652 8.3662 5.40755 8.32972 5.66661C8.28476 5.89271 8.26027 6.1224 8.25652 6.35289C8.25652 7.19014 8.25652 8.02969 8.25652 8.86923C8.25652 8.89439 8.25652 8.91955 8.25652 8.95615H12.0219C12.1797 8.95615 12.182 8.95616 12.1614 9.10714C12.0768 9.76596 11.9876 10.4248 11.9029 11.0813C11.8312 11.6319 11.7626 12.1824 11.697 12.733C11.6719 12.9434 11.6787 12.9434 11.4683 12.9434H8.26338V22.899C8.26338 22.979 8.26338 23.0591 8.26338 23.1392L4.11371 23.1369Z">
+                                    </path>
+                                </svg>
+                                <span class="usa-sr-only">NLM on Facebook</span>
+                            </a>
+                        
+
+                        
+                            <a href=https://www.youtube.com/user/NLMNIH class="ncbi-footer__social-icon ncbi-footer__social-icon--circled" target="_blank" rel="noreferrer noopener">
+                                <svg width="21"
+                                     height="15"
+                                     viewBox="0 0 21 15"
+                                     fill="none"
+                                     xmlns="http://www.w3.org/2000/svg"
+                                     focusable="false"
+                                     aria-hidden="true">
+                                    <path d="M19.2561 1.47914C18.9016 1.15888 18.5699 0.957569 17.2271 0.834039C15.5503 0.678484 13.2787 0.655608 11.563 0.65332H9.43556C7.71987 0.65332 5.4483 0.678484 3.77151 0.834039C2.43098 0.957569 2.097 1.15888 1.74242 1.47914C0.813665 2.32097 0.619221 4.62685 0.598633 6.89384C0.598633 7.31781 0.598633 7.74101 0.598633 8.16345C0.626084 10.4121 0.827391 12.686 1.74242 13.521C2.097 13.8412 2.4287 14.0425 3.77151 14.1661C5.4483 14.3216 7.71987 14.3445 9.43556 14.3468H11.563C13.2787 14.3468 15.5503 14.3216 17.2271 14.1661C18.5676 14.0425 18.9016 13.8412 19.2561 13.521C20.1712 12.6929 20.3725 10.451 20.3999 8.22064C20.3999 7.74025 20.3999 7.25986 20.3999 6.77946C20.3725 4.54907 20.1689 2.30724 19.2561 1.47914ZM8.55942 10.5311V4.65201L13.5601 7.50005L8.55942 10.5311Z"
+                                          fill="white" />
+                                </svg>
+                                <span class="usa-sr-only">NLM on YouTube</span>
+                            </a>
+                        
+                    </div>
+                </div>
+            
+
+            
+                <address class="ncbi-footer__address ncbi-footer__column">
+                    
+        <p>
+            <a class="usa-link usa-link--external"
+            href="https://www.google.com/maps/place/8600+Rockville+Pike,+Bethesda,+MD+20894/%4038.9959508,
+            -77.101021,17z/data%3D!3m1!4b1!4m5!3m4!1s0x89b7c95e25765ddb%3A0x19156f88b27635b8!8m2!3d38.9959508!
+            4d-77.0988323"
+            rel="noopener noreferrer" target="_blank">National Library of Medicine
+            <br/> 8600 Rockville Pike<br/> Bethesda, MD 20894</a>
+        </p>
+    
+                </address>
+            
+
+            
+                <ul class="usa-list usa-list--unstyled ncbi-footer__vertical-list ncbi-footer__column">
+                    
+                        <li class="ncbi-footer__vertical-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.nlm.nih.gov/web_policies.html" class="usa-link  usa-link--alt ncbi-footer__link"  >
+        
+
+        
+            Web Policies
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="ncbi-footer__vertical-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.nih.gov/institutes-nih/nih-office-director/office-communications-public-liaison/freedom-information-act-office" class="usa-link  usa-link--alt ncbi-footer__link"  >
+        
+
+        
+            FOIA
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="ncbi-footer__vertical-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.hhs.gov/vulnerability-disclosure-policy/index.html" class="usa-link usa-link--external usa-link--alt ncbi-footer__link" rel="noreferrer noopener" target='_blank' >
+        
+
+        
+            HHS Vulnerability Disclosure
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                </ul>
+            
+
+            
+                <ul class="usa-list usa-list--unstyled ncbi-footer__vertical-list ncbi-footer__column">
+                    
+                        <li class="ncbi-footer__vertical-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://support.nlm.nih.gov/" class="usa-link  usa-link--alt ncbi-footer__link"  >
+        
+
+        
+            Help
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="ncbi-footer__vertical-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.nlm.nih.gov/accessibility.html" class="usa-link  usa-link--alt ncbi-footer__link"  >
+        
+
+        
+            Accessibility
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="ncbi-footer__vertical-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.nlm.nih.gov/careers/careers.html" class="usa-link  usa-link--alt ncbi-footer__link"  >
+        
+
+        
+            Careers
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                </ul>
+            
+        </div>
+
+        
+            <div class="grid-row grid-col-12" data-testid="grid">
+                <ul class="ncbi-footer__bottom-links-list">
+                    
+                        <li class="ncbi-footer__bottom-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.nlm.nih.gov/" class="usa-link  usa-link--alt ncbi-footer__link"  >
+        
+
+        
+            NLM
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="ncbi-footer__bottom-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.nih.gov/" class="usa-link  usa-link--alt ncbi-footer__link"  >
+        
+
+        
+            NIH
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="ncbi-footer__bottom-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.hhs.gov/" class="usa-link usa-link--external usa-link--alt ncbi-footer__link" rel="noreferrer noopener" target='_blank' >
+        
+
+        
+            HHS
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="ncbi-footer__bottom-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.usa.gov/" class="usa-link usa-link--external usa-link--alt ncbi-footer__link" rel="noreferrer noopener" target='_blank' >
+        
+
+        
+            USA.gov
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                </ul>
+            </div>
+        
+    </div>
+</footer>
+
+    
+
+
+        
+        
+    
+  <script  type="text/javascript" src="https://cdn.ncbi.nlm.nih.gov/core/pinger/pinger.js"> </script>
+
+
+    
+        
+
+<button class="back-to-top" data-ga-category="pagination" data-ga-action="back_to_top">
+    <label>Back to Top</label>
+    <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/arrow_upward.svg" alt="back to top icon" class="usa-icon usa-icon--size-3 order-0 usa-icon--white" />
+</button>
+    
+
+
+        
+    
+    <div id="icon-container" style="display: none;"></div>
+    
+    
+        
+    <script type="application/javascript">
+    window.ncbi = window.ncbi || {};
+    window.ncbi.pmc = window.ncbi.pmc || {};
+    window.ncbi.pmc.options = {
+        logLevel: 'INFO',
+        
+        staticEndpoint: 'https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/',
+        
+        citeCookieName: 'pmc-cf',
+    };
+</script>
+    <script type="module" crossorigin="" src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/base-Cp_Il6gk.js"></script>
+<link href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/vendor-Co8Vdmw2.js" type="text/javascript" crossorigin="anonymous" rel="modulepreload" as="script" />
+    
+    <script type="text/javascript" src="https://cdn.ncbi.nlm.nih.gov/core/jquery/jquery-3.6.0.min.js">&#xA0;</script>
+    <script type="text/javascript">
+        jQuery.getScript("https://cdn.ncbi.nlm.nih.gov/core/alerts/alerts.js", function () {
+            galert(['div.nav_and_browser', 'div.header', '#universal_header', '.usa-banner', 'body > *:nth-child(1)'])
+        });
+    </script>
+
+
+    <script type="text/javascript">var exports = {};</script>
+     <script src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/CACHE/js/output.4e25b6297b38.js"></script>
+
+    <script type="module" crossorigin="" src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/article-BxyWTbsj.js"></script>
+<link href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/vendor-Co8Vdmw2.js" type="text/javascript" crossorigin="anonymous" rel="modulepreload" as="script" />
+<link href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/index-DXSA0fsx.js" type="text/javascript" crossorigin="anonymous" rel="modulepreload" as="script" />
+<link href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/secure-cookie-Br6x5jtB.js" type="text/javascript" crossorigin="anonymous" rel="modulepreload" as="script" />
+    
+        <script type="module" crossorigin="" src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/math-CjjrG8hn.js"></script>
+<link href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/vendor-Co8Vdmw2.js" type="text/javascript" crossorigin="anonymous" rel="modulepreload" as="script" />
+    
+    
+
+    </body>
+</html>

@@ -1,0 +1,3368 @@
+
+<!DOCTYPE html>
+<html lang="en" >
+    <head >
+
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="HandheldFriendly" content="True" />
+        <meta name="MobileOptimized" content="320" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        
+        
+
+        
+        
+  <link  rel="stylesheet" href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/base_style-BxRs1iOp.css" />
+<script type="module" crossorigin="" src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/base_style-D-jH62-1.js"></script>
+
+  <link  rel="stylesheet" href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/article_style-B67IZFds.css" />
+<link  rel="stylesheet" href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/style-D77LS1kY.css" />
+<script type="module" crossorigin="" src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/article_style-CTAd1LmM.js"></script>
+
+  
+  
+    <style>
+  
+  
+  @media screen and (min-width: 64em) {
+    div.pmc-wm {
+      background: repeat-y;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='350' xmlns:xlink='http://www.w3.org/1999/xlink'%3E%3Cdefs%3E%3Cfilter x='-.02' y='0' width='1.05' height='1' id='c'%3E%3CfeFlood flood-color='%23FFF'/%3E%3CfeComposite in='SourceGraphic'/%3E%3C/filter%3E%3Ctext id='b' font-family='Helvetica' font-size='11pt' style='opacity:1;fill:%23005ea2;stroke:none;text-anchor:middle' x='175' y='14'%3E%3C/text%3E%3Cpath id='a' style='fill:%23005ea2' d='M0 8h350v3H0z'/%3E%3C/defs%3E%3Cuse xlink:href='%23a' transform='rotate(90 10 10)'/%3E%3Cuse xlink:href='%23b' transform='rotate(90 10 10)' filter='url(%23c)'/%3E%3C/svg%3E");
+      padding-left: 3rem;
+    }
+  }
+</style>
+
+  
+
+
+
+        
+            <link rel="apple-touch-icon"
+                  sizes="180x180"
+                  href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/favicons/apple-touch-icon.png" />
+            <link rel="icon"
+                  type="image/png"
+                  sizes="48x48"
+                  href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/favicons/favicon-48x48.png" />
+            <link rel="icon"
+                  type="image/png"
+                  sizes="32x32"
+                  href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/favicons/favicon-32x32.png" />
+            <link rel="icon"
+                  type="image/png"
+                  sizes="16x16"
+                  href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/favicons/favicon-16x16.png" />
+            <link rel="manifest" href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/favicons/site.webmanifest" />
+            <link rel="mask-icon"
+                  href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/favicons/safari-pinned-tab.svg"
+                  color="#0071bc" />
+            <meta name="msapplication-config"
+                  content="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/favicons/browserconfig.xml" />
+            <meta name="theme-color" content="#ffffff" />
+        
+
+        <title>
+            Wavelet-Based Peak Detection and a New Charge Inference Procedure for MS/MS Implemented in ProteoWizard’s msConvert - PMC
+        </title>
+
+        
+        
+  
+  <!-- Logging params: Pinger defaults -->
+<meta name="ncbi_app" content="cloudpmc-viewer" />
+<meta name="ncbi_db" content="pmc" />
+<meta name="ncbi_phid" content="321FFD349D0F09030AFD3400486E10BD.m_1" />
+<meta name="ncbi_pinger_stat_url" content="https://pmc.ncbi.nlm.nih.gov/stat" />
+<!-- Logging params: Pinger custom -->
+<meta name="ncbi_pdid" content="article" />
+  
+    <link rel="preconnect" href="https://www.google-analytics.com" />
+
+    
+        <link rel="preconnect" href="https://cdn.ncbi.nlm.nih.gov" />
+    
+
+    <!-- Include USWDS Init Script -->
+    <script src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/uswds-init.js"></script>
+
+
+    <meta name="ncbi_domain" content="acssd">
+<meta name="ncbi_type" content="fulltext">
+<meta name="ncbi_pcid" content="journal">
+<meta name="ncbi_feature" content="associated_data">
+<link rel="canonical" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC4324452/">
+<meta name="robots" content="INDEX,NOFOLLOW,NOARCHIVE">
+<meta name="citation_journal_title" content="Journal of Proteome Research">
+<meta name="citation_title" content="Wavelet-Based Peak Detection and a New Charge Inference Procedure for MS/MS Implemented in ProteoWizard’s msConvert">
+<meta name="citation_author" content="William R French">
+<meta name="citation_author_institution" content="Department of Biomedical Informatics, Vanderbilt University Medical Center, Nashville, Tennessee 37232-8340, United States">
+<meta name="citation_author" content="Lisa J Zimmerman">
+<meta name="citation_author_institution" content="Jim Ayers Institute for Precancer Detection and Diagnosis, Vanderbilt-Ingram Cancer Center, Nashville, Tennessee 37232-6350, United States">
+<meta name="citation_author" content="Birgit Schilling">
+<meta name="citation_author_institution" content="Buck Institute for Research on Aging, Novato, California 94945, United States">
+<meta name="citation_author" content="Bradford W Gibson">
+<meta name="citation_author_institution" content="Buck Institute for Research on Aging, Novato, California 94945, United States">
+<meta name="citation_author" content="Christine A Miller">
+<meta name="citation_author_institution" content="Agilent Technologies, Santa Clara, California 95051, United States">
+<meta name="citation_author" content="R Reid Townsend">
+<meta name="citation_author_institution" content="Department of Cell Biology and Physiology, Washington University School of Medicine, St. Louis, Missouri 63110, United States,">
+<meta name="citation_author" content="Stacy D Sherrod">
+<meta name="citation_author_institution" content="Department of Physics and Astronomy, ○Department of Chemistry, Vanderbilt University, Nashville, Tennessee 37235, United States">
+<meta name="citation_author" content="Cody R Goodwin">
+<meta name="citation_author_institution" content="Department of Physics and Astronomy, ○Department of Chemistry, Vanderbilt University, Nashville, Tennessee 37235, United States">
+<meta name="citation_author" content="John A McLean">
+<meta name="citation_author_institution" content="Department of Physics and Astronomy, ○Department of Chemistry, Vanderbilt University, Nashville, Tennessee 37235, United States">
+<meta name="citation_author" content="David L Tabb">
+<meta name="citation_author_institution" content="Department of Biomedical Informatics, Vanderbilt University Medical Center, Nashville, Tennessee 37232-8340, United States">
+<meta name="citation_author_institution" content="Jim Ayers Institute for Precancer Detection and Diagnosis, Vanderbilt-Ingram Cancer Center, Nashville, Tennessee 37232-6350, United States">
+<meta name="citation_publication_date" content="2014 Nov 20">
+<meta name="citation_volume" content="14">
+<meta name="citation_issue" content="2">
+<meta name="citation_firstpage" content="1299">
+<meta name="citation_doi" content="10.1021/pr500886y">
+<meta name="citation_pmid" content="25411686">
+<meta name="citation_abstract_html_url" content="https://pmc.ncbi.nlm.nih.gov/articles/PMC4324452/">
+<meta name="citation_fulltext_html_url" content="https://pmc.ncbi.nlm.nih.gov/articles/PMC4324452/">
+<meta name="citation_pdf_url" content="https://pmc.ncbi.nlm.nih.gov/articles/PMC4324452/pdf/pr500886y.pdf">
+<meta name="description" content="We report the implementation of high-quality signal processing algorithms into ProteoWizard, an efficient, open-source software package designed for analyzing proteomics tandem mass spectrometry data. Specifically, a new wavelet-based peak-picker ...">
+<meta name="og:title" content="Wavelet-Based Peak Detection and a New Charge Inference Procedure for MS/MS Implemented in ProteoWizard’s msConvert">
+<meta name="og:type" content="article">
+<meta name="og:site_name" content="PubMed Central (PMC)">
+<meta name="og:description" content="We report the implementation of high-quality signal processing algorithms into ProteoWizard, an efficient, open-source software package designed for analyzing proteomics tandem mass spectrometry data. Specifically, a new wavelet-based peak-picker ...">
+<meta name="og:url" content="https://pmc.ncbi.nlm.nih.gov/articles/PMC4324452/">
+<meta name="og:image" content="https://cdn.ncbi.nlm.nih.gov/pmc/cms/images/pmc-card-share.jpg?_=0">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@ncbi">
+    
+    
+
+    </head>
+    <body >
+        
+    <a class="usa-skipnav " href="#main-content">
+      Skip to main content
+    </a>
+
+
+        
+            
+
+<section class="usa-banner " aria-label="Official website of the United States government" >
+    <div class="usa-accordion">
+        <header class="usa-banner__header">
+            <div class="usa-banner__inner">
+                <div class="grid-col-auto">
+                    <img aria-hidden="true"
+                         class="usa-banner__header-flag"
+                         src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/us_flag.svg"
+                         alt="" />
+                </div>
+
+                <div class="grid-col-fill tablet:grid-col-auto" aria-hidden="true">
+                    <p class="usa-banner__header-text">
+                        An official website of the United States government
+                    </p>
+                    <span class="usa-banner__header-action">Here's how you know</span>
+                </div>
+
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="button"
+        
+    
+    class="usa-accordion__button usa-banner__button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           
+           "
+    aria-expanded="false"
+    aria-controls="gov-banner-default"
+    
+    data-testid="storybook-django-banner"
+    
+    >
+    
+        
+
+        
+                    <span class="usa-banner__button-text">Here's how you know</span>
+                
+
+        
+    
+        
+            </button>
+        
+
+
+            </div>
+        </header>
+
+        <div class="usa-banner__content usa-accordion__content"
+             id="gov-banner-default"
+             hidden>
+            <div class="grid-row grid-gap-lg">
+                <div class="usa-banner__guidance tablet:grid-col-6">
+                    <img class="usa-banner__icon usa-media-block__img"
+                         src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/icon-dot-gov.svg"
+                         alt=""
+                         aria-hidden="true" />
+                    <div class="usa-media-block__body">
+                        <p>
+                            <strong>Official websites use .gov</strong>
+                            <br />
+                            A
+                            <strong>.gov</strong> website belongs to an official
+                            government organization in the United States.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="usa-banner__guidance tablet:grid-col-6">
+                    <img class="usa-banner__icon usa-media-block__img"
+                         src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/icon-https.svg"
+                         alt=""
+                         aria-hidden="true" />
+
+                    <div class="usa-media-block__body">
+                        <p>
+                            <strong>Secure .gov websites use HTTPS</strong>
+                            <br />
+                            A <strong>lock</strong> (
+                            <span class="icon-lock">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     width="52"
+                                     height="64"
+                                     viewBox="0 0 52 64"
+                                     class="usa-banner__lock-image"
+                                     role="graphics-symbol"
+                                     aria-labelledby="banner-lock-description"
+                                     focusable="false">
+                                    <title id="banner-lock-title">Lock</title>
+                                    <desc id="banner-lock-description">
+                                    Locked padlock icon
+                                    </desc>
+                                    <path fill="#000000"
+                                          fill-rule="evenodd"
+                                          d="M26 0c10.493 0 19 8.507 19 19v9h3a4 4 0 0 1 4 4v28a4 4 0 0 1-4 4H4a4 4 0 0 1-4-4V32a4 4 0 0 1 4-4h3v-9C7 8.507 15.507 0 26 0zm0 8c-5.979 0-10.843 4.77-10.996 10.712L15 19v9h22v-9c0-6.075-4.925-11-11-11z" />
+                                </svg>
+</span>) or <strong>https://</strong> means you've safely
+                                connected to the .gov website. Share sensitive
+                                information only on official, secure websites.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+        
+
+        
+    
+    
+    
+
+<div class="usa-overlay">
+</div>
+
+
+
+<header class="usa-header usa-header--extended usa-header--wide" data-header data-testid="header"    >
+    <div class="ncbi-header">
+        <div class="ncbi-header__container">
+            <a class="ncbi-header__logo-container"
+               href="https://www.ncbi.nlm.nih.gov/">
+                <img alt="NCBI home page"
+                     class="ncbi-header__logo-image"
+                     src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/ncbi-logos/nih-nlm-ncbi--white.svg"
+                     width="410"
+                     height="100" />
+            </a>
+
+            <!-- Mobile menu hamburger button -->
+            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="button"
+        
+    
+    class="usa-menu-btn ncbi-header__hamburger-button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           
+           "
+    
+    
+    aria-label="Show menu"
+    data-testid="navMenuButton"
+    
+    >
+    
+        
+
+        
+                <svg aria-hidden="true"
+                     class="ncbi-hamburger-icon"
+                     fill="none"
+                     focusable="false"
+                     height="21"
+                     viewBox="0 0 31 21"
+                     width="31"
+                     xmlns="http://www.w3.org/2000/svg">
+                    <path clip-rule="evenodd"
+                          d="M0.125 20.75H30.875V17.3333H0.125V20.75ZM0.125 12.2083H30.875V8.79167H0.125V12.2083ZM0.125 0.25V3.66667H30.875V0.25H0.125Z"
+                          fill="#F1F1F1"
+                          fill-rule="evenodd" />
+                </svg>
+            
+
+        
+    
+        
+            </button>
+        
+
+
+
+            
+                <!-- Desktop buttons-->
+                <div class="ncbi-header__desktop-buttons">
+                    
+                        <!-- Desktop search button -->
+                        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="button"
+        
+    
+    class="usa-button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           usa-button--unstyled ncbi-header__desktop-button
+           "
+    aria-expanded="false"
+    aria-controls="search-field-desktop-navigation"
+    aria-label="Show search overlay"
+    data-testid="toggleSearchPanelButton"
+    data-toggle-search-panel-button
+    >
+    
+        
+
+        
+                            
+
+
+
+    <img
+        src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/search.svg"
+        class="usa-icon "
+        aria-hidden="true"
+        
+        
+    />
+
+
+                            Search
+                        
+
+        
+    
+        
+            </button>
+        
+
+
+                    
+
+                    <!-- Desktop login dropdown -->
+                    
+                        <div class="ncbi-header__login-dropdown">
+                            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="button"
+        
+    
+    class="usa-button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           usa-button--unstyled ncbi-header__desktop-button ncbi-header__login-dropdown-button
+           "
+    aria-expanded="false"
+    aria-controls="login-dropdown-menu"
+    aria-label="Show login menu"
+    data-testid="toggleLoginMenuDropdown"
+    data-desktop-login-button
+    >
+    
+        
+
+        
+                                
+
+
+
+    <img
+        src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/person.svg"
+        class="usa-icon "
+        aria-hidden="true"
+        
+        
+    />
+
+
+
+                                <span data-login-dropdown-text>Log in</span>
+
+                                <!-- Dropdown icon pointing up -->
+                                
+
+
+
+    <img
+        src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/expand_less.svg"
+        class="usa-icon ncbi-header__login-dropdown-icon ncbi-header__login-dropdown-icon--expand-less ncbi-header__login-dropdown-icon--hidden"
+        aria-hidden="true"
+        data-login-dropdown-up-arrow
+        
+    />
+
+
+
+                                <!-- Dropdown icon pointing down -->
+                                
+
+
+
+    <img
+        src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/expand_more.svg"
+        class="usa-icon ncbi-header__login-dropdown-icon ncbi-header__login-dropdown-icon--expand-more ncbi-header__login-dropdown-icon--hidden"
+        aria-hidden="true"
+        data-login-dropdown-down-arrow
+        
+    />
+
+
+                            
+
+        
+    
+        
+            </button>
+        
+
+
+
+                            <!-- Login dropdown menu -->
+                            <ul class="usa-nav__submenu ncbi-header__login-dropdown-menu"
+                                id="login-dropdown-menu"
+                                data-desktop-login-menu-dropdown
+                                hidden>
+                                
+                                    <li class="usa-nav__submenu-item">
+                                        <!-- Uses custom style overrides to render external and document links. -->
+                                        
+
+
+
+
+
+
+
+
+
+    <a href="https://www.ncbi.nlm.nih.gov/myncbi/" class="usa-link  "  >
+        
+
+        
+            Dashboard
+        
+
+        
+    </a>
+
+
+                                    </li>
+                                
+                                    <li class="usa-nav__submenu-item">
+                                        <!-- Uses custom style overrides to render external and document links. -->
+                                        
+
+
+
+
+
+
+
+
+
+    <a href="https://www.ncbi.nlm.nih.gov/myncbi/collections/bibliography/" class="usa-link  "  >
+        
+
+        
+            Publications
+        
+
+        
+    </a>
+
+
+                                    </li>
+                                
+                                    <li class="usa-nav__submenu-item">
+                                        <!-- Uses custom style overrides to render external and document links. -->
+                                        
+
+
+
+
+
+
+
+
+
+    <a href="https://www.ncbi.nlm.nih.gov/account/settings/" class="usa-link  "  >
+        
+
+        
+            Account settings
+        
+
+        
+    </a>
+
+
+                                    </li>
+                                
+                                <li class="usa-nav__submenu-item">
+                                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="button"
+        
+    
+    class="usa-button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           usa-button--outline ncbi-header__login-dropdown-logout-button
+           "
+    
+    
+    
+    data-testid="desktopLogoutButton"
+    data-desktop-logout-button
+    >
+    
+        
+
+        Log out
+
+        
+    
+        
+            </button>
+        
+
+
+                                </li>
+                            </ul>
+                        </div>
+                    
+                </div>
+            
+        </div>
+    </div>
+
+    <!-- Search panel -->
+    
+        <div class="ncbi-search-panel ncbi--show-only-at-desktop"
+             data-header-search-panel
+             hidden>
+            <div class="ncbi-search-panel__container">
+                <form action="https://www.ncbi.nlm.nih.gov/search/all/"
+                      
+                      autocomplete="off"
+                      class="usa-search usa-search--big ncbi-search-panel__form"
+                      data-testid="desktop-navigation-search-form"
+                      method="GET"
+                      role="search">
+                    <label class="usa-sr-only" for="search-field-desktop-navigation">
+                        Search…
+                    </label>
+                    <input class="usa-input"
+                           id="search-field-desktop-navigation"
+                           name="term"
+                           
+                               placeholder="Search NCBI"
+                           
+                           type="search"
+                           value="" />
+                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="submit"
+        
+    
+    class="usa-button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           
+           "
+    
+    
+    
+    
+    
+    >
+    
+        
+
+        
+                        <span class="usa-search__submit-text">
+                            Search NCBI
+                        </span>
+                    
+
+        
+    
+        
+            </button>
+        
+
+
+                </form>
+
+                
+            </div>
+        </div>
+    
+
+    <nav aria-label="Primary navigation" class="usa-nav">
+        <p class="usa-sr-only" id="primary-navigation-sr-only-title">
+            Primary site navigation
+        </p>
+
+        <!-- Mobile menu close button -->
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="button"
+        
+    
+    class="usa-nav__close ncbi-nav__close-button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           
+           "
+    
+    
+    aria-label="Close navigation menu"
+    data-testid="navCloseButton"
+    
+    >
+    
+        
+
+        
+            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/usa-icons/close.svg" alt="Close" />
+        
+
+        
+    
+        
+            </button>
+        
+
+
+
+        
+            <!-- Mobile search component -->
+            <form class="usa-search usa-search--small ncbi--hide-at-desktop"
+                  action="https://www.ncbi.nlm.nih.gov/search/all/"
+                  
+                  autocomplete="off"
+                  data-testid="mobile-navigation-search-form"
+                  method="GET"
+                  role="search">
+                <label class="usa-sr-only" for="search-field-mobile-navigation">
+                    Search
+                </label>
+
+                <input class="usa-input"
+                       id="search-field-mobile-navigation"
+                       type="search"
+                       
+                           placeholder="Search NCBI"
+                       
+                       name="term" />
+
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="submit"
+        
+    
+    class="usa-button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           
+           "
+    
+    
+    
+    
+    
+    >
+    
+        
+
+        
+                    <!-- This SVG should be kept inline and not replaced with a link to the icon as otherwise it will render in the wrong color -->
+                    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjI0Ij48cGF0aCBkPSJNMCAwaDI0djI0SDB6IiBmaWxsPSJub25lIi8+PHBhdGggZmlsbD0iI2ZmZiIgZD0iTTE1LjUgMTRoLS43OWwtLjI4LS4yN0E2LjQ3MSA2LjQ3MSAwIDAgMCAxNiA5LjUgNi41IDYuNSAwIDEgMCA5LjUgMTZjMS42MSAwIDMuMDktLjU5IDQuMjMtMS41N2wuMjcuMjh2Ljc5bDUgNC45OUwyMC40OSAxOWwtNC45OS01em0tNiAwQzcuMDEgMTQgNSAxMS45OSA1IDkuNVM3LjAxIDUgOS41IDUgMTQgNy4wMSAxNCA5LjUgMTEuOTkgMTQgOS41IDE0eiIvPjwvc3ZnPg=="
+                         class="usa-search__submit-icon"
+                         alt="Search" />
+                
+
+        
+    
+        
+            </button>
+        
+
+
+            </form>
+
+            
+        
+
+        <!-- Primary navigation menu items -->
+        <!-- This usa-nav__inner wrapper is required to correctly style the navigation items on Desktop -->
+        
+
+        
+            <div class="ncbi-nav__mobile-login-menu ncbi--hide-at-desktop"
+                 data-mobile-login-menu
+                 hidden>
+                <p class="ncbi-nav__mobile-login-menu-status">
+                    Logged in as:
+                    <strong class="ncbi-nav__mobile-login-menu-email"
+                            data-mobile-login-email-text></strong>
+                </p>
+                <ul class="usa-nav__primary usa-accordion">
+                    
+                        <li class="usa-nav__primary-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.ncbi.nlm.nih.gov/myncbi/" class="usa-link  "  >
+        
+
+        
+            Dashboard
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="usa-nav__primary-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.ncbi.nlm.nih.gov/myncbi/collections/bibliography/" class="usa-link  "  >
+        
+
+        
+            Publications
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="usa-nav__primary-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.ncbi.nlm.nih.gov/account/settings/" class="usa-link  "  >
+        
+
+        
+            Account settings
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                </ul>
+            </div>
+        
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="button"
+        
+    
+    class="usa-button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           ncbi-nav__mobile-login-button ncbi--hide-at-desktop
+           "
+    
+    
+    
+    data-testid="mobileLoginButton"
+    data-mobile-login-button
+    >
+    
+        
+
+        Log in
+
+        
+    
+        
+            </button>
+        
+
+
+    </nav>
+</header>
+
+    
+    
+        
+
+<section class="pmc-header pmc-header--basic" aria-label="PMC Header with search box">
+    <div class="pmc-nav-container">
+        <div class="pmc-header__bar">
+           <div class="pmc-header__logo">
+               <a href="/" title="Home" aria-label="PMC Home"></a>
+           </div>
+            <button
+                    type="button"
+                    class="usa-button usa-button--unstyled pmc-header__search__button"
+                    aria-label="Open search"
+                    data-ga-category="search"
+                    data-ga-action="PMC"
+                    data-ga-label="pmc_search_panel_mobile"
+            >
+                <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/search.svg" alt="PMC search open icon" aria-hidden="true" class="usa-icon usa-icon--size-4 pmc-icon__open" />
+                <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/close.svg" alt="PMC search close ison" aria-hidden="true" class="usa-icon usa-icon--size-4 pmc-icon__close" />
+            </button>
+        </div>
+        <div class="pmc-header__search">
+            
+
+
+<form class="usa-search usa-search--extra usa-search--article-right-column  pmc-header__search__form" id="pmc-search-form" autocomplete="off" role="search">
+<label class="usa-sr-only" for="pmc-search">Search PMC Full-Text Archive</label>
+<span class="autoComplete_wrapper flex-1">
+<input class="usa-input width-full maxw-none" required="required" placeholder="Search PMC Full-Text Archive" id="pmc-search"  type="search" name="term" data-autocomplete-url="https://pmc.ncbi.nlm.nih.gov/autocomp/search/autocomp/"/>
+</span>
+<button
+class="usa-button"
+type="submit"
+formaction="https://pmc.ncbi.nlm.nih.gov/search/"
+data-ga-category="search"
+data-ga-action="PMC"
+data-ga-label="PMC_search_button"
+>
+<span class="usa-search__submit-text">Search in PMC</span>
+<img
+src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/usa-icons-bg/search--white.svg"
+class="usa-search__submit-icon"
+alt="Search"
+/>
+</button>
+</form>
+            <div class="display-flex flex-column tablet:flex-row tablet:flex-justify flex-justify-center flex-align-center width-full desktop:maxw-44">
+                <ul class="pmc-header__search__menu">
+                    <li>
+                        
+                            <a class="usa-link" href="/journals/" data-ga-action="featured_link" data-ga-label="journal list">
+                                Journal List
+                            </a>
+                        
+                    </li>
+                    <li>
+                        
+                            <a class="usa-link" href="/about/userguide/" data-ga-action="featured_link"
+                            data-ga-label="user guide">
+                                User Guide
+                            </a>
+                        
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+    
+
+
+        
+        
+
+       
+  <div class="usa-section padding-top-0 desktop:padding-top-6 pmc-article-section" data-article-db="pmc" data-article-id="4324452">
+
+    
+
+   
+
+
+
+<div class="grid-container pmc-actions-bar" aria-label="Actions bar" role="complementary">
+    <div class="grid-row">
+        <div class="grid-col-fill display-flex">
+             <div class="display-flex">
+                <ul class="usa-list usa-list--unstyled usa-list--horizontal">
+                    <li class="margin-right-2 mobile-lg:margin-right-4 display-flex mob">
+                        <button
+                                type="button"
+                                class="usa-button pmc-sidenav__container__open usa-button--unstyled width-auto display-flex"
+                                aria-label="Open resources"
+                                data-extra-class="is-visible-resources"
+                                data-ga-category="resources_accordion"
+                                data-ga-action="click"
+                                data-ga-label="mobile_icon"
+                        >
+                            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/more_vert.svg" alt="Open resources icon" class="usa-icon usa-icon--size-4 usa-icon--link" />
+                        </button>
+                    </li>
+                    
+                    <li class="margin-right-2 mobile-lg:margin-right-4 display-flex mob">
+                        <a
+                                href="https://doi.org/10.1021/pr500886y"
+                                class="usa-link display-flex usa-tooltip"
+                                role="button"
+                                target="_blank"
+                                rel="noreferrer noopener"
+                                title="View on publisher site"
+                                data-position="bottom"
+                                aria-label="View on publisher site"
+                                data-ga-category="actions"
+                                data-ga-action="click"
+                                data-ga-label="publisher_link_mobile"
+                        >
+                                <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/launch.svg" alt="View on publisher site icon" class="usa-icon usa-icon--size-4 usa-icon--link" />
+                        </a>
+                    </li>
+                    
+                    
+                        <li class="margin-right-2 mobile-lg:margin-right-4 display-flex">
+                             <a
+                                     href="pdf/pr500886y.pdf"
+                                     class="usa-link display-flex usa-tooltip"
+                                     role="button"
+                                     title="Download PDF"
+                                     data-position="bottom"
+                                     aria-label="Download PDF"
+                                     data-ga-category="actions"
+                                     data-ga-action="click"
+                                     data-ga-label="pdf_download_mobile"
+                             >
+
+                                 <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/file_download.svg" alt="Download PDF icon" aria-hidden="true" class="usa-icon usa-icon--size-4 usa-icon--link" />
+                            </a>
+                        </li>
+                    
+                    <li class="margin-right-2 mobile-lg:margin-right-4 display-flex">
+                        <button
+                            class="usa-button usa-button--unstyled  usa-tooltip collections-dialog-trigger collections-button display-flex collections-button-empty"
+                            title="Add to Collections"
+                            data-position="bottom"
+                            aria-label="Save article in MyNCBI collections."
+                            data-ga-category="actions"
+                            data-ga-action="click"
+                            data-ga-label="collections_button_mobile"
+                            data-collections-open-dialog-enabled="false"
+                            data-collections-open-dialog-url="https://account.ncbi.nlm.nih.gov/?back_url=https%3A%2F%2Fpmc.ncbi.nlm.nih.gov%2Farticles%2FPMC4324452%2F%23open-collections-dialog"
+                            data-in-collections="false"
+                        >
+                            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/action-bookmark-full.svg" alt="Collections icon" aria-hidden="true" class="usa-icon usa-icon--size-4 usa-icon--link usa-icon--bookmark-full" />
+                            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/action-bookmark-empty.svg" alt="Collections icon" aria-hidden="true" class="usa-icon usa-icon--size-4 usa-icon--link usa-icon--bookmark-empty" />
+                        </button>
+                    </li>
+                    
+                    <li class="margin-right-2 mobile-lg:margin-right-4 display-flex">
+                        <button role="button" class="usa-button usa-button--unstyled usa-tooltip citation-dialog-trigger display-flex"
+                            aria-label="Open dialog with citation text in different styles"
+                            title="Cite"
+                            data-position="bottom"
+                            data-ga-category="actions"
+                            data-ga-action="open"
+                            data-ga-label="cite_mobile"
+                            data-all-citations-url="/resources/citations/4324452/"
+                            data-citation-style="nlm"
+                            data-download-format-link="/resources/citations/4324452/export/"
+                        >
+                            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/format_quote.svg" alt="Cite icon" aria-hidden="true" class="usa-icon usa-icon--size-4 usa-icon--link" />
+                        </button>
+                    </li>
+                    
+                    <li class="pmc-permalink display-flex" >
+                         <button
+                                 type="button"
+                                 title="Permalink"
+                                 data-position="bottom"
+                                 class="usa-button usa-button--unstyled display-flex usa-tooltip"
+                                 aria-label="Show article permalink"
+                                 aria-expanded="false"
+                                 aria-haspopup="true"
+                                 data-ga-category="actions"
+                                 data-ga-action="open"
+                                 data-ga-label="permalink_mobile"
+                         >
+                            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/share.svg" alt="Show article permalink icon" aria-hidden="true" class="usa-icon usa-icon--size-4 usa-icon--link" />
+                        </button>
+                        
+
+<div class="pmc-permalink__dropdown" hidden>
+    <div class="pmc-permalink__dropdown__container">
+          <h2 class="usa-modal__heading margin-top-0 margin-bottom-2 text-uppercase font-sans-xs">PERMALINK</h2>
+          <div class="pmc-permalink__dropdown__content">
+              <input type="text" class="usa-input" value="https://pmc.ncbi.nlm.nih.gov/articles/PMC4324452/" aria-label="Article permalink">
+              <button class="usa-button display-inline-flex pmc-permalink__dropdown__copy__btn margin-right-0" title="Copy article permalink" data-ga-category="save_share" data-ga-action="link" data-ga-label="copy_link">
+                  <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/content_copy.svg" alt="Copy icon" aria-hidden="true" class="usa-icon usa-icon--white" />
+                  <span class="margin-left-1">Copy</span>
+              </button>
+          </div>
+    </div>
+</div>
+                    </li>
+                </ul>
+            </div>
+            <button
+                    type="button"
+                    class="usa-button pmc-sidenav__container__open usa-button--unstyled width-auto display-flex"
+                    aria-label="Open article navigation"
+                    data-extra-class="is-visible-in-page"
+                    data-ga-category="actions"
+                    data-ga-action="open"
+                    data-ga-label="article_nav_mobile"
+            >
+                <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/list.svg" alt="Open article navigation icon" aria-hidden="true" class="usa-icon usa-icon--size-4 usa-icon--link" />
+            </button>
+        </div>
+    </div>
+</div>
+    <div class="grid-container desktop:padding-left-6">
+      <div id="article-container" class="grid-row grid-gap">
+        <div class="grid-col-12 desktop:grid-col-8 order-2 pmc-layout__content">
+            <div class="grid-container padding-left-0 padding-right-0">
+                <div class="grid-row desktop:margin-left-neg-6">
+                    <div class="grid-col-12">
+                        <div class="pmc-layout__disclaimer" role="complementary" aria-label="Disclaimer note">
+    As a library, NLM provides access to scientific literature. Inclusion in an NLM database does not imply endorsement of, or agreement with,
+    the contents by NLM or the National Institutes of Health.<br/>
+    Learn more:
+    <a class="usa-link" data-ga-category="Link click" data-ga-action="Disclaimer" data-ga-label="New disclaimer box" href="/about/disclaimer/">PMC Disclaimer</a>
+    |
+    <a class="usa-link" data-ga-category="Link click" data-ga-action="PMC Copyright Notice" data-ga-label="New disclaimer box" href="/about/copyright/">
+        PMC Copyright Notice
+    </a>
+</div>
+                    </div>
+                </div>
+                <div class="grid-row pmc-wm desktop:margin-left-neg-6">
+                    <!-- Main content -->
+                    <main
+                      id="main-content"
+                      class="usa-layout-docs__main usa-layout-docs grid-col-12 pmc-layout pmc-prose padding-0"
+                    >
+
+                      
+                        <section class="pmc-journal-banner text-center line-height-none" aria-label="Journal banner"><img src="https://cdn.ncbi.nlm.nih.gov/pmc/banners/logo-acssd.png" alt="ACS AuthorChoice logo" usemap="#pmc-banner-imagemap" width="500" height="75"><map name="pmc-banner-imagemap"><area alt="Link to ACS AuthorChoice" title="Link to ACS AuthorChoice" shape="default" href="https://doi.org/10.1021/pr500886y" target="_blank" rel="noopener noreferrer"></map></section><article lang="en"><section aria-label="Article citation and metadata"><section class="pmc-layout__citation font-secondary font-xs"><div>
+<div class="display-inline-block"><button type="button" class="cursor-pointer text-no-underline bg-transparent border-0 padding-0 text-left margin-0 text-normal text-primary" aria-controls="journal_context_menu">J Proteome Res</button></div>. 2014 Nov 20;14(2):1299–1307. doi: <a href="https://doi.org/10.1021/pr500886y" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">10.1021/pr500886y</a>
+</div>
+<nav id="journal_context_menu" hidden="hidden"><ul class="menu-list font-family-ui" role="menu">
+<li role="presentation"><a href='https://pmc.ncbi.nlm.nih.gov/search/?term="J%20Proteome%20Res"[jour]' class="usa-link" role="menuitem">Search in PMC</a></li>
+<li role="presentation"><a href='https://pubmed.ncbi.nlm.nih.gov/?term="J%20Proteome%20Res"[jour]' lang="en" class="usa-link" role="menuitem">Search in PubMed</a></li>
+<li role="presentation"><a href='https://www.ncbi.nlm.nih.gov/nlmcatalog?term="J%20Proteome%20Res"[Title%20Abbreviation]' class="usa-link" role="menuitem">View in NLM Catalog</a></li>
+<li role="presentation"><a href='?term="J%20Proteome%20Res"[jour]' class="usa-link" role="menuitem" data-add-to-search="true">Add to search</a></li>
+</ul></nav></section><section class="front-matter"><div class="ameta p font-secondary font-xs">
+<hgroup><h1>Wavelet-Based Peak Detection
+and a New Charge Inference
+Procedure for MS/MS Implemented in ProteoWizard’s msConvert</h1></hgroup><div class="cg p">
+<a href='https://pubmed.ncbi.nlm.nih.gov/?term="French%20WR"[Author]' class="usa-link" aria-describedby="id1"><span class="name western">William
+R French</span></a><div hidden="hidden" id="id1">
+<h3><span class="name western">William
+R French</span></h3>
+<div class="p">
+<sup>†</sup>Department
+of Biomedical Informatics, Vanderbilt University
+Medical Center, Nashville, Tennessee 37232-8340, United States</div>
+<div class="p">Find articles by <a href='https://pubmed.ncbi.nlm.nih.gov/?term="French%20WR"[Author]' class="usa-link"><span class="name western">William
+R French</span></a>
+</div>
+</div>
+<sup>†</sup>, <a href='https://pubmed.ncbi.nlm.nih.gov/?term="Zimmerman%20LJ"[Author]' class="usa-link" aria-describedby="id2"><span class="name western">Lisa J Zimmerman</span></a><div hidden="hidden" id="id2">
+<h3><span class="name western">Lisa J Zimmerman</span></h3>
+<div class="p">
+<sup>‡</sup>Jim
+Ayers Institute for Precancer Detection and Diagnosis, Vanderbilt-Ingram Cancer Center, Nashville, Tennessee 37232-6350, United States</div>
+<div class="p">Find articles by <a href='https://pubmed.ncbi.nlm.nih.gov/?term="Zimmerman%20LJ"[Author]' class="usa-link"><span class="name western">Lisa J Zimmerman</span></a>
+</div>
+</div>
+<sup>‡</sup>, <a href='https://pubmed.ncbi.nlm.nih.gov/?term="Schilling%20B"[Author]' class="usa-link" aria-describedby="id3"><span class="name western">Birgit Schilling</span></a><div hidden="hidden" id="id3">
+<h3><span class="name western">Birgit Schilling</span></h3>
+<div class="p">
+<sup>§</sup>Buck
+Institute for Research on Aging, Novato, California 94945, United States</div>
+<div class="p">Find articles by <a href='https://pubmed.ncbi.nlm.nih.gov/?term="Schilling%20B"[Author]' class="usa-link"><span class="name western">Birgit Schilling</span></a>
+</div>
+</div>
+<sup>§</sup>, <a href='https://pubmed.ncbi.nlm.nih.gov/?term="Gibson%20BW"[Author]' class="usa-link" aria-describedby="id4"><span class="name western">Bradford W Gibson</span></a><div hidden="hidden" id="id4">
+<h3><span class="name western">Bradford W Gibson</span></h3>
+<div class="p">
+<sup>§</sup>Buck
+Institute for Research on Aging, Novato, California 94945, United States</div>
+<div class="p">Find articles by <a href='https://pubmed.ncbi.nlm.nih.gov/?term="Gibson%20BW"[Author]' class="usa-link"><span class="name western">Bradford W Gibson</span></a>
+</div>
+</div>
+<sup>§</sup>, <a href='https://pubmed.ncbi.nlm.nih.gov/?term="Miller%20CA"[Author]' class="usa-link" aria-describedby="id5"><span class="name western">Christine A Miller</span></a><div hidden="hidden" id="id5">
+<h3><span class="name western">Christine A Miller</span></h3>
+<div class="p">
+<sup>∥</sup>Agilent
+Technologies, Santa Clara, California 95051, United States</div>
+<div class="p">Find articles by <a href='https://pubmed.ncbi.nlm.nih.gov/?term="Miller%20CA"[Author]' class="usa-link"><span class="name western">Christine A Miller</span></a>
+</div>
+</div>
+<sup>∥</sup>, <a href='https://pubmed.ncbi.nlm.nih.gov/?term="Townsend%20RR"[Author]' class="usa-link" aria-describedby="id6"><span class="name western">R Reid Townsend</span></a><div hidden="hidden" id="id6">
+<h3><span class="name western">R Reid Townsend</span></h3>
+<div class="p">
+<sup>⊥</sup>Department
+of Cell Biology and Physiology, Washington
+University School of Medicine, St. Louis, Missouri 63110, United States,</div>
+<div class="p">Find articles by <a href='https://pubmed.ncbi.nlm.nih.gov/?term="Townsend%20RR"[Author]' class="usa-link"><span class="name western">R Reid Townsend</span></a>
+</div>
+</div>
+<sup>⊥</sup>, <a href='https://pubmed.ncbi.nlm.nih.gov/?term="Sherrod%20SD"[Author]' class="usa-link" aria-describedby="id7"><span class="name western">Stacy D Sherrod</span></a><div hidden="hidden" id="id7">
+<h3><span class="name western">Stacy D Sherrod</span></h3>
+<div class="p">
+<sup>#</sup>Department of Physics and Astronomy, <sup>○</sup>Department of Chemistry, Vanderbilt University, Nashville, Tennessee 37235, United States</div>
+<div class="p">Find articles by <a href='https://pubmed.ncbi.nlm.nih.gov/?term="Sherrod%20SD"[Author]' class="usa-link"><span class="name western">Stacy D Sherrod</span></a>
+</div>
+</div>
+<sup>#</sup>, <a href='https://pubmed.ncbi.nlm.nih.gov/?term="Goodwin%20CR"[Author]' class="usa-link" aria-describedby="id8"><span class="name western">Cody R Goodwin</span></a><div hidden="hidden" id="id8">
+<h3><span class="name western">Cody R Goodwin</span></h3>
+<div class="p">
+<sup>#</sup>Department of Physics and Astronomy, <sup>○</sup>Department of Chemistry, Vanderbilt University, Nashville, Tennessee 37235, United States</div>
+<div class="p">Find articles by <a href='https://pubmed.ncbi.nlm.nih.gov/?term="Goodwin%20CR"[Author]' class="usa-link"><span class="name western">Cody R Goodwin</span></a>
+</div>
+</div>
+<sup>○</sup>, <a href='https://pubmed.ncbi.nlm.nih.gov/?term="McLean%20JA"[Author]' class="usa-link" aria-describedby="id9"><span class="name western">John A McLean</span></a><div hidden="hidden" id="id9">
+<h3><span class="name western">John A McLean</span></h3>
+<div class="p">
+<sup>#</sup>Department of Physics and Astronomy, <sup>○</sup>Department of Chemistry, Vanderbilt University, Nashville, Tennessee 37235, United States</div>
+<div class="p">Find articles by <a href='https://pubmed.ncbi.nlm.nih.gov/?term="McLean%20JA"[Author]' class="usa-link"><span class="name western">John A McLean</span></a>
+</div>
+</div>
+<sup>○</sup>, <a href='https://pubmed.ncbi.nlm.nih.gov/?term="Tabb%20DL"[Author]' class="usa-link" aria-describedby="id10"><span class="name western">David L Tabb</span></a><div hidden="hidden" id="id10">
+<h3><span class="name western">David L Tabb</span></h3>
+<div class="p">
+<sup>†</sup>Department
+of Biomedical Informatics, Vanderbilt University
+Medical Center, Nashville, Tennessee 37232-8340, United States</div>
+<div class="p">
+<sup>‡</sup>Jim
+Ayers Institute for Precancer Detection and Diagnosis, Vanderbilt-Ingram Cancer Center, Nashville, Tennessee 37232-6350, United States</div>
+<div class="p">Find articles by <a href='https://pubmed.ncbi.nlm.nih.gov/?term="Tabb%20DL"[Author]' class="usa-link"><span class="name western">David L Tabb</span></a>
+</div>
+</div>
+<sup>†,</sup><sup>‡,</sup><sup>*</sup>
+</div>
+<ul class="d-buttons inline-list">
+<li><button class="d-button" aria-controls="aip_a" aria-expanded="false">Author information</button></li>
+<li><button class="d-button" aria-controls="anp_a" aria-expanded="false">Article notes</button></li>
+<li><button class="d-button" aria-controls="clp_a" aria-expanded="false">Copyright and License information</button></li>
+</ul>
+<div class="d-panels font-secondary-light">
+<div id="aip_a" class="d-panel p" style="display: none">
+<div class="p" id="aff1">
+<sup>†</sup>Department
+of Biomedical Informatics, Vanderbilt University
+Medical Center, Nashville, Tennessee 37232-8340, United States</div>
+<div id="aff2">
+<sup>‡</sup>Jim
+Ayers Institute for Precancer Detection and Diagnosis, Vanderbilt-Ingram Cancer Center, Nashville, Tennessee 37232-6350, United States</div>
+<div id="aff3">
+<sup>§</sup>Buck
+Institute for Research on Aging, Novato, California 94945, United States</div>
+<div id="aff4">
+<sup>∥</sup>Agilent
+Technologies, Santa Clara, California 95051, United States</div>
+<div id="aff5">
+<sup>⊥</sup>Department
+of Cell Biology and Physiology, Washington
+University School of Medicine, St. Louis, Missouri 63110, United States,</div>
+<div id="aff8">
+<sup>#</sup>Department of Physics and Astronomy, <sup>○</sup>Department of Chemistry, Vanderbilt University, Nashville, Tennessee 37235, United States</div>
+<div class="author-notes p"><div class="fn" id="cor1">
+<sup>*</sup><p class="display-inline">Phone: 615-936-0380; Fax: 615-343-8372; E-mail: <span>david.l.tabb@vanderbilt.edu</span>.</p>
+</div></div>
+</div>
+<div id="anp_a" class="d-panel p" style="display: none"><div class="notes p"><section id="historyarticle-meta1" class="history"><p>Received 2014 Aug 24; Issue date 2015 Feb 6.</p></section></div></div>
+<div id="clp_a" class="d-panel p" style="display: none">
+<div>Copyright © 2014 American Chemical Society</div>
+<p>This is an open access article published under an ACS AuthorChoice <a href="http://pubs.acs.org/page/policy/authorchoice_termsofuse.html" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">License</a>, which permits copying and redistribution of the article or any adaptations for non-commercial purposes.</p>
+<div class="p"><a href="/about/copyright/" class="usa-link">PMC Copyright notice</a></div>
+</div>
+</div>
+<div>PMCID: PMC4324452  PMID: <a href="https://pubmed.ncbi.nlm.nih.gov/25411686/" class="usa-link">25411686</a>
+</div>
+</div></section></section><section aria-label="Article content"><section class="body main-article-body"><section class="abstract" id="abstract1"><h2>Abstract</h2>
+<p class="img-box line-height-none margin-x-neg-2 tablet:margin-x-0 text-center"><img class="graphic" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/658d/4324452/09c65d80da90/pr-2014-00886y_0005.jpg" loading="lazy" id="ab-tgr1" height="296" width="800" alt="graphic file with name pr-2014-00886y_0005.jpg"></p>
+<p>We
+report the implementation of high-quality signal processing
+algorithms into ProteoWizard, an efficient, open-source software package
+designed for analyzing proteomics tandem mass spectrometry data. Specifically,
+a new wavelet-based peak-picker (CantWaiT) and a precursor charge
+determination algorithm (Turbocharger) have been implemented. These
+additions into ProteoWizard provide universal tools that are independent
+of vendor platform for tandem mass spectrometry analyses and have
+particular utility for intralaboratory studies requiring the advantages
+of different platforms convergent on a particular workflow or for
+interlaboratory investigations spanning multiple platforms. We compared
+results from these tools to those obtained using vendor and commercial
+software, finding that in all cases our algorithms resulted in a comparable
+number of identified peptides for simple and complex samples measured
+on Waters, Agilent, and AB SCIEX quadrupole time-of-flight and Thermo
+Q-Exactive mass spectrometers. The mass accuracy of matched precursor
+ions also compared favorably with vendor and commercial tools. Additionally,
+typical analysis runtimes (∼1–100 ms per MS/MS spectrum)
+were short enough to enable the practical use of these high-quality
+signal processing tools for large clinical and research data sets.</p>
+<section id="kwd-group1" class="kwd-group"><p><strong>Keywords:</strong> Continuous wavelet transformation, peak-picking, signal deconvolution, precursor charge determination, deisotoping, open-source software, mass spectrometry</p></section></section><section id="sec1"><h2 class="pmc_sec_title">Introduction</h2>
+<p>Processing raw spectra
+from a tandem mass spectrometry (MS/MS)
+experiment is an essential analysis step that often goes overlooked.
+While advances in instrument technology have enabled unprecedented
+levels of protein detection and sensitivity,<sup><a href="#ref1" class="usa-link" aria-describedby="ref1">1</a>−<a href="#ref3" class="usa-link" aria-describedby="ref3">3</a></sup> it is vital
+to continue developing robust signal processing algorithms that take
+full advantage of improved instrument performance. Common signal processing
+steps include peak-picking, ion charge determination, and deisotoping.
+Each of these steps must be automated in order to process the huge
+number of spectra and peaks produced by modern instruments. Ideally,
+these processing steps are performed in a high-quality manner as efficiently
+as possible so that valuable information contained in raw data sets
+can be obtained in a reasonable amount of time. Achieving consistently
+high-quality analysis is especially challenging across data acquired
+on different instrument platforms, where disparities in signal quality,
+shape, and resolution require sufficiently universal processing approaches
+that can account for these differences. For this reason, signal processing
+software is often written, tested, and optimized to operate on data
+of a specific resolution or quality, and vendor software generally
+processes only raw data from its own instruments. This data-specific,
+vendor-specific approach can constrain users to a particular quality
+of analysis and can preclude unbiased comparisons of data sets spanning
+multiple platforms. Moreover, vendor and commercial software can often
+be expensive or difficult to access. To address these challenges,
+a set of open-source tools capable of performing reliable and efficient
+signal processing across a range of different instrument and data
+types is needed.</p>
+<p>Peak-picking is a key signal processing step
+that, depending on
+the quality of an algorithm, can drastically impact downstream peptide
+identifications. Many approaches to peak-picking have been developed
+over the years. High-intensity peaks are generally straightforward
+to identify using some form of intensity or signal-to-noise ratio
+(SNR) threshold combined with signal-smoothing or noise-filtering;<sup><a href="#ref4" class="usa-link" aria-describedby="ref4">4</a></sup> however, this approach often breaks down for
+ions with peak intensities that are close to the noise level. When
+peaks are close to the noise threshold, shape-matching and curve-fitting
+methods can aid in discriminating true peaks from noise by evaluating
+the shape of the peak and/or the distribution of nearby peaks (in
+both the <em>m</em>/<em>z</em> and retention time
+domains). For example, MaxQuant<sup><a href="#ref5" class="usa-link" aria-describedby="ref5">5</a></sup> fits a
+Gaussian curve to the raw <em>m</em>/<em>z</em> points
+in each peak. MSInspect,<sup><a href="#ref6" class="usa-link" aria-describedby="ref6">6</a></sup> OpenMS,<sup><a href="#ref7" class="usa-link" aria-describedby="ref7">7</a></sup> and DyWave<sup><a href="#ref8" class="usa-link" aria-describedby="ref8">8</a></sup> all employ
+wavelet transformations to assess the correlation between a model
+wavelet and spectral data. Du and co-workers<sup><a href="#ref9" class="usa-link" aria-describedby="ref9">9</a></sup> developed a similar algorithm called MassSpecWavelet using continuous
+wavelet transformations (CWTs) and showed that this approach outperformed
+methods based on peak intensity and discrete wavelet transformations.
+Another feature that can be used to discern a true peak from noise
+is the presence of an isotopic envelope. For example, VIPER<sup><a href="#ref10" class="usa-link" aria-describedby="ref10">10</a></sup> and Hardklör<sup><a href="#ref11" class="usa-link" aria-describedby="ref11">11</a></sup> use the THRASH<sup><a href="#ref12" class="usa-link" aria-describedby="ref12">12</a></sup> algorithm, which performs
+isotope pattern matching for peak identification. Similarly, the commercial
+software package Mascot Distiller fits models of isotopic envelopes
+to profile data in order to discriminate between true peaks and noise.<sup><a href="#ref13" class="usa-link" aria-describedby="ref13">13</a>,<a href="#ref14" class="usa-link" aria-describedby="ref14">14</a></sup> A clear advantage of the isotope-based approach is the ability to
+simultaneously perform peak-picking, deisotoping, and ion charge determination.</p>
+<p>Determining ion charge is another important signal processing step,
+as it enables a precursor <em>m</em>/<em>z</em> value
+to be converted to the mass of an unknown peptide for database searching.
+The general procedure for determining precursor charge involves analyzing
+a small isolation window within the survey scan from which the precursor
+ion is derived. Charge is determined by computing the reciprocal of <em>m</em>/<em>z</em> spacing between peaks and, in most
+cases, evaluating the relative intensities of these peaks. Averagine<sup><a href="#ref15" class="usa-link" aria-describedby="ref15">15</a></sup> is perhaps the most widely used model (e.g.,
+see OpenMS<sup><a href="#ref7" class="usa-link" aria-describedby="ref7">7</a></sup> or Hardklör<sup><a href="#ref11" class="usa-link" aria-describedby="ref11">11</a></sup>) for predicting the relative intensities of
+the peaks within an isotopic envelope, although alternate methods
+exist. For instance, MSInspect<sup><a href="#ref6" class="usa-link" aria-describedby="ref6">6</a></sup> models
+the intensities with a Poisson distribution and then uses the Kullback–Leibler
+divergence to evaluate the similarity between the modeled and observed
+intensities. In addition to the previously mentioned isotopic modeling
+techniques, other precursor charge determination algorithms include
+a customized isotopic wavelet method,<sup><a href="#ref16" class="usa-link" aria-describedby="ref16">16</a></sup> a Fourier transformation technique,<sup><a href="#ref17" class="usa-link" aria-describedby="ref17">17</a></sup> and scoring approaches.<sup><a href="#ref18" class="usa-link" aria-describedby="ref18">18</a></sup></p>
+<p>In this
+work, we present results from implementing and applying
+high-quality signal processing algorithms in ProteoWizard,<sup><a href="#ref19" class="usa-link" aria-describedby="ref19">19</a></sup> an open-source, proteomics MS/MS analysis package.
+Specifically, a peak-picker entitled CantWaiT builds on the CWT method
+(MassSpecWavelet) developed by Du et al.<sup><a href="#ref9" class="usa-link" aria-describedby="ref9">9</a></sup> by tuning it for computational efficiency. For charge determination,
+we introduce a new algorithm called Turbocharger that scores groups
+of candidate isotopic peaks based on their <em>m</em>/<em>z</em> spacing, relative intensity distribution, and total intensity.
+We compared the performance of CantWaiT and Turbocharger with that
+of vendor and commercial signal processing software; the results demonstrated
+that our processing software produces identifications and mass accuracy
+on par with vendor and commercial software across numerous types of
+samples and instruments.</p></section><section id="sec2"><h2 class="pmc_sec_title">Methods</h2>
+<p>The algorithms described
+below can be run using the msConvert tool
+as part of the freely distributed ProteoWizard package (binaries and
+source code are available at <a href="http://www.proteowizard.sourceforge.net" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">www.proteowizard.sourceforge.net</a>). ProteoWizard supports commonly used vendor raw files and many
+open formats (e.g., mzML, mzXML, mz5) and is executed as native C++
+code in order to maximize runtime performance. As such, this software
+package provides an ideal programming environment for running efficient
+cross-platform analyses. ProteoWizard also provides seamless access
+to many vendor peak-picking libraries, enabling users to compare results
+across different algorithms.</p>
+<section id="sec2.1"><h3 class="pmc_sec_title">CantWaiT: A Wavelet Peak-Picker</h3>
+<p>The key signal processing
+algorithm that we incorporated into ProteoWizard was a spectral peak-picker.
+In order to maximize processing quality and cross-platform performance,
+we selected the continuous wavelet transformation (CWT) method for
+peak selection. The CWT method is noted for its performance in noisy,
+low-resolution spectra while also performing well on smooth, high-resolution
+data.<sup><a href="#ref9" class="usa-link" aria-describedby="ref9">9</a>,<a href="#ref20" class="usa-link" aria-describedby="ref20">20</a>,<a href="#ref21" class="usa-link" aria-describedby="ref21">21</a></sup> For the parent
+wavelet, we chose the Ricker (“Mexican Hat”) wavelet
+for its unimodal and symmetric properties, providing a generic means
+of detecting peptides regardless of the strength of their isotopic
+distributions.</p>
+<p>CantWaiT is based on the MassSpecWavelet algorithm
+introduced by Du et al.,<sup><a href="#ref9" class="usa-link" aria-describedby="ref9">9</a></sup> but we have built
+upon their implementation to reduce analysis runtime and to better
+handle spectra of varying resolution. Previously, the method’s
+biggest disadvantage was slow runtime, with the original developers
+reporting a processing time of ∼30 s for a single spectrum,
+which renders it impractical for use with large clinical and research
+data sets. While this runtime was reported in 2006 when processor
+speeds were slower than they are today, the authors themselves acknowledged
+that code enhancements for improving the algorithm’s efficiency
+were needed. We reduced runtime by limiting the CWT computation to
+10 carefully chosen wavelet scales. A challenge for choosing the appropriate
+scales is the tendency for peaks and <em>m</em>/<em>z</em> spacing to widen with increasing <em>m</em>/<em>z</em>; consequently, a good set of scales at low <em>m</em>/<em>z</em> is seldom optimal at high <em>m</em>/<em>z</em> values. CantWaiT addresses this problem by applying a novel, adaptive
+method in which the wavelet scales that are sampled depend on <em>m</em>/<em>z</em>. Each spectrum is quickly scanned to
+determine the appropriate scales to sample as a function of <em>m</em>/<em>z</em>, by computing the average <em>m</em>/<em>z</em> spacing in a 10-point sliding window for each <em>m</em>/<em>z</em> point. The wavelet transformation is
+then performed using wavelet scales that vary linearly between one
+and seven times the <em>m</em>/<em>z</em> spacing
+computed during preprocessing. CWT computations are performed with
+wavelets centered on each <em>m</em>/<em>z</em> point
+and midpoint in the spectrum. In addition to being computationally
+efficient, CantWaiT also handles irregularly spaced data or spectra
+with zero-intensity points removed. Thus, no additional signal preprocessing
+such as smoothing or resampling is needed prior to peak-picking.</p>
+<p>Unlike MassSpecWavelet, CantWaiT does not perform ridge line identification
+in wavelet space for locating peaks, which further improves CantWaiT’s
+computational efficiency. Ridge line identification is one of the
+more computationally intense steps of MassSpecWavelet in which local
+maxima are connected along both the <em>m</em>/<em>z</em> and wavelet scale axes. CantWaiT avoids this step by simply scanning
+the correlation matrix a single time, locating local maxima that are
+separated by at least 0.1 <em>m/</em>z. While this is a less
+rigorous procedure for filtering true peaks from noise, we found that
+it provided consistent results with the ridge line identification
+procedure at a fraction of the computational cost. The local maxima
+identified by CantWaiT are next filtered via SNR thresholding, where
+the signal is defined as the maximum wavelet correlation value in
+the ridge line. To calculate the noise, CantWaiT separates a spectrum
+into bins composed of 300 <em>m</em>/<em>z</em> points
+each. The noise level for each point in a bin is then set to the 95-percentage
+quantile of correlation at the smallest scale within that bin. In
+the final peak list, CantWaiT records the <em>m</em>/<em>z</em> and intensity values corresponding to the maximum intensity
+value within each peak. Pseudocode for CantWaiT is including in the <a href="#notes-1" class="usa-link">Supporting Information</a>, Algorithm S1.</p></section><section id="sec2.2"><h3 class="pmc_sec_title">Turbocharger:
+A Precursor Charge Determination Algorithm</h3>
+<p>In MS/MS experiments,
+mass analyzers catalog intense peaks in a survey
+scan and then isolate these ions for fragmentation in tandem MS. Ions
+are generally isolated for fragmentation within a small window (e.g.,
+±1.25 <em>m</em>/<em>z</em>) centered at a target <em>m</em>/<em>z</em> value. Analyzing the isotopic content
+of this region is the most conventional means of determining a precursor
+ion charged state. This process is not always straightforward. For
+example, multiple ions with overlapping peaks may be present (i.e.,
+chimeric spectra<sup><a href="#ref22" class="usa-link" aria-describedby="ref22">22</a></sup>), or strong evidence
+for isotopic features may be lacking. A robust algorithm must cope
+with these situations while remaining applicable among many different
+instruments. Turbocharger achieves this by using three criteria (<em>m</em>/<em>z</em> spacing, relative intensity distribution,
+and total intensity rank) to score how well groups of peaks conform
+to expected isotopic behavior. When the software is first initiated,
+it performs simulations to determine how to convert scores on the
+three criteria described below to <em>p</em>-values for evaluating
+isotopic packets.</p>
+<p>Turbocharger first uses CantWaiT to perform
+peak-picking within a window surrounding the instrument-reported target
+isolation <em>m</em>/<em>z</em>. Next, Turbocharger
+builds chains of peaks whose interpeak spacing is equal to <em>m</em><sub>neutron</sub>/<em>q</em> ± ε, where <em>m</em><sub>neutron</sub> is the mass of a neutron (here computed
+as the difference between the <sup>13</sup>C and <sup>12</sup>C masses:
+1.00335 Da), <em>q</em> is the charge state associated with
+the chain (generally any positive integer corresponding to a peptide’s
+charged state), and ε is a fixed <em>m</em>/<em>z</em> tolerance of 0.06. This tolerance is wide enough to catch
+isotopic peaks whose peak spacing is offset compared to the theoretical
+spacing, but it is not so wide that the number of chains becomes unnecessarily
+large (as estimated empirically using the data sets presented in this
+paper). All possible subchains within a chain are also scored; for
+instance, if peaks A, B, and C make up a chain, then chains A–B
+and B–C also receive their own scores. The maximum chain length
+is capped at five, while chains of charge five or greater must contain
+at least three peaks.</p>
+<p>The first scoring metric used by Turbocharger
+is <em>m</em>/<em>z</em> spacing. While previous algorithms
+have not scored
+isotope distributions on the basis of <em>m</em>/<em>z</em> spacing, we have found this to be an important metric for evaluating
+whether a set of peaks belong to an isotope envelope or appeared at
+this spacing by random chance. Turbocharger employs a sum of squared
+errors (SSE) method for scoring the fidelity of <em>m</em>/<em>z</em> spacing within a chain, similar to a published
+strategy from sequence tagging.<sup><a href="#ref23" class="usa-link" aria-describedby="ref23">23</a></sup> Specifically,
+each peak’s <em>m</em>/<em>z</em> value is
+used to estimate the leading (i.e., the monoisotopic peptide peak
+for conventional peptides) peak <em>m</em>/<em>z</em>; this is done by subtracting <em>km</em><sub>neutron</sub>/<em>q</em> from each peak, where <em>k</em> is the
+peak number with respect to the monoisotopic peak. These estimates
+are applied to compute the SSE of the monoisotopic peak, which is
+then converted to a <em>p</em>-value by comparing to a simulated
+distribution of SSEs. In these simulations, the SSEs are computed
+for chains consisting of randomly positioned (i.e., spaced by <em>m</em><sub>neutron</sub>/<em>q</em> ± εγ,
+where γ is a uniformly distributed value between zero and one)
+peaks; each possible chain length is simulated 10 000 times.
+This simulation technique is used to estimate the null distribution
+of SSE scores. The <em>p</em>-value is the fraction of simulated
+SSE scores that produce lower SSE values than computed for a set of
+putative isotopes.</p>
+<p>The relative intensity distribution is the
+second scoring metric
+evaluated by Turbocharger. We chose to implement the Poisson model
+introduced by Breen et al.<sup><a href="#ref24" class="usa-link" aria-describedby="ref24">24</a></sup> for predicting
+the relative intensities of peptide isotopes as a function of <em>m</em>/<em>z</em> and charge. Specifically, Turbocharger
+follows the implementation in MSInspect<sup><a href="#ref6" class="usa-link" aria-describedby="ref6">6</a></sup> where the Kullback–Leibler (KL) divergence is used to evaluate
+the similarity between the modeled and observed intensities. The KL
+score for each chain is converted to a <em>p</em>-value by
+comparing to a simulated distribution of KL scores. In these simulations,
+CantWaiT first identifies the 200 most intense peaks in each of nine
+survey scans (one at every 10th percentile in retention time). Turbocharger
+then builds hypothetical isolation windows around each of the intense
+peaks, and the KL score is computed for random sets of peaks within
+these windows, with 10 000 samples used for each chain length.</p>
+<p>The final scoring metric used by Turbocharger is based on the intensity
+rank sum of the chain. This criterion is meant to capture the tendency
+for an abundant precursor to produce more fragments than a less abundant
+precursor. Turbocharger ranks each peak in the precursor isolation
+window and then sums the ranks of the peaks included in a putative
+isotope set to evaluate the total intensity score of a chain. The
+rank-sum score is converted to a <em>p</em>-value by computing
+the fraction of possible rank-sums less than the calculated value.</p>
+<p>Once scoring is complete, the chains are ranked by each metric,
+and these ranks are summed together to produce the final chain score.
+Turbocharger does not always select the lowest scoring chain for assigning
+charge and the monoisotopic <em>m</em>/<em>z</em>.
+For instance, Turbocharger requires a relative intensity <em>p</em>-value of less than 0.30. Once Turbocharger has found the lowest
+scoring chain that satisfies this criterion, Turbocharger checks if
+another chain in the top eight consists of the same peaks plus an
+additional leading peak. If such a chain is found, and the relative
+intensity <em>p</em>-value is less than 0.30, then this chain
+is selected in place of the original. This is intended to correct
+the monoisotope <em>m</em>/<em>z</em> value in the
+event that a subchain scores better than a longer version of this
+chain that also scores well. If no chain among the top eight has a
+relative intensity <em>p</em>-value of less than 0.30, then
+Turbocharger returns the default charge(s) and target isolation <em>m</em>/<em>z</em>. The default charges may be specified
+by the user. By default, Turbocharger assigns no charge to indeterminate
+spectra. Pseudocode for Turbocharger is included in the <a href="#notes-1" class="usa-link">Supporting Information</a>, Algorithm S2.</p></section><section id="sec2.3"><h3 class="pmc_sec_title">Deisotoping</h3>
+<p>Peaks from MS/MS spectra are deisotoped
+using the Poisson model approach combined with the KL divergence score,
+as described in the previous section. Peaks are chained together in
+the same way described above except that here the interpeak spacing
+must be within 100 ppm of <em>m</em><sub>neutron</sub>/<em>q</em>. Note that a fixed interspeak spacing was applied by Turbocharger
+to facilitate the simulation of SSE scores. By default, the Poisson
+deisotoper checks charge states between one and three. If a chain
+yields SSE and KL scores below the assigned cutoff values, then the
+nonmonoisotopic peaks within the chain are removed from the peak list.
+The SSE and KL cutoffs depend on the length of the chain; the values
+that we applied are listed in the <a href="#notes-1" class="usa-link">Supporting Information</a> (Table S1).</p></section></section><section id="sec3"><h2 class="pmc_sec_title">Datasets</h2>
+<p>In order to assess our
+software’s cross-platform performance,
+we tested numerous simple and complex sample types (Table <a href="#tbl1" class="usa-link">1</a>) from the following instruments: AB SCIEX Triple
+TOF 5600 quadupole time-of-flight (QqTOF), Agilent 6530/6550 QqTOF,
+Thermo Scientific Q-Exactive, and Waters Synapt G2/G2-S QqTOF. All
+raw data sets are publicly available through the mass spectrometry
+interactive virtual environment (MassIVE) at <a href="http://massive.ucsd.edu/ProteoSAFe" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">http://massive.ucsd.edu/ProteoSAFe</a>. Please note that in many cases these data sets were collected solely
+for software evaluation purposes and were not necessarily acquired
+under conditions representative of optimal instrument performance.
+For instance, the Waters Synapt G2/G2-S is typically run under ion-mobility
+enhanced data-independent acquisition to maximize proteome coverage
+and quantitative reproducibility. Moreover, common samples were not
+necessarily selected to be run across all of the platforms, as interplatform
+comparisons are not and should not be inferred from these data. Rather,
+the capabilities of ProteoWizard signal processing is compared with
+the specific software typically used with each specific platform on
+which the data were generated to assess the universality of our software’s
+performance versus what would ordinarily be achieved with each specific
+platform. Details related to sample preparation and data acquisition
+are provided briefly in the <a href="#notes-1" class="usa-link">Supporting Information</a>.</p>
+<section class="tw xbox font-sm" id="tbl1"><h3 class="obj_head">Table 1. Summary of Samples Used for Evaluating
+ProteoWizard Signal Processing Algorithms<a href="#tbl1-fn1" class="usa-link"><sup>a</sup></a>.</h3>
+<div class="tbl-box p" tabindex="0"><table class="content" frame="hsides" rules="groups" border="0">
+<colgroup span="1">
+<col align="left" span="1">
+<col align="left" span="1">
+<col align="left" span="1">
+<col align="left" span="1">
+<col align="left" span="1">
+</colgroup>
+<thead><tr>
+<th style="border:none;" align="center" colspan="1" rowspan="1">instrument</th>
+<th style="border:none;" align="center" colspan="1" rowspan="1">sample</th>
+<th style="border:none;" align="center" colspan="1" rowspan="1">replicates</th>
+<th style="border:none;" align="center" colspan="1" rowspan="1">min. charge</th>
+<th style="border:none;" align="center" colspan="1" rowspan="1">max. charge</th>
+</tr></thead>
+<tbody>
+<tr>
+<td style="border:none;" align="left" colspan="1" rowspan="1">Agilent 6530</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">Bovine 6</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">8</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">+1</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">+5</td>
+</tr>
+<tr>
+<td style="border:none;" align="left" colspan="1" rowspan="1">Agilent 6550</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">Serum (Human)</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">4</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">+2</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">+14</td>
+</tr>
+<tr>
+<td style="border:none;" align="left" colspan="1" rowspan="1">AB SCIEX Triple TOF 5600</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">UPS1 (Human)</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">5</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">+2</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">+8</td>
+</tr>
+<tr>
+<td style="border:none;" align="left" colspan="1" rowspan="1">AB SCIEX Triple TOF 5600</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1"><em>E. coli</em></td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">3</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">+2</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">+8</td>
+</tr>
+<tr>
+<td style="border:none;" align="left" colspan="1" rowspan="1">AB SCIEX Triple TOF 5600</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">Rat Liver</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">3</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">+2</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">+8</td>
+</tr>
+<tr>
+<td style="border:none;" align="left" colspan="1" rowspan="1">Thermo Q-Exactive</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">Bovine 6</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">5</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">+2</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">+6</td>
+</tr>
+<tr>
+<td style="border:none;" align="left" colspan="1" rowspan="1">Thermo Q-Exactive</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">Jurkat (Human)</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">1</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">+2</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">+6</td>
+</tr>
+<tr>
+<td style="border:none;" align="left" colspan="1" rowspan="1">Waters Synapt G2</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">Bovine 6</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">3</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">+1</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">+8</td>
+</tr>
+<tr>
+<td style="border:none;" align="left" colspan="1" rowspan="1">Waters Synapt G2</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">Yeast</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">5</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">+1</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">+8</td>
+</tr>
+<tr>
+<td style="border:none;" align="left" colspan="1" rowspan="1">Waters Synapt G2</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1"><em>E. coli</em></td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">1</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">+1</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">+8</td>
+</tr>
+<tr>
+<td style="border:none;" align="left" colspan="1" rowspan="1">Waters Synapt GS-S</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">K562 (Human)</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">3</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">+1</td>
+<td style="border:none;" align="left" colspan="1" rowspan="1">+8</td>
+</tr>
+</tbody>
+</table></div>
+<div class="p text-right font-secondary"><a href="table/tbl1/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div>
+<div class="tw-foot p"><div class="fn" id="tbl1-fn1">
+<sup>a</sup><p class="display-inline">For each vendor, sample complexity
+increases moving from top to bottom. The Turbocharger precursor charge
+search range is also listed and was taken from the vendor-reported
+ranges for each dataset.</p>
+</div></div></section></section><section id="sec4"><h2 class="pmc_sec_title">Peptide
+Database Searching and Protein Assembly</h2>
+<p>Results from signal
+processing in msConvert were searched using
+two peptide database engines: MyriMatch<sup><a href="#ref27" class="usa-link" aria-describedby="ref27">27</a></sup> and MS-GF+.<sup><a href="#ref28" class="usa-link" aria-describedby="ref28">28</a></sup> These two tools employ different matching approaches, with MyriMatch
+modeling the number of matched vs unmatched peaks using the multivariate
+hypergeometric distribution, and MS-GF+ scoring MS/MS spectra using
+a prefix residue mass graph. Testing these two search engines allowed
+us to evaluate the robustness of results from ProteoWizard signal
+processing.</p>
+<p>Database searches were configured similarly between
+MyriMatch and
+MS-GF+. Files were searched against full proteome-level FASTA databases,
+which also included the reverse sequences for each protein in order
+to compute the false discovery rate (FDR); the peptide search space
+was generated by allowing a maximum of two missed cleavages and one
+missed termini cleavage (semitryptic digest), with a minimum peptide
+length of 5 amino acids and a maximum length of 75 amino acids. In
+addition, the following static modifications were applied: carboxymethylation
+of cysteine at any position for the bovine 6 (simple mixture of 6
+bovine proteins) data and carbamidomethylation of cysteine at any
+position for all other files. Dynamic modifications for all files
+included oxidation of methionine at any position and ammonia loss
+from glutamine at the peptide N-terminus; deamindation of glutamine
+or asparagine at the protein N-terminus was also applied for bovine
+6 data. Searching tolerances were set to 50 and 100 ppm (in <em>m</em>/<em>z</em>) for precursors and fragments, respectively,
+with the exception of the Thermo Q-Exactive files, which were searched
+using 10 and 20 ppm. MyriMatch and MS-GF+ can both be configured to
+search precursor <em>m</em>/<em>z</em> values that
+are shifted to different isotopic peaks, which is meant to account
+for incorrectly assigned monoisotopic peaks. While checking for misidentified
+monoisotopic peaks generally improves overall identifications, we
+chose to disable this option in order to compare how well the various
+software platforms are able to locate the monoisotopic peak.</p>
+<p>The results from peptide database searches were imported into IDPicker<sup><a href="#ref29" class="usa-link" aria-describedby="ref29">29</a></sup> (version 3.0), which assembles all matched peptides
+into their parsimonious proteins. The default import settings were
+applied in all cases. Specifically, a maximum <em>Q</em>-value
+of 2% (for peptide spectrum matches) and a minimum of two distinct
+peptides per protein group were required.</p></section><section id="sec5"><h2 class="pmc_sec_title">Analysis Methods</h2>
+<p>To evaluate the performance of the PreoteoWizard signal processing
+software, we compared results to vendor and commercial software. We
+applied the same four processing steps employed by ProteoWizard signal
+processing software: peak-picking of MS/MS spectra, precursor <em>m</em>/<em>z</em> assignment, precursor monoisotope assignment,
+and deisotoping. Thermo and Agilent data were processed using the
+vendor peak-picking and precursor charge determination libraries available
+through ProteoWizard’s msConvert tool; neither of these vendor
+libraries include deisotoping, so we also applied deisotoping on the
+Thermo and Agilent peak lists using ProteoWizard’s Poisson
+deisotoper. AB SCIEX raw files were analyzed with the AB SCIEX MS
+Data Converter using the “proteinpilot” peak list option.
+Waters data were processed using the commercial software package Mascot
+Distiller; default processing parameters were applied, with the following
+exceptions: maximum precursor charge of +8, precursor search tolerance
+of ±1.5 <em>m</em>/<em>z</em>, precursor grouping
+tolerance of 0.05 <em>m</em>/<em>z</em>, minimum precursor
+mass of 1.0 Da, maximum subscan summation time of 30 s, and minimum
+peak list size of one. The results from vendor (or commercial in the
+case of Waters data) signal processing were next searched using MyriMatch
+and MS-GF+ and then assembled using IDPicker 3.0.</p>
+<p>For analysis
+of raw data with our new signal processing software,
+we applied CantWaiT, Turbocharger, and the Poisson deisotoper as filters
+accessed through msConvert; see Table S2 in the <a href="#notes-1" class="usa-link">Supporting Information</a> for examples of how to apply these
+filters within msConvert and <a href="#notes-1" class="usa-link">Tables S3–S5</a> for lists of parameters and their allowed values. Note that CantWaiT
+peak-picking was performed only on MS/MS spectra, although it may
+also be applied to MS1 spectra, if desired. Waters data also required
+subscan summation prior to these three processing steps; we implemented
+a simple algorithm (which is also available within msConvert) that
+summed the intensity at identical <em>m</em>/<em>z</em> values across MS/MS spectra with the same precursor value (within
+0.05 <em>m/</em>z and 30 s in retention time, consistent with
+the Mascot Distiller settings). Turbocharger was applied by searching
+the charge ranges listed in Table <a href="#tbl1" class="usa-link">1</a>. Two survey
+spectra were analyzed for determining precursor charge for each MS/MS
+spectrum; two spectra immediately preceding (in retention time) the
+MS/MS spectrum were used for Thermo and Waters data, whereas one spectrum
+preceding and one spectrum proceeding the MS/MS spectrum were used
+for AB SCIEX and Agilent data. Isolation widths of ±1.00 and
+±1.25 <em>m</em>/<em>z</em> were applied for
+AB SCIEX and Thermo files, respectively, whereas ±1.50 <em>m</em>/<em>z</em> was applied for all other data sets.
+These settings for survey spectra and isolation width were applied
+because they led to optimal peptide identification rates and are summarized
+in <a href="#notes-1" class="usa-link">Table S6</a>. For cases where Turbocharger
+could not identify a reliable isotopic distribution in the isolation
+widow, default charges were set to values consistent with those used
+from vendor and commercial software: +2 for Thermo, +2 and +3 for
+Agilent and Waters, and no charge for AB SCIEX.</p>
+<p>CantWaiT accepts
+two command-line arguments for adjusting peak-filtering:
+a minimum SNR (in wavelet space) and minimum <em>m</em>/<em>z</em> peak spacing. By default, CantWaiT applies a minimum SNR
+of 1.0 and peak spacing of 0.1 <em>m</em>/<em>z</em>. We have found that for complex samples a minimum SNR of 1.0 generally
+results in identifications within 5% of the maximum number of identifications
+across a range of minimum SNR values (see Figure S1 in the <a href="#notes-1" class="usa-link">Supporting Information</a>); however, we recommend
+testing different values for analysis of new data sets. We have observed
+optimal values ranging from 0.0 (no filtering of peaks based on the
+SNR) to above 2.0. Adjusting the peak spacing parameter can be useful
+for high-resolution data, where peaks may be resolved within narrow <em>m</em>/<em>z</em> ranges; for instance, we applied a
+value of 0.01 <em>m</em>/<em>z</em> for analysis of
+Thermo Q-Exactive data.</p></section><section id="sec6"><h2 class="pmc_sec_title">Results</h2>
+<section id="sec6.1"><h3 class="pmc_sec_title">Peak List Size Distributions</h3>
+<p>Because the number of
+peptide identifications may be sensitive to the minimum SNR, we compared
+identifications on the basis of equal peak list size. This was accomplished
+by adjusting the minimum SNR until the total number of peaks was roughly
+equal to that of vendor or commercial software. Note that this approach
+still resulted in a different number of peaks in individual MS/MS
+spectra when comparing CantWaiT and vendor/commercial software. This
+is apparent in Figure <a href="#fig1" class="usa-link">1</a>, which shows the peak
+list size distributions for complex samples measured on four instruments.
+The discrepancies in Figure <a href="#fig1" class="usa-link">1</a> do not necessarily
+reflect gaps in algorithm quality, but rather highlight differences
+in peak resolution and in peak-picking/filtering methods. For instance,
+the close agreement in the Thermo panel is a result of highly resolved
+(17 500 for MS/MS spectra) peaks, which makes peak identification
+more straightforward and thus more consistent between CantWaiT and
+Thermo software. For less ideal data, CantWaiT is versatile enough
+to produce reasonable agreement in peak list distributions across
+different instrument and software platforms. The main feature of CantWaiT
+that makes it well suited for achieving consistent performance across
+different platforms is the calculation of correlation values between
+the Ricker wavelet and raw profile data. This procedure accounts for
+peak shape and makes CantWaiT less sensitive to an instrument’s
+sampling rate than methods based on peak intensity alone.</p>
+<figure class="fig xbox font-sm" id="fig1"><h4 class="obj_head">Figure 1.</h4>
+<p class="img-box line-height-none margin-x-neg-2 tablet:margin-x-0 text-center"><img class="graphic" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/658d/4324452/a6b2e0a49d90/pr-2014-00886y_0001.jpg" loading="lazy" id="gr1" height="520" width="666" alt="Figure 1"></p>
+<div class="p text-right font-secondary"><a href="figure/fig1/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div>
+<figcaption><p>Comparison
+of peak list size distributions for the most complex
+samples analyzed on four instruments. The <em>x</em> axis
+represents the number of peaks in an individual MS/MS spectrum. Gray
+curves correspond to results from vendor or commercial software, and
+colored curves correspond to results produced by CantWaiT peak-picking.
+Note that the samples used for each platform are different and therefore
+comparisons should be made only within each individual panel.</p></figcaption></figure></section><section id="sec6.2"><h3 class="pmc_sec_title">Precursor Mass Accuracy</h3>
+<p>An important metric for evaluating
+signal processing performance is mass accuracy, which measures how
+close the observed masses of matched ions are to the predicted locations.
+Figure <a href="#fig2" class="usa-link">2</a> compares the median mass accuracy
+of matched precursors in each data set resulting from MyriMatch searches.
+The agreement between CantWaiT peak positions and vendor software
+is high, with the majority of the results falling within 3 ppm. This
+result establishes that CantWaiT selects peak positions accurately
+and, in many cases, outperforms software tools that were optimized
+for a particular quality of spectra.</p>
+<figure class="fig xbox font-sm" id="fig2"><h4 class="obj_head">Figure 2.</h4>
+<p class="img-box line-height-none margin-x-neg-2 tablet:margin-x-0 text-center"><img class="graphic" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/658d/4324452/f07e8904c041/pr-2014-00886y_0002.jpg" loading="lazy" id="gr2" height="602" width="790" alt="Figure 2"></p>
+<div class="p text-right font-secondary"><a href="figure/fig2/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div>
+<figcaption><p>Median precursor mass accuracy difference
+between precursors matched
+from ProteoWizard vs vendor/commercial software. Positive values indicate
+that ProteoWizard’s median mass accuracy is better (i.e., smaller
+on an absolute scale) than the median mass accuracy of vendor/commercial
+software (value on <em>y</em> axis = |MA<sub>vendor</sub>| – |MA<sub>Pwiz</sub>|, where
+MA is the median mass accuracy). Red data correspond to Waters Synapt
+G2/G2-S; green, AB SCIEX Triple TOF 5600; blue, Agilent 6530/6550
+QqTOF; and purple, Thermo Q-Exactive. Sample complexity increases
+for each vendor moving from left to right.</p></figcaption></figure></section><section id="sec6.3"><h3 class="pmc_sec_title">Distinct Peptide Identifications</h3>
+<p>We also compared the
+total number of distinct peptides resulting from application of ProteoWizard
+vs vendor/commercial signal processing. Figure <a href="#fig3" class="usa-link">3</a> plots the log<sub>10</sub> difference between distinct peptides
+identified from ProteoWizard and vendor/commercial processing. For
+reference, log difference values of 0.05, 0.10, and 0.15 indicate
+that ProteoWizard identified 12, 26, and 41% more peptides than that
+of vendor/commercial software, respectively.</p>
+<figure class="fig xbox font-sm" id="fig3"><h4 class="obj_head">Figure 3.</h4>
+<p class="img-box line-height-none margin-x-neg-2 tablet:margin-x-0 text-center"><img class="graphic" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/658d/4324452/1967dc0705f5/pr-2014-00886y_0003.jpg" loading="lazy" id="gr3" height="494" width="666" alt="Figure 3"></p>
+<div class="p text-right font-secondary"><a href="figure/fig3/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div>
+<figcaption><p>Logarithm of the ratio
+of the number of distinct peptides identified
+by ProteoWizard to the number of peptides identified by vendor/commercial
+software and searched using (Top) MyriMatch and (Bottom) MS-GF+. Positive
+values indicate that identifications were higher with ProteoWizard
+signal processing. Circles indicate that all signal processing was
+performed within ProteoWizard, and triangles correspond to cases where
+ProteoWizard peak lists were combined with vendor-reported precursor
+charges and monoisotopic <em>m</em>/<em>z</em> values.
+The symbol colors indicate the vendor; see the caption to Figure <a href="#fig2" class="usa-link">2</a> for details. Note that rat liver data analyzed
+by MS-GF+ were removed due to suspected software errors.</p></figcaption></figure><p>Overall, ProteoWizard signal processing software
+produced identifications
+that were comparable to those of vendor and commercial software, with
+the number of identified peptides generally within ∼10%. This
+is true for both search engines, across different sample complexities
+measured on numerous instruments. There are exceptions (discussed
+below) where ProteoWizard lags behind vendor/commercial software more
+significantly (e.g., Waters G2-K562 data); however, there are also
+cases where the opposite is true. While there appear to be some minor
+differences between using MyriMatch vs MS-GF+ in Figure <a href="#fig3" class="usa-link">3</a>, overall these differences are insignificant.</p>
+<p>A perhaps
+less obvious trend in Figure <a href="#fig3" class="usa-link">3</a> is the slight
+drop in relative identifications for complex samples.
+To investigate this behavior further, we isolated different areas
+of the signal processing workflow by combining CantWaiT peak lists
+with vendor precursor charges and monoisotopic <em>m</em>/<em>z</em> values. We performed this analysis for all vendors except
+Waters, where Mascot Distiller’s summation of MS/MS subscans
+resulted in a different number and order of spectra compared to that
+from ProteoWizard.</p>
+<p>The general result of exchanging precursor
+information (i.e., charge
+and monoisotopic <em>m</em>/<em>z</em> value) from
+Turbocharger with those from vendor software was an increase in the
+number of identified peptides. In the Thermo Jurkat sample, exchanging
+precursor information produced consistent identifications with peak
+lists from Thermo software, suggesting that CantWaiT peak-picking
+is on par with Thermo software for the Jurkat sample. Exchanging precursor
+information produced less drastic improvements for the AB SCIEX and
+Agilent samples. Overall, CantWaiT appears to produce identifications
+on par with Agilent while slightly lagging behind AB SCIEX peak-picking.</p></section><section id="sec6.4"><h3 class="pmc_sec_title">The Effect of Precursor Charge Assignment</h3>
+<p>To examine
+the performance of Turbocharger, we compared the precursor charges
+reported by vendor software with those predicted by Turbocharger.
+Figure <a href="#fig4" class="usa-link">4</a> plots the percent agreement between
+vendor-reported and Turbocharger-reported charge states on complex
+samples from all vendors except Waters (Waters data were again not
+included due to differences in the number and order of spectra between
+Mascot Distiller and ProteoWizard). We first analyzed results from
+the Thermo Jurkat data, which is a valuable benchmark, as acquisition-time
+processing required that the precursor isotope cluster in the MS1
+spectrum match an averagine-based theoretical cluster. Hence, it is
+very unlikely for the Thermo software’s precursor charge or
+monoisotopic peak assignment to be wrong. The agreement with Thermo
+software is high (&gt;95%) across all of the reported charge states,
+indicating that Turbocharger assigned reasonable charges for a vast
+majority of MS/MS spectra. Interestingly, this small discrepancy in
+charge assignment still resulted in a noticeable disagreement in the
+number of identified peptides (Figure <a href="#fig3" class="usa-link">3</a>).</p>
+<figure class="fig xbox font-sm" id="fig4"><h4 class="obj_head">Figure 4.</h4>
+<p class="img-box line-height-none margin-x-neg-2 tablet:margin-x-0 text-center"><img class="graphic" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/658d/4324452/08bca871a59e/pr-2014-00886y_0004.jpg" loading="lazy" id="gr4" height="437" width="542" alt="Figure 4"></p>
+<div class="p text-right font-secondary"><a href="figure/fig4/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div>
+<figcaption><p>Percent
+of vendor-assigned precursor charges that were assigned
+the same charge from Turbocharger for the most complex sample analyzed
+from each vendor (except for Waters). Error bars span ±1 SD and
+are visible when greater than the symbol size. For each charge state,
+a sample size of at least 200 was required for inclusion. Note that
+comparisons should not be inferred between vendors, as each data set
+is different in sample and size, but should be made only to the agreement
+of Turbocharger with the vendor charge state assignments.</p></figcaption></figure><p>For Agilent and AB SCIEX data, the level of agreement
+between Turbocharger
+and vendor software was lower, in particular for high charge states.
+This does not necessarily indicate poor algorithm performance on the
+part of Turbocharger, but rather differences in the way these algorithms
+handle chimeric spectra (i.e., isolation windows containing multiple
+precursor ions). In spite of the disagreement in charge states, the
+results in Figure <a href="#fig3" class="usa-link">3</a> suggest that Turbocharger
+is still able to identify a comparable number of peptides for these
+samples. In the case of the Agilent serum data, ProteoWizard signal
+processing actually produced more spectrum matches than vendor software
+for all four replicates. However, ProteoWizard slightly underperformed
+vendor software on the basis of distinct peptides, suggesting that
+Agilent software was better able to identify new peptides that are
+not repeatedly identified across multiple MS/MS spectra. An analysis
+of the overlap in distinct matches between ProteoWizard and vendor
+software corroborated this point (see Figure S2 in the <a href="#notes-1" class="usa-link">Supporting Information</a>).</p>
+<p>In order to better
+understand the impact of chimeric spectra on
+ProteoWizard signal processing, we computed the frequency of the presence
+of multiple precursors in all data sets. MS/MS spectra were classified
+as chimeric if at least two of the top-eight-ranked isotope chains
+possessed different charge states, with relative intensity scores
+of less than 0.30 and total intensity scores of less than 0.10. For
+all tested samples, we found a maximum frequency of 51% in the Waters
+K562 data; recall that ProteoWizard performance (relative to Mascot
+Distiller) was lowest in this data set among all that we tested. Other
+complex samples for Thermo, AB SCIEX, and Agilent were found to contain
+multiple charges in the MS1 isolation window in 13, 27, and 35% of
+MS/MS spectra, respectively, further suggesting that the discrepancies
+in Figure <a href="#fig4" class="usa-link">4</a> are due to the presence of multiple
+precursor ions in the MS1 isolation window. An example of overlapping
+isotopic distributions from the Agilent serum data is provided in
+the <a href="#notes-1" class="usa-link">Supporting Information</a> (see Figure
+S3 and Table S7), along with a more detailed discussion of how Turbocharger
+handles situations where multiple precursor ions are present.</p></section><section id="sec6.5"><h3 class="pmc_sec_title">The Effect
+of Deisotoping</h3>
+<p>The final signal processing
+algorithm we tested was the Poisson deisotoper. Deisotoping can improve
+identifications by reducing the total number of peaks in a MS/MS spectrum
+while retaining the number of matched peaks (assuming none of the
+matched peaks are incorrectly removed); in other words, deisotoping
+can improve a peptide search engine’s confidence that matched
+peaks are not false positives. Indeed, we found that deisotoping increased
+the number of identified peptides for all replicates in the most complex
+samples tested. The increases were marginal in some cases (e.g., 0.1%),
+but ranged as high as 5.6%. See Figure S4 in the <a href="#notes-1" class="usa-link">Supporting Information</a> for a plot of the percent increase
+in distinct peptide identifications across all complex data sets.
+In addition to improving CantWaiT peak lists, the Poisson deisotoper
+can also be applied to improve nondeisotoped vendor peak lists. For
+instance, peptide identifications were improved by 8.2% by applying
+deisotoping to vendor peak lists of one of the Agilent serum samples.</p></section><section id="sec6.6"><h3 class="pmc_sec_title">Analysis Runtime</h3>
+<p>Computational efficiency was one of
+the primary design goals of the ProteoWizard signal processing software.
+The runtime for analysis depends on a number of factors, primarily
+the number of points in a typical peak and in the entire spectrum.
+As a test case, in the <a href="#notes-1" class="usa-link">Supporting Information</a> (Figure S5) we have included a plot showing the CantWaiT analysis
+time as a function of the number of <em>m</em>/<em>z</em> points in a spectrum for the Thermo Jurkat sample. The runtime ranged
+from ∼1–5 ms for spectra containing less than ∼2000
+points to ∼80 ms for a spectrum containing ∼20 000
+points. Meanwhile, Turbocharger executed in ∼5–15 ms
+per spectrum, depending of the density of <em>m</em>/<em>z</em> points within the isolation window and number of isotope
+chains that are built and scored.</p>
+<p>Note that runtime also depends
+on the hardware employed for analysis. The timings reported in the
+previous paragraph are from benchmarks run on a 3.5 GHz Intel Core
+i7-4770K processor. We additionally incorporated support for multithreading
+in msConvert, allowing multiple spectra to be analyzed simultaneously
+if multiple CPU cores are available on a processor.</p></section></section><section id="sec7"><h2 class="pmc_sec_title">Conclusions</h2>
+<p>We have incorporated high-quality signal processing tools into
+ProteoWizard that can be easily accessed and applied through msConvert
+for analyzing files in a variety of raw and open file formats (please
+refer to Table S2 in the <a href="#notes-1" class="usa-link">Supporting Information</a> for examples of how to apply the tools through msConvert). Comparisons
+to vendor and commercial signal processing algorithms showed that
+these new tools perform well across many different types and qualities
+of spectral data, both in terms of precursor mass accuracy and identified
+peptides. This, combined with the high computational efficiency of
+CantWaiT and Turbocharger, makes the tools an attractive option for
+analysis of proteomic MS/MS data.</p>
+<p>In the future, we plan to
+improve these signal processing tools
+further. Current plans include exploring strategies for improving
+how chimeric spectra are handled by Turbocharger and incorporating
+peak information across adjacent scans in retention time to improve
+CantWaiT performance.</p></section><section id="ack1" class="ack"><h2 class="pmc_sec_title">Acknowledgments</h2>
+<p>We thank the Proteomics
+Platform group at the Broad Institute
+of MIT and Harvard for providing the Q-Exactive Jurkat lysate tryptic
+digest dataset, Arthur Moseley at Duke University for sharing the
+Waters yeast data, Roy Martin for providing the K562 cell lysate data
+from the Waters Synapt G2-S, John Cottrell for assisting us with evaluation
+licenses of Mascot Distiller, and John Wikswo for helpful discussion.
+We gratefully acknowledge support from the National Institutes of
+Health through grant no. 5UH2TR000491-2 (W.R.F., S.D.S., C.R.G., J.A.M.)
+and the Department of Defense through DARPA-11-73-MPSys-FP-011 (W.R.F.,
+S.D.S., C.R.G., J.A.M., D.L.T.) and CBMXCEL-XL1-2-0001 (W.R.F., S.D.S.,
+C.R.G., J.A.M.). W.R.F., L.J.Z., and D.L.T. received support from
+the National Cancer Institute through grant no. U24 CA159988. B.W.G.
+acknowledges support by an National Center for Research Resources
+shared instrumentation grant for the Triple TOF 5600 (1S10 OD016281).
+R.R.T. acknowledges the support of the National Institute of General
+Medical Sciences (8 P41 GM103422-35) from the National Institutes
+of Health.</p></section><section id="dl1" class="glossary"><h2 class="pmc_sec_title">Glossary</h2>
+<h3>Abbreviations</h3>
+<dl class="def-list">
+<dt>AGC</dt>
+<dd><p>automatic gain control</p></dd>
+<dt>CWT</dt>
+<dd><p>continuous wavelet transformation</p></dd>
+<dt>DDA</dt>
+<dd><p>data-dependent
+acquisition</p></dd>
+<dt>DTT</dt>
+<dd><p>dithiothreitol</p></dd>
+<dt>IAA</dt>
+<dd><p>iodoacetic acid</p></dd>
+<dt>KL</dt>
+<dd><p>Kullback–Leibler</p></dd>
+<dt>LC</dt>
+<dd><p>liquid chromatography</p></dd>
+<dt>MS</dt>
+<dd><p>mass spectrometry</p></dd>
+<dt>MS1</dt>
+<dd><p>mass spectrum of precursor ions</p></dd>
+<dt>MS/MS</dt>
+<dd><p>tandem mass spectrometry or tandem
+mass spectrum</p></dd>
+<dt>
+<em>m</em>/<em>z</em>
+</dt>
+<dd><p>mass over charge</p></dd>
+<dt>QqTOF</dt>
+<dd><p>quadrupole time-of-flight</p></dd>
+<dt>SNR</dt>
+<dd><p>signal-to-noise ratio</p></dd>
+<dt>SSE</dt>
+<dd><p>sum of squared
+errors</p></dd>
+<dt>TCEP</dt>
+<dd><p>tris(2-carboxyethyl)phosphine</p></dd>
+<dt>TOF</dt>
+<dd><p>time-of-flight</p></dd>
+<dt>UHPLC</dt>
+<dd><p>ultra-high-performance
+liquid chromatography</p></dd>
+</dl></section><section id="notes-1"><h2 class="pmc_sec_title">Supporting Information Available</h2>
+<p>Pseudocode for CantWaiT and
+Turbocharger; KL and SSE score cutoffs used for the Poisson deisotoper;
+a table of example commands in msConvert; a table of parameters for
+CantWaiT, Turbocharger, and Poisson deisotoper; parameters applied
+for Turbocharger analysis; a plot of peptide identification as a function
+of the minimum SNR for complex samples; peptide overlap between search
+results on ProteoWizard peak lists vs vendor/commercial software peak
+lists; an example of a real chimeric MS/MS spectrum, with a detailed
+discussion of how Turbocharger treats cases where multiple precursor
+ions are present; a plot showing the percent increase in peptide identifications
+with deisotoping applied for complex samples; a plot showing the CantWaiT
+runtime as a function of the number of <em>m</em>/<em>z</em> points in a spectrum; and data set details. This material
+is available free of charge via the Internet at <a href="http://pubs.acs.org" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">http://pubs.acs.org</a>.</p></section><section id="NOTES-d4661e1276-autogenerated"><p>The authors declare no
+competing financial interest.</p></section><section id="funding-statement1" lang="en"><h2 class="pmc_sec_title">Funding Statement</h2>
+<p>National Institutes of Health, United States</p></section><section id="sec17"><h2 class="pmc_sec_title">Supplementary Material</h2>
+<section class="sm xbox font-sm" id="sifile1"><div class="media p"><div class="caption">
+<a href="/articles/instance/4324452/bin/pr500886y_si_001.pdf" data-ga-action="click_feat_suppl" class="usa-link">pr500886y_si_001.pdf</a><sup> (712.3KB, pdf) </sup>
+</div></div></section></section><section id="ref-list1" class="ref-list"><h2 class="pmc_sec_title">References</h2>
+<section id="ref-list1_sec2"><ol class="ref-list font-sm">
+<li id="ref1">
+<cite>Angel T. E.; Aryal U. K.; Hengel S. M.; et al. Mass spectrometry-based
+proteomics: existing capabilities and future directions. Chem. Soc. Rev.
+2012, 41, 3912–28.</cite> [<a href="https://doi.org/10.1039/c2cs15331a" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC3375054/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/22498958/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Chem.%20Soc.%20Rev.&amp;title=Mass%20spectrometry-based%20proteomics:%20existing%20capabilities%20and%20future%20directions&amp;author=T.%20E.%20Angel&amp;author=U.%20K.%20Aryal&amp;author=S.%20M.%20Hengel&amp;volume=41&amp;publication_year=2012&amp;pages=3912-28&amp;pmid=22498958&amp;doi=10.1039/c2cs15331a&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="ref2">
+<cite>Nesvizhskii A. I.; Vitek O.; Aebersold R.
+Analysis and validation of proteomic
+data generated by tandem mass spectrometry. Nat. Methods.
+2007, 4, 787–797.</cite> [<a href="https://doi.org/10.1038/nmeth1088" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/17901868/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Nat.%20Methods.&amp;title=Analysis%20and%20validation%20of%20proteomic%20data%20generated%20by%20tandem%20mass%20spectrometry&amp;author=A.%20I.%20Nesvizhskii&amp;author=O.%20Vitek&amp;author=R.%20Aebersold&amp;volume=4&amp;publication_year=2007&amp;pages=787-797&amp;pmid=17901868&amp;doi=10.1038/nmeth1088&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="ref3">
+<cite>Bantscheff M.; Lemeer S.; Savitski M. M.; Kuster B.
+Quantitative mass spectrometry
+in proteomics: critical review update from 2007 to the present. Anal. Bioanal. Chem.
+2012, 404, 939–65.</cite> [<a href="https://doi.org/10.1007/s00216-012-6203-4" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/22772140/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Anal.%20Bioanal.%20Chem.&amp;title=Quantitative%20mass%20spectrometry%20in%20proteomics:%20critical%20review%20update%20from%202007%20to%20the%20present&amp;author=M.%20Bantscheff&amp;author=S.%20Lemeer&amp;author=M.%20M.%20Savitski&amp;author=B.%20Kuster&amp;volume=404&amp;publication_year=2012&amp;pages=939-65&amp;pmid=22772140&amp;doi=10.1007/s00216-012-6203-4&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="ref4">
+<cite>Mantini D.; Petrucci F.; Pieragostino D.; et al. LIMPIC: a computational
+method for the separation of protein MALDI-TOF-MS signals from noise. BMC Bioinf.
+2007, 8, 101.</cite> [<a href="https://doi.org/10.1186/1471-2105-8-101" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC1847688/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/17386085/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=BMC%20Bioinf.&amp;title=LIMPIC:%20a%20computational%20method%20for%20the%20separation%20of%20protein%20MALDI-TOF-MS%20signals%20from%20noise&amp;author=D.%20Mantini&amp;author=F.%20Petrucci&amp;author=D.%20Pieragostino&amp;volume=8&amp;publication_year=2007&amp;pages=101&amp;pmid=17386085&amp;doi=10.1186/1471-2105-8-101&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="ref5">
+<cite>Cox J.; Mann M.
+MaxQuant enables high
+peptide identification rates, individualized
+p.p.b.-range mass accuracies and proteome-wide protein quantification. Nat. Biotechnol.
+2008, 26, 1367–72.</cite> [<a href="https://doi.org/10.1038/nbt.1511" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/19029910/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Nat.%20Biotechnol.&amp;title=MaxQuant%20enables%20high%20peptide%20identification%20rates,%20individualized%20p.p.b.-range%20mass%20accuracies%20and%20proteome-wide%20protein%20quantification&amp;author=J.%20Cox&amp;author=M.%20Mann&amp;volume=26&amp;publication_year=2008&amp;pages=1367-72&amp;pmid=19029910&amp;doi=10.1038/nbt.1511&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="ref6">
+<cite>Bellew M.; Coram M.; Fitzgibbon M.; et al. A suite of algorithms
+for the comprehensive analysis of complex protein mixtures using high-resolution
+LC–MS. Bioinformatics
+2006, 22, 1902–9.</cite> [<a href="https://doi.org/10.1093/bioinformatics/btl276" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/16766559/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Bioinformatics&amp;title=A%20suite%20of%20algorithms%20for%20the%20comprehensive%20analysis%20of%20complex%20protein%20mixtures%20using%20high-resolution%20LC%E2%80%93MS&amp;author=M.%20Bellew&amp;author=M.%20Coram&amp;author=M.%20Fitzgibbon&amp;volume=22&amp;publication_year=2006&amp;pages=1902-9&amp;pmid=16766559&amp;doi=10.1093/bioinformatics/btl276&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="ref7">
+<cite>Sturm M.; Bertsch A.; Gröpl C.; et al. OpenMS—an open-source
+software framework for mass spectrometry. BMC
+Bioinf.
+2008, 9, 163.</cite> [<a href="https://doi.org/10.1186/1471-2105-9-163" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC2311306/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/18366760/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=BMC%20Bioinf.&amp;title=OpenMS%E2%80%94an%20open-source%20software%20framework%20for%20mass%20spectrometry&amp;author=M.%20Sturm&amp;author=A.%20Bertsch&amp;author=C.%20Gr%C3%B6pl&amp;volume=9&amp;publication_year=2008&amp;pages=163&amp;pmid=18366760&amp;doi=10.1186/1471-2105-9-163&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="ref8">
+<cite>Wang P.; Yang P.; Arthur J.; Yang J. Y. H.
+A dynamic wavelet-based
+algorithm for pre-processing tandem mass spectrometry data. Bioinformatics
+2010, 26, 2242–9.</cite> [<a href="https://doi.org/10.1093/bioinformatics/btq403" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/20628072/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Bioinformatics&amp;title=A%20dynamic%20wavelet-based%20algorithm%20for%20pre-processing%20tandem%20mass%20spectrometry%20data&amp;author=P.%20Wang&amp;author=P.%20Yang&amp;author=J.%20Arthur&amp;author=J.%20Y.%20H.%20Yang&amp;volume=26&amp;publication_year=2010&amp;pages=2242-9&amp;pmid=20628072&amp;doi=10.1093/bioinformatics/btq403&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="ref9">
+<cite>Du P.; Kibbe W. A.; Lin S. M.
+Improved peak detection in mass spectrum
+by incorporating continuous wavelet transform-based pattern matching. Bioinformatics
+2006, 22, 2059–2065.</cite> [<a href="https://doi.org/10.1093/bioinformatics/btl355" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/16820428/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Bioinformatics&amp;title=Improved%20peak%20detection%20in%20mass%20spectrum%20by%20incorporating%20continuous%20wavelet%20transform-based%20pattern%20matching&amp;author=P.%20Du&amp;author=W.%20A.%20Kibbe&amp;author=S.%20M.%20Lin&amp;volume=22&amp;publication_year=2006&amp;pages=2059-2065&amp;pmid=16820428&amp;doi=10.1093/bioinformatics/btl355&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="ref10">
+<cite>Monroe M. E.; Tolić N.; Jaitly N.; Shaw J. L.; Adkins J. N.; Smith R. D.
+VIPER: an advanced software package to support high-throughput
+LC–MS peptide identification. Bioinformatics
+2007, 23, 2021–3.</cite> [<a href="https://doi.org/10.1093/bioinformatics/btm281" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/17545182/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Bioinformatics&amp;title=VIPER:%20an%20advanced%20software%20package%20to%20support%20high-throughput%20LC%E2%80%93MS%20peptide%20identification&amp;author=M.%20E.%20Monroe&amp;author=N.%20Toli%C4%87&amp;author=N.%20Jaitly&amp;author=J.%20L.%20Shaw&amp;author=J.%20N.%20Adkins&amp;volume=23&amp;publication_year=2007&amp;pages=2021-3&amp;pmid=17545182&amp;doi=10.1093/bioinformatics/btm281&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="ref11">
+<cite>Hoopmann M. R.; Finney G. L.; Maccoss M. J.
+High speed
+data reduction, feature
+detection, and MS/MS spectrum quality assessment of shotgun proteomics
+datasets. Anal. Chem.
+2007, 79, 5620–5632.</cite> [<a href="https://doi.org/10.1021/ac0700833" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC2556510/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/17580982/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Anal.%20Chem.&amp;title=High%20speed%20data%20reduction,%20feature%20detection,%20and%20MS/MS%20spectrum%20quality%20assessment%20of%20shotgun%20proteomics%20datasets&amp;author=M.%20R.%20Hoopmann&amp;author=G.%20L.%20Finney&amp;author=M.%20J.%20Maccoss&amp;volume=79&amp;publication_year=2007&amp;pages=5620-5632&amp;pmid=17580982&amp;doi=10.1021/ac0700833&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="ref12">
+<cite>Horn D. M.; Zubarev R. A.; Mclafferty F. W.
+Automated
+reduction and interpretation
+of high resolution electrospray mass spectra of large molecules. J. Am. Soc. Mass Spectrom.
+2000, 11, 320–332.</cite> [<a href="https://doi.org/10.1016/s1044-0305(99)00157-9" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/10757168/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=J.%20Am.%20Soc.%20Mass%20Spectrom.&amp;title=Automated%20reduction%20and%20interpretation%20of%20high%20resolution%20electrospray%20mass%20spectra%20of%20large%20molecules&amp;author=D.%20M.%20Horn&amp;author=R.%20A.%20Zubarev&amp;author=F.%20W.%20Mclafferty&amp;volume=11&amp;publication_year=2000&amp;pages=320-332&amp;pmid=10757168&amp;doi=10.1016/s1044-0305(99)00157-9&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="ref13">
+<cite>Berndt P.; Hobohm U.; Langen H.; Technologies G.; Roche F. H.
+Reliable automatic protein identification from matrix-assisted
+laser desorption/ionization mass spectrometric peptide fingerprints
+Proteomics and 2-DE. Electrophoresis
+1999, 20, 3521–3526.</cite> [<a href="https://doi.org/10.1002/(SICI)1522-2683(19991201)20:18&lt;3521::AID-ELPS3521&gt;3.0.CO;2-8" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/10612278/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Electrophoresis&amp;title=Reliable%20automatic%20protein%20identification%20from%20matrix-assisted%20laser%20desorption/ionization%20mass%20spectrometric%20peptide%20fingerprints%20Proteomics%20and%202-DE&amp;author=P.%20Berndt&amp;author=U.%20Hobohm&amp;author=H.%20Langen&amp;author=G.%20Technologies&amp;author=F.%20H.%20Roche&amp;volume=20&amp;publication_year=1999&amp;pages=3521-3526&amp;pmid=10612278&amp;doi=10.1002/(SICI)1522-2683(19991201)20:18&lt;3521::AID-ELPS3521&gt;3.0.CO;2-8&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="ref14">
+<cite>Gras R.; Müller M.; Gasteiger E.; et al. Improving protein identification
+from peptide mass fingerprinting through a parameterized multi-level
+scoring algorithm and an optimized peak detection. Electrophoresis
+1999, 20, 3535–3550.</cite> [<a href="https://doi.org/10.1002/(SICI)1522-2683(19991201)20:18&lt;3535::AID-ELPS3535&gt;3.0.CO;2-J" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/10612280/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Electrophoresis&amp;title=Improving%20protein%20identification%20from%20peptide%20mass%20fingerprinting%20through%20a%20parameterized%20multi-level%20scoring%20algorithm%20and%20an%20optimized%20peak%20detection&amp;author=R.%20Gras&amp;author=M.%20M%C3%BCller&amp;author=E.%20Gasteiger&amp;volume=20&amp;publication_year=1999&amp;pages=3535-3550&amp;pmid=10612280&amp;doi=10.1002/(SICI)1522-2683(19991201)20:18&lt;3535::AID-ELPS3535&gt;3.0.CO;2-J&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="ref15">
+<cite>Senko M. W.; Beu S. C.; Mclafferty F. W.
+Determination of monoisotopic masses
+and ion populations for large biomolecules from resolved isotopic
+distributions. J. Am. Soc. Mass Spectrom.
+1995, 6, 229–233.</cite> [<a href="https://doi.org/10.1016/1044-0305(95)00017-8" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/24214167/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=J.%20Am.%20Soc.%20Mass%20Spectrom.&amp;title=Determination%20of%20monoisotopic%20masses%20and%20ion%20populations%20for%20large%20biomolecules%20from%20resolved%20isotopic%20distributions&amp;author=M.%20W.%20Senko&amp;author=S.%20C.%20Beu&amp;author=F.%20W.%20Mclafferty&amp;volume=6&amp;publication_year=1995&amp;pages=229-233&amp;pmid=24214167&amp;doi=10.1016/1044-0305(95)00017-8&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="ref16">
+<cite>Hussong R.; Tholey A.; Hildebrandt A.; et al. Efficient analysis of
+mass spectrometry data using the isotope wavelet. AIP Conf Proc.
+2007, 940, 139–149.</cite> [<a href="https://scholar.google.com/scholar_lookup?journal=AIP%20Conf%20Proc.&amp;title=Efficient%20analysis%20of%20mass%20spectrometry%20data%20using%20the%20isotope%20wavelet&amp;author=R.%20Hussong&amp;author=A.%20Tholey&amp;author=A.%20Hildebrandt&amp;volume=940&amp;publication_year=2007&amp;pages=139-149&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="ref17">
+<cite>Tabb D. L.; Shah M. B.; Strader M. B.; Connelly H. M.; Hettich R. L.; Hurst G. B.
+Determination of peptide and protein ion charge states
+by Fourier transformation of isotope-resolved mass spectra. J. Am. Soc. Mass Spectrom.
+2006, 17, 903–15.</cite> [<a href="https://doi.org/10.1016/j.jasms.2006.02.003" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/16713712/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=J.%20Am.%20Soc.%20Mass%20Spectrom.&amp;title=Determination%20of%20peptide%20and%20protein%20ion%20charge%20states%20by%20Fourier%20transformation%20of%20isotope-resolved%20mass%20spectra&amp;author=D.%20L.%20Tabb&amp;author=M.%20B.%20Shah&amp;author=M.%20B.%20Strader&amp;author=H.%20M.%20Connelly&amp;author=R.%20L.%20Hettich&amp;volume=17&amp;publication_year=2006&amp;pages=903-15&amp;pmid=16713712&amp;doi=10.1016/j.jasms.2006.02.003&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="ref18">
+<cite>Zhang Z.; Marshall A. G.
+A universal algorithm for fast and automated charge
+state deconvolution of electrospray mass-to-charge ratio spectra. J. Am. Soc. Mass Spectrom.
+1998, 9, 225–33.</cite> [<a href="https://doi.org/10.1016/S1044-0305(97)00284-5" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/9879360/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=J.%20Am.%20Soc.%20Mass%20Spectrom.&amp;title=A%20universal%20algorithm%20for%20fast%20and%20automated%20charge%20state%20deconvolution%20of%20electrospray%20mass-to-charge%20ratio%20spectra&amp;author=Z.%20Zhang&amp;author=A.%20G.%20Marshall&amp;volume=9&amp;publication_year=1998&amp;pages=225-33&amp;pmid=9879360&amp;doi=10.1016/S1044-0305(97)00284-5&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="ref19">
+<cite>Chambers M. C.; Maclean B.; Burke R.; et al. A cross-platform toolkit
+for mass spectrometry and proteomics. Nat. Biotechnol.
+2012, 30, 918–20.</cite> [<a href="https://doi.org/10.1038/nbt.2377" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC3471674/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/23051804/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Nat.%20Biotechnol.&amp;title=A%20cross-platform%20toolkit%20for%20mass%20spectrometry%20and%20proteomics&amp;author=M.%20C.%20Chambers&amp;author=B.%20Maclean&amp;author=R.%20Burke&amp;volume=30&amp;publication_year=2012&amp;pages=918-20&amp;pmid=23051804&amp;doi=10.1038/nbt.2377&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="ref20">
+<cite>Yang C.; He Z.; Yu W.
+Comparison
+of public peak detection algorithms for
+MALDI mass spectrometry data analysis. BMC Bioinf.
+2009, 10, 4.</cite> [<a href="https://doi.org/10.1186/1471-2105-10-4" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC2631518/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/19126200/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=BMC%20Bioinf.&amp;title=Comparison%20of%20public%20peak%20detection%20algorithms%20for%20MALDI%20mass%20spectrometry%20data%20analysis&amp;author=C.%20Yang&amp;author=Z.%20He&amp;author=W.%20Yu&amp;volume=10&amp;publication_year=2009&amp;pages=4&amp;pmid=19126200&amp;doi=10.1186/1471-2105-10-4&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="ref21">
+<cite>Emanuele V. A.; Gurbaxani B. M.
+Benchmarking currently available SELDI-TOF MS preprocessing
+techniques. Proteomics
+2009, 9, 1754–62.</cite> [<a href="https://doi.org/10.1002/pmic.200701171" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/19294696/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Proteomics&amp;title=Benchmarking%20currently%20available%20SELDI-TOF%20MS%20preprocessing%20techniques&amp;author=V.%20A.%20Emanuele&amp;author=B.%20M.%20Gurbaxani&amp;volume=9&amp;publication_year=2009&amp;pages=1754-62&amp;pmid=19294696&amp;doi=10.1002/pmic.200701171&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="ref22">
+<cite>Houel S.; Abernathy R.; Renganathan K.; Meyer-arendt K.; Ahn N. G.; Old W. M.
+Quantifying the
+impact of chimera
+MS/MS spectra on peptide identification in large-scale proteomics
+studies. J. Proteome Res.
+2010, 9, 4152–4160.</cite> [<a href="https://doi.org/10.1021/pr1003856" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC3221600/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/20578722/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=J.%20Proteome%20Res.&amp;title=Quantifying%20the%20impact%20of%20chimera%20MS/MS%20spectra%20on%20peptide%20identification%20in%20large-scale%20proteomics%20studies&amp;author=S.%20Houel&amp;author=R.%20Abernathy&amp;author=K.%20Renganathan&amp;author=K.%20Meyer-arendt&amp;author=N.%20G.%20Ahn&amp;volume=9&amp;publication_year=2010&amp;pages=4152-4160&amp;pmid=20578722&amp;doi=10.1021/pr1003856&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="ref23">
+<cite>Tabb D. L.; Ma Z.; Martin D. B.; Ham A. L.; Chambers M. C.
+DirecTag: accurate
+sequence tags from peptide MS/MS through statistical scoring. J. Proteome Res.
+2008, 7, 3838–3846.</cite> [<a href="https://doi.org/10.1021/pr800154p" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC2810657/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/18630943/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=J.%20Proteome%20Res.&amp;title=DirecTag:%20accurate%20sequence%20tags%20from%20peptide%20MS/MS%20through%20statistical%20scoring&amp;author=D.%20L.%20Tabb&amp;author=Z.%20Ma&amp;author=D.%20B.%20Martin&amp;author=A.%20L.%20Ham&amp;author=M.%20C.%20Chambers&amp;volume=7&amp;publication_year=2008&amp;pages=3838-3846&amp;pmid=18630943&amp;doi=10.1021/pr800154p&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="ref24">
+<cite>Breen E. J.; Hopwood F. G.; Williams K. L.; Wilkins M. R.
+Automatic Poisson
+peak harvesting for high throughput protein identification proteomics. Electrophoresis
+2000, 21, 2243–2251.</cite> [<a href="https://doi.org/10.1002/1522-2683(20000601)21:11&lt;2243::AID-ELPS2243&gt;3.0.CO;2-K" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/10892735/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=Electrophoresis&amp;title=Automatic%20Poisson%20peak%20harvesting%20for%20high%20throughput%20protein%20identification%20proteomics&amp;author=E.%20J.%20Breen&amp;author=F.%20G.%20Hopwood&amp;author=K.%20L.%20Williams&amp;author=M.%20R.%20Wilkins&amp;volume=21&amp;publication_year=2000&amp;pages=2243-2251&amp;pmid=10892735&amp;doi=10.1002/1522-2683(20000601)21:11&lt;2243::AID-ELPS2243&gt;3.0.CO;2-K&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="ref27">
+<cite>Tabb D. L.; Fernando C. G.; Chambers M. C.
+MyriMatch: highly accurate tandem
+mass spectral peptide identification by multivariate hypergeometric
+analysis. J. Proteome Res.
+2007, 6, 654–661.</cite> [<a href="https://doi.org/10.1021/pr0604054" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC2525619/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/17269722/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=J.%20Proteome%20Res.&amp;title=MyriMatch:%20highly%20accurate%20tandem%20mass%20spectral%20peptide%20identification%20by%20multivariate%20hypergeometric%20analysis&amp;author=D.%20L.%20Tabb&amp;author=C.%20G.%20Fernando&amp;author=M.%20C.%20Chambers&amp;volume=6&amp;publication_year=2007&amp;pages=654-661&amp;pmid=17269722&amp;doi=10.1021/pr0604054&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="ref28">
+<cite>Kim S.; Gupta N.; Pevzner P. A.
+Spectral probabilities and generating
+functions of tandem mass spectra: a strike against decoy databases. J. Proteome Res.
+2008, 7, 3354–3363.</cite> [<a href="https://doi.org/10.1021/pr8001244" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC2689316/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/18597511/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=J.%20Proteome%20Res.&amp;title=Spectral%20probabilities%20and%20generating%20functions%20of%20tandem%20mass%20spectra:%20a%20strike%20against%20decoy%20databases&amp;author=S.%20Kim&amp;author=N.%20Gupta&amp;author=P.%20A.%20Pevzner&amp;volume=7&amp;publication_year=2008&amp;pages=3354-3363&amp;pmid=18597511&amp;doi=10.1021/pr8001244&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="ref29">
+<cite>Ma Z.; Dasari S.; Chambers M. C.; et al. IDPicker 2.0: improved
+protein assembly with high discrimination peptide identification filtering. J. Proteome Res.
+2009, 8, 3872–3881.</cite> [<a href="https://doi.org/10.1021/pr900360j" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">DOI</a>] [<a href="/articles/PMC2810655/" class="usa-link">PMC free article</a>] [<a href="https://pubmed.ncbi.nlm.nih.gov/19522537/" class="usa-link">PubMed</a>] [<a href="https://scholar.google.com/scholar_lookup?journal=J.%20Proteome%20Res.&amp;title=IDPicker%202.0:%20improved%20protein%20assembly%20with%20high%20discrimination%20peptide%20identification%20filtering&amp;author=Z.%20Ma&amp;author=S.%20Dasari&amp;author=M.%20C.%20Chambers&amp;volume=8&amp;publication_year=2009&amp;pages=3872-3881&amp;pmid=19522537&amp;doi=10.1021/pr900360j&amp;" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+</ol></section></section><section id="_ad93_" lang="en" class="associated-data"><h2 class="pmc_sec_title">Associated Data</h2>
+<p class="font-secondary"><em>This section collects any data citations, data availability statements, or supplementary materials included in this article.</em></p>
+<section id="_adsm93_" lang="en" class="supplementary-materials"><h3 class="pmc_sec_title">Supplementary Materials</h3>
+<section class="sm xbox font-sm" id="db_ds_supplementary-material1_reqid_"><div class="media p"><div class="caption">
+<a href="/articles/instance/4324452/bin/pr500886y_si_001.pdf" data-ga-action="click_feat_suppl" class="usa-link">pr500886y_si_001.pdf</a><sup> (712.3KB, pdf) </sup>
+</div></div></section></section></section></section><footer class="p courtesy-note font-secondary font-sm text-center"><hr class="headless">
+<p>Articles from Journal of Proteome Research are provided here courtesy of <strong>American Chemical Society</strong></p></footer></section></article>
+
+                      
+
+                    </main>
+                </div>
+            </div>
+        </div>
+
+        
+
+
+
+<!-- Secondary navigation placeholder -->
+<div class="pmc-sidenav desktop:grid-col-4 display-flex">
+    <section class="pmc-sidenav__container" aria-label="Article resources and navigation">
+        <button type="button" class="pmc-sidenav__container__close">
+            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/usa-icons/close.svg" role="img" alt="Close" />
+        </button>
+    <div class="display-none desktop:display-block">
+       <section class="margin-top-4 desktop:margin-top-0">
+              <h2 class="margin-top-0">ACTIONS</h2>
+           <ul class="usa-list usa-list--unstyled usa-list--actions">
+               
+               <li>
+                     <a
+                             href="https://doi.org/10.1021/pr500886y"
+                             class="usa-button usa-button--outline width-24 font-xs display-inline-flex flex-align-center flex-justify-start padding-left-1"
+                             target="_blank"
+                             rel="noreferrer noopener"
+                             data-ga-category="actions"
+                             data-ga-action="click"
+                             data-ga-label="publisher_link_desktop"
+                     >
+                         <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/launch.svg" alt="View on publisher site icon" class="usa-icon usa-icon--size-3 usa-icon--link"/>
+                         <span class="display-inline-flex flex-justify-center flex-1 padding-right-2">View on publisher site</span>
+                     </a>
+               </li>
+               
+               
+               <li>
+                    <a
+                            href="pdf/pr500886y.pdf"
+                            class="usa-button usa-button--outline width-24 display-inline-flex flex-align-center flex-justify-start padding-left-1"
+                            data-ga-category="actions"
+                            data-ga-action="click"
+                            data-ga-label="pdf_download_desktop"
+                    >
+                         <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/file_download.svg" alt="Download PDF icon" class="usa-icon usa-icon--size-3 usa-icon--link"/>
+                        <span class="display-inline-flex flex-justify-center flex-1">PDF (987.3 KB)</span>
+                    </a>
+               </li>
+               
+                
+               <li>
+                   <button role="button" class="usa-button width-24 citation-dialog-trigger display-inline-flex flex-align-center flex-justify-start padding-left-1"
+                        aria-label="Open dialog with citation text in different styles"
+                        data-ga-category="actions"
+                        data-ga-action="open"
+                        data-ga-label="cite_desktop"
+                        data-all-citations-url="/resources/citations/4324452/"
+                        data-citation-style="nlm"
+                        data-download-format-link="/resources/citations/4324452/export/"
+                    >
+                       <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/format_quote.svg" alt="Cite icon" class="usa-icon usa-icon--size-3 usa-icon--white"/>
+                       <span class="display-inline-flex flex-justify-center flex-1 button-label">Cite</span>
+                    </button>
+               </li>
+                
+               <li>
+
+                        <button class="usa-button width-24 collections-dialog-trigger collections-button display-inline-flex flex-align-center flex-justify-start padding-left-1 collections-button-empty"
+                              aria-label="Save article in MyNCBI collections."
+                              data-ga-category="actions"
+                              data-ga-action="click"
+                              data-ga-label="collections_button_desktop"
+                              data-collections-open-dialog-enabled="false"
+                              data-collections-open-dialog-url="https://account.ncbi.nlm.nih.gov/?back_url=https%3A%2F%2Fpmc.ncbi.nlm.nih.gov%2Farticles%2FPMC4324452%2F%23open-collections-dialog"
+                              data-in-collections="false">
+                            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/action-bookmark-full.svg" alt="Collections icon" class="usa-icon usa-icon--size-3 usa-icon--white usa-icon--bookmark-full" hidden />
+                            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/action-bookmark-empty.svg" alt="Collections icon" class="usa-icon usa-icon--size-3 usa-icon--white usa-icon--bookmark-empty" hidden />
+                            <span class="display-inline-flex flex-justify-center flex-1">Collections</span>
+                       </button>
+               </li>
+               <li class="pmc-permalink">
+                    <button
+                            type="button"
+                            class="usa-button width-24 display-inline-flex flex-align-center flex-justify padding-left-1 shadow-none"
+                            aria-label="Show article permalink"
+                            aria-expanded="false"
+                            aria-haspopup="true"
+                            data-ga-category="actions"
+                            data-ga-action="open"
+                            data-ga-label="permalink_desktop"
+                    >
+                        <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/share.svg" alt="Permalink icon" class="usa-icon usa-icon--size-3 usa-icon--white"/>
+                        <span class="display-inline-flex flex-justify-center flex-1 button-label">Permalink</span>
+                    </button>
+                   
+
+<div class="pmc-permalink__dropdown" hidden>
+    <div class="pmc-permalink__dropdown__container">
+          <h2 class="usa-modal__heading margin-top-0 margin-bottom-2 text-uppercase font-sans-xs">PERMALINK</h2>
+          <div class="pmc-permalink__dropdown__content">
+              <input type="text" class="usa-input" value="https://pmc.ncbi.nlm.nih.gov/articles/PMC4324452/" aria-label="Article permalink">
+              <button class="usa-button display-inline-flex pmc-permalink__dropdown__copy__btn margin-right-0" title="Copy article permalink" data-ga-category="save_share" data-ga-action="link" data-ga-label="copy_link">
+                  <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/content_copy.svg" alt="Copy icon" aria-hidden="true" class="usa-icon usa-icon--white" />
+                  <span class="margin-left-1">Copy</span>
+              </button>
+          </div>
+    </div>
+</div>
+               </li>
+           </ul>
+       </section>
+     </div>
+
+        <section class="pmc-resources margin-top-6 desktop:margin-top-4" data-page-path="/articles/PMC4324452/">
+            <h2 class="margin-top-0">RESOURCES</h2>
+            
+                <div class="usa-accordion usa-accordion--multiselectable" data-allow-multiple>
+                    <h3 class="usa-accordion__heading">
+                        <button
+                        type="button"
+                        class="usa-accordion__button"
+                        aria-expanded="false"
+                        aria-controls="resources-similar-articles"
+                        data-ga-category="resources_accordion"
+                        data-ga-action="open_similar_articles"
+                        data-ga-label="/articles/PMC4324452/"
+                        data-action-open="open_similar_articles"
+                        data-action-close="close_similar_articles"
+                        >
+                            Similar articles
+                        </button>
+                    </h3>
+                    <div
+                            id="resources-similar-articles"
+                            class="usa-accordion__content usa-prose"
+                            
+                                data-source-url="/resources/similar-article-links/25411686/"
+                            
+                    >
+                        
+                    </div>
+                    <h3 class="usa-accordion__heading">
+                        <button
+                        type="button"
+                        class="usa-accordion__button"
+                        aria-expanded="false"
+                        aria-controls="resources-cited-by-other-articles"
+                        data-ga-category="resources_accordion"
+                        data-ga-action="open_cited_by"
+                        data-ga-label="/articles/PMC4324452/"
+                        data-action-open="open_cited_by"
+                        data-action-close="close_cited_by"
+                        >
+                             Cited by other articles
+                        </button>
+                    </h3>
+                    <div
+                            id="resources-cited-by-other-articles"
+                            class="usa-accordion__content usa-prose"
+                            
+                                data-source-url="/resources/cited-by-links/25411686/"
+                            
+                    >
+                          
+                    </div>
+                    
+                        <h3 class="usa-accordion__heading">
+                            <button
+                            type="button"
+                            class="usa-accordion__button"
+                            aria-expanded="false"
+                            aria-controls="resources-links-to-ncbi-databases"
+                            data-ga-category="resources_accordion"
+                            data-ga-action="open_NCBI_links"
+                            data-ga-label="/articles/PMC4324452/"
+                            data-action-open="open_NCBI_links"
+                            data-action-close="close_NCBI_link"
+                            >
+                                 Links to NCBI Databases
+                            </button>
+                        </h3>
+                        <div
+                                id="resources-links-to-ncbi-databases"
+                                class="usa-accordion__content usa-prose"
+                                data-source-url="/resources/db-links/4324452/"
+                        >
+                        </div>
+                    
+                    
+                </div>
+            
+        </section>
+
+
+        <section
+        class="usa-in-page-nav usa-in-page-nav--wide margin-top-6 desktop:margin-top-4"
+        data-title-text="On this page"
+        data-title-heading-level="h2"
+        data-scroll-offset="0"
+        data-root-margin="-10% 0px -80% 0px"
+        data-main-content-selector="main"
+        data-threshold="1"
+        hidden
+        ></section>
+    </section>
+</div>
+
+        
+
+<div class="overlay" role="dialog" aria-label="Citation Dialog" hidden>
+    <div class="dialog citation-dialog" aria-hidden="true">
+        <div class="display-inline-flex flex-align-center flex-justify width-full margin-bottom-2">
+            <h2 class="usa-modal__heading margin-0">Cite</h2>
+             <button type="button" class="usa-button usa-button--unstyled close-overlay text-black width-auto"  tabindex="1">
+                 <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/close.svg" alt="Close icon" class="usa-icon usa-icon--size-3 usa-icon--button" />
+             </button>
+        </div>
+
+        
+
+<div class="citation-text-block">
+  <div class="citation-text margin-bottom-2"></div>
+  <ul class="usa-list usa-list--unstyled display-inline-flex flex-justify width-full flex-align-center">
+      <li>
+        <button
+          class="usa-button usa-button--unstyled text-no-underline display-flex flex-align-center copy-button dialog-focus"
+          data-ga-category="save_share"
+          data-ga-action="cite"
+          data-ga-label="copy"
+          tabindex="2">
+            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/content_copy.svg" alt="Copy icon" class="usa-icon usa-icon--size-3 usa-icon--link" />
+            <span>Copy</span>
+        </button>
+      </li>
+      <li>
+          <a
+              href="#"
+              role="button"
+              class="usa-button usa-button--unstyled text-no-underline display-flex flex-align-center export-button"
+              data-ga-category="save_share"
+              data-ga-action="cite"
+              data-ga-label="download"
+              title="Download a file for external citation management software"
+              tabindex="3">
+                <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/file_download.svg" alt="Download icon" aria-hidden="true" class="usa-icon usa-icon--size-3 usa-icon--link" />
+                <span class="display-none mobile-lg:display-inline">Download .nbib</span>
+                <span class="display-inline mobile-lg:display-none">.nbib</span>
+            </a>
+      </li>
+      <li>
+          
+
+<div class="display-inline-flex flex-align-center">
+  <label class="usa-label margin-top-0">Format:</label>
+  <select aria-label="Format" class="usa-select citation-style-selector padding-1 margin-top-0 border-0 padding-right-4" tabindex="4" >
+    
+      <option data-style-url-name="ama"
+              value="AMA"
+              >
+        AMA
+      </option>
+    
+      <option data-style-url-name="apa"
+              value="APA"
+              >
+        APA
+      </option>
+    
+      <option data-style-url-name="mla"
+              value="MLA"
+              >
+        MLA
+      </option>
+    
+      <option data-style-url-name="nlm"
+              value="NLM"
+              selected="selected">
+        NLM
+      </option>
+    
+  </select>
+</div>
+      </li>
+  </ul>
+</div>
+    </div>
+</div>
+
+        <div class="overlay" role="dialog" hidden>
+  <div id="collections-action-dialog" class="dialog collections-dialog" aria-hidden="true">
+   <div class="display-inline-flex flex-align-center flex-justify width-full margin-bottom-2">
+        <h2 class="usa-modal__heading margin-0">Add to Collections</h2>
+    </div>
+    <div class="collections-action-panel action-panel">
+      
+
+
+<form id="collections-action-dialog-form"
+      class="usa-form maxw-full collections-action-panel-form action-panel-content action-form action-panel-smaller-selectors"
+      data-existing-collections-url="/list-existing-collections/"
+      data-add-to-existing-collection-url="/add-to-existing-collection/"
+      data-create-and-add-to-new-collection-url="/create-and-add-to-new-collection/"
+      data-myncbi-max-collection-name-length="100"
+      data-collections-root-url="https://www.ncbi.nlm.nih.gov/myncbi/collections/">
+
+    <input type="hidden" name="csrfmiddlewaretoken" value="eXVoedp94wapPQbFjUPfWva2Iq2I3go75xctdkfri8qFYeLg12TyzSiEUZ5h2VFE">
+
+    <fieldset class="usa-fieldset margin-bottom-2">
+        <div class="usa-radio">
+            <input type="radio"
+            id="collections-action-dialog-new"
+            class="usa-radio__input usa-radio__input--tile collections-new  margin-top-0"
+            name="collections"
+            value="new"
+            data-ga-category="collections_button"
+            data-ga-action="click"
+            data-ga-label="collections_radio_new" />
+            <label class="usa-radio__label" for="collections-action-dialog-new">Create a new collection</label>
+        </div>
+        <div class="usa-radio">
+            <input type="radio"
+            id="collections-action-dialog-existing"
+            class="usa-radio__input usa-radio__input--tile collections-existing"
+            name="collections"
+            value="existing"
+            checked="true"
+            data-ga-category="collections_button"
+            data-ga-action="click"
+            data-ga-label="collections_radio_existing" />
+            <label class="usa-radio__label" for="collections-action-dialog-existing">Add to an existing collection</label>
+        </div>
+    </fieldset>
+
+    <fieldset class="usa-fieldset margin-bottom-2">
+        <div class="action-panel-control-wrap new-collections-controls">
+           <label for="collections-action-dialog-add-to-new" class="usa-label margin-top-0">
+                Name your collection
+               <abbr title="required" class="usa-hint usa-hint--required text-no-underline">*</abbr>
+          </label>
+          <input
+            type="text"
+            name="add-to-new-collection"
+            id="collections-action-dialog-add-to-new"
+            class="usa-input collections-action-add-to-new"
+            pattern="[^&quot;&amp;=&lt;&gt;/]*" title="The following characters are not allowed in the Name field: &quot;&amp;=&lt;&gt;/"
+            maxlength=""
+            data-ga-category="collections_button"
+            data-ga-action="create_collection"
+            data-ga-label="non_favorties_collection"
+            required
+          />
+        </div>
+        <div class="action-panel-control-wrap existing-collections-controls">
+             <label for="collections-action-dialog-add-to-existing" class="usa-label margin-top-0">
+                Choose a collection
+              </label>
+              <select id="collections-action-dialog-add-to-existing"
+                      class="usa-select collections-action-add-to-existing"
+                      data-ga-category="collections_button"
+                      data-ga-action="select_collection"
+                      data-ga-label="($('.collections-action-add-to-existing').val() === 'Favorites') ? 'Favorites' : 'non_favorites_collection'">
+              </select>
+              <div class="collections-retry-load-on-error usa-input-error-message selection-validation-message">
+                Unable to load your collection due to an error<br>
+                <a href="#">Please try again</a>
+              </div>
+        </div>
+    </fieldset>
+
+    <div class="display-inline-flex">
+        <button class="usa-button margin-top-0 action-panel-submit"
+            type="submit"
+            data-loading-label="Adding..."
+            data-pinger-ignore
+            data-ga-category="collections_button"
+            data-ga-action="click"
+            data-ga-label="add">
+          Add
+        </button>
+        <button class="usa-button usa-button--outline margin-top-0 action-panel-cancel"
+                aria-label="Close 'Add to Collections' panel"
+                ref="linksrc=close_collections_panel"
+                data-ga-category="collections_button"
+                data-ga-action="click"
+                data-ga-label="cancel">
+          Cancel
+        </button>
+    </div>
+</form>
+    </div>
+  </div>
+</div>
+
+        
+
+      </div>
+    </div>
+  </div>
+
+
+
+        
+    
+    
+
+<footer class="ncbi-footer ncbi-dark-background " >
+    
+        <div class="ncbi-footer__icon-section">
+            <div class="ncbi-footer__social-header">
+                Follow NCBI
+            </div>
+
+            <div class="grid-container ncbi-footer__ncbi-social-icons-container">
+                
+                    <a href="https://twitter.com/ncbi"
+                       class="ncbi-footer__social-icon ncbi-footer__social-icon--gray"
+                       target="_blank"
+                       rel="noreferrer noopener">
+                        <svg width="40"
+                             height="40"
+                             viewBox="0 0 40 40"
+                             fill="none"
+                             xmlns="http://www.w3.org/2000/svg"
+                             focusable="false"
+                             aria-hidden="true">
+                            <path d="m6.067 8 10.81 13.9L6 33.2h4.2l8.4-9.1 7.068 9.1H34L22.8 18.5 31.9 8h-3.5l-7.7 8.4L14.401 8H6.067Zm3.6 1.734h3.266l16.8 21.732H26.57L9.668 9.734Z">
+                            </path>
+                        </svg>
+                        <span class="usa-sr-only">NCBI on X (formerly known as Twitter)</span>
+                    </a>
+                
+
+                
+                    <a href="https://www.facebook.com/ncbi.nlm"
+                       class="ncbi-footer__social-icon ncbi-footer__social-icon--gray"
+                       target="_blank"
+                       rel="noreferrer noopener">
+                        <svg width="16"
+                             height="29"
+                             focusable="false"
+                             aria-hidden="true"
+                             viewBox="0 0 16 29"
+                             fill="none"
+                             xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3.8809 21.4002C3.8809 19.0932 3.8809 16.7876 3.8809 14.478C3.8809 14.2117 3.80103 14.1452 3.54278 14.1492C2.53372 14.1638 1.52334 14.1492 0.514288 14.1598C0.302626 14.1598 0.248047 14.0972 0.248047 13.8936C0.256034 12.4585 0.256034 11.0239 0.248047 9.58978C0.248047 9.37013 0.302626 9.30224 0.528931 9.3049C1.53798 9.31688 2.54837 9.3049 3.55742 9.31555C3.80103 9.31555 3.8809 9.26097 3.87957 9.00272C3.87158 8.00565 3.85428 7.00592 3.90753 6.00884C3.97142 4.83339 4.31487 3.73115 5.04437 2.78467C5.93095 1.63318 7.15699 1.09005 8.56141 0.967577C10.5582 0.79319 12.555 0.982221 14.5518 0.927641C14.7102 0.927641 14.7462 0.99287 14.7449 1.13664C14.7449 2.581 14.7449 4.02668 14.7449 5.47104C14.7449 5.67604 14.6517 5.68669 14.4946 5.68669C13.4523 5.68669 12.4113 5.68669 11.3703 5.68669C10.3506 5.68669 9.92057 6.10868 9.90593 7.13904C9.89661 7.7647 9.91525 8.39303 9.89794 9.01869C9.88995 9.26364 9.96583 9.31822 10.2015 9.31688C11.7204 9.30623 13.2393 9.31688 14.7595 9.3049C15.0257 9.3049 15.0723 9.3728 15.0444 9.62439C14.89 10.9849 14.7515 12.3467 14.6144 13.7085C14.5691 14.1571 14.5785 14.1585 14.1458 14.1585C12.8386 14.1585 11.5313 14.1665 10.2254 14.1518C9.95119 14.1518 9.89794 14.2317 9.89794 14.4899C9.90593 19.0799 9.89794 23.6752 9.91125 28.2612C9.91125 28.5674 9.8407 28.646 9.53186 28.6433C7.77866 28.6273 6.02414 28.6366 4.27094 28.634C3.82499 28.634 3.87158 28.6992 3.87158 28.22C3.87602 25.9472 3.87913 23.6739 3.8809 21.4002Z">
+                            </path>
+                        </svg>
+                        <span class="usa-sr-only">NCBI on Facebook</span>
+                    </a>
+                
+
+                
+                    <a href="https://www.linkedin.com/company/ncbinlm"
+                       class="ncbi-footer__social-icon ncbi-footer__social-icon--gray"
+                       target="_blank"
+                       rel="noreferrer noopener">
+                        <svg width="25"
+                             height="23"
+                             viewBox="0 0 26 24"
+                             fill="none"
+                             xmlns="http://www.w3.org/2000/svg"
+                             focusable="false"
+                             aria-hidden="true">
+                            <path d="M14.6983 9.98423C15.6302 9.24808 16.5926 8.74754 17.6762 8.51991C19.673 8.09126 21.554 8.30824 23.1262 9.7526C24.2351 10.7723 24.7529 12.1115 25.0165 13.5612C25.1486 14.3363 25.2105 15.1218 25.2015 15.9081C25.2015 18.3043 25.2015 20.6898 25.2082 23.0806C25.2082 23.3468 25.1549 23.444 24.8621 23.4414C23.1297 23.4272 21.3992 23.4272 19.6704 23.4414C19.4041 23.4414 19.3429 23.3588 19.3442 23.1019C19.3535 20.5194 19.3442 17.9368 19.3442 15.3543C19.3442 14.0005 18.3258 12.9448 17.0266 12.9488C15.7273 12.9528 14.6983 14.0071 14.6983 15.361C14.6983 17.9328 14.6917 20.5047 14.6983 23.0753C14.6983 23.3708 14.6198 23.444 14.3296 23.4427C12.6185 23.4294 10.9079 23.4294 9.19779 23.4427C8.93155 23.4427 8.86099 23.3735 8.86232 23.1086C8.8783 19.7619 8.88628 16.4144 8.88628 13.066C8.88628 11.5688 8.87874 10.0708 8.86365 8.57182C8.86365 8.3575 8.90758 8.27896 9.14054 8.28029C10.9048 8.29094 12.6687 8.29094 14.4321 8.28029C14.6464 8.28029 14.6983 8.34818 14.6983 8.54653C14.6903 9.00047 14.6983 9.45441 14.6983 9.98423Z">
+                            </path>
+                            <path d="M6.55316 15.8443C6.55316 18.2564 6.55316 20.6699 6.55316 23.082C6.55316 23.3629 6.48127 23.4388 6.19906 23.4374C4.47737 23.4241 2.75568 23.4241 1.03399 23.4374C0.767751 23.4374 0.69986 23.3629 0.701191 23.1006C0.709178 18.2648 0.709178 13.4281 0.701191 8.59053C0.701191 8.34026 0.765089 8.27237 1.01669 8.2737C2.74991 8.28435 4.48048 8.28435 6.20838 8.2737C6.47462 8.2737 6.5465 8.33627 6.54517 8.6065C6.54783 11.0186 6.55316 13.4308 6.55316 15.8443Z">
+                            </path>
+                            <path d="M3.65878 0.243898C5.36804 0.243898 6.58743 1.45529 6.58743 3.1406C6.58743 4.75801 5.32145 5.95742 3.60819 5.96807C3.22177 5.97614 2.83768 5.90639 2.47877 5.76299C2.11985 5.61959 1.79344 5.40546 1.51897 5.13334C1.24449 4.86123 1.02755 4.53668 0.881058 4.17902C0.734563 3.82136 0.661505 3.43788 0.666231 3.05141C0.67555 1.42601 1.9362 0.242566 3.65878 0.243898Z">
+                            </path>
+                        </svg>
+                        <span class="usa-sr-only">NCBI on LinkedIn</span>
+                    </a>
+                
+
+                
+                    <a href="https://github.com/ncbi"
+                       class="ncbi-footer__social-icon ncbi-footer__social-icon--gray"
+                       target="_blank"
+                       rel="noreferrer noopener">
+                        <svg width="28"
+                             height="27"
+                             viewBox="0 0 28 28"
+                             fill="none"
+                             xmlns="http://www.w3.org/2000/svg"
+                             focusable="false"
+                             aria-hidden="true">
+                            <path d="M16.7228 20.6334C17.5057 20.5527 18.2786 20.3944 19.0301 20.1608C21.3108 19.4193 22.5822 17.8259 22.963 15.4909C23.1228 14.5112 23.1814 13.5287 22.9883 12.5437C22.8106 11.6423 22.4013 10.8028 21.8007 10.1076C21.7526 10.0605 21.7197 10 21.7064 9.934C21.6931 9.86799 21.7 9.79952 21.7262 9.73748C22.0856 8.6206 21.9711 7.51969 21.601 6.42677C21.582 6.3497 21.5345 6.2827 21.468 6.23923C21.4016 6.19577 21.3211 6.17906 21.2429 6.19248C20.7329 6.21649 20.2313 6.33051 19.7611 6.52928C19.1103 6.7908 18.4899 7.12198 17.9104 7.51703C17.84 7.56996 17.7581 7.60551 17.6713 7.62078C17.5846 7.63605 17.4954 7.6306 17.4112 7.60489C15.2596 7.05882 13.0054 7.06203 10.8554 7.61421C10.7806 7.63586 10.7018 7.63967 10.6253 7.62534C10.5487 7.611 10.4766 7.57892 10.4148 7.53167C9.64788 7.03247 8.85171 6.58918 7.96368 6.33359C7.65781 6.24338 7.34123 6.19458 7.02239 6.18849C6.94879 6.17986 6.87462 6.19893 6.81432 6.242C6.75402 6.28507 6.71191 6.34904 6.69621 6.42145C6.32342 7.51437 6.2209 8.61527 6.56307 9.73348C6.59635 9.84264 6.64694 9.93316 6.54177 10.0516C5.47666 11.2604 5.09988 12.6834 5.19574 14.2676C5.2663 15.4244 5.46201 16.5466 6.01454 17.5769C6.84399 19.1171 8.21664 19.9119 9.85158 20.3352C10.3938 20.4706 10.9444 20.5698 11.4998 20.632C11.5384 20.7492 11.4506 20.7798 11.408 20.8291C11.1734 21.1179 10.9894 21.4441 10.8634 21.7942C10.7622 22.0458 10.8315 22.4039 10.6065 22.5516C10.263 22.7766 9.83827 22.8485 9.42421 22.8871C8.17936 23.0056 7.26471 22.4877 6.6283 21.4348C6.25552 20.8184 5.76956 20.3325 5.08523 20.0663C4.76981 19.9325 4.42139 19.8967 4.08537 19.9638C3.7898 20.029 3.73788 20.1901 3.93891 20.4111C4.03639 20.5234 4.14989 20.6207 4.27575 20.6999C4.9796 21.1318 5.51717 21.7884 5.80152 22.5636C6.37002 23.9973 7.48039 24.5697 8.93825 24.6323C9.43741 24.6575 9.93768 24.615 10.4254 24.5058C10.5892 24.4672 10.6531 24.4872 10.6517 24.6762C10.6451 25.4936 10.6637 26.3123 10.6517 27.131C10.6517 27.6635 10.1684 27.9297 9.58663 27.7393C8.17396 27.2671 6.84977 26.5631 5.66838 25.656C2.59555 23.2891 0.720966 20.1861 0.217704 16.3376C-0.357453 11.9127 0.911353 8.00824 3.98551 4.73881C6.11909 2.42656 8.99932 0.939975 12.1203 0.540191C16.5351 -0.0601815 20.4347 1.14323 23.7232 4.16373C26.2449 6.47869 27.724 9.37672 28.1048 12.7726C28.5828 17.0325 27.3686 20.7945 24.4768 23.9827C22.9762 25.6323 21.0956 26.8908 18.9982 27.6488C18.8783 27.6927 18.7585 27.738 18.636 27.7726C18.0356 27.9404 17.6189 27.6395 17.6189 27.0098C17.6189 25.7452 17.6308 24.4806 17.6295 23.2159C17.6329 22.9506 17.6128 22.6856 17.5696 22.4238C17.4325 21.6664 17.3419 21.484 16.7228 20.6334Z">
+                            </path>
+                        </svg>
+                        <span class="usa-sr-only">NCBI on GitHub</span>
+                    </a>
+                
+
+                
+                    <a href="https://ncbiinsights.ncbi.nlm.nih.gov/"
+                       class="ncbi-footer__social-icon ncbi-footer__social-icon--gray"
+                       target="_blank"
+                       rel="noreferrer noopener">
+                        <svg width="26"
+                             height="26"
+                             viewBox="0 0 27 27"
+                             fill="none"
+                             xmlns="http://www.w3.org/2000/svg"
+                             focusable="false"
+                             aria-hidden="true">
+                            <path d="M23.7778 26.4574C23.1354 26.3913 22.0856 26.8024 21.636 26.3087C21.212 25.8444 21.4359 24.8111 21.324 24.0347C19.9933 14.8323 14.8727 8.80132 6.09057 5.85008C4.37689 5.28406 2.58381 4.99533 0.779072 4.99481C0.202773 4.99481 -0.0229751 4.83146 0.00455514 4.21479C0.0660406 3.08627 0.0660406 1.95525 0.00455514 0.826734C-0.0413285 0.0815827 0.259669 -0.0193618 0.896534 0.00266238C6.96236 0.222904 12.3693 2.24179 16.9889 6.16209C22.9794 11.2478 26.1271 17.7688 26.4372 25.648C26.4629 26.294 26.3179 26.5271 25.6609 26.4684C25.0827 26.417 24.4991 26.4574 23.7778 26.4574Z">
+                            </path>
+                            <path d="M14.8265 26.441C14.0924 26.441 13.2371 26.6795 12.6626 26.3786C12.0092 26.0372 12.3781 25.0644 12.246 24.378C11.1154 18.5324 6.6849 14.5497 0.74755 14.1001C0.217135 14.0615 -0.0104482 13.9422 0.0134113 13.3659C0.0519536 12.1454 0.0482829 10.9213 0.0134113 9.69524C-0.00127145 9.14464 0.196946 9.03268 0.703502 9.04736C9.21217 9.27128 16.5994 16.2511 17.2804 24.7231C17.418 26.4446 17.418 26.4446 15.6579 26.4446H14.832L14.8265 26.441Z">
+                            </path>
+                            <path d="M3.58928 26.4555C2.64447 26.4618 1.73584 26.0925 1.06329 25.4289C0.39073 24.7653 0.00933763 23.8617 0.0030097 22.9169C-0.00331824 21.9721 0.365937 21.0635 1.02954 20.3909C1.69315 19.7184 2.59675 19.337 3.54156 19.3306C4.48637 19.3243 5.39499 19.6936 6.06755 20.3572C6.7401 21.0208 7.1215 21.9244 7.12782 22.8692C7.13415 23.814 6.7649 24.7226 6.10129 25.3952C5.43768 26.0677 4.53409 26.4491 3.58928 26.4555Z">
+                            </path>
+                        </svg>
+                        <span class="usa-sr-only">NCBI RSS feed</span>
+                    </a>
+                
+            </div>
+        </div>
+    
+
+    <div data-testid="gridContainer"
+         class="grid-container ncbi-footer__container">
+        <div class="grid-row ncbi-footer__main-content-container"
+             data-testid="grid">
+            
+                <div class="ncbi-footer__column">
+                    
+                        <p class="ncbi-footer__circled-icons-heading">
+                            Connect with NLM
+                        </p>
+                    
+
+                    <div class="ncbi-footer__circled-icons-list">
+                        
+                            <a href=https://twitter.com/nlm_nih class="ncbi-footer__social-icon ncbi-footer__social-icon--circled" target="_blank" rel="noreferrer noopener">
+                                <svg width="32"
+                                     height="32"
+                                     viewBox="0 0 40 40"
+                                     fill="none"
+                                     xmlns="http://www.w3.org/2000/svg"
+                                     focusable="false"
+                                     aria-hidden="true">
+                                    <path d="m6.067 8 10.81 13.9L6 33.2h4.2l8.4-9.1 7.068 9.1H34L22.8 18.5 31.9 8h-3.5l-7.7 8.4L14.401 8H6.067Zm3.6 1.734h3.266l16.8 21.732H26.57L9.668 9.734Z">
+                                    </path>
+                                </svg>
+                                <span class="usa-sr-only">NLM on X (formerly known as Twitter)</span>
+                            </a>
+                        
+
+                        
+                            <a href=https://www.facebook.com/nationallibraryofmedicine class="ncbi-footer__social-icon ncbi-footer__social-icon--circled" target="_blank" rel="noreferrer noopener">
+                                <svg width="13"
+                                     height="24"
+                                     viewBox="0 0 13 24"
+                                     fill="none"
+                                     xmlns="http://www.w3.org/2000/svg"
+                                     focusable="false"
+                                     aria-hidden="true">
+                                    <path d="M4.11371 23.1369C4.11371 23.082 4.11371 23.0294 4.11371 22.9745V12.9411H0.817305C0.6709 12.9411 0.670898 12.9411 0.670898 12.8016C0.670898 11.564 0.670898 10.3287 0.670898 9.09341C0.670898 8.97903 0.705213 8.95158 0.815017 8.95158C1.8673 8.95158 2.91959 8.95158 3.97417 8.95158H4.12057V8.83263C4.12057 7.8055 4.12057 6.7738 4.12057 5.74897C4.1264 4.92595 4.31387 4.11437 4.66959 3.37217C5.12916 2.38246 5.94651 1.60353 6.95717 1.1921C7.64827 0.905008 8.3913 0.764035 9.13953 0.778051C10.0019 0.791777 10.8644 0.830666 11.7268 0.860404C11.8869 0.860404 12.047 0.894717 12.2072 0.90158C12.2964 0.90158 12.3261 0.940469 12.3261 1.02968C12.3261 1.5421 12.3261 2.05452 12.3261 2.56465C12.3261 3.16857 12.3261 3.7725 12.3261 4.37642C12.3261 4.48165 12.2964 4.51367 12.1912 4.51138C11.5369 4.51138 10.8804 4.51138 10.2261 4.51138C9.92772 4.51814 9.63058 4.5526 9.33855 4.61433C9.08125 4.6617 8.84537 4.78881 8.66431 4.97766C8.48326 5.16652 8.3662 5.40755 8.32972 5.66661C8.28476 5.89271 8.26027 6.1224 8.25652 6.35289C8.25652 7.19014 8.25652 8.02969 8.25652 8.86923C8.25652 8.89439 8.25652 8.91955 8.25652 8.95615H12.0219C12.1797 8.95615 12.182 8.95616 12.1614 9.10714C12.0768 9.76596 11.9876 10.4248 11.9029 11.0813C11.8312 11.6319 11.7626 12.1824 11.697 12.733C11.6719 12.9434 11.6787 12.9434 11.4683 12.9434H8.26338V22.899C8.26338 22.979 8.26338 23.0591 8.26338 23.1392L4.11371 23.1369Z">
+                                    </path>
+                                </svg>
+                                <span class="usa-sr-only">NLM on Facebook</span>
+                            </a>
+                        
+
+                        
+                            <a href=https://www.youtube.com/user/NLMNIH class="ncbi-footer__social-icon ncbi-footer__social-icon--circled" target="_blank" rel="noreferrer noopener">
+                                <svg width="21"
+                                     height="15"
+                                     viewBox="0 0 21 15"
+                                     fill="none"
+                                     xmlns="http://www.w3.org/2000/svg"
+                                     focusable="false"
+                                     aria-hidden="true">
+                                    <path d="M19.2561 1.47914C18.9016 1.15888 18.5699 0.957569 17.2271 0.834039C15.5503 0.678484 13.2787 0.655608 11.563 0.65332H9.43556C7.71987 0.65332 5.4483 0.678484 3.77151 0.834039C2.43098 0.957569 2.097 1.15888 1.74242 1.47914C0.813665 2.32097 0.619221 4.62685 0.598633 6.89384C0.598633 7.31781 0.598633 7.74101 0.598633 8.16345C0.626084 10.4121 0.827391 12.686 1.74242 13.521C2.097 13.8412 2.4287 14.0425 3.77151 14.1661C5.4483 14.3216 7.71987 14.3445 9.43556 14.3468H11.563C13.2787 14.3468 15.5503 14.3216 17.2271 14.1661C18.5676 14.0425 18.9016 13.8412 19.2561 13.521C20.1712 12.6929 20.3725 10.451 20.3999 8.22064C20.3999 7.74025 20.3999 7.25986 20.3999 6.77946C20.3725 4.54907 20.1689 2.30724 19.2561 1.47914ZM8.55942 10.5311V4.65201L13.5601 7.50005L8.55942 10.5311Z"
+                                          fill="white" />
+                                </svg>
+                                <span class="usa-sr-only">NLM on YouTube</span>
+                            </a>
+                        
+                    </div>
+                </div>
+            
+
+            
+                <address class="ncbi-footer__address ncbi-footer__column">
+                    
+        <p>
+            <a class="usa-link usa-link--external"
+            href="https://www.google.com/maps/place/8600+Rockville+Pike,+Bethesda,+MD+20894/%4038.9959508,
+            -77.101021,17z/data%3D!3m1!4b1!4m5!3m4!1s0x89b7c95e25765ddb%3A0x19156f88b27635b8!8m2!3d38.9959508!
+            4d-77.0988323"
+            rel="noopener noreferrer" target="_blank">National Library of Medicine
+            <br/> 8600 Rockville Pike<br/> Bethesda, MD 20894</a>
+        </p>
+    
+                </address>
+            
+
+            
+                <ul class="usa-list usa-list--unstyled ncbi-footer__vertical-list ncbi-footer__column">
+                    
+                        <li class="ncbi-footer__vertical-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.nlm.nih.gov/web_policies.html" class="usa-link  usa-link--alt ncbi-footer__link"  >
+        
+
+        
+            Web Policies
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="ncbi-footer__vertical-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.nih.gov/institutes-nih/nih-office-director/office-communications-public-liaison/freedom-information-act-office" class="usa-link  usa-link--alt ncbi-footer__link"  >
+        
+
+        
+            FOIA
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="ncbi-footer__vertical-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.hhs.gov/vulnerability-disclosure-policy/index.html" class="usa-link usa-link--external usa-link--alt ncbi-footer__link" rel="noreferrer noopener" target='_blank' >
+        
+
+        
+            HHS Vulnerability Disclosure
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                </ul>
+            
+
+            
+                <ul class="usa-list usa-list--unstyled ncbi-footer__vertical-list ncbi-footer__column">
+                    
+                        <li class="ncbi-footer__vertical-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://support.nlm.nih.gov/" class="usa-link  usa-link--alt ncbi-footer__link"  >
+        
+
+        
+            Help
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="ncbi-footer__vertical-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.nlm.nih.gov/accessibility.html" class="usa-link  usa-link--alt ncbi-footer__link"  >
+        
+
+        
+            Accessibility
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="ncbi-footer__vertical-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.nlm.nih.gov/careers/careers.html" class="usa-link  usa-link--alt ncbi-footer__link"  >
+        
+
+        
+            Careers
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                </ul>
+            
+        </div>
+
+        
+            <div class="grid-row grid-col-12" data-testid="grid">
+                <ul class="ncbi-footer__bottom-links-list">
+                    
+                        <li class="ncbi-footer__bottom-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.nlm.nih.gov/" class="usa-link  usa-link--alt ncbi-footer__link"  >
+        
+
+        
+            NLM
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="ncbi-footer__bottom-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.nih.gov/" class="usa-link  usa-link--alt ncbi-footer__link"  >
+        
+
+        
+            NIH
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="ncbi-footer__bottom-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.hhs.gov/" class="usa-link usa-link--external usa-link--alt ncbi-footer__link" rel="noreferrer noopener" target='_blank' >
+        
+
+        
+            HHS
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="ncbi-footer__bottom-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.usa.gov/" class="usa-link usa-link--external usa-link--alt ncbi-footer__link" rel="noreferrer noopener" target='_blank' >
+        
+
+        
+            USA.gov
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                </ul>
+            </div>
+        
+    </div>
+</footer>
+
+    
+
+
+        
+        
+    
+  <script  type="text/javascript" src="https://cdn.ncbi.nlm.nih.gov/core/pinger/pinger.js"> </script>
+
+
+    
+        
+
+<button class="back-to-top" data-ga-category="pagination" data-ga-action="back_to_top">
+    <label>Back to Top</label>
+    <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/arrow_upward.svg" alt="back to top icon" class="usa-icon usa-icon--size-3 order-0 usa-icon--white" />
+</button>
+    
+
+
+        
+    
+    <div id="icon-container" style="display: none;"></div>
+    
+    
+        
+    <script type="application/javascript">
+    window.ncbi = window.ncbi || {};
+    window.ncbi.pmc = window.ncbi.pmc || {};
+    window.ncbi.pmc.options = {
+        logLevel: 'INFO',
+        
+        staticEndpoint: 'https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/',
+        
+        citeCookieName: 'pmc-cf',
+    };
+</script>
+    <script type="module" crossorigin="" src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/base-Cp_Il6gk.js"></script>
+<link href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/vendor-Co8Vdmw2.js" type="text/javascript" crossorigin="anonymous" rel="modulepreload" as="script" />
+    
+    <script type="text/javascript" src="https://cdn.ncbi.nlm.nih.gov/core/jquery/jquery-3.6.0.min.js">&#xA0;</script>
+    <script type="text/javascript">
+        jQuery.getScript("https://cdn.ncbi.nlm.nih.gov/core/alerts/alerts.js", function () {
+            galert(['div.nav_and_browser', 'div.header', '#universal_header', '.usa-banner', 'body > *:nth-child(1)'])
+        });
+    </script>
+
+
+    <script type="text/javascript">var exports = {};</script>
+     <script src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/CACHE/js/output.4e25b6297b38.js"></script>
+
+    <script type="module" crossorigin="" src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/article-BxyWTbsj.js"></script>
+<link href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/vendor-Co8Vdmw2.js" type="text/javascript" crossorigin="anonymous" rel="modulepreload" as="script" />
+<link href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/index-DXSA0fsx.js" type="text/javascript" crossorigin="anonymous" rel="modulepreload" as="script" />
+<link href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/secure-cookie-Br6x5jtB.js" type="text/javascript" crossorigin="anonymous" rel="modulepreload" as="script" />
+    
+    
+
+    </body>
+</html>

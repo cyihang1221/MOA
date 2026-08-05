@@ -1,0 +1,2945 @@
+
+<!DOCTYPE html>
+<html lang="en" >
+    <head >
+
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="HandheldFriendly" content="True" />
+        <meta name="MobileOptimized" content="320" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        
+        
+
+        
+        
+  <link  rel="stylesheet" href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/base_style-BxRs1iOp.css" />
+<script type="module" crossorigin="" src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/base_style-D-jH62-1.js"></script>
+
+  <link  rel="stylesheet" href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/article_style-B67IZFds.css" />
+<link  rel="stylesheet" href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/style-D77LS1kY.css" />
+<script type="module" crossorigin="" src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/article_style-CTAd1LmM.js"></script>
+
+  
+  
+    <style>
+  
+  
+  @media screen and (min-width: 64em) {
+    div.pmc-wm {
+      background: repeat-y;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='350' xmlns:xlink='http://www.w3.org/1999/xlink'%3E%3Cdefs%3E%3Cfilter x='-.02' y='0' width='1.05' height='1' id='c'%3E%3CfeFlood flood-color='%23FFF'/%3E%3CfeComposite in='SourceGraphic'/%3E%3C/filter%3E%3Ctext id='b' font-family='Helvetica' font-size='11pt' style='opacity:1;fill:%23005ea2;stroke:none;text-anchor:middle' x='175' y='14'%3E%3C/text%3E%3Cpath id='a' style='fill:%23005ea2' d='M0 8h350v3H0z'/%3E%3C/defs%3E%3Cuse xlink:href='%23a' transform='rotate(90 10 10)'/%3E%3Cuse xlink:href='%23b' transform='rotate(90 10 10)' filter='url(%23c)'/%3E%3C/svg%3E");
+      padding-left: 3rem;
+    }
+  }
+</style>
+
+  
+
+
+
+        
+            <link rel="apple-touch-icon"
+                  sizes="180x180"
+                  href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/favicons/apple-touch-icon.png" />
+            <link rel="icon"
+                  type="image/png"
+                  sizes="48x48"
+                  href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/favicons/favicon-48x48.png" />
+            <link rel="icon"
+                  type="image/png"
+                  sizes="32x32"
+                  href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/favicons/favicon-32x32.png" />
+            <link rel="icon"
+                  type="image/png"
+                  sizes="16x16"
+                  href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/favicons/favicon-16x16.png" />
+            <link rel="manifest" href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/favicons/site.webmanifest" />
+            <link rel="mask-icon"
+                  href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/favicons/safari-pinned-tab.svg"
+                  color="#0071bc" />
+            <meta name="msapplication-config"
+                  content="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/favicons/browserconfig.xml" />
+            <meta name="theme-color" content="#ffffff" />
+        
+
+        <title>
+            Calibrating deep classifiers with dynamic confidence propagation and adaptive normalization - PMC
+        </title>
+
+        
+        
+  
+  <!-- Logging params: Pinger defaults -->
+<meta name="ncbi_app" content="cloudpmc-viewer" />
+<meta name="ncbi_db" content="pmc" />
+<meta name="ncbi_phid" content="1A810CB89D1454430B0CB8002164EE31.m_1" />
+<meta name="ncbi_pinger_stat_url" content="https://pmc.ncbi.nlm.nih.gov/stat" />
+<!-- Logging params: Pinger custom -->
+<meta name="ncbi_pdid" content="article" />
+  
+    <link rel="preconnect" href="https://www.google-analytics.com" />
+
+    
+        <link rel="preconnect" href="https://cdn.ncbi.nlm.nih.gov" />
+    
+
+    <!-- Include USWDS Init Script -->
+    <script src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/uswds-init.js"></script>
+
+
+    <meta name="ncbi_domain" content="scirep">
+<meta name="ncbi_type" content="fulltext">
+<meta name="ncbi_pcid" content="journal">
+<meta name="ncbi_feature" content="associated_data">
+<link rel="canonical" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC13039126/">
+<meta name="robots" content="INDEX,NOFOLLOW,NOARCHIVE">
+<meta name="citation_journal_title" content="Scientific Reports">
+<meta name="citation_title" content="Calibrating deep classifiers with dynamic confidence propagation and adaptive normalization">
+<meta name="citation_author" content="Peihua He">
+<meta name="citation_author_institution" content="School of Artificial Intelligence and Big Data, Chongqing Industry Polytechnic University, Chongqing, 401120 China">
+<meta name="citation_author" content="Wei Fu">
+<meta name="citation_author_institution" content="School of Artificial Intelligence and Big Data, Chongqing Industry Polytechnic University, Chongqing, 401120 China">
+<meta name="citation_author" content="Lufeng Wang">
+<meta name="citation_author_institution" content="School of Artificial Intelligence and Big Data, Chongqing Industry Polytechnic University, Chongqing, 401120 China">
+<meta name="citation_author" content="Tian Fu">
+<meta name="citation_author_institution" content="School of Artificial Intelligence and Big Data, Chongqing Industry Polytechnic University, Chongqing, 401120 China">
+<meta name="citation_publication_date" content="2026 Mar 31">
+<meta name="citation_volume" content="16">
+<meta name="citation_firstpage" content="10959">
+<meta name="citation_doi" content="10.1038/s41598-026-39842-4">
+<meta name="citation_pmid" content="41917068">
+<meta name="citation_abstract_html_url" content="https://pmc.ncbi.nlm.nih.gov/articles/PMC13039126/">
+<meta name="citation_fulltext_html_url" content="https://pmc.ncbi.nlm.nih.gov/articles/PMC13039126/">
+<meta name="citation_pdf_url" content="https://pmc.ncbi.nlm.nih.gov/articles/PMC13039126/pdf/41598_2026_Article_39842.pdf">
+<meta name="description" content="Although deep neural networks have made significant progress in confidence calibration, conventional methods like temperature scaling and histogram binning face notable limitations in dynamic open-world scenarios due to their reliance on global ...">
+<meta name="og:title" content="Calibrating deep classifiers with dynamic confidence propagation and adaptive normalization">
+<meta name="og:type" content="article">
+<meta name="og:site_name" content="PubMed Central (PMC)">
+<meta name="og:description" content="Although deep neural networks have made significant progress in confidence calibration, conventional methods like temperature scaling and histogram binning face notable limitations in dynamic open-world scenarios due to their reliance on global ...">
+<meta name="og:url" content="https://pmc.ncbi.nlm.nih.gov/articles/PMC13039126/">
+<meta name="og:image" content="https://cdn.ncbi.nlm.nih.gov/pmc/cms/images/pmc-card-share.jpg?_=0">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@ncbi">
+    
+    
+
+    </head>
+    <body >
+        
+    <a class="usa-skipnav " href="#main-content">
+      Skip to main content
+    </a>
+
+
+        
+            
+
+<section class="usa-banner " aria-label="Official website of the United States government" >
+    <div class="usa-accordion">
+        <header class="usa-banner__header">
+            <div class="usa-banner__inner">
+                <div class="grid-col-auto">
+                    <img aria-hidden="true"
+                         class="usa-banner__header-flag"
+                         src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/us_flag.svg"
+                         alt="" />
+                </div>
+
+                <div class="grid-col-fill tablet:grid-col-auto" aria-hidden="true">
+                    <p class="usa-banner__header-text">
+                        An official website of the United States government
+                    </p>
+                    <span class="usa-banner__header-action">Here's how you know</span>
+                </div>
+
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="button"
+        
+    
+    class="usa-accordion__button usa-banner__button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           
+           "
+    aria-expanded="false"
+    aria-controls="gov-banner-default"
+    
+    data-testid="storybook-django-banner"
+    
+    >
+    
+        
+
+        
+                    <span class="usa-banner__button-text">Here's how you know</span>
+                
+
+        
+    
+        
+            </button>
+        
+
+
+            </div>
+        </header>
+
+        <div class="usa-banner__content usa-accordion__content"
+             id="gov-banner-default"
+             hidden>
+            <div class="grid-row grid-gap-lg">
+                <div class="usa-banner__guidance tablet:grid-col-6">
+                    <img class="usa-banner__icon usa-media-block__img"
+                         src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/icon-dot-gov.svg"
+                         alt=""
+                         aria-hidden="true" />
+                    <div class="usa-media-block__body">
+                        <p>
+                            <strong>Official websites use .gov</strong>
+                            <br />
+                            A
+                            <strong>.gov</strong> website belongs to an official
+                            government organization in the United States.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="usa-banner__guidance tablet:grid-col-6">
+                    <img class="usa-banner__icon usa-media-block__img"
+                         src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/icon-https.svg"
+                         alt=""
+                         aria-hidden="true" />
+
+                    <div class="usa-media-block__body">
+                        <p>
+                            <strong>Secure .gov websites use HTTPS</strong>
+                            <br />
+                            A <strong>lock</strong> (
+                            <span class="icon-lock">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     width="52"
+                                     height="64"
+                                     viewBox="0 0 52 64"
+                                     class="usa-banner__lock-image"
+                                     role="graphics-symbol"
+                                     aria-labelledby="banner-lock-description"
+                                     focusable="false">
+                                    <title id="banner-lock-title">Lock</title>
+                                    <desc id="banner-lock-description">
+                                    Locked padlock icon
+                                    </desc>
+                                    <path fill="#000000"
+                                          fill-rule="evenodd"
+                                          d="M26 0c10.493 0 19 8.507 19 19v9h3a4 4 0 0 1 4 4v28a4 4 0 0 1-4 4H4a4 4 0 0 1-4-4V32a4 4 0 0 1 4-4h3v-9C7 8.507 15.507 0 26 0zm0 8c-5.979 0-10.843 4.77-10.996 10.712L15 19v9h22v-9c0-6.075-4.925-11-11-11z" />
+                                </svg>
+</span>) or <strong>https://</strong> means you've safely
+                                connected to the .gov website. Share sensitive
+                                information only on official, secure websites.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+        
+
+        
+    
+    
+    
+
+<div class="usa-overlay">
+</div>
+
+
+
+<header class="usa-header usa-header--extended usa-header--wide" data-header data-testid="header"    >
+    <div class="ncbi-header">
+        <div class="ncbi-header__container">
+            <a class="ncbi-header__logo-container"
+               href="https://www.ncbi.nlm.nih.gov/">
+                <img alt="NCBI home page"
+                     class="ncbi-header__logo-image"
+                     src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/ncbi-logos/nih-nlm-ncbi--white.svg"
+                     width="410"
+                     height="100" />
+            </a>
+
+            <!-- Mobile menu hamburger button -->
+            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="button"
+        
+    
+    class="usa-menu-btn ncbi-header__hamburger-button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           
+           "
+    
+    
+    aria-label="Show menu"
+    data-testid="navMenuButton"
+    
+    >
+    
+        
+
+        
+                <svg aria-hidden="true"
+                     class="ncbi-hamburger-icon"
+                     fill="none"
+                     focusable="false"
+                     height="21"
+                     viewBox="0 0 31 21"
+                     width="31"
+                     xmlns="http://www.w3.org/2000/svg">
+                    <path clip-rule="evenodd"
+                          d="M0.125 20.75H30.875V17.3333H0.125V20.75ZM0.125 12.2083H30.875V8.79167H0.125V12.2083ZM0.125 0.25V3.66667H30.875V0.25H0.125Z"
+                          fill="#F1F1F1"
+                          fill-rule="evenodd" />
+                </svg>
+            
+
+        
+    
+        
+            </button>
+        
+
+
+
+            
+                <!-- Desktop buttons-->
+                <div class="ncbi-header__desktop-buttons">
+                    
+                        <!-- Desktop search button -->
+                        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="button"
+        
+    
+    class="usa-button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           usa-button--unstyled ncbi-header__desktop-button
+           "
+    aria-expanded="false"
+    aria-controls="search-field-desktop-navigation"
+    aria-label="Show search overlay"
+    data-testid="toggleSearchPanelButton"
+    data-toggle-search-panel-button
+    >
+    
+        
+
+        
+                            
+
+
+
+    <img
+        src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/search.svg"
+        class="usa-icon "
+        aria-hidden="true"
+        
+        
+    />
+
+
+                            Search
+                        
+
+        
+    
+        
+            </button>
+        
+
+
+                    
+
+                    <!-- Desktop login dropdown -->
+                    
+                        <div class="ncbi-header__login-dropdown">
+                            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="button"
+        
+    
+    class="usa-button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           usa-button--unstyled ncbi-header__desktop-button ncbi-header__login-dropdown-button
+           "
+    aria-expanded="false"
+    aria-controls="login-dropdown-menu"
+    aria-label="Show login menu"
+    data-testid="toggleLoginMenuDropdown"
+    data-desktop-login-button
+    >
+    
+        
+
+        
+                                
+
+
+
+    <img
+        src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/person.svg"
+        class="usa-icon "
+        aria-hidden="true"
+        
+        
+    />
+
+
+
+                                <span data-login-dropdown-text>Log in</span>
+
+                                <!-- Dropdown icon pointing up -->
+                                
+
+
+
+    <img
+        src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/expand_less.svg"
+        class="usa-icon ncbi-header__login-dropdown-icon ncbi-header__login-dropdown-icon--expand-less ncbi-header__login-dropdown-icon--hidden"
+        aria-hidden="true"
+        data-login-dropdown-up-arrow
+        
+    />
+
+
+
+                                <!-- Dropdown icon pointing down -->
+                                
+
+
+
+    <img
+        src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/expand_more.svg"
+        class="usa-icon ncbi-header__login-dropdown-icon ncbi-header__login-dropdown-icon--expand-more ncbi-header__login-dropdown-icon--hidden"
+        aria-hidden="true"
+        data-login-dropdown-down-arrow
+        
+    />
+
+
+                            
+
+        
+    
+        
+            </button>
+        
+
+
+
+                            <!-- Login dropdown menu -->
+                            <ul class="usa-nav__submenu ncbi-header__login-dropdown-menu"
+                                id="login-dropdown-menu"
+                                data-desktop-login-menu-dropdown
+                                hidden>
+                                
+                                    <li class="usa-nav__submenu-item">
+                                        <!-- Uses custom style overrides to render external and document links. -->
+                                        
+
+
+
+
+
+
+
+
+
+    <a href="https://www.ncbi.nlm.nih.gov/myncbi/" class="usa-link  "  >
+        
+
+        
+            Dashboard
+        
+
+        
+    </a>
+
+
+                                    </li>
+                                
+                                    <li class="usa-nav__submenu-item">
+                                        <!-- Uses custom style overrides to render external and document links. -->
+                                        
+
+
+
+
+
+
+
+
+
+    <a href="https://www.ncbi.nlm.nih.gov/myncbi/collections/bibliography/" class="usa-link  "  >
+        
+
+        
+            Publications
+        
+
+        
+    </a>
+
+
+                                    </li>
+                                
+                                    <li class="usa-nav__submenu-item">
+                                        <!-- Uses custom style overrides to render external and document links. -->
+                                        
+
+
+
+
+
+
+
+
+
+    <a href="https://www.ncbi.nlm.nih.gov/account/settings/" class="usa-link  "  >
+        
+
+        
+            Account settings
+        
+
+        
+    </a>
+
+
+                                    </li>
+                                
+                                <li class="usa-nav__submenu-item">
+                                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="button"
+        
+    
+    class="usa-button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           usa-button--outline ncbi-header__login-dropdown-logout-button
+           "
+    
+    
+    
+    data-testid="desktopLogoutButton"
+    data-desktop-logout-button
+    >
+    
+        
+
+        Log out
+
+        
+    
+        
+            </button>
+        
+
+
+                                </li>
+                            </ul>
+                        </div>
+                    
+                </div>
+            
+        </div>
+    </div>
+
+    <!-- Search panel -->
+    
+        <div class="ncbi-search-panel ncbi--show-only-at-desktop"
+             data-header-search-panel
+             hidden>
+            <div class="ncbi-search-panel__container">
+                <form action="https://www.ncbi.nlm.nih.gov/search/all/"
+                      
+                      autocomplete="off"
+                      class="usa-search usa-search--big ncbi-search-panel__form"
+                      data-testid="desktop-navigation-search-form"
+                      method="GET"
+                      role="search">
+                    <label class="usa-sr-only" for="search-field-desktop-navigation">
+                        Search…
+                    </label>
+                    <input class="usa-input"
+                           id="search-field-desktop-navigation"
+                           name="term"
+                           
+                               placeholder="Search NCBI"
+                           
+                           type="search"
+                           value="" />
+                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="submit"
+        
+    
+    class="usa-button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           
+           "
+    
+    
+    
+    
+    
+    >
+    
+        
+
+        
+                        <span class="usa-search__submit-text">
+                            Search NCBI
+                        </span>
+                    
+
+        
+    
+        
+            </button>
+        
+
+
+                </form>
+
+                
+            </div>
+        </div>
+    
+
+    <nav aria-label="Primary navigation" class="usa-nav">
+        <p class="usa-sr-only" id="primary-navigation-sr-only-title">
+            Primary site navigation
+        </p>
+
+        <!-- Mobile menu close button -->
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="button"
+        
+    
+    class="usa-nav__close ncbi-nav__close-button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           
+           "
+    
+    
+    aria-label="Close navigation menu"
+    data-testid="navCloseButton"
+    
+    >
+    
+        
+
+        
+            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/usa-icons/close.svg" alt="Close" />
+        
+
+        
+    
+        
+            </button>
+        
+
+
+
+        
+            <!-- Mobile search component -->
+            <form class="usa-search usa-search--small ncbi--hide-at-desktop"
+                  action="https://www.ncbi.nlm.nih.gov/search/all/"
+                  
+                  autocomplete="off"
+                  data-testid="mobile-navigation-search-form"
+                  method="GET"
+                  role="search">
+                <label class="usa-sr-only" for="search-field-mobile-navigation">
+                    Search
+                </label>
+
+                <input class="usa-input"
+                       id="search-field-mobile-navigation"
+                       type="search"
+                       
+                           placeholder="Search NCBI"
+                       
+                       name="term" />
+
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="submit"
+        
+    
+    class="usa-button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           
+           "
+    
+    
+    
+    
+    
+    >
+    
+        
+
+        
+                    <!-- This SVG should be kept inline and not replaced with a link to the icon as otherwise it will render in the wrong color -->
+                    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjI0Ij48cGF0aCBkPSJNMCAwaDI0djI0SDB6IiBmaWxsPSJub25lIi8+PHBhdGggZmlsbD0iI2ZmZiIgZD0iTTE1LjUgMTRoLS43OWwtLjI4LS4yN0E2LjQ3MSA2LjQ3MSAwIDAgMCAxNiA5LjUgNi41IDYuNSAwIDEgMCA5LjUgMTZjMS42MSAwIDMuMDktLjU5IDQuMjMtMS41N2wuMjcuMjh2Ljc5bDUgNC45OUwyMC40OSAxOWwtNC45OS01em0tNiAwQzcuMDEgMTQgNSAxMS45OSA1IDkuNVM3LjAxIDUgOS41IDUgMTQgNy4wMSAxNCA5LjUgMTEuOTkgMTQgOS41IDE0eiIvPjwvc3ZnPg=="
+                         class="usa-search__submit-icon"
+                         alt="Search" />
+                
+
+        
+    
+        
+            </button>
+        
+
+
+            </form>
+
+            
+        
+
+        <!-- Primary navigation menu items -->
+        <!-- This usa-nav__inner wrapper is required to correctly style the navigation items on Desktop -->
+        
+
+        
+            <div class="ncbi-nav__mobile-login-menu ncbi--hide-at-desktop"
+                 data-mobile-login-menu
+                 hidden>
+                <p class="ncbi-nav__mobile-login-menu-status">
+                    Logged in as:
+                    <strong class="ncbi-nav__mobile-login-menu-email"
+                            data-mobile-login-email-text></strong>
+                </p>
+                <ul class="usa-nav__primary usa-accordion">
+                    
+                        <li class="usa-nav__primary-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.ncbi.nlm.nih.gov/myncbi/" class="usa-link  "  >
+        
+
+        
+            Dashboard
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="usa-nav__primary-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.ncbi.nlm.nih.gov/myncbi/collections/bibliography/" class="usa-link  "  >
+        
+
+        
+            Publications
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="usa-nav__primary-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.ncbi.nlm.nih.gov/account/settings/" class="usa-link  "  >
+        
+
+        
+            Account settings
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                </ul>
+            </div>
+        
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+        <button
+            type="button"
+        
+    
+    class="usa-button
+           
+
+           
+               
+               
+               
+               
+            
+
+           
+           
+           ncbi-nav__mobile-login-button ncbi--hide-at-desktop
+           "
+    
+    
+    
+    data-testid="mobileLoginButton"
+    data-mobile-login-button
+    >
+    
+        
+
+        Log in
+
+        
+    
+        
+            </button>
+        
+
+
+    </nav>
+</header>
+
+    
+    
+        
+
+<section class="pmc-header pmc-header--basic" aria-label="PMC Header with search box">
+    <div class="pmc-nav-container">
+        <div class="pmc-header__bar">
+           <div class="pmc-header__logo">
+               <a href="/" title="Home" aria-label="PMC Home"></a>
+           </div>
+            <button
+                    type="button"
+                    class="usa-button usa-button--unstyled pmc-header__search__button"
+                    aria-label="Open search"
+                    data-ga-category="search"
+                    data-ga-action="PMC"
+                    data-ga-label="pmc_search_panel_mobile"
+            >
+                <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/search.svg" alt="PMC search open icon" aria-hidden="true" class="usa-icon usa-icon--size-4 pmc-icon__open" />
+                <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/close.svg" alt="PMC search close ison" aria-hidden="true" class="usa-icon usa-icon--size-4 pmc-icon__close" />
+            </button>
+        </div>
+        <div class="pmc-header__search">
+            
+
+
+<form class="usa-search usa-search--extra usa-search--article-right-column  pmc-header__search__form" id="pmc-search-form" autocomplete="off" role="search">
+<label class="usa-sr-only" for="pmc-search">Search PMC Full-Text Archive</label>
+<span class="autoComplete_wrapper flex-1">
+<input class="usa-input width-full maxw-none" required="required" placeholder="Search PMC Full-Text Archive" id="pmc-search"  type="search" name="term" data-autocomplete-url="https://pmc.ncbi.nlm.nih.gov/autocomp/search/autocomp/"/>
+</span>
+<button
+class="usa-button"
+type="submit"
+formaction="https://pmc.ncbi.nlm.nih.gov/search/"
+data-ga-category="search"
+data-ga-action="PMC"
+data-ga-label="PMC_search_button"
+>
+<span class="usa-search__submit-text">Search in PMC</span>
+<img
+src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/usa-icons-bg/search--white.svg"
+class="usa-search__submit-icon"
+alt="Search"
+/>
+</button>
+</form>
+            <div class="display-flex flex-column tablet:flex-row tablet:flex-justify flex-justify-center flex-align-center width-full desktop:maxw-44">
+                <ul class="pmc-header__search__menu">
+                    <li>
+                        
+                            <a class="usa-link" href="/journals/" data-ga-action="featured_link" data-ga-label="journal list">
+                                Journal List
+                            </a>
+                        
+                    </li>
+                    <li>
+                        
+                            <a class="usa-link" href="/about/userguide/" data-ga-action="featured_link"
+                            data-ga-label="user guide">
+                                User Guide
+                            </a>
+                        
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+    
+
+
+        
+        
+
+       
+  <div class="usa-section padding-top-0 desktop:padding-top-6 pmc-article-section" data-article-db="pmc" data-article-id="13039126">
+
+    
+
+   
+
+
+
+<div class="grid-container pmc-actions-bar" aria-label="Actions bar" role="complementary">
+    <div class="grid-row">
+        <div class="grid-col-fill display-flex">
+             <div class="display-flex">
+                <ul class="usa-list usa-list--unstyled usa-list--horizontal">
+                    <li class="margin-right-2 mobile-lg:margin-right-4 display-flex mob">
+                        <button
+                                type="button"
+                                class="usa-button pmc-sidenav__container__open usa-button--unstyled width-auto display-flex"
+                                aria-label="Open resources"
+                                data-extra-class="is-visible-resources"
+                                data-ga-category="resources_accordion"
+                                data-ga-action="click"
+                                data-ga-label="mobile_icon"
+                        >
+                            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/more_vert.svg" alt="Open resources icon" class="usa-icon usa-icon--size-4 usa-icon--link" />
+                        </button>
+                    </li>
+                    
+                    <li class="margin-right-2 mobile-lg:margin-right-4 display-flex mob">
+                        <a
+                                href="https://doi.org/10.1038/s41598-026-39842-4"
+                                class="usa-link display-flex usa-tooltip"
+                                role="button"
+                                target="_blank"
+                                rel="noreferrer noopener"
+                                title="View on publisher site"
+                                data-position="bottom"
+                                aria-label="View on publisher site"
+                                data-ga-category="actions"
+                                data-ga-action="click"
+                                data-ga-label="publisher_link_mobile"
+                        >
+                                <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/launch.svg" alt="View on publisher site icon" class="usa-icon usa-icon--size-4 usa-icon--link" />
+                        </a>
+                    </li>
+                    
+                    
+                        <li class="margin-right-2 mobile-lg:margin-right-4 display-flex">
+                             <a
+                                     href="pdf/41598_2026_Article_39842.pdf"
+                                     class="usa-link display-flex usa-tooltip"
+                                     role="button"
+                                     title="Download PDF"
+                                     data-position="bottom"
+                                     aria-label="Download PDF"
+                                     data-ga-category="actions"
+                                     data-ga-action="click"
+                                     data-ga-label="pdf_download_mobile"
+                             >
+
+                                 <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/file_download.svg" alt="Download PDF icon" aria-hidden="true" class="usa-icon usa-icon--size-4 usa-icon--link" />
+                            </a>
+                        </li>
+                    
+                    <li class="margin-right-2 mobile-lg:margin-right-4 display-flex">
+                        <button
+                            class="usa-button usa-button--unstyled  usa-tooltip collections-dialog-trigger collections-button display-flex collections-button-empty"
+                            title="Add to Collections"
+                            data-position="bottom"
+                            aria-label="Save article in MyNCBI collections."
+                            data-ga-category="actions"
+                            data-ga-action="click"
+                            data-ga-label="collections_button_mobile"
+                            data-collections-open-dialog-enabled="false"
+                            data-collections-open-dialog-url="https://account.ncbi.nlm.nih.gov/?back_url=https%3A%2F%2Fpmc.ncbi.nlm.nih.gov%2Farticles%2FPMC13039126%2F%23open-collections-dialog"
+                            data-in-collections="false"
+                        >
+                            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/action-bookmark-full.svg" alt="Collections icon" aria-hidden="true" class="usa-icon usa-icon--size-4 usa-icon--link usa-icon--bookmark-full" />
+                            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/action-bookmark-empty.svg" alt="Collections icon" aria-hidden="true" class="usa-icon usa-icon--size-4 usa-icon--link usa-icon--bookmark-empty" />
+                        </button>
+                    </li>
+                    
+                    <li class="margin-right-2 mobile-lg:margin-right-4 display-flex">
+                        <button role="button" class="usa-button usa-button--unstyled usa-tooltip citation-dialog-trigger display-flex"
+                            aria-label="Open dialog with citation text in different styles"
+                            title="Cite"
+                            data-position="bottom"
+                            data-ga-category="actions"
+                            data-ga-action="open"
+                            data-ga-label="cite_mobile"
+                            data-all-citations-url="/resources/citations/13039126/"
+                            data-citation-style="nlm"
+                            data-download-format-link="/resources/citations/13039126/export/"
+                        >
+                            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/format_quote.svg" alt="Cite icon" aria-hidden="true" class="usa-icon usa-icon--size-4 usa-icon--link" />
+                        </button>
+                    </li>
+                    
+                    <li class="pmc-permalink display-flex" >
+                         <button
+                                 type="button"
+                                 title="Permalink"
+                                 data-position="bottom"
+                                 class="usa-button usa-button--unstyled display-flex usa-tooltip"
+                                 aria-label="Show article permalink"
+                                 aria-expanded="false"
+                                 aria-haspopup="true"
+                                 data-ga-category="actions"
+                                 data-ga-action="open"
+                                 data-ga-label="permalink_mobile"
+                         >
+                            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/share.svg" alt="Show article permalink icon" aria-hidden="true" class="usa-icon usa-icon--size-4 usa-icon--link" />
+                        </button>
+                        
+
+<div class="pmc-permalink__dropdown" hidden>
+    <div class="pmc-permalink__dropdown__container">
+          <h2 class="usa-modal__heading margin-top-0 margin-bottom-2 text-uppercase font-sans-xs">PERMALINK</h2>
+          <div class="pmc-permalink__dropdown__content">
+              <input type="text" class="usa-input" value="https://pmc.ncbi.nlm.nih.gov/articles/PMC13039126/" aria-label="Article permalink">
+              <button class="usa-button display-inline-flex pmc-permalink__dropdown__copy__btn margin-right-0" title="Copy article permalink" data-ga-category="save_share" data-ga-action="link" data-ga-label="copy_link">
+                  <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/content_copy.svg" alt="Copy icon" aria-hidden="true" class="usa-icon usa-icon--white" />
+                  <span class="margin-left-1">Copy</span>
+              </button>
+          </div>
+    </div>
+</div>
+                    </li>
+                </ul>
+            </div>
+            <button
+                    type="button"
+                    class="usa-button pmc-sidenav__container__open usa-button--unstyled width-auto display-flex"
+                    aria-label="Open article navigation"
+                    data-extra-class="is-visible-in-page"
+                    data-ga-category="actions"
+                    data-ga-action="open"
+                    data-ga-label="article_nav_mobile"
+            >
+                <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/list.svg" alt="Open article navigation icon" aria-hidden="true" class="usa-icon usa-icon--size-4 usa-icon--link" />
+            </button>
+        </div>
+    </div>
+</div>
+    <div class="grid-container desktop:padding-left-6">
+      <div id="article-container" class="grid-row grid-gap">
+        <div class="grid-col-12 desktop:grid-col-8 order-2 pmc-layout__content">
+            <div class="grid-container padding-left-0 padding-right-0">
+                <div class="grid-row desktop:margin-left-neg-6">
+                    <div class="grid-col-12">
+                        <div class="pmc-layout__disclaimer" role="complementary" aria-label="Disclaimer note">
+    As a library, NLM provides access to scientific literature. Inclusion in an NLM database does not imply endorsement of, or agreement with,
+    the contents by NLM or the National Institutes of Health.<br/>
+    Learn more:
+    <a class="usa-link" data-ga-category="Link click" data-ga-action="Disclaimer" data-ga-label="New disclaimer box" href="/about/disclaimer/">PMC Disclaimer</a>
+    |
+    <a class="usa-link" data-ga-category="Link click" data-ga-action="PMC Copyright Notice" data-ga-label="New disclaimer box" href="/about/copyright/">
+        PMC Copyright Notice
+    </a>
+</div>
+                    </div>
+                </div>
+                <div class="grid-row pmc-wm desktop:margin-left-neg-6">
+                    <!-- Main content -->
+                    <main
+                      id="main-content"
+                      class="usa-layout-docs__main usa-layout-docs grid-col-12 pmc-layout pmc-prose padding-0"
+                    >
+
+                      
+                        <section class="pmc-journal-banner text-center line-height-none" aria-label="Journal banner"><img src="https://cdn.ncbi.nlm.nih.gov/pmc/banners/logo-scirep.jpg" alt="Scientific Reports logo" usemap="#pmc-banner-imagemap" width="500" height="75"><map name="pmc-banner-imagemap"><area alt="Link to Scientific Reports" title="Link to Scientific Reports" shape="default" href="http://www.nature.com/srep" target="_blank" rel="noopener noreferrer"></map></section><article lang="en"><section aria-label="Article citation and metadata"><section class="pmc-layout__citation font-secondary font-xs"><div>
+<div class="display-inline-block"><button type="button" class="cursor-pointer text-no-underline bg-transparent border-0 padding-0 text-left margin-0 text-normal text-primary" aria-controls="journal_context_menu">Sci Rep</button></div>. 2026 Mar 31;16:10959. doi: <a href="https://doi.org/10.1038/s41598-026-39842-4" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">10.1038/s41598-026-39842-4</a>
+</div>
+<nav id="journal_context_menu" hidden="hidden"><ul class="menu-list font-family-ui" role="menu">
+<li role="presentation"><a href='https://pmc.ncbi.nlm.nih.gov/search/?term="Sci%20Rep"[jour]' class="usa-link" role="menuitem">Search in PMC</a></li>
+<li role="presentation"><a href='https://pubmed.ncbi.nlm.nih.gov/?term="Sci%20Rep"[jour]' lang="en" class="usa-link" role="menuitem">Search in PubMed</a></li>
+<li role="presentation"><a href='https://www.ncbi.nlm.nih.gov/nlmcatalog?term="Sci%20Rep"[Title%20Abbreviation]' class="usa-link" role="menuitem">View in NLM Catalog</a></li>
+<li role="presentation"><a href='?term="Sci%20Rep"[jour]' class="usa-link" role="menuitem" data-add-to-search="true">Add to search</a></li>
+</ul></nav></section><section class="front-matter"><div class="ameta p font-secondary font-xs">
+<hgroup><h1>Calibrating deep classifiers with dynamic confidence propagation and adaptive normalization</h1></hgroup><div class="cg p">
+<a href='https://pubmed.ncbi.nlm.nih.gov/?term="He%20P"[Author]' class="usa-link" aria-describedby="id1"><span class="name western">Peihua He</span></a><div hidden="hidden" id="id1">
+<h3><span class="name western">Peihua He</span></h3>
+<div class="p">
+<sup>1</sup>School of Artificial Intelligence and Big Data, Chongqing Industry Polytechnic University, Chongqing, 401120 China</div>
+<div class="p">Find articles by <a href='https://pubmed.ncbi.nlm.nih.gov/?term="He%20P"[Author]' class="usa-link"><span class="name western">Peihua He</span></a>
+</div>
+</div>
+<sup>1,</sup><sup>✉</sup>, <a href='https://pubmed.ncbi.nlm.nih.gov/?term="Fu%20W"[Author]' class="usa-link" aria-describedby="id2"><span class="name western">Wei Fu</span></a><div hidden="hidden" id="id2">
+<h3><span class="name western">Wei Fu</span></h3>
+<div class="p">
+<sup>1</sup>School of Artificial Intelligence and Big Data, Chongqing Industry Polytechnic University, Chongqing, 401120 China</div>
+<div class="p">Find articles by <a href='https://pubmed.ncbi.nlm.nih.gov/?term="Fu%20W"[Author]' class="usa-link"><span class="name western">Wei Fu</span></a>
+</div>
+</div>
+<sup>1</sup>, <a href='https://pubmed.ncbi.nlm.nih.gov/?term="Wang%20L"[Author]' class="usa-link" aria-describedby="id3"><span class="name western">Lufeng Wang</span></a><div hidden="hidden" id="id3">
+<h3><span class="name western">Lufeng Wang</span></h3>
+<div class="p">
+<sup>1</sup>School of Artificial Intelligence and Big Data, Chongqing Industry Polytechnic University, Chongqing, 401120 China</div>
+<div class="p">Find articles by <a href='https://pubmed.ncbi.nlm.nih.gov/?term="Wang%20L"[Author]' class="usa-link"><span class="name western">Lufeng Wang</span></a>
+</div>
+</div>
+<sup>1</sup>, <a href='https://pubmed.ncbi.nlm.nih.gov/?term="Fu%20T"[Author]' class="usa-link" aria-describedby="id4"><span class="name western">Tian Fu</span></a><div hidden="hidden" id="id4">
+<h3><span class="name western">Tian Fu</span></h3>
+<div class="p">
+<sup>1</sup>School of Artificial Intelligence and Big Data, Chongqing Industry Polytechnic University, Chongqing, 401120 China</div>
+<div class="p">Find articles by <a href='https://pubmed.ncbi.nlm.nih.gov/?term="Fu%20T"[Author]' class="usa-link"><span class="name western">Tian Fu</span></a>
+</div>
+</div>
+<sup>1</sup>
+</div>
+<ul class="d-buttons inline-list">
+<li><button class="d-button" aria-controls="aip_a" aria-expanded="false">Author information</button></li>
+<li><button class="d-button" aria-controls="anp_a" aria-expanded="false">Article notes</button></li>
+<li><button class="d-button" aria-controls="clp_a" aria-expanded="false">Copyright and License information</button></li>
+</ul>
+<div class="d-panels font-secondary-light">
+<div id="aip_a" class="d-panel p" style="display: none">
+<div class="p" id="Aff1">
+<sup>1</sup>School of Artificial Intelligence and Big Data, Chongqing Industry Polytechnic University, Chongqing, 401120 China</div>
+<div class="author-notes p"><div class="fn" id="_fncrsp93pmc__">
+<sup>✉</sup><p class="display-inline">Corresponding author.</p>
+</div></div>
+</div>
+<div id="anp_a" class="d-panel p" style="display: none"><div class="notes p"><section id="historyarticle-meta1" class="history"><p>Received 2025 Jul 30; Accepted 2026 Feb 9; Collection date 2026.</p></section></div></div>
+<div id="clp_a" class="d-panel p" style="display: none">
+<div>© The Author(s) 2026</div>
+<p><strong>Open Access</strong> This article is licensed under a Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License, which permits any non-commercial use, sharing, distribution and reproduction in any medium or format, as long as you give appropriate credit to the original author(s) and the source, provide a link to the Creative Commons licence, and indicate if you modified the licensed material. You do not have permission under this licence to share adapted material derived from this article or parts of it. The images or other third party material in this article are included in the article’s Creative Commons licence, unless indicated otherwise in a credit line to the material. If material is not included in the article’s Creative Commons licence and your intended use is not permitted by statutory regulation or exceeds the permitted use, you will need to obtain permission directly from the copyright holder. To view a copy of this licence, visit <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">http://creativecommons.org/licenses/by-nc-nd/4.0/</a>.</p>
+<div class="p"><a href="/about/copyright/" class="usa-link">PMC Copyright notice</a></div>
+</div>
+</div>
+<div>PMCID: PMC13039126  PMID: <a href="https://pubmed.ncbi.nlm.nih.gov/41917068/" class="usa-link">41917068</a>
+</div>
+</div></section></section><section aria-label="Article content"><section class="body main-article-body"><section class="abstract" id="Abs1"><h2>Abstract</h2>
+<p id="Par1">Although deep neural networks have made significant progress in confidence calibration, conventional methods like temperature scaling and histogram binning face notable limitations in dynamic open-world scenarios due to their reliance on global static parameters or idealized data distribution assumptions. To address these challenges, we propose a Dynamic Confidence Propagation and Alternating Normalization (DCP-AN) framework. Our approach introduces three key innovations: (1) a bidirectional alternating propagation mechanism that enables sample-class confidence synergy through entropy-driven horizontal normalization and KL-divergence-weighted vertical normalization; (2) an adaptive temperature field with dynamic coefficients that achieves differential calibration for non-uniform confidence biases; and (3) a theoretically guaranteed spectral convergence process within 15 iterations. Extensive experiments demonstrate that DCP-AN achieves remarkable improvements: on ImageNet-LT, it boosts tail-class accuracy by 10.3% and reduces expected calibration error by 56%; in cross-domain adaptation, it decreases domain discrepancy by 24% while improving target domain accuracy by 5.5%. Furthermore, DCP-AN maintains computational efficiency with a GPU latency of 1.05 ms and memory overhead under 0.5 MB, making it suitable for real-time deployment.</p>
+<section id="kwd-group1" lang="en" class="kwd-group"><p><strong>Keywords:</strong> Dynamic confidence propagation, Alternating normalization, Temperature field, Deep neural networks, Spectral convergence</p></section></section><section id="Sec1"><h2 class="pmc_sec_title">Introduction</h2>
+<p id="Par2">Judging from the current research progress, many fields have already been associated with deep neural networks, among which two have attracted much attention, namely object recognition and image recognition. However, it should be clear that when in a high-risk scenario, the credibility of the model largely comes from the difference between the actual confidence level and the estimated confidence leve<sup><a href="#CR1" class="usa-link" aria-describedby="CR1">1</a>–<a href="#CR3" class="usa-link" aria-describedby="CR3">3</a></sup>. With the help of detailed analysis and research, a brand-new solution was finally presented, that is, the method of global parameter adjustment and empirical distribution matching.</p>
+<p id="Par3">While existing calibration methods, such as temperature scaling and histogram binning, can somehow lessen the problems of overconfidence, however there are basic drawbacks to these situations, which include the fact that static parametric approaches are unable to adjust to the heterogeneous uncertainty that exists between the head and tail classes in long-tailed distributions (which are the same as the others at about 0.4 and 0.6<sup><a href="#CR4" class="usa-link" aria-describedby="CR4">4</a></sup>, respectively), whereas the non-parametric approaches have a difficulty in terms of domain adaptation because to large amounts of data and storage overhead<sup><a href="#CR5" class="usa-link" aria-describedby="CR5">5</a></sup>.</p>
+<p id="Par4">The simulation of sample-class contacts improved calibration by means of the dynamic propagation method, which was graph-based. To increase the amount of uncertainty in the segmentation of medical images, for example, Zhang et al.<sup><a href="#CR6" class="usa-link" aria-describedby="CR6">6</a></sup> suggested that graphs were used, and Klicpera et al.<sup><a href="#CR7" class="usa-link" aria-describedby="CR7">7</a></sup> and others recommended that confidence propagation be optimized using the spectral graph theory. Nevertheless, there are two main problems with the existing method: (1) In cross-domain tasks, the mean time to failure (MTTF) of less than 48 h is less because there is insufficient cross-dimensional optimization when there is a lack of data flow (either sample or class dimensions)<sup><a href="#CR8" class="usa-link" aria-describedby="CR8">8</a></sup>; (2) There might be performance volatility because of parameter oscillation in real-world deployments because there are insufficient theoretical assurances for iterative convergence <sup><a href="#CR9" class="usa-link" aria-describedby="CR9">9</a></sup> . Furthermore, the use of edge devices is further restricted because of their high latency (more than 10 ms)<sup><a href="#CR10" class="usa-link" aria-describedby="CR10">10</a></sup> .</p>
+<p id="Par5">To solve them, this paper proposes the Dynamic confidence Propagation with Alternating Normalization (DCP-AN) framework, with three core innovations:</p>
+<ul class="list" style="list-style-type:disc">
+<li><p id="Par6"><strong>Bidirectional Alternating Propagation:</strong> Bidirectional alternating propagation is a bipartite graph model that can distinguish between samples and categories. It can perform entropy-based temperature adjustment in the category dimension and KL divergence weighted normalization in the sample dimension to improve cross dimensional confidence synergy. Theoretical analysis shows that compared to one-way methods, this method can improve the feature distinguishability of tail classes by 2.3 times<sup><a href="#CR11" class="usa-link" aria-describedby="CR11">11</a></sup>.</p></li>
+<li><p id="Par7"><strong>Adaptive Temperature Field</strong>: Focusing on the adaptive temperature field, the uncertain dynamic temperature coefficient can lead to differential adjustment of non-uniform confidence bias. According to relevant experimental findings, taking the long tail dataset as an example, the tail class coefficient has increased to 3.03 compared to before, and the head class coefficient has decreased to. 85 compared to before, thus balancing class competition and ultimately avoiding the harm caused by excessive smoothing.</p></li>
+<li><p id="Par8"><strong>Spectral Convergence Guarantee:</strong> The Markov network modeling, which was described by a spectral gap = 0.3, gives the formal proof of convergence in fifteen iterations, which is provided by the Markov chain modeling. In response to the dynamic propagation methods, this solves the stability gap that is part of them.</p></li>
+</ul>
+<p id="Par9">Experiments carried out on 26 benchmark datasets show notable progress: DCP-AN achieves a 12.7% relative increase in tail class accuracy (rising from 32.4% to 42.7%) on ImageNet-LT, decreases domain discrepancy (as measured by Maximum Mean Discrepancy, MMD) by 24% (from 0.382 to 0.289) on Office-Home, and reaches a GPU inference latency of 1.05 ms. Additionally, theoretical analysis also fully reveals the basic relationship between graph diffusion dynamics and confidence propagation, which provides a theoretical basis for the development of artificial intelligence systems.</p></section><section id="Sec2"><h2 class="pmc_sec_title">Related work</h2>
+<section id="Sec3"><h3 class="pmc_sec_title">Evolution of belief propagation algorithms</h3>
+<p id="Par10">With the continuous improvement of technological level, the development speed of belief propagation (BP) algorithm has also significantly increased. The main idea of the belief propagation algorithm here is to estimate the marginal probability of nodes through local message passing. Pearl<sup><a href="#CR12" class="usa-link" aria-describedby="CR12">12</a></sup> introduced the traditional BP algorithm in the research process, which can accurately infer Markov random fields and tree structure factor graphs. However, when used in cyclic graph structures, it always encounters local oscillations or convergence problems. Subsequent research mainly relies on two methods to improve its adaptability to complex graphic structures, one of which is dynamic graph structure modeling:</p>
+<p id="Par11">After continuous analysis and research, scholars such as Kipf<sup><a href="#CR13" class="usa-link" aria-describedby="CR13">13</a></sup> summarized GCNs, which is the graph convolutional network that people often mention. In order to make the research work more detailed, scholars such as Velikovi<sup><a href="#CR14" class="usa-link" aria-describedby="CR14">14</a></sup> effectively combined the graph attention network and the graph convolutional network. By adopting this approach, it is possible to achieve self-adaptation with modifying the interaction weights of nodes. However, even though this method has certain advantages, its disadvantages are also quite obvious, that is, the amount of computation that needs to be processed by adopting this method is extremely large. Referring to the analysis results, it was found that Li et al.<sup><a href="#CR15" class="usa-link" aria-describedby="CR15">15</a></sup> also added temporal modeling to the analysis. However, such an operation mode cannot fundamentally guarantee the computing efficiency.</p>
+<p id="Par12">Some scholars also conduct such research work from another perspective during the research process. For instance, some scholars will analyze the optimized propagation mechanism. Chen et al.<sup><a href="#CR16" class="usa-link" aria-describedby="CR16">16</a></sup> also added residual confidence propagation during the research and analysis process. The approaches of several scholars have properly solved the original problem of excessive smoothing. After extensive analysis, Zhang et al.<sup><a href="#CR17" class="usa-link" aria-describedby="CR17">17</a></sup> also introduced a multi-scale propagation technique and effectively integrated global information and local information hierarchically. Although this operation has certain advantages, it has not properly solved the problem of adaptive parameter adjustment.</p></section><section id="Sec4"><h3 class="pmc_sec_title">Collaborative optimization of normalization methods</h3>
+<p id="Par13">The Propagation Normalization method utilizes normalization operations on feature distributions to accelerate the convergence speed of the training process. However, when used alone, this method faces challenges in effectively addressing the collaboration of multimodal data.</p>
+<p id="Par14">Batch standardization, also known as BN<sup><a href="#CR18" class="usa-link" aria-describedby="CR18">18</a></sup>, relies on batch statistics to carry out standardization work and is subject to the influence of small batches. Layer normalization (LN)<sup><a href="#CR19" class="usa-link" aria-describedby="CR19">19</a></sup> is a standard that does not consider spatial correlation. However, it is applicable to sequence models in a similar way. Wu et al.<sup><a href="#CR20" class="usa-link" aria-describedby="CR20">20</a></sup> proposed switching modularity, also known as SN, which can be applied to BN through dynamic fusion and Instance Normalization (IN), to determine its weighted allocation, although it lacks the ability to adapt to specific tasks.</p>
+<p id="Par15">However, scholars have focused on the relevant content of cross-layer feature alignment during their analysis, and scholars like Park<sup><a href="#CR21" class="usa-link" aria-describedby="CR21">21</a></sup> have also devoted a lot of effort to this aspect. However, it should be clear that although this method has obvious advantages, it is largely influenced by external prior information. Referring to the relevant analysis results, Huang et al.<sup><a href="#CR22" class="usa-link" aria-describedby="CR22">22</a></sup> also analyzed cross-layer gradient coordination in detail when conducting the research.</p></section><section id="Sec5"><h3 class="pmc_sec_title">Poor confidence level and long-tail distribution</h3>
+<p id="Par16">Y. Cui et al.<sup><a href="#CR23" class="usa-link" aria-describedby="CR23">23</a></sup> mainly analysed the inter class weights of long tail classification and the design methods of rebalancing theory during the research process. B. Zhou et al.<sup><a href="#CR24" class="usa-link" aria-describedby="CR24">24</a></sup> mainly used a dual branch network to verify the gradient suppression effect of the tail class on the head class. J. Zhang et al.<sup><a href="#CR25" class="usa-link" aria-describedby="CR25">25</a></sup> established the theoretical foundation for dynamic propagation mechanisms and created inter-class competition graphs. K. Cao and T.Liu et al.<sup><a href="#CR26" class="usa-link" aria-describedby="CR26">26</a>,<a href="#CR27" class="usa-link" aria-describedby="CR27">27</a></sup> also summarized a label distribution perceptual loss function during the analysis and research process, and also studied coupled representation learning. Furthermore, progress has been made in semi-supervised domain generalization within industrial applications like fault diagnosis. For instance, J.Wei et al.<sup><a href="#CR28" class="usa-link" aria-describedby="CR28">28</a></sup> integrated domain knowledge with pseudo-label generation, offering a novel approach for uncertainty modeling under target domain data scarcity, which shares common ground with the challenges of cross-domain confidence calibration addressed in this study.</p></section><section id="Sec6"><h3 class="pmc_sec_title">Explorations related to norms and the dissemination of beliefs</h3>
+<p id="Par17">As time goes by, the research work of many scholars has begun to deepen continuously. More and more scholars have started to analyze issues such as the dissemination mechanism and normalization techniques together. For example, scholars such as Liu et al.<sup><a href="#CR29" class="usa-link" aria-describedby="CR29">29</a></sup> also took neural networks as the research focus during the analysis process. Based on a large amount of analysis and research, scholars such as Wang<sup><a href="#CR30" class="usa-link" aria-describedby="CR30">30</a></sup> summarized MPN, which is message passing normalization. In the specific operation process, it should be understood that the fusion of heterogeneous features will be largely influenced by MPN. Through a lot of efforts, several scholars Pan et al.<sup><a href="#CR31" class="usa-link" aria-describedby="CR31">31</a>–<a href="#CR34" class="usa-link" aria-describedby="CR34">34</a></sup> successfully added adaptive normalization to it. Even though the advantages of this method are very obvious, its shortcomings also need to be improved.</p>
+<p id="Par18">In comparison, DCP-AN can effectively resolve the limitations of dynamic adaptability and computational efficiency in current methods the current methods<sup><a href="#CR35" class="usa-link" aria-describedby="CR35">35</a>–<a href="#CR39" class="usa-link" aria-describedby="CR39">39</a></sup>.</p></section></section><section id="Sec7"><h2 class="pmc_sec_title">Our method</h2>
+<p id="Par19">The traditional calibration method mainly relies on temperature scaling, which mainly adjusts the confidence distribution through global static parameters, but ignores many elements throughout the entire process. The confidence difference between the head and tail categories may range from 0.4 to 0.6, and static methods are difficult to effectively address this issue (Minderer et al. 2021).</p>
+<p id="Par20">In this chapter, three important factors of this method are summarized, namely adaptive temperature field and bidirectional alternating propagation, as well as ensuring spectral convergence. For more details on the adaptive temperature field, please refer to<sup><a href="#CR40" class="usa-link" aria-describedby="CR40">40</a>–<a href="#CR45" class="usa-link" aria-describedby="CR45">45</a></sup>.</p>
+<p id="Par21">As shown in Table <a href="#Tab1" class="usa-link">1</a>, DCP-AN distinguishes itself from existing methods through bidirectional propagation, adaptive temperature field, and theoretical convergence guarantee, which jointly address the limitations of dynamic adaptability and stability in current calibration frameworks.</p>
+<section class="tw xbox font-sm" id="Tab1"><h3 class="obj_head">Table 1.</h3>
+<div class="caption p"><p>Core differences between DCP-AN and competitive methods.</p></div>
+<div class="tbl-box p" tabindex="0"><table class="content" frame="hsides" rules="groups">
+<thead><tr>
+<th align="left" colspan="1" rowspan="1">Methods</th>
+<th align="left" colspan="1" rowspan="1">Propagation mechanism</th>
+<th align="left" colspan="1" rowspan="1">Temperature adjustment strategy</th>
+<th align="left" colspan="1" rowspan="1">Convergence guarantee</th>
+</tr></thead>
+<tbody>
+<tr>
+<td align="left" colspan="1" rowspan="1">Graph-CALM</td>
+<td align="left" colspan="1" rowspan="1">One-way (Sample → Class)</td>
+<td align="left" colspan="1" rowspan="1">No temperature adjustment</td>
+<td align="left" colspan="1" rowspan="1">None</td>
+</tr>
+<tr>
+<td align="left" colspan="1" rowspan="1">Meta-calibration</td>
+<td align="left" colspan="1" rowspan="1">No explicit propagation, meta-parameter adjustment</td>
+<td align="left" colspan="1" rowspan="1">Global dynamic temperature</td>
+<td align="left" colspan="1" rowspan="1">Empirical convergence</td>
+</tr>
+<tr>
+<td align="left" colspan="1" rowspan="1">CAN</td>
+<td align="left" colspan="1" rowspan="1">One-way (Class → Sample)</td>
+<td align="left" colspan="1" rowspan="1">Fixed temperature parameter</td>
+<td align="left" colspan="1" rowspan="1">None</td>
+</tr>
+<tr>
+<td align="left" colspan="1" rowspan="1">DCP-AN</td>
+<td align="left" colspan="1" rowspan="1">Bidirectional alternating (Sample ↔ Class)</td>
+<td align="left" colspan="1" rowspan="1">Adaptive temperature field (based on entropy/KL divergence)</td>
+<td align="left" colspan="1" rowspan="1">Theoretically guaranteed (within 15 iterations)</td>
+</tr>
+</tbody>
+</table></div>
+<div class="p text-right font-secondary"><a href="table/Tab1/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div></section><p id="Par22">As illustrated in Fig. <a href="#Fig1" class="usa-link">1</a>, the figure depicts the complete workflow, starting from the initial prediction matrix A, proceeding through bidirectional alternating propagation and adaptive temperature field iterative optimization, continuing until the spectral convergence criterion is satisfied, and ultimately yielding the calibrated matrix A.</p>
+<figure class="fig xbox font-sm" id="Fig1"><h3 class="obj_head">Fig. 1.</h3>
+<p class="img-box line-height-none margin-x-neg-2 tablet:margin-x-0 text-center"><a class="tileshop" target="_blank" href="https://www.ncbi.nlm.nih.gov/core/lw/2.0/html/tileshop_pmc/tileshop_pmc_inline.html?title=Click%20on%20image%20to%20zoom&amp;p=PMC3&amp;id=13039126_41598_2026_39842_Fig1_HTML.jpg"><img class="graphic zoom-in" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/0fff8c723cc8/41598_2026_39842_Fig1_HTML.jpg" loading="lazy" id="d33e419" height="511" width="669" alt="Fig. 1"></a></p>
+<div class="p text-right font-secondary"><a href="figure/Fig1/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div>
+<figcaption><p>Flowchart of the DCP-AN framework.</p></figcaption></figure><section id="Sec8"><h3 class="pmc_sec_title">Bidirectional alternating propagation</h3>
+<p id="Par23">When using the modeling method, the confidence calibration problem can be specifically subdivided into the optimization problem of information propagation of network nodes.</p>
+<section id="Sec9"><h4 class="pmc_sec_title">Bipartite graph modeling</h4>
+<p id="Par24">Specify the sample node set  <span xmlns:mml="http://www.w3.org/1998/Math/MathML" id="IEq1"><img class="inline" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/7e292a57d2d1/d33e428.gif" loading="lazy" id="d33e428" alt="Inline graphic"></span> and the class node set <span xmlns:mml="http://www.w3.org/1998/Math/MathML" id="IEq2"><img class="inline" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/c1fdfdb8a6bb/d33e432.gif" loading="lazy" id="d33e432" alt="Inline graphic"></span>​​.</p>
+<p id="Par25">Then, set up the edge weight matrix <span xmlns:mml="http://www.w3.org/1998/Math/MathML" id="IEq3"><img class="inline" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/407949a38d17/d33e438.gif" loading="lazy" id="d33e438" alt="Inline graphic"></span>  , where <span xmlns:mml="http://www.w3.org/1998/Math/MathML" id="IEq4"><img class="inline" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/993ccfb9f6b0/d33e442.gif" loading="lazy" id="d33e442" alt="Inline graphic"></span>.</p>
+<p id="Par26">This modeling approach utilizes the optimization problem of information propagation divided into network nodes to handle the confidence calibration problem, laying the foundation for bidirectional collaborative adjustment.</p></section><section id="Sec10"><h4 class="pmc_sec_title">Mathematical derivation of dynamic propagation mechanism</h4>
+<p id="Par27">Process 1. Sample → Class Propagation (Horizontal Normalization):</p>
+<p id="Par28">Horizontal propagation selects entropy-based temperature adjustment to recalibrate class dimension confidence.</p>
+<table class="disp-formula p" id="Equ1"><tr>
+<td class="formula"><img class="graphic" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/fe1db025925a/d33e454.gif" loading="lazy" id="d33e454" alt="graphic file with name d33e454.gif"></td>
+<td class="label">1</td>
+</tr></table>
+<p><span xmlns:mml="http://www.w3.org/1998/Math/MathML" id="IEq5"><img class="inline" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/e0dc64bff566/d33e458.gif" loading="lazy" id="d33e458" alt="Inline graphic"></span> : Class confidence, measuring the certainty of class <span xmlns:mml="http://www.w3.org/1998/Math/MathML" id="IEq6"><img class="inline" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/c565ecdc4b3d/d33e462.gif" loading="lazy" id="d33e462" alt="Inline graphic"></span>​ predictions (normalized entropy of category prediction uncertainty).</p>
+<p id="Par29"><span xmlns:mml="http://www.w3.org/1998/Math/MathML" id="IEq7"><img class="inline" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/30edffdb3297/d33e467.gif" loading="lazy" id="d33e467" alt="Inline graphic"></span> : Class-dimensional temperature coefficient, enhancing confidence signals for high-uncertainty classes (e.g., tail classes in long-tailed data).</p>
+<p id="Par30">Process 2. Class → Sample Propagation (Vertical Normalization) : The longitudinal propagation restricts the confidence distribution of the sample dimension through KL divergence weighting.</p>
+<table class="disp-formula p" id="Equ2"><tr>
+<td class="formula"><img class="graphic" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/9617f7142b0f/d33e473.gif" loading="lazy" id="d33e473" alt="graphic file with name d33e473.gif"></td>
+<td class="label">2</td>
+</tr></table>
+<p><span xmlns:mml="http://www.w3.org/1998/Math/MathML" id="IEq8"><img class="inline" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/baf2c31d13ed/d33e477.gif" loading="lazy" id="d33e477" alt="Inline graphic"></span>: Sample confidence, measuring the consistency between the initial and intermediate confidence distributions of sample <span xmlns:mml="http://www.w3.org/1998/Math/MathML" id="IEq9"><img class="inline" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/7e92da4fc9a3/d33e481.gif" loading="lazy" id="d33e481" alt="Inline graphic"></span>.</p>
+<p id="Par31"><span xmlns:mml="http://www.w3.org/1998/Math/MathML" id="IEq10"><img class="inline" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/bd44fa46f29c/d33e486.gif" loading="lazy" id="d33e486" alt="Inline graphic"></span>: Sample-dimensional temperature coefficient, mitigating abnormal confidence spikes caused by distribution shifts.</p></section><section id="Sec11"><h4 class="pmc_sec_title">Adaptive temperature field</h4>
+<p id="Par32">Uncertainty is measured using entropy <span xmlns:mml="http://www.w3.org/1998/Math/MathML" id="IEq11"><img class="inline" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/5dd246941568/d33e494.gif" loading="lazy" id="d33e494" alt="Inline graphic"></span> and <span xmlns:mml="http://www.w3.org/1998/Math/MathML" id="IEq12"><img class="inline" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/b59912fa06e6/d33e498.gif" loading="lazy" id="d33e498" alt="Inline graphic"></span> divergence <span xmlns:mml="http://www.w3.org/1998/Math/MathML" id="IEq13"><img class="inline" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/2089365e87a1/d33e502.gif" loading="lazy" id="d33e502" alt="Inline graphic"></span>​, with temperature coefficients <span xmlns:mml="http://www.w3.org/1998/Math/MathML" id="IEq14"><img class="inline" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/61c6e424cbc5/d33e506.gif" loading="lazy" id="d33e506" alt="Inline graphic"></span> modified exponentially:</p>
+<table class="disp-formula p" id="Equ3"><tr>
+<td class="formula"><img class="graphic" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/10402eed5770/d33e510.gif" loading="lazy" id="d33e510" alt="graphic file with name d33e510.gif"></td>
+<td class="label">3</td>
+</tr></table>
+<p id="Par33"><span xmlns:mml="http://www.w3.org/1998/Math/MathML" id="IEq15"><img class="inline" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/c836b10c1f29/d33e515.gif" loading="lazy" id="d33e515" alt="Inline graphic"></span> Total global uncertainty.</p>
+<p id="Par34">α = 0.9: Smoothing coefficient for historical data.</p>
+<p id="Par35">β = 10: Sensitivity coefficient to uncertainty.</p>
+<p id="Par36">This update rule is derived from maximum likelihood estimation of the confidence distribution. By minimizing the cross-entropy between predicted confidence and true labels, we obtain the exponential adjustment of temperature coefficients, ensuring rapid response to high uncertainty (e.g., tail-class coefficient increases to 3.03) and stable output in low-uncertainty scenarios (e.g., head-class coefficient decreases to 0.85).</p></section></section><section id="Sec12"><h3 class="pmc_sec_title">Spectral convergence guarantee</h3>
+<section id="Sec13"><h4 class="pmc_sec_title">Markov chain modeling</h4>
+<p id="Par37">The alternating propagation process is represented as a Markov chain, where the state transition matrix is broken down into a column random matrix <span xmlns:mml="http://www.w3.org/1998/Math/MathML" id="IEq16"><img class="inline" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/e30e431393b4/d33e531.gif" loading="lazy" id="d33e531" alt="Inline graphic"></span>(representing horizontal propagation) and rows of random matrices <span xmlns:mml="http://www.w3.org/1998/Math/MathML" id="IEq17"><img class="inline" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/524fd2ce0fd8/d33e535.gif" loading="lazy" id="d33e535" alt="Inline graphic"></span>(representing vertical propagation). Based on the Perron-Frobenius theorem, if the transfer matrix <strong>T</strong> If <strong>T</strong> is irreducible (meaning all states can interact with each other) and aperiodic (indicating a state period of 1), there exists a unique steady-state distribution <span xmlns:mml="http://www.w3.org/1998/Math/MathML" id="IEq18"><img class="inline" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/bbc0b49d557d/d33e545.gif" loading="lazy" id="d33e545" alt="Inline graphic"></span>. This leads to:</p>
+<table class="disp-formula p" id="Equ4"><tr>
+<td class="formula"><img class="graphic" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/8d2de08697a5/d33e550.gif" loading="lazy" id="d33e550" alt="graphic file with name d33e550.gif"></td>
+<td class="label">4</td>
+</tr></table>
+<p id="Par38">Define the spectral gap <span xmlns:mml="http://www.w3.org/1998/Math/MathML" id="IEq19"><img class="inline" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/a555476bc9e6/d33e556.gif" loading="lazy" id="d33e556" alt="Inline graphic"></span>, which <span xmlns:mml="http://www.w3.org/1998/Math/MathML" id="IEq20"><img class="inline" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/ef9993b77c8e/d33e560.gif" loading="lazy" id="d33e560" alt="Inline graphic"></span> is the difference between the largest eigenvalue and the second-largest eigenvalue of a given matrix.</p>
+<table class="disp-formula p" id="Equ5"><tr>
+<td class="formula"><img class="graphic" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/16d5f9c8115d/d33e564.gif" loading="lazy" id="d33e564" alt="graphic file with name d33e564.gif"></td>
+<td class="label">5</td>
+</tr></table>
+<p id="Par39">Practical Estimation of Spectral Gap:</p>
+<p id="Par40">Step1: Construct the transition matrix <span xmlns:mml="http://www.w3.org/1998/Math/MathML" id="IEq21"><img class="inline" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/baa9ff7539cb/d33e572.gif" loading="lazy" id="d33e572" alt="Inline graphic"></span>.</p>
+<p id="Par41">Step2: Perform eigenvalue decomposition on <span xmlns:mml="http://www.w3.org/1998/Math/MathML" id="IEq22"><img class="inline" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/c0850480ddb4/d33e578.gif" loading="lazy" id="d33e578" alt="Inline graphic"></span> to obtain the largest eigenvalue <span xmlns:mml="http://www.w3.org/1998/Math/MathML" id="IEq23"><img class="inline" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/942de1e4525a/d33e582.gif" loading="lazy" id="d33e582" alt="Inline graphic"></span> (<span xmlns:mml="http://www.w3.org/1998/Math/MathML" id="IEq24"><img class="inline" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/942de1e4525a/d33e586.gif" loading="lazy" id="d33e586" alt="Inline graphic"></span>=1 in Markov chains) and the second largest eigenvalue <span xmlns:mml="http://www.w3.org/1998/Math/MathML" id="IEq25"><img class="inline" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/ef9993b77c8e/d33e590.gif" loading="lazy" id="d33e590" alt="Inline graphic"></span>.</p>
+<p id="Par42">Step3: Calculate the spectral gap <span xmlns:mml="http://www.w3.org/1998/Math/MathML" id="IEq26"><img class="inline" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/a555476bc9e6/d33e596.gif" loading="lazy" id="d33e596" alt="Inline graphic"></span>, On ImageNet-LT <span xmlns:mml="http://www.w3.org/1998/Math/MathML" id="IEq27"><img class="inline" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/557a58a0d8fb/d33e600.gif" loading="lazy" id="d33e600" alt="Inline graphic"></span> , requiring 15 iterations to achieve ε = 10<sup> −4</sup>.</p></section><section id="Sec14"><h4 class="pmc_sec_title">Loss function</h4>
+<p id="Par43">The optimization objective of DCP-AN is to minimize the combined KL divergence:</p>
+<table class="disp-formula p" id="Equ6"><tr>
+<td class="formula"><img class="graphic" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/41a84175f4ab/d33e610.gif" loading="lazy" id="d33e610" alt="graphic file with name d33e610.gif"></td>
+<td class="label">6</td>
+</tr></table>
+<p id="Par44">During this process, λ mainly adjusts the propagation weights of classes and samples, and alternate normalization will be used to gradually approach the global optimal solution through coordinate descent techniques, ensuring that the confidence distribution maintains local consistency and global stability.</p>
+<figure class="fig xbox font-sm" id="Figa"><p class="img-box line-height-none margin-x-neg-2 tablet:margin-x-0 text-center"><a class="tileshop" target="_blank" href="https://www.ncbi.nlm.nih.gov/core/lw/2.0/html/tileshop_pmc/tileshop_pmc_inline.html?title=Click%20on%20image%20to%20zoom&amp;p=PMC3&amp;id=13039126_41598_2026_39842_Figa_HTML.jpg"><img class="graphic zoom-in" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/e18fed90e54a/41598_2026_39842_Figa_HTML.jpg" loading="lazy" id="d33e624" height="329" width="677" alt="graphic file with name 41598_2026_39842_Figa_HTML.jpg"></a></p>
+<div class="p text-right font-secondary"><a href="figure/Figa/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div>
+<figcaption><p><strong>Algorithm</strong>: dynamic confidence propagation and alternating normalization framework</p></figcaption></figure><p id="Par45">The time complexity per iteration is O(NK), which is comparable to the complexity of the initial prediction calculation. The memory usage is limited to an N × K matrix, making it appropriate for large-scale applications.</p></section></section></section><section id="Sec15"><h2 class="pmc_sec_title">Experimental analysis</h2>
+<p id="Par46">In this section, we mainly analyze the research results in several aspects, specifically involving long-tail classification, cross-domain adaptation and computational efficiency, etc. Meanwhile, while analyzing the DCP-AN algorithm, the author also verifies its effectiveness. We conducted experiments on three benchmark datasets, namely ImageNet-LT for long tail research<sup><a href="#CR46" class="usa-link" aria-describedby="CR46">46</a></sup>, Office Home for cross domain research<sup><a href="#CR47" class="usa-link" aria-describedby="CR47">47</a></sup>, and CIFAR-100 for balanced classification research<sup><a href="#CR48" class="usa-link" aria-describedby="CR48">48</a></sup>. We also selected ResNet-50<sup><a href="#CR49" class="usa-link" aria-describedby="CR49">49</a>–<a href="#CR51" class="usa-link" aria-describedby="CR51">51</a></sup>as the benchmark architecture to comprehensively evaluate its performance.</p>
+<section id="Sec16"><h3 class="pmc_sec_title">Experiment detail</h3>
+<section id="Sec17"><h4 class="pmc_sec_title">Datasets</h4>
+<ul class="list" style="list-style-type:disc">
+<li><p id="Par48"><strong>ImageNet-LT</strong>. Long-tailed distribution with 1280 samples for head classes and 5 samples for tail classes. Adopts official split (training/validation/test = 8:1:1).</p></li>
+<li><p id="Par49"><strong>Office-Home</strong>. Covers 65 object categories, evaluating cross-domain adaptability between art sketches (source domain) and real-world images (target domain). Target domain split: validation (20%) / test (80%).</p></li>
+<li><p id="Par50"><strong>CIFAR-100</strong>. Adopts the official split with 50,000 training samples and 10,000 test samples. The validation set is randomly selected from the training set at 10%.</p></li>
+</ul></section><section id="Sec18"><h4 class="pmc_sec_title">Comparison methods</h4>
+<p id="Par51"><strong>First is the temperature scale (TS).</strong> The calibration technique frequently used by professionals nowadays is temperature calibration. This technique mainly relies on global temperature during the process of modifying the logic of neural networks, which can also enhance the accuracy of calibration.</p>
+<p id="Par52"><strong>The second is Histogram binning (HB)</strong>. When using this method, the confidence score is mainly divided into various intervals, and the confidence score is adjusted on the basis of referring to the accuracy of each interval.</p>
+<p id="Par53"><strong>The third method is alternating normalization classification (CAN)</strong>. The use of this illegal method can effectively improve the confidence estimation, thus ensuring the improvement of the calibration accuracy of the model.</p></section><section id="Sec19"><h4 class="pmc_sec_title">Evaluation metrics</h4>
+<p id="Par54"><strong>Top-1 accuracy.</strong> Ratio of correctly classified samples in the test set.</p>
+<p id="Par55"><strong>Expected Calibration Error (ECE)</strong>. Measures the consistency between predicted confidence and actual accuracy.</p>
+<p id="Par56"><strong>The maximum average difference (MMD)</strong>. Measures domain discrepancy in cross-domain tasks using kernel-based statistical methods.</p>
+<p id="Par57"><strong>Inference Latency</strong>. Measurement methods for per-iteration time and memory overhead of each method (using torch.cuda.synchronize() for synchronous timing in PyTorch, and memory overhead measured by torch.cuda.max_memory_allocated()).</p></section><section id="Sec20"><h4 class="pmc_sec_title">Hyperparameter sensitivity analysis</h4>
+<p id="Par58">The impact of α (0.7/0.8/0.9/0.95), β (5/10/15/20), and the number of iterations (5/10/15/20/25) on performance.</p>
+<p id="Par59"><strong>α:</strong> Within the range of 0.8–0.95, the tail-class accuracy fluctuates ≤ 1.2% and ECE fluctuates ≤ 0.005, indicating that the model is robust to the smoothing coefficient.</p>
+<p id="Par60"><strong>β:</strong> The performance is optimal within the range of 10–15. When β &lt; 5, it is insensitive to uncertainty; when β &gt; 20, over-adjustment leads to an increase in ECE.</p>
+<p id="Par61"><strong>Number of iterations:</strong> The performance tends to stabilize after 15 iterations (ECE ≤ 0.067). Continuing to increase the number of iterations does not bring significant improvement but increases computational overhead, verifying the rationality of the spectral convergence theory.</p>
+<p id="Par62"><strong>GPU Model.</strong> All efficiency experiments are based on the NVIDIA RTX-3090 GPU.</p>
+<p id="Par63">We mainly discuss the training details. ResNet-50 is mainly used in the baseline architecture for testing. At the beginning, the initial temperature coefficient τ was set to 1.0, while the smoothing coefficient α was set to 0.9. The above parameters will also be adjusted during training. Setting the number of iterations to 15 not only ensures computational efficiency but also provides sufficient convergence. All experiments were run with 5 random seeds, and results are reported as mean ± standard deviation. Statistical significance was confirmed via a paired t-test (p &lt; 0.05 vs. all baselines).</p></section></section><section id="Sec21"><h3 class="pmc_sec_title">Long-tailed classification on ImageNet-LT (ImageNet-LT)</h3>
+<p id="Par64">We provide detailed information on the training used in the experiment, with ResNet-50 used as the baseline architecture for each experiment to ensure consistent and reliable comparisons between various tasks and datasets. We use a starting temperature coefficient of 0.1 and a smoothing factor of 0 to explain the coefficient of variation of 0.9. These parameters are dynamically adjusted throughout the training process to ensure effective self-calibration of the reliability distribution. The number of iterations is set to 15 to ensure sufficient convergence while maintaining computational efficiency.</p>
+<p id="Par65">By analyzing the content of Table <a href="#Tab2" class="usa-link">2</a>, it can be found that compared to the three evaluation methods, the proposed method can significantly improve the accuracy of the tail class. The DCP-AN framework can improve the results by 10.3% compared to the baseline, which has advantages over traditional temperature scaling. Through analysis, it was further understood that the calibration error has decreased by 56% compared to before, and the expected calibration error has decreased from the initial 0.152 to 0.067 compared to before. From the above discussion, it can be found that the dynamic propagation mechanism can reasonably solve the problem of overconfident prediction, and at the same time, it can significantly improve the original accuracy of high-tail class prediction.</p>
+<section class="tw xbox font-sm" id="Tab2"><h4 class="obj_head">Table 2.</h4>
+<div class="caption p"><p>Long tail classification performance comparison.</p></div>
+<div class="tbl-box p" tabindex="0"><table class="content" frame="hsides" rules="groups">
+<thead><tr>
+<th align="left" colspan="1" rowspan="1">Methods</th>
+<th align="left" colspan="1" rowspan="1">Head-class accuracy</th>
+<th align="left" colspan="1" rowspan="1">Tail-class accuracy</th>
+<th align="left" colspan="1" rowspan="1">ECE</th>
+</tr></thead>
+<tbody>
+<tr>
+<td align="left" colspan="1" rowspan="1">Baseline</td>
+<td align="center" colspan="1" rowspan="1">68.2%</td>
+<td align="center" colspan="1" rowspan="1">32.4%</td>
+<td align="center" colspan="1" rowspan="1">0.152</td>
+</tr>
+<tr>
+<td align="left" colspan="1" rowspan="1">Temp Scaling</td>
+<td align="center" colspan="1" rowspan="1">67.8%</td>
+<td align="center" colspan="1" rowspan="1">34.1%</td>
+<td align="center" colspan="1" rowspan="1">0.121</td>
+</tr>
+<tr>
+<td align="left" colspan="1" rowspan="1">CAN</td>
+<td align="center" colspan="1" rowspan="1">69.5%</td>
+<td align="center" colspan="1" rowspan="1">38.9%</td>
+<td align="center" colspan="1" rowspan="1">0.089</td>
+</tr>
+<tr>
+<td align="left" colspan="1" rowspan="1">DCP-AN</td>
+<td align="center" colspan="1" rowspan="1">70.1%</td>
+<td align="center" colspan="1" rowspan="1">42.7%</td>
+<td align="center" colspan="1" rowspan="1">0.067</td>
+</tr>
+</tbody>
+</table></div>
+<div class="p text-right font-secondary"><a href="table/Tab2/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div></section></section><section id="Sec22"><h3 class="pmc_sec_title">Adaptation of the dynamic temperature coefficient</h3>
+<p id="Par66">Take Fig. <a href="#Fig2" class="usa-link">2</a> as an example. After understanding its content, the temperature coefficients of the head and tail categories can also be modified by DCP-AN.</p>
+<figure class="fig xbox font-sm" id="Fig2"><h4 class="obj_head">Fig. 2.</h4>
+<p class="img-box line-height-none margin-x-neg-2 tablet:margin-x-0 text-center"><img class="graphic" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/b2d4d5a88f77/41598_2026_39842_Fig2_HTML.jpg" loading="lazy" id="d33e806" height="473" width="644" alt="Fig. 2"></p>
+<div class="p text-right font-secondary"><a href="figure/Fig2/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div>
+<figcaption><p>Dynamic variation of temperature coefficient.</p></figcaption></figure><p id="Par67">Head Classes (blue curve). The temperature coefficient of the head category decreases from 1.0 to 0.85, which can alleviate overconfidence by making the output distribution more uniform.</p>
+<p id="Par68">Tail Classes (red curve). The temperature coefficient of the head category decreases from 1.0 to 0.85, which can alleviate overconfidence by making the output distribution more uniform.</p></section><section id="Sec23"><h3 class="pmc_sec_title">Confidence distribution for tail categories</h3>
+<p id="Par69">As shown in Fig. <a href="#Fig3" class="usa-link">3</a>, Prior to calibration, 65% of tail-class samples show confidence scores below 0.3, highlighting a significant calibration bias. In contrast, with DCP-AN, the peak of the distribution moves to the range of [0.5, 0.6), with 45% of samples reaching confidence levels above 0.5. The average confidence for accurate predictions increases from 0.32 to 0.51 (Δ =  + 0.19), indicating a notable improvement in uncertainty alignment.</p>
+<figure class="fig xbox font-sm" id="Fig3"><h4 class="obj_head">Fig. 3.</h4>
+<p class="img-box line-height-none margin-x-neg-2 tablet:margin-x-0 text-center"><img class="graphic" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/540a0f1b6474/41598_2026_39842_Fig3_HTML.jpg" loading="lazy" id="d33e824" height="436" width="638" alt="Fig. 3"></p>
+<div class="p text-right font-secondary"><a href="figure/Fig3/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div>
+<figcaption><p>Confidence distribution for tail categories.</p></figcaption></figure><p id="Par70">Compared with the temperature scale, the tail accuracy of DCP-AN has been improved by 1.7%, which is a 10.3% increase in this case. It can reduce the expected calibration error (ECE) from the initial 0.152 to 0.067, an increase of 56% compared to existing technologies, and fully highlight the necessity of bidirectional propagation.</p>
+<p id="Par71">After thorough research, it is learned that DCP-AN can be used in both the head and tail types of problems. In addition, the calibration performance and computational efficiency (1.05 ms on GPU) have both been improved after using DCP-AN.</p></section><section id="Sec24"><h3 class="pmc_sec_title">Cross-domain adaptation on office-home (office-home)</h3>
+<p id="Par72">Using the Office Home dataset to achieve cross domain adaptation from the art field to the real world, this dataset covers 65 different object categories.</p></section><section id="Sec25"><h3 class="pmc_sec_title">Experimental setup</h3>
+<p id="Par73">Objective: Transition from Art to Real World.</p>
+<p id="Par74">Framework: ResNet-34 trained on the source domain (Art) without any domain adaptation.</p>
+<p id="Par75">Calibration approach: Implement DCP-AN exclusively on the test set of the target domain (Real World).</p>
+<p id="Par76">Evaluation strategy: Apply DCP-AN only to the target domain (Real World) test set.</p>
+<p id="Par77">The DCP-AN framework automatically aligns feature distributions during the alternating normalization process by utilizing a sample propagation step. The difference between domains is measured using the Maximum Mean Discrepancy (MMD).</p>
+<table class="disp-formula p" id="Equ7"><tr>
+<td class="formula"><img class="graphic" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/34e5c7e59179/d33e845.gif" loading="lazy" id="d33e845" alt="graphic file with name d33e845.gif"></td>
+<td class="label">7</td>
+</tr></table>
+<p id="Par78">The kernel function ϕ plays a role in the confidence propagation space. The experimental results show that DCP-AN reduces the MMD distance by 24.3%, which proves its effectiveness in solving domain transfer without direct adversarial training.</p>
+<section id="Sec26"><h4 class="pmc_sec_title">Example of incorrect prediction</h4>
+<ul class="list" style="list-style-type:disc">
+<li><p id="Par80">Source Domain. Art (the artistic expression of objects).</p></li>
+<li><p id="Par81">Target Domain. Real World (photos from reality).</p></li>
+<li><p id="Par82">Misclassification in Footnotes. An image of a “Bookshelf” (from the target domain) is mistakenly categorized as a “Desk” due to bias from the source domain.</p></li>
+</ul>
+<p id="Par83">Referring to Table <a href="#Tab3" class="usa-link">3</a>, it can be seen that lateral propagation presents a situation where there is domain shift and significant uncertainty related to the “desktop” class, resulting in a decrease in temperature coefficient (τ_c from 1.0 to 0.85). This is helpful in reducing overconfidence. In terms of vertical propagation, the relatively high KL divergence of the samples increases its role in the normalization process of the “bookshelf” class. As a result, the confidence level for the misclassified “Desk” drops considerably from 0.72 to 0.29 (-59.7%), while the confidence for the correct “Bookshelf” class rises significantly from 0.18 to 0.61 (+ 238%).</p>
+<section class="tw xbox font-sm" id="Tab3"><h5 class="obj_head">Table 3.</h5>
+<div class="caption p"><p>Example of correction error confidence.</p></div>
+<div class="tbl-box p" tabindex="0"><table class="content" frame="hsides" rules="groups">
+<thead><tr>
+<th align="left" colspan="1" rowspan="1">Class</th>
+<th align="left" colspan="1" rowspan="1">Confidence (before calibration)</th>
+<th align="left" colspan="1" rowspan="1">Confidence (after DCP-AN)</th>
+</tr></thead>
+<tbody>
+<tr>
+<td align="left" colspan="1" rowspan="1">Desk</td>
+<td align="center" colspan="1" rowspan="1">0.72</td>
+<td align="center" colspan="1" rowspan="1">0.29</td>
+</tr>
+<tr>
+<td align="left" colspan="1" rowspan="1">Bookshelf</td>
+<td align="center" colspan="1" rowspan="1">0.18</td>
+<td align="center" colspan="1" rowspan="1">0.61</td>
+</tr>
+<tr>
+<td align="left" colspan="1" rowspan="1">Others</td>
+<td align="center" colspan="1" rowspan="1">0.10</td>
+<td align="center" colspan="1" rowspan="1">0.10</td>
+</tr>
+</tbody>
+</table></div>
+<div class="p text-right font-secondary"><a href="table/Tab3/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div></section><p id="Par84">It can be clearly seen from Fig. <a href="#Fig4" class="usa-link">4</a> that the red bar shows the prevalence of all kinds of errors before calibration. In contrast, the green bar highlights the distribution of the adjusted confidence after DCP-AN processing.</p>
+<figure class="fig xbox font-sm" id="Fig4"><h5 class="obj_head">Fig. 4.</h5>
+<p class="img-box line-height-none margin-x-neg-2 tablet:margin-x-0 text-center"><img class="graphic" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/018d2961edb6/41598_2026_39842_Fig4_HTML.jpg" loading="lazy" id="d33e921" height="428" width="626" alt="Fig. 4"></p>
+<div class="p text-right font-secondary"><a href="figure/Fig4/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div>
+<figcaption><p>Confidence modification representation.</p></figcaption></figure><p id="Par85">As shown in Table <a href="#Tab4" class="usa-link">4</a>, By analyzing the relevant content of this case, it can be found that DCP-AN mainly relies on the application of adaptive temperature fields to significantly reduce erroneous high confidence predictions. It utilizes graph-based propagation to readjust interpretable confidence, which also provides assistance for the future development of this field.</p>
+<section class="tw xbox font-sm" id="Tab4"><h5 class="obj_head">Table 4.</h5>
+<div class="caption p"><p>A comparative examination of the results from cross-domain adaptation.</p></div>
+<div class="tbl-box p" tabindex="0"><table class="content" frame="hsides" rules="groups">
+<thead><tr>
+<th align="left" colspan="1" rowspan="1">Method</th>
+<th align="left" colspan="1" rowspan="1">Target domain accuracy</th>
+<th align="left" colspan="1" rowspan="1">ECE</th>
+<th align="left" colspan="1" rowspan="1">Domain discrepancy (MMD)</th>
+</tr></thead>
+<tbody>
+<tr>
+<td align="left" colspan="1" rowspan="1">No calibration</td>
+<td align="center" colspan="1" rowspan="1">54.3%</td>
+<td align="center" colspan="1" rowspan="1">0.178</td>
+<td align="center" colspan="1" rowspan="1">0.382</td>
+</tr>
+<tr>
+<td align="left" colspan="1" rowspan="1">Histogram binning</td>
+<td align="center" colspan="1" rowspan="1">56.1%</td>
+<td align="center" colspan="1" rowspan="1">0.142</td>
+<td align="center" colspan="1" rowspan="1">0.351</td>
+</tr>
+<tr>
+<td align="left" colspan="1" rowspan="1">DCP-AN</td>
+<td align="center" colspan="1" rowspan="1">59.8%</td>
+<td align="center" colspan="1" rowspan="1">0.093</td>
+<td align="center" colspan="1" rowspan="1">0.289</td>
+</tr>
+</tbody>
+</table></div>
+<div class="p text-right font-secondary"><a href="table/Tab4/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div></section></section></section><section id="Sec27"><h3 class="pmc_sec_title">Cross-domain adaptation on office-home (office-home)</h3>
+<p id="Par86">In the specific operation process, the main focus is on observing the training iteration process, while also analyzing the Frobenius norm. In practical operation, we test the convergence characteristics of DCP-AN:</p>
+<table class="disp-formula p" id="Equ8"><tr>
+<td class="formula"><img class="graphic" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/40a31b3171b0/d33e979.gif" loading="lazy" id="d33e979" alt="graphic file with name d33e979.gif"></td>
+<td class="label">8</td>
+</tr></table>
+<p id="Par87">Here, A(t) represents the parameter matrix at iteration t. This provides empirical support for the theoretical spectral convergence limit established in Sect. 3.3, where a spectral gap <span xmlns:mml="http://www.w3.org/1998/Math/MathML" id="IEq28"><img class="inline" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/1abc6e0f85ad/d33e985.gif" loading="lazy" id="d33e985" alt="Inline graphic"></span> guarantees convergence within <span xmlns:mml="http://www.w3.org/1998/Math/MathML" id="IEq29"><img class="inline" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/14695f526c8d/d33e989.gif" loading="lazy" id="d33e989" alt="Inline graphic"></span> iterations (Fig. <a href="#Fig5" class="usa-link">5</a>).</p>
+<figure class="fig xbox font-sm" id="Fig5"><h4 class="obj_head">Fig. 5.</h4>
+<p class="img-box line-height-none margin-x-neg-2 tablet:margin-x-0 text-center"><img class="graphic" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/7165f2762eda/41598_2026_39842_Fig5_HTML.jpg" loading="lazy" id="d33e1002" height="454" width="629" alt="Fig. 5"></p>
+<div class="p text-right font-secondary"><a href="figure/Fig5/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div>
+<figcaption><p>Analysis of iterative processes.</p></figcaption></figure><p id="Par88">As is shown in Table <a href="#Tab5" class="usa-link">5</a>, we benchmarked DCP-AN against four competitive methods: Dirichlet calibration, Vector Scaling, Meta-Calibration, and Graph-CALM on ImageNet-LT (5 random seeds, ResNet-50). As is shown as Table <a href="#Tab6" class="usa-link">6</a>, All competitors were re-implemented using their official hyper-parameters. A paired t-test (5 seeds) shows DCP-AN significantly outperforms every baseline (p &lt; 0.05), confirming both superior accuracy and better calibration.</p>
+<section class="tw xbox font-sm" id="Tab5"><h4 class="obj_head">Table 5.</h4>
+<div class="caption p"><p>Analyzes the time and memory expenses associated with different calibration techniques.</p></div>
+<div class="tbl-box p" tabindex="0"><table class="content" frame="hsides" rules="groups">
+<thead><tr>
+<th align="left" colspan="1" rowspan="1">Method</th>
+<th align="left" colspan="1" rowspan="1">Per-iter time</th>
+<th align="left" colspan="1" rowspan="1">GPU memory overhead</th>
+<th align="left" colspan="1" rowspan="1">Total latency (<em>T</em> = 15)</th>
+</tr></thead>
+<tbody>
+<tr>
+<td align="left" colspan="1" rowspan="1">Temperature scaling</td>
+<td align="left" colspan="1" rowspan="1">–</td>
+<td align="left" colspan="1" rowspan="1">–</td>
+<td align="left" colspan="1" rowspan="1">0.1 ms</td>
+</tr>
+<tr>
+<td align="left" colspan="1" rowspan="1">CAN</td>
+<td align="left" colspan="1" rowspan="1">0.4 ms</td>
+<td align="left" colspan="1" rowspan="1"> + 15 MB</td>
+<td align="left" colspan="1" rowspan="1">6.0 ms</td>
+</tr>
+<tr>
+<td align="left" colspan="1" rowspan="1">DCP-AN (CPU)</td>
+<td align="left" colspan="1" rowspan="1">1.2 ms</td>
+<td align="left" colspan="1" rowspan="1"> + 2.0 MB</td>
+<td align="left" colspan="1" rowspan="1">18.0 ms</td>
+</tr>
+<tr>
+<td align="left" colspan="1" rowspan="1">DCP-AN (GPU)</td>
+<td align="left" colspan="1" rowspan="1">0.07 ms</td>
+<td align="left" colspan="1" rowspan="1"> + 0.5 MB</td>
+<td align="left" colspan="1" rowspan="1">1.05 ms</td>
+</tr>
+</tbody>
+</table></div>
+<div class="p text-right font-secondary"><a href="table/Tab5/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div></section><section class="tw xbox font-sm" id="Tab6"><h4 class="obj_head">Table 6.</h4>
+<div class="caption p"><p>Positioning of DCP-AN versus existing calibration methods.</p></div>
+<div class="tbl-box p" tabindex="0"><table class="content" frame="hsides" rules="groups">
+<thead><tr>
+<th align="left" colspan="1" rowspan="1">Methods</th>
+<th align="left" colspan="1" rowspan="1">Tail Acc (%)</th>
+<th align="left" colspan="1" rowspan="1">ECE (%)</th>
+<th align="left" colspan="1" rowspan="1">p-value versus DCP-AN</th>
+</tr></thead>
+<tbody>
+<tr>
+<td align="left" colspan="1" rowspan="1">Dirichlet calibration</td>
+<td align="left" colspan="1" rowspan="1">39.2 ± 0.4</td>
+<td align="left" colspan="1" rowspan="1">9.8 ± 0.3</td>
+<td align="left" colspan="1" rowspan="1"> &lt; 0.01</td>
+</tr>
+<tr>
+<td align="left" colspan="1" rowspan="1">Vector scaling</td>
+<td align="left" colspan="1" rowspan="1">38.7 ± 0.5</td>
+<td align="left" colspan="1" rowspan="1">10.1 ± 0.4</td>
+<td align="left" colspan="1" rowspan="1"> &lt; 0.01</td>
+</tr>
+<tr>
+<td align="left" colspan="1" rowspan="1">Meta-calibration</td>
+<td align="left" colspan="1" rowspan="1">40.1 ± 0.3</td>
+<td align="left" colspan="1" rowspan="1">8.9 ± 0.3</td>
+<td align="left" colspan="1" rowspan="1"> &lt; 0.01</td>
+</tr>
+<tr>
+<td align="left" colspan="1" rowspan="1">Graph-CALM</td>
+<td align="left" colspan="1" rowspan="1">41.0 ± 0.4</td>
+<td align="left" colspan="1" rowspan="1">8.1 ± 0.3</td>
+<td align="left" colspan="1" rowspan="1">0.018</td>
+</tr>
+<tr>
+<td align="left" colspan="1" rowspan="1">DCP-AN</td>
+<td align="left" colspan="1" rowspan="1">42.7 ± 0.3</td>
+<td align="left" colspan="1" rowspan="1">6.7 ± 0.2</td>
+<td align="left" colspan="1" rowspan="1">–</td>
+</tr>
+</tbody>
+</table></div>
+<div class="p text-right font-secondary"><a href="table/Tab6/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div></section></section><section id="Sec28"><h3 class="pmc_sec_title">Ablation analysis and convergence visualization</h3>
+<p id="Par89">We progressively removed the three core components on ImageNet-LT while keeping all other settings identical:</p>
+<ul class="list" style="list-style-type:disc">
+<li><p id="Par90">w/o bidirectional propagation (only sample → class)</p></li>
+<li><p id="Par91">w/o adaptive temperature (fixed τ = 1)</p></li>
+<li><p id="Par92">w/o spectral convergence (run 30 iterations)</p></li>
+</ul>
+<p id="Par93">Table <a href="#Tab7" class="usa-link">7</a> summarizes the results averaged over five random seeds. Removing bidirectional propagation causes the largest degradation (-4.6% tail accuracy and + 3.5% ECE), confirming its key role in transferring confidence signals to tail classes. Disabling adaptive temperature ranks second (-3.3% Acc), whereas dropping spectral stopping mainly slows convergence but still yields − 1.5% Acc, validating that all modules are indispensable.</p>
+<section class="tw xbox font-sm" id="Tab7"><h4 class="obj_head">Table 7.</h4>
+<div class="caption p"><p>Ablation study on ImageNet-LT.</p></div>
+<div class="tbl-box p" tabindex="0"><table class="content" frame="hsides" rules="groups">
+<thead><tr>
+<th align="left" colspan="1" rowspan="1">Methods</th>
+<th align="left" colspan="1" rowspan="1">Tail Acc↑</th>
+<th align="left" colspan="1" rowspan="1">ECE↓</th>
+<th align="left" colspan="1" rowspan="1">MMD↓</th>
+</tr></thead>
+<tbody>
+<tr>
+<td align="left" colspan="1" rowspan="1">DCP-AN (full)</td>
+<td align="left" colspan="1" rowspan="1">42.7%</td>
+<td align="left" colspan="1" rowspan="1">0.067</td>
+<td align="left" colspan="1" rowspan="1">0.289</td>
+</tr>
+<tr>
+<td align="left" colspan="1" rowspan="1">w/o bidirectional propagation</td>
+<td align="left" colspan="1" rowspan="1">38.1% (− 4.6)</td>
+<td align="left" colspan="1" rowspan="1">0.102</td>
+<td align="left" colspan="1" rowspan="1">0.341</td>
+</tr>
+<tr>
+<td align="left" colspan="1" rowspan="1">w/o adapt temperature</td>
+<td align="left" colspan="1" rowspan="1">39.4% (− 3.3)</td>
+<td align="left" colspan="1" rowspan="1">0.095</td>
+<td align="left" colspan="1" rowspan="1">0.325</td>
+</tr>
+<tr>
+<td align="left" colspan="1" rowspan="1">w/o spectral convergence</td>
+<td align="left" colspan="1" rowspan="1">41.2% (− 1.5)</td>
+<td align="left" colspan="1" rowspan="1">0.071</td>
+<td align="left" colspan="1" rowspan="1">0.290</td>
+</tr>
+</tbody>
+</table></div>
+<div class="p text-right font-secondary"><a href="table/Tab7/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div></section><p id="Par94">Figure <a href="#Fig6" class="usa-link">6</a> employs UMAP to visualize embeddings of the confidence matrix before and after calibration. Distinct clustering of tail classes emerges only when bidirectional propagation is enabled, offering intuitive support for the observed improvement in tail-class accuracy.</p>
+<figure class="fig xbox font-sm" id="Fig6"><h4 class="obj_head">Fig. 6.</h4>
+<p class="img-box line-height-none margin-x-neg-2 tablet:margin-x-0 text-center"><a class="tileshop" target="_blank" href="https://www.ncbi.nlm.nih.gov/core/lw/2.0/html/tileshop_pmc/tileshop_pmc_inline.html?title=Click%20on%20image%20to%20zoom&amp;p=PMC3&amp;id=13039126_41598_2026_39842_Fig6_HTML.jpg"><img class="graphic zoom-in" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/06127e52d700/41598_2026_39842_Fig6_HTML.jpg" loading="lazy" id="d33e1225" height="415" width="726" alt="Fig. 6"></a></p>
+<div class="p text-right font-secondary"><a href="figure/Fig6/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div>
+<figcaption><p>UMAP visualization of confidence embeddings.</p></figcaption></figure><p id="Par95">Figure <a href="#Fig7" class="usa-link">7</a> displays the adaptive temperature trajectories: τ_tail increases to 3.03, while τ_head decreases to 0.85. This dynamic adjustment simultaneously mitigates overconfidence in head classes and under-confidence in tail classes.</p>
+<figure class="fig xbox font-sm" id="Fig7"><h4 class="obj_head">Fig. 7.</h4>
+<p class="img-box line-height-none margin-x-neg-2 tablet:margin-x-0 text-center"><img class="graphic" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/b73729a7b977/41598_2026_39842_Fig7_HTML.jpg" loading="lazy" id="d33e1237" height="586" width="643" alt="Fig. 7"></p>
+<div class="p text-right font-secondary"><a href="figure/Fig7/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div>
+<figcaption><p>Adaptive temperature curves.</p></figcaption></figure><p id="Par96">Figure <a href="#Fig8" class="usa-link">8</a> (semilog scale) presents the Frobenius norm ‖A(t) − A(t − 1)‖_F as a function of iteration count. The full model achieves a tolerance of 10^ − 4 within eight iterations, whereas the variant without spectral stopping requires 24 iterations, highlighting the practical effectiveness of the Markov chain-based stopping criterion.</p>
+<figure class="fig xbox font-sm" id="Fig8"><h4 class="obj_head">Fig. 8.</h4>
+<p class="img-box line-height-none margin-x-neg-2 tablet:margin-x-0 text-center"><img class="graphic" src="https://cdn.ncbi.nlm.nih.gov/pmc/blobs/5e2a/13039126/e8f62fcb1be6/41598_2026_39842_Fig8_HTML.jpg" loading="lazy" id="d33e1249" height="573" width="614" alt="Fig. 8"></p>
+<div class="p text-right font-secondary"><a href="figure/Fig8/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div>
+<figcaption><p>Spectral convergence curves.</p></figcaption></figure></section><section id="Sec29"><h3 class="pmc_sec_title">Efficiency across architectures and batch sizes</h3>
+<p id="Par97">Table <a href="#Tab8" class="usa-link">8</a> summarizes the latency and memory overhead of DCP-AN when paired with four popular backbones. On an RTX-3040 GPU the extra latency remains sub-2.2 ms and the additional memory is &lt; 1 MB even at batch 64, demonstrating that our method scales gracefully with both model capacity and batch size. CPU inference shows the same trend, while the memory increase is negligible compared with the baseline model footprint.</p>
+<section class="tw xbox font-sm" id="Tab8"><h4 class="obj_head">Table 8.</h4>
+<div class="caption p"><p>Efficiency across architectures and batch sizes.</p></div>
+<div class="tbl-box p" tabindex="0"><table class="content" frame="hsides" rules="groups">
+<thead><tr>
+<th align="left" colspan="1" rowspan="1">Backbone</th>
+<th align="left" colspan="1" rowspan="1">Batch</th>
+<th align="left" colspan="1" rowspan="1">GPU latency ↓</th>
+<th align="left" colspan="1" rowspan="1">CPU latency ↓</th>
+<th align="left" colspan="1" rowspan="1">Memory ↑</th>
+</tr></thead>
+<tbody>
+<tr>
+<td align="left" colspan="1" rowspan="1">ResNet-18</td>
+<td align="left" colspan="1" rowspan="1">1</td>
+<td align="left" colspan="1" rowspan="1">0.38 ms</td>
+<td align="left" colspan="1" rowspan="1">6.1 ms</td>
+<td align="left" colspan="1" rowspan="1"> + 0.3 MB</td>
+</tr>
+<tr>
+<td align="left" colspan="1" rowspan="1">ResNet-50</td>
+<td align="left" colspan="1" rowspan="1">32</td>
+<td align="left" colspan="1" rowspan="1">1.05 ms</td>
+<td align="left" colspan="1" rowspan="1">18.0 ms</td>
+<td align="left" colspan="1" rowspan="1"> + 0.5 MB</td>
+</tr>
+<tr>
+<td align="left" colspan="1" rowspan="1">ResNet-101</td>
+<td align="left" colspan="1" rowspan="1">64</td>
+<td align="left" colspan="1" rowspan="1">2.12 ms</td>
+<td align="left" colspan="1" rowspan="1">35.2 ms</td>
+<td align="left" colspan="1" rowspan="1"> + 0.9 MB</td>
+</tr>
+<tr>
+<td align="left" colspan="1" rowspan="1">EfficientNet-B0</td>
+<td align="left" colspan="1" rowspan="1">1</td>
+<td align="left" colspan="1" rowspan="1">0.41 ms</td>
+<td align="left" colspan="1" rowspan="1">5.8 ms</td>
+<td align="left" colspan="1" rowspan="1"> + 0.3 MB</td>
+</tr>
+</tbody>
+</table></div>
+<div class="p text-right font-secondary"><a href="table/Tab8/" class="usa-link" target="_blank" rel="noopener noreferrer">Open in a new tab</a></div></section></section></section><section id="Sec30"><h2 class="pmc_sec_title">Conclusion</h2>
+<p id="Par98">In this study, we propose a dynamic confidence propagation and alternating normalization framework (DCP-AN) framework, which overcomes the shortcomings of traditional calibration techniques in dynamic open world environments with two main innovations: bidirectional alternating propagation and adaptive temperature field. By creating a sample-class bipartite graph, DCP-AN iteratively enhances confidence distributions using entropy-driven temperature adjustments and KL divergence-weighted normalization, effectively managing diverse uncertainties. The theoretical assurance of spectral convergence (within 15 iterations, γ = 0.3) further guarantees stability in real-world applications. Comprehensive experiments across 26 benchmarks highlight the advantages of DCP-AN: in long-tailed classification, it achieves a 12.7% relative increase in tail-class accuracy on ImageNet-LT (from 32.4% to 42.7%) while reducing ECE by 56% (from 0.152 to 0.067). In cross domain adaptation, it reduced domain differences by 24% on Office Home, from 0.382 to 0.289, and improved target domain accuracy to 59.8%, which is 3.7% higher than histogram merging. Its computational efficiency is good, with a GPU latency of 1.05 ms and a memory overhead of less than 0.5 MB, making it suitable for edge devices. DCP-AN eliminates the need for static assumptions or high-capacity teacher models, providing a lightweight and effective solution for practical applications such as medical imaging and autonomous driving.</p></section><section id="ack1" class="ack"><h2 class="pmc_sec_title">Acknowledgements</h2>
+<p>The authors are grateful to the School of Artificial Intelligence and Big Data for allowing them to carry out this work.</p></section><section id="notes1"><h2 class="pmc_sec_title">Author contributions</h2>
+<p>The study’s inception and design involved input from all authors. Peihua He conceived the experiments, and Peihua He and Wei Fu conducted the experiments. Lufeng Wang and Tian Fu performed statistical analysis and figure generation. All authors have read and agreed to the published version of the manuscript.</p></section><section id="notes2"><h2 class="pmc_sec_title">Funding</h2>
+<p>This research was supported by the Key Projects of Chongqing Science and Technology (Grant No. CSTB2024TIAD-STX0036).</p></section><section id="notes3"><h2 class="pmc_sec_title">Data availability</h2>
+<p>All datasets used in this study follow their official versions (ImageNet-LT 2015, Office-Home 2017, CIFAR-100 v4.0.0). All data generated or analyzed during this study are available from the corresponding author upon reasonable request.</p></section><section id="notes4"><h2 class="pmc_sec_title">Declarations</h2>
+<section id="FPar1"><h3 class="pmc_sec_title">Competing interests</h3>
+<p id="Par99">The authors declare no competing interests.</p></section></section><section id="fn-group1" class="fn-group"><h2 class="pmc_sec_title">Footnotes</h2>
+<div class="fn-group p font-secondary-light font-sm"><div class="fn p" id="fn1">
+<p><strong>Publisher’s note</strong></p>
+<p>Springer Nature remains neutral with regard to jurisdictional claims in published maps and institutional affiliations.</p>
+</div></div></section><section id="Bib1" class="ref-list"><h2 class="pmc_sec_title">References</h2>
+<section id="Bib1_sec2"><ul class="ref-list font-sm" style="list-style-type:none">
+<li id="CR1">
+<span class="label">1.</span><cite>Guo, C., Pleiss, G., Sun, Y. &amp; Weinberger, K.Q. On calibration of. modern neural networks. In: <em>International Conference on Machine. Learning (ICML)</em>, 1321–1330 (2017).</cite>
+</li>
+<li id="CR2">
+<span class="label">2.</span><cite>Kull, M., Silva Filho, T. &amp; Flach, P. Beta calibration: A well-founded and easily implemented improvement on logistic calibration. <em>Neurocomputing</em><strong>253</strong>, 1–14 (2017).</cite> [<a href="https://scholar.google.com/scholar_lookup?Kull,%20M.,%20Silva%20Filho,%20T.%20&amp;%20Flach,%20P.%20Beta%20calibration:%20A%20well-founded%20and%20easily%20implemented%20improvement%20on%20logistic%20calibration.%20Neurocomputing253,%201%E2%80%9314%20(2017)." class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="CR3">
+<span class="label">3.</span><cite>Lakshminarayanan, B., Pritzel, A. &amp; Blundell, C. Simple and scalable predictive uncertainty estimation using deep ensembles. <em>Adv. Neural Inf. Process. Syst.</em><strong>30</strong>, 6402–6413 (2017).</cite> [<a href="https://scholar.google.com/scholar_lookup?Lakshminarayanan,%20B.,%20Pritzel,%20A.%20&amp;%20Blundell,%20C.%20Simple%20and%20scalable%20predictive%20uncertainty%20estimation%20using%20deep%20ensembles.%20Adv.%20Neural%20Inf.%20Process.%20Syst.30,%206402%E2%80%936413%20(2017)." class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="CR4">
+<span class="label">4.</span><cite>Niculescu-Mizil, A. &amp; Caruana, R. Predicting good probabilities with supervised learning. In: <em>International Conference on Machine Learning (ICML)</em>, 625–632 (2005).</cite>
+</li>
+<li id="CR5">
+<span class="label">5.</span><cite>Platt, J. Probabilistic outputs for support vector machines and comparisons to regularized likelihood methods. <em>Adv. Large Margin Classif.</em><strong>10</strong>(3), 61–74 (1999).</cite> [<a href="https://scholar.google.com/scholar_lookup?Platt,%20J.%20Probabilistic%20outputs%20for%20support%20vector%20machines%20and%20comparisons%20to%20regularized%20likelihood%20methods.%20Adv.%20Large%20Margin%20Classif.10(3),%2061%E2%80%9374%20(1999)." class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="CR6">
+<span class="label">6.</span><cite>Zhang, Y., Song, G. &amp; Shao, L. Graph-CALM: Graph-based confidence-aware learning for medical image segmentation. In: <em>IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)</em>, 1234–1245 (2022).</cite>
+</li>
+<li id="CR7">
+<span class="label">7.</span><cite>Klicpera, J., Groß, J. &amp; Günnemann, S. Diffusion improves graph learni ng. <em>Adv. Neural. Inf. Process. Syst.</em><strong>34</strong>, 23765–23777 (2021).</cite> [<a href="https://scholar.google.com/scholar_lookup?Klicpera,%20J.,%20Gro%C3%9F,%20J.%20&amp;%20G%C3%BCnnemann,%20S.%20Diffusion%20improves%20graph%20learni%20ng.%20Adv.%20Neural.%20Inf.%20Process.%20Syst.34,%2023765%E2%80%9323777%20(2021)." class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="CR8">
+<span class="label">8.</span><cite>Wang, Y., Chen, X. &amp; Liu, Z. et al. Edge-friendly confidence calibration: A 1 ms framework for real-time deployment. In: <em>Conference on Machine Learning and Systems (MLSys)</em>, Miami, FL, USA, 456–468 (2024).</cite>
+</li>
+<li id="CR9">
+<span class="label">9.</span><cite>Kumar, A., Liang, P. &amp; Ma, T. Verified uncertainty calibration under distribution shift. <em>Adv. Neural. Inf. Process. Syst.</em><strong>35</strong>, 14567–14581 (2022).</cite> [<a href="https://scholar.google.com/scholar_lookup?Kumar,%20A.,%20Liang,%20P.%20&amp;%20Ma,%20T.%20Verified%20uncertainty%20calibration%20under%20distribution%20shift.%20Adv.%20Neural.%20Inf.%20Process.%20Syst.35,%2014567%E2%80%9314581%20(2022)." class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="CR10">
+<span class="label">10.</span><cite>Bai, Y., Yao, Q. &amp; Zhou, W. et al. Neural architecture search for calibrated uncertainty estimation. In: <em>International Conference on Learning Representations (ICLR)</em>, Virtual (2023).</cite>
+</li>
+<li id="CR11">
+<span class="label">11.</span><cite>Li, Z., Tan, M., &amp; Socher, R. et al. Meta-calibration: Dynamic parameter adaptation for open-world learning. In: <em>International Conference on Machine Learning (ICML)</em>, Honolulu, HI, USA, 9876–9888 (2023).</cite>
+</li>
+<li id="CR12">
+<span class="label">12.</span><cite>Pearl, J. <em>Probabilistic Reasoning in Intelligent Systems: Networks of Plausible Inference</em> (Morgan Kaufmann, 1988).</cite> [<a href="https://scholar.google.com/scholar_lookup?Pearl,%20J.%20Probabilistic%20Reasoning%20in%20Intelligent%20Systems:%20Networks%20of%20Plausible%20Inference%20(Morgan%20Kaufmann,%201988)." class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="CR13">
+<span class="label">13.</span><cite>Kipf, T. N. &amp; Welling, M. Semi-supervised classification with graph convolutional networks. In: <em>International Conference on Learning Representations (ICLR)</em>, Toulon, France (2017).</cite>
+</li>
+<li id="CR14">
+<span class="label">14.</span><cite>P. Veličković, A. Casanova, A. Romero, et al. Graph attention networks. In: <em>International Conference on Learning Representations (ICLR)</em>, Vancouver, Canada (2018).</cite>
+</li>
+<li id="CR15">
+<span class="label">15.</span><cite>Li, Y., Tarlow, D., Brockschmidt, M. &amp; Zemel, R. Dynamic graph convolutional networks. <em>IEEE Trans. Pattern Anal. Mach. Intell.</em><strong>43</strong>(5), 1832–1846 (2020).</cite> [<a href="https://scholar.google.com/scholar_lookup?Li,%20Y.,%20Tarlow,%20D.,%20Brockschmidt,%20M.%20&amp;%20Zemel,%20R.%20Dynamic%20graph%20convolutional%20networks.%20IEEE%20Trans.%20Pattern%20Anal.%20Mach.%20Intell.43(5),%201832%E2%80%931846%20(2020)." class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="CR16">
+<span class="label">16.</span><cite>Chen, J., Gao, K., Li, G. &amp; Li, K. Residual belief propagation for heterogeneous graphs. <em>Adv. Neural. Inf. Process. Syst.</em><strong>32</strong>, 11245–11255 (2019).</cite> [<a href="https://scholar.google.com/scholar_lookup?Chen,%20J.,%20Gao,%20K.,%20Li,%20G.%20&amp;%20Li,%20K.%20Residual%20belief%20propagation%20for%20heterogeneous%20graphs.%20Adv.%20Neural.%20Inf.%20Process.%20Syst.32,%2011245%E2%80%9311255%20(2019)." class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="CR17">
+<span class="label">17.</span><cite>Zhang, Z., Lin, H. &amp; Wang, X. et al. Multi-scale graph neural networks with hierarchical propagation. In: <em>IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)</em>, Virtual, 1437–1446 (2021).</cite>
+</li>
+<li id="CR18">
+<span class="label">18.</span><cite>Ioffe, S. &amp; Szegedy, C. Batch normalization: Accelerating deep network training by reducing internal covariate shift. In: <em>International Conference on Machine Learning (ICML)</em>, Lille, France, 448–456 (2015).</cite>
+</li>
+<li id="CR19">
+<span class="label">19.</span><cite>Ba, J. L., Kiros, R. &amp; Hinton, G. E. Layer normalization. arXiv preprint <a href="http://arxiv.org/abs/1607.06450" class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">arXiv:1607.06450</a> (2016).</cite>
+</li>
+<li id="CR20">
+<span class="label">20.</span><cite>Wu, Y. &amp; He, K. Group normalization. In: <em>European Conference on Computer Vision (ECCV)</em>, Munich, Germany, 3–19 (2018).</cite>
+</li>
+<li id="CR21">
+<span class="label">21.</span><cite>Park, T., Liu, M., Wang, T. &amp; Zhu, J. Semantic image synthesis with spatially-adaptive normalization. In: <em>IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)</em>, Long Beach, CA, USA, 2337–2346 (2019).</cite>
+</li>
+<li id="CR22">
+<span class="label">22.</span><cite>Huang, L., Zhang, C. &amp; Xu, H. et al. Meta-normalization via cross-gradient alignment. In: <em>International Conference on Machine Learning (ICML)</em>, Virtual, 4567–4576 (2021).</cite>
+</li>
+<li id="CR23">
+<span class="label">23.</span><cite>Cui, Y., Jia, M. &amp; Lin, T. et al. Class-balanced loss based on effective. number of samples. In: <em>IEEE Conference on Computer Vision and Pattern Recognition (CVPR)</em>, Long Beach, CA, USA, 9268–9277 (2019).</cite>
+</li>
+<li id="CR24">
+<span class="label">24.</span><cite>Zhou, B. et al. BBN: Bilateral-branch network with cumulative learning for long-tailed visual recognition. <em>IEEE Trans. Pattern Anal. Mach. Intell.</em><strong>44</strong>(12), 9165–9179 (2022).</cite> [<a href="https://scholar.google.com/scholar_lookup?Zhou,%20B.%20et%20al.%20BBN:%20Bilateral-branch%20network%20with%20cumulative%20learning%20for%20long-tailed%20visual%20recognition.%20IEEE%20Trans.%20Pattern%20Anal.%20Mach.%20Intell.44(12),%209165%E2%80%939179%20(2022)." class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="CR25">
+<span class="label">25.</span><cite>Zhang, J., Li, Y. &amp; Chen, T. Dynamic confidence propagation for long-tailed classification. <em>Neurocomputing</em><strong>456</strong>, 123–135 (2023).</cite> [<a href="https://scholar.google.com/scholar_lookup?Zhang,%20J.,%20Li,%20Y.%20&amp;%20Chen,%20T.%20Dynamic%20confidence%20propagation%20for%20long-tailed%20classification.%20Neurocomputing456,%20123%E2%80%93135%20(2023)." class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="CR26">
+<span class="label">26.</span><cite>Cao, K. et al. Learning imbalanced datasets with label-distribution-aware margin loss. <em>Adv. Neural Inf. Process. Syst.</em><strong>32</strong>, 1567–1578 (2019).</cite> [<a href="https://scholar.google.com/scholar_lookup?Cao,%20K.%20et%20al.%20Learning%20imbalanced%20datasets%20with%20label-distribution-aware%20margin%20loss.%20Adv.%20Neural%20Inf.%20Process.%20Syst.32,%201567%E2%80%931578%20(2019)." class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="CR27">
+<span class="label">27.</span><cite>Liu, T., Guo, Y. &amp; Wang, A. et al. Decoupled representation learning for long-tailed classification. In: <em>IEEE Conference on Computer Vision and Pattern Recognition (CVPR)</em>, Virtual, 9432–9441 (2021).</cite>
+</li>
+<li id="CR28">
+<span class="label">28.</span><cite>Wei, J., Wang, Q., Zhang, G., Ma, H. &amp; Wang, Y. Domain knowledge guided pseudo-label generation framework for semi-supervised domain generalization fault diagnosis. <em>Adv. Eng. Inform.</em><strong>67</strong>, 103540 (2025).</cite> [<a href="https://scholar.google.com/scholar_lookup?Wei,%20J.,%20Wang,%20Q.,%20Zhang,%20G.,%20Ma,%20H.%20&amp;%20Wang,%20Y.%20Domain%20knowledge%20guided%20pseudo-label%20generation%20framework%20for%20semi-supervised%20domain%20generalization%20fault%20diagnosis.%20Adv.%20Eng.%20Inform.67,%20103540%20(2025)." class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="CR29">
+<span class="label">29.</span><cite>Liu, Z., Fang, Y. &amp; Huang, X. et al. Adaptive normalization for graph neural networks. In: <em>AAAI Conference on Artificial Intelligence (AAAI)</em>, Virtual, 12345–12353 (2022).</cite>
+</li>
+<li id="CR30">
+<span class="label">30.</span><cite>Wang, X., Zhang, M., Zhu, W. &amp; Wipf, D. Message passing normalization for deep graph networks. <em>Adv. Neural Inf. Process. Syst.</em> 15420–15431 (2020).</cite>
+</li>
+<li id="CR31">
+<span class="label">31.</span><cite>Li, Y., Wang, N. &amp; Shi, J. et al. Adaptive batch normalization for practical domain adaptation. <em>Pattern Recognit.</em><strong>80</strong>, 109–117 (2018).</cite>
+</li>
+<li id="CR32">
+<span class="label">32.</span><cite>Pan, X., Luo, P., Shi, J. &amp; Tang, X. Two at once: Enhancing learning and generalization capacities via IBN-Net. In: <em>European Conference on Computer Vision (ECCV)</em>, Munich, Germany, 484–500 (2018).</cite>
+</li>
+<li id="CR33">
+<span class="label">33.</span><cite>Nam, H., Lee, H. &amp; Park, J. et al. Reducing domain gap via style- agnostic networks. In: <em>IEEE Conference on Computer Vision and Pattern Recognition (CVPR)</em>, Long Beach, CA, USA, pp. 12503–12512, 2019.</cite>
+</li>
+<li id="CR34">
+<span class="label">34.</span><cite>Huang, X. &amp; Belongie, S. Arbitrary style transfer in real-time with adaptive instance normalization. In: <em>IEEE International Conference on Computer Vision (ICCV)</em>, Venice, Italy, pp. 1510–1519, 2017.</cite>
+</li>
+<li id="CR35">
+<span class="label">35.</span><cite>Ghiasi, G., Lee, H., Kudlur, M., Dumoulin. Exploring the structure of a real-time, arbitrary neural artistic stylization network (2017).</cite>
+</li>
+<li id="CR36">
+<span class="label">36.</span><cite>Saito, K., Ushiku, Y. &amp; Harada, T. Asymmetric tri-training for unsupervised domain adaptation. In: <em>International Conference on Machine Learning (ICML)</em>, Sydney, Australia, 2988–2997 (2017).</cite>
+</li>
+<li id="CR37">
+<span class="label">37.</span><cite>Long, M., Cao, Y., Wang, J. &amp; Jordan, M. Learning transferable. features with deep adaptation networks. In: <em>International Conference on Machine Learning (ICML)</em>, Lille, France, 97–105 (2015).</cite>
+</li>
+<li id="CR38">
+<span class="label">38.</span><cite>Tzeng, E., Hoffman, J., Saenko, K.&amp; Darrell, T. Adversarial discriminative domain adaptation. In: <em>IEEE Conference on Computer Vision and Pattern Recognition (CVPR)</em>, Honolulu, HI, USA, 7167–7176 (2017).</cite>
+</li>
+<li id="CR39">
+<span class="label">39.</span><cite>Ben-David, S. et al. A theory of learning from different domains. <em>Mach. Learn.</em><strong>79</strong>(1–2), 151–175 (2010).</cite> [<a href="https://scholar.google.com/scholar_lookup?Ben-David,%20S.%20et%20al.%20A%20theory%20of%20learning%20from%20different%20domains.%20Mach.%20Learn.79(1%E2%80%932),%20151%E2%80%93175%20(2010)." class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="CR40">
+<span class="label">40.</span><cite>Yu, F. X. et al. Orthogonal random features. <em>Adv. Neural Inf. Process. Syst.</em><strong>29</strong>, 1975–1983 (2016).</cite> [<a href="https://scholar.google.com/scholar_lookup?Yu,%20F.%20X.%20et%20al.%20Orthogonal%20random%20features.%20Adv.%20Neural%20Inf.%20Process.%20Syst.29,%201975%E2%80%931983%20(2016)." class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="CR41">
+<span class="label">41.</span><cite>Williams, C. &amp; Seeger, M. Using the Nyström method to speed up kernel machines. <em>Adv. Neural Inf. Process. Syst.</em><strong>13</strong>, 682–688 (2000).</cite> [<a href="https://scholar.google.com/scholar_lookup?Williams,%20C.%20&amp;%20Seeger,%20M.%20Using%20the%20Nystr%C3%B6m%20method%20to%20speed%20up%20kernel%20machines.%20Adv.%20Neural%20Inf.%20Process.%20Syst.13,%20682%E2%80%93688%20(2000)." class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="CR42">
+<span class="label">42.</span><cite>Gittens, A. &amp; Mahoney, M. Revisiting the Nyström method for improved large-scale machine learning. <em>J. Mach. Learn. Res.</em><strong>17</strong>(117), 1–65 (2016).</cite> [<a href="https://scholar.google.com/scholar_lookup?Gittens,%20A.%20&amp;%20Mahoney,%20M.%20Revisiting%20the%20Nystr%C3%B6m%20method%20for%20improved%20large-scale%20machine%20learning.%20J.%20Mach.%20Learn.%20Res.17(117),%201%E2%80%9365%20(2016)." class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="CR43">
+<span class="label">43.</span><cite>Avron, H., Clarkson, K. &amp; Woodruff, D. Faster kernel ridge regression using sketching and preconditioning. <em>SIAM J. Matrix Anal. Appl.</em><strong>38</strong>(4), 1116–1138 (2017).</cite> [<a href="https://scholar.google.com/scholar_lookup?Avron,%20H.,%20Clarkson,%20K.%20&amp;%20Woodruff,%20D.%20Faster%20kernel%20ridge%20regression%20using%20sketching%20and%20preconditioning.%20SIAM%20J.%20Matrix%20Anal.%20Appl.38(4),%201116%E2%80%931138%20(2017)." class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="CR44">
+<span class="label">44.</span><cite>Karandikar, A. et al. Soft calibration objectives for neural networks. <em>Adv. Neural. Inf. Process. Syst.</em><strong>34</strong>, 29768–29779 (2021).</cite> [<a href="https://scholar.google.com/scholar_lookup?Karandikar,%20A.%20et%20al.%20Soft%20calibration%20objectives%20for%20neural%20networks.%20Adv.%20Neural.%20Inf.%20Process.%20Syst.34,%2029768%E2%80%9329779%20(2021)." class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="CR45">
+<span class="label">45.</span><cite>Postels, J. et al. Uncertainty estimation via response scaling for probabilistic semantic segmentation. <em>IEEE Trans. Pattern Anal. Mach. Intell.</em><strong>44</strong>(12), 9675–9688 (2022).</cite> [<a href="https://scholar.google.com/scholar_lookup?Postels,%20J.%20et%20al.%20Uncertainty%20estimation%20via%20response%20scaling%20for%20probabilistic%20semantic%20segmentation.%20IEEE%20Trans.%20Pattern%20Anal.%20Mach.%20Intell.44(12),%209675%E2%80%939688%20(2022)." class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="CR46">
+<span class="label">46.</span><cite>Russakovsky, O. et al. ImageNet large scale visual recognition challenge. <em>Int. J. Comput. Vis.</em><strong>115</strong>(3), 211–252 (2015).</cite> [<a href="https://scholar.google.com/scholar_lookup?Russakovsky,%20O.%20et%20al.%20ImageNet%20large%20scale%20visual%20recognition%20challenge.%20Int.%20J.%20Comput.%20Vis.115(3),%20211%E2%80%93252%20(2015)." class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="CR47">
+<span class="label">47.</span><cite>Venkateswara, H., Eusebio, J., Chakraborty, S. &amp; Panchanathan, S. Deep hashing network for unsupervised domain adaptation. In: <em>IEEE Conference on Computer Vision and Pattern Recognition (CVPR)</em>, Honolulu, HI, USA, 5385–5394 (2017).</cite>
+</li>
+<li id="CR48">
+<span class="label">48.</span><cite>Sun, B. &amp; Saenko, K. Deep CORAL: Correlation alignment for deep domain adaptation. In: <em>European Conference on Computer Vision (ECCV)</em>, Amsterdam, Netherlands, 443–450 (2016).</cite>
+</li>
+<li id="CR49">
+<span class="label">49.</span><cite>He, K., Zhang, X., Ren, S. &amp; Sun, J. Deep residual learning for image recognition. In: <em>IEEE Conference on Computer Vision and Pattern Recognition (CVPR)</em>, Las Vegas, NV, USA, 770–778 (2016).</cite>
+</li>
+<li id="CR50">
+<span class="label">50.</span><cite>Pei, W., Baltrušaitis, T., Tax, D. J. &amp; Morency, L. Temporal attention-gated model for robust sequence classification. <em>IEEE Trans. Pattern Anal. Mach. Intell.</em><strong>41</strong>(11), 2765–2779 (2019).</cite> [<a href="https://scholar.google.com/scholar_lookup?Pei,%20W.,%20Baltru%C5%A1aitis,%20T.,%20Tax,%20D.%20J.%20&amp;%20Morency,%20L.%20Temporal%20attention-gated%20model%20for%20robust%20sequence%20classification.%20IEEE%20Trans.%20Pattern%20Anal.%20Mach.%20Intell.41(11),%202765%E2%80%932779%20(2019)." class="usa-link usa-link--external" data-ga-action="click_feat_suppl" target="_blank" rel="noopener noreferrer">Google Scholar</a>]</li>
+<li id="CR51">
+<span class="label">51.</span><cite>Loshchilov, I. &amp; Hutter, F. SGDR: Stochastic gradient descent with. Warm restarts. In: <em>International Conference on Learning Representations (ICLR), Toulon, France</em> (2017).</cite>
+</li>
+</ul></section></section><section id="_ad93_" lang="en" class="associated-data"><h2 class="pmc_sec_title">Associated Data</h2>
+<p class="font-secondary"><em>This section collects any data citations, data availability statements, or supplementary materials included in this article.</em></p>
+<section id="_adda93_" lang="en" class="data-availability-statement"><h3 class="pmc_sec_title">Data Availability Statement</h3>
+<p>All datasets used in this study follow their official versions (ImageNet-LT 2015, Office-Home 2017, CIFAR-100 v4.0.0). All data generated or analyzed during this study are available from the corresponding author upon reasonable request.</p></section></section></section><footer class="p courtesy-note font-secondary font-sm text-center"><hr class="headless">
+<p>Articles from Scientific Reports are provided here courtesy of <strong>Nature Publishing Group</strong></p></footer></section></article>
+
+                      
+
+                    </main>
+                </div>
+            </div>
+        </div>
+
+        
+
+
+
+<!-- Secondary navigation placeholder -->
+<div class="pmc-sidenav desktop:grid-col-4 display-flex">
+    <section class="pmc-sidenav__container" aria-label="Article resources and navigation">
+        <button type="button" class="pmc-sidenav__container__close">
+            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/usa-icons/close.svg" role="img" alt="Close" />
+        </button>
+    <div class="display-none desktop:display-block">
+       <section class="margin-top-4 desktop:margin-top-0">
+              <h2 class="margin-top-0">ACTIONS</h2>
+           <ul class="usa-list usa-list--unstyled usa-list--actions">
+               
+               <li>
+                     <a
+                             href="https://doi.org/10.1038/s41598-026-39842-4"
+                             class="usa-button usa-button--outline width-24 font-xs display-inline-flex flex-align-center flex-justify-start padding-left-1"
+                             target="_blank"
+                             rel="noreferrer noopener"
+                             data-ga-category="actions"
+                             data-ga-action="click"
+                             data-ga-label="publisher_link_desktop"
+                     >
+                         <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/launch.svg" alt="View on publisher site icon" class="usa-icon usa-icon--size-3 usa-icon--link"/>
+                         <span class="display-inline-flex flex-justify-center flex-1 padding-right-2">View on publisher site</span>
+                     </a>
+               </li>
+               
+               
+               <li>
+                    <a
+                            href="pdf/41598_2026_Article_39842.pdf"
+                            class="usa-button usa-button--outline width-24 display-inline-flex flex-align-center flex-justify-start padding-left-1"
+                            data-ga-category="actions"
+                            data-ga-action="click"
+                            data-ga-label="pdf_download_desktop"
+                    >
+                         <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/file_download.svg" alt="Download PDF icon" class="usa-icon usa-icon--size-3 usa-icon--link"/>
+                        <span class="display-inline-flex flex-justify-center flex-1">PDF (2.9 MB)</span>
+                    </a>
+               </li>
+               
+                
+               <li>
+                   <button role="button" class="usa-button width-24 citation-dialog-trigger display-inline-flex flex-align-center flex-justify-start padding-left-1"
+                        aria-label="Open dialog with citation text in different styles"
+                        data-ga-category="actions"
+                        data-ga-action="open"
+                        data-ga-label="cite_desktop"
+                        data-all-citations-url="/resources/citations/13039126/"
+                        data-citation-style="nlm"
+                        data-download-format-link="/resources/citations/13039126/export/"
+                    >
+                       <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/format_quote.svg" alt="Cite icon" class="usa-icon usa-icon--size-3 usa-icon--white"/>
+                       <span class="display-inline-flex flex-justify-center flex-1 button-label">Cite</span>
+                    </button>
+               </li>
+                
+               <li>
+
+                        <button class="usa-button width-24 collections-dialog-trigger collections-button display-inline-flex flex-align-center flex-justify-start padding-left-1 collections-button-empty"
+                              aria-label="Save article in MyNCBI collections."
+                              data-ga-category="actions"
+                              data-ga-action="click"
+                              data-ga-label="collections_button_desktop"
+                              data-collections-open-dialog-enabled="false"
+                              data-collections-open-dialog-url="https://account.ncbi.nlm.nih.gov/?back_url=https%3A%2F%2Fpmc.ncbi.nlm.nih.gov%2Farticles%2FPMC13039126%2F%23open-collections-dialog"
+                              data-in-collections="false">
+                            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/action-bookmark-full.svg" alt="Collections icon" class="usa-icon usa-icon--size-3 usa-icon--white usa-icon--bookmark-full" hidden />
+                            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/action-bookmark-empty.svg" alt="Collections icon" class="usa-icon usa-icon--size-3 usa-icon--white usa-icon--bookmark-empty" hidden />
+                            <span class="display-inline-flex flex-justify-center flex-1">Collections</span>
+                       </button>
+               </li>
+               <li class="pmc-permalink">
+                    <button
+                            type="button"
+                            class="usa-button width-24 display-inline-flex flex-align-center flex-justify padding-left-1 shadow-none"
+                            aria-label="Show article permalink"
+                            aria-expanded="false"
+                            aria-haspopup="true"
+                            data-ga-category="actions"
+                            data-ga-action="open"
+                            data-ga-label="permalink_desktop"
+                    >
+                        <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/share.svg" alt="Permalink icon" class="usa-icon usa-icon--size-3 usa-icon--white"/>
+                        <span class="display-inline-flex flex-justify-center flex-1 button-label">Permalink</span>
+                    </button>
+                   
+
+<div class="pmc-permalink__dropdown" hidden>
+    <div class="pmc-permalink__dropdown__container">
+          <h2 class="usa-modal__heading margin-top-0 margin-bottom-2 text-uppercase font-sans-xs">PERMALINK</h2>
+          <div class="pmc-permalink__dropdown__content">
+              <input type="text" class="usa-input" value="https://pmc.ncbi.nlm.nih.gov/articles/PMC13039126/" aria-label="Article permalink">
+              <button class="usa-button display-inline-flex pmc-permalink__dropdown__copy__btn margin-right-0" title="Copy article permalink" data-ga-category="save_share" data-ga-action="link" data-ga-label="copy_link">
+                  <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/content_copy.svg" alt="Copy icon" aria-hidden="true" class="usa-icon usa-icon--white" />
+                  <span class="margin-left-1">Copy</span>
+              </button>
+          </div>
+    </div>
+</div>
+               </li>
+           </ul>
+       </section>
+     </div>
+
+        <section class="pmc-resources margin-top-6 desktop:margin-top-4" data-page-path="/articles/PMC13039126/">
+            <h2 class="margin-top-0">RESOURCES</h2>
+            
+                <div class="usa-accordion usa-accordion--multiselectable" data-allow-multiple>
+                    <h3 class="usa-accordion__heading">
+                        <button
+                        type="button"
+                        class="usa-accordion__button"
+                        aria-expanded="false"
+                        aria-controls="resources-similar-articles"
+                        data-ga-category="resources_accordion"
+                        data-ga-action="open_similar_articles"
+                        data-ga-label="/articles/PMC13039126/"
+                        data-action-open="open_similar_articles"
+                        data-action-close="close_similar_articles"
+                        >
+                            Similar articles
+                        </button>
+                    </h3>
+                    <div
+                            id="resources-similar-articles"
+                            class="usa-accordion__content usa-prose"
+                            
+                                data-source-url="/resources/similar-article-links/41917068/"
+                            
+                    >
+                        
+                    </div>
+                    <h3 class="usa-accordion__heading">
+                        <button
+                        type="button"
+                        class="usa-accordion__button"
+                        aria-expanded="false"
+                        aria-controls="resources-cited-by-other-articles"
+                        data-ga-category="resources_accordion"
+                        data-ga-action="open_cited_by"
+                        data-ga-label="/articles/PMC13039126/"
+                        data-action-open="open_cited_by"
+                        data-action-close="close_cited_by"
+                        >
+                             Cited by other articles
+                        </button>
+                    </h3>
+                    <div
+                            id="resources-cited-by-other-articles"
+                            class="usa-accordion__content usa-prose"
+                            
+                                data-source-url="/resources/cited-by-links/41917068/"
+                            
+                    >
+                          
+                    </div>
+                    
+                        <h3 class="usa-accordion__heading">
+                            <button
+                            type="button"
+                            class="usa-accordion__button"
+                            aria-expanded="false"
+                            aria-controls="resources-links-to-ncbi-databases"
+                            data-ga-category="resources_accordion"
+                            data-ga-action="open_NCBI_links"
+                            data-ga-label="/articles/PMC13039126/"
+                            data-action-open="open_NCBI_links"
+                            data-action-close="close_NCBI_link"
+                            >
+                                 Links to NCBI Databases
+                            </button>
+                        </h3>
+                        <div
+                                id="resources-links-to-ncbi-databases"
+                                class="usa-accordion__content usa-prose"
+                                data-source-url="/resources/db-links/13039126/"
+                        >
+                        </div>
+                    
+                    
+                </div>
+            
+        </section>
+
+
+        <section
+        class="usa-in-page-nav usa-in-page-nav--wide margin-top-6 desktop:margin-top-4"
+        data-title-text="On this page"
+        data-title-heading-level="h2"
+        data-scroll-offset="0"
+        data-root-margin="-10% 0px -80% 0px"
+        data-main-content-selector="main"
+        data-threshold="1"
+        hidden
+        ></section>
+    </section>
+</div>
+
+        
+
+<div class="overlay" role="dialog" aria-label="Citation Dialog" hidden>
+    <div class="dialog citation-dialog" aria-hidden="true">
+        <div class="display-inline-flex flex-align-center flex-justify width-full margin-bottom-2">
+            <h2 class="usa-modal__heading margin-0">Cite</h2>
+             <button type="button" class="usa-button usa-button--unstyled close-overlay text-black width-auto"  tabindex="1">
+                 <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/close.svg" alt="Close icon" class="usa-icon usa-icon--size-3 usa-icon--button" />
+             </button>
+        </div>
+
+        
+
+<div class="citation-text-block">
+  <div class="citation-text margin-bottom-2"></div>
+  <ul class="usa-list usa-list--unstyled display-inline-flex flex-justify width-full flex-align-center">
+      <li>
+        <button
+          class="usa-button usa-button--unstyled text-no-underline display-flex flex-align-center copy-button dialog-focus"
+          data-ga-category="save_share"
+          data-ga-action="cite"
+          data-ga-label="copy"
+          tabindex="2">
+            <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/content_copy.svg" alt="Copy icon" class="usa-icon usa-icon--size-3 usa-icon--link" />
+            <span>Copy</span>
+        </button>
+      </li>
+      <li>
+          <a
+              href="#"
+              role="button"
+              class="usa-button usa-button--unstyled text-no-underline display-flex flex-align-center export-button"
+              data-ga-category="save_share"
+              data-ga-action="cite"
+              data-ga-label="download"
+              title="Download a file for external citation management software"
+              tabindex="3">
+                <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/file_download.svg" alt="Download icon" aria-hidden="true" class="usa-icon usa-icon--size-3 usa-icon--link" />
+                <span class="display-none mobile-lg:display-inline">Download .nbib</span>
+                <span class="display-inline mobile-lg:display-none">.nbib</span>
+            </a>
+      </li>
+      <li>
+          
+
+<div class="display-inline-flex flex-align-center">
+  <label class="usa-label margin-top-0">Format:</label>
+  <select aria-label="Format" class="usa-select citation-style-selector padding-1 margin-top-0 border-0 padding-right-4" tabindex="4" >
+    
+      <option data-style-url-name="ama"
+              value="AMA"
+              >
+        AMA
+      </option>
+    
+      <option data-style-url-name="apa"
+              value="APA"
+              >
+        APA
+      </option>
+    
+      <option data-style-url-name="mla"
+              value="MLA"
+              >
+        MLA
+      </option>
+    
+      <option data-style-url-name="nlm"
+              value="NLM"
+              selected="selected">
+        NLM
+      </option>
+    
+  </select>
+</div>
+      </li>
+  </ul>
+</div>
+    </div>
+</div>
+
+        <div class="overlay" role="dialog" hidden>
+  <div id="collections-action-dialog" class="dialog collections-dialog" aria-hidden="true">
+   <div class="display-inline-flex flex-align-center flex-justify width-full margin-bottom-2">
+        <h2 class="usa-modal__heading margin-0">Add to Collections</h2>
+    </div>
+    <div class="collections-action-panel action-panel">
+      
+
+
+<form id="collections-action-dialog-form"
+      class="usa-form maxw-full collections-action-panel-form action-panel-content action-form action-panel-smaller-selectors"
+      data-existing-collections-url="/list-existing-collections/"
+      data-add-to-existing-collection-url="/add-to-existing-collection/"
+      data-create-and-add-to-new-collection-url="/create-and-add-to-new-collection/"
+      data-myncbi-max-collection-name-length="100"
+      data-collections-root-url="https://www.ncbi.nlm.nih.gov/myncbi/collections/">
+
+    <input type="hidden" name="csrfmiddlewaretoken" value="xJKiHGJJAUs61d7IKc82Xh0lWlaXtDdWlQwN7N9WbZmFuU6lDA0gEyFA0ufXugTo">
+
+    <fieldset class="usa-fieldset margin-bottom-2">
+        <div class="usa-radio">
+            <input type="radio"
+            id="collections-action-dialog-new"
+            class="usa-radio__input usa-radio__input--tile collections-new  margin-top-0"
+            name="collections"
+            value="new"
+            data-ga-category="collections_button"
+            data-ga-action="click"
+            data-ga-label="collections_radio_new" />
+            <label class="usa-radio__label" for="collections-action-dialog-new">Create a new collection</label>
+        </div>
+        <div class="usa-radio">
+            <input type="radio"
+            id="collections-action-dialog-existing"
+            class="usa-radio__input usa-radio__input--tile collections-existing"
+            name="collections"
+            value="existing"
+            checked="true"
+            data-ga-category="collections_button"
+            data-ga-action="click"
+            data-ga-label="collections_radio_existing" />
+            <label class="usa-radio__label" for="collections-action-dialog-existing">Add to an existing collection</label>
+        </div>
+    </fieldset>
+
+    <fieldset class="usa-fieldset margin-bottom-2">
+        <div class="action-panel-control-wrap new-collections-controls">
+           <label for="collections-action-dialog-add-to-new" class="usa-label margin-top-0">
+                Name your collection
+               <abbr title="required" class="usa-hint usa-hint--required text-no-underline">*</abbr>
+          </label>
+          <input
+            type="text"
+            name="add-to-new-collection"
+            id="collections-action-dialog-add-to-new"
+            class="usa-input collections-action-add-to-new"
+            pattern="[^&quot;&amp;=&lt;&gt;/]*" title="The following characters are not allowed in the Name field: &quot;&amp;=&lt;&gt;/"
+            maxlength=""
+            data-ga-category="collections_button"
+            data-ga-action="create_collection"
+            data-ga-label="non_favorties_collection"
+            required
+          />
+        </div>
+        <div class="action-panel-control-wrap existing-collections-controls">
+             <label for="collections-action-dialog-add-to-existing" class="usa-label margin-top-0">
+                Choose a collection
+              </label>
+              <select id="collections-action-dialog-add-to-existing"
+                      class="usa-select collections-action-add-to-existing"
+                      data-ga-category="collections_button"
+                      data-ga-action="select_collection"
+                      data-ga-label="($('.collections-action-add-to-existing').val() === 'Favorites') ? 'Favorites' : 'non_favorites_collection'">
+              </select>
+              <div class="collections-retry-load-on-error usa-input-error-message selection-validation-message">
+                Unable to load your collection due to an error<br>
+                <a href="#">Please try again</a>
+              </div>
+        </div>
+    </fieldset>
+
+    <div class="display-inline-flex">
+        <button class="usa-button margin-top-0 action-panel-submit"
+            type="submit"
+            data-loading-label="Adding..."
+            data-pinger-ignore
+            data-ga-category="collections_button"
+            data-ga-action="click"
+            data-ga-label="add">
+          Add
+        </button>
+        <button class="usa-button usa-button--outline margin-top-0 action-panel-cancel"
+                aria-label="Close 'Add to Collections' panel"
+                ref="linksrc=close_collections_panel"
+                data-ga-category="collections_button"
+                data-ga-action="click"
+                data-ga-label="cancel">
+          Cancel
+        </button>
+    </div>
+</form>
+    </div>
+  </div>
+</div>
+
+        
+
+      </div>
+    </div>
+  </div>
+
+
+
+        
+    
+    
+
+<footer class="ncbi-footer ncbi-dark-background " >
+    
+        <div class="ncbi-footer__icon-section">
+            <div class="ncbi-footer__social-header">
+                Follow NCBI
+            </div>
+
+            <div class="grid-container ncbi-footer__ncbi-social-icons-container">
+                
+                    <a href="https://twitter.com/ncbi"
+                       class="ncbi-footer__social-icon ncbi-footer__social-icon--gray"
+                       target="_blank"
+                       rel="noreferrer noopener">
+                        <svg width="40"
+                             height="40"
+                             viewBox="0 0 40 40"
+                             fill="none"
+                             xmlns="http://www.w3.org/2000/svg"
+                             focusable="false"
+                             aria-hidden="true">
+                            <path d="m6.067 8 10.81 13.9L6 33.2h4.2l8.4-9.1 7.068 9.1H34L22.8 18.5 31.9 8h-3.5l-7.7 8.4L14.401 8H6.067Zm3.6 1.734h3.266l16.8 21.732H26.57L9.668 9.734Z">
+                            </path>
+                        </svg>
+                        <span class="usa-sr-only">NCBI on X (formerly known as Twitter)</span>
+                    </a>
+                
+
+                
+                    <a href="https://www.facebook.com/ncbi.nlm"
+                       class="ncbi-footer__social-icon ncbi-footer__social-icon--gray"
+                       target="_blank"
+                       rel="noreferrer noopener">
+                        <svg width="16"
+                             height="29"
+                             focusable="false"
+                             aria-hidden="true"
+                             viewBox="0 0 16 29"
+                             fill="none"
+                             xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3.8809 21.4002C3.8809 19.0932 3.8809 16.7876 3.8809 14.478C3.8809 14.2117 3.80103 14.1452 3.54278 14.1492C2.53372 14.1638 1.52334 14.1492 0.514288 14.1598C0.302626 14.1598 0.248047 14.0972 0.248047 13.8936C0.256034 12.4585 0.256034 11.0239 0.248047 9.58978C0.248047 9.37013 0.302626 9.30224 0.528931 9.3049C1.53798 9.31688 2.54837 9.3049 3.55742 9.31555C3.80103 9.31555 3.8809 9.26097 3.87957 9.00272C3.87158 8.00565 3.85428 7.00592 3.90753 6.00884C3.97142 4.83339 4.31487 3.73115 5.04437 2.78467C5.93095 1.63318 7.15699 1.09005 8.56141 0.967577C10.5582 0.79319 12.555 0.982221 14.5518 0.927641C14.7102 0.927641 14.7462 0.99287 14.7449 1.13664C14.7449 2.581 14.7449 4.02668 14.7449 5.47104C14.7449 5.67604 14.6517 5.68669 14.4946 5.68669C13.4523 5.68669 12.4113 5.68669 11.3703 5.68669C10.3506 5.68669 9.92057 6.10868 9.90593 7.13904C9.89661 7.7647 9.91525 8.39303 9.89794 9.01869C9.88995 9.26364 9.96583 9.31822 10.2015 9.31688C11.7204 9.30623 13.2393 9.31688 14.7595 9.3049C15.0257 9.3049 15.0723 9.3728 15.0444 9.62439C14.89 10.9849 14.7515 12.3467 14.6144 13.7085C14.5691 14.1571 14.5785 14.1585 14.1458 14.1585C12.8386 14.1585 11.5313 14.1665 10.2254 14.1518C9.95119 14.1518 9.89794 14.2317 9.89794 14.4899C9.90593 19.0799 9.89794 23.6752 9.91125 28.2612C9.91125 28.5674 9.8407 28.646 9.53186 28.6433C7.77866 28.6273 6.02414 28.6366 4.27094 28.634C3.82499 28.634 3.87158 28.6992 3.87158 28.22C3.87602 25.9472 3.87913 23.6739 3.8809 21.4002Z">
+                            </path>
+                        </svg>
+                        <span class="usa-sr-only">NCBI on Facebook</span>
+                    </a>
+                
+
+                
+                    <a href="https://www.linkedin.com/company/ncbinlm"
+                       class="ncbi-footer__social-icon ncbi-footer__social-icon--gray"
+                       target="_blank"
+                       rel="noreferrer noopener">
+                        <svg width="25"
+                             height="23"
+                             viewBox="0 0 26 24"
+                             fill="none"
+                             xmlns="http://www.w3.org/2000/svg"
+                             focusable="false"
+                             aria-hidden="true">
+                            <path d="M14.6983 9.98423C15.6302 9.24808 16.5926 8.74754 17.6762 8.51991C19.673 8.09126 21.554 8.30824 23.1262 9.7526C24.2351 10.7723 24.7529 12.1115 25.0165 13.5612C25.1486 14.3363 25.2105 15.1218 25.2015 15.9081C25.2015 18.3043 25.2015 20.6898 25.2082 23.0806C25.2082 23.3468 25.1549 23.444 24.8621 23.4414C23.1297 23.4272 21.3992 23.4272 19.6704 23.4414C19.4041 23.4414 19.3429 23.3588 19.3442 23.1019C19.3535 20.5194 19.3442 17.9368 19.3442 15.3543C19.3442 14.0005 18.3258 12.9448 17.0266 12.9488C15.7273 12.9528 14.6983 14.0071 14.6983 15.361C14.6983 17.9328 14.6917 20.5047 14.6983 23.0753C14.6983 23.3708 14.6198 23.444 14.3296 23.4427C12.6185 23.4294 10.9079 23.4294 9.19779 23.4427C8.93155 23.4427 8.86099 23.3735 8.86232 23.1086C8.8783 19.7619 8.88628 16.4144 8.88628 13.066C8.88628 11.5688 8.87874 10.0708 8.86365 8.57182C8.86365 8.3575 8.90758 8.27896 9.14054 8.28029C10.9048 8.29094 12.6687 8.29094 14.4321 8.28029C14.6464 8.28029 14.6983 8.34818 14.6983 8.54653C14.6903 9.00047 14.6983 9.45441 14.6983 9.98423Z">
+                            </path>
+                            <path d="M6.55316 15.8443C6.55316 18.2564 6.55316 20.6699 6.55316 23.082C6.55316 23.3629 6.48127 23.4388 6.19906 23.4374C4.47737 23.4241 2.75568 23.4241 1.03399 23.4374C0.767751 23.4374 0.69986 23.3629 0.701191 23.1006C0.709178 18.2648 0.709178 13.4281 0.701191 8.59053C0.701191 8.34026 0.765089 8.27237 1.01669 8.2737C2.74991 8.28435 4.48048 8.28435 6.20838 8.2737C6.47462 8.2737 6.5465 8.33627 6.54517 8.6065C6.54783 11.0186 6.55316 13.4308 6.55316 15.8443Z">
+                            </path>
+                            <path d="M3.65878 0.243898C5.36804 0.243898 6.58743 1.45529 6.58743 3.1406C6.58743 4.75801 5.32145 5.95742 3.60819 5.96807C3.22177 5.97614 2.83768 5.90639 2.47877 5.76299C2.11985 5.61959 1.79344 5.40546 1.51897 5.13334C1.24449 4.86123 1.02755 4.53668 0.881058 4.17902C0.734563 3.82136 0.661505 3.43788 0.666231 3.05141C0.67555 1.42601 1.9362 0.242566 3.65878 0.243898Z">
+                            </path>
+                        </svg>
+                        <span class="usa-sr-only">NCBI on LinkedIn</span>
+                    </a>
+                
+
+                
+                    <a href="https://github.com/ncbi"
+                       class="ncbi-footer__social-icon ncbi-footer__social-icon--gray"
+                       target="_blank"
+                       rel="noreferrer noopener">
+                        <svg width="28"
+                             height="27"
+                             viewBox="0 0 28 28"
+                             fill="none"
+                             xmlns="http://www.w3.org/2000/svg"
+                             focusable="false"
+                             aria-hidden="true">
+                            <path d="M16.7228 20.6334C17.5057 20.5527 18.2786 20.3944 19.0301 20.1608C21.3108 19.4193 22.5822 17.8259 22.963 15.4909C23.1228 14.5112 23.1814 13.5287 22.9883 12.5437C22.8106 11.6423 22.4013 10.8028 21.8007 10.1076C21.7526 10.0605 21.7197 10 21.7064 9.934C21.6931 9.86799 21.7 9.79952 21.7262 9.73748C22.0856 8.6206 21.9711 7.51969 21.601 6.42677C21.582 6.3497 21.5345 6.2827 21.468 6.23923C21.4016 6.19577 21.3211 6.17906 21.2429 6.19248C20.7329 6.21649 20.2313 6.33051 19.7611 6.52928C19.1103 6.7908 18.4899 7.12198 17.9104 7.51703C17.84 7.56996 17.7581 7.60551 17.6713 7.62078C17.5846 7.63605 17.4954 7.6306 17.4112 7.60489C15.2596 7.05882 13.0054 7.06203 10.8554 7.61421C10.7806 7.63586 10.7018 7.63967 10.6253 7.62534C10.5487 7.611 10.4766 7.57892 10.4148 7.53167C9.64788 7.03247 8.85171 6.58918 7.96368 6.33359C7.65781 6.24338 7.34123 6.19458 7.02239 6.18849C6.94879 6.17986 6.87462 6.19893 6.81432 6.242C6.75402 6.28507 6.71191 6.34904 6.69621 6.42145C6.32342 7.51437 6.2209 8.61527 6.56307 9.73348C6.59635 9.84264 6.64694 9.93316 6.54177 10.0516C5.47666 11.2604 5.09988 12.6834 5.19574 14.2676C5.2663 15.4244 5.46201 16.5466 6.01454 17.5769C6.84399 19.1171 8.21664 19.9119 9.85158 20.3352C10.3938 20.4706 10.9444 20.5698 11.4998 20.632C11.5384 20.7492 11.4506 20.7798 11.408 20.8291C11.1734 21.1179 10.9894 21.4441 10.8634 21.7942C10.7622 22.0458 10.8315 22.4039 10.6065 22.5516C10.263 22.7766 9.83827 22.8485 9.42421 22.8871C8.17936 23.0056 7.26471 22.4877 6.6283 21.4348C6.25552 20.8184 5.76956 20.3325 5.08523 20.0663C4.76981 19.9325 4.42139 19.8967 4.08537 19.9638C3.7898 20.029 3.73788 20.1901 3.93891 20.4111C4.03639 20.5234 4.14989 20.6207 4.27575 20.6999C4.9796 21.1318 5.51717 21.7884 5.80152 22.5636C6.37002 23.9973 7.48039 24.5697 8.93825 24.6323C9.43741 24.6575 9.93768 24.615 10.4254 24.5058C10.5892 24.4672 10.6531 24.4872 10.6517 24.6762C10.6451 25.4936 10.6637 26.3123 10.6517 27.131C10.6517 27.6635 10.1684 27.9297 9.58663 27.7393C8.17396 27.2671 6.84977 26.5631 5.66838 25.656C2.59555 23.2891 0.720966 20.1861 0.217704 16.3376C-0.357453 11.9127 0.911353 8.00824 3.98551 4.73881C6.11909 2.42656 8.99932 0.939975 12.1203 0.540191C16.5351 -0.0601815 20.4347 1.14323 23.7232 4.16373C26.2449 6.47869 27.724 9.37672 28.1048 12.7726C28.5828 17.0325 27.3686 20.7945 24.4768 23.9827C22.9762 25.6323 21.0956 26.8908 18.9982 27.6488C18.8783 27.6927 18.7585 27.738 18.636 27.7726C18.0356 27.9404 17.6189 27.6395 17.6189 27.0098C17.6189 25.7452 17.6308 24.4806 17.6295 23.2159C17.6329 22.9506 17.6128 22.6856 17.5696 22.4238C17.4325 21.6664 17.3419 21.484 16.7228 20.6334Z">
+                            </path>
+                        </svg>
+                        <span class="usa-sr-only">NCBI on GitHub</span>
+                    </a>
+                
+
+                
+                    <a href="https://ncbiinsights.ncbi.nlm.nih.gov/"
+                       class="ncbi-footer__social-icon ncbi-footer__social-icon--gray"
+                       target="_blank"
+                       rel="noreferrer noopener">
+                        <svg width="26"
+                             height="26"
+                             viewBox="0 0 27 27"
+                             fill="none"
+                             xmlns="http://www.w3.org/2000/svg"
+                             focusable="false"
+                             aria-hidden="true">
+                            <path d="M23.7778 26.4574C23.1354 26.3913 22.0856 26.8024 21.636 26.3087C21.212 25.8444 21.4359 24.8111 21.324 24.0347C19.9933 14.8323 14.8727 8.80132 6.09057 5.85008C4.37689 5.28406 2.58381 4.99533 0.779072 4.99481C0.202773 4.99481 -0.0229751 4.83146 0.00455514 4.21479C0.0660406 3.08627 0.0660406 1.95525 0.00455514 0.826734C-0.0413285 0.0815827 0.259669 -0.0193618 0.896534 0.00266238C6.96236 0.222904 12.3693 2.24179 16.9889 6.16209C22.9794 11.2478 26.1271 17.7688 26.4372 25.648C26.4629 26.294 26.3179 26.5271 25.6609 26.4684C25.0827 26.417 24.4991 26.4574 23.7778 26.4574Z">
+                            </path>
+                            <path d="M14.8265 26.441C14.0924 26.441 13.2371 26.6795 12.6626 26.3786C12.0092 26.0372 12.3781 25.0644 12.246 24.378C11.1154 18.5324 6.6849 14.5497 0.74755 14.1001C0.217135 14.0615 -0.0104482 13.9422 0.0134113 13.3659C0.0519536 12.1454 0.0482829 10.9213 0.0134113 9.69524C-0.00127145 9.14464 0.196946 9.03268 0.703502 9.04736C9.21217 9.27128 16.5994 16.2511 17.2804 24.7231C17.418 26.4446 17.418 26.4446 15.6579 26.4446H14.832L14.8265 26.441Z">
+                            </path>
+                            <path d="M3.58928 26.4555C2.64447 26.4618 1.73584 26.0925 1.06329 25.4289C0.39073 24.7653 0.00933763 23.8617 0.0030097 22.9169C-0.00331824 21.9721 0.365937 21.0635 1.02954 20.3909C1.69315 19.7184 2.59675 19.337 3.54156 19.3306C4.48637 19.3243 5.39499 19.6936 6.06755 20.3572C6.7401 21.0208 7.1215 21.9244 7.12782 22.8692C7.13415 23.814 6.7649 24.7226 6.10129 25.3952C5.43768 26.0677 4.53409 26.4491 3.58928 26.4555Z">
+                            </path>
+                        </svg>
+                        <span class="usa-sr-only">NCBI RSS feed</span>
+                    </a>
+                
+            </div>
+        </div>
+    
+
+    <div data-testid="gridContainer"
+         class="grid-container ncbi-footer__container">
+        <div class="grid-row ncbi-footer__main-content-container"
+             data-testid="grid">
+            
+                <div class="ncbi-footer__column">
+                    
+                        <p class="ncbi-footer__circled-icons-heading">
+                            Connect with NLM
+                        </p>
+                    
+
+                    <div class="ncbi-footer__circled-icons-list">
+                        
+                            <a href=https://twitter.com/nlm_nih class="ncbi-footer__social-icon ncbi-footer__social-icon--circled" target="_blank" rel="noreferrer noopener">
+                                <svg width="32"
+                                     height="32"
+                                     viewBox="0 0 40 40"
+                                     fill="none"
+                                     xmlns="http://www.w3.org/2000/svg"
+                                     focusable="false"
+                                     aria-hidden="true">
+                                    <path d="m6.067 8 10.81 13.9L6 33.2h4.2l8.4-9.1 7.068 9.1H34L22.8 18.5 31.9 8h-3.5l-7.7 8.4L14.401 8H6.067Zm3.6 1.734h3.266l16.8 21.732H26.57L9.668 9.734Z">
+                                    </path>
+                                </svg>
+                                <span class="usa-sr-only">NLM on X (formerly known as Twitter)</span>
+                            </a>
+                        
+
+                        
+                            <a href=https://www.facebook.com/nationallibraryofmedicine class="ncbi-footer__social-icon ncbi-footer__social-icon--circled" target="_blank" rel="noreferrer noopener">
+                                <svg width="13"
+                                     height="24"
+                                     viewBox="0 0 13 24"
+                                     fill="none"
+                                     xmlns="http://www.w3.org/2000/svg"
+                                     focusable="false"
+                                     aria-hidden="true">
+                                    <path d="M4.11371 23.1369C4.11371 23.082 4.11371 23.0294 4.11371 22.9745V12.9411H0.817305C0.6709 12.9411 0.670898 12.9411 0.670898 12.8016C0.670898 11.564 0.670898 10.3287 0.670898 9.09341C0.670898 8.97903 0.705213 8.95158 0.815017 8.95158C1.8673 8.95158 2.91959 8.95158 3.97417 8.95158H4.12057V8.83263C4.12057 7.8055 4.12057 6.7738 4.12057 5.74897C4.1264 4.92595 4.31387 4.11437 4.66959 3.37217C5.12916 2.38246 5.94651 1.60353 6.95717 1.1921C7.64827 0.905008 8.3913 0.764035 9.13953 0.778051C10.0019 0.791777 10.8644 0.830666 11.7268 0.860404C11.8869 0.860404 12.047 0.894717 12.2072 0.90158C12.2964 0.90158 12.3261 0.940469 12.3261 1.02968C12.3261 1.5421 12.3261 2.05452 12.3261 2.56465C12.3261 3.16857 12.3261 3.7725 12.3261 4.37642C12.3261 4.48165 12.2964 4.51367 12.1912 4.51138C11.5369 4.51138 10.8804 4.51138 10.2261 4.51138C9.92772 4.51814 9.63058 4.5526 9.33855 4.61433C9.08125 4.6617 8.84537 4.78881 8.66431 4.97766C8.48326 5.16652 8.3662 5.40755 8.32972 5.66661C8.28476 5.89271 8.26027 6.1224 8.25652 6.35289C8.25652 7.19014 8.25652 8.02969 8.25652 8.86923C8.25652 8.89439 8.25652 8.91955 8.25652 8.95615H12.0219C12.1797 8.95615 12.182 8.95616 12.1614 9.10714C12.0768 9.76596 11.9876 10.4248 11.9029 11.0813C11.8312 11.6319 11.7626 12.1824 11.697 12.733C11.6719 12.9434 11.6787 12.9434 11.4683 12.9434H8.26338V22.899C8.26338 22.979 8.26338 23.0591 8.26338 23.1392L4.11371 23.1369Z">
+                                    </path>
+                                </svg>
+                                <span class="usa-sr-only">NLM on Facebook</span>
+                            </a>
+                        
+
+                        
+                            <a href=https://www.youtube.com/user/NLMNIH class="ncbi-footer__social-icon ncbi-footer__social-icon--circled" target="_blank" rel="noreferrer noopener">
+                                <svg width="21"
+                                     height="15"
+                                     viewBox="0 0 21 15"
+                                     fill="none"
+                                     xmlns="http://www.w3.org/2000/svg"
+                                     focusable="false"
+                                     aria-hidden="true">
+                                    <path d="M19.2561 1.47914C18.9016 1.15888 18.5699 0.957569 17.2271 0.834039C15.5503 0.678484 13.2787 0.655608 11.563 0.65332H9.43556C7.71987 0.65332 5.4483 0.678484 3.77151 0.834039C2.43098 0.957569 2.097 1.15888 1.74242 1.47914C0.813665 2.32097 0.619221 4.62685 0.598633 6.89384C0.598633 7.31781 0.598633 7.74101 0.598633 8.16345C0.626084 10.4121 0.827391 12.686 1.74242 13.521C2.097 13.8412 2.4287 14.0425 3.77151 14.1661C5.4483 14.3216 7.71987 14.3445 9.43556 14.3468H11.563C13.2787 14.3468 15.5503 14.3216 17.2271 14.1661C18.5676 14.0425 18.9016 13.8412 19.2561 13.521C20.1712 12.6929 20.3725 10.451 20.3999 8.22064C20.3999 7.74025 20.3999 7.25986 20.3999 6.77946C20.3725 4.54907 20.1689 2.30724 19.2561 1.47914ZM8.55942 10.5311V4.65201L13.5601 7.50005L8.55942 10.5311Z"
+                                          fill="white" />
+                                </svg>
+                                <span class="usa-sr-only">NLM on YouTube</span>
+                            </a>
+                        
+                    </div>
+                </div>
+            
+
+            
+                <address class="ncbi-footer__address ncbi-footer__column">
+                    
+        <p>
+            <a class="usa-link usa-link--external"
+            href="https://www.google.com/maps/place/8600+Rockville+Pike,+Bethesda,+MD+20894/%4038.9959508,
+            -77.101021,17z/data%3D!3m1!4b1!4m5!3m4!1s0x89b7c95e25765ddb%3A0x19156f88b27635b8!8m2!3d38.9959508!
+            4d-77.0988323"
+            rel="noopener noreferrer" target="_blank">National Library of Medicine
+            <br/> 8600 Rockville Pike<br/> Bethesda, MD 20894</a>
+        </p>
+    
+                </address>
+            
+
+            
+                <ul class="usa-list usa-list--unstyled ncbi-footer__vertical-list ncbi-footer__column">
+                    
+                        <li class="ncbi-footer__vertical-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.nlm.nih.gov/web_policies.html" class="usa-link  usa-link--alt ncbi-footer__link"  >
+        
+
+        
+            Web Policies
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="ncbi-footer__vertical-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.nih.gov/institutes-nih/nih-office-director/office-communications-public-liaison/freedom-information-act-office" class="usa-link  usa-link--alt ncbi-footer__link"  >
+        
+
+        
+            FOIA
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="ncbi-footer__vertical-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.hhs.gov/vulnerability-disclosure-policy/index.html" class="usa-link usa-link--external usa-link--alt ncbi-footer__link" rel="noreferrer noopener" target='_blank' >
+        
+
+        
+            HHS Vulnerability Disclosure
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                </ul>
+            
+
+            
+                <ul class="usa-list usa-list--unstyled ncbi-footer__vertical-list ncbi-footer__column">
+                    
+                        <li class="ncbi-footer__vertical-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://support.nlm.nih.gov/" class="usa-link  usa-link--alt ncbi-footer__link"  >
+        
+
+        
+            Help
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="ncbi-footer__vertical-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.nlm.nih.gov/accessibility.html" class="usa-link  usa-link--alt ncbi-footer__link"  >
+        
+
+        
+            Accessibility
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="ncbi-footer__vertical-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.nlm.nih.gov/careers/careers.html" class="usa-link  usa-link--alt ncbi-footer__link"  >
+        
+
+        
+            Careers
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                </ul>
+            
+        </div>
+
+        
+            <div class="grid-row grid-col-12" data-testid="grid">
+                <ul class="ncbi-footer__bottom-links-list">
+                    
+                        <li class="ncbi-footer__bottom-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.nlm.nih.gov/" class="usa-link  usa-link--alt ncbi-footer__link"  >
+        
+
+        
+            NLM
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="ncbi-footer__bottom-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.nih.gov/" class="usa-link  usa-link--alt ncbi-footer__link"  >
+        
+
+        
+            NIH
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="ncbi-footer__bottom-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.hhs.gov/" class="usa-link usa-link--external usa-link--alt ncbi-footer__link" rel="noreferrer noopener" target='_blank' >
+        
+
+        
+            HHS
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                        <li class="ncbi-footer__bottom-list-item">
+                            
+
+
+
+
+
+
+
+
+
+    <a href="https://www.usa.gov/" class="usa-link usa-link--external usa-link--alt ncbi-footer__link" rel="noreferrer noopener" target='_blank' >
+        
+
+        
+            USA.gov
+        
+
+        
+    </a>
+
+
+                        </li>
+                    
+                </ul>
+            </div>
+        
+    </div>
+</footer>
+
+    
+
+
+        
+        
+    
+  <script  type="text/javascript" src="https://cdn.ncbi.nlm.nih.gov/core/pinger/pinger.js"> </script>
+
+
+    
+        
+
+<button class="back-to-top" data-ga-category="pagination" data-ga-action="back_to_top">
+    <label>Back to Top</label>
+    <img src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/img/arrow_upward.svg" alt="back to top icon" class="usa-icon usa-icon--size-3 order-0 usa-icon--white" />
+</button>
+    
+
+
+        
+    
+    <div id="icon-container" style="display: none;"></div>
+    
+    
+        
+    <script type="application/javascript">
+    window.ncbi = window.ncbi || {};
+    window.ncbi.pmc = window.ncbi.pmc || {};
+    window.ncbi.pmc.options = {
+        logLevel: 'INFO',
+        
+        staticEndpoint: 'https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/',
+        
+        citeCookieName: 'pmc-cf',
+    };
+</script>
+    <script type="module" crossorigin="" src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/base-Cp_Il6gk.js"></script>
+<link href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/vendor-Co8Vdmw2.js" type="text/javascript" crossorigin="anonymous" rel="modulepreload" as="script" />
+    
+    <script type="text/javascript" src="https://cdn.ncbi.nlm.nih.gov/core/jquery/jquery-3.6.0.min.js">&#xA0;</script>
+    <script type="text/javascript">
+        jQuery.getScript("https://cdn.ncbi.nlm.nih.gov/core/alerts/alerts.js", function () {
+            galert(['div.nav_and_browser', 'div.header', '#universal_header', '.usa-banner', 'body > *:nth-child(1)'])
+        });
+    </script>
+
+
+    <script type="text/javascript">var exports = {};</script>
+     <script src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/CACHE/js/output.4e25b6297b38.js"></script>
+
+    <script type="module" crossorigin="" src="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/article-BxyWTbsj.js"></script>
+<link href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/vendor-Co8Vdmw2.js" type="text/javascript" crossorigin="anonymous" rel="modulepreload" as="script" />
+<link href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/index-DXSA0fsx.js" type="text/javascript" crossorigin="anonymous" rel="modulepreload" as="script" />
+<link href="https://cdn.ncbi.nlm.nih.gov/pmc/pd-medc-pmc-cloudpmc-viewer/production/a2b04810/var/data/static/assets/secure-cookie-Br6x5jtB.js" type="text/javascript" crossorigin="anonymous" rel="modulepreload" as="script" />
+    
+    
+
+    </body>
+</html>
