@@ -1,0 +1,31 @@
+========== reproducibility_recipe entry ==========
+paper_title: Technical Note: mzML and imzML Libraries for Processing Mass Spectrometry Data with the High-Performance Programming Language Julia.
+source_paper: Rosas-Román I et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.3c05853, PMID: 38427332
+overall_reproducibility_score: 85/100
+
+workflow_steps: 1
+  Step 1: MS data import
+    tool: julia_mzML_imzML
+    algorithm: HUPO-PSI standard-compliant parsing
+    input: raw .mzML and .imzML files
+    output: in-memory Julia data structures (e.g., spectra, peak lists, imaging matrices)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/CINVESTAV-LABI/julia_mzML_imzML
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No experimental MS datasets provided or referenced for validation
+  - No end-to-end analysis workflow demonstrated (e.g., peak picking, statistical analysis, annotation) — only data import is implemented and benchmarked
+reproducibility_strengths:
+  - Open-source Julia library with MIT license
+  - Cross-platform support (Windows, Linux, macOS)
+  - Benchmarked performance against R (214× faster for imzML), enabling reproducible speed comparisons

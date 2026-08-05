@@ -1,0 +1,47 @@
+========== reproducibility_recipe entry ==========
+paper_title: MS2MP: A Deep Learning Framework for Metabolic Pathway Prediction from MS/MS-Based Untargeted Metabolomics.
+source_paper: Bao H et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.4c06875, PMID: 40583780
+overall_reproducibility_score: 30/100
+
+workflow_steps: 3
+  Step 1: MS/MS spectrum preprocessing and graph representation
+    tool: MS2MP
+    algorithm: Graph Neural Network (GNN) with fragmentation tree encoding
+    parameters: num_spectra_trained_on=33221, balanced_accuracy_cv=0.941, exact_match_count=97
+    input: experimental MS/MS spectra (peak lists with m/z and intensity)
+    output: KEGG pathway probability scores per spectrum
+    confidence: medium
+  Step 2: MS2-based pathway enrichment analysis
+    tool: MS2MP
+    algorithm: Novel MS2-driven pathway enrichment (method not detailed beyond 'developed')
+    parameters: test_sets=3, exact_match_range=[97, 98], metabolite_standards_tested=161
+    input: MS2MP pathway prediction scores across samples
+    output: significantly perturbed KEGG pathways (e.g., phenylpropanoid biosynthesis)
+    confidence: low
+  Step 3: Biological interpretation and comparison to conventional annotation-based enrichment
+    tool: Not specified
+    algorithm: Comparative pathway analysis
+    input: MS2MP pathway results vs. traditional annotation-based enrichment output
+    output: Differentially identified pathways (e.g., overlooked phenylpropanoid disruptions)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (Not specified)
+  processed_data: not_mentioned (Not specified)
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No repository or accession ID provided for training spectra (n=33,221)
+  - No code repository or installation instructions mentioned
+  - No details on GNN architecture (layers, hyperparameters, training epochs, optimizer)
+  - No description of the novel MS2-based enrichment algorithm
+  - No raw or processed data made available
+  - No metadata schema or sample information disclosed
+  - No figure/table methods described in provided text
+reproducibility_strengths:
+  - Explicit performance metrics reported (balanced accuracy, exact match counts)
+  - Clear biological validation case (transgenic maize), though insufficiently detailed for reproduction

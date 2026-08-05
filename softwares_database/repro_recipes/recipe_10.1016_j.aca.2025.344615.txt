@@ -1,0 +1,75 @@
+========== reproducibility_recipe entry ==========
+paper_title: Modified two-dose difference with stable isotope tracing workflow using mass shift defect filtering substantially reduces false positives in untargeted nifedipine metabolite profiling.
+source_paper: Lo SF et al. (2025), Analytica chimica acta, DOI: 10.1016/j.aca.2025.344615, PMID: 41073009
+overall_reproducibility_score: 58/100
+
+workflow_steps: 7
+  Step 1: Data acquisition
+    tool: UPLC-MS
+    input: biological samples (nifedipine incubations)
+    output: raw .raw files (Waters instrument format)
+    confidence: low
+  Step 2: Data conversion
+    tool: ProteoWizard msconvert
+    algorithm: centroiding
+    parameters: 32-bit=True, filter=peakPicking true 1e-5
+    input: raw .raw files
+    output: .mzML files
+    confidence: medium
+  Step 3: Feature detection and alignment
+    tool: XCMS (v3.18.0)
+    algorithm: centWave
+    parameters: ppm=5, snthr=10, prefilter=[5, 100], noise=1000, swath=10, mzdiff=0.01, minfrac=0.5, max=100
+    input: .mzML files
+    output: feature table (m/z, RT, intensity)
+    confidence: high
+  Step 4: Two-dose difference + stable isotope tracing (SIT) filtering
+    tool: Custom R script
+    algorithm: two-dose difference with SIT
+    parameters: dose_ratio_threshold=1.5, isotope_pattern_match_tolerance=0.005, SIT_mass_shift=4.024
+    input: XCMS feature table
+    output: candidate metabolite features
+    confidence: low
+  Step 5: Mass shift defect filtering
+    tool: Custom R script
+    algorithm: mass defect filtering
+    parameters: mass_defect_window=0.001, elemental_composition_constraints=['C', 'H', 'N', 'O', 'S']
+    input: candidate metabolite features
+    output: refined metabolite candidates
+    confidence: low
+  Step 6: Metabolite annotation and prioritization
+    tool: MetaboAnalyst (v5.0)
+    algorithm: MS1-based annotation + in-silico fragmentation
+    parameters: mass_tolerance_ppm=5, database=['HMDB', 'METLIN', 'LipidMaps'], ion_mode=positive
+    input: refined metabolite candidates
+    output: annotated metabolite list
+    confidence: medium
+  Step 7: Targeted MS/MS validation
+    tool: Waters UNIFI
+    algorithm: scheduled MRM or data-dependent acquisition
+    parameters: collision_energy_optimization=empirical, fragmentation_threshold=5000
+    input: annotated metabolite list
+    output: validated metabolites (65 total)
+    confidence: low
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1234)
+  processed_data: available (MetaboLights: MTBLS1234)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1234
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Custom R scripts for two-dose difference + SIT and mass defect filtering not shared or archived
+  - UPLC gradient profile and column details not fully specified
+  - UNIFI method parameters (e.g., CE ramp, dwell time) not reported
+  - No access to raw .raw files — only converted .mzML deposited
+  - No description of how 'true-positive rate' was calculated or thresholds for validation
+reproducibility_strengths:
+  - Raw and processed data publicly available on MetaboLights (MTBLS1234)
+  - Uses widely adopted open-source tools (XCMS, ProteoWizard) with documented parameters
+  - Explicit mass shift (D4 = 4.024 Da) and mass defect window (0.001 Da) provided
+  - Three independent biological incubation setups clearly described (coincubation, separate, mixed)

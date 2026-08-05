@@ -1,0 +1,65 @@
+========== reproducibility_recipe entry ==========
+paper_title: Cell-Type-Specific Metabolic Profiling Achieved by Combining Desorption Electrospray Ionization Mass Spectrometry Imaging and Immunofluorescence Staining.
+source_paper: Yan X et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.0c02519, PMID: 32880432
+overall_reproducibility_score: 35/100
+
+workflow_steps: 6
+  Step 1: Tissue preparation and immunofluorescence staining
+    tool: Immunofluorescence protocol
+    parameters: staining_target=['neuronal marker', 'astrocyte marker'], antibodies=['anti-NeuN', 'anti-GFAP']
+    input: frozen mouse forebrain tissue sections
+    output: cell-type-labeled tissue sections (IF-stained)
+    confidence: medium
+  Step 2: Desorption electrospray ionization mass spectrometry imaging
+    tool: DESI-MSI
+    parameters: spatial_resolution=150 μm, mass_range=m/z 50–1000, ionization_mode=positive, solvent_composition=50:50 v/v methanol:water with 0.1% formic acid, spray_voltage=4.5, capillary_temperature=250
+    input: IF-stained tissue sections
+    output: raw DESI-MSI data cubes (x, y, m/z, intensity)
+    confidence: high
+  Step 3: Image registration and co-localization
+    tool: Custom image processing
+    algorithm: affine registration
+    parameters: registration_reference=fluorescence channel, interpolation_method=bilinear
+    input: DESI-MSI ion images + IF fluorescence images
+    output: co-registered spatial metabolite and cell-type maps
+    confidence: low
+  Step 4: Cell-type-specific metabolic deconvolution
+    tool: Convex optimization
+    algorithm: non-negative matrix factorization (NMF) with convex mixture constraints
+    parameters: number_of_components=2, sparsity_regularization=L1, convergence_threshold=1e-06, max_iterations=1000
+    input: co-registered ion intensity matrix + cell-type abundance map
+    output: cell-type-specific metabolite profiles (neuron vs astrocyte)
+    confidence: medium
+  Step 5: Metabolite identification
+    tool: High-resolution MS and MS/MS
+    algorithm: accurate mass matching + spectral library matching
+    parameters: mass_tolerance_ppm=5, database=['HMDB', 'LipidMaps'], fragmentation_energy=collision-induced dissociation (CID), spectral_similarity_threshold=0.7
+    input: DESI-MS/MS spectra of candidate features
+    output: annotated metabolites (23 identified)
+    confidence: high
+  Step 6: Statistical differential analysis
+    tool: t-test
+    algorithm: two-sample t-test
+    parameters: p_value_cutoff=0.05, multiple_testing_correction=Benjamini-Hochberg FDR
+    input: cell-type-specific normalized intensity matrix
+    output: differentially distributed metabolites (107 significant)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw DESI-MSI and fluorescence image data not deposited in public repository
+  - Custom convex optimization code not shared
+  - No details on NMF implementation or software environment (e.g., Python/Matlab version, libraries)
+  - Exact DESI source parameters (e.g., spray angle, distance, flow rate) not fully specified
+  - No metadata schema or sample annotation table provided
+reproducibility_strengths:
+  - Clear description of biological rationale and experimental design
+  - Explicit reporting of key analytical parameters (e.g., mass tolerance, spatial resolution, solvent composition)

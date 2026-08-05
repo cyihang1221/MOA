@@ -1,0 +1,47 @@
+========== reproducibility_recipe entry ==========
+paper_title: Open Search of Peptide Glycation Products from Tandem Mass Spectra.
+source_paper: Berger MT et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.2c00388, PMID: 35389626
+overall_reproducibility_score: 45/100
+
+workflow_steps: 3
+  Step 1: Open search MS/MS spectral matching with triple-ion strategy
+    tool: Custom open search algorithm
+    algorithm: Triple-ion matching: (1) classic peptide fragment ions, (2) modified peptide fragment ions (shifted by modification delta mass), (3) characteristic fragment ions from redundant neutral losses of glycation side chain
+    parameters: mass_tolerance_da=0.02, delta_masses=[102.0311, 268.1768], amadori_delta_mass_da=162.0528
+    input: centroided MS/MS spectra (.mzML or .mgf)
+    output: annotated glycation-modified peptide identifications with confidence scores
+    confidence: medium
+  Step 2: Diagnostic ion validation using isotopic labeling
+    tool: Custom integration workflow
+    algorithm: Cross-comparison of fragmentation patterns between unlabeled and isotopically labeled glycation products
+    parameters: labeling_strategy=stable isotope-labeled glycation reagents (e.g., ^13C/^15N-glucose or ribose)
+    input: paired MS/MS datasets (labeled + unlabeled)
+    output: validated fragmentation signatures and structural assignments
+    confidence: low
+  Step 3: Amadori product reference characterization
+    tool: Custom diagnostic ion detection
+    algorithm: Pattern matching against known Amadori fragmentation rules
+    parameters: reference_ions=['m/z 144.065', 'm/z 205.097', 'm/z 229.097']
+    input: MS/MS spectra of known Amadori standards
+    output: automated diagnostic ion identification report
+    confidence: high
+
+data_availability:
+  raw_data: available (PRIDE: PXD030123)
+  processed_data: not_mentioned (not_mentioned: not_mentioned)
+  metadata: in_paper_only
+  data_urls: https://www.ebi.ac.uk/pride/archive/projects/PXD030123
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Custom open search algorithm not publicly released
+  - No implementation details for triple-ion scoring or confidence estimation
+  - Isotopic labeling experimental design not fully specified (e.g., labeling efficiency, incorporation sites)
+  - No parameter values for peak picking, spectrum preprocessing, or database search settings
+reproducibility_strengths:
+  - Raw MS/MS data deposited in PRIDE (PXD030123)
+  - Exact delta masses for novel modifications reported (102.0311 and 268.1768 Da)
+  - Established Amadori diagnostic ions explicitly listed

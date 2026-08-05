@@ -1,0 +1,52 @@
+========== reproducibility_recipe entry ==========
+paper_title: Strategy to Empower Nontargeted Metabolomics by Triple-Dimensional Combinatorial Derivatization with MS-TDF Software.
+source_paper: Yuan C et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.4c00527, PMID: 38691624
+overall_reproducibility_score: 55/100
+
+workflow_steps: 4
+  Step 1: Triple-dimensional combinatorial derivatization
+    tool: Chemical derivatization
+    parameters: reagents=['2-hydrazinopyridine', '2-hydrazino-5-methylpyridine', '2-hydrazino-5-cyanopyridine'], target_functional_groups=['carbonyl']
+    input: human plasma samples
+    output: derivatized biological extracts
+    confidence: high
+  Step 2: LC-MS data acquisition
+    tool: Liquid chromatography–mass spectrometry
+    input: derivatized biological extracts
+    output: raw .raw or .d files (vendor format)
+    confidence: low
+  Step 3: MS data processing and feature detection
+    tool: MS-TDF
+    algorithm: combinatorial derivatization pattern matching
+    parameters: derivatization_mass_shifts=[106.042, 120.058, 147.047], retention_time_shift_patterns=stable but distinct, discrimination_rule=co-eluting peaks with characteristic mass + RT shifts across reagent sets
+    input: raw MS data (vendor format)
+    output: feature table with derivatized metabolite annotations
+    confidence: medium
+  Step 4: Metabolite identification and biomarker prioritization
+    tool: MS-TDF
+    algorithm: pattern-based annotation using triple-reagent signature
+    parameters: annotation_criteria=matching of m/z shift + RT shift combinations across three derivatization channels
+    input: MS-TDF feature table
+    output: list of carbonyl-containing metabolite candidates and biomarkers
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/CaixiaYuan/MS-TDF
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS data not deposited in public repository (e.g., MetaboLights, PRIDE)
+  - No details on LC conditions (gradient, column, flow rate, temperature) or MS parameters (ionization mode, fragmentation settings, scan ranges)
+  - MS-TDF algorithm described conceptually but lacks implementation details (e.g., peak alignment strategy, false discovery control, scoring thresholds)
+  - No validation of derivatization efficiency or side-reaction profiling
+  - Human plasma metadata (clinical cohort size, inclusion/exclusion criteria, preprocessing steps) not provided
+reproducibility_strengths:
+  - MS-TDF source code openly available on GitHub
+  - Explicit listing of three derivatization reagents and their exact chemical names
+  - Clear definition of targeted functional group (carbonyl analogues)

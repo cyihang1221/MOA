@@ -1,0 +1,47 @@
+========== reproducibility_recipe entry ==========
+paper_title: Feature Selection Pipelines with Classification for Non-targeted Metabolomics Combining the Neural Network and Genetic Algorithm.
+source_paper: Lisitsyna A et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.1c03237, PMID: 35344349
+overall_reproducibility_score: 25/100
+
+workflow_steps: 3
+  Step 1: Data preprocessing and feature matrix construction
+    tool: Custom Python pipeline
+    algorithm: Direct infusion FT-ICR MS data processing
+    input: raw DI-FT-ICR MS spectra
+    output: feature intensity matrix (m/z × sample)
+    confidence: low
+  Step 2: Neural network-based classification
+    tool: Convolutional neural network (CNN)
+    algorithm: 1D-CNN for spectral classification
+    parameters: precision_recall_score_threshold=0.9, test_set_split=standard train/test
+    input: feature intensity matrix
+    output: classification model with feature importance proxy
+    confidence: medium
+  Step 3: Genetic algorithm-based feature selection
+    tool: Custom genetic algorithm implementation
+    algorithm: Adapted genetic algorithm for feature subset optimization
+    parameters: population_size=None, generations=None, fitness_function=classification performance (precision-recall), selected_features_count=200
+    input: feature intensity matrix + CNN classification output
+    output: ranked list of ~200 predictive m/z features
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposition reported
+  - No code repository or software link provided
+  - No details on CNN architecture (layers, filters, activation functions)
+  - No parameters specified for genetic algorithm (mutation rate, crossover method, convergence criteria)
+  - No description of DI-FT-ICR MS data preprocessing (peak picking, calibration, noise filtering)
+  - Lifestyle intervention cohort metadata not publicly accessible
+reproducibility_strengths:
+  - Clear objective (feature selection for prediabetic classification)
+  - Reported performance metric (precision-recall > 0.9) enables validation
+  - Pipeline conceptual structure explicitly described (CNN + GA)

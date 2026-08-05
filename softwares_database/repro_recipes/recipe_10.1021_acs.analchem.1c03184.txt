@@ -1,0 +1,61 @@
+========== reproducibility_recipe entry ==========
+paper_title: Accurate Prediction of y Ions in Beam-Type Collision-Induced Dissociation Using Deep Learning.
+source_paper: Shin H et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.1c03184, PMID: 35609248
+overall_reproducibility_score: 40/100
+
+workflow_steps: 5
+  Step 1: Data collection and curation
+    tool: NIST MS/MS Library and Proteomics Identification Database (PRIDE)
+    algorithm: manual curation and filtering
+    parameters: peptide_length_range=[6, 15], instrument_types=['Q-TOF', 'triple-quadrupole'], fragmentation_method=beam-type CID
+    input: experimental MS/MS spectra of peptides
+    output: curated training dataset of 180,833 peptide-spectrum matches
+    confidence: medium
+  Step 2: Feature engineering
+    tool: custom Python implementation
+    algorithm: sliding window amino acid combination (4-mer), proline presence, peptide length
+    parameters: window_size=4, include_proline_flag=True, encode_length_as_feature=True
+    input: peptide amino acid sequences
+    output: structured feature vectors (sequence + physicochemical features)
+    confidence: high
+  Step 3: Model architecture design and training
+    tool: TensorFlow/Keras
+    algorithm: hybrid deep neural network: RNN (LSTM/GRU) for sequence modeling, CNN for local motif detection, fully connected layers for integration
+    parameters: rnn_units=128, cnn_filters=64, cnn_kernel_size=3, dense_layers=[256, 128], dropout_rate=0.3, batch_size=64, epochs=50, optimizer=Adam, learning_rate=0.001, loss_function=mean_squared_error
+    input: feature vectors and corresponding experimental y-ion intensities
+    output: trained PrAI-frag model (predicts y-ion m/z and relative intensity)
+    confidence: medium
+  Step 4: Model evaluation
+    tool: custom Python scripts
+    algorithm: Pearson correlation coefficient, top-k accuracy (k=3,5,10), mean absolute error on y-ion intensity prediction
+    parameters: top_k_values=[3, 5, 10], correlation_metric=Pearson, intensity_threshold=0.05
+    input: predicted vs. experimental y-ion intensities
+    output: performance metrics (r², MAE, top-k recall)
+    confidence: medium
+  Step 5: Web deployment
+    tool: PrAI-frag Web server
+    algorithm: RESTful API serving trained model
+    parameters: supported_peptide_length=[6, 15], output_format=tab-separated y-ion m/z and predicted intensity, input_validation=sequence length and residue checks
+    input: user-submitted peptide sequences (length 6–15)
+    output: predicted y-ion fragmentation spectrum
+    confidence: high
+
+data_availability:
+  raw_data: in_paper_only (PRIDE: not specified in abstract/text)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Training data accession IDs not provided (PRIDE/NIST identifiers missing)
+  - No link to source code or model weights
+  - No details on RNN/CNN architecture hyperparameters (e.g., LSTM vs GRU, layer depth)
+  - No description of spectral preprocessing (peak picking, noise filtering, normalization)
+  - Web server not archived or versioned; no API documentation or reproducible endpoint
+reproducibility_strengths:
+  - Large, publicly sourced training dataset (NIST + PRIDE)
+  - Explicit specification of key biological features (proline, 4-mer windows, length)
+  - Clear model purpose and validation metrics (top-k, Pearson r²)

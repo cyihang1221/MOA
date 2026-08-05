@@ -1,0 +1,72 @@
+========== reproducibility_recipe entry ==========
+paper_title: Comparing univariate filtration preceding and succeeding PLS-DA analysis on the differential variables/metabolites identified from untargeted LC-MS metabolomics data.
+source_paper: Xu S et al. (2024), Analytica chimica acta, DOI: 10.1016/j.aca.2023.342103, PMID: 38182346
+overall_reproducibility_score: 30/100
+
+workflow_steps: 7
+  Step 1: LC-MS data acquisition
+    tool: not specified
+    input: biological samples (human serum, C. elegans extracts, with/without metabolite standards)
+    output: raw LC-MS data files
+    confidence: low
+  Step 2: Data preprocessing (peak detection, alignment, normalization)
+    tool: not specified
+    input: raw LC-MS data files
+    output: feature table (m/z–RT–intensity matrix)
+    confidence: low
+  Step 3: Univariate statistical filtration (pre-PLS-DA)
+    tool: not specified
+    algorithm: FDR-adjusted t-test or ANOVA
+    parameters: fdr_method=Benjamini-Hochberg, alpha=0.05
+    input: feature table
+    output: filtered feature table (significant features only)
+    confidence: medium
+  Step 4: PLS-DA modeling (with prefiltration)
+    tool: not specified
+    algorithm: PLS-DA
+    parameters: n_components=not specified, vip_threshold=1.0
+    input: prefiltered feature table
+    output: VIP scores, p(corr), model metrics, differential features list
+    confidence: medium
+  Step 5: PLS-DA modeling (on full feature table, no prefiltration)
+    tool: not specified
+    algorithm: PLS-DA
+    parameters: n_components=not specified, vip_threshold=>1.0 (recommended)
+    input: full (unfiltered) feature table
+    output: VIP scores, p(corr), model metrics, differential features list
+    confidence: medium
+  Step 6: Differential feature selection
+    tool: not specified
+    algorithm: VIP-based selection
+    parameters: vip_threshold_prefiltered=1.0, vip_threshold_unfiltered=>1.0
+    input: VIP scores from PLS-DA
+    output: list of discriminative metabolites/features
+    confidence: medium
+  Step 7: Stability and reliability assessment
+    tool: not specified
+    algorithm: comparison of feature overlap, VIP/p(corr) behavior, false positive analysis
+    input: differential features lists (prefiltered vs. unfiltered PLS-DA)
+    output: stability metrics, interpretation of VIP inflation
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No software tools explicitly named (e.g., XCMS, MetaboAnalyst, SIMCA, ropls)
+  - No details on LC-MS instrument parameters, chromatographic conditions, or data preprocessing steps
+  - No description of peak picking, alignment, or normalization methods
+  - No information on FDR-adjusted test implementation (e.g., R/Bioconductor package)
+  - No raw or processed data deposition reported
+  - No code or workflow scripts shared
+  - No figure/table descriptions provided in the input text
+reproducibility_strengths:
+  - Clear conceptual comparison of pre- vs. post-PLS-DA univariate filtering
+  - Mechanistic explanation of VIP inflation due to high-dimensional noise
+  - Recommendation of adjusted VIP threshold (>1.0) when no prefiltration is applied

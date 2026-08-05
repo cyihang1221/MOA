@@ -1,0 +1,93 @@
+========== reproducibility_recipe entry ==========
+paper_title: Computationally unmasking each fatty acyl C=C position in complex lipids by routine LC-MS/MS lipidomics.
+source_paper: Lamp LM et al. (2025), Nature communications, DOI: 10.1038/s41467-025-61911-x, PMID: 40790030
+overall_reproducibility_score: 42/100
+
+workflow_steps: 9
+  Step 1: Lipid extraction
+    tool: BUME method
+    algorithm: butanol:methanol [3:1] extraction
+    parameters: solvent_ratio=3:1, solvents=['butanol', 'methanol']
+    input: cell pellets or plasma samples spiked with deuterated internal standards (USO or EquiSPLASH)
+    output: extracted lipid samples in organic phase
+    confidence: high
+  Step 2: Chromatographic separation
+    tool: Vanquish UHPLC / Agilent 1290 Infinity II LC
+    algorithm: reverse-phase gradient elution on CORTECS T3 column
+    parameters: column=CORTECS T3, 120 Å, 1.6 µm, 2.1 mm × 150 mm, temperature=50, flow_rate_mL/min=0.3, buffer_A=10 mM ammonium formate + 1% formic acid in water, buffer_B=70/30 isopropanol/acetonitrile + 10 mM ammonium formate + 1% formic acid, gradient_30min=0–0.5 min: 25% B; 0.5–2 min: ramp to 60% B; 2–7 min: ramp to 75% B; 7–15 min: hold; 15–22 min: ramp to 80% B; 22–26 min: ramp to 95% B; 26–33 min: ramp to 99% B; 33–34.5 min: hold; 34.5–34.8 min: ramp to 25% B; 34.8–35 min: hold, gradient_60min=0–1 min: 25% B; 1–4 min: ramp to 60% B; 4–14 min: ramp to 70% B; 14–40 min: ramp to 75% B; 40–57 min: ramp to 99% B; 57–59 min: hold; 59–59.9 min: ramp to 25% B; 59.9–60 min: hold
+    input: BUME-extracted lipid samples
+    output: chromatographically separated analytes
+    confidence: high
+  Step 3: MS1 acquisition
+    tool: Q-Exactive Hybrid Quadrupole-Orbitrap
+    algorithm: full-scan Orbitrap MS1
+    parameters: resolution_mz200=70000, mass_range_mz=[350, 2000], acquisition_mode=full scan
+    input: LC-separated analytes
+    output: MS1 spectra (.raw)
+    confidence: high
+  Step 4: CID MS/MS acquisition
+    tool: Q-Exactive Hybrid Quadrupole-Orbitrap
+    algorithm: data-dependent acquisition (DDA) with CID
+    parameters: ms2_resolution_mz200=17500, collision_energy_ev=stepped or optimized (not specified numerically), ddia_parameters={'top_n': 5, 'intensity_threshold': 100, 'dynamic_background_subtraction': True}
+    input: MS1-selected precursors
+    output: CID MS/MS spectra (.raw)
+    confidence: medium
+  Step 5: EAD MS/MS acquisition
+    tool: ZenoTOF 7600
+    algorithm: electron-activated dissociation (EAD) with IDA
+    parameters: electron_kinetic_energy_ev=12, beam_current_na=5500, ms1_accumulation_time_s=0.1, ms2_accumulation_time_ms=125, reaction_time_ms=30, zenothreshold_cps=10000, ion_source_gas1_psi=50, ion_source_gas2_psi=60, cad_gas=7, curtain_gas=35, source_temperature_c=450, spray_voltage_v=5500, declustering_potential_v=40, inclusion_list=['PC 38:3', 'PC 38:4', 'PE 38:3', 'PE 38:4', 'PI 38:3', 'PI 38:4'], adducts=['[M+H]+', '[M+Na]+', '[M+NH4]+'], rt_scheduling=True, accumulation_times_ms={'PC': 65, 'PE': 95, 'PI': 215}
+    input: LC-separated analytes
+    output: EAD MS/MS spectra (.wiff or .abf)
+    confidence: high
+  Step 6: Automated lipid annotation & quantification
+    tool: LDA (Lipid Data Analyzer)
+    algorithm: 3D peak integration + FA library matching + mass list-based annotation
+    parameters: fa_library=Excel-based with SIL prefix encoding (A–E), mass_list_generation=GUI-driven MassList Creator, peak_integration=optimized 3D algorithm for ω-isomer separation, isomer_discrimination=authentic standards for BMP vs PG
+    input: MS1 and MS/MS raw files
+    output: lipid molecular species-level identifications and peak areas
+    confidence: medium
+  Step 7: Retention time database (RT-DB) generation
+    tool: LC=CL (integrated module in LDA)
+    algorithm: isotope effect correction (aTIE) + SIL-FA RT mapping
+    parameters: aTIE_equation=(k_H/k_D - 1)/f_a + 1, f_a_default=1, deuterium_effect=additive per SIL-FA, grouping_window_s=5, anchor_selection_strategy=['prioritize_number', 'prioritize_reliability', 'match_all']
+    input: LDA-annotated SIL and natural lipid species with measured RTs
+    output: RT-DB (e.g., RT-DB A30, B30a, B30b, C60)
+    confidence: high
+  Step 8: C=C position prediction via RT mapping
+    tool: LC=CL RT predictor
+    algorithm: cubic spline interpolation (Apache Commons Math v3.6.1 PolynomialSplineFunction)
+    parameters: anchor_points=user-selected from GUI, class-specific or global, interpolation_method=cubic spline, apache_commons_version=3.6.1
+    input: RT-DB + new experimental RTs + anchor species
+    output: predicted C=C positions per acyl chain (ω-position)
+    confidence: high
+  Step 9: C=C fragment annotation
+    tool: LDA
+    algorithm: decision rule sets for EAD fragment interpretation
+    parameters: fragment_rules=C=C position-specific (e.g., allylic cleavages), manual_verification=True
+    input: EAD MS/MS spectra
+    output: annotated C=C diagnostic fragments
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw MS data not deposited in public repository (e.g., MetaboLights, PRIDE, or MassIVE)
+  - LDA software is not open-source nor publicly available; no download link or license information provided
+  - LC=CL is a proprietary computational module with no source code, documentation, or standalone release
+  - No details on machine learning training procedure, hyperparameters, or validation metrics for RT predictor
+  - Exact CID collision energy values not reported — only 'optimized' or 'stepped'
+  - No access to the comprehensive RT-DB (>2400 lipids) or the FA prefix encoding Excel libraries
+  - Supplementary Data 4, 5, 6 referenced but not described as publicly accessible
+reproducibility_strengths:
+  - Detailed chromatographic gradients (30-min and 60-min) fully specified
+  - Column type, dimensions, temperature, flow rate, and mobile phases explicitly reported
+  - Instrument parameters (resolutions, voltages, gas settings, accumulation times) comprehensively listed
+  - Use of authentic standards for isomer discrimination (BMP vs PG) and isotope effect calibration
+  - Explicit description of SIL-FA encoding scheme (A–E prefixes) and adduct coverage

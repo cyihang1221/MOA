@@ -1,0 +1,47 @@
+========== reproducibility_recipe entry ==========
+paper_title: Development of an integrated searching system for rapid and accurate classification of edible oils by matrix-assisted laser desorption/ionization mass spectrometry.
+source_paper: Ma MH et al. (2026), Analytica chimica acta, DOI: 10.1016/j.aca.2025.344804, PMID: 41285534
+overall_reproducibility_score: 20/100
+
+workflow_steps: 4
+  Step 1: MALDI-MS spectral acquisition
+    tool: MALDI mass spectrometer
+    input: edible oil samples (directly loaded)
+    output: raw mass spectra
+    confidence: low
+  Step 2: Spectral preprocessing and feature extraction
+    tool: OilAnalysis
+    algorithm: Gaussian mixture model (GMM)
+    input: raw mass spectra
+    output: spectral features / latent variables
+    confidence: low
+  Step 3: Classification modeling
+    tool: OilAnalysis
+    algorithm: Logistic regression + Decision tree (LR-DT) ensemble
+    input: GMM-derived features
+    output: edible oil class labels + confidence scores
+    confidence: low
+  Step 4: High-throughput online classification
+    tool: OilAnalysis
+    algorithm: Integrated GMM-LR-DT pipeline
+    parameters: processing_speed=1.7 spectra/second, classification_threshold=confidence-based scoring system
+    input: real-time MALDI-MS spectra
+    output: automated oil type classification with confidence
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of spectral preprocessing steps (e.g., baseline correction, smoothing, peak picking, m/z calibration)
+  - No details on GMM parameters (number of components, covariance type, initialization)
+  - No specification of logistic regression or decision tree hyperparameters (e.g., regularization, max depth, min samples split)
+  - OilAnalysis software is proprietary and not publicly available or documented
+  - No public data repository or accession ID for MALDI-MS spectra or spectral database
+  - No validation dataset description or sample metadata (oil types, origins, replicates)

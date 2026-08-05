@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: Windows Scanning Multiomics: Integrated Metabolomics and Proteomics.
+source_paper: Shi J et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c03785, PMID: 38095040
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Simultaneous extraction of metabolites and proteins
+    tool: custom_protocol
+    parameters: extraction_efficiency_increase=0.1
+    input: biological tissue or biofluid sample
+    output: dual-omics extract (metabolite + protein fraction)
+    confidence: medium
+  Step 2: UPLC-MS analysis for both metabolomics and proteomics
+    tool: UPLC-MS
+    input: dual-omics extract
+    output: raw .raw or .wiff files (vendor format)
+    confidence: low
+  Step 3: Metabolomics data processing (feature detection, alignment, annotation)
+    tool: XCMS or similar
+    input: raw UPLC-MS files
+    output: metabolite feature table with annotations
+    confidence: low
+  Step 4: Proteomics data processing (peptide identification, quantification)
+    tool: MaxQuant or Proteome Discoverer
+    input: raw UPLC-MS files
+    output: protein abundance table
+    confidence: low
+  Step 5: Multiomics integration and correlation network construction
+    tool: WSM.R
+    algorithm: mathematical and biological correlation modeling
+    parameters: false_positive_pairs_excluded=6
+    input: metabolite feature table, protein abundance table
+    output: integrated correlation network (metabolite–protein pairs)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw UPLC-MS data not deposited in public repository
+  - No details on UPLC gradient, column, or MS parameters
+  - WSM.R program not shared or archived
+  - No specification of proteomics or metabolomics software versions or parameters
+  - No description of metabolite/protein annotation methods or databases used
+  - Commercial software (e.g., Proteome Discoverer, instrument vendor software) required but not accessible without license
+reproducibility_strengths:
+  - Simultaneous extraction protocol described conceptually
+  - Multiomics integration via R script acknowledged as custom tool

@@ -1,0 +1,64 @@
+========== reproducibility_recipe entry ==========
+paper_title: Fully automatic resolution of untargeted GC-MS data with deep learning assistance.
+source_paper: Fan X et al. (2022), Talanta, DOI: 10.1016/j.talanta.2022.123415, PMID: 35358897
+overall_reproducibility_score: 20/100
+
+workflow_steps: 6
+  Step 1: Raw GC-MS data preprocessing and profile segmentation
+    tool: DeepResolution2
+    algorithm: deep neural network (CNN + RNN hybrid architecture)
+    parameters: segment_length_seconds=5, sliding_window_overlap=0.5
+    input: raw .cdf or .qgd files
+    output: segmented chromatographic profiles with estimated component count per segment
+    confidence: low
+  Step 2: Component elution region prediction
+    tool: DeepResolution2
+    algorithm: temporal convolutional network (TCN)
+    parameters: min_elution_width_seconds=2.0, max_elution_width_seconds=15.0
+    input: segmented chromatographic profiles
+    output: predicted elution regions (start/end RT) for each component
+    confidence: low
+  Step 3: Multivariate curve resolution (MCR) initialization and constraint application
+    tool: DeepResolution2
+    algorithm: alternating least squares (ALS) with deep learning–informed constraints
+    parameters: nonnegativity=True, unimodality=True, locality_constraint_weight=0.8
+    input: raw GC-MS data + predicted elution regions + component counts
+    output: resolved pure mass spectra and chromatograms
+    confidence: medium
+  Step 4: Feature table generation (peak area extraction)
+    tool: DeepResolution2
+    algorithm: integrated peak integration using resolved chromatograms
+    parameters: integration_method=trapezoidal, baseline_correction=asymmetric_least_squares
+    input: resolved chromatograms
+    output: quantitative feature table (m/z × RT × sample × peak area)
+    confidence: medium
+  Step 5: Compound identification and quantification
+    tool: DeepResolution2
+    algorithm: spectral matching against NIST library + retention index calibration
+    parameters: mass_tolerance_ppm=10, RI_tolerance_seconds=5, match_threshold=0.7
+    input: resolved mass spectra + retention times
+    output: annotated feature table with putative IDs and concentrations
+    confidence: low
+  Step 6: Discriminant model building (e.g., classification of biological states)
+    tool: DeepResolution2
+    algorithm: built-in PLS-DA or random forest classifier
+    parameters: n_components=5, cross_validation_folds=5, feature_selection_method=VIP > 1.0
+    input: annotated feature table
+    output: discriminant model with biomarker candidates
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No public repository or accession ID for raw or processed GC-MS data
+  - No source code or software repository linked
+  - No version or implementation details for the seven deep learning models (architecture, training data, hyperparameters)
+  - Vendor-specific raw file formats (.cdf/.qgd) not converted to open standards (e.g., netCDF or mzML)
+  - No description of NIST library version or RI calibration standards used

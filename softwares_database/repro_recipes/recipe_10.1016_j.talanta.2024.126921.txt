@@ -1,0 +1,62 @@
+========== reproducibility_recipe entry ==========
+paper_title: An integrated 3-M workflow for accelerated annotation of natural products: Flavonoids in Daemonorops draco as a case study.
+source_paper: Fan W et al. (2025), Talanta, DOI: 10.1016/j.talanta.2024.126921, PMID: 39368333
+overall_reproducibility_score: 42/100
+
+workflow_steps: 5
+  Step 1: Mass defect filtering (MDF) for flavonoid subclass enrichment
+    tool: Custom implementation or SIRIUS-integrated MDF
+    algorithm: Mass defect filter using pre-defined flavonoid chemical space windows
+    parameters: reduction_rate=0.85, initial_peak_count=10043, filtered_peak_count=1585, ion_mode=positive
+    input: LC-HRMS MS¹ feature table (e.g., .mzML or peak list)
+    output: Flavonoid-enriched MS¹ feature subset
+    confidence: medium
+  Step 2: De novo molecular formula annotation
+    tool: SIRIUS
+    algorithm: CSI:FingerID + CANOPUS + ZODIAC
+    parameters: adducts=['[M+H]+', '[M+Na]+', '[M+NH4]+']
+    input: Flavonoid-enriched MS¹ features with MS² spectra
+    output: Annotated molecular formulas and compound class predictions
+    confidence: high
+  Step 3: Molecular fingerprint-based structure elucidation
+    tool: SIRIUS (CSI:FingerID)
+    algorithm: Deep neural network fingerprint prediction and database search
+    parameters: database=PubChem, fingerprint_type=ECFP4
+    input: MS² spectra + molecular formulas
+    output: Rank-ordered candidate structures with confidence scores
+    confidence: high
+  Step 4: Feature-based molecular networking (FBMN)
+    tool: GNPS
+    algorithm: Cosine similarity clustering of MS² spectra
+    parameters: min_cosine_score=0.7, min_matched_peaks=6, max_shift_ppm=10
+    input: MS² spectra (MGF format)
+    output: Molecular network graph (clusters of structurally related metabolites)
+    confidence: medium
+  Step 5: t-SNE molecular network visualization and clustering
+    tool: Custom t-SNE implementation (likely in Python/R)
+    algorithm: t-distributed stochastic neighbor embedding on spectral or fingerprint distances
+    parameters: perplexity=30, learning_rate=200, n_iter=1000
+    input: MS² spectral similarity matrix or molecular fingerprints
+    output: 2D/3D t-SNE plot with metabolite clusters
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (GNPS)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-HRMS data not deposited or accessioned
+  - No GNPS or SIRIUS job IDs or workflow links provided
+  - Pre-defined flavonoid MDF windows not specified numerically (e.g., mass defect ranges)
+  - No details on t-SNE input distance metric or fingerprint generation
+  - Custom scripts for integration of 3-M steps not shared
+  - No validation metrics (e.g., FDR, recall rates) reported for annotations
+reproducibility_strengths:
+  - Uses fully open-source core tools (SIRIUS, GNPS)
+  - Clear stepwise logic of integrated 3-M strategy (MDF → formula → fingerprint → networks)
+  - Quantitative reduction metrics reported (85% peak reduction)

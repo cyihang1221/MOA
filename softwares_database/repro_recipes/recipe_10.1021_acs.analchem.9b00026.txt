@@ -1,0 +1,50 @@
+========== reproducibility_recipe entry ==========
+paper_title: Anticancer Drug Affects Metabolomic Profiles in Multicellular Spheroids: Studies Using Mass Spectrometry Imaging Combined with Machine Learning.
+source_paper: Tian X et al. (2019), Analytical chemistry, DOI: 10.1021/acs.analchem.9b00026, PMID: 30951294
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Mass spectrometry imaging data acquisition
+    tool: Single-probe MSI
+    input: intact spheroids (HCT-116)
+    output: raw MSI datasets (m/z vs. spatial coordinates)
+    confidence: low
+  Step 2: Spectral decomposition and component extraction
+    tool: Multivariate Curve Resolution Alternating Least Squares
+    algorithm: MCR-ALS
+    input: raw MSI datasets
+    output: decomposed metabolite components (spectral profiles + spatial maps)
+    confidence: medium
+  Step 3: Unsupervised clustering of MS images
+    tool: CLARA
+    algorithm: cluster large applications
+    input: metabolomic feature matrices (e.g., m/z intensities per pixel/region)
+    output: clusters of spatially similar metabolic phenotypes
+    confidence: medium
+  Step 4: Supervised classification of treatment conditions
+    tool: Random Forest
+    algorithm: Random Forest
+    input: metabolomic feature matrices
+    output: classification model, feature importance scores
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw MSI data not deposited in public repository
+  - No details on MSI acquisition parameters (e.g., laser settings, matrix application, spatial resolution)
+  - No specification of preprocessing steps (e.g., denoising, normalization, peak picking)
+  - MCR-ALS implementation details (constraints, number of components, convergence criteria) omitted
+  - No description of feature selection or dimensionality reduction prior to ML
+  - No hyperparameter settings for Random Forest or CLARA
+  - No code or workflow scripts shared
+reproducibility_strengths:
+  - Uses standard open-source ML algorithms (Random Forest, CLARA)
+  - Clear biological experimental design (cell line, drug, time/concentration gradients)

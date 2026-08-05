@@ -1,0 +1,103 @@
+========== reproducibility_recipe entry ==========
+paper_title: A guide to precise measurements of isotope abundance by ESI-Orbitrap MS.
+source_paper: Kantnerová K et al. (2024), Nature protocols, DOI: 10.1038/s41596-024-00981-5, PMID: 38654136
+overall_reproducibility_score: 52/100
+
+workflow_steps: 4
+  Step 1: Direct infusion ESI-Orbitrap analysis of polar solutes
+    tool: Thermo Scientific Orbitrap mass spectrometer
+    algorithm: direct infusion
+    parameters: scan_range_mz=[60, 200], resolution=15000, AGC_target=1000000, ion_transfer_time_ms=0.75, calibration_solution=trifluoroacetic acid (TFA) and MRFA peptide
+    input: pure standard solutions (TFA, MRFA)
+    output: raw .RAW files
+    confidence: high
+  Step 2: Flow injection analysis of nitrate
+    tool: Thermo Scientific Orbitrap mass spectrometer with flow injection system
+    algorithm: flow injection
+    parameters: scan_range_mz=[60, 80], resolution=15000, AGC_target=1000000, ion_transfer_time_ms=0.75, standards=['USGS35', 'USGS32']
+    input: nitrate standards and samples in aqueous solution
+    output: raw .RAW files
+    confidence: high
+  Step 3: Isotopocule extraction and ratio calculation
+    tool: custom Orbitrap IRMS data-extraction and -processing software
+    algorithm: isotopologue-specific ion current integration
+    parameters: mass_tolerance_ppm=2, integration_window_ms=100, baseline_correction=linear, one_point_calibration=True
+    input: raw .RAW files
+    output: isotopocule ratios (e.g., 13C/M0, 18O/M0), δ-values
+    confidence: low
+  Step 4: Shot-noise precision assessment
+    tool: custom R/Python scripts (implied)
+    algorithm: relative standard error vs. theoretical shot-noise limit
+    parameters: replicates=5, integration_time_ms=1000
+    input: extracted ion currents (EICs)
+    output: shot-noise plots, relative standard error (RSE)
+    confidence: medium
+
+data_availability:
+  raw_data: available (Springer Nature Source Data: Source Data Fig. 10–12, Extended Data Figs. 6–8)
+  processed_data: available (Springer Nature Supplementary Data: Supplementary Data (XLSX))
+  metadata: in_paper_only
+  data_urls: https://doi.org/10.1038/s41596-024-00981-5, https://www.nature.com/articles/s41596-024-00981-5#Sec33
+
+code_availability: mentioned_no_link
+
+figure_recipes: 12
+  Figure 1: [workflow_diagram]
+    caption: Conceptual illustration of ESI-Orbitrap IRMS as a bridge between life and geosciences.
+    visualization_tool: not specified
+  Figure 2: [other]
+    caption: Schematic of basic measurement principles for isotope ratio determination by ESI-Orbitrap MS.
+    visualization_tool: not specified
+  Figure 3: [workflow_diagram]
+    caption: Stepwise workflow for isotope ratio data processing, from raw signal to δ-values.
+    produced_by_step: [3]
+    visualization_tool: not specified
+  Figure 4: [workflow_diagram]
+    caption: Overview of two presented procedures: direct infusion (TFA/MRFA) and flow injection (nitrate).
+    produced_by_step: [1, 2]
+    visualization_tool: not specified
+  Figure 5: [other]
+    caption: Framework for adapting protocols to new analytes and research contexts.
+    visualization_tool: not specified
+  Figure 6: [other]
+    caption: Categories to assess robustness of ESI-Orbitrap IRMS workflows.
+    visualization_tool: not specified
+  Figure 7: [chromatogram]
+    caption: Mass spectrum of TFA in the m/z 60–200 range, showing isotopocules used for quantification.
+    produced_by_step: [1, 3]
+    visualization_tool: FreeStyle software (Thermo)
+  Figure 8: [chromatogram]
+    caption: Mass spectrum of immonium ions from MRFA amino acids in the m/z 60–200 range.
+    produced_by_step: [1, 3]
+    visualization_tool: FreeStyle software (Thermo)
+  Figure 9: [chromatogram]
+    caption: Mass spectrum of nitrate in the m/z 60–80 range.
+    produced_by_step: [2, 3]
+    visualization_tool: FreeStyle software (Thermo)
+  Figure 10: [plot]
+    caption: Shot-noise plots comparing experimental precision (RSE) against theoretical shot-noise limit for 13C/M0 and 18O/M0 of TFA.
+    produced_by_step: [4]
+    visualization_tool: not specified
+    statistical_test: theoretical shot-noise limit fit
+  Figure 11: [plot]
+    caption: Replicate analysis showing decreasing RSE over time for immonium ion isotopocules from MRFA.
+    produced_by_step: [4]
+    visualization_tool: not specified
+    statistical_test: theoretical shot-noise limit fit
+  Figure 12: [plot]
+    caption: Nitrate isotopocule ratio results under non-optimal ion source settings, illustrating impact on precision.
+    produced_by_step: [2, 3, 4]
+    visualization_tool: not specified
+    statistical_test: comparative precision analysis
+
+reproducibility_gaps:
+  - Custom Orbitrap IRMS data-extraction and -processing software not publicly available or described in sufficient detail
+  - No repository link or DOI provided for code or pipeline implementation
+  - Critical instrument parameters (e.g., exact spray voltage, capillary temperature, sheath gas flow) not fully specified
+  - No description of calibration curve construction beyond 'one-point calibration'
+  - FreeStyle software is commercial and proprietary; no open alternative or export format specification given
+reproducibility_strengths:
+  - All source data (XLSX) explicitly provided via Springer Nature Source Data
+  - Full parameter tables in Supplementary Tables 1–11
+  - Detailed step-by-step protocol including troubleshooting tips and optimization rationale
+  - Use of widely available Orbitrap hardware (no custom instrumentation required)

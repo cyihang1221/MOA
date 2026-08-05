@@ -1,0 +1,112 @@
+========== reproducibility_recipe entry ==========
+paper_title: Electrolyte and metabolite composition of cystic fluid from a rat model of ARPKD.
+source_paper: Klemens CA et al. (2025), Communications biology, DOI: 10.1038/s42003-025-07631-w, PMID: 39948436
+overall_reproducibility_score: 42/100
+
+workflow_steps: 12
+  Step 1: Sample preparation and deproteinization
+    tool: Manual protocol
+    algorithm: Cold organic solvent precipitation
+    parameters: solvent_ratio=acetonitrile:methanol 1:1, solvent_volume=6x sample volume, temperature=4, vortexing_duration_min=30, centrifugation_g=18000, internal_standard=13C6-phenylalanine, internal_standard_concentration_ng_per_ul=250, internal_standard_volume_ul=3
+    input: raw cyst fluid, plasma, urine
+    output: deproteinized supernatant (2 aliquots)
+    confidence: high
+  Step 2: LC-MS data acquisition
+    tool: Agilent 6550 Q-TOF + 1290 Infinity UHPLC
+    algorithm: Full-scan ESI-QTOF
+    parameters: ionization_mode=['positive', 'negative'], mass_range_mz=[100, 1200], resolution=[10000, 35000], flow_rate_ul_per_min=400, column_types=['HILIC', 'C18'], column_dimensions_mm=2.1 × 150, column_particle_size_mm=[1.7, 1.8], run_time_min=20, runs_per_sample=4, injection_replicates=['duplicate', 'triplicate'], quality_control_injection_frequency=several times per run
+    input: deproteinized supernatant
+    output: raw .d files (Agilent format)
+    confidence: high
+  Step 3: Data conversion and peak alignment
+    tool: MassHunter Data Analysis Reprocessor
+    algorithm: Compound Exchange File (CEF) conversion
+    input: raw .d files
+    output: .cef files
+    confidence: medium
+  Step 4: Feature detection and peak table generation
+    tool: Mass Profiler Professional (MPP)
+    algorithm: Unsupervised feature detection
+    parameters: feature_definition=m/z × intensity × retention_time
+    input: .cef files
+    output: peak matrix (features × samples)
+    confidence: medium
+  Step 5: Multivariate statistical analysis and differential feature selection
+    tool: Mass Profiler Professional (MPP) + custom R
+    algorithm: ['PCA', 'ANOVA', 'heat map clustering']
+    parameters: fold_change_threshold=1.5, mass_accuracy_ppm=0.05
+    input: peak matrix
+    output: list of differentially expressed m/z features
+    confidence: medium
+  Step 6: Metabolite annotation (MS1-based)
+    tool: METLIN
+    algorithm: Accurate mass matching
+    parameters: mass_tolerance_ppm=5, database_species=Rattus norvegicus
+    input: list of m/z features
+    output: putative metabolite IDs (with confidence scores)
+    confidence: low
+  Step 7: Reference standard validation
+    tool: Manual verification
+    algorithm: Retention time & MS/MS match to purchased standards
+    input: putative metabolite IDs
+    output: confirmed metabolite identifications
+    confidence: low
+  Step 8: Pathway enrichment from untargeted peaks
+    tool: MetaboAnalyst 6.0 (MS Peaks to Paths module) (v6.0)
+    algorithm: ['mummichog v2.0', 'GSEA-adapted']
+    parameters: enrichment_method=['ORA', 'GSEA'], statistical_model=Gamma distribution null model, multiple_testing_correction=FDR, organism=Rattus norvegicus, p_value_cutoff=None, last_access_date=2024-03-11
+    input: ranked list of m/z features (with or without significance cutoff)
+    output: enriched metabolic pathways (KEGG, etc.)
+    confidence: high
+  Step 9: Targeted amino acid quantification
+    tool: Thermo Quantiva + Waters Acquity LC-MS/MS
+    algorithm: SRM (selected reaction monitoring)
+    parameters: derivatization_kit=Waters AccQ-Fluor, derivatization_reagent=6-aminoquinolyl-N-hydroxysuccinimidyl carbamate, internal_standards=isotopically labeled amino acids, calibration_points=10, ionization_mode=positive ESI, analytes_count=42
+    input: plasma, urine, cyst fluid
+    output: quantified amino acid concentrations (µM or µg/mL)
+    confidence: high
+  Step 10: Transcriptomic data processing
+    tool: HISAT2 + DESeq2
+    algorithm: ['alignment', 'quantification (FPKM)', 'differential expression']
+    parameters: reference_genome=ensembl_rattus_norvegicus_rnor_6_0_gca_000001895_4, fold_change_threshold_log2=1, adjusted_p_value_threshold=0.05
+    input: RNA-Seq FASTQ files
+    output: differentially expressed genes (DEGs)
+    confidence: high
+  Step 11: Integrated pathway analysis
+    tool: ['IPA', 'clusterProfiler']
+    algorithm: ['Ingenuity Pathway Analysis', 'GO/KEGG enrichment']
+    parameters: enrichment_method=['hypergeometric test', 'GSEA'], organism=Rattus norvegicus
+    input: DEG list
+    output: enriched molecular functions, pathways, networks
+    confidence: medium
+  Step 12: Statistical testing and visualization
+    tool: R (ggplot2, pheatmap, dplyr, tidyverse, etc.)
+    algorithm: ['t-test', 'Brown-Forsythe/Welch ANOVA', 'Dunnett’s correction', 'Mann–Whitney U']
+    parameters: test_type=['unpaired two-tailed t-test', 'non-parametric Mann–Whitney U', "Welch ANOVA with Dunnett's"], significance_threshold=0.05, error_representation=SEM, clustering_method=hierarchical clustering
+    input: quantitative metabolite/gene tables
+    output: statistical summaries, volcano plots, PCA plots, heatmaps
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS data not deposited in public repository (e.g., MetaboLights, GNPS, or MassIVE)
+  - No accession ID or repository link provided for untargeted metabolomics or RNA-Seq datasets
+  - Mass Profiler Professional is commercial software requiring license; no open-source alternative specified
+  - Exact UHPLC gradient profiles, column temperature, or injection volume not reported
+  - No code or scripts shared for R-based analyses (PCA, heatmaps, volcano plots, GSEA/mummichog integration)
+  - METLIN search parameters (e.g., adducts, charge states, instrument type) not specified
+  - No details on QC sample composition or how MPP alignment parameters (e.g., RT tolerance, m/z tolerance) were set
+reproducibility_strengths:
+  - Explicit reporting of biological replicates (n=5 per sex), collection timing, and animal ethics compliance
+  - Clear description of internal standards (13C6-Phe for untargeted; isotopic AAs for targeted)
+  - Use of established open-source tools (DESeq2, clusterProfiler, R/ggplot2) for transcriptomics and visualization
+  - Public web platform used for pathway analysis (MetaboAnalyst 6.0 with mummichog/GSEA)
+  - Detailed sample prep protocol including solvent ratios, temperatures, and centrifugation conditions

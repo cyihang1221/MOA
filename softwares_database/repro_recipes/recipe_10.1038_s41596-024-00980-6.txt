@@ -1,0 +1,92 @@
+========== reproducibility_recipe entry ==========
+paper_title: High-throughput identification of gut microbiome-dependent metabolites.
+source_paper: Han S et al. (2024), Nature protocols, DOI: 10.1038/s41596-024-00980-6, PMID: 38740909
+overall_reproducibility_score: 42/100
+
+workflow_steps: 7
+  Step 1: Raw data acquisition
+    tool: Agilent qTOF LC-MS
+    parameters: ionization_mode=['positive', 'negative'], chromatography=['C18', 'HILIC'], mass_calibration=Agilent MassHunter Tune and Calibration (Extended Data Fig. 3), filtering=0.2 μm membrane filtration of mega media
+    input: biological samples (culture supernatant, mouse serum, human biospecimens)
+    output: raw .d files (Agilent proprietary format)
+    confidence: medium
+  Step 2: Data conversion and preprocessing
+    tool: Agilent MassHunter Qualitative Analysis
+    parameters: extraction_method=extracted ion chromatogram (EIC), quality_checks=['peak shape', 'signal-to-noise ratio', 'retention time consistency']
+    input: raw .d files
+    output: processed chromatograms and peak lists
+    confidence: medium
+  Step 3: Feature detection and alignment
+    tool: MS-DIAL
+    algorithm: recursive partitioning-based peak detection
+    parameters: peak_detection={'min_peak_width_sec': 5, 'max_peak_width_sec': 60, 'sn_threshold': 3, 'min_rel_height': 0.01}, alignment={'rt_tolerance_sec': 30, 'mz_tolerance_ppm': 10, 'alignment_method': 'dynamic programming'}, isotope_tracking=False, ms2_deconvolution=False
+    input: raw .d files or converted .mzML (implied via MS-DIAL compatibility)
+    output: aligned feature table (m/z, RT, intensity)
+    confidence: high
+  Step 4: Metabolite identification
+    tool: MS-DIAL
+    algorithm: spectral library matching (MS1 + MS2)
+    parameters: identification_method=library search against in-house and public spectral libraries, adduct_handling=predefined in reference library input file, score_threshold=MS-DIAL similarity score ≥ 0.7 (standard default, inferred)
+    input: feature table + MS/MS spectra
+    output: annotated metabolite table with confidence levels (e.g., Level 1–2 identifications)
+    confidence: medium
+  Step 5: Quality control and filtering
+    tool: MS-DIAL + custom evaluation
+    algorithm: internal standard residual analysis
+    parameters: qc_metrics=['RT residuals', 'm/z residuals', 'peak area residuals vs. QC'], filtering_criteria=['retention time drift < 5 sec', 'm/z drift < 5 ppm', 'CV < 30% in QCs']
+    input: aligned feature table + internal standard data
+    output: filtered, QC-passed feature table
+    confidence: medium
+  Step 6: Statistical analysis and differential metabolite detection
+    tool: not explicitly named — inferred use of MS-DIAL export + external tools
+    algorithm: t-test / ANOVA (implied by Fig. 4 caption 'significantly produced')
+    parameters: statistical_test=two-group comparison (e.g., germ-free vs. mono-associated), p_value_threshold=0.05, correction_method=Benjamini-Hochberg FDR
+    input: QC-filtered feature table with sample metadata
+    output: list of differentially abundant metabolites
+    confidence: low
+  Step 7: Multi-experiment integration and annotation curation
+    tool: custom bioinformatics workflow
+    algorithm: manual curation + co-elution analysis (Supplementary Table 2)
+    parameters: integration_strategy=cross-method (C18+/−, HILIC+), cross-sample-type (serum, culture, fecal), co_elution_filtering=retention time overlap + shared m/z ± 5 ppm
+    input: multiple annotated feature tables
+    output: integrated gut microbiome-dependent metabolite list (>800 compounds)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: not_mentioned (not mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 4
+  Fig. 1: [workflow_diagram]
+    caption: Schematic of sample preparation and general workflow of the metabolomic pipeline.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7]
+    visualization_tool: Adobe Illustrator or similar (not specified)
+  Fig. 2: [other]
+    caption: Example batch structure for sample analysis sequence.
+    produced_by_step: [1]
+    visualization_tool: not specified
+  Fig. 3: [workflow_diagram]
+    caption: Example bioinformatics workflow for integrating data from multiple experiments, sample types and analytical methods.
+    produced_by_step: [7]
+    visualization_tool: not specified
+  Fig. 4: [bar_chart]
+    caption: Significantly produced serum metabolites in mice associated with Clostridium sporogenes or Bacteroides thetaiotaomicron.
+    produced_by_step: [6]
+    visualization_tool: not specified
+    statistical_test: t-test or ANOVA with significance threshold p < 0.05
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in any public repository
+  - No code or scripts shared for multi-experiment integration (Step 7)
+  - Statistical analysis software and exact parameters (e.g., FDR cutoff, fold-change threshold) not specified
+  - Agilent MassHunter is commercial and requires license; no open alternative provided
+  - Internal standard identities and concentrations not listed
+  - Gradient profiles, column details, and instrument source parameters only partially described (e.g., 'C18 positive method' without flow rate, temperature, or gradient time)
+reproducibility_strengths:
+  - Detailed MS-DIAL parameter settings shown in Extended Data Fig. 5
+  - Use of open-source MS-DIAL for core feature detection and identification
+  - Explicit QC metrics reported (residual plots in Extended Data Fig. 6)
+  - Comprehensive supplementary tables listing identified metabolites (Supplementary Tables 1–2)

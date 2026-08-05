@@ -1,0 +1,111 @@
+========== reproducibility_recipe entry ==========
+paper_title: Ultra-fast label-free quantification and comprehensive proteome coverage with narrow-window data-independent acquisition.
+source_paper: Guzman UH et al. (2024), Nature biotechnology, DOI: 10.1038/s41587-023-02099-7, PMID: 38302753
+overall_reproducibility_score: 72/100
+
+workflow_steps: 8
+  Step 1: Sample preparation (cell lysis and protein extraction)
+    tool: Boiling lysis buffer + sonication
+    parameters: lysis_buffer_composition=['5% SDS', '5 mM TCEP', '10 mM chloroacetamide', '100 mM Tris pH 8.5'], boiling_time_min=10, sonication_protocol=Vibra-Cell VCX130, 2 min, 1 s on/1 s off, 80% amplitude, BCA_assay_used=True
+    input: biological samples (HeLa, HEK293, yeast, human brain tissue)
+    output: protein lysates
+    confidence: high
+  Step 2: Protein digestion and peptide cleanup
+    tool: Protein Aggregation Capture (PAC) protocol with MagReSyn amine microparticles
+    parameters: enzymes=['LysC (1:500)', 'trypsin (1:250)'], digestion_temperature_c=37, digestion_duration_h=16, quenching_agent=TFA to 1%, desalting_method=Stage-tips (yeast), SepPak C18 (human cell lines)
+    input: protein lysates
+    output: peptide mixtures
+    confidence: high
+  Step 3: Offline high-pH reversed-phase fractionation
+    tool: Thermo UltiMate 3000 HPLC + Acquity CSH C18 column
+    parameters: column=Acquity CSH C18 1.7 μm × 1 mm × 150 mm, flow_rate_ul_min=30, buffer_A=5 mM ABC, buffer_B=100% ACN, gradient_profile=['0–10 min: 6.5% → 15% B', '10–59.5 min: 15% → 30% B', '59.5–67 min: 30% → 65% B', '67–70 min: 65% → 80% B', '70–77 min: 80% B', '78–87 min: 6.5% B'], fractions_collected=46, collection_interval_s=60, acidification_volume_ul=30, acidification_reagent=10% formic acid, concatenation_scheme=['34', '23', '12']
+    input: peptide mixtures
+    output: fractionated peptides
+    confidence: high
+  Step 4: LC–MS/MS acquisition (nDIA)
+    tool: Orbitrap Astral mass spectrometer + Vanquish Neo/Evosep ONE + EASY-Spray source
+    algorithm: narrow-window DIA (nDIA)
+    parameters: ms1_resolution=[180000, 240000], ms1_scan_range_mz=[380, 980], ms1_agc_target_percent=500, ms2_resolution=80000, ms2_max_it_ms=2.5, isolation_window_th=2, number_of_windows=300, collision_energy_percent=25, fragmentation_method=HCD
+    input: peptide mixtures or fractionated peptides
+    output: raw .raw files (nDIA mode)
+    confidence: high
+  Step 5: LC–MS/MS acquisition (DDA control)
+    tool: Orbitrap Astral mass spectrometer
+    algorithm: data-dependent acquisition
+    parameters: cycle_time_s=0.5, ms1_resolution=180000, ms1_scan_range_mz=[380, 980], ms1_agc_target_percent=500, isolation_width_th=2, collision_energy_percent=30, ms2_resolution=80000, ms2_max_it_ms=2.5, dynamic_exclusion_s=10, fragmentation_method=HCD
+    input: peptide mixtures
+    output: raw .raw files (DDA mode)
+    confidence: high
+  Step 6: DIA data analysis (human proteome)
+    tool: DIA-NN (v1.8.1)
+    algorithm: in silico spectral library search + neural network quantification
+    parameters: spectral_library=in silico predicted (4,299,848 precursors), database=UniProt 2022 (20,598 sequences), fixed_modifications=['C carbamidomethylation', 'N-terminal M excision'], missed_cleavages=1, protein_inference=Genes, neural_network_mode=Single-pass mode, quantification_strategy=Robust LC (high precision), cross_run_normalization=RT-dependent, library_generation=['IDs', 'RT', 'IM Profiling'], mass_accuracy_ppm=0, ms1_accuracy_ppm=0, share_spectra=False, heuristic_protein_inference=True, mbr_enabled=True, pg_qvalue_threshold=0.05, q_value_threshold=0.01, global_pg_q_value_threshold=0.01
+    input: raw .raw files (nDIA/DDA)
+    output: protein group abundance table (MaxLFQ)
+    confidence: high
+  Step 7: DIA data analysis (clinical/low-input/gradient optimization)
+    tool: Spectronaut (vv.17 and v.18)
+    algorithm: library-free directDIA+
+    parameters: database=UniProt 2022 (20,598 sequences) + contaminants (246), fixed_modifications=['Cysteine carbamylation'], variable_modifications=['Methionine oxidation', 'Protein N-terminal acetylation'], precursor_filtering=Q value, cross_run_normalization=False, quantification_level=Orbitrap MS1 (for low-amount series)
+    input: raw .raw files (nDIA)
+    output: protein group abundance table
+    confidence: high
+  Step 8: Multi-species LFQ analysis
+    tool: Spectronaut (vv.17)
+    algorithm: library-free directDIA+
+    parameters: database=three-species benchmark (31,657 sequences), fixed_modifications=['Cysteine carbamylation'], variable_modifications=['Methionine oxidation', 'Protein N-terminal acetylation'], precursor_filtering=Q value, cross_run_normalization=False
+    input: raw .raw files (mixed-species samples)
+    output: cross-species protein abundance table
+    confidence: high
+
+data_availability:
+  raw_data: available (PRIDE: PXD042312)
+  processed_data: available (PRIDE: PXD042312)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/pride/archive/projects/PXD042312
+
+code_availability: not_mentioned
+
+figure_recipes: 6
+  Fig. 1: [bar_chart]
+    caption: Benchmarking of nDIA against DDA in terms of protein group identifications and quantitative performance.
+    produced_by_step: [4, 5, 6, 7]
+    visualization_tool: GraphPad Prism or custom R/ggplot2 (not specified)
+    statistical_test: Not explicitly stated; likely t-test or Wilcoxon rank-sum test for significance between nDIA and DDA
+  Fig. 2: [line_plot]
+    caption: Depth of proteome coverage across a wide dynamic range of sample input amounts (50 pg to 10 ng).
+    produced_by_step: [4, 7]
+    visualization_tool: GraphPad Prism or custom R/ggplot2 (not specified)
+    statistical_test: Error bars represent SD across n=3 replicates
+  Fig. 3: [volcano_plot]
+    caption: Demonstration of improved label-free quantification accuracy and precision using Orbitrap Astral nDIA vs legacy platforms.
+    produced_by_step: [4, 7, 8]
+    visualization_tool: GraphPad Prism or custom R/ggplot2 (not specified)
+    statistical_test: Pearson/Spearman correlation; CV% calculation
+  Fig. 4: [heatmap]
+    caption: Comprehensive human proteome coverage achieved via multi-shot (offline HpH-fractionated) nDIA analysis (~3 h total run time).
+    produced_by_step: [3, 4, 7]
+    visualization_tool: Not specified
+    statistical_test: Not applicable (coverage summary)
+  Fig. 5: [bar_chart]
+    caption: Yeast proteome profiling across knockout strains revealing functional genomics insights.
+    produced_by_step: [4, 7]
+    visualization_tool: Not specified
+    statistical_test: Likely ANOVA or moderated t-test for differential expression
+  Fig. 6: [boxplot]
+    caption: Clinical application showing enhanced throughput and reproducibility in human brain proteomics (CTRL vs MSA).
+    produced_by_step: [4, 7]
+    visualization_tool: Not specified
+    statistical_test: t-test or Mann–Whitney U test for group comparisons
+
+reproducibility_gaps:
+  - Orbitrap Astral mass spectrometer is proprietary hardware not widely accessible
+  - FAIMS Pro interface settings only partially specified (CV = −50 V, but no details on dispersion field or compensation voltage sweep)
+  - Exact gradient profiles for Evosep ONE runs referenced only in Supplementary Table 2 (not provided in text)
+  - No public code repository for custom analysis scripts (e.g., MaxLFQ post-processing in DIA-NN R package)
+  - Spectronaut v.17/v.18 are commercial tools requiring license; no open-source alternative provided for library-free DIA
+reproducibility_strengths:
+  - Raw and processed data deposited in PRIDE (PXD042312) with full metadata
+  - Detailed instrument parameters and acquisition methods reported for both nDIA and DDA
+  - Use of standard, community-accepted tools (DIA-NN 1.8.1, Spectronaut, UniProt reference DB)
+  - Explicit reporting of modifications, filtering thresholds, and quantification strategies

@@ -1,0 +1,85 @@
+========== reproducibility_recipe entry ==========
+paper_title: In vivo identification of astrocyte and neuron subproteomes by proximity-dependent biotinylation.
+source_paper: Soto JS et al. (2024), Nature protocols, DOI: 10.1038/s41596-023-00923-7, PMID: 38062165
+overall_reproducibility_score: 48/100
+
+workflow_steps: 6
+  Step 1: Cell-type-specific BioID2 expression
+    tool: Genetic targeting (AAV or transgenic mouse)
+    parameters: expression_timing=['1-2 days', '3 weeks'], cell_types_targeted=['astrocytes', 'neurons'], subcellular_targeting=['plasma membrane', 'cell-cell contacts']
+    input: mouse model (CNS)
+    output: in vivo biotinylated proteins in intact cells
+    confidence: medium
+  Step 2: In vivo biotinylation
+    tool: Biotin injection
+    parameters: duration=7 d, route=subcutaneous, dose=None, frequency=single injection
+    input: live mouse with BioID2 expression
+    output: biotinylated proximal proteome
+    confidence: low
+  Step 3: Tissue microdissection and lysis
+    tool: Manual microdissection + Dounce homogenization
+    parameters: temperature=cold (pre-frozen TissueTek plate), lysis_buffer=lysis buffer 1, volume=600 µL, tissue=striatum
+    input: fresh brain tissue
+    output: lysate containing biotinylated proteins
+    confidence: high
+  Step 4: Streptavidin-based affinity enrichment
+    tool: Streptavidin pulldown
+    parameters: beads=streptavidin beads, wash_stringency=high (details not specified)
+    input: cell lysate
+    output: enriched biotinylated peptides/proteins
+    confidence: medium
+  Step 5: Mass spectrometry data acquisition
+    tool: LC-MS/MS
+    parameters: instrument=None, gradient=None, acquisition_mode=data-dependent acquisition (DDA)
+    input: enriched peptides
+    output: raw MS files (.raw or .d)
+    confidence: low
+  Step 6: Proteomic data analysis
+    tool: artMS
+    algorithm: integrated MSStats for label-free quantification and statistical testing
+    parameters: quant_method=label-free, statistical_framework=MSStats, normalization=default artMS pipeline, FDR_threshold=0.05
+    input: raw MS files
+    output: quantified protein list with statistics (e.g., fold-change, p-value, adjusted p-value)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: mentioned_no_link
+
+figure_recipes: 5
+  Fig. 1: [workflow_diagram]
+    caption: Schematic overview of the in vivo BioID2 workflow for cell- and subcompartment-specific proteome labeling in the CNS.
+    produced_by_step: [1, 2, 3, 4, 5, 6]
+    visualization_tool: Not specified
+  Fig. 2: [other]
+    caption: Illustration of how in vivo BioID2 preserves cellular morphology and enables subproteome mapping in intact astrocytes and neurons.
+    produced_by_step: [1, 2]
+    visualization_tool: Not specified
+  Fig. 3: [other]
+    caption: Validation data demonstrating successful in vivo biotinylation using BioID2, including imaging and biochemical controls.
+    produced_by_step: [2, 4]
+    visualization_tool: Not specified
+  Fig. 4: [other]
+    caption: Example experimental design layout for an in vivo BioID2 proteomics study, including biological replicates and controls.
+    produced_by_step: [1, 2, 4]
+    visualization_tool: Not specified
+  Fig. 5: [other]
+    caption: Proteomic data analysis pipeline using artMS integrated with MSStats, showing quantification, normalization, and statistical output.
+    produced_by_step: [6]
+    visualization_tool: Not specified
+    statistical_test: MSStats-based linear modeling (t-test/ANOVA analogues)
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository
+  - No accession ID or repository cited for proteomics data
+  - Biotin injection dose and formulation not specified
+  - LC-MS/MS instrument parameters and gradient profile omitted
+  - No link to artMS configuration files despite Supplementary Code 1–3 being referenced
+  - Custom wet-lab protocols (e.g., lysis buffer 1 composition) not provided in methods
+reproducibility_strengths:
+  - Explicit timeline for in vivo steps (expression timing, labeling duration, processing windows)
+  - Use of open-source artMS + MSStats for analysis
+  - Detailed microdissection and homogenization setup described

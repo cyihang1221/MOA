@@ -1,0 +1,51 @@
+========== reproducibility_recipe entry ==========
+paper_title: Magnetic thermo-responsive branched polymer for fast extraction and enrichment of phenolic acids in olive oil with tunable and enhanced performance.
+source_paper: Li Y et al. (2022), Analytica chimica acta, DOI: 10.1016/j.aca.2022.340359, PMID: 36156232
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Nanocomposite synthesis and characterization
+    tool: ATRP, TEM, SEM, FTIR, TGA, VSM, contact angle, DLS
+    input: chemical reagents and Fe3O4 nanoparticles
+    output: characterized magnetic thermo-responsive branched polymer (Fe3O4@PGMA@PNIPAM)
+    confidence: low
+  Step 2: Microwave-assisted magnetic solid-phase extraction (MMSPE)
+    tool: microwave reactor
+    parameters: adsorbent_amount=not specified numerically in abstract, adsorption_time=1 min total sample pretreatment time, sample_volume=not specified, desorption_conditions=not specified, interferents_tested=investigated and optimized (no details)
+    input: olive oil samples spiked with phenolic acids
+    output: extracted and enriched phenolic acid analytes
+    confidence: low
+  Step 3: UHPLC-MS/MS analysis
+    tool: ultra-high performance liquid chromatography-tandem mass spectrometry
+    algorithm: multiple reaction monitoring (MRM)
+    parameters: mode=MRM, linearity_range=[0.2, 30], linearity_unit=μg L⁻¹, r_squared_min=0.9798, lod_range=[0.005, 0.03], loq_range=[0.016, 0.098], precision_rsd_max=4.85
+    input: extracted phenolic acid fractions
+    output: quantitative peak areas/intensities for target phenolic acids
+    confidence: medium
+  Step 4: Multivariate statistical analysis
+    tool: principal component analysis
+    algorithm: PCA
+    input: quantitative UHPLC-MS/MS data matrix (samples × analytes)
+    output: PCA scores and loadings for olive oil classification
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw chromatographic and MS data not deposited or referenced
+  - No public repository accession ID provided for any data
+  - Critical experimental parameters missing (e.g., exact adsorbent mass, olive oil volume, desorption solvent/time/temperature, microwave power/temperature profile)
+  - PCA implementation details unspecified (software, scaling method, number of components, preprocessing steps)
+  - No code, scripts, or workflow documentation shared
+  - Vendor-specific UHPLC-MS/MS method parameters (e.g., column, gradient, dwell times, MRM transitions) not reported in abstract
+reproducibility_strengths:
+  - Analytical validation metrics reported (linearity, LOD/LOQ, precision, recovery)
+  - Use of standard kinetic and isotherm models (Freundlich, pseudo-second-order) implies reproducible modeling approach
+  - Clear objective (differentiation of EVOO vs refined olive oil) and endpoint (PCA-based classification)

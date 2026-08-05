@@ -1,0 +1,67 @@
+========== reproducibility_recipe entry ==========
+paper_title: MetEx: A Targeted Extraction Strategy for Improving the Coverage and Accuracy of Metabolite Annotation in Liquid Chromatography-High-Resolution Mass Spectrometry Data.
+source_paper: Zheng F et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.1c04783, PMID: 35670335
+overall_reproducibility_score: 55/100
+
+workflow_steps: 6
+  Step 1: Retention time prediction
+    tool: GNN-RT model
+    algorithm: graph neural network
+    input: metabolite structure (SMILES/InChI)
+    output: predicted retention time (tR)
+    confidence: medium
+  Step 2: MS2 spectrum prediction
+    tool: CFM-ID
+    algorithm: collision-induced dissociation fragmentation modeling
+    input: metabolite structure (SMILES/InChI)
+    output: predicted MS2 spectra
+    confidence: medium
+  Step 3: Targeted metabolite database construction
+    tool: MetEx
+    algorithm: database integration and annotation mapping
+    parameters: total_metabolites=30620, tr_coverage_percent=95.4, ms2_prediction_percent=39.4
+    input: MoNA, KEGG spectral data + predicted tR and MS2
+    output: curated targeted metabolite database (MetEx DB)
+    confidence: high
+  Step 4: LC-HRMS data processing and annotation
+    tool: MetEx (R implementation)
+    algorithm: targeted extraction using tR, m/z, and MS2 matching
+    parameters: mass_tolerance_ppm=None, rt_tolerance_sec=None, ms2_similarity_score_threshold=None
+    input: raw .mzML files
+    output: annotated feature table with confidence levels
+    confidence: low
+  Step 5: Performance evaluation against standards
+    tool: MetEx
+    algorithm: true positive identification count
+    parameters: standard_mixture_size=634, detected_standards=253, correctly_assigned=252
+    input: standard mixture LC-HRMS data
+    output: annotation accuracy metrics
+    confidence: high
+  Step 6: Comparative biological sample analysis
+    tool: MetEx vs XCMS vs MS-DIAL vs MZmine 2
+    algorithm: compound detection count comparison
+    parameters: biological_samples=['human plasma (NIST SRM 1950)', 'human urine', 'HepG2 cells', 'mouse liver tissue', 'mouse feces'], coverage_improvement_range_percent=[8.0, 44.2]
+    input: biological LC-HRMS datasets
+    output: comparative compound ID counts per tool
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: http://www.metaboex.cn/MetEx
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-HRMS data from biological samples not publicly deposited
+  - Exact mass/RT/MS2 matching thresholds not specified in methods
+  - GNN-RT and CFM-ID model training details and weights not shared
+  - No benchmark dataset or standard mixture data provided for independent validation
+  - Web platform (metaboex.cn) may lack version control or archived release
+reproducibility_strengths:
+  - MetEx source code freely available via web interface
+  - Uses open spectral resources (MoNA, KEGG)
+  - Clear performance metrics reported on standard mixtures

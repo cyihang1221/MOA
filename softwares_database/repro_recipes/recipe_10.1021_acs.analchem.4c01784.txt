@@ -1,0 +1,61 @@
+========== reproducibility_recipe entry ==========
+paper_title: Prediction of Retention Indices in LC-HRMS for Enhanced Structural Identification of Organic Micropollutants in Water: Selectivity-Based Filtration.
+source_paper: Kajtazi A et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.4c01784, PMID: 39752599
+overall_reproducibility_score: 35/100
+
+workflow_steps: 5
+  Step 1: Retention index conversion
+    tool: custom implementation
+    algorithm: linear interpolation against n-alkane series
+    parameters: sigma_tolerance=1.5
+    input: experimental retention times, n-alkane standards
+    output: retention indices (RI)
+    confidence: medium
+  Step 2: Molecular descriptor calculation
+    tool: RDKit or similar cheminformatics toolkit
+    algorithm: calculation of 5666 molecular descriptors
+    parameters: max_molecular_weight_da=500, elemental_constraints=['C', 'O', 'H']
+    input: SMILES or structural representations
+    output: descriptor matrix (n_compounds × 5666)
+    confidence: low
+  Step 3: Descriptor selection and model training
+    tool: Multiple Linear Regression (MLR)
+    algorithm: feature selection + MLR
+    parameters: num_descriptors_selected=16, training_set_size=100, test_set_size=16, stationary_phases=['C18', 'F5']
+    input: descriptor matrix, retention indices
+    output: two predictive models: MLR-C18 and MLR-F5
+    confidence: high
+  Step 4: Retention-based structural filtration
+    tool: custom intersection algorithm
+    algorithm: 2-stationary-phase intersection within ±1.5σ prediction error
+    parameters: sigma_tolerance=1.5, error_metric=RMSE
+    input: predicted RIs from MLR-C18 and MLR-F5, elemental composition candidates
+    output: filtered list of plausible structures
+    confidence: high
+  Step 5: Application to real-world sample
+    tool: custom pipeline integrating HRMS and RI prediction
+    algorithm: elemental composition assignment → candidate structure generation → RI prediction → intersection filtering
+    input: LC-HRMS data from drinking water sample
+    output: prioritized structural identifications
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposited in public repository
+  - No code or software repository linked
+  - No specification of which cheminformatics toolkit or descriptor set was used (e.g., RDKit vs. Dragon)
+  - No SMILES or structural files for the 100 training / 16 test compounds provided
+  - No details on n-alkane gradient conditions or column specifications needed for RI transferability
+  - Custom intersection algorithm not described or shared
+reproducibility_strengths:
+  - Explicit performance metrics reported (R², RMSE, MAE) for both models
+  - Clear description of two-stationary-phase selectivity principle
+  - Defined elemental constraints (C/O/H <500 Da) and sigma tolerance (±1.5σ) for filtration

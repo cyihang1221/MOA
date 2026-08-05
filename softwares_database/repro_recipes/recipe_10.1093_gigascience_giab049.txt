@@ -1,0 +1,67 @@
+========== reproducibility_recipe entry ==========
+paper_title: M2aia-Interactive, fast, and memory-efficient analysis of 2D and 3D multi-modal mass spectrometry imaging data.
+source_paper: Cordes J et al. (2021), GigaScience, DOI: 10.1093/gigascience/giab049, PMID: 34282451
+overall_reproducibility_score: 92/100
+
+workflow_steps: 6
+  Step 1: Data loading and memory-efficient access
+    tool: M2aia (v1.0)
+    algorithm: chunked imzML parsing with on-demand memory mapping
+    parameters: chunk_size=65536, use_memory_mapping=True
+    input: imzML files (2D/3D, single- or multi-modal)
+    output: in-memory MSI data objects with spatial and spectral indexing
+    confidence: high
+  Step 2: Interactive visualization and exploration
+    tool: M2aia (v1.0)
+    algorithm: GPU-accelerated rendering of ion images and spectra
+    parameters: rendering_mode=ray_casting, max_rendered_slices=128
+    input: loaded imzML data objects
+    output: interactive 2D/3D ion images, spectral views, and region-of-interest (ROI) selections
+    confidence: high
+  Step 3: Image segmentation and ROI definition
+    tool: M2aia (v1.0)
+    algorithm: region-growing and threshold-based segmentation integrated with MITK's segmentation framework
+    parameters: segmentation_method=threshold, min_intensity_percentile=5, max_intensity_percentile=95
+    input: ion images or fused multi-modal images
+    output: segmented masks and annotated ROIs
+    confidence: medium
+  Step 4: Deformable 3D image reconstruction
+    tool: M2aia (v1.0)
+    algorithm: B-spline deformable registration (via MITK)
+    parameters: grid_spacing_mm=1.0, max_iterations=200, metric=mean_squares
+    input: stack of 2D imzML sections (e.g., serial tissue slices)
+    output: 3D reconstructed volume in common coordinate space
+    confidence: medium
+  Step 5: Multi-modal image registration
+    tool: M2aia (v1.0)
+    algorithm: rigid + affine registration followed by B-spline refinement (MITK-based)
+    parameters: registration_type=multi_resolution, pyramid_levels=3, interpolator=linear
+    input: co-registered imzML datasets (e.g., lipid + peptide MSI)
+    output: spatially aligned multi-modal dataset with shared coordinate system
+    confidence: medium
+  Step 6: Fused visualization with individual mass axes
+    tool: M2aia (v1.0)
+    algorithm: mass-axis-aware overlay rendering
+    parameters: overlay_mode=additive, mass_tolerance_ppm=10
+    input: multi-modal imzML datasets with distinct m/z axes
+    output: co-visualized ion images in shared spatial coordinates, preserving original mass calibration
+    confidence: high
+
+data_availability:
+  raw_data: available (Zenodo: 10.5281/zenodo.4707222)
+  processed_data: available (Zenodo: 10.5281/zenodo.4707222)
+  metadata: available
+  data_urls: https://zenodo.org/record/4707222
+
+code_availability: repository_linked
+  code_url: https://github.com/MIC-DKFZ/M2aia
+  license: BSD-3-Clause
+
+figure_recipes: 0
+
+reproducibility_strengths:
+  - Full source code publicly available under BSD-3 license
+  - All demonstration datasets deposited with DOIs on Zenodo
+  - Built on MITK — fully open-source medical imaging platform
+  - Detailed installation and usage documentation provided in GitHub repository
+  - All analysis steps implemented as reproducible GUI workflows or scriptable modules

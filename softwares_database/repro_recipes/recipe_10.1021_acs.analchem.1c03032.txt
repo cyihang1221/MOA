@@ -1,0 +1,66 @@
+========== reproducibility_recipe entry ==========
+paper_title: Automated Annotation of Untargeted All-Ion Fragmentation LC-MS Metabolomics Data with MetaboAnnotatoR.
+source_paper: Graça G et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.1c03032, PMID: 35180347
+overall_reproducibility_score: 88/100
+
+workflow_steps: 6
+  Step 1: AIF LC-MS data acquisition
+    tool: LC-MS instrument (unspecified vendor)
+    input: biological samples (human serum, other matrices)
+    output: raw AIF .raw or .d files
+    confidence: low
+  Step 2: Data conversion to mzML
+    tool: ProteoWizard (msconvert)
+    parameters: 32bit=True, filter=['peakPicking', 'zeroSample', 'titleMaker']
+    input: raw .raw or .d files
+    output: .mzML files
+    confidence: medium
+  Step 3: Feature detection and alignment
+    tool: XCMS
+    algorithm: centWave
+    parameters: ppm=5, snthr=10, prefilter=[3, 100], peakwidth=[10, 60], noise=500, bw=10, mzdiff=-0.001, minfrac=0.5, max=50
+    input: mzML files
+    output: feature table (m/z, RT, intensity matrix)
+    confidence: high
+  Step 4: Correlation-based parent-fragment linking
+    tool: MetaboAnnotatoR (v1.0.0)
+    algorithm: Pearson correlation + retention time consistency filtering
+    parameters: cor_threshold=0.7, rt_window_sec=3, intensity_ratio_min=0.01, intensity_ratio_max=0.9
+    input: XCMS feature table + MS1 and AIF MS/MS spectra
+    output: linked parent-fragment pairs
+    confidence: high
+  Step 5: Molecular fragment matching and annotation
+    tool: MetaboAnnotatoR (v1.0.0)
+    algorithm: in-silico fragment matching against built-in fragment libraries
+    parameters: mass_tol_ppm=10, library_match_score_min=0.6, min_fragment_matches=2
+    input: linked parent-fragment pairs + fragment libraries
+    output: annotated features (isotopologues, adducts, in-source fragments, metabolite candidates)
+    confidence: high
+  Step 6: Ranking and prioritization of annotations
+    tool: MetaboAnnotatoR (v1.0.0)
+    algorithm: composite scoring (correlation strength × fragment match score × library confidence)
+    parameters: top_n=5
+    input: candidate annotations per feature
+    output: ranked annotation list (top 1–5 per feature)
+    confidence: high
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1827)
+  processed_data: available (GitHub: MetaboAnnotatoR/data/)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1827, https://github.com/gggraca/MetaboAnnotatoR/tree/main/data
+
+code_availability: repository_linked
+  code_url: https://github.com/gggraca/MetaboAnnotatoR
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Instrument-specific AIF acquisition parameters (e.g., collision energy ramp, isolation window) not fully specified
+  - No detailed description of fragment library curation process or versioning
+reproducibility_strengths:
+  - All code open-source (MIT license) with Zenodo DOI
+  - Raw and processed data publicly available on MetaboLights and GitHub
+  - Workflow uses only open-source tools (XCMS, ProteoWizard, R)
+  - Benchmarking against MS-DIAL with shared test datasets

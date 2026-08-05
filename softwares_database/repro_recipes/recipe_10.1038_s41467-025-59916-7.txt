@@ -1,0 +1,124 @@
+========== reproducibility_recipe entry ==========
+paper_title: Intestinal permeability of N-acetylcysteine is driven by gut microbiota-dependent cysteine palmitoylation.
+source_paper: Zhang YH et al. (2025), Nature communications, DOI: 10.1038/s41467-025-59916-7, PMID: 40389439
+overall_reproducibility_score: 42/100
+
+workflow_steps: 10
+  Step 1: Metabolite extraction from intestinal fluid
+    tool: Manual protocol
+    algorithm: Liquid-liquid extraction with methanol:acetonitrile (1:1) + internal standard
+    parameters: extraction_volume=1000, internal_standard_concentration_mg_L=20, grinding_frequency_Hz=45, grinding_duration_min=10, ultrasonication_duration_min=10, centrifugation_g=200, centrifugation_temperature_C=4, centrifugation_duration_min=15, reconstitution_volume_uL=160, reconstitution_solvent_ratio_ACN_water=1:1, QC_mixing=120 uL supernatant per sample into pooled QC
+    input: intestinal fluid samples
+    output: extracted metabolite solution ready for LC-MS
+    confidence: high
+  Step 2: LC-MS/MS data acquisition
+    tool: Waters Xevo G2-XS QTOF (vMassLynx V4.2)
+    algorithm: MSe acquisition mode
+    parameters: low_collision_energy_V=2, high_collision_energy_range_V=[10, 40], scan_frequency_s=0.2, capillary_voltage_positive_V=2000, capillary_voltage_negative_V=-1500, cone_voltage_V=30, ion_source_temperature_C=150, desolvation_gas_temperature_C=500, backflush_gas_flow_rate_L_h=50, desolvation_gas_flow_rate_L_h=800
+    input: extracted metabolite solution
+    output: raw .raw files (Waters format)
+    confidence: high
+  Step 3: Peak detection, alignment, and annotation
+    tool: Progenesis QI
+    algorithm: Automated peak picking, retention time alignment, and database matching
+    parameters: database=METLIN online, fold_change_threshold=1, p_value_threshold=0.05, vip_threshold=1
+    input: raw .raw files
+    output: annotated feature table (m/z, RT, intensity, compound ID, pathway, class)
+    confidence: medium
+  Step 4: Metabolite database annotation and classification
+    tool: KEGG, HMDB, Lipid Maps
+    algorithm: Cross-database lookup and pathway mapping
+    input: Progenesis QI output feature table
+    output: Classified and pathway-annotated metabolite list
+    confidence: high
+  Step 5: 16S rRNA amplicon sequencing and taxonomic profiling
+    tool: DADA2 (v1.10)
+    algorithm: ASV inference with error modeling and merging
+    parameters: forward_read_truncation_bp=200, reverse_read_truncation_bp=150, max_expected_errors=2, reads_per_run_for_error_model=1000000, normalization_depth=10000, min_relative_abundance_threshold=0.001
+    input: 16S rRNA raw FASTQ files
+    output: ASV table with taxonomy (RDP v16 training set)
+    confidence: high
+  Step 6: Microbial functional prediction
+    tool: PICRUSt2
+    algorithm: Phylogeny-based metagenome prediction
+    input: DADA2 ASV table
+    output: Predicted KEGG orthologs and pathways
+    confidence: medium
+  Step 7: Microbe-metabolite correlation network construction
+    tool: SparCC
+    algorithm: Sparse Correlations for Compositional Data
+    parameters: bootstrap_replicates=1000, correlation_coefficient_threshold_abs=0.2, p_value_threshold=0.01
+    input: ASV table + metabolite abundance table
+    output: Correlation network (edges: microbe–metabolite pairs)
+    confidence: high
+  Step 8: Differential abundance analysis (microbiota)
+    tool: LEfSe
+    algorithm: Linear discriminant analysis (LDA) effect size
+    parameters: lda_score_threshold=2, p_value_threshold=0.05
+    input: ASV table with group labels
+    output: Biomarkers (taxa with significant LDA scores)
+    confidence: high
+  Step 9: Statistical testing of permeability and metabolite differences
+    tool: Wilcoxon rank-sum test
+    algorithm: Non-parametric two-group comparison
+    parameters: fdr_correction=True, alpha=0.05
+    input: P_eff values, metabolite intensities, or ASV abundances
+    output: Significance-ranked differentially abundant features
+    confidence: high
+  Step 10: Machine learning model development
+    tool: XGBoost (eXtreme Gradient Boosting)
+    algorithm: Gradient-boosted decision trees
+    parameters: n_features=15, model_type=clinical + microbial feature integration, evaluation_metric=net reclassification improvement (NRI)
+    input: Clinical descriptors + microbial/metabolite features (n=319 cohort)
+    output: Trained predictive model for NAC permeability
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 7
+  Fig. 1: [workflow_diagram]
+    caption: Illustrates the SPIP experimental setup comparing NAC permeability in GF vs SPF rats, including perfusion schematic and P_eff calculation.
+    produced_by_step: [1, 2, 9]
+    visualization_tool: Not specified
+    statistical_test: Wilcoxon rank-sum test with FDR correction
+  Fig. 4: [bar_chart]
+    caption: Shows NAC permeability in rats colonized with wild-type or SPT-knockout B. thetaiotaomicron/B. fragilis strains, demonstrating microbiota-dependent cysteine palmitoylation effect.
+    produced_by_step: [9]
+    visualization_tool: Not specified
+    statistical_test: Wilcoxon rank-sum test with FDR correction
+  Supplementary Table 1: [table]
+    caption: Details ketamine-xylazine dosing regimen for rat anesthesia.
+    visualization_tool: Not applicable
+  Supplementary Table 2: [table]
+    caption: Lists qPCR primers and validation data for bacterial abundance quantification.
+    visualization_tool: Not applicable
+  Supplementary Table 3: [table]
+    caption: Reports LC-MS quantification parameters and metabolite concentrations.
+    produced_by_step: [3, 4]
+    visualization_tool: Not applicable
+  Supplementary Fig. 2c: [other]
+    caption: Confirms SPT overexpression in E. coli Rosetta (DE3) via SDS-PAGE/Western blot.
+    visualization_tool: Not specified
+  Supplementary Fig. 3h: [other]
+    caption: Validates colonization fitness of edited Bacteroides strains via gel electrophoresis.
+    visualization_tool: Not specified
+
+reproducibility_gaps:
+  - Raw mass spectrometry data (.raw files) not deposited in public repository (e.g., MetaboLights, GNPS)
+  - Progenesis QI is commercial software requiring license; no open-source alternative workflow provided
+  - No code or scripts shared for XGBoost model training, SparCC correlation, or LEfSe analysis
+  - No detailed LC gradient method or column specifications reported for LC-MS
+  - No access to clinical cohort metadata beyond Supplementary Data 1 & 2 (no repository link or DOIs)
+  - Internal standard identity unspecified (only concentration given)
+  - No description of Progenesis QI parameter settings beyond database and thresholds
+reproducibility_strengths:
+  - Explicit DADA2 version (1.10) and full preprocessing parameters provided
+  - SparCC and LEfSe statistical thresholds fully specified
+  - All major databases (METLIN, KEGG, HMDB, Lipid Maps) named with URLs
+  - Complete MS instrument parameters (voltages, temperatures, energies) reported
+  - Detailed metabolite extraction and centrifugation protocols included

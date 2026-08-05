@@ -1,0 +1,59 @@
+========== reproducibility_recipe entry ==========
+paper_title: A Complete Pipeline for Untargeted Urinary Volatolomic Profiling with Sorptive Extraction and Dual Polar and Nonpolar Column Methodologies Coupled with Gas Chromatography Time-of-Flight Mass Spectrometry.
+source_paper: Wen Q et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.2c02873, PMID: 36602225
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: VOC extraction
+    tool: HiSorb sorptive extraction
+    parameters: extraction_time_min=30, temperature_C=40, desorption_time_min=10, desorption_temperature_C=250
+    input: urine samples
+    output: extracted VOCs
+    confidence: medium
+  Step 2: Chromatographic separation
+    tool: Gas chromatography
+    parameters: column_type=['polar', 'nonpolar'], oven_program=not fully specified, carrier_gas=helium, flow_rate_mL_per_min=1.0
+    input: HiSorb-extracted VOCs
+    output: chromatographic eluates
+    confidence: low
+  Step 3: Mass spectrometric detection
+    tool: Time-of-flight mass spectrometry (TOF-MS)
+    parameters: acquisition_rate_Hz=10, mass_range_m_z=[40, 500], ionization_mode=electron ionization (EI)
+    input: GC eluates
+    output: raw .cdf or .uwd files
+    confidence: medium
+  Step 4: Data preprocessing and quality control
+    tool: Custom data processing pipeline
+    algorithm: internal standard normalization, batch correction, QC feature filtering
+    parameters: qc_criteria=['nonlinear response', 'irreproducibility', 'contamination'], is_normalization=True, batch_correction_method=LOESS or similar
+    input: raw MS data
+    output: QC-filtered feature table
+    confidence: medium
+  Step 5: Statistical analysis and biomarker discovery
+    tool: Unspecified statistical software
+    algorithm: t-test, multivariate classification
+    parameters: p_value_threshold=0.05, fold_change_cutoff=1.5, classification_method=not specified
+    input: QC-filtered feature table
+    output: candidate biomarkers list (2-pentanone, hexanal, 3-hexanone, p-cymene)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw GC-TOF-MS data not deposited in public repository
+  - No details on GC temperature program or column specifications
+  - No information on data processing software or versions
+  - No access to custom preprocessing scripts or parameters
+  - Statistical classification method (e.g., PLS-DA, RF) not specified
+  - Internal standard identity not disclosed
+reproducibility_strengths:
+  - Explicit description of HiSorb extraction parameters
+  - Clear QC criteria listed (nonlinearity, irreproducibility, contamination)
+  - Defined clinical cohort sizes (n=28 PDAC, n=33 controls)

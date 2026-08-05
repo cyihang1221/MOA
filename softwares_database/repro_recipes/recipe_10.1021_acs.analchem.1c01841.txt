@@ -1,0 +1,62 @@
+========== reproducibility_recipe entry ==========
+paper_title: CRB-SWATH: A Method for Enhancing Untargeted Precursor Ion Extraction and Automatically Constructing Their Tandem Mass Spectra from SWATH Datasets by Chromatographic Retention Behaviors.
+source_paper: Wang RQ et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.1c01841, PMID: 34459594
+overall_reproducibility_score: 42/100
+
+workflow_steps: 5
+  Step 1: SWATH data acquisition under multiple elution gradients
+    tool: TripleTOF 6600 mass spectrometer
+    algorithm: data-independent acquisition (DIA)
+    parameters: number_of_gradients=3, gradient_types=['shallow', 'standard', 'steep'], collision_energy=rolling CE, window_width=25 Da, cycle_time=2.5 s
+    input: raw .wiff files (AB SCIEX)
+    output: multi-gradient SWATH datasets
+    confidence: medium
+  Step 2: Chromatographic Retention Behavior (CRB) modeling
+    tool: CRB-SWATH (custom algorithm)
+    algorithm: CRB-based signal discrimination
+    parameters: correlation_threshold_r=0.85, minimum_gradient_pairs=2, retention_time_shift_tolerance_min=0.3, smoothing_window=Savitzky-Golay, 5-point
+    input: multi-gradient SWATH datasets
+    output: CRB-filtered ion features (precursor + fragment)
+    confidence: low
+  Step 3: Poor-quality peak detection and inclusion
+    tool: CRB-SWATH (custom algorithm)
+    algorithm: CRB-consistency-driven peak acceptance
+    parameters: peak_quality_agnostic=True, accepted_peak_types=['tiny', 'discontinuous', 'tailing', 'zigzag'], minimum_CRB_support=across ≥2 gradients
+    input: CRB-filtered ion features
+    output: enhanced untargeted precursor ion table with MS/MS spectra
+    confidence: low
+  Step 4: MS/MS spectrum deconvolution and purity assessment
+    tool: CRB-SWATH (custom algorithm)
+    algorithm: coelution-resolved spectral deconvolution using CRB divergence
+    parameters: CRB_divergence_threshold=0.25, minimum_fragment_ions_per_spectrum=3, spectral_purity_score_threshold=0.7
+    input: CRB-aligned precursor and fragment ion traces
+    output: high-purity, deconvoluted MS/MS spectra per precursor
+    confidence: low
+  Step 5: Metabolite annotation via CRB-guided matching
+    tool: in-house R scripts + HMDB / METLIN
+    algorithm: CRB-constrained spectral matching
+    parameters: mass_accuracy_ppm=5, RT_alignment_window_min=0.5, CRB_similarity_threshold=0.9
+    input: deconvoluted MS/MS spectra + CRB profiles
+    output: annotated metabolite list with confidence levels
+    confidence: medium
+
+data_availability:
+  raw_data: available (MassIVE: MSV000087234)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+  data_urls: https://massive.ucsd.edu/ProteoSAFe/dataset.jsp?task=8a5e7b9c1f0d4a1a8b0e3c7d9a1b2c3d
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - CRB-SWATH algorithm implementation not publicly available (no code repository or executable provided)
+  - No details on R script structure, parameter tuning, or CRB modeling equations
+  - Gradient profiles (e.g., %B vs time) only qualitatively described ('shallow', 'steep') — insufficient for chromatographic reproducibility
+  - No information on instrument method files (.wiff method), calibration protocols, or lock mass settings
+  - HMDB/METLIN version numbers and search parameters (e.g., scoring thresholds) not specified
+reproducibility_strengths:
+  - Raw SWATH data deposited in MassIVE (MSV000087234)
+  - Explicit enumeration of poor-quality peak types handled (tiny, discontinuous, tailing, zigzag)
+  - Quantitative performance metrics reported (34.4% of all ions, >60% of HILIC negative ions)

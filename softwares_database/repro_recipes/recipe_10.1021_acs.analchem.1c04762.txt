@@ -1,0 +1,55 @@
+========== reproducibility_recipe entry ==========
+paper_title: Integrated Pipeline of Rapid Isolation and Analysis of Human Plasma Exosomes for Cancer Discrimination Based on Deep Learning of MALDI-TOF MS Fingerprints.
+source_paper: Zheng H et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.1c04762, PMID: 35025210
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Exosome isolation from human plasma
+    tool: Sequential size-exclusion chromatography (SSEC)
+    parameters: isolation_time_per_sample_h=2, HDL_discard_rate_percent=93, LDL_VLDL_discard_rate_percent=85
+    input: fresh/frozen human plasma
+    output: purified exosome fraction
+    confidence: medium
+  Step 2: MALDI-TOF MS profiling of exosomal content
+    tool: MALDI-TOF mass spectrometry
+    input: SSEC-purified exosome lysate or intact exosomes (matrix-assisted)
+    output: raw MALDI-TOF mass spectra (m/z-intensity)
+    confidence: low
+  Step 3: MS data pre-processing
+    tool: not specified
+    input: raw MALDI-TOF spectra
+    output: pre-processed spectral features
+    confidence: low
+  Step 4: Feature selection
+    tool: not specified
+    input: pre-processed spectral features
+    output: selected m/z feature peaks
+    confidence: low
+  Step 5: Multi-class deep learning classification
+    tool: Artificial neural network (Exo-ANN)
+    algorithm: multi-class artificial neural network
+    parameters: classes=['breast cancer', 'pancreatic cancer', 'healthy control'], avoided_overfitting=True
+    input: selected m/z feature peaks (intensity matrix)
+    output: cancer classification predictions and probabilities
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No details on MALDI-TOF instrument parameters (laser energy, detector settings, matrix, spotting protocol)
+  - No description of MS pre-processing steps (baseline correction, smoothing, calibration, peak detection)
+  - No specification of feature selection method (e.g., VIP, ANOVA, mutual information)
+  - No architecture details of Exo-ANN (layers, neurons, activation functions, optimizer, epochs, batch size)
+  - No code, model weights, or training scripts shared
+  - No raw or processed MS data deposited in public repository
+  - SSEC protocol lacks column specifications, flow rates, fraction collection criteria
+reproducibility_strengths:
+  - Clear cohort description (n=220, stratified by disease)
+  - Reported performance metrics (accuracy=80.0%, AUC=0.91) with independent test cohort

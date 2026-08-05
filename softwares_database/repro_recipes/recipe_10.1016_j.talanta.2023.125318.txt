@@ -1,0 +1,48 @@
+========== reproducibility_recipe entry ==========
+paper_title: A novel endogenous retention-index for minimizing retention-time variations in metabolomic analysis with reversed-phase ultrahigh-performance liquid-chromatography and mass spectrometry.
+source_paper: Chen Q et al. (2024), Talanta, DOI: 10.1016/j.talanta.2023.125318, PMID: 37875029
+overall_reproducibility_score: 35/100
+
+workflow_steps: 3
+  Step 1: Endogenous retention index (endoRI) derivation
+    tool: Custom R/Python script
+    algorithm: Linear regression of log-transformed retention time vs. acyl chain length (L_C)
+    parameters: acylcarnitine_range=C0–C26, chain_length_variable=L_C, transformation=log10(t_R)
+    input: Raw .mzML or .raw files with detected acylcarnitines
+    output: endoRI calibration model (slope, intercept) and corrected t_R values
+    confidence: medium
+  Step 2: Retention time correction using endoRI
+    tool: Custom R/Python script
+    algorithm: Retention time alignment via endoRI interpolation/extrapolation
+    parameters: reference_acylcarnitines=['C0', 'C2', 'C4', 'C6', 'C8', 'C10', 'C12', 'C14', 'C16', 'C18', 'C20', 'C22', 'C24', 'C26'], interpolation_method=linear
+    input: Feature table with uncorrected t_R and m/z
+    output: Feature table with endoRI-corrected t_R
+    confidence: medium
+  Step 3: Quantitative prediction of missing acylcarnitine t_R
+    tool: Custom R/Python script
+    algorithm: Linear regression model (t_R ~ L_C) applied to predict t_R for absent acylcarnitines
+    parameters: model_form=log10(t_R) = a * L_C + b, prediction_scope=C0–C26
+    input: Acylcarnitine presence/absence matrix + calibration parameters
+    output: Predicted t_R values for missing acylcarnitines
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (MetaboLights: MTBLSXXXX)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw data accession ID provided
+  - No code repository or script shared
+  - No details on feature detection or peak picking software/methods
+  - No specification of UPLC gradient profile, column type, temperature, or flow rate beyond 'reversed-phase'
+  - No description of MS acquisition parameters (e.g., polarity, scan range, fragmentation)
+  - EndoRI implementation details (e.g., interpolation logic, outlier handling, model validation metrics) not disclosed
+reproducibility_strengths:
+  - Conceptually well-defined endogenous standard strategy using native acylcarnitines
+  - Clear performance metrics reported (e.g., t_R variation reduction from 5.1 min → 0.2 min)
+  - Broad biological matrix validation (serum, plasma, feces, urine, cell extracts, tissue extracts)

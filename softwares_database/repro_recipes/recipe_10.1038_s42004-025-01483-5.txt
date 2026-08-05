@@ -1,0 +1,102 @@
+========== reproducibility_recipe entry ==========
+paper_title: A HoLDI mass spectrometry platform for airborne nanoplastic detection.
+source_paper: Wang Z et al. (2025), Communications chemistry, DOI: 10.1038/s42004-025-01483-5, PMID: 40133397
+overall_reproducibility_score: 42/100
+
+workflow_steps: 8
+  Step 1: Aerosol sampling and size-resolved collection
+    tool: MOUDI (Model 100-R, MSP)
+    algorithm: cascade impactor staging
+    parameters: flow_rate_L_min=30, sampling_duration_h=12, inlet_stage_cut_point_um=18, stages_cut_points_um=[10, 5.6, 3.2, 1.8, 1.0, 0.56, 0.32, 0.18], total_air_volume_L_indoor=14400, total_air_volume_L_outdoor=43200, sampling_height_m=1.2
+    input: ambient air
+    output: size-fractionated filter substrates (PTFE, PVDF, glass chips) with deposited particles
+    confidence: high
+  Step 2: Particle size distribution measurement
+    tool: ['SMPS (Model 3910, TSI)', 'OPS (Model 3330, TSI)', 'NTA (NanoSight NS300, Malvern Panalytical)']
+    algorithm: ['electrical mobility diameter calculation', 'optical diameter measurement', 'Brownian motion tracking via Stokes-Einstein equation']
+    parameters: SMPS_size_range_nm=[10, 400], OPS_size_range_um=[0.3, 10], NTA_laser_wavelength_nm=532, NTA_temperature_C=25.0, NTA_camera_level=15, NTA_focus=-111, NTA_videos_per_run=5, NTA_runs_per_sample=3
+    input: aerosol samples (air), aqueous samples (melted snow)
+    output: particle size distribution histograms and number concentration data
+    confidence: high
+  Step 3: HoLDI target fabrication and characterization
+    tool: ['Rhinoceros 3D', 'PreForm', 'Form 3+ printer', 'four-point probe']
+    algorithm: stereolithography printing + conductivity calculation
+    parameters: resin_type=Formlabs Durable resin → Proto-Pasta Electrically Conductive Composite Polylactide, post_processing_isopropanol_min=20, post_processing_cure_temp_C=60, post_processing_cure_time_min=60, circular_LDI_hole_radius_mm=2, circular_LDI_array=4x6, HoLDI_window_dimensions_mm=6x20
+    input: 3D CAD models
+    output: conductive 3D-printed HoLDI target plates with measured sheet resistance and conductivity
+    confidence: high
+  Step 4: HoLDI-MS sample preparation (no matrix/salt)
+    tool: manual substrate handling
+    algorithm: direct analysis without chemical enhancement
+    parameters: sample_substrate_fraction=quarter, matrix_application=none, ion_pairing_agent_application=none, laser_shots_per_spectrum=2000, laser_wavelength_nm=355, acceleration_voltage_kV=18.8, ion_mode=['linear positive', 'reflectron positive']
+    input: size-fractionated filter substrates with airborne particles
+    output: raw MALDI-TOF mass spectra (.fid or .d format)
+    confidence: high
+  Step 5: Mass spectral acquisition and processing
+    tool: ['FlexControl 3.4', 'FlexAnalysis 3.4', 'PolyTools 1.31'] (v3.4, 1.31)
+    algorithm: peak detection, integration, oligomer series identification
+    parameters: software_vendor=Bruker Daltonics, peak_integration_method=integrated peak area, mass_list_extraction=yes, peak_intensity_extraction=yes, peak_area_extraction=yes
+    input: raw MALDI-TOF spectra
+    output: peak table (m/z, intensity, area), oligomer assignments, polymer identification suggestions
+    confidence: high
+  Step 6: Relative quantification of polymers
+    tool: custom calculation (Eq. 3)
+    algorithm: normalized oligomer summation
+    parameters: At_formula_components=['Ap', 'MO', 'ME', 'MC', 'MR'], normalization_basis=repeat unit mass-corrected oligomer contribution
+    input: peak table with m/z assignments and areas
+    output: relative quantity (normalized integrated signal) per polymer type
+    confidence: medium
+  Step 7: Morphological and elemental analysis
+    tool: ['Talos F200X G2 (S)TEM-EDS', 'Quanta 450 ESEM']
+    algorithm: HR-TEM imaging + EDS elemental mapping + SEM surface imaging
+    parameters: TEM_grid_preparation=glow-discharged for snow; direct MOUDI-collected for aerosols, sample_volume_snow_uL=5, EDS_acquisition_mode=point analysis / mapping, SEM_operating_mode=environmental
+    input: TEM grids with deposited particles
+    output: micrographs, elemental spectra, semi-quantitative composition tables
+    confidence: high
+  Step 8: Elemental and organic carbon quantification
+    tool: ['ICP-MS (8900, Agilent)', 'TOC Analyzer (Aurora 1030 W, OI Analytical)']
+    algorithm: triple quadrupole quantification (ICP-MS), high-temperature combustion (TOC)
+    parameters: ICP_MS_mode=triple quadrupole, TOC_analyzer_method=combustion oxidation
+    input: digested filter extracts (ICP-MS), aqueous filtrates (TOC)
+    output: metal concentrations (ng/m³), TOC concentration (mg/L)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 4
+  Figure 1: [workflow_diagram]
+    caption: Illustrates the HoLDI-MS principle and proposed framework for simultaneous mass- and particle-based nano/microplastic analysis in air.
+    produced_by_step: [1, 2, 3, 4]
+    visualization_tool: not specified
+  Figure 2: [composite]
+    caption: Shows HoLDI-MS detection of indoor airborne nano/microplastics (PE, PEG, PDMS) alongside complementary physicochemical analysis (size distribution, TEM, EDS).
+    produced_by_step: [1, 2, 4, 5, 6, 7]
+    visualization_tool: not specified
+  Figure 3: [composite]
+    caption: Presents outdoor aerosol analysis using HoLDI-MS (PAHs) and supplementary physicochemical data (size distribution, morphology, composition).
+    produced_by_step: [1, 2, 4, 5, 6, 7]
+    visualization_tool: not specified
+  Figure 4: [composite]
+    caption: Displays comprehensive mass- and particle-based analysis of snow samples, including filtration, HoLDI-MS, NTA, TEM/EDS, and ZnO-assisted detection.
+    produced_by_step: [2, 4, 5, 6, 7]
+    visualization_tool: not specified
+
+reproducibility_gaps:
+  - Raw mass spectra not deposited in any public repository (e.g., MetaboLights, MassIVE)
+  - No access to HoLDI 3D-printed target design files (Rhinoceros models not shared)
+  - PolyTools 1.31 is proprietary Bruker software with no open algorithm documentation
+  - No code or scripts provided for Eq. (3) implementation or peak area normalization
+  - Critical MS acquisition parameters (e.g., laser fluence, detector gain, mass calibration standards) not reported
+  - No description of spectral preprocessing (baseline correction, smoothing, recalibration) prior to PolyTools use
+  - Field blank and procedural blank data not quantitatively reported or made available
+  - No statistical validation (e.g., CV%, LOD/LOQ reporting beyond nominal ranges) for HoLDI-MS reproducibility
+reproducibility_strengths:
+  - Detailed hardware specifications (MOUDI cut points, SMPS/OPS/NTA settings)
+  - Explicit reporting of sampling volumes, durations, and heights
+  - Transparent disclosure of matrix/salt screening results leading to 'no-additive' protocol
+  - Full description of HoLDI target fabrication workflow (printing, washing, curing, conductivity measurement)

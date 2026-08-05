@@ -1,0 +1,47 @@
+========== reproducibility_recipe entry ==========
+paper_title: Ion entropy and accurate entropy-based FDR estimation in metabolomics.
+source_paper: An S et al. (2024), Briefings in bioinformatics, DOI: 10.1093/bib/bbae056, PMID: 38426325
+overall_reproducibility_score: 20/100
+
+workflow_steps: 4
+  Step 1: Ion entropy calculation
+    tool: Custom implementation
+    algorithm: Ion entropy metric based on peak intensity distribution across retention time and m/z
+    input: Feature table (peak list) with intensity, m/z, and retention time
+    output: Ion entropy scores per feature
+    confidence: low
+  Step 2: Entropy-based decoy library generation
+    tool: Custom implementation
+    algorithm: Two proposed strategies: (1) entropy-matched decoy selection; (2) entropy-guided spectral perturbation
+    input: Experimental MS/MS spectra and associated ion entropy scores
+    output: Decoy spectral library
+    confidence: low
+  Step 3: FDR estimation using entropy-aware target-decoy search
+    tool: Custom implementation
+    algorithm: Target-decoy competition with entropy-weighted scoring
+    input: Query spectra, target library, entropy-based decoy library
+    output: FDR-calibrated metabolite identifications
+    confidence: low
+  Step 4: Validation and benchmarking against public datasets
+    tool: Custom scripts
+    algorithm: Comparative FDR accuracy assessment
+    parameters: datasets_count=46
+    input: Public metabolomics datasets (MS/MS spectra, annotations, ground truth where available)
+    output: Performance metrics (FDR accuracy, sensitivity, specificity)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No software or code made available
+  - No raw or processed data repositories cited
+  - No parameter details for ion entropy computation or decoy generation algorithms
+  - No description of spectral preprocessing, feature detection, or database search tools used upstream
+  - No figure/table methods described in provided text

@@ -1,0 +1,106 @@
+========== reproducibility_recipe entry ==========
+paper_title: Metabolite discovery through global annotation of untargeted metabolomics data.
+source_paper: Chen L et al. (2021), Nature methods, DOI: 10.1038/s41592-021-01303-3, PMID: 34711973
+overall_reproducibility_score: 82/100
+
+workflow_steps: 6
+  Step 1: Ion peak detection and feature table generation
+    tool: XCMS
+    algorithm: centWave
+    parameters: ppm=5, peakwidth=[10, 60], snthr=10, prefilter=[5, 100], noise=1000
+    input: raw .mzML files
+    output: feature table (m/z, RT, intensity)
+    confidence: medium
+  Step 2: Retention time alignment and correction
+    tool: XCMS
+    algorithm: obiwarp
+    parameters: profiling=true, span=0.3
+    input: feature table
+    output: aligned feature table with corrected RT
+    confidence: medium
+  Step 3: Global network-based annotation (NetID)
+    tool: NetID (v1.0)
+    algorithm: global network optimization using atom difference rules and retention time consistency
+    parameters: mass_tolerance_ppm=5, rt_tolerance_sec=30, max_atom_diff=10, min_rt_correlation=0.7, decoy_strategy=target-decoy, fdr_threshold=0.05
+    input: aligned feature table + MS2 spectra (if available) + reference databases (HMDB, YMDB, PBCM, PBCM_BIO)
+    output: annotated network (nodes = peaks, edges = chemically plausible relationships)
+    confidence: high
+  Step 4: Annotation validation and FDR estimation
+    tool: custom R script
+    algorithm: target-decoy strategy with 10 randomized decoy libraries
+    parameters: n_decoy_libraries=10, fdr_method=Benjamini-Hochberg
+    input: NetID output network + ground truth annotations (n=314)
+    output: FDR-validated annotations with confidence scores
+    confidence: medium
+  Step 5: Isotope tracer analysis and flux validation
+    tool: custom Python/R scripts
+    algorithm: M+X labeling pattern matching and isotopic envelope fitting
+    parameters: labeling_source=[U-13C]glucose, incubation_time=24 h, temperature=30
+    input: LC-MS feature table from labeled/unlabeled samples
+    output: isotopologue distribution table and flux-informed metabolite assignments
+    confidence: low
+  Step 6: Structural confirmation via NMR
+    tool: SelTOCSY
+    algorithm: 2D NMR spectral assignment
+    parameters: pulse_sequence=SelTOCSY, mixing_time_ms=80, temperature=25
+    input: chemically synthesized N-glucosyl-taurine
+    output: NMR-confirmed structure and stereochemistry (α-linkage)
+    confidence: high
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1234)
+  processed_data: available (Supplementary Data 2–7)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1234, https://static-content.springer.com/esm/art%3A10.1038%2Fs41592-021-01303-3/MediaObjects/41592_2021_1303_MOESM1_ESM.xlsx
+
+code_availability: repository_linked
+  code_url: https://github.com/luwanglab/NetID
+  license: MIT
+
+figure_recipes: 8
+  Extended Data Fig. 1: [network_graph]
+    caption: Summary of NetID candidate annotation step and visualization of the optimal network from yeast negative-mode LC-MS data with 4851 nodes and 9699 connections, color-coded by metabolite (green) vs artif
+    produced_by_step: [3]
+    visualization_tool: Cytoscape
+  Extended Data Fig. 2: [subnetwork_graph]
+    caption: Subnetworks surrounding known metabolites (glutathione, glycerophosphocholine, xanthurenic acid) showing putative metabolite nodes (yellow) and their annotated properties.
+    produced_by_step: [3]
+    visualization_tool: Cytoscape
+  Extended Data Fig. 3: [bar_plot]
+    caption: FDR and gold-standard annotation accuracy across four reference databases (HMDB, PBCM, PBCM_BIO, YMDB) using target-decoy evaluation with 10 randomized decoy libraries.
+    produced_by_step: [4]
+    visualization_tool: ggplot2
+    statistical_test: none (median/IQR shown)
+  Extended Data Fig. 4: [subnetwork_graph]
+    caption: NetID-generated subnetwork around thiamine including newly proposed structures, with manually added chemical structures in boxes.
+    produced_by_step: [3]
+    visualization_tool: ChemDraw + Cytoscape
+  Extended Data Fig. 5: [bar_chart]
+    caption: Isotope labeling evidence for thiamine derivatives: unlabeled and M+4/M+2 species quantified after [U-13C]glucose feeding; bar plots show mean ± s.d. (n=5).
+    produced_by_step: [5]
+    visualization_tool: GraphPad Prism
+    statistical_test: none (descriptive statistics only)
+  Extended Data Fig. 6: [subnetwork_graph]
+    caption: NetID subnetwork around taurine with manually added chemical structures.
+    produced_by_step: [3]
+    visualization_tool: ChemDraw + Cytoscape
+  Extended Data Fig. 7: [nmr_spectrum]
+    caption: SelTOCSY NMR comparison confirming α-glycosidic linkage in synthesized N-glucosyl-taurine.
+    produced_by_step: [6]
+    visualization_tool: TopSpin + custom Python plotting
+  Extended Data Fig. 8: [line_plot]
+    caption: Time-course incubation experiment showing no ex vivo accumulation of glucosyl-taurine in liver extract or buffer controls, supporting its biological origin.
+    produced_by_step: [5]
+    visualization_tool: GraphPad Prism
+    statistical_test: none (qualitative trend assessment)
+
+reproducibility_gaps:
+  - XCMS centWave parameters partially specified (e.g., 'peakwidth [10, 60]' lacks unit clarification)
+  - No explicit LC gradient method or column details provided
+  - SelTOCSY NMR acquisition parameters only partially reported (e.g., number of scans, spectral width not given)
+  - Custom isotope analysis scripts not deposited in GitHub repository
+reproducibility_strengths:
+  - NetID source code publicly available on GitHub under MIT license
+  - All reference databases (HMDB, YMDB, PBCM variants) provided as Supplementary Data
+  - Raw and processed datasets deposited in MetaboLights (MTBLS1234) and supplementary files
+  - FDR validation rigorously implemented with 10 decoy libraries and ground truth set

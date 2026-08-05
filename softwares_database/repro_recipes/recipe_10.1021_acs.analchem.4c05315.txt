@@ -1,0 +1,69 @@
+========== reproducibility_recipe entry ==========
+paper_title: HeuSMA: A Multigradient LC-MS Strategy for Improving Peak Identification in Untargeted Metabolomics.
+source_paper: Chen YY et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.4c05315, PMID: 40178068
+overall_reproducibility_score: 58/100
+
+workflow_steps: 6
+  Step 1: Multi-gradient LC-MS data acquisition
+    tool: LC-MS platform (unspecified vendor)
+    parameters: gradient_conditions=multiple (exact number and profiles not specified), sample_type_for_gradient_survey=pooled sample or quality control sample
+    input: biological samples (e.g., serum)
+    output: raw .mzML or vendor-native files from multiple gradient runs
+    confidence: low
+  Step 2: Retention index calibration and heuristic peak list construction
+    tool: HeuSMA (custom strategy)
+    algorithm: retention index system
+    parameters: reference_compounds=not specified, RI_calculation_method=not detailed, peak_list_heuristic_rules=not disclosed
+    input: multi-gradient raw LC-MS data + reference standards (implied)
+    output: heuristic peak list with retention index annotations
+    confidence: medium
+  Step 3: Heuristic-guided peak picking in quantitative datasets
+    tool: HPLG or HP (HeuSMA GUI tools)
+    algorithm: heuristic peak detection (RI- and MS1-intensity guided)
+    parameters: mass_tolerance_ppm=None, RT_tolerance_seconds=None, min_peak_width_seconds=None, signal_to_noise_threshold=None, intensity_threshold=None
+    input: raw LC-MS data from biological samples + heuristic peak list
+    output: feature table (m/z–RT–intensity matrix)
+    confidence: low
+  Step 4: Metabolite annotation and identification
+    tool: HeuSMA workflow (integrated MS/MS access)
+    algorithm: MS1 matching + MS/MS spectral matching
+    parameters: database_sources=['HMDB', 'METLIN', 'GNPS'], MS_MS_similarity_score_threshold=None, mass_accuracy_cutoff_ppm=None, fragment_tolerance_da=None
+    input: feature table + MS/MS spectra
+    output: annotated metabolite table (level 1–2 identifications)
+    confidence: medium
+  Step 5: Statistical analysis and biomarker discovery
+    tool: Not explicitly named; implied use of standard methods
+    algorithm: t-test, ANOVA, VIP scores (from PLS-DA)
+    parameters: p_value_threshold=0.05, FDR_correction=yes (Benjamini-Hochberg implied), VIP_threshold=1.0, fold_change_threshold=None
+    input: normalized feature table with sample metadata
+    output: differentially abundant metabolites
+    confidence: low
+  Step 6: Pathway and functional enrichment analysis
+    tool: Not specified
+    algorithm: over-representation analysis
+    parameters: pathway_database=KEGG or HMDB pathways (implied), statistical_test=hypergeometric test
+    input: list of significant metabolites
+    output: enriched metabolic pathways
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: not_mentioned (not mentioned)
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/Lacterd/HeuSMA
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw multi-gradient LC-MS data not deposited in public repository
+  - Exact chromatographic gradient profiles (time, %B, flow rate) not specified
+  - Retention index calibration protocol (standards, interpolation method) not detailed
+  - Heuristic rules for peak list construction not algorithmically defined
+  - No versioning or commit hash provided for GitHub repository
+  - HPLG/HP software documentation and parameter defaults not described in paper
+reproducibility_strengths:
+  - Source code publicly available on GitHub
+  - Strategy explicitly designed for reproducibility via retention index anchoring
+  - Benchmarked against established open tools (MS-DIAL, MZmine)

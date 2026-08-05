@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: PyINETA: Open-Source Platform for INADEQUATE-JRES Integration in NMR Metabolomics.
+source_paper: Taujale R et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.4c03966, PMID: 39563064
+overall_reproducibility_score: 75/100
+
+workflow_steps: 4
+  Step 1: INADEQUATE data processing and network construction
+    tool: PyINETA
+    algorithm: INADEQUATE network analysis
+    input: raw INADEQUATE NMR spectra
+    output: carbon-carbon connectivity network
+    confidence: medium
+  Step 2: 13C-JRES data processing and quantification
+    tool: PyINETA
+    algorithm: 13C J-resolved spectral analysis
+    input: raw 13C-JRES NMR spectra
+    output: relative 13C-labeled metabolite quantification
+    confidence: medium
+  Step 3: INADEQUATE–JRES integration and structural annotation
+    tool: PyINETA
+    algorithm: multi-experiment network fusion and database matching
+    input: INADEQUATE-derived carbon networks + 13C-JRES quantification data
+    output: structurally annotated, tissue-specific 13C-metabolite assignments
+    confidence: high
+  Step 4: Database search using INADEQUATE library
+    tool: PyINETA
+    algorithm: spectral pattern matching against INADEQUATE reference library
+    input: experimental INADEQUATE peak patterns
+    output: candidate compound identifications with structural confidence scores
+    confidence: medium
+
+data_availability:
+  raw_data: available (NMRbox)
+  processed_data: not_mentioned
+  metadata: not_mentioned
+  data_urls: https://nmrbox.org
+
+code_availability: repository_linked
+  code_url: https://nmrbox.org
+  license: open_source
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No specific NMR acquisition parameters (e.g., pulse sequences, relaxation delays, number of scans) provided
+  - INADEQUATE reference library content and curation methodology not described
+  - No details on spectral preprocessing (apodization, zero-filling, phasing, baseline correction)
+  - No validation metrics or false discovery rate control for annotations reported
+  - Tissue-specific metabolite distribution results are descriptive but lack statistical testing details
+reproducibility_strengths:
+  - Fully open-source platform (PyINETA) hosted on NMRbox
+  - Automated pipeline with parameter tracking for transparency
+  - Integration of two complementary NMR experiments (INADEQUATE + 13C-JRES) in a single framework
+  - Application demonstrated on real biological model (mouse tissue study)

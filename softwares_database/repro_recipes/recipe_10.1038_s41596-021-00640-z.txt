@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: Integrative structural modeling of macromolecular complexes using Assembline.
+source_paper: Rantos V et al. (2022), Nature protocols, DOI: 10.1038/s41596-021-00640-z, PMID: 34845384
+overall_reproducibility_score: 75/100
+
+workflow_steps: 0
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/kosinski-lab/assembline
+  license: MIT
+
+figure_recipes: 8
+  Figure 1: [workflow_diagram]
+    caption: Overview of the Assembline workflow for integrative structural modeling of macromolecular complexes.
+    visualization_tool: Inkscape or similar vector graphics software (inferred)
+  Figure 2: [workflow_diagram]
+    caption: Detailed workflow for calculating fit libraries used in Assembline modeling.
+    visualization_tool: Inkscape or similar vector graphics software (inferred)
+  Figure 3: [workflow_diagram]
+    caption: Workflow of the global optimization step in Assembline.
+    visualization_tool: Inkscape or similar vector graphics software (inferred)
+  Figure 4: [other]
+    caption: Example interface of Xlink Analyzer for configuring the modeling project in Assembline.
+    visualization_tool: Xlink Analyzer GUI (custom tool)
+  Figure 5: [workflow_diagram]
+    caption: Workflow of the refinement step in Assembline.
+    visualization_tool: Inkscape or similar vector graphics software (inferred)
+  Figure 6: [other]
+    caption: Integrative models of the Saccharomyces cerevisiae nuclear pore complex (ScNPC).
+    visualization_tool: ChimeraX or PyMOL (inferred from field standards)
+  Figure 7: [other]
+    caption: Integrative modeling of the Elongator complex using Assembline.
+    visualization_tool: ChimeraX or PyMOL (inferred from field standards)
+  Figure 8: [other]
+    caption: Validation of the integrative model of the Elongator complex against a high-resolution cryo-EM structure.
+    visualization_tool: ChimeraX or PyMOL (inferred from field standards)
+    statistical_test: cross-correlation coefficient (CCC), RMSD
+
+reproducibility_gaps:
+  - No explicit description of computational parameters (e.g., number of models generated, sampling iterations, restraint weights, convergence criteria)
+  - No specification of input file formats beyond general categories (PDB, EM maps, cross-links)
+  - No details on hardware configuration or parallelization strategy used in reported CPU-hour estimates
+  - Supplementary tutorials and manual are referenced but not embedded or directly accessible from the paper
+reproducibility_strengths:
+  - Assembline source code publicly available on GitHub under MIT license
+  - DOI-linked Zenodo archive ensures persistent code versioning
+  - Workflow diagrams (Figs. 1–5) provide clear modular structure of the pipeline
+  - Reference to real-case applications (ScNPC, Elongator) with validation against experimental structures

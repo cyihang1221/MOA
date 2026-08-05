@@ -1,0 +1,130 @@
+========== reproducibility_recipe entry ==========
+paper_title: Impact of easing COVID-19 restrictions on antibiotic usage in Eastern China using wastewater-based epidemiology.
+source_paper: Zang J et al. (2024), Nature communications, DOI: 10.1038/s41467-024-54498-2, PMID: 39580546
+overall_reproducibility_score: 42/100
+
+workflow_steps: 10
+  Step 1: Sample collection
+    tool: JH-8000D auto-sampler
+    parameters: sampling_interval_minutes=15, duration_hours=24, sample_volume_per_interval_mL=10, total_samples_per_campaign=70
+    input: raw wastewater influent
+    output: 24-hour composite wastewater samples
+    confidence: high
+  Step 2: Internal standard spiking
+    tool: manual pipetting
+    parameters: istd_volume_uL=50, istd_concentration_mg_L=1.0, istd_mass_ng=50
+    input: composite wastewater samples
+    output: ISTD-spiked wastewater samples
+    confidence: high
+  Step 3: Solid-phase extraction (SPE)
+    tool: Oasis HLB cartridges
+    parameters: cartridge_capacity_mg=60, filtration_pore_size_um=0.7, load_flow_rate_mL_min=5, conditioning_solvents=['2 mL MeOH', '2 mL HPLC water'], elution_volume_mL=4, elution_solvent=MeOH
+    input: ISTD-spiked wastewater samples
+    output: SPE eluate
+    confidence: high
+  Step 4: Sample concentration and reconstitution
+    tool: nitrogen evaporator (LabTech)
+    parameters: evaporation_temperature_C=40, reconstitution_volume_mL=0.5, reconstitution_solvent_ratio=4:1 H2O:MeOH
+    input: SPE eluate
+    output: reconstituted extract for injection
+    confidence: high
+  Step 5: Chromatographic separation
+    tool: ACQUITY UPLC™ system with HSS T3 column
+    parameters: column_dimensions_mm=2.1 × 100, particle_size_um=1.8, gradient_duration_min=11.5, mobile_phase_A=2:3 methanol:acetonitrile, mobile_phase_B=0.2% formic acid in water
+    input: reconstituted extract
+    output: chromatographically separated analytes
+    confidence: medium
+  Step 6: Quantitative detection via MRM
+    tool: ABSCIEX QTRAP 6500+
+    algorithm: multiple reaction monitoring (MRM)
+    parameters: transitions_per_analyte=2, transitions_per_ISTD=1, mdls_ng_L=[0.004, 0.296], recovery_range_percent=[70.0, 120.8]
+    input: chromatographically separated analytes
+    output: quantified antibiotic concentrations (ng/L)
+    confidence: high
+  Step 7: WBE load and intake calculation
+    tool: Microsoft Excel (v2019)
+    algorithm: population-normalised daily load/intake formulas
+    parameters: equation_1=DL = C × F, equation_2=PNDL = (C × F) / (PE × 10^3), equation_3=PNDI = PNDL × CF
+    input: antibiotic concentrations (ng/L), flow rate (L/day), population estimate (PE), correction factors (CF)
+    output: PNDL (mg/day/1000 inh), PNDI (mg/day/1000 inh)
+    confidence: high
+  Step 8: Statistical comparison (temporal change)
+    tool: SPSS Statistics (v26.0)
+    algorithm: Wilcoxon rank-sum test
+    parameters: alpha=0.05, two_sided=True, bonferroni_adjustment=True
+    input: PNDL/PNDI values for 2021 vs 2023
+    output: p-values, fold-changes, significance flags
+    confidence: high
+  Step 9: Temporal variability analysis
+    tool: SPSS Statistics (v26.0)
+    algorithm: ANOVA
+    parameters: alpha=0.05, factor=day (1–7)
+    input: daily antibiotic concentrations across 7 days
+    output: F-statistic, p-value, group means
+    confidence: high
+  Step 10: Correlation analysis
+    tool: GraphPad Prism (v9.0.0)
+    algorithm: Pearson correlation
+    parameters: alpha=0.05, bonferroni_adjustment=True
+    input: antibiotic PNDI or concentration matrices
+    output: correlation matrix (r values), significance flags
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 8
+  Fig. 1: [bar_chart]
+    caption: Shows detection frequencies (%) of each antibiotic in 2021 (red) and 2023 (blue) across Site A and Site B.
+    produced_by_step: [6, 8]
+    visualization_tool: GraphPad Prism
+  Fig. 2: [stacked_bar_chart]
+    caption: Displays proportional abundances of antibiotic classes (macrolides, quinolones, etc.) in wastewater samples.
+    produced_by_step: [6, 7]
+    visualization_tool: GraphPad Prism
+  Fig. 3: [multi_panel_line_or_bar_chart]
+    caption: Shows concentration (ng/L), daily mass load (mg/day), and population-normalised daily load (mg/day/1000 inh) for all antibiotics across all WWTPs.
+    produced_by_step: [6, 7]
+    visualization_tool: GraphPad Prism
+  Fig. 4: [grouped_bar_chart]
+    caption: Compares PNDLs by antibiotic class (macrolides, quinolones, sulfonamides, phenicols, tetracyclines) across WWTPs.
+    produced_by_step: [7, 8]
+    visualization_tool: GraphPad Prism
+    statistical_test: Wilcoxon test (p < 0.05)
+  Fig. 5: [correlation_heatmap]
+    caption: Pearson correlation matrix of all antibiotics in 2021 and 2023, color-coded for direction and strength of association.
+    produced_by_step: [10]
+    visualization_tool: GraphPad Prism
+    statistical_test: Pearson r with Bonferroni-adjusted significance
+  Fig. 6: [boxplot]
+    caption: Box plots comparing PNDI distributions for 2021 vs 2023 across antibiotics.
+    produced_by_step: [7, 8]
+    visualization_tool: GraphPad Prism
+    statistical_test: Wilcoxon test (p < 0.05)
+  Table 1: [table]
+    caption: Comparison of WBE-derived PNDIs with monthly catchment prescription data (Site A only).
+    produced_by_step: [7, 8]
+    visualization_tool: Microsoft Excel
+  Table 2: [table]
+    caption: List of 27 target antibiotics, their abbreviations, and clinical usage classification by drug class.
+    produced_by_step: [1]
+    visualization_tool: Microsoft Excel
+
+reproducibility_gaps:
+  - Raw UPLC-MS/MS chromatographic data not deposited in public repository (e.g., MetaboLights, MassIVE)
+  - No access to raw prescription EMR data — only aggregated counts reported
+  - Critical analytical parameters missing: exact UPLC gradient profile (time/volume %B), MRM transitions (Q1/Q3 m/z, CE), column temperature, injection volume
+  - Correction factors (CF) for PNDI calculation not provided or cited
+  - No protocol or code for WBE calculations (Equations 1–3) shared — implementation details ambiguous
+  - GraphPad Prism and SPSS are commercial tools requiring licenses; no open-source alternatives or scripts provided
+  - No metadata schema or structured sample annotation (e.g., date/time stamps, flow rates per sample) made available
+reproducibility_strengths:
+  - Detailed chemical standards and ISTD information provided (Table 2, Table S5)
+  - Full description of SPE and sample prep workflow with vendor-specific materials
+  - Explicit statistical methods (Wilcoxon, ANOVA, Pearson) with alpha and correction method stated
+  - Quality control metrics reported (MDLs, recoveries, QC accuracy, RSDs)
+  - Ethics approval and institutional oversight documented

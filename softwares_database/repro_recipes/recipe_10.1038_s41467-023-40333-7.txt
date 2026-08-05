@@ -1,0 +1,139 @@
+========== reproducibility_recipe entry ==========
+paper_title: Simultaneously discovering the fate and biochemical effects of pharmaceuticals through untargeted metabolomics.
+source_paper: Bowen TJ et al. (2023), Nature communications, DOI: 10.1038/s41467-023-40333-7, PMID: 37537184
+overall_reproducibility_score: 72/100
+
+workflow_steps: 11
+  Step 1: Sample extraction and preparation
+    tool: in-house protocol
+    parameters: tissue_extraction_ratio_methanol_water=8 µL/mg : 3.2 µL/mg, chloroform_water_ratio=8 µL/mg : 4 µL/mg, cardiomyocyte_extraction_ratio_methanol_water=2:0.8, biofluid_extraction_ratio_acetonitrile_or_isopropanol=150 µL per 50 µL biofluid, phase_partitioning_time_on_ice=10, phase_partitioning_time_room_temp=5, centrifugation_g_force=2500, centrifugation_temperature_c=4, centrifugation_duration_min=10, resuspension_solvent_polar=3:1 acetonitrile:water, resuspension_solvent_nonpolar=3:1 isopropanol:water, injection_volume_ul=2
+    input: biological samples (plasma, cardiac tissue, cardiomyocyte lysates, spent media)
+    output: extracted polar/non-polar fractions in LC vials
+    confidence: high
+  Step 2: UHPLC-MS data acquisition
+    tool: Thermo XCalibur
+    parameters: instrument=Q Exactive Focus Orbitrap, chromatography_modes=['HILIC', 'RP C18'], ionization_modes=['positive', 'negative'], mass_resolution=70000, mz_range_hilic=[70, 1050], mz_range_rpc18=[150, 2000], scan_ranges_hilic=[[70, 200], [200, 400], [400, 1050]], scan_ranges_rpc18=[[150, 400], [400, 800], [800, 2000]], hcd_collision_energies_hilic=[25, 60, 100], hcd_collision_energies_rpc18=[20, 50, 80], data_dependent_acquisition_mode=Discovery Mode, hilic_column=Accucore 150 Amide, 100 × 2.1 mm, 2.6 µm, rpc18_column=Hypersil GOLD C18, 10 × 2.1 mm, 1.9 µm, hilic_gradient_profile=[{'t_min': 0.0, 'B_percent': 1}, {'t_min': 1.0, 'B_percent': 1}, {'t_min': 3.0, 'B_percent': 15}, {'t_min': 6.0, 'B_percent': 50}, {'t_min': 9.0, 'B_percent': 95}, {'t_min': 10.0, 'B_percent': 95}, {'t_min': 10.5, 'B_percent': 1}, {'t_min': 14.0, 'B_percent': 1}], rpc18_gradient_profile=[{'t_min': 0.0, 'B_percent': 20}, {'t_min': 0.5, 'B_percent': 20}, {'t_min': 8.5, 'B_percent': 100}, {'t_min': 9.5, 'B_percent': 100}, {'t_min': 11.5, 'B_percent': 20}, {'t_min': 14.0, 'B_percent': 20}], gradient_curve=5, hilic_flow_rate_ml_min=0.5, rpc18_flow_rate_ml_min=0.4, hilic_column_temp_c=35, rpc18_column_temp_c=55
+    input: extracted samples in HPLC vials
+    output: raw .raw files (Thermo format)
+    confidence: high
+  Step 3: Data conversion to mzML
+    tool: ProteoWizard msconvert
+    algorithm: default conversion settings
+    parameters: filter=['peakPicking', 'msLevel 1-2']
+    input: Thermo .raw files
+    output: .mzML files
+    confidence: medium
+  Step 4: Feature detection and alignment
+    tool: XCMS
+    algorithm: centWave
+    parameters: peakwidth=[10, 60], ppm=5, snthresh=10, prefilter=[3, 100], noise=0, bw=10, mzdiff=-0.001, max=5, minsamp=0.5
+    input: .mzML files
+    output: feature table (m/z, RT, intensity matrix)
+    confidence: medium
+  Step 5: Retention time correction and peak alignment
+    tool: XCMS
+    algorithm: loess
+    parameters: profiling=True, span=0.5
+    input: feature table with unaligned RTs
+    output: aligned feature table
+    confidence: medium
+  Step 6: Gap filling and missing value imputation
+    tool: xcms::fillPeaks
+    algorithm: nearest neighbor interpolation
+    parameters: method=nearest, minfrac=0.5, maxfrac=0.75
+    input: aligned feature table
+    output: gap-filled feature table
+    confidence: low
+  Step 7: Feature filtering and QC-based curation
+    tool: in-house R script
+    algorithm: QC-based intensity thresholding and CV filtering
+    parameters: qc_cv_threshold_percent=30, sample_detection_threshold_fraction=0.5, qc_detection_threshold_fraction=0.8
+    input: gap-filled feature table
+    output: curated feature table
+    confidence: low
+  Step 8: Metabolite annotation (MS1-level)
+    tool: Compound Discoverer (Thermo Scientific)
+    algorithm: accurate mass search + retention time indexing
+    parameters: mass_tolerance_ppm=5, rt_tolerance_min=0.3, database_sources=['HMDB', 'METLIN', 'LipidMaps', 'ChemSpider'], isotope_pattern_matching=True, adducts_positive=['[M+H]+', '[M+Na]+', '[M+NH4]+'], adducts_negative=['[M-H]-', '[M+Cl]-', '[M+HCOO]-']
+    input: curated feature table + .raw files
+    output: putatively annotated feature table (level 2 confidence)
+    confidence: medium
+  Step 9: MS/MS spectral matching and structural confirmation
+    tool: Compound Discoverer
+    algorithm: library search (Thermo mzCloud, NIST, in-house QC MS2 library)
+    parameters: spectral_similarity_score_threshold=70, min_matched_peaks=3, precursor_mass_tolerance_da=0.02, fragment_mass_tolerance_da=0.02
+    input: DDA MS2 spectra from QCs + annotated features
+    output: confidently identified metabolites (level 1) and biotransformation products
+    confidence: medium
+  Step 10: Differential analysis and dose–response association
+    tool: MetaboAnalystR
+    algorithm: univariate t-test / ANOVA + multivariate PLS-DA + correlation (Spearman)
+    parameters: p_value_threshold=0.05, fdr_method=BH, pls_da_n_components=2, correlation_method=spearman, dose_metric=internal exposure (parent + metabolite AUC or peak intensity)
+    input: curated feature table + metadata (dose, time, tissue, treatment)
+    output: differentially abundant features, PLS-DA models, dose–response associations
+    confidence: medium
+  Step 11: Pathway and biochemical context analysis
+    tool: MetaboAnalyst web server / MetaboAnalystR
+    algorithm: hypergeometric test + impact analysis (relative betweenness centrality)
+    parameters: organism=rat, database=KEGG, top_pathways_count=10, impact_threshold=0.1
+    input: annotated differentially abundant features
+    output: enriched pathways, pathway impact scores, integrated fate–response maps
+    confidence: medium
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1872)
+  processed_data: available (MetaboLights: MTBLS1872)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1872
+
+code_availability: mentioned_no_link
+
+figure_recipes: 8
+  Figure 1: [workflow_diagram]
+    caption: Schematic overview of the integrated untargeted metabolomics workflow for simultaneous xenobiotic fate and endogenous response discovery.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    visualization_tool: Adobe Illustrator
+  Figure 2: [pca_scores]
+    caption: PCA score plots showing separation of sunitinib-treated vs vehicle control rat plasma samples across time points.
+    produced_by_step: [4, 5, 7, 10]
+    visualization_tool: ggplot2 (R)
+    statistical_test: PERMANOVA p < 0.001
+  Figure 3: [volcano_plot]
+    caption: Volcano plots highlighting significantly altered endogenous metabolites and sunitinib biotransformation products in rat cardiac tissue.
+    produced_by_step: [10]
+    visualization_tool: ggplot2 (R)
+    statistical_test: t-test FDR-adjusted p < 0.05, |log2FC| > 1
+  Figure 4: [pathway_map]
+    caption: Integrated KEGG pathway map showing perturbed amino acid metabolism with overlaid sunitinib metabolites and dose–response correlations.
+    produced_by_step: [11]
+    visualization_tool: MetaboAnalyst + Adobe Illustrator
+    statistical_test: hypergeometric test FDR < 0.05
+  Figure 5: [bar_chart]
+    caption: Relative abundance of major sunitinib phase I and II metabolites across rat plasma time courses.
+    produced_by_step: [8, 9, 10]
+    visualization_tool: ggplot2 (R)
+  Figure 6: [boxplot]
+    caption: Boxplots of internal exposure metric (summed sunitinib + metabolite intensities) correlated with glutathione depletion in human plasma samples.
+    produced_by_step: [10]
+    visualization_tool: ggplot2 (R)
+    statistical_test: Spearman rho = −0.72, p = 0.002
+  Supplementary Figure 1: [chromatogram]
+    caption: Representative extracted ion chromatograms (XICs) demonstrating detection and RT alignment of sunitinib and its N-oxide metabolite.
+    produced_by_step: [4, 5]
+    visualization_tool: XCalibur
+  Supplementary Figure 2: [heatmap]
+    caption: Hierarchical clustering heatmap of top 50 most variable features across all in vitro and in vivo sample types.
+    produced_by_step: [10]
+    visualization_tool: pheatmap (R)
+
+reproducibility_gaps:
+  - XCMS parameters (e.g., bw, minsamp) are reported but not justified or sensitivity-tested
+  - No public repository link for Compound Discoverer project files or custom spectral libraries
+  - In-house R scripts for QC filtering and dose–response modeling not shared
+  - Exact version numbers for XCMS, MetaboAnalystR, and ProteoWizard not specified
+  - No description of batch correction strategy despite multi-batch acquisition
+reproducibility_strengths:
+  - Raw and processed data deposited in MetaboLights (MTBLS1872) with full metadata
+  - Detailed UHPLC gradient profiles, column specs, and MS acquisition parameters provided
+  - Use of widely adopted open-source tools (XCMS, MetaboAnalystR, ProteoWizard) for core processing
+  - All chemical standards, doses, sampling timepoints, and biological models explicitly described

@@ -1,0 +1,69 @@
+========== reproducibility_recipe entry ==========
+paper_title: Barcode-free hit discovery from massive libraries enabled by automated small molecule structure annotation.
+source_paper: van der Nol E et al. (2025), Nature communications, DOI: 10.1038/s41467-025-65282-1, PMID: 41145427
+overall_reproducibility_score: 52/100
+
+workflow_steps: 6
+  Step 1: Library synthesis (solid-phase combinatorial chemistry)
+    tool: Custom solid-phase synthesis protocol
+    parameters: resin=TentaGel S NH₂, linker=Fmoc-Rink Amide, coupling_reagents=['HATU', 'DIPEA'], deprotection=20% piperidine in DMF, cleavage=TFA:H₂O:TIPS (92.5:5:2.5), purification=Reverse-phase chromatography, stepwise gradient 0–70–100% MeCN:H₂O (0.1% TFA)
+    input: Building block lists (AA1-AA62, CA1-CA130, AM1-AM52, AL1-AL67, AB1-AB10, BA1-BA53)
+    output: Purified SEL compound library (mass-labeled, untagged small molecules)
+    confidence: medium
+  Step 2: Affinity selection (target pulldown)
+    tool: KingFisher™ Duo Prime + BindIt 4.1 (v4.1)
+    parameters: protein_amount=150 pmol, beads=['Dynabeads MyOne Streptavidin T1', 'Dynabeads His-Tag Isolation and Pulldown'], library_input=['100 fmol/member (CAIX)', '1 pmol/member (FEN1)'], replicates=2, wash_buffers=['0.1% FA in MQ', 'MeCN:MQ (7:3) elution']
+    input: Immobilized target protein + SEL library
+    output: Enriched bound compounds (lyophilized, StageTip-purified)
+    confidence: high
+  Step 3: LC-MS/MS data acquisition
+    tool: UPLC-MS/MS system (unspecified vendor)
+    parameters: injection_volume=8 µL, sample_solvent=0.1% FA in UPLC-MS grade water, chromatography=Reverse-phase UPLC, ionization=ESI (implied), mass_accuracy_ms1=5 ppm, mass_accuracy_ms2=5 ppm, rt_tolerance=10 s
+    input: StageTip-purified affinity-selected samples
+    output: .mzML files
+    confidence: low
+  Step 4: Background subtraction & feature filtering
+    tool: COMET GUI
+    algorithm: Custom tag-based background subtraction
+    parameters: ms1_mass_accuracy_ppm=5, rt_accuracy_s=10, max_intensity_ratio=3, control_rt_tolerance_s=2, control_mass_deviation_ppm=5, fold_change_threshold=2
+    input: .mzML files + control run .mzML
+    output: Filtered feature table (background-subtracted, control-corrected)
+    confidence: high
+  Step 5: Fragment type–guided spectral matching
+    tool: COMET
+    algorithm: Scaffold-aware fragment annotation (S[0;1], S[1;2], etc.)
+    parameters: scaffold_formula={'SEL1': '', 'SEL2': 'C8H3N2O', 'SEL3': '', 'SEL4': ''}, fragment_types={'SEL1': ['S[0;1]', 'S[1;2]', '0', '2'], 'SEL2': ['S[0;2]', 'S[1;2]', '0', '1'], 'SEL3': ['S[1:2]', '0'], 'SEL4': ['S[0;1]', 'S[1;2]', '0', '2']}, min_matching_peaks=1, num_considered_peaks=5, allowed_h_shifts=1, ms2_mass_accuracy_ppm=5
+    input: Filtered features + custom library .csv + building block definitions
+    output: Annotated candidate structures per feature
+    confidence: high
+  Step 6: Molecular formula generation & structure database search
+    tool: COMET
+    algorithm: Formula database search + fingerprint prediction (EPIMETHEUS ranking)
+    parameters: formula_search_mode=custom_library_import, fingerprint_score_threshold_enabled=True, ranking_method=EPIMETHEUS
+    input: Annotated candidates + custom structure database
+    output: Ranked structure annotations with confidence scores
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: https://github.com/sirius-ms/comet
+  license: GPL-3.0
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS/MS data (.mzML) not deposited in public repository (e.g., MetaboLights, MassIVE)
+  - No details on UPLC gradient, column, or MS instrument parameters (e.g., resolution, AGC target, isolation window)
+  - BindIt 4.1 is commercial software with no public documentation or open API
+  - KingFisher protocol details only in Supplementary Fig. 19 (not provided in text)
+  - No access to enumerated library files (KNIME-generated structure databases) — only described as 'imported into COMET'
+  - EPIMETHEUS ranking algorithm not open-source; referenced only in Supplementary Chapter 4.5 without implementation details
+reproducibility_strengths:
+  - COMET source code publicly available on GitHub
+  - Building block input script shared via Zenodo DOI
+  - Detailed synthetic protocols for all four SELs including equivalents, volumes, times, and reagents
+  - Explicit COMET filter and fragment-type parameters reported per library

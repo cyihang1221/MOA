@@ -1,0 +1,50 @@
+========== reproducibility_recipe entry ==========
+paper_title: Data-Independent Acquisition-Based Mass Spectrometry (DIA-MS) for Quantitative Analysis of Intact N-Linked Glycopeptides.
+source_paper: Dong M et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.1c01659, PMID: 34622651
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: DIA-MS data acquisition
+    tool: mass spectrometer (not specified)
+    parameters: isolation_windows=100, acquisition_mode=data-independent acquisition
+    input: intact N-linked glycopeptide samples (e.g., from human serum)
+    output: raw DIA-MS files (.raw or .d, vendor-specific)
+    confidence: medium
+  Step 2: Spectral library construction
+    tool: in-house platform
+    algorithm: Y-ion–based quantification + quality filtering
+    parameters: glycopeptide_coverage=1123 nonredundant intact glycopeptides, quantification_ions=Y ions, filtering_criteria=automated low-quality MS2 spectrum removal
+    input: reference glycopeptide standards or DDA-MS data
+    output: custom spectral library (.splib or similar)
+    confidence: low
+  Step 3: DIA data search and quantification
+    tool: in-house platform
+    algorithm: library-based extraction using Y ions
+    parameters: quantification_strategy=Y-ion–centric, quality_filtering=automated based on MS2 spectral quality
+    input: raw DIA-MS files + custom spectral library
+    output: quantified intact glycopeptide table (peptide-glycan combinations with abundances)
+    confidence: low
+  Step 4: Confidence filtering and result curation
+    tool: in-house platform
+    algorithm: high-confidence thresholding
+    parameters: final_quantified_glycopeptides=620, confidence_level=high confidence
+    input: quantified glycopeptide table
+    output: curated high-confidence glycopeptide quantification list
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of instrumentation (LC model, column, gradient, MS instrument type/model, software version)
+  - No details on spectral library generation (search engine, FDR method, fragmentation settings, retention time alignment)
+  - No parameters for Y-ion extraction (mass tolerance, fragment ion inclusion rules, scoring)
+  - No statistical or normalization methods described
+  - All analytical steps rely on 'in-house platform' with no tool names, versions, or code access
+  - Raw data, spectral library, and processed results not deposited in public repositories

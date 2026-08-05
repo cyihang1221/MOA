@@ -1,0 +1,57 @@
+========== reproducibility_recipe entry ==========
+paper_title: LC-HRMS-Driven Computational Toolbox to Assess Extraction Protocols Dedicated to Untargeted Analysis: How to Ease Analyzing Pesticide-Contaminated Soils?
+source_paper: Ghosson H et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.3c03242, PMID: 38305221
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: LC-HRMS data acquisition and conversion
+    tool: unknown
+    input: raw instrument files (vendor-specific)
+    output: LC-HRMS data (presumably mzML or similar)
+    confidence: low
+  Step 2: Feature detection and annotation
+    tool: unknown
+    parameters: annotated_features_count=861
+    input: LC-HRMS data
+    output: annotated feature table
+    confidence: low
+  Step 3: Metabolome coverage and quantitative performance assessment
+    tool: unknown
+    parameters: visualization_configurations=['optimized heatmaps', 'van Krevelen diagrams']
+    input: annotated feature table
+    output: coverage and quantitative metrics per extraction protocol
+    confidence: medium
+  Step 4: Reproducibility assessment of LC-HRMS profiles
+    tool: unknown
+    algorithm: Euclidean distance, relative standard deviation (RSD)
+    input: feature intensity matrix
+    output: reproducibility metrics (distance matrices, RSD distributions)
+    confidence: high
+  Step 5: Discriminatory capacity evaluation (contaminated vs. uncontaminated soils)
+    tool: OPLS-DA
+    algorithm: orthogonal projections to latent structures-discriminant analysis
+    parameters: scaling_parameters_tested=various
+    input: feature intensity matrix
+    output: discrimination model, variable importance (VIP) scores
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-HRMS data not deposited in public repository
+  - No specification of software tools used for feature detection, annotation, or visualization
+  - No details on LC-HRMS acquisition parameters (e.g., gradient, column, ionization mode)
+  - No description of data preprocessing steps (peak picking, alignment, filtering, imputation)
+  - OPLS-DA scaling parameters not specified
+  - No access to scripts or workflows used for heatmaps or van Krevelen diagrams
+reproducibility_strengths:
+  - Explicit mention of use of public-access platforms and open-source software
+  - Clear experimental design (trifactorial: 5 extractions × 2 soils × 3 contamination conditions)
+  - Quantitative reporting of annotated features (n = 861)

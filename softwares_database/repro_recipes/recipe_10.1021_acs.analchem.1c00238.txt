@@ -1,0 +1,48 @@
+========== reproducibility_recipe entry ==========
+paper_title: mWISE: An Algorithm for Context-Based Annotation of Liquid Chromatography-Mass Spectrometry Features through Diffusion in Graphs.
+source_paper: Barranco-Altirriba M et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.1c00238, PMID: 34320315
+overall_reproducibility_score: 78/100
+
+workflow_steps: 3
+  Step 1: Mass-to-charge ratio matching to KEGG database
+    tool: mWISE
+    algorithm: exact mass matching with tolerance
+    parameters: mass_tolerance_ppm=5
+    input: feature table (m/z, RT, intensity)
+    output: initial KEGG candidate list per feature
+    confidence: medium
+  Step 2: Clustering and filtering of KEGG candidates
+    tool: mWISE
+    algorithm: structural similarity clustering + biochemical context filtering
+    parameters: min_cluster_size=2, tanimoto_threshold=0.4
+    input: initial KEGG candidate list per feature
+    output: filtered and clustered candidate groups
+    confidence: medium
+  Step 3: Diffusion-based prioritization in biological network graph
+    tool: mWISE
+    algorithm: graph diffusion (heat kernel or personalized PageRank)
+    parameters: diffusion_alpha=0.1, max_iterations=100, convergence_tol=1e-06
+    input: filtered candidate groups + biological network (FELLA-derived)
+    output: prioritized annotation list with confidence scores
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (MetaboLights)
+  processed_data: not_mentioned (MetaboLights)
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/b2slab/mWISE
+  license: GPL
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No specific public datasets or accession IDs cited for the three evaluation studies
+  - Biological network construction details (e.g., FELLA version, KEGG subset, edge weighting) not specified
+  - Exact LC-MS preprocessing steps (peak picking, alignment, normalization) not described — mWISE assumes pre-processed input but does not define required format
+reproducibility_strengths:
+  - Source code publicly available on GitHub
+  - Open-source GPL license
+  - Explicit comparison against xMSannotator with quantitative metrics (sensitivity, computation time)
+  - Four configurable modes documented, enabling method reuse

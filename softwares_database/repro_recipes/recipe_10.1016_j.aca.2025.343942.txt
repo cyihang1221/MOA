@@ -1,0 +1,46 @@
+========== reproducibility_recipe entry ==========
+paper_title: Dual LC column characterization for mass spectrometry-based small molecule profiling of human plasma and serum.
+source_paper: Tkalec Ž et al. (2025), Analytica chimica acta, DOI: 10.1016/j.aca.2025.343942, PMID: 40288861
+overall_reproducibility_score: 40/100
+
+workflow_steps: 3
+  Step 1: Chromatographic system characterization
+    tool: Dual LC setup (SiH and PBr columns)
+    parameters: column_SiH=type-C silica hydride, aqueous normal-phase (ANP) mode, column_PBr=pentabromobenzyl, reversed-phase (RP) mode, cLogP_range_SiH=[-6.6, 8.67], cLogP_range_PBr=[-3.34, 12.95], standards_count=604, repeatability_subset_size=108, repeatability_replicates=3
+    input: 604 chemical standards (structures, cLogP values)
+    output: retention time (RT) measurements per column, peak width, peak area
+    confidence: high
+  Step 2: Retention time model development
+    tool: Custom predictive modeling (not specified)
+    algorithm: Regression modeling (R² reported)
+    parameters: model_performance_SiH_R2=0.92, model_performance_SiH_MAE_min=0.29, model_performance_PBr_R2=0.96, model_performance_PBr_MAE_min=0.27
+    input: Experimental RT data from 604 standards on SiH and PBr columns
+    output: Predictive RT models (per column)
+    confidence: medium
+  Step 3: Metabolite annotation in human biofluids
+    tool: Retention time matching (experimental or predicted) + MS2 spectral matching
+    algorithm: RT-based annotation (single- or dual-column match)
+    parameters: biomatrix=['pooled human serum', 'pooled human plasma'], annotated_metabolites_count=129, annotation_confidence_strategy=RT match on one or both columns + MS2 spectra
+    input: LC-MS/MS data from pooled human serum and plasma; RT models; MS2 spectra of standards
+    output: Annotated metabolite list (129 metabolites)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (Not specified)
+  processed_data: not_mentioned (Not specified)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS data (chromatograms, spectra) not deposited in public repository
+  - No details on RT modeling software or algorithm (e.g., random forest, PLS, neural network)
+  - No access information for 'openly available' RT models and MS2 spectra — no repository name, accession, or URL provided
+  - No description of data processing pipeline (peak picking, alignment, feature table generation)
+  - No instrument parameters (e.g., gradient profiles, flow rates, ionization settings) specified for reproducibility
+reproducibility_strengths:
+  - Use of chemically diverse standard set (n=604) with cLogP coverage spanning -6.6 to 12.95
+  - Quantitative repeatability/reproducibility metrics reported per column (RT, peak width, area)
+  - Dual-column orthogonal retention behavior characterized and leveraged for annotation

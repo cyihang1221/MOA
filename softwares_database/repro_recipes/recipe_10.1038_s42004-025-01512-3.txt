@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: Enhanced sensitivity to odors due to chemosignals associated with anxiety.
+source_paper: Wunder A et al. (2025), Communications chemistry, DOI: 10.1038/s42004-025-01512-3, PMID: 40301685
+overall_reproducibility_score: 20/100
+
+workflow_steps: 0
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 6
+  Fig. 1: [boxplot]
+    caption: Mean olfactory threshold scores for phenylethyl alcohol (PEA) and n-butanol across four experimental conditions.
+    visualization_tool: JASP
+    statistical_test: repeated-measures ANOVA with Bonferroni-corrected posthoc tests, p ≤ 0.05
+  Table 1: [table]
+    caption: Intensity and pleasantness ratings of PEA and n-butanol across conditions.
+    visualization_tool: JASP or manual tabulation
+    statistical_test: not specified
+  Fig. 2: [bar_chart]
+    caption: Odor profiles (left) and intensity/pleasantness ratings (right) of anxiety and neutral chemosignal samples.
+    visualization_tool: custom plotting (not specified)
+    statistical_test: not specified
+  Table 2: [table]
+    caption: Potent odorants identified via GC-O and GC-MS in chemosignal samples.
+    visualization_tool: manual curation and reporting
+    statistical_test: not applicable
+  Fig. 3: [pca_scores]
+    caption: Principal component analysis results distinguishing anxiety and neutral chemosignal samples.
+    visualization_tool: unknown (likely custom or commercial software)
+    statistical_test: not specified
+  Table 3: [table]
+    caption: NIST matches and normalized mean peak areas of significantly differing features (p < 0.01) between anxiety and neutral sweat, from GC-MS on DB-5 and DB-FFAP columns.
+    visualization_tool: manual reporting
+    statistical_test: t-test or ANOVA (implied by p < 0.01)
+
+reproducibility_gaps:
+  - No raw GC-MS or GC-O data deposited or referenced
+  - No metadata schema or sample annotation details provided
+  - No description of GC-MS data processing workflow (peak picking, alignment, normalization)
+  - No software/tools named for GC-MS data analysis (e.g., ChromaTOF, AMDIS, NIST MS Search, or open-source alternatives)
+  - No access to sensory panel data or consensus methodology code
+  - No repository accession IDs for any data
+  - No code or scripts shared for statistical analysis beyond JASP version mention
+reproducibility_strengths:
+  - JASP version explicitly stated (0.16.3.0)
+  - Statistical methods clearly described (rmANOVA, Greenhouse-Geisser correction, Bonferroni posthoc)
+  - Experimental design and blinding procedures well documented
+  - Sensory evaluation followed DIN EN ISO 13299:2016 standard

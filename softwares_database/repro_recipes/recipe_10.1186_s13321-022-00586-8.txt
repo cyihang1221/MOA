@@ -1,0 +1,71 @@
+========== reproducibility_recipe entry ==========
+paper_title: Reproducible untargeted metabolomics workflow for exhaustive MS2 data acquisition of MS1 features.
+source_paper: Yu M et al. (2022), Journal of cheminformatics, DOI: 10.1186/s13321-022-00586-8, PMID: 35172886
+overall_reproducibility_score: 80/100
+
+workflow_steps: 7
+  Step 1: Redundant peak removal from MS1 data
+    tool: PMDDA
+    algorithm: paired mass distance-dependent analysis
+    input: MS1 full scan data
+    output: non-redundant list of precursor ions
+    confidence: medium
+  Step 2: Export precursor ion list for pseudo-targeted MS/MS analysis
+    tool: PMDDA
+    algorithm: statistical model-free selection
+    input: non-redundant MS1 features
+    output: precursor ion list for MS/MS acquisition
+    confidence: high
+  Step 3: Pseudo-targeted MS/MS data acquisition
+    tool: LC-MS instrument (vendor unspecified)
+    algorithm: instrument-specific DDA or scheduled MS/MS
+    parameters: one_peak_per_compound=True
+    input: precursor ion list
+    output: MS2 spectra linked to MS1 features
+    confidence: low
+  Step 4: Comparison of MS2 spectral coverage and annotation performance
+    tool: CAMERA
+    algorithm: peak grouping and annotation
+    input: MS1 feature table + MS2 spectra
+    output: annotated compounds, molecular networks
+    confidence: medium
+  Step 5: Comparison of MS2 spectral coverage and annotation performance
+    tool: RAMclustR
+    algorithm: clustering-based feature alignment and annotation
+    input: MS1 feature table + MS2 spectra
+    output: annotated compounds, molecular networks
+    confidence: medium
+  Step 6: Generation of preferred ion list for iterative DDA
+    tool: PMDDA
+    algorithm: iterative precursor prioritization
+    parameters: support_iterative_dda=True
+    input: MS1 features + prior MS2 results
+    output: enhanced precursor ion list
+    confidence: medium
+  Step 7: Dual-polarity compound identification
+    tool: PMDDA
+    algorithm: cross-mode signal matching
+    parameters: polarity_modes=['positive', 'negative']
+    input: MS1 features from positive and negative mode
+    output: compounds detected in both polarities
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/xcmsrocker/xcmsrocker
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS data not deposited in public repository
+  - Instrument-specific MS/MS acquisition parameters (e.g., isolation window, collision energy) not specified
+  - No details on chromatographic gradient or column used
+reproducibility_strengths:
+  - Fully containerized workflow via Docker image xcmsrocker
+  - Open-source implementation with MIT license
+  - Statistical model-free design eliminates dependence on arbitrary statistical thresholds

@@ -1,0 +1,140 @@
+========== reproducibility_recipe entry ==========
+paper_title: Metabolomic differentiation of benign vs malignant pulmonary nodules with high specificity via high-resolution mass spectrometry analysis of patient sera.
+source_paper: Yao Y et al. (2023), Nature communications, DOI: 10.1038/s41467-023-37875-1, PMID: 37095081
+overall_reproducibility_score: 72/100
+
+workflow_steps: 10
+  Step 1: Serum metabolite extraction
+    tool: Combined MTBE/methanol/water extraction
+    algorithm: Liquid-liquid extraction with internal standards
+    parameters: serum_volume=50, methanol_volume=225, MTBE_volume=750, water_volume=188, incubation_time_min=60, incubation_temperature=ice_cold, centrifugation_g=15000, centrifugation_time_min=10, centrifugation_temperature=4, internal_standards=['13C-lactate', '13C3-pyruvate', '13C-methionine', '13C6-isoleucine']
+    input: raw serum samples
+    output: extracted metabolite fractions (positive/negative mode)
+    confidence: high
+  Step 2: UPLC-HRMS untargeted analysis (positive mode)
+    tool: Thermo Q-Exactive Orbitrap + Dionex Ultimate 3000 UPLC (vXcalibur 4.1)
+    algorithm: Full scan + ddMS2
+    parameters: column=ACQUITY BEH Amide, 2.1 × 100 mm, 1.7 μm, column_temperature=40, autosampler_temperature=10, flow_rate_mL_min=0.3, injection_volume_uL=3, mobile_phase_A=95% acetonitrile + 10 mmol/L ammonium acetate + 0.1% formic acid, mobile_phase_B=50% acetonitrile + 10 mmol/L ammonium acetate + 0.1% formic acid, gradient_program=[{'time_min': 0, 'B_percent': 2}, {'time_min': 0.5, 'B_percent': 2}, {'time_min': 12, 'B_percent': 50}, {'time_min': 14, 'B_percent': 98}, {'time_min': 16, 'B_percent': 98}, {'time_min': 16.1, 'B_percent': 2}, {'time_min': 20, 'B_percent': 2}], spray_voltage_kV=3.8, capillary_temperature_C=320, sheath_gas_arb=40, auxiliary_gas_arb=10, probe_heater_temperature_C=350, scan_range_mz=[70, 1050], resolution=70000
+    input: dried extracted metabolites reconstituted in 80% acetonitrile
+    output: raw .raw files (Thermo)
+    confidence: high
+  Step 3: UPLC-HRMS untargeted analysis (negative mode)
+    tool: Thermo Q-Exactive Orbitrap + Dionex Ultimate 3000 UPLC (vXcalibur 4.1)
+    algorithm: Full scan + ddMS2
+    parameters: column=ACQUITY BEH Amide, 2.1 × 100 mm, 1.7 μm, column_temperature=40, autosampler_temperature=10, flow_rate_mL_min=0.3, injection_volume_uL=3, mobile_phase_A=95% acetonitrile + 10 mmol/L ammonium acetate, pH=9, mobile_phase_B=50% acetonitrile + 10 mmol/L ammonium acetate, pH=9, gradient_program=[{'time_min': 0, 'B_percent': 2}, {'time_min': 0.5, 'B_percent': 2}, {'time_min': 12, 'B_percent': 50}, {'time_min': 14, 'B_percent': 98}, {'time_min': 16, 'B_percent': 98}, {'time_min': 16.1, 'B_percent': 2}, {'time_min': 20, 'B_percent': 2}], spray_voltage_kV=-3.2, capillary_temperature_C=320, sheath_gas_arb=40, auxiliary_gas_arb=10, probe_heater_temperature_C=350, scan_range_mz=[70, 1050], resolution=70000
+    input: dried extracted metabolites reconstituted in 80% acetonitrile
+    output: raw .raw files (Thermo)
+    confidence: high
+  Step 4: QC and batch correction using reference serum pool
+    tool: Custom normalization in Compound Discovery/TraceFinder (vCompound Discovery 3.1, TraceFinder 4.0)
+    algorithm: Reference-based inter-batch correction
+    parameters: reference_material=serum pool from 100 healthy donors, correction_method=feature peak divided by corresponding reference peak per batch, QC_injection_frequency=periodic throughout batch, initial_QC_injections=6
+    input: raw .raw files + reference serum QC injections
+    output: batch-corrected feature table (relative abundance)
+    confidence: high
+  Step 5: Peak detection and feature extraction
+    tool: Compound Discovery 3.1 and TraceFinder 4.0 (v3.1, 4.0)
+    algorithm: Chromatographic peak detection (m/z + RT)
+    parameters: peak_detection_algorithm=not specified, min_peak_height=None, mz_tolerance_ppm=None, rt_tolerance_sec=None
+    input: raw .raw files
+    output: feature table (m/z, RT, intensity)
+    confidence: medium
+  Step 6: Statistical differential analysis
+    tool: Custom R pipeline + MetaboAnalyst 5.0 (vMetaboAnalyst 5.0, ropls v1.26.4, pROC v1.18.0, glmnet v4.1-3)
+    algorithm: Wilcoxon rank test with FDR correction + fold change filtering
+    parameters: fdr_threshold=0.05, fold_change_threshold=[0.83, 1.2], normalization_method=sum normalization, scaling_method=auto scaling (mean-centered, unit variance)
+    input: batch-corrected feature table
+    output: list of significantly differential features
+    confidence: high
+  Step 7: Metabolite annotation (Level 1–2)
+    tool: Compound Discovery 3.1 + mzCloud + HMDB + ChemSpider (v3.1)
+    algorithm: MS/MS spectral matching + database search
+    parameters: mzCloud_score_threshold=85, annotation_levels=['identified', 'putatively_annotated'], standards_required_for_level1=True, MS_MS_matching_required=True
+    input: differential features (m/z, RT)
+    output: annotated metabolite list with confidence levels
+    confidence: high
+  Step 8: Pathway enrichment analysis
+    tool: MetaboAnalyst 5.0 (v5.0)
+    algorithm: KEGG pathway overrepresentation analysis
+    parameters: database=KEGG, organism=Homo sapiens, statistical_method=hypergeometric test, multiple_testing_correction=FDR
+    input: significantly differential annotated metabolites
+    output: enriched metabolic pathways
+    confidence: high
+  Step 9: Multivariate modeling (biomarker panel selection)
+    tool: R glmnet (LASSO logistic regression) (vv4.1-3)
+    algorithm: LASSO penalized binary logistic regression
+    parameters: alpha=1.0, family=binomial, cross_validation_folds=10, lambda_selection=minimum CV error or 1-SE rule
+    input: normalized metabolite abundance matrix + class labels (benign/malignant)
+    output: 27-metabolite biomarker panel + model coefficients
+    confidence: medium
+  Step 10: Model validation and performance evaluation
+    tool: R pROC (vv1.18.0)
+    algorithm: ROC analysis + Youden Index optimization
+    parameters: metric=AUC, cut_off_selection=maximum Youden Index (sensitivity + specificity - 1), confidence_interval_method=DeLong
+    input: predicted probabilities + true labels
+    output: AUC, sensitivity, specificity, optimal cut-off
+    confidence: high
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS2147)
+  processed_data: in_paper_only (Supplementary Data 1–3)
+  metadata: in_paper_only
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS2147
+
+code_availability: mentioned_no_link
+
+figure_recipes: 9
+  Figure 1: [workflow_diagram]
+    caption: Overview of study design including discovery, internal validation, and external validation cohorts, sample processing, and analytical workflow.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    visualization_tool: Adobe Illustrator
+  Figure 2: [pca_scores]
+    caption: PCA score plots showing separation between healthy controls, benign nodules, and lung adenocarcinoma in discovery cohort.
+    produced_by_step: [6]
+    visualization_tool: ropls + ggplot2
+  Figure 3: [pls_da_scores]
+    caption: PLS-DA score plots distinguishing benign vs malignant nodules with permutation testing validation.
+    produced_by_step: [6]
+    visualization_tool: ropls + ggplot2
+    statistical_test: permutation test (200 permutations)
+  Figure 4: [volcano_plot]
+    caption: Volcano plot highlighting 27 differentially abundant metabolites (FDR < 0.05, |log2FC| > 0.263) between benign and malignant nodules.
+    produced_by_step: [6]
+    visualization_tool: ggplot2
+    statistical_test: Wilcoxon rank test with FDR correction
+  Figure 5: [roc_curve]
+    caption: ROC curves for the 27-metabolite LASSO model in discovery, internal validation, and external validation cohorts.
+    produced_by_step: [9, 10]
+    visualization_tool: pROC + ggplot2
+    statistical_test: AUC comparison (DeLong test)
+  Figure 6: [pathway_map]
+    caption: KEGG pathway map highlighting glycolysis and tryptophan metabolism alterations in lung adenocarcinoma.
+    produced_by_step: [8]
+    visualization_tool: MetaboAnalyst + Adobe Illustrator
+    statistical_test: hypergeometric test
+  Figure 7: [bar_chart]
+    caption: Bar plots showing relative abundance of key metabolites (tryptophan, lactate, pyruvate) across groups.
+    produced_by_step: [6]
+    visualization_tool: ggplot2
+    statistical_test: Wilcoxon rank test with FDR correction
+  Supplementary Figure 1: [boxplot]
+    caption: Boxplots of internal standard RSD before and after reference-based normalization.
+    produced_by_step: [4]
+    visualization_tool: ggplot2
+  Supplementary Figure 2: [heatmap]
+    caption: Hierarchical clustering heatmap of top 50 differential metabolites across all samples.
+    produced_by_step: [6]
+    visualization_tool: pheatmap + R
+
+reproducibility_gaps:
+  - Raw .raw files require Thermo Xcalibur for conversion; no open-source converter explicitly validated
+  - Compound Discovery 3.1 and TraceFinder 4.0 are commercial tools with no public parameter documentation for peak picking
+  - No code repository provided for LASSO modeling, ROC analysis, or data preprocessing pipelines
+  - Gradient details for negative mode lack exact pH adjustment method (e.g., ammonia addition volume/concentration)
+  - No description of missing value imputation strategy or feature filtering thresholds (e.g., % present across samples)
+reproducibility_strengths:
+  - Raw data deposited in MetaboLights (MTBLS2147) with full metadata
+  - All statistical software versions explicitly reported (ropls v1.26.4, pROC v1.18.0, glmnet v4.1-3)
+  - Complete LC-MS parameters (gradients, temperatures, voltages, resolutions) provided for both polarities
+  - Reference-based batch correction methodology fully described with QC injection scheme
+  - Metabolite annotation criteria (mzCloud score >85, MS/MS matching) clearly defined

@@ -1,0 +1,46 @@
+========== reproducibility_recipe entry ==========
+paper_title: Logistic Regression Analysis of LC-MS/MS Data of Monomers Eluted from Aged Dental Composites: A Supervised Machine-Learning Approach.
+source_paper: Chen CC et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.2c04362, PMID: 36917068
+overall_reproducibility_score: 40/100
+
+workflow_steps: 3
+  Step 1: LC-MS/MS data acquisition
+    tool: quadrupole-time-of-flight tandem MS
+    parameters: instrument_type=Q-TOF, chromatography=liquid chromatography, sample_environment=simulated oral environment
+    input: aged dental composite leachates
+    output: raw .d or .raw files (vendor format)
+    confidence: medium
+  Step 2: Tandem MS data processing and database searching
+    tool: vendor software
+    algorithm: spectral library matching
+    parameters: matching_criterion=experimental vs. library mass spectra, output_metric=software-generated identification score
+    input: raw .d/.raw files
+    output: compound identification list with scores
+    confidence: low
+  Step 3: Logistic regression modeling for identification probability estimation
+    tool: logistic regression
+    algorithm: binary logistic regression
+    parameters: purpose=probability estimation (not classification), training_data=analytical standards of compounds in target database, predictors=vendor software identification scores and other unspecified features
+    input: database-matched identification results with scores
+    output: identification probability per compound
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Vendor software identity and version not specified
+  - No details on logistic regression feature engineering (e.g., which scores or spectral metrics used as predictors)
+  - No description of training dataset composition (number/identity of analytical standards)
+  - Raw LC-MS/MS data not deposited in public repository
+  - No code or model implementation shared
+  - No information on database used (e.g., MassBank, NIST, in-house) or search parameters (mass tolerance, fragmentation settings)
+reproducibility_strengths:
+  - Clear conceptual framework for using logistic regression for probabilistic identification
+  - Explicit statement that model is transferable to other LC-MS/MS workflows with appropriate standards

@@ -1,0 +1,58 @@
+========== reproducibility_recipe entry ==========
+paper_title: Quality Control Standards for Batch Effect Evaluation and Correction in Mass Spectrometry Imaging.
+source_paper: Huang L et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c02020, PMID: 40354550
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: QCS preparation
+    tool: custom tissue-mimicking phantom
+    parameters: analyte=propranolol, matrix=gelatin
+    input: chemical reagents and gelation protocol
+    output: spatially homogeneous QCS slide
+    confidence: high
+  Step 2: MALDI-MSI data acquisition
+    tool: MALDI mass spectrometer
+    parameters: experiment_duration=three days, instrument_platform=not specified, laser_settings=not specified, matrix_application_method=not specified
+    input: QCS slides and biological tissue samples
+    output: raw MSI .imzML/.ibd files
+    confidence: low
+  Step 3: QCS signal extraction and variability assessment
+    tool: custom or unspecified software
+    algorithm: intensity extraction from predefined QCS regions of interest (ROIs)
+    parameters: roi_definition=spatially defined QCS areas, metric=coefficient of variation (CV) across batches
+    input: raw .imzML/.ibd files
+    output: QCS intensity matrix (batch × m/z × spatial pixel)
+    confidence: medium
+  Step 4: Batch effect correction
+    tool: three computational approaches applied to MALDI-MSI data for the first time
+    parameters: correction_methods=['ComBat', 'SVA', 'RUV'], target=QCS intensity variation reduction
+    input: QCS + sample intensity matrices
+    output: batch-corrected intensity matrix
+    confidence: medium
+  Step 5: Multivariate clustering evaluation
+    tool: Principal Component Analysis (PCA)
+    algorithm: PCA
+    parameters: n_components=2, scaling=auto, input=batch-corrected intensity matrix
+    input: batch-corrected intensity matrix
+    output: PCA scores and loadings
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw MALDI-MSI data (.imzML/.ibd) not deposited in public repository
+  - No specification of instrument platform, acquisition parameters, or matrix application protocol
+  - No code or scripts shared for QCS ROI extraction or batch correction implementation
+  - Three correction methods (ComBat/SVA/RUV) applied but no version numbers, parameter settings, or preprocessing details provided
+  - QCS preparation protocol lacks gel concentration, propranolol loading concentration, homogenization method, and validation of spatial uniformity
+reproducibility_strengths:
+  - Explicit description of QCS composition (propranolol in gelatin)
+  - Clear experimental design (three-day batch experiment)
+  - Use of standard open-source batch correction methods (ComBat, SVA, RUV)

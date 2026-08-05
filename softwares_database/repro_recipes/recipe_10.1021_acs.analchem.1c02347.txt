@@ -1,0 +1,62 @@
+========== reproducibility_recipe entry ==========
+paper_title: Rapid Automated Annotation and Analysis of N-Glycan Mass Spectrometry Imaging Data Sets Using NGlycDB in METASPACE.
+source_paper: Veličković D et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.1c02347, PMID: 34581565
+overall_reproducibility_score: 72/100
+
+workflow_steps: 5
+  Step 1: N-glycan database construction
+    tool: NGlycDB
+    algorithm: database curation and adaptation
+    input: existing glycan databases
+    output: public N-glycan database (NGlycDB)
+    confidence: medium
+  Step 2: MSI data upload and preprocessing
+    tool: METASPACE
+    algorithm: ion image generation, peak detection, spatial normalization
+    parameters: ionization_mode=positive, mz_tolerance_ppm=5, adducts=['+Na', '+K', '+H']
+    input: raw MALDI-MSI .imzML files
+    output: ion images and annotated molecular features
+    confidence: medium
+  Step 3: Molecular annotation of N-glycans
+    tool: METASPACE with NGlycDB
+    algorithm: spectral matching against NGlycDB using METASPACE annotation engine
+    parameters: database=NGlycDB, score_threshold=0.3, min_spectral_similarity=0.6
+    input: preprocessed MSI data + NGlycDB
+    output: spatially resolved N-glycan annotations with confidence scores
+    confidence: low
+  Step 4: Visualization and spatial analysis
+    tool: METASPACE web interface
+    algorithm: ion image rendering, co-localization analysis, region-of-interest (ROI) extraction
+    parameters: colocalization_method=Pearson correlation, roi_segmentation=manual or tissue annotation-based
+    input: annotated ion images
+    output: spatial heatmaps, co-localization maps, ROI intensity profiles
+    confidence: medium
+  Step 5: Biological interpretation and validation
+    tool: manual curation and literature cross-referencing
+    algorithm: biological context mapping
+    input: annotated N-glycan list with spatial distribution
+    output: biologically interpreted N-glycan distributions (e.g., tissue-specific expression)
+    confidence: low
+
+data_availability:
+  raw_data: available (METASPACE)
+  processed_data: available (METASPACE)
+  metadata: in_paper_only
+  data_urls: https://metaspace2020.eu/
+
+code_availability: repository_linked
+  code_url: https://github.com/metaspace2020
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - NGlycDB construction details (e.g., source databases, curation rules) not fully specified
+  - No explicit description of MSI acquisition parameters (laser settings, matrix application, spatial resolution)
+  - No mention of raw data deposition in public repositories like MassIVE or GNPS
+  - Statistical or multivariate analysis methods not described
+reproducibility_strengths:
+  - METASPACE is open-source and publicly accessible
+  - NGlycDB integrated into METASPACE for public use
+  - Code available on GitHub under MIT license
+  - Analysis performed using cloud platform eliminating local software dependency

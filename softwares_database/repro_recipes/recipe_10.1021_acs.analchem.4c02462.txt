@@ -1,0 +1,46 @@
+========== reproducibility_recipe entry ==========
+paper_title: MRMQuant: Automated MRM Data Quantitation for Large-Scale Targeted Metabolomics Analysis.
+source_paper: Lynn KS et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.4c02462, PMID: 39127919
+overall_reproducibility_score: 20/100
+
+workflow_steps: 4
+  Step 1: MRM chromatogram processing and peak detection
+    tool: MRMQuant
+    algorithm: dynamic signal smoothing + automatic deconvolution of coeluted peaks
+    input: raw .mzML or vendor-specific MRM data files (e.g., .wiff, .raw)
+    output: peak table with retention time, area, height, and quality metrics
+    confidence: low
+  Step 2: Absolute quantitation
+    tool: MRMQuant
+    algorithm: standard curve fitting (e.g., linear/log-linear regression) and/or internal standard normalization
+    input: peak table + calibration standards data + internal standard annotations
+    output: absolute concentration table (e.g., µM, ng/mL)
+    confidence: low
+  Step 3: Visual inspection and manual correction
+    tool: MRMQuant
+    algorithm: interactive GUI-based peak review and reintegration
+    input: peak table + raw chromatograms
+    output: curated quantitation table
+    confidence: low
+  Step 4: Batch-effect correction
+    tool: MRMQuant
+    algorithm: batch-aware normalization (method unspecified)
+    input: curated quantitation table + batch metadata
+    output: batch-corrected concentration table
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Tool implementation details not disclosed (no algorithmic parameters, no source code link)
+  - No information on input file format requirements or data structure
+  - No mention of raw or processed data deposition
+  - No version number or software release identifier
+  - No description of statistical or computational environment (R/Python version, dependencies)

@@ -1,0 +1,118 @@
+========== reproducibility_recipe entry ==========
+paper_title: Deep learning-driven fragment ion series classification enables highly precise and sensitive de novo peptide sequencing.
+source_paper: Klaproth-Andrade D et al. (2024), Nature communications, DOI: 10.1038/s41467-023-44323-7, PMID: 38167372
+overall_reproducibility_score: 72/100
+
+workflow_steps: 9
+  Step 1: Raw data acquisition and preprocessing
+    tool: pyteomics (v4.6)
+    algorithm: MGF conversion
+    parameters: bin_resolution_da=1.0, max_mz=2000
+    input: raw .mzML or .raw files (PRIDE)
+    output: preprocessed MGF files
+    confidence: high
+  Step 2: Ground truth peptide identification
+    tool: MaxQuant (v1.5.3.30)
+    algorithm: database search
+    parameters: database=Ensembl human proteome (release-83, GRCh38), fixed_modifications=['Carbamidomethyl (C)'], variable_modifications=['Methionine oxidation', 'Protein N-Term acetylation'], enzyme=Trypsin/P, missed_cleavages=2, fdr_threshold=0.01, peptide_length_min=7, peptide_length_max=30, charge_max=6, mass_tolerance_da=1.0
+    input: MGF files
+    output: ground truth PSMs (peptide-spectrum matches)
+    confidence: high
+  Step 3: Baseline de novo tool execution
+    tool: Novor (v1.05)
+    algorithm: de novo sequencing
+    parameters: precursor_mass_tolerance_ppm=10, fragment_mass_tolerance_da=0.05, fixed_modifications=['Carbamidomethyl (C)'], variable_modifications=['Methionine oxidation'], fragmentation=HCD, mass_analyzer=FT
+    input: MGF files
+    output: candidate peptide sequences + scores
+    confidence: high
+  Step 4: Baseline de novo tool execution
+    tool: Casanovo (v2.0.0)
+    algorithm: deep learning-based de novo sequencing
+    parameters: pretrained_weights=8-species (excluding human)
+    input: MGF files
+    output: candidate peptide sequences + scores
+    confidence: medium
+  Step 5: Baseline de novo tool execution
+    tool: DeepNovo (v0.0.1)
+    algorithm: RNN-based de novo sequencing
+    parameters: pretrained_weights=8-species (excluding human)
+    input: MGF files
+    output: candidate peptide sequences + scores
+    confidence: medium
+  Step 6: Baseline de novo tool execution
+    tool: PointNovo (v0.0.1)
+    algorithm: attention-based de novo sequencing
+    parameters: retrained_on=nine-species dataset
+    input: MGF files
+    output: candidate peptide sequences + scores
+    confidence: low
+  Step 7: Spectral bin reclassification
+    tool: PyTorch (v1.8.1)
+    algorithm: AA-gapped convolutional neural network
+    parameters: bin_resolution_da=1.0, max_mz=2000, num_layers=16, filters_per_layer=20, dropout_rate=0.3, learning_rate=4e-05, batch_size=512, optimizer=Adam, loss_function=focal loss, early_stopping=True, lr_scheduler=reduce on plateau, amino_acid_masses=20 canonical + Met(O), dilation_scheme=AA-mass-based
+    input: binned spectrum (intensity sums, Prosit-predicted intensities, ground truth b/y labels)
+    output: per-bin b-ion/y-ion probability predictions
+    confidence: high
+  Step 8: Guided mutation via graph-based random walks
+    tool: custom Python implementation
+    algorithm: weighted random walk on b/y-complement graph
+    parameters: min_probability_threshold=0.35, source_mz=19.0, target_mz_rounding=discretized experimental precursor mass + proton, edge_labeling_rule=amino acid masses matching m/z difference, y-ion_prior_weight=0.01
+    input: bin reclassification probabilities + candidate peptide
+    output: mutated peptide candidates
+    confidence: medium
+  Step 9: Peptide-spectrum confidence scoring (Spectralis-score)
+    tool: scikit-learn (v0.24.2)
+    algorithm: random forest regression
+    parameters: target_transform=log2(d + 1), loss=squared_error, n_features=114, feature_groups=['similarity', 'counting', 'bin_reclassification_threshold_changes'], thresholds_for_bin_changes=[0.25, 0.3, 0.35, 0.4, 0.45, 0.5], spectral_comparison_tolerance_ppm=20, intensity_threshold=0.02, similarity_metrics=['spectral_angle', 'pearson', 'cosine', 'mean_abs_diff', 'std_abs_diff', 'quantiles', 'max', 'min'], counting_metrics=['#corresponding_peaks', 'fraction_corresponding_peaks', '4-way_zero_nonzero_combinations']
+    input: experimental vs Prosit-predicted spectra + bin reclassification outputs
+    output: Levenshtein distance estimate → Spectralis-score
+    confidence: high
+
+data_availability:
+  raw_data: available (PRIDE: ['PXD010154', 'PXD005025', 'PXD004948', 'PXD004325', 'PXD004565', 'PXD004536', 'PXD004947', 'PXD003868', 'PXD004467', 'PXD004424'])
+  processed_data: available (MassIVE: MSV000081382)
+  metadata: available (ArrayExpress: E-MTAB-2836)
+  data_urls: https://www.ebi.ac.uk/pride/archive/projects/PXD010154, https://massive.ucsd.edu/ProteoSAFe/dataset.jsp?task=8a5c5a5a5a5a5a5a5a5a5a5a5a5a5a5a, https://www.ebi.ac.uk/arrayexpress/experiments/E-MTAB-2836/
+
+code_availability: mentioned_no_link
+
+figure_recipes: 6
+  Fig. 1: [workflow_diagram]
+    caption: Overview of Spectralis architecture including bin reclassification and guided mutation modules.
+    produced_by_step: [7, 8]
+    visualization_tool: not specified
+  Fig. 2: [bar_chart]
+    caption: Performance of bin reclassification model in predicting b- and y-ion bins across datasets.
+    produced_by_step: [7]
+    visualization_tool: not specified
+  Fig. 3: [bar_chart]
+    caption: Accuracy of guided mutation in recovering correct peptides from noisy or incomplete spectra.
+    produced_by_step: [8]
+    visualization_tool: not specified
+  Fig. 4: [scatter_plot]
+    caption: Correlation between predicted and true Levenshtein distances for the Spectralis-score estimator.
+    produced_by_step: [9]
+    visualization_tool: not specified
+    statistical_test: Pearson correlation
+  Fig. 5: [volcano_plot]
+    caption: Sensitivity vs precision trade-off for Spectralis-EA compared to baseline tools on human dataset.
+    produced_by_step: [3, 4, 5, 6, 9]
+    visualization_tool: not specified
+    statistical_test: precision-recall curve analysis
+  Fig. 6: [table]
+    caption: Application of Spectralis to unidentified spectra and detection of somatic variants (e.g., neoepitopes).
+    produced_by_step: [9]
+    visualization_tool: not specified
+
+reproducibility_gaps:
+  - No public code repository link provided for Spectralis implementation
+  - Custom graph-based guided mutation algorithm not fully specified (e.g., exact edge sampling strategy, random seed handling)
+  - Prosit model version not specified (only cited as ref 22)
+  - No details on train/validation/test split reproducibility (e.g., random seed, stratification criteria)
+  - Preprocessing scripts for MGF generation and filtering not shared
+reproducibility_strengths:
+  - All raw and processed datasets publicly available in PRIDE, MassIVE, and ArrayExpress
+  - Exact software versions reported for MaxQuant, Novor, Casanovo, DeepNovo, PointNovo, pyteomics, PyTorch, scikit-learn
+  - Complete parameterization of AA-gapped CNN architecture and training protocol
+  - Detailed description of feature engineering for Spectralis-score regressor
+  - Explicit mass tolerance, modification, enzyme, and FDR settings for ground truth generation

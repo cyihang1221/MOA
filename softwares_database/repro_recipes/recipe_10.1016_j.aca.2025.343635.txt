@@ -1,0 +1,66 @@
+========== reproducibility_recipe entry ==========
+paper_title: Feature selection and extraction strategies for non-targeted analysis using GC-MS and GC-IMS: A tutorial.
+source_paper: Parastar H et al. (2025), Analytica chimica acta, DOI: 10.1016/j.aca.2025.343635, PMID: 39947788
+overall_reproducibility_score: 45/100
+
+workflow_steps: 6
+  Step 1: Raw data acquisition and preprocessing
+    tool: GC-MS and GC-IMS instruments
+    input: raw chromatographic data files (vendor-specific)
+    output: preprocessed chromatograms (retention time-aligned, baseline-corrected)
+    confidence: low
+  Step 2: Feature detection and peak table generation
+    tool: ChromaTOF (LECO) for GC-MS; GC-IMS Library Search Software (G.A.S. mbH) for GC-IMS
+    algorithm: deconvolution-based peak finding
+    parameters: signal_to_noise_ratio_threshold=10, minimum_peak_width=3–5 data points
+    input: preprocessed chromatograms
+    output: feature table (m/z or drift time + retention time + intensity)
+    confidence: medium
+  Step 3: Feature alignment and retention time correction
+    tool: ChromaTOF (for GC-MS); GC-IMS Library Search Software (for GC-IMS)
+    algorithm: correlation-optimized warping (COW) or dynamic time warping (DTW)
+    parameters: alignment_window=±1–2 s, reference_sample=QC or pooled sample
+    input: individual feature tables
+    output: aligned feature matrix (samples × features)
+    confidence: medium
+  Step 4: Feature selection
+    tool: R (stats, mlr3, caret) and/or Python (scikit-learn)
+    algorithm: ['Variance thresholding', 'Univariate statistical filtering (t-test, ANOVA)', 'Recursive Feature Elimination (RFE)', 'SelectKBest']
+    parameters: variance_threshold=0.01, p_value_cutoff=0.05, n_features_to_select=50
+    input: aligned feature matrix
+    output: reduced feature matrix
+    confidence: high
+  Step 5: Feature extraction
+    tool: R (prcomp, FactoMineR) and/or Python (scikit-learn)
+    algorithm: ['Principal Component Analysis (PCA)', 'Linear Discriminant Analysis (LDA)', 'Partial Least Squares Discriminant Analysis (PLS-DA)']
+    parameters: n_components=2, scaling=UV scaling (unit variance), cross_validation_folds=5
+    input: aligned or selected feature matrix
+    output: low-dimensional score/loadings matrices
+    confidence: high
+  Step 6: Pattern recognition and model evaluation
+    tool: R (mlr3, e1071) and/or Python (scikit-learn)
+    algorithm: ['k-Nearest Neighbors (k-NN)', 'Support Vector Machine (SVM)', 'Random Forest']
+    parameters: k=5, kernel=RBF, n_estimators=100, cv_strategy=stratified k-fold
+    input: reduced or extracted feature matrix
+    output: classification/regression models, performance metrics (accuracy, AUC, F1)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw GC-MS and GC-IMS data not deposited in public repository
+  - No links to code/scripts despite claim of 'available tools' and 'tutorial' reproducibility
+  - Vendor-specific software (ChromaTOF, GC-IMS Library Search) are commercial and not accessible without license
+  - No specification of instrument parameters (e.g., column type, temperature program, IMS drift gas, calibration standards) needed to replicate acquisition
+  - No example dataset or parameter files provided for benchmarking
+reproducibility_strengths:
+  - Explicit listing of open-source algorithms (PCA, PLS-DA, SVM, RF) with common parameter ranges
+  - Clear conceptual workflow structure suitable for pedagogical reuse
+  - Identification of both feature selection and extraction strategies with comparative intent

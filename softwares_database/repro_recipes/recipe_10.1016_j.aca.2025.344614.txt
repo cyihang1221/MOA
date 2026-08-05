@@ -1,0 +1,75 @@
+========== reproducibility_recipe entry ==========
+paper_title: Classification of small blue round cell tumors by integrating peptide and N-glycan mass imaging spectrometric profiles.
+source_paper: Bollwein C et al. (2025), Analytica chimica acta, DOI: 10.1016/j.aca.2025.344614, PMID: 41073008
+overall_reproducibility_score: 30/100
+
+workflow_steps: 7
+  Step 1: MALDI-MSI data acquisition
+    tool: MALDI-TOF/TOF mass spectrometer
+    parameters: laser_frequency_hz=1000, laser_spot_size_um=20, spatial_resolution_um=50, mass_range_mz=[800, 4000], ionization_mode=positive, matrix=α-cyano-4-hydroxycinnamic acid (CHCA) for peptides; 2,5-dihydroxybenzoic acid (DHB) for N-glycans
+    input: tissue microarray (TMA) sections
+    output: raw .imzML files (peptide and N-glycan datasets separately)
+    confidence: medium
+  Step 2: Data preprocessing and peak detection
+    tool: SCiLS Lab
+    algorithm: centroiding, noise filtering, baseline correction
+    parameters: snr_threshold=3, peak_width_da=0.5, mz_tolerance_ppm=20
+    input: raw .imzML files
+    output: peak lists per pixel (m/z-intensity matrices)
+    confidence: medium
+  Step 3: Feature alignment and normalization
+    tool: SCiLS Lab
+    algorithm: total ion current (TIC) normalization, m/z alignment across pixels
+    parameters: alignment_method=correlation optimized warping (COW), normalization_method=TIC
+    input: peak lists per pixel
+    output: normalized feature matrix (m/z × pixel)
+    confidence: medium
+  Step 4: Integration of peptide and N-glycan datasets
+    tool: Custom R script
+    algorithm: horizontal concatenation of m/z feature matrices after m/z-range harmonization
+    parameters: mz_harmonization_window_da=0.3, feature_union_strategy=union
+    input: two normalized feature matrices (peptide + N-glycan)
+    output: integrated feature matrix (combined m/z × pixel)
+    confidence: low
+  Step 5: Classification modeling
+    tool: scikit-learn
+    algorithm: ['Gradient Boosting', 'SVM', 'KNN', 'LDA']
+    parameters: cv_folds=5, train_test_split_ratio=0.7, feature_selection_method=ANOVA F-test top-100 features, svm_kernel=rbf, knn_neighbors=5, lda_solver=svd
+    input: integrated feature matrix (m/z × pixel), sample labels
+    output: classification models, accuracy metrics per algorithm
+    confidence: high
+  Step 6: Biomarker signature identification
+    tool: SCiLS Lab + manual annotation
+    algorithm: univariate statistical analysis (p-value < 0.05, fold-change > 2)
+    parameters: statistical_test=ANOVA with Tukey post-hoc, fold_change_threshold=2, p_value_threshold=0.05
+    input: integrated feature matrix, class labels
+    output: discriminatory m/z features (tentatively identified peptides and N-glycans)
+    confidence: medium
+  Step 7: Tentative identification of discriminatory features
+    tool: MassBank, GlycoWorkbench, UniProt
+    algorithm: m/z matching with in-silico fragmentation and glycan topology rules
+    parameters: mass_tolerance_ppm=10, fragmentation_rule_set=glycan-specific (e.g., cross-ring cleavages), database_search_mode=exact mass + retention time not applicable (imaging)
+    input: discriminatory m/z features
+    output: tentatively annotated peptide/N-glycan signatures
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw MALDI-MSI data (.imzML) not deposited in public repository (e.g., MetaboLights, Imaging MS Data Commons)
+  - SCiLS Lab is commercial software requiring license and is not reproducible without access
+  - No code or scripts shared for dataset integration (Step 4) or classification pipeline (Step 5)
+  - Tentative identifications lack MS/MS spectral evidence or validation — only based on m/z matching
+  - TMA composition details (core locations, staining QC, tissue viability) not provided
+  - No description of instrument calibration, internal standards, or QC metrics (e.g., CVs across replicates)
+reproducibility_strengths:
+  - Clear tumor class definitions and sample sizes reported (n=5 per major group)
+  - Explicit reporting of classification algorithms and performance metrics (accuracy range 76–100%)
+  - Use of standard open-source ML library (scikit-learn) for modeling

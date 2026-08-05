@@ -1,0 +1,84 @@
+========== reproducibility_recipe entry ==========
+paper_title: Metabolomics reveals pro-inflammatory effects of 12R-HETE and ALOX12B in maternal allergic asthma.
+source_paper: Wang L et al. (2025), Communications biology, DOI: 10.1038/s42003-025-08979-9, PMID: 41254134
+overall_reproducibility_score: 42/100
+
+workflow_steps: 6
+  Step 1: Sample preparation for untargeted metabolomics
+    tool: manual protocol
+    algorithm: liquid-liquid extraction (MTBE/methanol/water)
+    parameters: tissue_weight_mg=20, homogenization_buffer_volume_ul=200, homogenization_method=ball mill, homogenization_time_min=10, sample_volume_ul=20, methanol_volume_ul=225, MTBE_volume_ul=750, water_volume_ul=188, centrifugation_speed_rpm=18000, centrifugation_time_min=2, centrifugation_temperature_c=4, reconstitution_solvent_ratio_acn_water=4:1, internal_standard=CUDA, internal_standard_concentration_ug_ml=1, sonication_time_min=None, vortex_time_total_min=10
+    input: lung tissue homogenate or plasma
+    output: extracted metabolite samples ready for injection
+    confidence: high
+  Step 2: Chromatographic separation
+    tool: Dionex UltiMate 3000 UPLC
+    algorithm: HILIC
+    parameters: column=Waters ACQUITY UPLC BEH Amide (2.1 × 150 mm, 1.7 μm), column_temperature_c=45, mobile_phase_a=H2O + 10 mM AmF + 0.125% FA, mobile_phase_b=ACN:H2O (95:5, v/v) + 10 mM AmF + 0.125% FA, flow_rate_ml_min=0.4, gradient_profile=['0–2 min: 100% B', '2–7.7 min: linear to 70% B', '7.7–9.5 min: linear to 40% B', '9.5–10.25 min: linear to 30% B', '10.25–12.75 min: return to 100% B', '12.75–17 min: equilibration at 100% B'], injection_volume_ul=None
+    input: extracted metabolite samples
+    output: chromatographically separated analytes
+    confidence: high
+  Step 3: Mass spectrometry acquisition
+    tool: Q Exactive HF MS
+    algorithm: data-dependent acquisition (DDA)
+    parameters: ion_mode=['positive', 'negative'], scan_range_mz=[60, 900], sheath_gas_flow_arb=60, auxiliary_gas_flow_arb=25, spray_voltage_kv_positive=3.6, spray_voltage_kv_negative=4.0, capillary_temperature_c=300, auxiliary_gas_heater_temperature_c=370, ms1_resolution=17500, ms2_resolution=70000, top_n_precursors=10, nce_values=[20, 40, 60], qc_frequency=every 6 samples
+    input: chromatographically separated analytes
+    output: raw .raw files
+    confidence: high
+  Step 4: Metabolite identification
+    tool: MS-DIAL 4.24 (v4.24)
+    algorithm: spectral library matching and retention time alignment
+    parameters: library_matching_score_threshold=None, rt_tolerance_sec=None, mz_tolerance_ppm=None
+    input: raw .raw files
+    output: putatively identified metabolite features
+    confidence: medium
+  Step 5: Data processing and statistical analysis
+    tool: MetaboAnalyst 5.0 (v5.0)
+    algorithm: univariate and multivariate statistics
+    parameters: normalization_method=autoscaling, scaling_method=Pareto scaling, missing_value_imputation=k-nearest neighbors, statistical_tests=['one-way ANOVA'], p_value_threshold=0.05, fdr_correction=Benjamini-Hochberg, multivariate_methods=['PCA', 'PLS-DA', 'OPLS-DA'], validation_method=permutation test
+    input: feature table (peak intensities)
+    output: differential metabolites, pathway enrichment results, model metrics
+    confidence: medium
+  Step 6: Targeted quantification of 12R-HETE
+    tool: TSQ Vantage™ MS/MS
+    algorithm: multiple reaction monitoring (MRM)
+    parameters: ion_mode=negative, spray_voltage_v=3200, vaporizer_temperature_c=None, sheath_gas_pressure_bar=45, auxiliary_gas_pressure_bar=25, capillary_temperature_c=350, s_lens_amplitude=None, collision_energy_ev=None, flow_rate_ml_min=0.3, injection_volume_ul=2, run_time_min=3
+    input: extracted plasma and lung tissue samples
+    output: quantified 12R-HETE concentrations
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 3
+  Figure 1A: [workflow_diagram]
+    caption: Schematic of experimental design for maternal HDM-induced asthma model.
+    produced_by_step: [1, 2, 3]
+    visualization_tool: not specified
+  Figure 2A: [workflow_diagram]
+    caption: Schematic of experimental design for offspring HDM-induced asthma model.
+    produced_by_step: [1, 2, 3]
+    visualization_tool: not specified
+  Table 1: [table]
+    caption: Primer sequences used for RT-qPCR analysis.
+    visualization_tool: not specified
+
+reproducibility_gaps:
+  - Raw mass spectrometry data (.raw files) not deposited in public repository (e.g., MetaboLights, PRIDE)
+  - No accession ID or repository link provided for any data
+  - MS-DIAL 4.24 parameters (e.g., m/z tolerance, RT window, library version) not specified
+  - MetaboAnalyst 5.0 workflow settings (e.g., imputation method, scaling, CV cutoff for filtering) only partially described
+  - Chromatographic gradient lacks exact %B values at each timepoint (only qualitative 'linear decrease' stated)
+  - Targeted MRM transitions and collision energies for 12R-HETE not reported
+  - No code, scripts, or parameter files shared for data processing or statistical modeling
+  - QC sample composition and handling details (e.g., pooling strategy, number of QCs) insufficiently described
+reproducibility_strengths:
+  - Detailed HILIC-MS chromatographic and MS acquisition parameters provided
+  - Explicit reagent sources and catalog numbers listed
+  - Full animal model timeline and dosing regimen documented
+  - Use of widely adopted open-source (MS-DIAL) and free web-based (MetaboAnalyst) tools
+  - Clear description of sample preparation protocol including solvent volumes and centrifugation conditions

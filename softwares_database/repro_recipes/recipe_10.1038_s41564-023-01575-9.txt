@@ -1,0 +1,97 @@
+========== reproducibility_recipe entry ==========
+paper_title: microbeMASST: a taxonomically informed mass spectrometry search tool for microbial metabolomics data.
+source_paper: Zuffa S et al. (2024), Nature microbiology, DOI: 10.1038/s41564-023-01575-9, PMID: 38316926
+overall_reproducibility_score: 82/100
+
+workflow_steps: 10
+  Step 1: Public MS/MS data collection from GNPS/MassIVE
+    tool: ReDU
+    algorithm: manual and systematic curation
+    parameters: date_range=May–July 2022, ionization_modes=['positive', 'negative'], sample_type=monocultures only
+    input: publicly deposited .mzML/.mzXML files in GNPS/MassIVE
+    output: curated list of 60,781 LC–MS/MS files from 537 datasets
+    confidence: high
+  Step 2: Metadata harmonization and taxonomic curation
+    tool: NCBI Taxonomy API + manual curation
+    algorithm: BLAST-based taxonomic name resolution + manual NCBI ID assignment
+    parameters: mass_tolerance_da=0.02, taxonomic_ranks_kept=['kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species', 'strain', 'subgenus', 'subspecies', 'variety']
+    input: raw metadata from GNPS/MassIVE + ReDU outputs
+    output: microbe_masst_table.csv (with MassIVE IDs, NCBI IDs, taxonomy, QC/blank flags)
+    confidence: high
+  Step 3: Taxonomic tree generation
+    tool: taxize (v0.9.100)
+    algorithm: NCBI lineage retrieval
+    parameters: r_version=4.2.2, python_version=3.10, ete3_tree_method=NCBI-based
+    input: microbe_masst_table.csv (NCBI IDs)
+    output: Newick tree → JSON tree with sample counts per taxon and QC/blank nodes
+    confidence: high
+  Step 4: MASST fast search execution
+    tool: Fast Search Tool (FASST) API
+    algorithm: precursor-mass-indexed spectral similarity search (modified cosine score)
+    parameters: precursor_mass_tolerance=0.05, fragment_mass_tolerance=0.05, min_cosine_score=0.7, min_matched_peaks=3, analogue_search=False
+    input: USI or .mgf file (MS/MS spectra)
+    output: list of matching spectra with metadata and cosine scores
+    confidence: high
+  Step 5: Taxonomic tree visualization
+    tool: D3.js
+    algorithm: JSON tree filtering + D3 hierarchical rendering
+    input: FASST search results + microbeMASST taxonomic JSON tree
+    output: interactive HTML taxonomic tree
+    confidence: medium
+  Step 6: Batch spectral filtering (mouse study)
+    tool: custom Python script
+    algorithm: cosine similarity + delta parent mass filtering
+    parameters: cosine_threshold=0.7, delta_parent_mass_da=0.02
+    input: Molecular network output (.mgf, .tsv, .qza), networkedges_selfloop file
+    output: filtered .mgf file (n = 2,425 spectra)
+    confidence: medium
+  Step 7: Compound class prediction
+    tool: SIRIUS + CANOPUS
+    algorithm: machine learning–based compound class annotation
+    parameters: max_mz=850
+    input: MS/MS spectra (.mgf)
+    output: compound class predictions (e.g., flavonoid, lipid)
+    confidence: high
+  Step 8: Cross-dataset spectral matching
+    tool: FASST API (again)
+    algorithm: same as step 4
+    parameters: precursor_mass_tolerance=0.05, fragment_mass_tolerance=0.05, min_cosine_score=0.7, min_matched_peaks=3
+    input: filtered .mgf (n = 2,425)
+    output: matched spectra against MSV000080918 (antibiotic-treated mice)
+    confidence: high
+  Step 9: Set-based analysis (Venn/UpSet)
+    tool: VennDiagram, UpSetR, ComplexUpset (v1.7.3, 1.4.0, 1.3.3)
+    algorithm: intersection analysis of spectral matches across conditions/datasets
+    input: lists of USIs or spectrum IDs from multiple searches
+    output: Venn diagram / UpSet plot
+    confidence: high
+  Step 10: Human disease/body site mapping
+    tool: GNPS web interface + ReDU metadata
+    algorithm: metadata-driven aggregation
+    input: USIs of matched spectra
+    output: distribution table of spectra across diseases and anatomical sites
+    confidence: medium
+
+data_availability:
+  raw_data: available (GNPS/MassIVE: multiple (e.g., MSV000080918))
+  processed_data: available (GNPS: aecd30b9febd43bd8f57b88598a05553, c33855fc32c948049331e9730189d5c1)
+  metadata: available (GNPS/MassIVE: microbeMASST_metadata_massiveID)
+  data_urls: https://gnps.ucsd.edu/ProteoSAFe/status.jsp?task=893fd89b52dc4c07a292485404f97723, https://gnps.ucsd.edu/ProteoSAFe/status.jsp?task=aecd30b9febd43bd8f57b88598a05553, https://gnps.ucsd.edu/ProteoSAFe/status.jsp?task=c33855fc32c948049331e9730189d5c1
+
+code_availability: repository_linked
+  code_url: https://github.com/robinschmid/microbe_masst
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No explicit figure/table descriptions provided in the Methods text — cannot map figures to steps
+  - Custom Python batch script not linked directly in Methods (only implied via GitHub repo)
+  - QIIME2 conversion steps lack exact commands (e.g., 'qiime tools export' parameters)
+  - No details on LC–MS acquisition parameters (gradient, column, flow rate) for original datasets
+  - Spectral processing prior to molecular networking (e.g., peak picking, alignment) not described
+reproducibility_strengths:
+  - Full reference database construction pipeline transparently documented
+  - All major tools (ReDU, taxize, ETE3, FASST, SIRIUS/CANOPUS, UpSetR) are open-source or freely accessible
+  - Raw and processed data deposited in GNPS with stable task IDs
+  - GitHub repository explicitly named and publicly available
+  - Parameter values for FASST search fully specified (tolerances, cosine threshold, min peaks)

@@ -1,0 +1,68 @@
+========== reproducibility_recipe entry ==========
+paper_title: An untargeted analytical workflow based on Kendrick mass defect filtering reveals dysregulations in acylcarnitines in prostate cancer tissue.
+source_paper: Cerrato A et al. (2024), Analytica chimica acta, DOI: 10.1016/j.aca.2024.342574, PMID: 38719419
+overall_reproducibility_score: 35/100
+
+workflow_steps: 6
+  Step 1: Data acquisition
+    tool: Orbitrap mass spectrometer
+    parameters: resolution=120000, mass_range_mz=[70, 1000], polarity=positive, ionization=electrospray ionization (ESI)
+    input: tissue extracts (prostate cancer and adjacent non-malignant)
+    output: raw .raw files
+    confidence: medium
+  Step 2: Kendrick mass defect (KMD) filtering
+    tool: Compound Discoverer
+    algorithm: Kendrick mass defect filtering
+    parameters: KMD_tolerance=0.005 Da, CH2_unit=True, filtering_threshold=90% feature reduction
+    input: raw .raw files
+    output: filtered feature list (acylcarnitine candidates)
+    confidence: high
+  Step 3: Retention time prediction and confirmation
+    tool: Compound Discoverer
+    algorithm: Retention time prediction model for acylcarnitines
+    parameters: chromatography=reversed-phase C18, gradient_profile=not fully specified, prediction_method=structure-based RT modeling
+    input: filtered feature list
+    output: confirmed acylcarnitine annotations
+    confidence: low
+  Step 4: Feature annotation
+    tool: Compound Discoverer
+    algorithm: MS1-based annotation with KMD + RT prediction
+    parameters: mass_accuracy_ppm=5, database=internal acylcarnitine library + mzCloud
+    input: filtered and RT-confirmed features
+    output: 74 annotated acylcarnitines
+    confidence: high
+  Step 5: Multivariate statistical analysis
+    tool: Compound Discoverer / custom PLS-DA implementation
+    algorithm: Partial Least Squares-Discriminant Analysis (PLS-DA)
+    parameters: validation=repeated double cross-validation, components=3, classification_rate_threshold=0.93
+    input: quantified acylcarnitine peak areas
+    output: PLS-DA model with classification performance
+    confidence: medium
+  Step 6: Univariate statistical analysis
+    tool: Compound Discoverer / unspecified statistical module
+    algorithm: t-test or ANOVA
+    parameters: p_value_threshold=0.05, correction=not specified
+    input: quantified acylcarnitine peak areas
+    output: differentially abundant acylcarnitines
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository
+  - Compound Discoverer is commercial software requiring license and version-specific workflows
+  - Exact LC gradient profile and column details not fully specified
+  - Custom retention time prediction model not described or shared
+  - No access to the 74-acylcarnitine annotation table or feature table
+  - Statistical validation details (e.g., number of repeats in double cross-validation) omitted
+reproducibility_strengths:
+  - Clear description of Kendrick mass defect filtering as a core innovation
+  - Explicit reporting of 90% feature reduction and 74 final annotations
+  - Use of repeated double cross-validation for PLS-DA adds methodological rigor

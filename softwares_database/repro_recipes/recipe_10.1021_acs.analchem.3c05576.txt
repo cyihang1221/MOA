@@ -1,0 +1,52 @@
+========== reproducibility_recipe entry ==========
+paper_title: Tandem Mass Spectrometry across Platforms.
+source_paper: Hoang C et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.3c05576, PMID: 38529642
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: MS/MS data acquisition
+    tool: mass spectrometers
+    parameters: collision_energies_eV=[0, 10, 20, 40]
+    input: 100 molecular standards (pure compounds)
+    output: raw MS/MS spectra (.raw, .d, or vendor-specific formats)
+    confidence: high
+  Step 2: MS/MS spectral comparison
+    tool: cosine scoring algorithm
+    algorithm: cosine similarity
+    parameters: similarity_threshold=None
+    input: MS/MS spectra from multiple platforms
+    output: pairwise cosine scores between spectra
+    confidence: medium
+  Step 3: Fragment ion concordance analysis
+    tool: custom or standard spectral analysis
+    algorithm: m/z agreement assessment
+    parameters: mass_tolerance_ppm=None
+    input: fragment ion lists across instruments and collision energies
+    output: concordance metrics per collision energy (e.g., % shared fragments, m/z deviation)
+    confidence: low
+  Step 4: Visual spectral inspection
+    tool: manual spectral review
+    input: MS/MS spectra
+    output: qualitative assessment of spectral similarity and mischaracterization risk (e.g., dimethyl sphingosine vs C20 sphingosine)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw MS/MS spectra not deposited in public repository
+  - No details on cosine scoring implementation (e.g., preprocessing, peak filtering, weighting)
+  - No mass tolerance or fragment matching criteria specified
+  - No information on software used for spectral visualization or comparison
+  - Collision energy calibration method not described
+  - Instrument-specific acquisition parameters (e.g., resolution, scan range, dwell time) not reported
+reproducibility_strengths:
+  - Explicit list of instrument platforms and collision energies tested
+  - Clear experimental design using 100 well-defined molecular standards
+  - Use of widely accepted cosine similarity metric for spectral comparison

@@ -1,0 +1,99 @@
+========== reproducibility_recipe entry ==========
+paper_title: malbacR: A Package for Standardized Implementation of Batch Correction Methods for Omics Data.
+source_paper: Leach DT et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c01289, PMID: 37551970
+overall_reproducibility_score: 85/100
+
+workflow_steps: 12
+  Step 1: Batch effect correction
+    tool: malbacR
+    algorithm: pareto scaling
+    input: omics feature table (e.g., metabolite intensity matrix)
+    output: batch-corrected feature table
+    confidence: medium
+  Step 2: Batch effect correction
+    tool: malbacR
+    algorithm: power scaling
+    input: omics feature table
+    output: batch-corrected feature table
+    confidence: medium
+  Step 3: Batch effect correction
+    tool: malbacR
+    algorithm: range scaling
+    input: omics feature table
+    output: batch-corrected feature table
+    confidence: medium
+  Step 4: Batch effect correction
+    tool: malbacR
+    algorithm: ComBat
+    input: omics feature table
+    output: batch-corrected feature table
+    confidence: medium
+  Step 5: Batch effect correction
+    tool: malbacR
+    algorithm: EigenMS
+    input: omics feature table
+    output: batch-corrected feature table
+    confidence: medium
+  Step 6: Batch effect correction
+    tool: malbacR
+    algorithm: NOMIS
+    input: omics feature table
+    output: batch-corrected feature table
+    confidence: medium
+  Step 7: Batch effect correction
+    tool: malbacR
+    algorithm: RUV-random
+    input: omics feature table
+    output: batch-corrected feature table
+    confidence: medium
+  Step 8: Batch effect correction
+    tool: malbacR
+    algorithm: QC-RLSC
+    input: omics feature table
+    output: batch-corrected feature table
+    confidence: medium
+  Step 9: Batch effect correction
+    tool: malbacR
+    algorithm: WaveICA2.0
+    input: omics feature table
+    output: batch-corrected feature table
+    confidence: medium
+  Step 10: Batch effect correction
+    tool: malbacR
+    algorithm: TIGER
+    input: omics feature table
+    output: batch-corrected feature table
+    confidence: medium
+  Step 11: Batch effect correction
+    tool: malbacR
+    algorithm: SERRF
+    input: omics feature table
+    output: batch-corrected feature table
+    confidence: medium
+  Step 12: Integration with pmartR workflow
+    tool: pmartR
+    algorithm: standardized batch correction pipeline
+    input: batch-corrected feature table from malbacR
+    output: pmartR-ready processed omics data object
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/USDA-ARS-GDL/malbacR
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No empirical dataset or case study provided in the paper to demonstrate application
+  - No benchmarking parameters (e.g., number of surrogate variables, iterations, convergence thresholds) specified for individual methods
+  - No description of QC metrics or evaluation criteria used to assess correction performance
+reproducibility_strengths:
+  - Source code publicly available on GitHub with DOI
+  - MIT license ensures reuse and modification
+  - Standardized I/O enables interoperability with pmartR
+  - Documentation includes function-level help and vignettes (implied by package standards and journal context)

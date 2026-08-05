@@ -1,0 +1,42 @@
+========== reproducibility_recipe entry ==========
+paper_title: MoFi: A Software Tool for Annotating Glycoprotein Mass Spectra by Integrating Hybrid Data from the Intact Protein and Glycopeptide Level.
+source_paper: Skala W et al. (2018), Analytical chemistry, DOI: 10.1021/acs.analchem.8b00019, PMID: 29624378
+overall_reproducibility_score: 20/100
+
+workflow_steps: 3
+  Step 1: Intact protein mass spectrum deconvolution
+    tool: MoFi
+    algorithm: two-stage search algorithm
+    input: deconvoluted mass spectra of intact proteins
+    output: assigned monosaccharide/PTM compositions per peak
+    confidence: low
+  Step 2: Glycan combination compilation and filtering
+    tool: MoFi
+    algorithm: hierarchical glycan combination enumeration with glycan library constraint
+    parameters: library_source=glycopeptide or released glycan analysis
+    input: monosaccharide/PTM compositions per peak
+    output: ranked list of compatible glycoforms with probability scores
+    confidence: medium
+  Step 3: Proteoform ranking by glycoform probability score
+    tool: MoFi
+    algorithm: score calculation from relative glycan abundances, site-aware
+    parameters: score_basis=relative glycan abundances, site_sensitivity=True
+    input: compatible glycoforms
+    output: ranked proteoforms
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - MoFi software not publicly available or described with version, installation, or source code
+  - No raw or processed data deposition reported
+  - No parameters (e.g., mass tolerance, charge state range, glycan database format) specified for MoFi execution
+  - No description of glycan library construction or integration method
+  - No validation dataset or benchmarking protocol provided

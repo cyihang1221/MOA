@@ -1,0 +1,58 @@
+========== reproducibility_recipe entry ==========
+paper_title: PICA: Pixel Intensity Correlation Analysis for Deconvolution and Metabolite Identification in Mass Spectrometry Imaging.
+source_paper: Dong Y et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.2c04778, PMID: 36594613
+overall_reproducibility_score: 20/100
+
+workflow_steps: 5
+  Step 1: Pixel intensity correlation calculation
+    tool: PICA
+    algorithm: Pearson correlation coefficient (PCC)
+    parameters: pcc_threshold_strong=0.9, pcc_threshold_moderate=None
+    input: MALDI mass spectrometry imaging (MSI) ion images (per m/z)
+    output: correlation matrix per precursor ion
+    confidence: high
+  Step 2: Ion grouping based on colocalization
+    tool: PICA
+    algorithm: threshold-based clustering (PCC ≥ 0.9)
+    parameters: pcc_threshold_strong=0.9
+    input: correlation matrix
+    output: ion groups (precursor + fragments/isotopes/adducts/multimers)
+    confidence: high
+  Step 3: Metabolite identification using pseudo-MS/MS spectra
+    tool: PICA
+    algorithm: spectral matching of grouped ions to reference MS/MS or in-silico fragmentation
+    parameters: match_tolerance_ppm=None, fragment_consistency_rules=colocalization-supported
+    input: ion groups (pseudo-MS/MS spectra)
+    output: annotated metabolites with confidence scores
+    confidence: medium
+  Step 4: Structural relationship inference for unknown metabolites
+    tool: PICA
+    algorithm: correlation-guided structural similarity inference (PCC < 0.9)
+    parameters: pcc_threshold_moderate=None
+    input: ion groups and moderate-correlation ions
+    output: hypotheses for unknown metabolite identities
+    confidence: low
+  Step 5: Computation time optimization
+    tool: PICA
+    algorithm: three unspecified acceleration strategies
+    parameters: acceleration_strategy_count=3
+    input: MSI dataset
+    output: computationally efficient PICA analysis
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - PICA software implementation not publicly available or described
+  - No version, repository link, or installation instructions provided
+  - Three computation acceleration strategies not specified
+  - No parameters for spectral matching (e.g., mass tolerance, scoring method)
+  - No details on reference databases or fragmentation tools used for identification
+  - Raw MSI datasets not deposited or accessioned

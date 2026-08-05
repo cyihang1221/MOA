@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: <i>metabCombiner</i>: Paired Untargeted LC-HRMS Metabolomics Feature Matching and Concatenation of Disparately Acquired Data Sets.
+source_paper: Habra H et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.0c03693, PMID: 33724799
+overall_reproducibility_score: 82/100
+
+workflow_steps: 4
+  Step 1: Feature grouping by m/z
+    tool: metabCombiner
+    algorithm: m/z tolerance-based grouping
+    parameters: mz_tolerance_ppm=5
+    input: feature tables (peak lists) from two untargeted LC-HRMS data sets
+    output: m/z-aligned feature groups (candidate pairs)
+    confidence: high
+  Step 2: Retention time mapping via spline fitting
+    tool: metabCombiner
+    algorithm: cubic spline interpolation
+    parameters: min_anchor_pairs=10, rt_ordering_required=True
+    input: selected high-confidence m/z-matched feature pairs with ordered retention times
+    output: retention time transformation function (RT warp model)
+    confidence: medium
+  Step 3: Feature pair scoring and ranking
+    tool: metabCombiner
+    algorithm: weighted similarity scoring (m/z + mapped RT + relative abundance)
+    parameters: weight_mz=0.4, weight_rt=0.4, weight_abundance=0.2
+    input: candidate feature pairs + RT warp model + normalized abundances
+    output: ranked list of best-matching feature pairs
+    confidence: high
+  Step 4: Concatenation of intersecting features
+    tool: metabCombiner
+    algorithm: intersection-based table merging
+    parameters: keep_all_features=False, merge_strategy=intersect
+    input: top-ranked matched feature pairs + original abundance matrices
+    output: combined feature abundance table (n features × (samples_A + samples_B))
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/hhabra/metabCombiner
+  license: Artistic-2.0
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-HRMS data not deposited in public repository
+  - No detailed description of input feature table format (e.g., XCMS vs. MS-DIAL output structure)
+  - Exact spline fitting implementation details (e.g., smoothing parameter) not specified
+reproducibility_strengths:
+  - Open-source R package available on GitHub and Bioconductor
+  - Clear algorithmic description of m/z grouping, RT warping, and weighted scoring
+  - Reproducible parameters reported (e.g., 5 ppm m/z tolerance, weights)

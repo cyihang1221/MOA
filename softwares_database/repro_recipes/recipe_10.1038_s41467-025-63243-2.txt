@@ -1,0 +1,76 @@
+========== reproducibility_recipe entry ==========
+paper_title: Spatial isotope deep tracing deciphers inter-tissue metabolic crosstalk.
+source_paper: Li X et al. (2025), Nature communications, DOI: 10.1038/s41467-025-63243-2, PMID: 40858577
+overall_reproducibility_score: 38/100
+
+workflow_steps: 7
+  Step 1: Raw data conversion
+    tool: ProteoWizard (v3.0.22143)
+    algorithm: msconvert
+    parameters: to_mzXML=True, to_mgf=True, filter=peakPicking
+    input: vendor .raw files
+    output: .mzXML (MS1) and .mgf (MS/MS) files
+    confidence: high
+  Step 2: Parameter optimization for peak detection
+    tool: AutoTuner (v1.4.0)
+    algorithm: grid search + signal-to-noise optimization
+    input: .mzXML files (noninfusion controls)
+    output: optimized XCMS parameters (e.g., ppm tolerance, peak width, snthresh)
+    confidence: medium
+  Step 3: Feature detection, retention time correction, and peak alignment
+    tool: XCMS (v3.12.0)
+    algorithm: centWave (for peak detection), obiwarp (for retention time correction), and matchFeatures (for alignment)
+    parameters: ppm=None, peakwidth=None, snthresh=None, prefilter=3, mzdiff=-0.001, noise=1000, sleep=0.01
+    input: optimized .mzXML files (noninfusion group)
+    output: aligned feature table (m/z, RT, intensity matrix)
+    confidence: low
+  Step 4: Metabolite annotation (HILIC mode)
+    tool: metID (v1.2.19)
+    algorithm: MS2 spectral matching + retention time prediction
+    parameters: lc_mode=HILIC, database=HMDB, METLIN, MassBank
+    input: XCMS feature table + .mgf MS/MS files
+    output: annotated metabolite table (Level 2 & 3 confidence)
+    confidence: high
+  Step 5: Metabolite annotation (RP mode)
+    tool: metID (v1.2.19)
+    algorithm: MS1 database matching (exact mass + RT filtering)
+    parameters: lc_mode=RP, database=HMDB, METLIN, MassBank
+    input: XCMS feature table
+    output: annotated metabolite table (Level 2 & 3 confidence)
+    confidence: high
+  Step 6: Metabolite annotation (HILIC mode, alternative)
+    tool: MetDNA2 (v1.4.1)
+    algorithm: MS2 spectral networking + in silico fragmentation
+    parameters: lc_mode=HILIC, ionization_mode=positive/negative
+    input: XCMS feature table + .mgf MS/MS files
+    output: annotated metabolite table (Level 2 & 3 confidence)
+    confidence: medium
+  Step 7: Isotopic enrichment quantification
+    tool: MSITracer
+    algorithm: spatial isotope deep tracing (SIDT): differential isotopologue distribution analysis across tissue regions
+    parameters: isotope_label=U-13C, background_subtraction=noninfusion control, spatial_resolution=100 μm × 76 μm (tissue), 500 μm × 270 μm (WBA), mz_tolerance_ppm=3
+    input: AFADESI-MSI ion images + LC-MS isotopologue intensities
+    output: spatially resolved 13C-enrichment maps and inter-tissue metabolic flux estimates
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - MSITracer software not publicly available — no repository link, version, or installation instructions
+  - Raw LC-MS and MSI data not deposited in public repository (e.g., MetaboLights, MASSIVE, Zenodo)
+  - AutoTuner-optimized XCMS parameters only referenced in Supplementary Table 3 (unavailable in main text or methods)
+  - No details on statistical modeling for inter-tissue crosstalk inference (e.g., flux balance, correlation networks, regression models)
+  - AFADESI-MSI raw data processing pipeline (e.g., ion image generation, normalization, spatial segmentation) not described
+  - No information on batch correction, QC filtering thresholds, or missing value imputation strategy
+reproducibility_strengths:
+  - Uses established open-source tools (ProteoWizard, XCMS, metID) with versions specified
+  - LC-MS acquisition parameters fully reported (gradients, flow rates, ion source settings, scan ranges)
+  - Metabolite identification confidence levels aligned with Metabolomics Standards Initiative (MSI Level 2/3)
+  - Detailed animal model, labeling protocol, and sample collection timeline provided

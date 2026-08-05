@@ -1,0 +1,86 @@
+========== reproducibility_recipe entry ==========
+paper_title: METASPACE-ML: Context-specific metabolite annotation for imaging mass spectrometry using machine learning.
+source_paper: Wadie B et al. (2024), Nature communications, DOI: 10.1038/s41467-024-52213-9, PMID: 39438443
+overall_reproducibility_score: 52/100
+
+workflow_steps: 8
+  Step 1: Public dataset metadata curation
+    tool: METASPACE API
+    algorithm: manual standardization + heuristic classification
+    parameters: metadata_download_date=2023-09-13, organism_standardization_level=genus/species, kingdom_classes=['Animal', 'Plant', 'Bacteria', 'Fungi', 'Protista', 'Undefined'], sample_type_classes=['Tissue', 'Cells', 'Whole Organism', 'Spheroids', 'Environmental', 'Spots'], irregular_geometry_definition=total_pixel_count != x_pixels * y_pixels, mz_class_thresholds={'small_molecules_max_mz': 400, 'lipids_min_mz': 500}
+    input: METASPACE public dataset metadata (JSON/CSV via API)
+    output: curated metadata table with organism, kingdom, sample_type, m/z_class fields
+    confidence: high
+  Step 2: Non-centroided dataset detection and exclusion
+    tool: custom Python script
+    algorithm: proportion_overlap heuristic
+    parameters: n_top_pixels=50, mz_tol_ppm=3, exclusion_threshold_proportion_overlap=0.5
+    input: centroided vs profile spectrum heuristics per pixel (m/z vectors)
+    output: binary flag per dataset: centroided (keep) / non-centroided (exclude)
+    confidence: high
+  Step 3: Low-quality dataset filtering
+    tool: custom quality control pipeline
+    algorithm: multi-criteria thresholding
+    parameters: min_annotations_fdr_20pct=10, min_median_nonzero_peaks_intensity_threshold=50000, proportion_overlap_exclusion_threshold=0.5
+    input: METASPACE annotation results + peak intensity statistics
+    output: filtered dataset list (1710 retained from 9251)
+    confidence: high
+  Step 4: Context-dependent stratified sampling for train/test split
+    tool: custom R/Python sampling algorithm
+    algorithm: entropy-weighted recursive sampling by project-group-day
+    parameters: context_variables=['polarity', 'ionization_source', 'mass_analyzer', 'mz_class', 'sample_type', 'species'], kingdom_split=['Animal', 'Plant'], min_datasets_per_context=45, test_set_size_per_context=30, training_set_sizes_explored=[10, 20, 30, 40, 50], bottom_species_frequency_grouping_percentile=10, sample_type_whitelist=['Tissue', 'Whole Organism', 'Cells', 'Uncurated']
+    input: curated metadata table
+    output: train/test dataset assignment per context (Supplementary Data 5)
+    confidence: medium
+  Step 5: Reprocessing of training datasets with rule-based METASPACE
+    tool: METASPACE (rule-based) (vv2020+)
+    algorithm: MSM scoring (spatial isotope rho_spatial, spectral isotope rho_spectral, spatial chaos rho_chaos)
+    parameters: annotation_database=CoreMetabolome, configuration_modifications=see Supplementary Note S1
+    input: raw .imzML files (centroided)
+    output: rule-based annotation results (MSM scores, FDR estimates)
+    confidence: medium
+  Step 6: Computation of new m/z error scores
+    tool: custom implementation
+    algorithm: m/z_error_abs and m/z_error_rel (Eqs. 2–4)
+    parameters: isotope_peak_count_T=4, theoretical_isotope_intensities=used in rel error calculation, centroid_mz_calculation=intensity-weighted mean across pixels
+    input: centroided ion images + theoretical adduct formulas
+    output: two new continuous scores per candidate annotation
+    confidence: high
+  Step 7: Decoy adduct sampling and robust FDR estimation
+    tool: custom FDR engine
+    algorithm: target-decoy with median-of-S_D sampling
+    parameters: decoy_sampling_repetitions_S_D=20, monotonicity_adjustment=True, FDR_control_level=0.2
+    input: target annotations + decoy adduct database
+    output: FDR-calibrated annotation confidence scores
+    confidence: high
+  Step 8: Machine learning model training and evaluation
+    tool: scikit-learn or XGBoost (inferred)
+    algorithm: supervised binary classification (target vs decoy)
+    parameters: features=['rho_spatial', 'rho_spectral', 'rho_chaos', 'm/z_error_abs', 'm/z_error_rel'], label=target/decoy, cross_validation_strategy=context-stratified, model_variants=5, evaluation_metrics=['precision', 'throughput', 'low-intensity recall']
+    input: feature matrix (scores) + target/decoy labels
+    output: trained METASPACE-ML classifier models
+    confidence: low
+
+data_availability:
+  raw_data: available (METASPACE)
+  processed_data: in_paper_only (Supplementary Data 1–5)
+  metadata: in_paper_only
+  data_urls: https://metaspace2020.readthedocs.io
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No repository link or DOI provided for METASPACE-ML source code
+  - CoreMetabolome database not publicly released (described as 'specially designed and developed by us')
+  - Custom sampling algorithm and m/z error score implementations not shared
+  - Exact ML model architecture (e.g., XGBoost hyperparameters, feature scaling) not specified
+  - Supplementary Data files referenced but no persistent accession (e.g., Zenodo, Figshare) provided
+  - METASPACE API usage requires account and may have access restrictions
+reproducibility_strengths:
+  - Comprehensive metadata curation methodology fully described
+  - All quality filters and exclusion thresholds explicitly quantified
+  - Context definition framework reproducible from metadata fields
+  - FDR estimation method detailed with equations and parameters (S_D = 20, monotonicity adjustment)
+  - New m/z error scores defined mathematically (Eqs. 2–4)

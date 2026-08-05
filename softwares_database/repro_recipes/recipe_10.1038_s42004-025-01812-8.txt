@@ -1,0 +1,66 @@
+========== reproducibility_recipe entry ==========
+paper_title: NMR data processing, visualization, analysis and structure calculation with NMRFx.
+source_paper: Koag E et al. (2025), Communications chemistry, DOI: 10.1038/s42004-025-01812-8, PMID: 41350395
+overall_reproducibility_score: 78/100
+
+workflow_steps: 5
+  Step 1: NUS NMR data import and processing
+    tool: NMRFx
+    algorithm: NUS reconstruction (non-uniform sampling)
+    parameters: sampling_density=0.088, synthetic_peak_set=1
+    input: NMRPipe time-domain files + schedule file
+    output: processed 3D NMR spectrum (HNCACB)
+    confidence: high
+  Step 2: Chemical shift prediction (protein)
+    tool: NMRFx (FM model via Tribuo)
+    algorithm: Factorization Machine (FM) with stochastic gradient descent
+    parameters: training_dataset_size=1480, test_dataset_size=61, atom_classes=['H', 'C', 'N']
+    input: BMRB/PDB-matched protein structures and assignments
+    output: predicted chemical shifts (ppm)
+    confidence: medium
+  Step 3: Chemical shift prediction (RNA)
+    tool: NMRFx (FM model via Tribuo)
+    algorithm: Factorization Machine (FM) with stochastic gradient descent
+    parameters: training_dataset_size=371, features=['secondary_structure_motifs', 'base_pairing_info']
+    input: BMRB/PDB-matched RNA structures and assignments
+    output: predicted chemical shifts (ppm)
+    confidence: medium
+  Step 4: Molecular structure calculation (NMR restraints)
+    tool: NMRFx
+    algorithm: Simulated annealing / target function minimization
+    parameters: ensemble_size=200, retained_structures=10, alignment_enabled=True
+    input: NEF file (NMR constraints)
+    output: PDBx/mmCIF file (10-structure ensemble)
+    confidence: high
+  Step 5: Algal metabolomics 1D ¹³C NMR processing
+    tool: NMRFx Scanner Tool
+    algorithm: Fourier transform, phasing, baseline correction, spectral alignment
+    parameters: line_broadening_hz=0.3, baseline_correction_order=3, reference_peak_ppm=0.0, reference_compound=TMSP
+    input: FIDs (time-domain ¹³C NMR data)
+    output: stacked, aligned, phased ¹³C NMR spectra
+    confidence: high
+
+data_availability:
+  raw_data: in_paper_only (NUScon competition dataset: not specified)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: https://github.com/oneils/nmrfx
+  license: BSD-3-Clause
+
+figure_recipes: 1
+  Figure 1: [spectral_plot]
+    caption: Processed HNCACB NUS spectrum of Protein A generated using NMRFx.
+    produced_by_step: [1]
+    visualization_tool: NMRFx GUI
+
+reproducibility_gaps:
+  - NUScon dataset accession ID not provided
+  - Algal FID data not deposited in public repository
+  - No link to Supplementary Information containing culturing/GC-FAME details or TSV metadata schema
+  - NMRFx batch command parameters lack convergence criteria or force field specification
+reproducibility_strengths:
+  - NMRFx is open-source (BSD-3-Clause) with GitHub repository and Zenodo DOI
+  - Full Python script for NUS processing provided in SI
+  - Explicit command-line arguments and processing parameters reported for structure calculation and NMR processing

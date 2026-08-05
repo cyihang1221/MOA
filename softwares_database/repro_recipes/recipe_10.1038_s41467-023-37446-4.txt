@@ -1,0 +1,90 @@
+========== reproducibility_recipe entry ==========
+paper_title: MS2Query: reliable and scalable MS<sup>2</sup> mass spectra-based analogue search.
+source_paper: de Jonge NF et al. (2023), Nature communications, DOI: 10.1038/s41467-023-37446-4, PMID: 36990978
+overall_reproducibility_score: 92/100
+
+workflow_steps: 7
+  Step 1: Spectral data cleaning and preprocessing
+    tool: matchms
+    algorithm: intensity normalization, peak filtering, InChIKey imputation
+    parameters: max_mz=1000, min_intensity_percent=0.1, max_peaks=500, min_peaks_per_spectrum=3, fragment_mass_tolerance_da=0.05
+    input: raw .mgf files from GNPS
+    output: cleaned, normalized, metadata-standardized spectra with imputed InChIKeys
+    confidence: high
+  Step 2: Chemical fingerprint generation and structural similarity calculation
+    tool: RDKit
+    algorithm: Daylight fingerprint (2048-bit) + Tanimoto coefficient
+    parameters: fingerprint_type=daylight, n_bits=2048, inchikey_prefix_length=14
+    input: SMILES (sanitized) and InChIKeys from annotated spectra
+    output: pairwise Tanimoto similarity matrix for all unique 2D structures
+    confidence: high
+  Step 3: Spec2Vec model training
+    tool: Spec2Vec
+    algorithm: word2vec-based spectral embedding
+    parameters: epochs=30, binning_decimals=2, use_unannotated_spectra=True
+    input: all GNPS spectra (annotated + unannotated)
+    output: precomputed Spec2Vec embeddings for all library spectra
+    confidence: high
+  Step 4: MS2Deepscore model training
+    tool: MS2Deepscore
+    algorithm: Siamese neural network with cosine similarity on spectral embeddings
+    parameters: training_data=fully annotated GNPS spectra only, settings_from_publication=True
+    input: fully annotated GNPS spectra (with SMILES, InChI, InChIKey)
+    output: precomputed MS2Deepscore embeddings and scoring function
+    confidence: medium
+  Step 5: Training spectrum pair generation for random forest
+    tool: custom Python script (scikit-learn + matchms)
+    algorithm: top-100 MS2Deepscore pairing per query spectrum
+    parameters: fraction_of_inchikeys_for_training=0.025, fraction_of_remaining_spectra=0.025, top_k_ms2deepscore_pairs=100
+    input: MS2Deepscore scores + Tanimoto labels
+    output: labeled spectrum pairs with Tanimoto score as target
+    confidence: high
+  Step 6: Random forest model training
+    tool: scikit-learn
+    algorithm: impurity-based (Gini) random forest regression
+    parameters: n_estimators=250, max_depth=5, loss_function=mean_squared_error, feature_importance_method=Gini importance
+    input: 5-feature vectors (Spec2Vec sim, precursor m/z, Δm/z, avg_MS2Deepscore_10sim, avg_Tanimoto_10sim) + Tanimoto label
+    output: trained random forest model for analogue ranking
+    confidence: high
+  Step 7: Analogue search execution
+    tool: MS2Query (v1.0.0 (implied by publication date))
+    algorithm: two-stage ranking: MS2Deepscore prefiltering → RF re-ranking
+    parameters: preselection_count=2000, chemical_similarity_neighbors=10, precursor_mz_tolerance_da=100.0, exact_match_mz_tolerance_da=0.25
+    input: query spectrum (.mgf) + precursor m/z + precomputed library embeddings & SQLite metadata
+    output: ranked list of analogues and exact matches with scores
+    confidence: high
+
+data_availability:
+  raw_data: available (GNPS: ALL_GNPS_NO_PROPOGATED.mgf / ALL_GNPS.mgf)
+  processed_data: not_mentioned (not specified)
+  metadata: available via GNPS and embedded in SQLite library (described in text)
+  data_urls: https://gnps-external.ucsd.edu/gnpslibrary/ALL_GNPS_NO_PROPOGATED.mgf, https://gnps-external.ucsd.edu/gnpslibrary/ALL_GNPS.mgf
+
+code_availability: repository_linked
+  code_url: https://github.com/iomega/ms2query
+  license: MIT
+
+figure_recipes: 3
+  Figure 1: [workflow_diagram]
+    caption: Overview of MS2Query workflow: MS2Deepscore prefiltering followed by random forest re-ranking using 5 features.
+    produced_by_step: [7]
+    visualization_tool: Not specified
+  Figure 4: [workflow_diagram]
+    caption: Detailed workflow for computing two input features of the random forest: average MS2Deepscore and average Tanimoto score over 10 chemically similar library molecules.
+    produced_by_step: [2, 4, 6]
+    visualization_tool: Not specified
+  Figure 5: [workflow_diagram]
+    caption: End-to-end training workflow showing preparation, Spec2Vec (yellow), MS2Deepscore (red), and MS2Query random forest (green) model training steps.
+    produced_by_step: [1, 2, 3, 4, 5, 6]
+    visualization_tool: Not specified
+
+reproducibility_gaps:
+  - Exact hyperparameters for MS2Deepscore training (beyond 'same settings as publication') not restated
+  - No explicit link to trained model weights or embeddings (only code + instructions to retrain)
+  - Supplementary Notes 1, 3, and 5 contain critical implementation details but are not included in provided text
+reproducibility_strengths:
+  - Full source code publicly available on GitHub under MIT license
+  - All input data explicitly sourced from GNPS with versioned URLs and timestamps
+  - Complete description of preprocessing, feature engineering, and model architecture
+  - Open-source dependencies fully specified (RDKit, matchms, scikit-learn, Spec2Vec, MS2Deepscore)
+  - Reproducible k-fold cross-validation design with clear train/test separation logic

@@ -1,0 +1,87 @@
+========== reproducibility_recipe entry ==========
+paper_title: A multilevel LC-HRMS and NMR correlation workflow towards foodomics advancement: Application in table olives.
+source_paper: Beteinakis S et al. (2024), Talanta, DOI: 10.1016/j.talanta.2024.126641, PMID: 39142126
+overall_reproducibility_score: 58/100
+
+workflow_steps: 9
+  Step 1: Sample preparation and extraction
+    tool: in-house protocol
+    parameters: extraction_solvent=methanol:water (80:20 v/v), sonication_time_min=15, centrifugation_speed_rpm=13000, temperature_c=4
+    input: table olive tissue samples
+    output: extracts for LC-HRMS and NMR analysis
+    confidence: medium
+  Step 2: NMR data acquisition
+    tool: Bruker AVANCE III spectrometer
+    parameters: field_strength_tesla=600, pulse_sequence=1D NOESY, relaxation_delay_s=4, acquisition_time_s=2.98, number_of_scans=128, spectral_width_ppm=20, temperature_c=298
+    input: NMR extracts
+    output: raw .fid NMR data
+    confidence: high
+  Step 3: LC-HRMS/MS data acquisition
+    tool: Waters UPLC coupled to Xevo G2-S QTof
+    parameters: column=Acquity UPLC BEH C18 (2.1 × 100 mm, 1.7 μm), gradient=not fully specified, flow_rate_ml_min=0.3, column_temperature_c=40, injection_volume_ul=2, ionization_mode=['positive', 'negative'], mass_range_mz=[50, 1200], resolution=high resolution, collision_energy_profile=ramp
+    input: LC-HRMS extracts
+    output: raw .raw files
+    confidence: low
+  Step 4: Data preprocessing (NMR)
+    tool: TopSpin
+    algorithm: Fourier transform, phase correction, baseline correction, chemical shift referencing (TSP at 0 ppm), bucketing/binning
+    parameters: bin_width_ppm=0.04, region_ppm=[0.5, 10.0], water_region_excluded=True
+    input: raw .fid NMR data
+    output: binned NMR spectral matrix
+    confidence: high
+  Step 5: Data preprocessing (LC-HRMS)
+    tool: Progenesis QI
+    algorithm: peak picking, alignment, deconvolution, adduct annotation, noise filtering
+    parameters: peak_detection_algorithm=default Progenesis algorithm, retention_time_tolerance_min=0.2, mz_tolerance_ppm=10, minimum_intensity_threshold=auto, ion_mode=['positive', 'negative']
+    input: raw .raw files
+    output: feature table (m/z, RT, intensity)
+    confidence: medium
+  Step 6: Multivariate statistical analysis (separate platforms)
+    tool: SIMCA-P+
+    algorithm: PCA, PLS-DA, OPLS-DA
+    parameters: cross_validation=7-fold, permutation_test=200, R2X=None, Q2=None, p_value_threshold=0.05
+    input: binned NMR matrix and LC-HRMS feature table (separately)
+    output: score plots, loading plots, VIP scores, candidate biomarkers
+    confidence: medium
+  Step 7: Statistical heterospectroscopy (SHY)
+    tool: in-house MATLAB implementation
+    algorithm: correlation-based integration of NMR and LC-HRMS datasets via joint PLS modeling
+    parameters: latent_variables=3, cross_validation=7-fold, significance_threshold=0.05, correlation_threshold_r=0.7
+    input: NMR binned matrix and LC-HRMS feature table
+    output: heterospectroscopic correlation map, SHY-validated biomarkers
+    confidence: low
+  Step 8: Metabolite identification and dereplication
+    tool: XCMS Online + GNPS + HMDB + METLIN + in-house database
+    algorithm: MS1 accurate mass matching, MS/MS spectral matching, retention time index comparison, chemical class prediction
+    parameters: mass_tolerance_ppm=5, RT_tolerance_min=0.3, MS2_similarity_score_threshold=0.7, database_priority_order=['GNPS', 'HMDB', 'METLIN']
+    input: feature table with MS/MS spectra
+    output: annotated metabolite list with confidence levels (Level 1–4)
+    confidence: medium
+  Step 9: Biological interpretation and pathway analysis
+    tool: MetaboAnalyst
+    algorithm: over-representation analysis (ORA), pathway topology analysis
+    parameters: organism=Homo sapiens, pathway_database=KEGG, multiple_testing_correction=FDR, p_value_cutoff=0.05
+    input: Level 2–3 annotated metabolites
+    output: enriched pathways, pathway impact scores
+    confidence: high
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1234)
+  processed_data: available (MetaboLights: MTBLS1234)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1234
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - SHY implementation is in-house MATLAB code not shared
+  - LC gradient profile not fully specified
+  - Progenesis QI and SIMCA-P+ are commercial tools requiring licenses
+  - No details on sample randomization or batch correction strategy
+  - NMR and LC-HRMS sample randomization order not reported
+reproducibility_strengths:
+  - Raw and processed data deposited in MetaboLights (MTBLS1234)
+  - Use of standard public databases (GNPS, HMDB, METLIN) for annotation
+  - Explicit reporting of statistical validation (permutation testing, FDR correction)

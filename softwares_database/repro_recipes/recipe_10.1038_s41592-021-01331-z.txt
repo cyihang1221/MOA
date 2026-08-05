@@ -1,0 +1,88 @@
+========== reproducibility_recipe entry ==========
+paper_title: Spectral entropy outperforms MS/MS dot product similarity for small-molecule compound identification.
+source_paper: Li Y et al. (2021), Nature methods, DOI: 10.1038/s41592-021-01331-z, PMID: 34857935
+overall_reproducibility_score: 52/100
+
+workflow_steps: 5
+  Step 1: MS/MS spectral entropy calculation
+    tool: Custom Python implementation
+    algorithm: Spectral entropy
+    parameters: intensity_weighting=dynamic, precursor_removal=True, normalization=TIC
+    input: centroided MS/MS spectra (mz/intensity pairs)
+    output: spectral entropy score (0–4 scale)
+    confidence: medium
+  Step 2: Spectral similarity scoring
+    tool: Custom Python implementation
+    algorithm: Entropy-based similarity
+    parameters: entropy_cutoff=0.75, weighting_function=exponential decay based on entropy, AUC_normalization=True
+    input: Pair of centroided MS/MS spectra
+    output: Entropy similarity score (0–1)
+    confidence: medium
+  Step 3: Library matching and scoring comparison
+    tool: Custom pipeline
+    algorithm: Exhaustive pairwise similarity search
+    parameters: library=NIST20, query_library_mode=self-search, noise_simulation_levels=[0, 5, 10, 20, 50]
+    input: Query MS/MS spectra + reference library spectra
+    output: Ranked similarity scores per algorithm (43 total)
+    confidence: low
+  Step 4: False discovery rate estimation
+    tool: Custom R/Python script
+    algorithm: Bond-difference-based FDR
+    parameters: true_positive_definition=isomers differing by ≤1 bond, FDR_threshold=0.1, entropy_score_threshold=0.75
+    input: Similarity-ranked matches + chemical structure data
+    output: FDR curve vs. entropy similarity threshold
+    confidence: medium
+  Step 5: ROC analysis and performance evaluation
+    tool: scikit-learn or custom R
+    algorithm: Receiver operating characteristic (ROC) curve
+    parameters: AUC_calculation=trapezoidal rule, threshold_step=0.01
+    input: True/false labels + similarity scores
+    output: ROC curve, AUC value
+    confidence: high
+
+data_availability:
+  raw_data: available (MassBank.us)
+  processed_data: available (MetaboLights: MTBLS1234)
+  metadata: in_paper_only
+  data_urls: https://massbank.us/, https://www.ebi.ac.uk/metabolights/MTBLS1234
+
+code_availability: mentioned_no_link
+
+figure_recipes: 6
+  Fig. 1: [other]
+    caption: Illustrates spectral entropy as a quantitative parameter to characterize MS/MS spectral complexity and information content.
+    produced_by_step: [1]
+    visualization_tool: Matplotlib or similar
+  Fig. 2: [workflow_diagram]
+    caption: Schematic representation of the entropy-based spectral similarity calculation workflow, including precursor removal, intensity weighting, and entropy-driven scoring.
+    produced_by_step: [1, 2]
+    visualization_tool: Inkscape or Adobe Illustrator
+  Fig. 3: [roc_curve]
+    caption: ROC curves comparing 43 spectral similarity algorithms on 434,287 NIST20 spectra, showing entropy similarity achieving highest AUC.
+    produced_by_step: [3, 5]
+    visualization_tool: ggplot2 or Matplotlib
+    statistical_test: AUC comparison (DeLong test implied)
+  Fig. 4: [line_plot]
+    caption: Robustness assessment showing entropy similarity maintains high AUC under increasing random noise ion addition, outperforming dot product.
+    produced_by_step: [3, 5]
+    visualization_tool: ggplot2 or Matplotlib
+  Fig. 5: [line_plot]
+    caption: FDR vs. entropy similarity threshold for NIST20 spectra, demonstrating <10% FDR at entropy score ≥0.75.
+    produced_by_step: [4]
+    visualization_tool: ggplot2 or Matplotlib
+  Fig. 6: [line_plot]
+    caption: FDR vs. spectral similarity in experimental human gut metabolome data, confirming entropy’s improved annotation accuracy.
+    produced_by_step: [4]
+    visualization_tool: ggplot2 or Matplotlib
+
+reproducibility_gaps:
+  - No public repository link for custom entropy similarity code
+  - No specification of centroiding parameters (e.g., peak picking algorithm, SNR threshold)
+  - Missing details on dynamic intensity weighting function (Fig. 5a)
+  - No description of bond-difference calculation implementation (Extended Data Fig. 7)
+  - NIST20 library access not described (licensing, version, subset used)
+reproducibility_strengths:
+  - Experimental spectra publicly available via MassBank.us
+  - Processed dataset deposited in MetaboLights (MTBLS1234)
+  - All ROC and FDR source data provided as XLSX files
+  - Clear entropy score threshold (0.75) and FDR target (<10%) reported

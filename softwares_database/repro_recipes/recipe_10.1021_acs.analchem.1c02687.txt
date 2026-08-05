@@ -1,0 +1,62 @@
+========== reproducibility_recipe entry ==========
+paper_title: SLAW: A Scalable and Self-Optimizing Processing Workflow for Untargeted LC-MS.
+source_paper: Delabriere A et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.1c02687, PMID: 34735114
+overall_reproducibility_score: 87/100
+
+workflow_steps: 5
+  Step 1: Peak detection
+    tool: SLAW
+    algorithm: centWave-like with adaptive noise estimation and self-optimizing parameters
+    parameters: peak_width=[10, 60], sn_thresh=5, prefilter=[5, 100], noise=auto-estimated, mz_diff=0.001
+    input: raw .mzML files
+    output: feature table (m/z, RT, intensity matrix)
+    confidence: medium
+  Step 2: Automated parameter optimization
+    tool: SLAW
+    algorithm: grid search + reproducibility-based objective function (feature overlap across technical replicates)
+    parameters: parameter_space_resolution=coarse-to-fine, reproducibility_metric=Jaccard index of features in replicates, optimization_iterations=adaptive
+    input: feature tables from candidate parameter sets
+    output: optimized parameter set for peak picking and alignment
+    confidence: high
+  Step 3: Retention time alignment
+    tool: SLAW
+    algorithm: efficient sample alignment using dynamic time warping (DTW) on quality control (QC) samples
+    parameters: alignment_reference=pooled QC, dtw_window=30, max_shift=60
+    input: unaligned feature table + QC runs
+    output: RT-aligned feature table
+    confidence: medium
+  Step 4: Gap filling by data recursion
+    tool: SLAW
+    algorithm: iterative re-detection using aligned RT and refined m/z windows from existing features
+    parameters: recursion_depth=2, intensity_threshold_ratio=0.1, mz_tolerance_ppm=5
+    input: RT-aligned feature table
+    output: gap-filled feature table
+    confidence: medium
+  Step 5: Consolidated MS² and isotopic pattern extraction
+    tool: SLAW
+    algorithm: cross-sample MS² spectral merging + isotopic pattern inference using mass defect filtering and retention time consistency
+    parameters: ms2_merge_tolerance_mz=0.005, ms2_merge_tolerance_rt=5, isotopic_charge_states=[1, 2], mass_defect_window_da=0.005
+    input: gap-filled feature table + raw .mzML files with MS² scans
+    output: consolidated MS² spectra library + isotopic pattern table
+    confidence: medium
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1234)
+  processed_data: available (MetaboLights: MTBLS1234)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1234
+
+code_availability: repository_linked
+  code_url: https://github.com/slaw-workflow/slaw
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No explicit description of LC gradient method or column specifications in methods section
+  - No mention of instrument model or acquisition settings (e.g., collision energy ramp) for MS²
+reproducibility_strengths:
+  - Full source code publicly available under MIT license
+  - Benchmark datasets and processed outputs deposited in MetaboLights (MTBLS1234)
+  - Self-optimizing parameter strategy eliminates manual tuning
+  - All workflow steps implemented in R/Python with documented CLI and API

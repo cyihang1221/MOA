@@ -1,0 +1,51 @@
+========== reproducibility_recipe entry ==========
+paper_title: MCnebula: Critical Chemical Classes for the Classification and Boost Identification by Visualization for Untargeted LC-MS/MS Data Analysis.
+source_paper: Huang L et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c01072, PMID: 37314081
+overall_reproducibility_score: 40/100
+
+workflow_steps: 4
+  Step 1: Abundance-based classes (ABC) selection
+    tool: MCnebula
+    algorithm: abundance-based classes selection algorithm
+    input: feature table (peak intensity matrix)
+    output: selected critical chemical classes
+    confidence: medium
+  Step 2: Critical chemical class–guided feature classification
+    tool: MCnebula
+    algorithm: chemical class–driven feature grouping
+    input: feature table + chemical class annotations
+    output: classified features grouped by chemical class
+    confidence: medium
+  Step 3: Multi-dimensional visualization as Child-Nebulae network graphs
+    tool: MCnebula
+    algorithm: network graph visualization with annotation, classification, and structure overlay
+    input: classified features + chemical annotations + structural information
+    output: interactive Child-Nebulae network visualizations
+    confidence: medium
+  Step 4: Downstream analysis modules
+    tool: MCnebula R package suite
+    algorithm: multiple integrated workflows
+    input: MCnebula-classified features
+    output: feature selection results, homology traces, pathway enrichment reports, heatmaps, spectral visualizations, chemical queries, analysis reports
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No repository link or DOI for MCnebula source code
+  - No raw or processed data deposition reported
+  - No parameters specified for ABC algorithm (e.g., abundance threshold, class frequency cutoff)
+  - No details on chemical classification source (e.g., ClassyFire, LipidMaps, or custom ontology)
+  - No description of LC-MS/MS data preprocessing steps (e.g., peak picking, alignment, normalization) prior to MCnebula input
+  - Visualization rendering engine and layout algorithm unspecified
+reproducibility_strengths:
+  - Framework fully implemented in R — language conducive to reproducibility
+  - Modular downstream analysis functions explicitly listed (e.g., pathway enrichment, heat map clustering)
+  - Demonstrated on two distinct biological datasets (human serum, *E. ulmoides*)

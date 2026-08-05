@@ -1,0 +1,49 @@
+========== reproducibility_recipe entry ==========
+paper_title: Simulation of Energy-Resolved Mass Spectrometry Distributions from Surface-Induced Dissociation.
+source_paper: Seffernick JT et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.2c01869, PMID: 35834801
+overall_reproducibility_score: 45/100
+
+workflow_steps: 3
+  Step 1: Structural modeling and interface analysis
+    tool: Rosetta
+    algorithm: interface energy density calculation
+    parameters: energy_unit=REU, interface_definition_method=buried_surface_area_threshold
+    input: native crystal structure (PDB)
+    output: interface size and energy density metrics
+    confidence: medium
+  Step 2: Energy-resolved MS/MS data simulation
+    tool: Rosetta (custom ERMS application)
+    algorithm: collision-energy-dependent cleavage probability model
+    parameters: collision_energy_range_keV=[0.5, 10.0], energy_step_keV=0.5, cleavage_probability_function=sigmoidal_dependence_on_interface_energy_density
+    input: interface size and energy density metrics
+    output: simulated ERMS distribution (intensity vs. SID energy)
+    confidence: low
+  Step 3: Model validation against experimental ERMS
+    tool: custom R/Python script (not specified)
+    algorithm: root-mean-square error (RMSE) and R² evaluation
+    parameters: rmse_threshold=0.2, r_squared_threshold=0.71
+    input: simulated ERMS distribution, experimental ERMS plot
+    output: validation metrics (RMSE, R²), native-vs-model discrimination score
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: mentioned_no_link
+  code_url: https://github.com/RosettaCommons
+  license: BSD-3-Clause
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No experimental ERMS data deposited or accessioned
+  - No link to the specific Rosetta ERMS application code
+  - No details on cleavage probability model parameters or functional form
+  - No description of how experimental ERMS curves were digitized or preprocessed
+  - No metadata on SID instrument parameters (e.g., surface type, pressure, detector settings)
+reproducibility_strengths:
+  - Rosetta is open-source with BSD license
+  - Method grounded in physically interpretable structural features (interface size, energy density)
+  - Validation performed across 20 protein complexes with quantitative metrics reported

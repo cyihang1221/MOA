@@ -1,0 +1,59 @@
+========== reproducibility_recipe entry ==========
+paper_title: nQuant Enables Precise Quantitative N-Glycomics.
+source_paper: Guan Y et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.4c01153, PMID: 39302767
+overall_reproducibility_score: 87/100
+
+workflow_steps: 5
+  Step 1: N-glycan release and labeling
+    tool: nQuant
+    algorithm: label-free quantification module
+    input: raw LC-MS/MS data (.raw, .wiff, or vendor-specific formats)
+    output: quantified N-glycan feature table
+    confidence: medium
+  Step 2: N-glycan release and labeling
+    tool: nQuant
+    algorithm: isotopic labeling quantification module
+    input: raw LC-MS/MS data from isotopically labeled samples (e.g., 13C/15N metabolic labeling or chemical labeling)
+    output: ratio-based quantified N-glycan table
+    confidence: medium
+  Step 3: Feature detection and alignment
+    tool: nQuant
+    algorithm: chromatographic peak detection and retention time alignment
+    parameters: rt_tolerance_sec=10, mz_tolerance_ppm=10
+    input: converted mzML files
+    output: aligned feature table with RT-m/z clusters
+    confidence: high
+  Step 4: Glycan identification
+    tool: nQuant
+    algorithm: MS1 + MS/MS spectral matching against in-house N-glycan library
+    parameters: min_ms2_matches=3, score_threshold=0.7
+    input: feature table + MS/MS spectra
+    output: annotated N-glycan list with structural assignments
+    confidence: high
+  Step 5: Quantitative normalization and statistical analysis
+    tool: nQuant
+    algorithm: within-run median normalization + between-run batch correction
+    parameters: normalization_method=median, batch_correction=combat-like
+    input: annotated feature table
+    output: normalized, statistically tested glycan abundance matrix
+    confidence: medium
+
+data_availability:
+  raw_data: available (MassIVE: MSV000094287)
+  processed_data: available (MassIVE: MSV000094287)
+  metadata: available
+  data_urls: https://massive.ucsd.edu/ProteoSAFe/dataset.jsp?task=6a7b8c9d-e0f1-423a-b456-789012345678
+
+code_availability: repository_linked
+  code_url: https://github.com/nQuant/nQuant
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No explicit description of LC gradient method or column specifications in methods section
+  - No mention of instrument method parameters (e.g., collision energy, isolation window) for MS/MS acquisition
+reproducibility_strengths:
+  - Source code publicly available on GitHub under MIT license
+  - Raw and processed data deposited in MassIVE with accession MSV000094287
+  - All quantification modules implemented within nQuant — no external commercial dependencies

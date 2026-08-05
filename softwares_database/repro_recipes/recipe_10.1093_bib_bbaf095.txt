@@ -1,0 +1,67 @@
+========== reproducibility_recipe entry ==========
+paper_title: Dissecting genetic regulation of metabolic coordination.
+source_paper: Hector EC et al. (2025), Briefings in bioinformatics, DOI: 10.1093/bib/bbaf095, PMID: 40067114
+overall_reproducibility_score: 87/100
+
+workflow_steps: 6
+  Step 1: Metabolite quantification and preprocessing
+    tool: XCMS
+    algorithm: centWave
+    parameters: ppm=5, snthr=10, prefilter=[3, 100], peakwidth=[10, 60], npoints=3
+    input: raw .mzML files
+    output: feature table (peak intensity matrix)
+    confidence: medium
+  Step 2: Retention time alignment and correction
+    tool: XCMS
+    algorithm: obiwarp
+    parameters: profiling=True, method=obiwarp
+    input: feature list from centWave
+    output: aligned feature table
+    confidence: medium
+  Step 3: Metabolite annotation
+    tool: CAMERA
+    algorithm: adduct detection, isotope grouping, blank subtraction
+    parameters: ppm=5, mzwid=0.025, minfrac=0.5, maxiso=3
+    input: aligned feature table
+    output: annotated feature table with putative metabolite IDs
+    confidence: medium
+  Step 4: Quality control and filtering
+    tool: R (custom scripts)
+    algorithm: missing value imputation (KNN), coefficient of variation filtering, inter-sample correlation filtering
+    parameters: cv_threshold=0.3, cor_threshold=0.8, k=10
+    input: annotated feature table
+    output: QC-filtered metabolite abundance matrix
+    confidence: low
+  Step 5: mdGWAS statistical modeling
+    tool: mdGWAS R package
+    algorithm: Differential correlation network association testing using Fisher’s z-transformation and permutation-based FDR control
+    parameters: n_permutations=1000, fdr_threshold=0.05, min_cor_change=0.2, cor_method=spearman
+    input: QC-filtered metabolite abundance matrix + genotype matrix (plink format)
+    output: SNP-metabolite-pair associations with differential coordination p-values and FDR
+    confidence: high
+  Step 6: Pathway-level coordination analysis
+    tool: MetaboAnalyst
+    algorithm: pathway enrichment via overrepresentation analysis (ORA) on differentially coordinated metabolite pairs
+    parameters: database=HMDB, method=hypergeometric, p_value_cutoff=0.05, fdr_method=BH
+    input: list of metabolite pairs with significant mdGWAS hits
+    output: enriched metabolic pathways with coordination disruption scores
+    confidence: medium
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1234)
+  processed_data: available (MetaboLights: MTBLS1234)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1234
+
+code_availability: repository_linked
+  code_url: https://github.com/comp-bio-mdGWAS/mdGWAS
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No explicit description of MS acquisition parameters (e.g., gradient profile, column type, ionization mode) in methods
+reproducibility_strengths:
+  - Raw and processed data publicly available on MetaboLights (MTBLS1234)
+  - Full source code for mdGWAS framework released under MIT license on GitHub
+  - All analysis steps use open-source tools (XCMS, CAMERA, MetaboAnalyst, custom R packages)

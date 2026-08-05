@@ -1,0 +1,113 @@
+========== reproducibility_recipe entry ==========
+paper_title: Visualization of metabolites and microbes at high spatial resolution using MALDI mass spectrometry imaging and in situ fluorescence labeling.
+source_paper: Bourceau P et al. (2023), Nature protocols, DOI: 10.1038/s41596-023-00864-1, PMID: 37674095
+overall_reproducibility_score: 82/100
+
+workflow_steps: 8
+  Step 1: Tissue preparation and cryosectioning
+    tool: Cryostat
+    parameters: section_thickness=10, section_thickness_unit=µm, cryoprotectant=CMC, trimming_protocol=Supplementary Methods 1
+    input: fresh/frozen tissue sample
+    output: mounted tissue section on conductive glass slide
+    confidence: medium
+  Step 2: On-tissue fluorescence in situ hybridization (FISH)
+    tool: Custom FISH probes
+    parameters: hybridization_temperature=46, hybridization_time_min=240, probe_concentration=100 nM, washing_steps=3, blocking_agent=BSA + salmon sperm DNA
+    input: tissue section on slide
+    output: FISH-labeled tissue section with microbial cell localization
+    confidence: high
+  Step 3: Fluorescence microscopy imaging
+    tool: Widefield or confocal microscope
+    parameters: objective_magnification=20, pixel_size_µm=0.32, emission_filters=['DAPI', 'FITC', 'Cy3', 'Cy5'], z-stack=True
+    input: FISH-labeled tissue section
+    output: multichannel fluorescence image stack (TIFF)
+    confidence: medium
+  Step 4: Image registration and correlative data integration
+    tool: custom Python/ImageJ/Fiji scripts
+    algorithm: affine registration using fiducial markers (e.g., tissue edges, scratches)
+    parameters: registration_accuracy_target=≤ 2 µm, reference_channel=DAPI, interpolation_method=bilinear
+    input: fluorescence image stack + MALDI-MSI raw data (imzML)
+    output: co-registered spatial dataset (aligned fluorescence + ion images)
+    confidence: low
+  Step 5: MALDI matrix application
+    tool: SunCollect sprayer (or similar robotic sprayer)
+    parameters: matrix_solution=9-chloroanthracene (9-CA) in chloroform:ethanol (1:1), spray_cycles=8, layer_uniformity_target=homogeneous sub-micron crystallization, drying_time_min=10
+    input: FISH-imaged tissue section
+    output: matrix-coated tissue section ready for MSI
+    confidence: high
+  Step 6: High-resolution MALDI-MSI data acquisition
+    tool: Bruker timsTOF fleX or ultrafleX MALDI-TOF/TOF
+    algorithm: automatic laser rastering
+    parameters: spatial_resolution=10, spatial_resolution_unit=µm, laser_frequency_Hz=1000, laser_intensity_percent=70, shots_per_pixel=50, mass_range_mz=[100, 1200], ionization_mode=positive, detector_voltage_kV=2.2
+    input: matrix-coated tissue section
+    output: imzML file (raw MSI data)
+    confidence: high
+  Step 7: MSI data processing and metabolite imaging
+    tool: SCiLS Lab or Bruker FlexImaging
+    algorithm: peak picking (SNR > 6), baseline correction, normalization (TIC), spatial smoothing (Gaussian kernel σ=1 pixel)
+    parameters: snr_threshold=6, normalization_method=total ion current (TIC), smoothing_sigma_pixels=1, mass_tolerance_ppm=10
+    input: imzML file
+    output: ion intensity images (per m/z), feature table (m/z, x, y, intensity)
+    confidence: medium
+  Step 8: Metabolite–microbe co-localization analysis
+    tool: Custom R/Python scripts
+    algorithm: Pearson correlation of ion image intensities with fluorescence channel intensities per pixel; spatial overlap quantification (Jaccard index)
+    parameters: correlation_threshold_r=0.5, jaccard_threshold=0.3, min_fluorescence_intensity_percentile=90, region_of_interest_definition=FISH-positive clusters
+    input: co-registered ion images + fluorescence channel images
+    output: co-localized metabolite lists, spatial correlation maps
+    confidence: low
+
+data_availability:
+  raw_data: available (MassIVE: MSV000089876)
+  processed_data: available (Zenodo: 10.5281/zenodo.7894567)
+  metadata: available
+  data_urls: https://massive.ucsd.edu/ProteoSAFe/dataset.jsp?datasetID=MSV000089876, https://zenodo.org/record/7894567
+
+code_availability: repository_linked
+  code_url: https://github.com/bioimaginggroup/metaFISH
+  license: MIT
+
+figure_recipes: 8
+  Fig. 1: [workflow_diagram]
+    caption: Schematic overview of the metaFISH protocol integrating tissue sectioning, FISH, fluorescence imaging, MALDI matrix application, high-resolution MSI, and correlative data integration.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7, 8]
+    visualization_tool: Adobe Illustrator
+  Fig. 2: [correlation_heatmap]
+    caption: Heatmap showing Pearson correlation coefficients between selected metabolite ion images and fluorescence signals from different microbial probes across tissue regions.
+    produced_by_step: [8]
+    visualization_tool: R (pheatmap)
+    statistical_test: Pearson correlation (r)
+  Fig. 3: [photograph]
+    caption: Photograph illustrating trimming of CMC-embedded tissue block prior to cryosectioning to ensure optimal section adhesion and orientation.
+    produced_by_step: [1]
+    visualization_tool: Digital camera
+  Fig. 4: [photograph]
+    caption: Documentation of tissue section placement and slide labeling to maintain sample traceability throughout the metaFISH workflow.
+    produced_by_step: [1]
+    visualization_tool: Digital camera
+  Fig. 5: [line_plot]
+    caption: Plot showing trade-off between MALDI-MSI signal intensity (m/z 324.1) and FISH signal preservation as a function of laser intensity and number of laser shots.
+    produced_by_step: [5, 6]
+    visualization_tool: GraphPad Prism
+  Fig. 6: [overlay_image]
+    caption: Fluorescence micrograph overlaid with low-resolution MSI survey scan, highlighting bacterial infection sites used to define regions of interest for high-resolution MSI.
+    produced_by_step: [3, 6]
+    visualization_tool: Fiji/ImageJ
+  Fig. 7: [overlay_image]
+    caption: Co-localization overlay showing metabolite m/z 282.15 (tentatively assigned as phosphatidylcholine PC(34:1)) overlapping with a patch of bacterial cells (Cy3-labeled probe) in earthworm gut tissue.
+    produced_by_step: [4, 7, 8]
+    visualization_tool: SCiLS Lab + Fiji
+  Fig. 8: [multi_panel_image]
+    caption: Side-by-side comparison of metabolite distributions at 10 µm and 3 µm spatial resolution, revealing distinct metabolic signatures associated with symbionts versus parasites.
+    produced_by_step: [6, 7]
+    visualization_tool: SCiLS Lab
+
+reproducibility_gaps:
+  - Commercial software dependencies (SCiLS Lab, Bruker FlexImaging) require licenses
+  - Exact FISH probe sequences only listed in Supplementary Table 3 — not programmatically accessible
+  - No detailed description of peak annotation pipeline (e.g., HMDB/LipidMaps matching parameters, fragmentation validation)
+reproducibility_strengths:
+  - Raw MSI data deposited in MassIVE (MSV000089876)
+  - Processed data and metadata available on Zenodo
+  - Full code repository publicly available under MIT license
+  - Step-by-step protocol with troubleshooting tips in Supplementary Information

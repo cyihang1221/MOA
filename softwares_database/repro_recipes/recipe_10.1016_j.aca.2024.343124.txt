@@ -1,0 +1,63 @@
+========== reproducibility_recipe entry ==========
+paper_title: MassLite: An integrated python platform for single cell mass spectrometry metabolomics data pretreatment with graphical user interface and advanced peak alignment method.
+source_paper: Zou Z et al. (2024), Analytica chimica acta, DOI: 10.1016/j.aca.2024.343124, PMID: 39244309
+overall_reproducibility_score: 40/100
+
+workflow_steps: 6
+  Step 1: Void scan filtering
+    tool: MassLite
+    algorithm: void_scan_filtering
+    input: raw .imzML or .mzML files (single-cell MS imaging or profiling data)
+    output: filtered scan list
+    confidence: medium
+  Step 2: Dynamic grouping
+    tool: MassLite
+    algorithm: dynamic_grouping
+    input: filtered scans
+    output: grouped spectral segments
+    confidence: low
+  Step 3: Advanced background removal
+    tool: MassLite
+    algorithm: advanced_background_removal
+    input: grouped spectral segments
+    output: background-subtracted spectra
+    confidence: low
+  Step 4: Peak detection and feature extraction
+    tool: MassLite
+    algorithm: peak_detection
+    input: background-subtracted spectra
+    output: feature table (m/z, intensity per cell)
+    confidence: medium
+  Step 5: Novel peak alignment
+    tool: MassLite
+    algorithm: non-binning_peak_alignment
+    parameters: alignment_method=retention_time_and_mz_drift_correction_without_binning
+    input: feature table (per-cell spectra)
+    output: aligned feature table (m/z-intensity matrix across cells)
+    confidence: high
+  Step 6: Data export for downstream analysis
+    tool: MassLite
+    algorithm: export_per_cell
+    parameters: export_format=CSV, per_cell=True
+    input: aligned feature table
+    output: individual CSV files per cell (or consolidated matrix)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No repository link or DOI provided for MassLite source code
+  - No raw or processed SCMS data deposited or referenced
+  - No parameter values specified for void scan filtering, dynamic grouping, or background removal
+  - Algorithmic details of 'novel peak alignment' not described (e.g., warping function, reference selection, tolerance thresholds)
+reproducibility_strengths:
+  - Tool is Python-based and open-source in principle
+  - GUI-enabled design improves accessibility
+  - Explicit emphasis on non-binning alignment — addresses known limitation of traditional binning

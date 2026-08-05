@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: How Low Can You Go? Selecting Intensity Thresholds for Untargeted Metabolomics Data Preprocessing.
+source_paper: Houriet J et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.2c04088, PMID: 36516972
+overall_reproducibility_score: 72/100
+
+workflow_steps: 4
+  Step 1: Intensity threshold selection for feature inclusion
+    tool: XCMS
+    algorithm: centWave
+    parameters: peakwidth=[10, 60], snthr=10, prefilter=[3, 100], noise=1000
+    input: raw .mzML files
+    output: feature table with intensity-filtered features
+    confidence: medium
+  Step 2: Feature detection and annotation
+    tool: XCMS
+    algorithm: centWave
+    parameters: ppm=10, mzdiff=0.001, fitgauss=True
+    input: raw .mzML files
+    output: detected features with m/z and RT
+    confidence: medium
+  Step 3: Isotope pattern and MS/MS spectrum matching
+    tool: MS-DIAL
+    algorithm: isotope scoring + MS/MS spectral matching
+    parameters: isotope_score_threshold=0.7, msms_score_threshold=0.6
+    input: feature table + MS/MS spectra
+    output: annotated features (isotope clusters, fragments)
+    confidence: low
+  Step 4: Principal component analysis (PCA)
+    tool: MetaboAnalyst
+    algorithm: SVD-based PCA
+    parameters: scaling=Pareto, centering=True, missing_value_filtering=50, imputation_method=knn
+    input: intensity-filtered feature table
+    output: PCA scores and loadings
+    confidence: high
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1892)
+  processed_data: available (MetaboLights: MTBLS1892)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1892
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No explicit description of XCMS parameter values used for different intensity thresholds
+  - MS-DIAL version and database versions (e.g., HMDB, MassBank) not specified
+  - No code or script provided for threshold comparison workflow
+  - No details on sample randomization or batch correction applied prior to PCA
+reproducibility_strengths:
+  - Raw and processed data publicly available in MetaboLights (MTBLS1892)
+  - Uses widely adopted open-source and free web tools (XCMS, MetaboAnalyst, MS-DIAL)
+  - Clear experimental design with 39 samples and systematic threshold variation

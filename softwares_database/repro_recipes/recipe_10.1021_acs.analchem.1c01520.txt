@@ -1,0 +1,48 @@
+========== reproducibility_recipe entry ==========
+paper_title: Chemical Proportionality within Molecular Networks.
+source_paper: Petras D et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.1c01520, PMID: 34533933
+overall_reproducibility_score: 85/100
+
+workflow_steps: 3
+  Step 1: Molecular network generation
+    tool: GNPS
+    algorithm: cosine similarity
+    parameters: min_cosine=0.7, min_matched_peaks=6, fragment_tolerance=0.02
+    input: centroided .mgf files (MS/MS spectra)
+    output: molecular network graph (edges: cosine score > threshold)
+    confidence: high
+  Step 2: ChemProp scoring
+    tool: ChemProp (GNPS plugin)
+    algorithm: chemical proportionality calculation
+    parameters: directionality=sequential, normalization=z-score per compound, smoothing=none
+    input: molecular network + ordered sample metadata (e.g., time series, spatial gradient)
+    output: directed edge weights (ChemProp scores), directional network visualization
+    confidence: medium
+  Step 3: Biological prioritization and interpretation
+    tool: GNPS web interface + manual curation
+    algorithm: directional edge filtering and pathway-aware ranking
+    parameters: min_ChemProp_score=0.5, max_edge_distance=2
+    input: directed molecular network with ChemProp scores
+    output: prioritized transformation hypotheses (e.g., oxidation, glycosylation, deconjugation)
+    confidence: low
+
+data_availability:
+  raw_data: available (GNPS: GNPS MSV000086245)
+  processed_data: available (GNPS: GNPS MSV000086245)
+  metadata: available
+  data_urls: https://gnps.ucsd.edu/ProteoSAFe/project.jsp?project=MSV000086245
+
+code_availability: repository_linked
+  code_url: https://github.com/CCMS-UCSD/GNPS_Workflows/tree/master/chemprop
+  license: Apache-2.0
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No explicit description of z-score normalization implementation (across samples vs. across features)
+  - Ground truth mixture composition not fully tabulated in paper or supplementary
+  - No benchmarking parameters for 'min_ChemProp_score' selection reported
+reproducibility_strengths:
+  - Fully integrated into open GNPS platform with public workflow
+  - Source code publicly available on GitHub under permissive license
+  - All datasets deposited in GNPS with full metadata and raw spectra

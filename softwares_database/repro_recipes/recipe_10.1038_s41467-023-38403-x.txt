@@ -1,0 +1,137 @@
+========== reproducibility_recipe entry ==========
+paper_title: Using mass spectrometry imaging to map fluxes quantitatively in the tumor ecosystem.
+source_paper: Schwaiger-Haber M et al. (2023), Nature communications, DOI: 10.1038/s41467-023-38403-x, PMID: 37208361
+overall_reproducibility_score: 52/100
+
+workflow_steps: 13
+  Step 1: Stable isotope labeling in vivo
+    tool: custom animal feeding protocol
+    algorithm: U-13C-glucose dietary labeling
+    parameters: labeling_duration_hours=48, glucose_concentration_g_per_50mL=4.95, U13C_glucose_mass_g=5.12, base_mix_mass_g=3.06, water_volume_mL=22, mouse_strain=C57BL/6J, age_weeks=8, cell_line=GL261-IDH1-R132H-YFP, injection_volume_uL=3, injection_cells=200000, injection_coordinates_mm={'lateral_to_bregma': 2, 'depth': 3}, injection_speed_uL_per_min=0.6
+    input: live mice
+    output: 13C-labeled brain tissue and serum
+    confidence: high
+  Step 2: Tissue sectioning and slide preparation
+    tool: Leica CM1860 cryostat
+    algorithm: cryosectioning
+    parameters: DESI_section_thickness_um=20, MALDI_section_thickness_um=10, fluorescence_section_thickness_um=10, serial_section_thickness_um=50, embedding_medium=5% carboxymethylcellulose, storage_temperature_C=-80, drying_method=vacuum
+    input: frozen brain tissue
+    output: tissue sections on slides
+    confidence: high
+  Step 3: Fluorescence microscopy for tumor localization
+    tool: Leica DMi8 Thunder Imager
+    algorithm: RFP/DAPI co-imaging
+    parameters: RFP_excitation_nm=540-580, RFP_emission_nm=592-668, RFP_exposure_s=1.3, DAPI_excitation_nm=375-435, DAPI_emission_nm=450-490, DAPI_exposure_ms=59
+    input: tissue sections with RFP+ tumor cells and DAPI staining
+    output: fluorescence images confirming tumor location
+    confidence: high
+  Step 4: DESI-MSI data acquisition
+    tool: Waters Synapt XS with DESI source
+    algorithm: desorption electrospray ionization imaging
+    parameters: polarity=negative, mass_range_mz=[70, 560], resolution_FWHM_at_mz554=43000, capillary_voltage_kV=4.0, source_temperature_C=120, pixel_size_um=[50, 50], raster_rate_um_per_s=10, spray_angle_deg=75, collection_angle_deg=-7, solvent_composition=98:2 methanol:water, formic_acid_percent=0.01, lockmass_concentration_pg_per_uL=200, lockmass_compound=leucine-enkephalin, solvent_flow_rate_uL_per_min=3, delivery_system=Waters Acquity LC with 1:100 splitter
+    input: tissue sections on Superfrost Plus slides
+    output: raw DESI-MSI spectra (MassLynx format)
+    confidence: high
+  Step 5: TWIMS-DESI data acquisition
+    tool: Waters Synapt XS with TWIMS
+    algorithm: traveling wave ion mobility spectrometry
+    parameters: mass_range_mz=[50, 1200], wave_height_V=25.0, wave_velocity_ramp_ms_per_s=1000 to 300 over 100% cycle, polarity=negative, capillary_voltage_kV=2.2, source_temperature_C=140, solvent_flow_rate_uL_per_min=10, solvent_composition=98:2 methanol:water, formic_acid_percent=0.01, lockmass_concentration_pg_per_uL=200
+    input: tissue sections or standards for direct infusion
+    output: TWIMS mobilograms and CCS values
+    confidence: high
+  Step 6: MALDI-MSI data acquisition
+    tool: Bruker timsTOF fleX with MALDI source
+    algorithm: matrix-assisted laser desorption ionization imaging
+    parameters: polarity=negative, mass_range_mz=[50, 400], pixel_size_um=50, laser_power_percent=85, laser_frequency_kHz=10, shots_per_pixel=200, matrix=N-(1-Naphthyl)ethylenediamine dihydrochloride (NEDC), matrix_concentration_mg_per_mL=10, matrix_solvent=70:30 methanol:water, spray_passes=[12, 14], nozzle_temperature_C=80, flow_rate_mL_per_min=0.1, velocity_mm_per_min=1000, track_spacing_mm=2, pressure_psi=10, gas_flow_L_per_min=3, drying_time_s_per_pass=10
+    input: tissue sections on ITO-coated SiO2 slides
+    output: raw MALDI-MSI spectra (Bruker format)
+    confidence: high
+  Step 7: LC/MS sample preparation
+    tool: manual extraction
+    algorithm: organic solvent extraction
+    parameters: tissue_extraction_ratio_uL_per_mg=80, tissue_solvent_composition=2:2:1 acetonitrile:methanol:water, serum_extraction_ratio_uL_per_uL=10, serum_solvent_composition=4:4:1 acetonitrile:methanol:water, extraction_temperature_C=-20, extraction_duration_hours=12, centrifugation_g=14000, centrifugation_time_min=10, centrifugation_temperature_C=4
+    input: 50 µm tissue sections or serum
+    output: LC/MS-ready supernatants
+    confidence: high
+  Step 8: HILIC chromatographic separation
+    tool: Thermo Vanquish UHPLC
+    algorithm: hydrophilic interaction liquid chromatography
+    parameters: column=SeQuant ZIC-pHILIC, 100 × 2.1 mm, 5 µm, guard_column=ZIC-pHILIC, 20 × 2.1 mm, 5 µm, column_temperature_C=40, flow_rate_uL_per_min=250, mobile_phase_A_composition=95% water, 5% acetonitrile, 20 mM ammonium bicarbonate, 0.1% ammonium hydroxide, 5 µM medronic acid, mobile_phase_B_composition=95% acetonitrile, 5% water, gradient_profile_min_B_percent=[90, 35, 25, 90], gradient_time_min=[0, 12, 12.5, 15], re_equilibration_time_min=6, re_equilibration_flow_rate_uL_per_min=[400, 250], autosampler_temperature_C=6, injection_volume_uL=5
+    input: extracted metabolite supernatants
+    output: chromatographically separated analytes
+    confidence: high
+  Step 9: Orbitrap MS acquisition
+    tool: Thermo Orbitrap ID-X Tribrid
+    algorithm: high-resolution full-scan MS1 and data-dependent MS2
+    parameters: polarity_switching=True, spray_voltage_kV_positive=3.5, spray_voltage_kV_negative=2.8, sheath_gas_flow_arb=50, aux_gas_flow_arb=10, sweep_gas_flow_arb=1, ion_transfer_tube_temp_C=300, vaporizer_temp_C=200, RF_lens_value=60, MS1_resolution=120000, MS1_mass_range_mz=[67, 900], MS1_AGC_target=200000, MS1_max_injection_time_ms=200, MS2_resolution=15000, MS2_AGC_target=25000, MS2_max_injection_time_ms=70, mass_error_ppm=5, dynamic_exclusion_s=10
+    input: eluting analytes from HILIC column
+    output: raw .raw files (MS1 + MS2)
+    confidence: high
+  Step 10: LC/MS untargeted data processing
+    tool: Thermo Compound Discoverer 3.3 (v3.3)
+    algorithm: feature detection, adduct/isotope grouping, background subtraction
+    parameters: background_removal_threshold_sample_to_blank_ratio=5, normalization_method=constant median, CV_filter_threshold_percent=20, p_value_threshold=0.05, feature_grouping_strategy=isotopes and adducts
+    input: raw .raw files
+    output: filtered feature table (459 compounds), differential list (166 compounds)
+    confidence: high
+  Step 11: Metabolite identification (LC/MS)
+    tool: mzCloud
+    algorithm: MS/MS spectral matching
+    parameters: matching_score_threshold=70
+    input: MS2 spectra
+    output: annotated metabolites (Fig. 2c,d)
+    confidence: high
+  Step 12: CCS calculation and validation
+    tool: custom Python code
+    algorithm: peak smoothing and collision cross-section calculation
+    parameters: reference_database=Unified CCS Compendium
+    input: DESI-TWIMS mobilograms
+    output: validated CCS values
+    confidence: medium
+  Step 13: IMS data conversion and preprocessing
+    tool: ['MassLynx (Waters)', 'HDI (Waters)', 'SCiLS Lab (Bruker)']
+    algorithm: lockmass correction, imzML conversion
+    parameters: lockmass_correction_enabled=True, output_format=imzML
+    input: raw DESI (.raw) and MALDI (.d) files
+    output: imzML files
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: https://github.com/e-stan/imaging
+
+figure_recipes: 4
+  Fig. 2a: [pca_scores]
+    caption: PCA plot generated from LC/MS-based untargeted metabolomics data of tumor vs non-tumor hemispheres.
+    produced_by_step: [10]
+    visualization_tool: Compound Discoverer 3.3 built-in plotting
+  Fig. 2b: [heatmap]
+    caption: Heatmap showing differentially abundant metabolites (p < 0.05) between tumor and non-tumor hemispheres.
+    produced_by_step: [10]
+    visualization_tool: Compound Discoverer 3.3 built-in plotting
+    statistical_test: p < 0.05
+  Fig. 2c: [bar_chart]
+    caption: Bar chart showing relative abundance of identified metabolites including AMP, stearate, palmitate, and NAA.
+    produced_by_step: [10, 11]
+    visualization_tool: Compound Discoverer 3.3 or custom plotting
+  Fig. 2d: [bar_chart]
+    caption: Bar chart comparing isotopologue distributions for key metabolites across tissue regions.
+    produced_by_step: [10, 11]
+    visualization_tool: Compound Discoverer 3.3 or custom plotting
+
+reproducibility_gaps:
+  - Raw MSI and LC/MS data not deposited in public repository (e.g., MetaboLights, MassIVE, or Zenodo)
+  - Compound Discoverer 3.3 is commercial software requiring license; no open-source alternative workflow provided
+  - No details on spatial segmentation or region-of-interest definition for MSI quantification
+  - No description of Isotopologue Spectral Analysis (ISA) implementation — algorithmic and computational details missing
+  - Gradient profile for HILIC is described but lacks dwell time, equilibration specifics, and system dispersion corrections
+  - No metadata schema or sample annotation file provided (e.g., MAF or ISA-tab)
+reproducibility_strengths:
+  - Custom Python code for CCS calculation publicly available on GitHub
+  - Detailed instrument parameters and acquisition settings reported for all platforms (DESI, MALDI, LC/MS, TWIMS)
+  - Explicit chemical standards, matrix, solvents, and concentrations listed
+  - Clear biological experimental design (n, labeling, controls, endpoints)

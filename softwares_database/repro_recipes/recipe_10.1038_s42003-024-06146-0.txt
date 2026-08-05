@@ -1,0 +1,113 @@
+========== reproducibility_recipe entry ==========
+paper_title: Longitudinal associations of an exposome score with serum metabolites from childhood to adolescence.
+source_paper: Healy DR et al. (2024), Communications biology, DOI: 10.1038/s42003-024-06146-0, PMID: 39039257
+overall_reproducibility_score: 52/100
+
+workflow_steps: 9
+  Step 1: LC-MS data acquisition
+    tool: Thermo Fischer Q Exactive Focus + Vanquish UHPLC
+    parameters: column=Zorbax Eclipse XDB-C18 (1.8 µm, 2.1 × 100 mm), ionization_mode=['positive', 'negative'], chromatography=['reversed-phase', 'HILIC']
+    input: fasting serum samples
+    output: raw .raw files (4 modes per sample)
+    confidence: high
+  Step 2: Molecular feature detection and alignment
+    tool: MS-DIAL (vv4.90)
+    algorithm: peak picking and alignment
+    input: raw .raw files
+    output: feature table (m/z, RT, intensity)
+    confidence: high
+  Step 3: Data preprocessing
+    tool: R + notame package
+    algorithm: drift correction, QC-based feature filtering, random forest imputation
+    parameters: imputation_method=random forest, qc_filtering=True, drift_correction=True
+    input: MS-DIAL feature table
+    output: preprocessed feature table (per analytical mode)
+    confidence: medium
+  Step 4: Metabolite annotation/identification
+    tool: METLIN, MassBank of North America, HMDB, LIPID MAPS, literature
+    algorithm: MSI Level 1–4 annotation
+    parameters: level_1_criteria=retention time + MS/MS match to in-house standards, databases_used=['METLIN', 'MassBank NA', 'HMDB', 'LIPID MAPS']
+    input: preprocessed feature table with MS/MS spectra
+    output: annotated metabolite table (Level 1–4 confidence)
+    confidence: high
+  Step 5: NMR metabolomics profiling
+    tool: Nightingale high-throughput NMR platform
+    parameters: metabolite_classes=['lipoprotein', 'triglyceride', 'apolipoprotein', 'fatty acid', 'amino acid', 'systemic inflammation']
+    input: fasting serum samples
+    output: NMR-derived quantitative metabolite concentrations
+    confidence: high
+  Step 6: Exposome score construction
+    tool: R (custom implementation)
+    algorithm: quartile-based scoring + weighted summation
+    parameters: components=['diet', 'activity', 'sleep', 'air_pollution', 'socioeconomic_status'], diet_index=Finnish Children Healthy Eating Index (2–45), air_pollutants=['NO', 'NO2', 'O3', 'PM2.5', 'PM10'], socioeconomic_variables=['parental_education', 'household_income'], scoring_scheme=quartiles (1=lowest risk, 4=highest risk); socioeconomic: ordinal mapping (1–3) → summed → mapped to 1–4
+    input: lifestyle/environmental/laboratory metadata
+    output: exposome score (5–20 scale)
+    confidence: high
+  Step 7: Statistical association analysis
+    tool: R + lmer (lme4 package)
+    algorithm: linear mixed-effects model
+    parameters: fixed_effects=['exposome_score', 'time', 'age', 'sex', 'pubertal_status', 'serum_cotinine'], random_effect=participant (intercept), transformation=log-transform if improves model fit, model_assumptions_checked=True
+    input: annotated metabolite table (LC-MS or NMR) + exposome score + covariates
+    output: association estimates (β, SE, p-value) per metabolite
+    confidence: high
+  Step 8: Mediation and interaction analysis
+    tool: R + interactions package
+    algorithm: Baron & Kenny mediation; interaction modeling (BMI-SDS × exposome score)
+    parameters: mediator=BMI-SDS, interaction_term=BMI-SDS * exposome_score, visualization_package=interactions
+    input: association model outputs + BMI-SDS
+    output: mediation effects, interaction coefficients, interaction plots
+    confidence: medium
+  Step 9: Sensitivity analysis
+    tool: R (custom)
+    algorithm: leave-one-out component removal; alternative diet scores
+    parameters: leave_one_out_components=['diet', 'activity', 'sleep', 'air_pollution', 'socioeconomic_status'], alternative_diet_scores=['Mediterranean Diet Score', 'Baltic Sea Diet Score']
+    input: exposome score components + alternative indices
+    output: robustness assessment of exposome-metabolite associations
+    confidence: medium
+
+data_availability:
+  raw_data: available (Finnish Meteorological Institute Open Data)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+  data_urls: https://en.ilmatieteenlaitos.fi/open-data
+
+code_availability: not_mentioned
+
+figure_recipes: 5
+  Table 1: [table]
+    caption: Descriptive characteristics of participants across baseline, 2-year, and 8-year follow-ups.
+    produced_by_step: [6, 7]
+    visualization_tool: R (base/stats)
+  Table 2: [table]
+    caption: Associations between the exposome score and LC-MS-measured serum metabolites.
+    produced_by_step: [7]
+    visualization_tool: R (base/table formatting)
+    statistical_test: linear mixed-effects model (p-values adjusted for multiple testing?)
+  Table 3: [table]
+    caption: Associations between the exposome score and NMR-measured serum metabolites.
+    produced_by_step: [7]
+    visualization_tool: R (base/table formatting)
+    statistical_test: linear mixed-effects model
+  Fig. 1: [interaction_plot]
+    caption: Modification of exposome-metabolite associations by BMI-SDS, showing stratified effects for selected LC-MS and NMR metabolites.
+    produced_by_step: [8]
+    visualization_tool: interactions package in R
+    statistical_test: interaction term (BMI-SDS × exposome score) significance
+  Fig. 2: [workflow_diagram]
+    caption: Simplified conceptual diagram of hypothesized relationships among exposome score, serum metabolites, and BMI-SDS.
+    produced_by_step: [6, 7, 8]
+    visualization_tool: not specified (likely Illustrator or R/ggplot2)
+
+reproducibility_gaps:
+  - Raw LC-MS/NMR metabolomics data not deposited in public repository (e.g., MetaboLights, GNPS)
+  - No code repository or script sharing for exposome scoring, preprocessing, or statistical models
+  - Notame package usage described but no version or GitHub link provided
+  - No details on LC-MS gradient profiles, flow rates, or temperature settings — critical for chromatographic reproducibility
+  - No specification of multiple testing correction method (e.g., FDR, Bonferroni) for metabolite-wide associations
+  - Nightingale NMR platform is proprietary — no access to raw spectral data or quantification algorithms
+reproducibility_strengths:
+  - Air pollution data publicly available via Finnish Meteorological Institute Open Data
+  - Study registered at ClinicalTrials.gov (NCT01803776)
+  - Ethical approval and consent procedures fully documented
+  - Use of MSI-compliant metabolite annotation (Level 1–4) with standard databases
+  - All statistical analyses performed in open-source R with widely used packages (lme4, interactions)

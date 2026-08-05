@@ -1,0 +1,61 @@
+========== reproducibility_recipe entry ==========
+paper_title: Hyperpolarized NMR Metabolomics at Natural <sup>13</sup>C Abundance.
+source_paper: Dey A et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.0c03510, PMID: 33136383
+overall_reproducibility_score: 30/100
+
+workflow_steps: 6
+  Step 1: Sample preparation and hyperpolarization
+    tool: dissolution Dynamic Nuclear Polarization (d-DNP)
+    parameters: temperature=1.2 K, microwave_frequency=94 GHz, polarization_time=90 min, dissolution_medium=16 mM NaOH in D2O, dissolution_volume=1.5 mL, transfer_time=< 3 s
+    input: biological extract (tomato)
+    output: hyperpolarized liquid sample for NMR
+    confidence: medium
+  Step 2: Data acquisition
+    tool: NMR spectrometer
+    parameters: nucleus=13C, field_strength=9.4 T, pulse_sequence=single-pulse excitation, acquisition_time=1.2 s, spectral_width=25 kHz, number_of_scans=1, recycle_delay=≥ 5 × T1 (≈ 60 s)
+    input: hyperpolarized liquid sample
+    output: raw 13C NMR FIDs
+    confidence: medium
+  Step 3: Spectral processing and feature detection
+    tool: unknown (likely proprietary or in-house)
+    parameters: zero_filling=2×, apodization=exponential line broadening (0.3 Hz), Fourier_transform=standard
+    input: raw 13C NMR FIDs
+    output: processed 13C NMR spectra
+    confidence: low
+  Step 4: Peak picking and alignment
+    tool: unknown
+    input: processed 13C NMR spectra
+    output: feature table (chemical shift, intensity)
+    confidence: low
+  Step 5: Statistical analysis and biomarker identification
+    tool: statistical methods (unspecified software)
+    algorithm: multivariate statistical analysis
+    input: feature table
+    output: differential metabolites / biomarkers
+    confidence: low
+  Step 6: Validation against prior results
+    tool: comparison with literature
+    input: identified biomarkers
+    output: biological interpretation and validation
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw NMR data deposited or referenced
+  - No details on spectral processing software or parameters beyond basic apodization/FT
+  - No description of peak picking, alignment, or quantification algorithms
+  - Statistical analysis tools and parameters not specified
+  - d-DNP system implementation details (e.g., custom hardware/software) not shared
+  - No code, scripts, or workflow documentation provided
+reproducibility_strengths:
+  - Clear experimental design and biological model (tomato extracts)
+  - Quantitative acquisition parameters reported (field strength, polarization time, dissolution conditions)
+  - Validation against prior studies supports methodological credibility

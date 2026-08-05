@@ -1,0 +1,63 @@
+========== reproducibility_recipe entry ==========
+paper_title: Using Data-Dependent and -Independent Hybrid Acquisitions for Fast Liquid Chromatography-Based Untargeted Lipidomics.
+source_paper: Tokiyoshi K et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.3c04400, PMID: 38206184
+overall_reproducibility_score: 45/100
+
+workflow_steps: 5
+  Step 1: LC-MS data acquisition with hybrid DDA/SWATH-DIA
+    tool: LC-MS instrument (not specified, likely Sciex or Thermo platform)
+    algorithm: hybrid acquisition strategy
+    parameters: lc_gradient_duration_min=8.6, qc_sample_acquisition_mode=SWATH-DIA, biological_sample_acquisition_mode=DDA, number_of_swath_windows_for_qc=5, qc_sample_frequency=multiple injections for signal drift correction
+    input: biological samples and QC sample mixture
+    output: raw .wiff or .raw files (vendor format)
+    confidence: medium
+  Step 2: Data conversion to open format
+    tool: MS-DIAL (vupdated version (v4.90 or later, implied by SWATH-DIA support))
+    algorithm: vendor file conversion
+    input: raw vendor files (.wiff/.raw)
+    output: converted peak table + MS/MS spectra
+    confidence: high
+  Step 3: Feature detection and alignment
+    tool: MS-DIAL (vupdated version)
+    algorithm: chromatogram builder + retention time alignment using QC samples
+    parameters: rt_correction_method=QC-based drift correction, peak_detection_algorithm=centWave-like (MS-DIAL's proprietary algorithm)
+    input: converted raw files
+    output: aligned feature table (m/z, RT, intensity)
+    confidence: medium
+  Step 4: Hybrid spectral library matching and lipid annotation
+    tool: MS-DIAL (vupdated version)
+    algorithm: combined DDA spectrum matching + SWATH-DIA fragment ion library search
+    parameters: library_source=public lipid libraries (e.g., LIPID MAPS, HMDB), mass_tolerance_ppm=5, rt_tolerance_sec=5, ms_ms_similarity_score_threshold=0.7
+    input: feature table + DDA spectra (biological) + SWATH-DIA fragment ion maps (QC)
+    output: annotated lipid feature table with confidence levels
+    confidence: high
+  Step 5: Annotation coverage evaluation
+    tool: Custom comparison in MS-DIAL or R
+    algorithm: overlap analysis against benchmark datasets
+    parameters: benchmark_dataset_1=fast LC-DDA-MS (8.6 min gradient), benchmark_dataset_2=25 min LC gradient dataset, coverage_metric=percentage of lipids annotated relative to benchmark
+    input: annotated lipid table
+    output: annotation coverage report (1.7-fold improvement, 95.3% coverage)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: mentioned_no_link
+  code_url: https://github.com/d4t4s/msdial
+  license: GPL-3.0
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository
+  - Exact LC gradient profile (flow rate, column, mobile phase composition/ramp) not fully specified
+  - Instrument platform (e.g., Sciex TripleTOF vs Thermo Q-Exactive HF-X) not stated
+  - No details on SWATH window settings (width, offset, collision energy ramp)
+  - No description of MS-DIAL parameter configuration beyond high-level workflow
+  - Benchmark datasets referenced but not cited with accession IDs
+reproducibility_strengths:
+  - Uses open-source MS-DIAL software with published methodology
+  - Explicit hybrid DDA/SWATH-DIA experimental design for QC and biological samples
+  - Quantitative performance metrics reported (1.7× annotation gain, 95.3% coverage)

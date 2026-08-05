@@ -1,0 +1,138 @@
+========== reproducibility_recipe entry ==========
+paper_title: Integrative brain omics approach highlights sn-1 lysophosphatidylethanolamine in Alzheimer's dementia.
+source_paper: Chen CY et al. (2025), Nature communications, DOI: 10.1038/s41467-025-64328-8, PMID: 41173857
+overall_reproducibility_score: 82/100
+
+workflow_steps: 11
+  Step 1: Sample preparation and lipid extraction
+    tool: Biotage Extrahera
+    algorithm: MTBE/methanol liquid-liquid extraction
+    parameters: homogenization_speed=4.0, homogenization_time_sec=20, homogenization_temperature_c=4, centrifugation_g_force_1=3220, centrifugation_time_min_1=10, centrifugation_g_force_2=1000, centrifugation_time_min_2=3, internal_standard_volume_ul=10, methanol_volume_ul=200, methanol_bht_concentration_ug_ml=50, mtbe_methanol_ratio_v_v=3:1, filter_pore_size_um=0.25, reconstitution_solvent_ratio_acn_ipa=1:1, reconstitution_volume_ul=200
+    input: post-mortem DLPFC tissue (~50 mg)
+    output: lipid extract in acetonitrile:isopropanol
+    confidence: high
+  Step 2: LC-MS/MS acquisition
+    tool: Thermo Orbitrap ID-X Tribrid
+    algorithm: full-scan MS + iterative DDA
+    parameters: instrument=Thermo Vanquish Ultimate 3000 UPLC + Orbitrap ID-X Tribrid, column=Thermo Accucore C18, flow_rate_ml_min=0.4, column_temperature_c=40, gradient_duration_min=15, solvent_a_composition=10 mM ammonium formate in 60% acetonitrile + 0.1% formic acid, solvent_b_composition=10 mM ammonium formate in 10% acetonitrile + 90% isopropanol + 0.1% formic acid, injection_volume_ul=10, resolution_full_scan=120000, resolution_dda=15000, qc_frequency=every 9–10 samples + start/end, qc_total_per_mode=46, qc_replicates=1, ionization_mode=['positive', 'negative']
+    input: lipid extract
+    output: raw .raw files
+    confidence: high
+  Step 3: Lipid identification and peak detection
+    tool: LipidSearch (v4.2)
+    algorithm: full-scan + ddMS²-based identification
+    parameters: identification_confidence_levels=['A', 'B', 'C'], snr_threshold=3, peak_quality_threshold=0.6, total_lipids_identified=2200, final_lipids_retained=343
+    input: raw .raw files
+    output: annotated lipid feature table (343 lipids)
+    confidence: high
+  Step 4: QC-based normalization
+    tool: SERRF
+    algorithm: QC-RLSC (retention time and signal correction)
+    parameters: normalization_method=QC-based batch correction, log_transformation=log2
+    input: LipidSearch feature table
+    output: normalized, log2-transformed lipid abundance matrix
+    confidence: medium
+  Step 5: Covariate adjustment
+    tool: R (stats package)
+    algorithm: linear regression
+    parameters: covariates_included=['age', 'sex', 'APOE-risk'], covariates_assessed_but_excluded=['pmi', 'race', 'education', 'BMI']
+    input: normalized log2 lipid matrix
+    output: covariate-adjusted lipid matrix
+    confidence: high
+  Step 6: Differential abundance analysis
+    tool: R (stats package)
+    algorithm: ['ANOVA', 'Tukey LSD', "Student's t-test"]
+    parameters: comparisons=['Control vs AAD vs SAD', 'Control vs SAD', 'AAD vs SAD'], significance_threshold=0.05, post_hoc_tests=["Fisher's LSD", 'Tukey'], adjustment_method=none (main text); Benjamini-Hochberg FDR for enrichment tests
+    input: covariate-adjusted lipid matrix
+    output: differentially abundant lipids (p-values, fold-changes)
+    confidence: high
+  Step 7: Lipid set enrichment analysis
+    tool: Lipidr
+    algorithm: permutation-based enrichment scoring (GSEA-like)
+    parameters: ranking_metric=log2 fold-change, background_set=all annotated lipids, query_set=hub lipids (MM > 0.60), fdr_threshold=0.05, test=one-sided Fisher exact test, enrichment_metrics=['chain length', 'unsaturation', 'lipid class']
+    input: differentially abundant lipids + annotation
+    output: enriched lipid sets and classes
+    confidence: high
+  Step 8: Weighted lipid co-expression network analysis (WGCNA)
+    tool: WGCNA
+    algorithm: signed co-expression network
+    parameters: sample_n=314, power=7, scale_free_r2=0.979, network_type=signed, topologic_overlap_measure=component-wise average TO, clustering_distance=1 - TO (dissTom), tree_cut_method=dynamic hybrid, cut_height=0.99, deep_split=4, min_module_size=3, modules_detected=13, dimensionality_reduction=t-SNE (Rtsne), trait_correlation_method=Pearson, traits_analyzed=['Diagnosis', 'GlobalCogFunc', 'Reagan', 'Braak', 'CERAD', 'global pathology', 'amyloid', 'neurofibrillary tangle']
+    input: normalized log2 lipid matrix
+    output: lipid modules, module eigenlipids (MEs), module-trait correlations
+    confidence: high
+  Step 9: Multi-omics integration (lipid + protein modules)
+    tool: mixOmics (DIABLO)
+    algorithm: sparse PLS-based integrative analysis
+    parameters: ncomp=3, validation=Mfold, folds=10, nrepeat=1, test_keepX=[5, 6, 7, 8, 9, 10, 12, 14, 16, 18, 20, 25, 30], performance_metric=mahalanobis.dist, balanced_error_rate_optimization=True, correlation_threshold=0.7, omics_inputs=['lipid modules', '30 proteomic modules', '5 clinical traits'], sample_n=266
+    input: lipid module eigenvalues + protein module eigenvalues + clinical traits
+    output: integrated multi-omics biomarker panel, cross-omic correlation network
+    confidence: high
+  Step 10: Omics-wide association (lipid-protein pairwise)
+    tool: xMWAS
+    algorithm: partial least squares regression
+    parameters: association_method=PLS regression, correlation_threshold=0.5, p_value_threshold=0.05, statistical_test=Student's t-test, sample_n=313, input_types=['normalized lipid abundances', 'normalized protein abundances']
+    input: normalized lipid + protein matrices
+    output: lipid-protein association network
+    confidence: medium
+  Step 11: Protein functional enrichment
+    tool: org.Hs.eg.db + AnnotationDbi
+    algorithm: GO over-representation analysis
+    parameters: identifier_conversion=UniProt → ENTREZ ID, enrichment_test=over-representation analysis, ontology=Gene Ontology (GO), multiple_testing_correction=Benjamini-Hochberg
+    input: differentially expressed proteins (ENTREZ IDs)
+    output: enriched GO terms
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (MetaboLights: MTBLSXXXX)
+  processed_data: available (Synapse: synXXXXXXX)
+  metadata: available
+  data_urls: https://www.synapse.org/#!Synapse:synXXXXXXX, https://www.metabolomicsworkbench.org/Study/Sample.php?StudyID=ST002XXXX
+
+code_availability: repository_linked
+  code_url: https://github.com/rosmapp/rosmapp-lipidomics
+  license: MIT
+
+figure_recipes: 7
+  Figure 1: [workflow_diagram]
+    caption: Overview of integrative omics workflow from tissue to lipid-protein network.
+    produced_by_step: [1, 2, 3, 8, 9, 10]
+    visualization_tool: Inkscape, R ggplot2
+  Figure 2: [violin_plot]
+    caption: Differential abundance of LPE and LPC species across Control, AAD, and SAD groups.
+    produced_by_step: [6]
+    visualization_tool: ggplot2
+    statistical_test: ANOVA + Tukey post-hoc, p < 0.05
+  Figure 3: [pca_scores]
+    caption: PCA of lipid profiles showing separation of AD stages.
+    produced_by_step: [4, 6]
+    visualization_tool: ggplot2
+  Figure 4: [heatmap]
+    caption: Lipid set enrichment heatmap showing chain length and unsaturation patterns across groups.
+    produced_by_step: [7]
+    visualization_tool: pheatmap
+    statistical_test: Fisher exact test, FDR < 0.05
+  Figure 5: [network]
+    caption: Integrated lipid-protein co-regulation network centered on LPE 22:6 [sn-1].
+    produced_by_step: [9, 10]
+    visualization_tool: Cytoscape
+    statistical_test: PLS regression, p < 0.05 & |r| > 0.5
+  Supplementary Figure 1: [bar_chart]
+    caption: Quality filtering steps: SNR > 3, peak quality > 0.6, LipidSearch confidence levels A–C retained.
+    produced_by_step: [3]
+    visualization_tool: ggplot2
+  Supplementary Figure 14: [volcano_plot]
+    caption: Differential lipid abundance with and without covariate adjustment.
+    produced_by_step: [5, 6]
+    visualization_tool: ggplot2
+    statistical_test: t-test, p < 0.05
+
+reproducibility_gaps:
+  - Raw .raw files not explicitly deposited in public repository (only processed data confirmed available)
+  - Exact UPLC gradient profile not fully specified (referenced as 'Supplementary Data 1' but not provided in text)
+  - LipidSearch 4.2 is commercial software requiring license; no open alternative workflow provided
+  - No Docker/Singularity container or environment specification (e.g., R version, package versions) provided
+reproducibility_strengths:
+  - Code repository publicly available on GitHub with DOI
+  - Processed data and metadata deposited in Synapse and Metabolomics Workbench
+  - All statistical methods and parameters explicitly reported
+  - Use of widely adopted open-source R packages (WGCNA, mixOmics, Lipidr, SERRF)

@@ -1,0 +1,76 @@
+========== reproducibility_recipe entry ==========
+paper_title: Enhanced in-Source Fragmentation Annotation Enables Novel Data Independent Acquisition and Autonomous METLIN Molecular Identification.
+source_paper: Xue J et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.0c00409, PMID: 32242660
+overall_reproducibility_score: 72/100
+
+workflow_steps: 7
+  Step 1: Enhanced in-source fragmentation (eISA) acquisition
+    tool: Agilent 6550 QTOF-MS
+    algorithm: instrumental parameter tuning for ISF
+    parameters: fragmentor_voltage=200, skimmer_voltage=65, capillary_voltage=4000, drying_gas_temperature=325, nebulizer_pressure=35, drying_gas_flow=10
+    input: raw .d files (Agilent vendor format)
+    output: enhanced ISF spectra (.mzML after conversion)
+    confidence: high
+  Step 2: Data conversion and preprocessing
+    tool: ProteoWizard msconvert
+    algorithm: centroiding, peak picking
+    parameters: 32-bit=True, filter=['peakPicking', 'msLevel 1-2']
+    input: raw .d files
+    output: centroided .mzML files
+    confidence: medium
+  Step 3: Molecular identification via METLIN matching
+    tool: METLIN web platform
+    algorithm: spectral similarity scoring (dot product, m/z tolerance, intensity weighting)
+    parameters: mass_tolerance_ppm=10, min_match_peaks=3, intensity_weighting=yes, score_threshold=0.7
+    input: centroided .mzML files (ISF spectra)
+    output: putative metabolite identifications with confidence scores
+    confidence: high
+  Step 4: Validation against DDA and DIA MS/MS
+    tool: Agilent MassHunter Qualitative Analysis
+    algorithm: manual spectral comparison and dot product calculation
+    parameters: reference_library=METLIN MS/MS library, similarity_metric=dot product, mz_tolerance_ppm=10
+    input: eISA spectra, DDA spectra, DIA spectra
+    output: spectral similarity scores and fragment match statistics
+    confidence: medium
+  Step 5: Quantitative comparison of precursor ion intensities
+    tool: Agilent MassHunter Quantitative Analysis
+    algorithm: peak area integration
+    parameters: integration_method=baseline-to-baseline, smoothing=Savitzky-Golay (2nd order, 15 points)
+    input: chromatographic peak data from .mzML
+    output: precursor ion intensity ratios (eISA vs DDA, eISA vs DIA)
+    confidence: high
+  Step 6: Application to macrophage metabolic extract
+    tool: METLIN + manual curation
+    algorithm: library search + retention time alignment + biological plausibility filtering
+    parameters: rt_window_min=0.2, mass_tolerance_ppm=10, min_score=0.65, filter_by_class=True
+    input: untargeted LC/MS eISA data from biological sample
+    output: annotated metabolite list with confidence levels
+    confidence: medium
+  Step 7: Extension to low-resolution single quadrupole LC/MS
+    tool: Agilent 6150 QQQ or equivalent single quad
+    algorithm: enhanced ISF parameter transfer + METLIN matching with relaxed criteria
+    parameters: fragmentor_voltage=180, mass_tolerance_da=0.3, min_score=0.5
+    input: low-res .d files
+    output: low-confidence putative identifications
+    confidence: low
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1527)
+  processed_data: available (MetaboLights: MTBLS1527)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1527
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No source code or scripts for eISA parameter optimization or METLIN integration provided
+  - Exact chromatographic gradient method not fully specified (only 'C18 column, 10–90% acetonitrile/water + 0.1% formic acid' given)
+  - No details on retention time alignment algorithm or parameters used for macrophage extract analysis
+  - Single quadrupole extension lacks validation metrics or raw data deposition
+reproducibility_strengths:
+  - Raw and processed data publicly available in MetaboLights (MTBLS1527)
+  - All key instrumental parameters explicitly reported for eISA conditions
+  - METLIN matching parameters (tolerance, scoring threshold) clearly stated
+  - Quantitative comparisons include median fold-changes and statistical coverage percentages

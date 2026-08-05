@@ -1,0 +1,70 @@
+========== reproducibility_recipe entry ==========
+paper_title: Duplexing metabolic deuterated water-labeled samples using dimethyl labeling to estimate protein turnover rates.
+source_paper: Deberneh HM et al. (2025), Communications chemistry, DOI: 10.1038/s42004-025-01762-1, PMID: 41298887
+overall_reproducibility_score: 35/100
+
+workflow_steps: 6
+  Step 1: Data conversion
+    tool: MSConvert (v3.0.22048)
+    algorithm: ProteoWizard mzML conversion
+    parameters: profile_mode=True, 32bit=False
+    input: raw .raw files (Thermo Orbitrap Exploris 480)
+    output: mzML files
+    confidence: high
+  Step 2: Peptide identification
+    tool: Mascot (v2.5)
+    algorithm: Database search
+    parameters: taxonomy=Mus musculus, precursor_mass_tolerance_ppm=15, fragment_mass_tolerance_ppm=40, fixed_modifications=['carbamidomethyl (C)'], variable_modifications=['oxidation (M)', 'dimethyl (K)', 'dimethyl (N-term)'], max_missed_cleavages=3, enzyme=trypsin, fdr_target=0.01, isotope_error=2
+    input: mzML files
+    output: peptide identifications (PSMs, peptides, proteins)
+    confidence: high
+  Step 3: Monosiotopic relative abundance (RA) extraction
+    tool: Custom analysis (not specified)
+    algorithm: Isotope profile deconvolution and monoisotopic peak integration
+    parameters: monoisotopic_peak_selection=highest intensity within expected m/z window
+    input: mzML files or Mascot results with raw intensities
+    output: time-series monoisotopic RA values per peptide
+    confidence: low
+  Step 4: Body water deuterium enrichment quantification
+    tool: Los Gatos Research Liquid Water Isotope Analyzer
+    algorithm: Calibration curve interpolation
+    parameters: standard_range_percent_D2O=[0, 12], dilution_factor=300
+    input: plasma condensate
+    output: p_W (deuterium enrichment in body water, excess of natural abundance)
+    confidence: high
+  Step 5: Turnover rate modeling (non-duplexed)
+    tool: Custom non-linear regression (not specified)
+    algorithm: Non-linear least squares fitting of exponential decay model
+    parameters: model_equation=I0(t) = I0_asymp + (I0(0) - I0_asymp) * exp(-k*t), I0_asymp_calculation=I0(0) * (1 - p_W / (1 - p_H))^N_EH, p_H=0.000115, fitting_method=non-linear least squares
+    input: Time-series monoisotopic RA (I0(t)), p_W, N_EH (hydrogen exchangeable sites)
+    output: protein/peptide turnover rate k (day⁻¹)
+    confidence: medium
+  Step 6: Turnover rate modeling (duplexed dimethyl)
+    tool: Custom non-linear regression (not specified)
+    algorithm: Non-linear least squares fitting of ratio-based exponential model
+    parameters: model_equation=I0(t)/I0(0) = I0_asymp/I0(0) + (1 - I0_asymp/I0(0)) * exp(-k*t), I0_asymp_over_I0_0=(1 - p_W / (1 - p_H))^N_EH, fitting_method=non-linear least squares
+    input: Time-series monoisotopic RA ratios (heavy/light dimethyl channels), p_W, N_EH
+    output: protein/peptide turnover rate k (day⁻¹)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: not_mentioned (not mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository
+  - No code or scripts provided for monoisotopic RA extraction or non-linear fitting
+  - Mascot is commercial software requiring license and database subscription
+  - Exact algorithm and implementation for isotope profile deconvolution and monoisotopic RA calculation not described
+  - N_EH (exchangeable hydrogen count per peptide) computation method not specified
+  - No details on how peptide-level turnover rates were aggregated to protein-level estimates
+reproducibility_strengths:
+  - Full LC-MS acquisition parameters explicitly reported (gradient, flow rate, resolution, DDA settings)
+  - MSConvert version and conversion settings specified
+  - Mascot search parameters fully detailed (tolerances, modifications, FDR, taxonomy)
+  - Body water enrichment measurement method and calibration protocol described

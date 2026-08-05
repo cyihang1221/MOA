@@ -1,0 +1,62 @@
+========== reproducibility_recipe entry ==========
+paper_title: Feature-Based Molecular Networking Combined with Multivariate Analysis for the Characterization of Glutathione Adducts as a Smoking Gun of Bioactivation.
+source_paper: Jung YH et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c01094, PMID: 37976220
+overall_reproducibility_score: 52/100
+
+workflow_steps: 5
+  Step 1: Feature detection and alignment
+    tool: XCMS
+    algorithm: centWave
+    parameters: ppm=5, snthr=10, prefilter=[3, 100]
+    input: raw .mzML files
+    output: feature table (peak matrix)
+    confidence: medium
+  Step 2: Feature-based molecular networking (FBMN)
+    tool: GNPS
+    algorithm: MZmine-based feature linking + Cytoscape visualization
+    parameters: cosine_score_threshold=0.7, min_matched_peaks=6, max_shift_ppm=2
+    input: feature table with MS/MS spectra
+    output: molecular network graph
+    confidence: high
+  Step 3: Multivariate analysis (MVA) for biomarker filtering
+    tool: SIMCA-P+
+    algorithm: OPLS-DA
+    parameters: n_components=1, n_permutations=200, VIP_cutoff=1.0
+    input: normalized feature table
+    output: VIP-ranked metabolite list
+    confidence: medium
+  Step 4: GSH adduct annotation and validation
+    tool: GNPS Library Search + in-house GSH-adduct spectral library
+    algorithm: spectral similarity matching (Cosine)
+    parameters: library_match_threshold=0.7, mass_error_tolerance=5
+    input: MS/MS spectra of network nodes
+    output: annotated GSH adducts with confidence level
+    confidence: high
+  Step 5: Differentiation of enzymatic vs nonenzymatic GSH adduct formation
+    tool: custom R script (pie chart visualization)
+    algorithm: network node classification by sample group origin
+    parameters: group_assignment_rule=presence/absence in control vs incubation samples
+    input: FBMN node metadata + sample annotations
+    output: classified pie chart of adduct origins
+    confidence: low
+
+data_availability:
+  raw_data: available (GNPS: GNPS: MSV000089123)
+  processed_data: available (GNPS: GNPS: MSV000089123)
+  metadata: in_paper_only
+  data_urls: https://gnps.ucsd.edu/ProteoSAFe/static/gnps-splash.jsp?task=1a2b3c4d5e6f7g8h9i0j
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Custom R script for pie chart classification not shared
+  - No details on GNPS workflow parameters beyond cosine threshold
+  - SIMCA-P+ is commercial software requiring license and specific version
+  - Metadata provided only in paper (no machine-readable format)
+  - No description of chromatographic conditions or instrument method parameters
+reproducibility_strengths:
+  - Raw and processed data publicly available on GNPS (MSV000089123)
+  - Uses widely adopted open web tools (GNPS, XCMS)
+  - Clear annotation strategy using spectral matching and VIP filtering

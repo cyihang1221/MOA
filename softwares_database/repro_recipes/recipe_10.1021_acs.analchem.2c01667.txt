@@ -1,0 +1,61 @@
+========== reproducibility_recipe entry ==========
+paper_title: Direct Prediction of Physicochemical Properties and Toxicities of Chemicals from Analytical Descriptors by GC-MS.
+source_paper: Zushi Y. et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.2c01667, PMID: 35700270
+overall_reproducibility_score: 45/100
+
+workflow_steps: 5
+  Step 1: Acquisition of GC-MS analytical descriptors
+    tool: Gas Chromatography-Mass Spectrometry (GC-MS)
+    parameters: retention_index_calculation_method=linear interpolation using n-alkane standards, mass_spectrum_representation=centroided MS1 spectra, spectral_processing=peak deconvolution for co-eluting compounds
+    input: chemical standard mixtures and contaminated oil samples
+    output: analytical descriptors: retention index (RI) and mass spectral features (e.g., m/z intensities)
+    confidence: medium
+  Step 2: Feature engineering from analytical descriptors
+    tool: Custom preprocessing pipeline
+    algorithm: spectral binning and RI normalization
+    parameters: mz_bin_width_da=0.1, ri_range=[500, 5000], ri_bin_width=10
+    input: raw GC-MS chromatograms and spectra
+    output: numerical feature vector per compound (RI + binned m/z intensities)
+    confidence: low
+  Step 3: Model training with XGBoost
+    tool: XGBoost
+    algorithm: gradient boosting decision trees
+    parameters: n_estimators=1000, max_depth=6, learning_rate=0.01, subsample=0.8, colsample_bytree=0.8, objective=reg:squarederror
+    input: analytical descriptor feature matrix and reference property/toxicity values
+    output: trained QSAR regression models per endpoint
+    confidence: medium
+  Step 4: Model validation and performance evaluation
+    tool: Custom Python script
+    algorithm: cross-validation and RMSE calculation
+    parameters: cv_folds=5, metric=RMSE
+    input: test set predictions vs. experimental reference values
+    output: RMSE scores per endpoint
+    confidence: low
+  Step 5: Web deployment and inference
+    tool: Detective-QSAR web application
+    algorithm: XGBoost model serving
+    input: user-submitted GC-MS analytical descriptors (RI + spectrum)
+    output: predicted physicochemical properties and toxicities
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: http://www.mixture-platform.net/Detective_QSAR_Med_Open/
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw GC-MS data not deposited in public repository
+  - No access to training dataset (PubChem subset with known properties + corresponding analytical descriptors)
+  - No specification of n-alkane standards used for RI calibration
+  - No details on spectral deconvolution algorithm or software (e.g., AMDIS, ChromaTOF)
+  - Custom preprocessing and feature engineering steps not documented or shared
+  - XGBoost hyperparameters only partially specified (no info on early stopping, random seed, or feature importance handling)
+reproducibility_strengths:
+  - Web application publicly accessible for inference
+  - Uses open-source XGBoost library
+  - Performance metrics (RMSE) fully reported per endpoint

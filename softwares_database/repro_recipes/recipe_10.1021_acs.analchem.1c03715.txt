@@ -1,0 +1,60 @@
+========== reproducibility_recipe entry ==========
+paper_title: Referenced Kendrick Mass Defect Annotation and Class-Based Filtering of Imaging MS Lipidomics Experiments.
+source_paper: Richardson LT et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.1c03715, PMID: 35344335
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: RKMD-based lipid feature annotation
+    tool: Custom RKMD algorithm
+    algorithm: Referenced Kendrick Mass Defect analysis
+    parameters: mass_tolerance_ppm=5, kendrick_base=CH2
+    input: centroided IMS mass spectra (m/z and intensity)
+    output: annotated lipid features with molecular class, acyl chain length, and degree of unsaturation
+    confidence: medium
+  Step 2: Class-based filtering of lipid features
+    tool: Custom implementation
+    algorithm: Chemical structure-based filtering using lipid class and unsaturation rules
+    parameters: filter_by_class=True, filter_by_unsaturation=True, filter_by_chain_length=True
+    input: RKMD-annotated lipid features
+    output: filtered lipid feature list suitable for spatial reconstruction
+    confidence: low
+  Step 3: Spatial image reconstruction by structural property
+    tool: Custom script
+    algorithm: Ion intensity mapping per m/z feature onto tissue coordinates
+    parameters: reconstruction_resolution=pixel-level, normalization_method=TIC
+    input: Filtered lipid features + IMS spatial coordinates
+    output: Structurally stratified ion images (e.g., by class, chain length, DBE)
+    confidence: low
+  Step 4: Specificity validation against background ions
+    tool: Custom computational simulation
+    algorithm: Synthetic IMS dataset generation with lipid + background ion models
+    parameters: background_ion_density=high, lipid_spectral_overlap_ratio=0.15
+    input: Simulated IMS dataset
+    output: RKMD specificity metrics (true positive rate, false discovery rate)
+    confidence: low
+  Step 5: Application to experimental MALDI-IMS data
+    tool: Custom RKMD pipeline
+    algorithm: RKMD annotation + class-based filtering + image reconstruction
+    parameters: tissue_type=human kidney, matrix=DHB, polarity=positive
+    input: Raw MALDI-IMS .imzML files
+    output: Annotated, filtered, and spatially resolved lipidomics maps
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (Not specified)
+  processed_data: not_mentioned (Not specified)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed IMS data deposited in public repository
+  - No code or software implementation shared
+  - No details on custom RKMD algorithm implementation (e.g., reference compound selection, defect calculation logic)
+  - No parameter values for background ion simulation model
+  - No description of MALDI-IMS acquisition parameters (e.g., laser frequency, pixel size, spectral processing)
+reproducibility_strengths:
+  - Method conceptually grounded in established RKMD theory
+  - Validation includes both simulated and real human tissue data

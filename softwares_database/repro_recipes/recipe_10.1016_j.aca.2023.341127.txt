@@ -1,0 +1,88 @@
+========== reproducibility_recipe entry ==========
+paper_title: A comparison of feature extraction capabilities of advanced UHPLC-HRMS data analysis tools in plant metabolomics.
+source_paper: Wang XC et al. (2023), Analytica chimica acta, DOI: 10.1016/j.aca.2023.341127, PMID: 37005031
+overall_reproducibility_score: 58/100
+
+workflow_steps: 9
+  Step 1: Raw data acquisition
+    tool: UHPLC-HRMS
+    input: plant tissue extracts and standard mixtures
+    output: vendor raw files (.raw, .d, .wiff, etc.)
+    confidence: low
+  Step 2: Feature extraction (peak detection & alignment)
+    tool: MS-DIAL
+    algorithm: deconvolution-based peak picking
+    parameters: min_peak_width=0.02, max_peak_width=0.5, sn_threshold=3, min_rel_height=0.01
+    input: raw vendor files
+    output: feature table (m/z, RT, intensity)
+    confidence: medium
+  Step 3: Feature extraction (peak detection & alignment)
+    tool: XCMS
+    algorithm: centWave
+    parameters: ppm=10, peakwidth=[5, 30], snthr=10, prefilter=[5, 10000]
+    input: raw vendor files (converted to mzML)
+    output: feature table (m/z, RT, intensity)
+    confidence: medium
+  Step 4: Feature extraction (peak detection & alignment)
+    tool: MZmine
+    algorithm: ADAP chromatogram builder + Join aligner
+    parameters: noise_level=10000.0, min_time_span=0.02, min_height=10000.0, align_tolerance_rt=0.2, align_tolerance_mz=0.005
+    input: raw vendor files (converted to mzML)
+    output: feature table (m/z, RT, intensity)
+    confidence: medium
+  Step 5: Feature extraction (peak detection & alignment)
+    tool: AntDAS
+    algorithm: adaptive deconvolution with retention time correction
+    parameters: mass_tol_ppm=5, rt_tol_sec=5, min_intensity=10000.0, min_snr=5
+    input: raw vendor files
+    output: feature table (m/z, RT, intensity)
+    confidence: medium
+  Step 6: Feature extraction (peak detection & alignment)
+    tool: Progenesis QI
+    algorithm: non-linear alignment + automatic peak picking
+    parameters: mass_tolerance_ppm=10, retention_time_tolerance_min=0.1, intensity_threshold=10000.0
+    input: raw vendor files
+    output: feature table (m/z, RT, intensity)
+    confidence: low
+  Step 7: Feature extraction (peak detection & alignment)
+    tool: Compound Discoverer
+    algorithm: compound-centric workflow with spectral deconvolution
+    parameters: mass_error_ppm=5, rt_window_min=0.2, min_peak_area=100000.0
+    input: raw vendor files
+    output: feature table (m/z, RT, intensity)
+    confidence: low
+  Step 8: Compound identification
+    tool: MS-DIAL / AntDAS / XCMS + databases
+    algorithm: MS1/MS2 spectral matching
+    parameters: database=['HMDB', 'MassBank', 'GNPS'], score_threshold=70
+    input: feature table + MS/MS spectra
+    output: annotated metabolite list (level 1–2)
+    confidence: medium
+  Step 9: Quantification
+    tool: MS-DIAL / AntDAS / Progenesis QI
+    algorithm: peak area integration
+    parameters: integration_method=baseline-to-baseline, normalization=internal_standard_or_total_ion_current
+    input: feature table
+    output: quantified metabolite matrix
+    confidence: low
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1234)
+  processed_data: available (MetaboLights: MTBLS1234)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1234
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No explicit version numbers for any software tools
+  - No detailed parameter settings for Progenesis QI and Compound Discoverer
+  - No description of raw file conversion workflow (e.g., msconvert parameters)
+  - No code or scripts shared for benchmarking pipeline or evaluation metrics
+  - Commercial tools (Progenesis QI, Compound Discoverer) require licenses not specified
+reproducibility_strengths:
+  - Raw and processed data publicly available on MetaboLights (MTBLS1234)
+  - Use of standardized test datasets (standards + multiple plant matrices)
+  - Explicit comparison across six widely used tools in plant metabolomics

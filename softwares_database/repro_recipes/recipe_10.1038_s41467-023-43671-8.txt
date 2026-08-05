@@ -1,0 +1,139 @@
+========== reproducibility_recipe entry ==========
+paper_title: Multi-omics analysis of hospital-acquired diarrhoeal patients reveals biomarkers of enterococcal proliferation and Clostridioides difficile infection.
+source_paper: Bosnjak M et al. (2023), Nature communications, DOI: 10.1038/s41467-023-43671-8, PMID: 38007555
+overall_reproducibility_score: 58/100
+
+workflow_steps: 9
+  Step 1: 16S rRNA amplicon sequencing
+    tool: QIIME (vv.1.9.1)
+    algorithm: Uclust
+    parameters: otu_identity_threshold=0.99, min_otu_abundance_fraction=0.0001, database=GreenGenes, paired_end_joining=Fastq-Join
+    input: raw .fastq files
+    output: OTU table (99% identity)
+    confidence: high
+  Step 2: Microbiota diversity and composition analysis
+    tool: Calypso
+    algorithm: Bray-Curtis dissimilarity, PERMANOVA, Shannon index
+    parameters: normalization=Total Sum Scaling (TSS), square root transformed, rarefaction=used only for alpha diversity, statistical_tests=['Mann-Whitney U', 'Kruskal-Wallis H'], beta_diversity_metric=Bray-Curtis, visualization=PCoA
+    input: OTU table
+    output: alpha/beta diversity metrics, genus-level composition, differential OTUs
+    confidence: medium
+  Step 3: Differential abundance analysis
+    tool: ANCOM
+    algorithm: Analysis of Compositions of Microbiomes
+    parameters: auc_threshold=0.7, filtering=taxa with AUC > 0.7 retained
+    input: OTU table (TSS + sqrt transformed)
+    output: putative taxonomic biomarkers
+    confidence: high
+  Step 4: Enterococcus isolation and whole-genome sequencing
+    tool: Nullarbor (vv2.0)
+    algorithm: core genome phylogeny, MLST, vanA/vanB detection
+    parameters: reference_strain=E. faecium Ef_aus00233, assembler=SPAdes, annotator=Prokka, visualization=iTOL v5
+    input: Illumina MiSeq 150 bp paired-end reads
+    output: core genome phylogeny, ST assignment, resistance gene calls
+    confidence: high
+  Step 5: Untargeted GC-MS metabolite profiling
+    tool: Agilent GC-MS platform
+    algorithm: not applicable
+    parameters: instrument=Agilent 7890B GC + 5977B MS, autosampler=Gerstel MPS, derivatisation=as per Supplementary Materials, extraction=as per Supplementary Materials
+    input: frozen faecal specimens
+    output: raw .d or .cdf chromatographic data
+    confidence: low
+  Step 6: SCFA profiling
+    tool: Agilent GC-MS platform
+    algorithm: not applicable
+    parameters: instrument=Agilent 6890B GC + 5977B MS, protocol_reference=Furuhashi et al. with modifications, autosampler=Gerstel MPS, derivatisation=as per Supplementary Materials
+    input: frozen faecal specimens
+    output: raw SCFA chromatographic data
+    confidence: low
+  Step 7: Metabolomics data preprocessing and multivariate modeling
+    tool: SIMCA (v16)
+    algorithm: PLS-DA
+    parameters: transformation=log-transform, scaling=Pareto scaling, vip_threshold=1.0, loading_threshold_abs=0.5, model_validation=['R2X', 'R2Y', 'Q2', 'CV-ANOVA'], r2_interpretation={'high': '>0.67', 'moderate': '0.33–0.67', 'low': '0.19–0.33', 'unacceptable': '<0.19'}, overfitting_indicator=disparate R2 and Q2
+    input: peak-integrated metabolite table (preprocessed)
+    output: PLS-DA model, VIP-ranked metabolites, scores plots
+    confidence: high
+  Step 8: Univariate statistical testing and biomarker evaluation
+    tool: GraphPad Prism (v8.2.1)
+    algorithm: Mann-Whitney U, Kruskal-Wallis H
+    parameters: correction=Benjamini-Hochberg FDR, auc_threshold=0.7, auc_interpretation={'excellent': '0.9–1.0', 'good': '0.8–0.9', 'fair': '0.7–0.8', 'poor': '0.6–0.7'}, biomarker_ratios=used for biologically significant metabolite pairs
+    input: metabolite abundance matrix
+    output: statistically significant metabolites, ROC-AUC values, biomarker ratios
+    confidence: high
+  Step 9: Heatmap visualization of significant metabolites
+    tool: ClustVis
+    algorithm: hierarchical clustering + PCA-based scaling
+    parameters: input_normalization=as provided by SIMCA/Prism output, clustering=row/column
+    input: VIP-filtered metabolite abundance matrix
+    output: interactive heatmap
+    confidence: medium
+
+data_availability:
+  raw_data: available (NIH Sequence Read Archive (SRA): PRJNA986597; SRR24999020–SRR249990213)
+  processed_data: not_mentioned (not mentioned)
+  metadata: in_paper_only
+  data_urls: https://github.com/tseemann/nullarbor, https://itol.embl.de/
+
+code_availability: repository_linked
+  code_url: https://github.com/tseemann/nullarbor
+  license: MIT
+
+figure_recipes: 9
+  Table 1: [table]
+    caption: Patient demographics and antibiotic usage across HAD cohorts.
+    produced_by_step: [2]
+    visualization_tool: GraphPad Prism or custom reporting
+    statistical_test: not specified
+  Fig. 1: [bar_chart]
+    caption: Extended antibiotic exposure and combination therapy associated with Enterococcaceae-dominated microbiota.
+    produced_by_step: [2, 3]
+    visualization_tool: Calypso or GraphPad Prism
+    statistical_test: Kruskal-Wallis H test
+  Fig. 2: [phylogenetic_tree]
+    caption: Core phylogeny, MLST, and vancomycin resistance gene profiling of E. faecium isolates.
+    produced_by_step: [4]
+    visualization_tool: iTOL v5
+    statistical_test: not applicable
+  Fig. 3: [pca_scores]
+    caption: Low-diversity AAD with enterococcal proliferation forms a microbially distinct subset.
+    produced_by_step: [2]
+    visualization_tool: Calypso (PCoA)
+    statistical_test: PERMANOVA
+  Fig. 4: [bar_chart]
+    caption: Elevated tyramine/L-tyrosine ratio in low-diversity enterococcal-dominant AAD.
+    produced_by_step: [8]
+    visualization_tool: GraphPad Prism
+    statistical_test: Mann-Whitney U test, FDR-corrected
+  Fig. 5: [heatmap]
+    caption: Reduction in sugars and amino acids in non-antibiotic/non-enterococcal CDI vs. other groups.
+    produced_by_step: [7, 9]
+    visualization_tool: ClustVis
+    statistical_test: not explicitly shown but underlies VIP selection
+  Fig. 6: [bar_chart]
+    caption: Enterococcal CDI associated with L-proline Stickland fermentation by-products.
+    produced_by_step: [7, 8]
+    visualization_tool: GraphPad Prism
+    statistical_test: Mann-Whitney U test, FDR-corrected
+  Fig. 7: [bar_chart]
+    caption: Non-enterococcal CDI associated with L-leucine and L-valine Stickland fermentation by-products.
+    produced_by_step: [7, 8]
+    visualization_tool: GraphPad Prism
+    statistical_test: Mann-Whitney U test, FDR-corrected
+  Fig. 8: [bar_chart]
+    caption: Non-enterococcal CDI associated with tyrosine Stickland fermentation by-products.
+    produced_by_step: [7, 8]
+    visualization_tool: GraphPad Prism
+    statistical_test: Mann-Whitney U test, FDR-corrected
+
+reproducibility_gaps:
+  - Raw GC-MS chromatographic data (.d/.cdf) not deposited in public repository
+  - SIMCA 16 is commercial software requiring license and not reproducible without paid access
+  - Detailed GC-MS derivatisation and extraction protocols only in Supplementary Materials (not linked or archived)
+  - No metabolite peak table or processed feature matrix publicly available
+  - ClustVis and Calypso workflows lack versioned configuration or exportable parameters
+  - No code/scripts shared for ANCOM, PLS-DA interpretation, or ratio calculations
+reproducibility_strengths:
+  - 16S raw sequencing data publicly available in SRA (PRJNA986597)
+  - E. faecium WGS data available in NCBI (PRJNA1015000)
+  - Open-source tools used for core microbiome analysis (QIIME, ANCOM, Nullarbor)
+  - Clear statistical thresholds reported (VIP > 1, p(corr) > |0.5|, AUC ≥ 0.7)

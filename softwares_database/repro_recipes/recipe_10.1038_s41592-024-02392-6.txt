@@ -1,0 +1,136 @@
+========== reproducibility_recipe entry ==========
+paper_title: Integration of mass cytometry and mass spectrometry imaging for spatially resolved single-cell metabolic profiling.
+source_paper: Nunes JB et al. (2024), Nature methods, DOI: 10.1038/s41592-024-02392-6, PMID: 39210066
+overall_reproducibility_score: 42/100
+
+workflow_steps: 16
+  Step 1: MALDI-MSI data acquisition (oTOF mode)
+    tool: timsTOF fleX MALDI-2 with microGRID
+    parameters: spatial_resolution=5 × 5 µm², mz_range=[300, 1100], laser_shots_per_pixel=25, measurement_region_size=≈1 × 1 mm²
+    input: frozen tissue section on ITO-coated slide
+    output: raw .d folder (Bruker format) in oTOF mode
+    confidence: high
+  Step 2: MALDI-MSI data acquisition (timsON mode)
+    tool: timsTOF fleX MALDI-2 with microGRID
+    parameters: spatial_resolution=10 × 10 µm², mz_range=[300, 1100], laser_shots_per_pixel=74, ion_mobility_ramp_duration_ms=300, k0_interval_Vs_cm2=[0.6, 1.6], measurement_region_size=≈0.5 × 1 mm²
+    input: same tissue section post-oTOF
+    output: raw .d folder (Bruker format) in timsON mode
+    confidence: high
+  Step 3: Data loading and separation
+    tool: SCiLS Lab PRO (v2024a)
+    input: raw Bruker .d files (oTOF and timsON)
+    output: two separate processed datasets: timsON for annotation, oTOF for imaging
+    confidence: high
+  Step 4: Feature detection (timsON dataset)
+    tool: SCiLS Lab T-ReX 3
+    algorithm: T-ReX 3 feature finding
+    parameters: neighborhood_size=4 × 4, coverage=100%, relative_intensity_threshold_percent=0.3
+    input: timsON raw data
+    output: feature list (m/z, RT, CCS, intensity)
+    confidence: high
+  Step 5: CCS-aware molecular annotation
+    tool: MetaboScape (v2023b)
+    algorithm: CCS-Predict Pro + database matching
+    parameters: database=Lipid Maps Structural Database (GP & SP subclasses), hmdb_url=https://HMDB.ca, mass_tolerance_narrow_ppm=5.0, mass_tolerance_wide_ppm=15.0, mSigma_narrow=100, mSigma_wide=900, ccs_tolerance_narrow_percent=2.0, ccs_tolerance_wide_percent=4.0, ion_mode=[M − H]⁻, mass_error_threshold_ppm=10.0, ccs_error_threshold_percent=5.0
+    input: T-ReX 3 feature list from timsON
+    output: annotated feature table (m/z, CCS, lipid class, adduct, confidence)
+    confidence: high
+  Step 6: Single-ion image export at single-cell resolution
+    tool: SCiLS Lab PRO (v2024a)
+    parameters: mz_window_ppm=6.6
+    input: annotated features + oTOF raw data
+    output: OME-TIFF ion images (5 × 5 µm² pixels)
+    confidence: high
+  Step 7: IMC sample preparation and staining
+    tool: Standard BioTools Hyperion workflow
+    parameters: fixation=10% formalin (1 h, RT) OR 4% PFA (30 min, 4°C), antigen_retrieval=as per IJsselsteijn et al., staining_panel=metal-conjugated antibodies (see Supplementary Table 1)
+    input: same tissue section post-MALDI matrix removal
+    output: stained tissue slide ready for IMC
+    confidence: medium
+  Step 8: IMC data acquisition
+    tool: Hyperion Mass Cytometry System (vCyTOF software 7.0.5189)
+    parameters: acquisition_area=1100 × 1100 µm², spatial_resolution=1 × 1 µm²
+    input: stained tissue slide
+    output: .mcd files
+    confidence: high
+  Step 9: IMC image preprocessing and segmentation
+    tool: Ilastik + CellProfiler + ImaCytE
+    algorithm: random forest background removal + binarization + keratin/vimentin/CD45/DNA-based segmentation
+    parameters: intensity_normalization=saturate above 99th percentile, background_masking=Ilastik random forest classifier
+    input: .mcd files
+    output: cell segmentation masks + per-pixel marker intensities
+    confidence: medium
+  Step 10: Cell phenotype identification
+    tool: Cytosplore
+    algorithm: t-SNE + mean-shift clustering
+    parameters: t_sne_perplexity=None, mean_shift_bandwidth=None
+    input: per-cell protein expression matrix
+    output: cell phenotype labels (e.g., cancer, T cell, macrophage)
+    confidence: low
+  Step 11: MSI–IMC coregistration
+    tool: Python (custom script) (v3.9)
+    algorithm: landmark-based rigid registration
+    parameters: coregistration_strategy=visual landmark matching (e.g., empty areas, epithelial structures), exclusion_policy=exclude non-overlapping border pixels
+    input: OME-TIFF (MSI) + TIFF (IMC preprocessed)
+    output: coregistered pixel coordinate mapping
+    confidence: medium
+  Step 12: Metabolite abundance assignment per cell
+    tool: Python (custom script) (v3.9)
+    algorithm: pixel-to-cell weighted averaging (1:25 resolution ratio)
+    parameters: msi_pixel_size_um=5, imc_pixel_size_um=1, mapping_function=y_j = f(x_i), where each y_j maps to 25 x_i, cell_metabolite_abundance_formula=T̄_k,t = (1/m_k) * Σ_i T_f(i),t
+    input: coregistered pixel mappings + OME-TIFF ion images + cell masks
+    output: cell-level metabolite abundance matrix (n_cells × n_metabolites)
+    confidence: high
+  Step 13: Phenotype–metabolite integration and normalization
+    tool: RStudio (v2022.07.1 (R 4.2.0))
+    algorithm: relative abundance normalization per cell
+    input: cell-level metabolite matrix + phenotype labels
+    output: normalized metabolite-by-phenotype matrix
+    confidence: high
+  Step 14: Differential metabolite analysis
+    tool: R (stats package)
+    algorithm: Wilcoxon rank-sum test
+    parameters: test_type=two-group comparison (phenotype vs rest), p_value_adjustment=FDR (Benjamini-Hochberg), significance_threshold=0.05
+    input: normalized metabolite-by-phenotype matrix
+    output: differentially abundant metabolites (fold change, FDR-adjusted p-value)
+    confidence: high
+  Step 15: Visualization: heatmap
+    tool: ComplexHeatmap (v2.14.0)
+    input: normalized metabolite-by-phenotype matrix
+    output: sample-wise heatmap (phenotypes × metabolites)
+    confidence: high
+  Step 16: Dimensionality reduction (UMAP)
+    tool: umap R package (v0.2.10.0)
+    algorithm: UMAP
+    parameters: n_neighbors=5, min_dist=0.05, n_epochs=1000
+    input: cell-level metabolite matrix
+    output: 2D UMAP embedding
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 1
+  Extended Data Fig. 1b: [workflow_diagram]
+    caption: Schematic illustration of the pixel-to-cell metabolite assignment logic, showing how a single 5×5 µm MALDI-MSI pixel maps to 25 IMC pixels and how partial cell coverage is handled via weighted averagi
+    produced_by_step: [11, 12]
+    visualization_tool: custom schematic (not specified)
+
+reproducibility_gaps:
+  - Raw MALDI-MSI (.d) and IMC (.mcd) data not deposited in public repository (e.g., MetaboLights, CyTOF Data Commons, or MIRACL)
+  - No code repository provided for Python coregistration or metabolite assignment scripts
+  - SCiLS Lab PRO (v2024a) and MetaboScape (v2023b) are commercial tools requiring paid licenses and proprietary file formats
+  - T-ReX 3 parameters lack specification of peak width, SNR thresholds, or baseline correction method
+  - IMC antibody panel validation details (Supplementary Table 1) and phenotype definitions (Supplementary Table 2) are referenced but not included in methods text
+  - No description of MSI matrix sublimation uniformity QC or instrument calibration procedures
+  - t-SNE parameters (perplexity, learning rate) and mean-shift bandwidth not reported for phenotype clustering
+reproducibility_strengths:
+  - Explicit spatial resolution, laser settings, and acquisition parameters for both MSI modes
+  - Full parameterization of MetaboScape annotation (mass/CCS tolerances, databases, filters)
+  - Mathematically precise definition of cell-level metabolite quantification
+  - Use of open-source tools for segmentation (Ilastik, CellProfiler), visualization (ComplexHeatmap, umap), and statistics (R Wilcoxon)
+  - Clear description of coregistration strategy and exclusion of non-overlapping pixels

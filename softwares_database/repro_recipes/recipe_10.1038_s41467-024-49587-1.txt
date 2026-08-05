@@ -1,0 +1,122 @@
+========== reproducibility_recipe entry ==========
+paper_title: Discovering type I cis-AT polyketides through computational mass spectrometry and genome mining with Seq2PKS.
+source_paper: Yan D et al. (2024), Nature communications, DOI: 10.1038/s41467-024-49587-1, PMID: 38918378
+overall_reproducibility_score: 42/100
+
+workflow_steps: 8
+  Step 1: BGC identification
+    tool: antiSMASH (v24)
+    algorithm: HMMER-based homology search
+    parameters: flanking_region_bp=10000
+    input: microbial genome FASTA (contigs)
+    output: polyketide biosynthetic gene clusters (BGCs)
+    confidence: high
+  Step 2: PK domain and tailoring enzyme annotation
+    tool: HMMER (v43)
+    algorithm: hidden Markov model profile matching
+    input: BGC nucleotide/protein sequences
+    output: domain architecture (AT, KR, DH, ER, tailoring enzymes)
+    confidence: high
+  Step 3: AT substrate specificity prediction
+    tool: Seq2PKS (custom Extra-Trees model)
+    algorithm: Extremely Randomized Trees
+    parameters: n_estimators=150, max_depth=10, cross_validation_folds=5
+    input: 24-residue AT active site sequences (one-hot encoded)
+    output: predicted AT substrate (e.g., malonyl, methylmalonyl, ethylmalonyl)
+    confidence: high
+  Step 4: Module-level substructure prediction
+    tool: Seq2PKS (rule-based)
+    algorithm: domain logic rules (KR→DH→ER cascade)
+    input: AT substrate + presence/absence of KR/DH/ER domains per module
+    output: hypothetical polyketide core substructures
+    confidence: medium
+  Step 5: Assembly line order prediction
+    tool: Seq2PKS (custom logistic regression)
+    algorithm: logistic regression on BLAST bit-score features
+    parameters: n_neighbors=3, positive_samples=382, negative_samples=382, W_forward=1.0, W_backward=1.0
+    input: docking domain sequences (N-terminal 50 aa, C-terminal 100 aa)
+    output: ranked candidate assembly pathways
+    confidence: high
+  Step 6: Post-assembly modification prediction
+    tool: Seq2PKS (rule-based + Ullman subgraph isomorphism)
+    algorithm: Ullman algorithm for motif matching + SMILES-based reaction application
+    input: core polyketide structures + tailoring enzyme inventory
+    output: set of hypothetical mature polyketide structures (SMILES)
+    confidence: medium
+  Step 7: Mass spectral database search
+    tool: Dereplicator+ (v25)
+    algorithm: exact mass spectral matching
+    input: hypothetical SMILES + LC-MS/MS spectra (mzML or .raw)
+    output: matched compound candidates with scores
+    confidence: high
+  Step 8: Variable mass spectral search
+    tool: Variable Dereplicator+ (v25)
+    algorithm: variable modification-aware spectral matching
+    input: hypothetical SMILES + LC-MS/MS spectra
+    output: matched compounds with unknown modifications
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 10
+  Fig. 1: [workflow_diagram]
+    caption: Overview of the Seq2PKS framework integrating genome mining, structure prediction, and spectral matching.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7, 8]
+    visualization_tool: not_mentioned
+  Fig. 2: [bar_chart]
+    caption: Accuracy comparison of different classifiers (including Extra-Trees) for AT domain substrate specificity prediction.
+    produced_by_step: [3]
+    visualization_tool: not_mentioned
+    statistical_test: fivefold cross-validation accuracy
+  Fig. 3: [other]
+    caption: Illustration of TIMPKs assembly order pattern based on docking domain interactions.
+    produced_by_step: [5]
+    visualization_tool: not_mentioned
+  Fig. 4: [bar_chart]
+    caption: Pathway prediction accuracy comparison between PNN, antiSMASH, and DDAP.
+    produced_by_step: [5]
+    visualization_tool: not_mentioned
+    statistical_test: accuracy metric (not specified)
+  Fig. 5: [table]
+    caption: List of polyketide post-assembly modifications curated from literature and encoded in Seq2PKS.
+    produced_by_step: [6]
+    visualization_tool: not_mentioned
+  Table 1: [table]
+    caption: Seq2PKS correctly identified the compound structure for 23 BGCs.
+    produced_by_step: [7, 8]
+    visualization_tool: not_mentioned
+  Fig. 6: [heatmap]
+    caption: Tanimoto similarity coefficient matrix among mature compounds predicted from 80 MiBIG BGCs.
+    produced_by_step: [6]
+    visualization_tool: not_mentioned
+  Fig. 7: [other]
+    caption: Identification workflow and validation results for monazomycin BGC using Seq2PKS.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7, 8]
+    visualization_tool: not_mentioned
+  Fig. 8: [other]
+    caption: Identification workflow and validation results for oasomycin A BGC using Seq2PKS.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7, 8]
+    visualization_tool: not_mentioned
+  Fig. 9: [other]
+    caption: Identification workflow and validation results for 2-aminobenzamide-actiphenol BGC using Seq2PKS.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7, 8]
+    visualization_tool: not_mentioned
+
+reproducibility_gaps:
+  - Seq2PKS source code not shared (no repository link or DOI)
+  - Trained machine learning models (Extra-Trees, logistic regression) not released
+  - Custom rule sets (Supplementary Figs. 3, 24, 25) not provided in machine-readable format
+  - No access to raw or processed mass spectrometry data (LC-MS/MS) for monazomycin/oasomycin validation
+  - No accession IDs or repositories cited for genomic data (e.g., Streptomyces cinnamoneus NRRL B-24434, strain 44321-A2)
+  - LC gradient parameters partially specified (e.g., column temperature, autosampler temp, flow rate stability not given)
+  - Dereplicator+/Variable Dereplicator+ spectral search parameters (e.g., mass tolerance, fragment tolerance, scoring thresholds) not reported
+reproducibility_strengths:
+  - Uses established open-source tools: antiSMASH, HMMER, Dereplicator+, Variable Dereplicator+
+  - Detailed algorithmic descriptions for AT prediction, docking scoring, and modification rules
+  - Explicit cross-validation protocol (5-fold) for ML model evaluation
+  - Full LC-MS instrument settings and acquisition parameters reported for validation experiment

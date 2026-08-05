@@ -1,0 +1,113 @@
+========== reproducibility_recipe entry ==========
+paper_title: Genome-wide mapping and quantification of DNA damage induced by catechol estrogens using Click-Probe-Seq and LC-MS&lt;sup&gt;2&lt;/sup&gt;.
+source_paper: Do QT et al. (2025), Communications biology, DOI: 10.1038/s42003-025-07657-0, PMID: 40069327
+overall_reproducibility_score: 42/100
+
+workflow_steps: 8
+  Step 1: Chromatin isolation from MCF-7 cells
+    tool: Manual protocol
+    parameters: cell_confluence=80%, crosslinking_agent=1% formaldehyde, quenching_agent=125 mM glycine, cytosol_extraction_buffer=10 mM HEPES, 10 mM KCl, 1.5 mM DTT, 1% Triton X-100, 1x protease inhibitor, 5% glycerol, MNase_dose=4000 gel units, MNase_digestion_time=1 h, MNase_digestion_temperature=37, EDTA_arrest_concentration=5 mM
+    input: cultured MCF-7 cells
+    output: isolated chromatin (500 μg protein, 100 μg DNA)
+    confidence: high
+  Step 2: In-situ quinone generation and adduct formation
+    tool: Chemical synthesis protocol
+    parameters: 4OHEE2_concentration=0.0013, solvent_composition=ACN/DMSO 80:20 v/v, MnO2_amount=1 mg, quinone_generation_temperature=-30, quinone_generation_time=30, adduct_formation_temperature=37, adduct_formation_time_chromatin=[0, 24], adduct_concentrations=[30, 300], DNA_amount=0.0001, buffer=PBS
+    input: 4OHEE2, MnO2, chromatin/DNA/nucleosides
+    output: released adducts (supernatant) and stable adducts (pellet)
+    confidence: high
+  Step 3: DNA hydrolysis to nucleosides
+    tool: Enzymatic digestion
+    algorithm: Tetra-enzyme cocktail (DNase I, NP1, PDE I, ALP)
+    parameters: DNA_amount=0.0001, buffer=5 mM BIS-TRIS pH 7.0, boiling_time=30, digestion_time=18, digestion_temperature=37, enzyme_volumes=3 μL total tetra-enzyme mix: DNase I (10 μL of 20,000 U/mL), NP1 (15 μL of 200 U/mL), PDE I (40 μL of 100 U/mL), ALP (0.5 μL of 40,000 U/mL)
+    input: purified chromatin DNA or calf thymus DNA
+    output: nucleoside mixture containing stable adducts
+    confidence: high
+  Step 4: LC-MRM quantification of adducts
+    tool: Waters ACQUITY UPLC + Sciex 4000QTRAP
+    algorithm: Multiple Reaction Monitoring (MRM)
+    parameters: injection_volume=5, trap_column=C18, 5 mm × 0.2 mm, 5 μm, analytical_column=C18, 220 mm × 0.2 mm, 1.7 μm BEH, mobile_phase_A=0.1% formic acid in water, mobile_phase_B=0.1% formic acid in ACN, gradient_profile=[{'time_min': 0, 'B_percent': 10}, {'time_min': 2, 'B_percent': 10}, {'time_min': 3, 'B_percent': 70}, {'time_min': 13, 'B_percent': 70}, {'time_min': 15, 'B_percent': 10}, {'time_min': 18, 'B_percent': 10}], flow_rate=1.7, equilibration_time_min=10, ionization_mode=positive, capillary_voltage_V=4000, interface_temperature_C=150, collision_energy_V=[62, 23], declustering_potential_V=[188, 135], entrance_potential_V=[9, 7], collision_cell_exit_potential_V=[24, 18], LOD_ng_per_mL=<0.5, LOQ_ng_per_mL=<1
+    input: hydrolyzed nucleoside samples or adduct standards
+    output: quantified adduct peak areas (MRM transitions)
+    confidence: high
+  Step 5: Click-Probe enrichment of stable DNA adducts
+    tool: Click chemistry + streptavidin pulldown
+    algorithm: CuAAC (copper-catalyzed azide–alkyne cycloaddition)
+    parameters: CR3_linker_concentration_M=0.0002, CuSO4_concentration_M=0.0002, THPTA_concentration_M=0.001, sodium_ascorbate_concentration_M=0.002, reaction_volume_uL=120, reaction_time_min=60, reaction_temperature_C=37, streptavidin_bead_volume_uL=20, pulldown_incubation_time_h=2, wash_buffers=['40% ACN', '1% SDS', 'PBS'], cleavage_reagent=1 M DTT, cleavage_temperature_C=50
+    input: chromatin-derived DNA with stable adducts
+    output: enriched stable adduct-containing DNA fragments
+    confidence: high
+  Step 6: NGS library prep and sequencing
+    tool: IDT for Illumina – TruSeq DNA UD Indexes + SSEL XT Low Input Kit
+    parameters: input_DNA_ng=10, sequencing_platform=Illumina NovaSeq, read_length_cycles=151, read_type=paired-end
+    input: Click-enriched DNA
+    output: FASTQ files
+    confidence: medium
+  Step 7: Bioinformatic processing of Click-Probe-Seq data
+    tool: fastp + bowtie2 + MACS2 (vfastp 0.20.0, bowtie2 2.3.4.3, MACS2 2.2.4)
+    algorithm: Peak calling with FDR control
+    parameters: trimming_tool=fastp, alignment_reference_genome=GRCh38, peak_calling_tool=MACS2, q_value_cutoff=0.05, control_sample_used=True
+    input: FASTQ files (treated + control)
+    output: BED files of enriched genomic regions (peaks)
+    confidence: high
+  Step 8: Genomic annotation and DHS correlation
+    tool: Custom bioinformatics (not specified)
+    algorithm: Genomic element overlap (Promoter, 5’-UTR, etc.) and correlation with DNase hypersensitive sites
+    parameters: genomic_annotation_source=GRCh38, DHS_data_source=ENCODE or similar (not specified)
+    input: MACS2 peaks + DHS track
+    output: annotated target genes, enrichment statistics, correlation plots
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: not_mentioned (not mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 6
+  Fig. 1: [bar_chart]
+    caption: Global DNA adduct generation detected by LC-MS².
+    produced_by_step: [4]
+    visualization_tool: not specified
+    statistical_test: not specified
+  Fig. 2: [genome_browser_track]
+    caption: 4OHEE2 Click-Probe-Seq by NGS and DHS site mapping.
+    produced_by_step: [6, 7, 8]
+    visualization_tool: not specified
+    statistical_test: not specified
+  Fig. 3: [heatmap]
+    caption: Bioinformatics and sequence analysis of the identified target genes.
+    produced_by_step: [8]
+    visualization_tool: not specified
+    statistical_test: not specified
+  Fig. 4: [volcano_plot]
+    caption: Comparability study of transcriptional changes induced by 4OHE2, 4OHEE2, and E2.
+    produced_by_step: [8]
+    visualization_tool: not specified
+    statistical_test: not specified
+  Fig. 5: [line_plot]
+    caption: Comparability time course studies of DSB damage and repair of MCF7 cells treated with 4OHE2, 4OHEE2, or E2.
+    produced_by_step: [8]
+    visualization_tool: not specified
+    statistical_test: not specified
+  Fig. 6: [bar_chart]
+    caption: Effect of MCF-7 Cell viability by treatment with 4OHE2, 4OHEE2, or E2.
+    produced_by_step: [8]
+    visualization_tool: not specified
+    statistical_test: not specified
+
+reproducibility_gaps:
+  - Raw FASTQ and LC-MS² raw data not deposited in public repositories
+  - No code or scripts shared for bioinformatic analysis (steps 7–8)
+  - DHS data source and processing pipeline not specified
+  - No details on statistical methods for Fig. 4–6 (e.g., test type, correction, n)
+  - No repository link or accession ID for any data
+  - Commercial instruments (Sciex 4000QTRAP, Waters UPLC) require proprietary software not described
+  - Click-Probe-Seq library prep details (e.g., fragmentation, size selection, PCR cycles) omitted
+reproducibility_strengths:
+  - Detailed chemical protocols for quinone generation and adduct formation
+  - Explicit LC-MRM parameters (transitions, voltages, gradients)
+  - Full enzyme cocktail composition and hydrolysis conditions
+  - Clear chromatin isolation and MNase digestion protocol
+  - Use of standard open-source tools (fastp, bowtie2, MACS2) with versions specified

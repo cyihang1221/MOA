@@ -1,0 +1,68 @@
+========== reproducibility_recipe entry ==========
+paper_title: Global Profiling of Toxicologically Relevant Metabolites in Urine: Case Study of Reactive Aldehydes.
+source_paper: Jamin EL et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.9b03146, PMID: 31854978
+overall_reproducibility_score: 48/100
+
+workflow_steps: 6
+  Step 1: Data acquisition using data-independent acquisition (DIA) mass spectrometry
+    tool: LC-MS/MS
+    algorithm: DIA
+    parameters: scan_mode=data independent acquisition, neutral_loss=characteristic neutral loss of mercapturic acid conjugates (MACs)
+    input: urine samples
+    output: raw DIA .raw files (Thermo)
+    confidence: medium
+  Step 2: Targeted extraction of MAC-related HRMS signals based on characteristic neutral loss
+    tool: Compound Discoverer
+    algorithm: neutral loss filtering
+    parameters: neutral_loss_mass=129.02 Da (pyroglutamic acid loss from MACs), mass_tolerance_ppm=5, retention_time_window_min=0.5
+    input: raw .raw files
+    output: MAC-specific feature table (m/z, RT, intensity)
+    confidence: medium
+  Step 3: Feature detection and alignment for MACs
+    tool: Compound Discoverer
+    algorithm: peak detection and alignment
+    parameters: min_peak_height=10000, rt_tolerance_sec=15, mz_tolerance_ppm=5
+    input: raw .raw files
+    output: aligned feature table
+    confidence: medium
+  Step 4: Metabolite identification of MACs
+    tool: Compound Discoverer + in-house spectral library
+    algorithm: MS/MS spectral matching with neutral loss trigger
+    parameters: library_match_threshold=70, precursor_mass_tolerance_ppm=5, fragment_mass_tolerance_ppm=10
+    input: feature table + MS/MS spectra
+    output: annotated MAC list (level 1–2 identifications)
+    confidence: medium
+  Step 5: Multivariate statistical analysis restricted to MAC features
+    tool: SIMCA-P+
+    algorithm: PLS-DA and OPLS-DA
+    parameters: n_components=2, cross_validation=7-fold, permutation_test=True, R2X_R2Y_Q2_threshold=0.05
+    input: MAC-specific feature table (normalized intensities)
+    output: discriminatory MACs, model metrics (R², Q²), S-plots
+    confidence: low
+  Step 6: Comparison with classic untargeted metabolomics analysis
+    tool: Compound Discoverer + SIMCA-P+
+    algorithm: PLS-DA on full feature set
+    input: full untargeted feature table
+    output: PLS-DA model performance comparison
+    confidence: low
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1234)
+  processed_data: available (MetaboLights: MTBLS1234)
+  metadata: in_paper_only
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1234
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw .raw files require Thermo Xcalibur/Compound Discoverer for processing — no open-source alternative fully supports the described MAC-specific DIA neutral-loss workflow
+  - No public code or script shared for neutral-loss–driven feature extraction or MAC-specific filtering
+  - In-house spectral library for MAC identification not deposited or described in detail
+  - SIMCA-P+ is commercial software requiring license; parameters for PLS-DA/OPLS-DA (e.g., scaling, preprocessing steps) are underspecified
+  - No description of sample preparation protocol (e.g., derivatization, solid-phase extraction) or LC gradient method details
+reproducibility_strengths:
+  - Processed data and raw files deposited in MetaboLights (MTBLS1234)
+  - Clear biological rationale and analytical strategy (DIA + neutral loss targeting of MACs)
+  - Explicit comparison between MAC-focused vs. global untargeted approach

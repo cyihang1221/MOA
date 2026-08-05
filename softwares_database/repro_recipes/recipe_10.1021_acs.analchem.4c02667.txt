@@ -1,0 +1,50 @@
+========== reproducibility_recipe entry ==========
+paper_title: OligoDistiller: A Platform Agnostic Software Tool for MS and MS<sup>2</sup> Data Analysis of Complex Oligonucleotides and Their Impurities.
+source_paper: Liu Y et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.4c02667, PMID: 39733345
+overall_reproducibility_score: 75/100
+
+workflow_steps: 4
+  Step 1: MS data preprocessing and feature detection
+    tool: OligoDistiller
+    algorithm: charge deconvolution, isotope envelope separation, peak picking with OIE resolution
+    input: raw LC-MS spectra (vendor-neutral format supported)
+    output: annotated feature table with charge states, m/z, RT, intensity, isotope quality metrics
+    confidence: medium
+  Step 2: Oligonucleotide sequence annotation and impurity identification
+    tool: OligoDistiller
+    algorithm: mass defect filtering, sequence-based mass prediction, adduct/impurity pattern matching
+    input: feature table from step 1
+    output: sequence-annotated features including known strands, unknown impurities, and OIEs
+    confidence: medium
+  Step 3: MS/MS spectral interpretation and sequence coverage
+    tool: OligoDistiller
+    algorithm: product ion assignment using fragmentation rules for DNA/RNA, b/y-ion series matching
+    input: MS² spectra (centroided or profile mode)
+    output: sequence coverage map, major product ion assignments, % sequence coverage
+    confidence: medium
+  Step 4: Interactive raw spectrum review and validation
+    tool: OligoDistiller
+    algorithm: spectrum zooming, feature-linked spectral extraction, isotope envelope visualization
+    input: raw .mzML or vendor files + feature table
+    output: validated annotations with user-reviewed spectral evidence
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/daniellyz/OligoDistiller
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw MS and MS² data not deposited in public repository
+  - No details on LC conditions (gradient, column, flow rate) or instrument parameters (resolution, AGC targets, isolation windows)
+  - No parameter values provided for mass tolerance, charge range, or isotope envelope separation thresholds
+reproducibility_strengths:
+  - Source code publicly available on GitHub under MIT license
+  - Tool is platform-agnostic and supports common input formats (e.g., .mzML)
+  - Includes interactive validation module enabling transparent manual curation

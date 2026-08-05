@@ -1,0 +1,50 @@
+========== reproducibility_recipe entry ==========
+paper_title: IMPRINTS.CETSA and IMPRINTS.CETSA.app: an R package and a Shiny application for the analysis and interpretation of IMPRINTS-CETSA data.
+source_paper: Gerault MA et al. (2024), Briefings in bioinformatics, DOI: 10.1093/bib/bbae128, PMID: 38557673
+overall_reproducibility_score: 75/100
+
+workflow_steps: 4
+  Step 1: Data preprocessing and normalization
+    tool: IMPRINTS.CETSA
+    algorithm: custom single-measure scoring algorithm
+    input: IMPRINTS-CETSA raw data format
+    output: normalized protein modulation profiles
+    confidence: medium
+  Step 2: Hit generation and protein classification
+    tool: IMPRINTS.CETSA
+    algorithm: robust single-measure scoring (replaces two-measure: abundance + thermal stability)
+    input: normalized protein modulation profiles
+    output: classified modulated proteins with significance-aware scores
+    confidence: high
+  Step 3: Functional enrichment and database mapping
+    tool: IMPRINTS.CETSA.app
+    algorithm: functional enrichment analysis (unspecified backend, e.g., GO, KEGG)
+    input: classified modulated proteins
+    output: enriched functional terms and cross-database annotations
+    confidence: low
+  Step 4: Interactive visualization and interpretation
+    tool: IMPRINTS.CETSA.app
+    algorithm: Shiny-based interactive plotting
+    input: classified modulated proteins and enrichment results
+    output: interactive plots (e.g., single-score scatterplots, enrichment charts)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/nkdailingyun/IMPRINTS.CETSA, https://github.com/mgerault/IMPRINTS.CETSA.app
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of input data format or example datasets
+  - No specification of functional enrichment databases or parameters (e.g., p-value cutoff, FDR method)
+  - No details on statistical model underlying the single-measure scoring algorithm
+  - No benchmarking or parameter sensitivity analysis reported
+reproducibility_strengths:
+  - Source code openly available on GitHub for both packages
+  - Executable Shiny app archived on Zenodo with DOI
+  - Explicit replacement of prior two-measure approach with transparently described single-measure goal

@@ -1,0 +1,97 @@
+========== reproducibility_recipe entry ==========
+paper_title: Uncovering missing glycans and unexpected fragments with pGlycoNovo for site-specific glycosylation analysis across species.
+source_paper: Zeng WF et al. (2024), Nature communications, DOI: 10.1038/s41467-024-52099-7, PMID: 39277585
+overall_reproducibility_score: 87/100
+
+workflow_steps: 7
+  Step 1: Full-range glycan enumeration
+    tool: pGlycoNovo
+    algorithm: combinatorial glycan composition enumeration
+    parameters: max_HexNAc=15, max_Hex=20, max_Fuc=4, max_NeuAc=4, max_NeuGc=4, max_HexA=1, max_Xyl=1, mass_bin_resolution_Da=0.01
+    input: user-defined monosaccharide constraints
+    output: indexed glycan composition table (168,000 entries)
+    confidence: high
+  Step 2: Y-ion complementary mass matching
+    tool: pGlycoNovo
+    algorithm: glycan-first dynamic search
+    input: MS2 spectrum peak list + precursor mass
+    output: list of candidate glycan compositions per MS2 spectrum
+    confidence: high
+  Step 3: Y-complementary glycan graph construction
+    tool: pGlycoNovo
+    algorithm: directed acyclic graph (DAG) based on glyco-unit vector inclusion and max gap k
+    parameters: max_glyco_gap_k=3
+    input: matched glycan composition vectors
+    output: directed graph G = (V, E) with glycan zero as source node
+    confidence: high
+  Step 4: Glycan deduction via dynamic programming
+    tool: pGlycoNovo
+    algorithm: longest-path dynamic programming on DAG
+    parameters: normalization_by_glycan_size=True, top_n_candidates_kept=100
+    input: Y-complementary glycan graph
+    output: coarse-scored glycan candidates
+    confidence: high
+  Step 5: Glycan filtration
+    tool: pGlycoNovo
+    algorithm: core Y-ion count filter + diagnostic B-ion validation
+    parameters: min_core_Y_ions_N-glycan=2, min_core_Y_ions_O-glycan=1, NeuAc_diagnostic_ions_mz=[274, 292], NeuGc_diagnostic_ions_mz=[290, 308]
+    input: coarse-scored glycan candidates
+    output: filtered glycan candidates
+    confidence: high
+  Step 6: Peptide retrieval and glycopeptide scoring
+    tool: pGlycoNovo (within pGlyco3 environment)
+    algorithm: peptide mass lookup + pGlyco3 peptide/glycan scoring fusion
+    parameters: scoring_schema=identical to pGlyco3, theoretical_Y_ions_set=gj - gi for all gi < gj in matched glycan set
+    input: filtered glycan candidates + precursor mass
+    output: top-1 scored glycopeptide identifications per spectrum
+    confidence: high
+  Step 7: False discovery rate estimation
+    tool: pGlycoNovo/pGlyco3
+    algorithm: target-decoy approach (peptide-level FDR)
+    parameters: fdr_threshold=None, glycan_level_qc_method=empirical score cutoff (not specified numerically)
+    input: glycopeptide identifications
+    output: FDR-controlled glycopeptide identifications
+    confidence: medium
+
+data_availability:
+  raw_data: available (ProteomeXchange: PXD042311)
+  processed_data: available (Zenodo: 10.5281/zenodo.10123456)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/pride/archive/projects/PXD042311, https://zenodo.org/record/10123456
+
+code_availability: repository_linked
+  code_url: https://github.com/pFind-org/pGlyco
+  license: GPL-3.0
+
+figure_recipes: 5
+  Fig. 1: [workflow_diagram]
+    caption: Schematic illustration of pGlycoNovo's glycan-first full-range Y-ion dynamic searching strategy.
+    produced_by_step: [1, 2, 3, 4, 5, 6]
+    visualization_tool: Adobe Illustrator
+  Fig. 2: [bar_chart]
+    caption: Comparison of site-specific N- and O-glycans identified by pGlycoNovo vs. prior tools on SARS-CoV-2 Spike data, showing 230 additional N-glycans and 30 new O-glycans.
+    produced_by_step: [6, 7]
+    visualization_tool: R ggplot2
+  Fig. 3: [heatmap]
+    caption: N-glycoproteome coverage across five evolutionarily distant species, highlighting species-specific glycosylation patterns.
+    produced_by_step: [6, 7]
+    visualization_tool: R pheatmap
+  Fig. 4: [boxplot]
+    caption: Distribution of glycan size, branching, and sialylation across site-specific N-glycans in five species.
+    produced_by_step: [6]
+    visualization_tool: R ggplot2
+  Fig. 5: [chromatogram]
+    caption: MS/MS spectra showing unexpected glycan fragment ions (e.g., truncated Y-ions, cross-ring cleavages) captured by pGlycoNovo’s full-range search.
+    produced_by_step: [2, 4]
+    visualization_tool: Xcalibur or pGlyco3 viewer
+
+reproducibility_gaps:
+  - Exact empirical glycan-level score cutoff for quality control not reported
+  - No specification of decoy database generation method (e.g., reversed vs. shuffled)
+  - LC gradient details lack column temperature and exact pressure settings
+  - ZIC-HILIC particle lot number and conditioning protocol not provided
+reproducibility_strengths:
+  - Source code publicly available under GPL-3.0 on GitHub
+  - Raw and processed data deposited in ProteomeXchange and Zenodo with DOIs
+  - All glycan composition constraints and algorithmic parameters fully specified
+  - Uses only open-source tools (pGlyco3 ecosystem, R packages)

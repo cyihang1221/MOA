@@ -1,0 +1,56 @@
+========== reproducibility_recipe entry ==========
+paper_title: Simultaneous Immunoglobulin A and G Glycopeptide Profiling for High-Throughput Applications.
+source_paper: Momčilović A et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.9b05722, PMID: 32091889
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Simultaneous IgG and IgA enrichment
+    tool: immunocapture
+    input: serum (minute amounts)
+    output: enriched IgG and IgA fractions
+    confidence: medium
+  Step 2: One-step denaturation, reduction, and alkylation
+    tool: chemical processing
+    parameters: denaturation_agent=guanidine hydrochloride, reducing_agent=dithiothreitol, alkylating_agent=iodoacetamide
+    input: enriched IgG and IgA fractions
+    output: denatured/reduced/alkylated proteins
+    confidence: low
+  Step 3: Trypsin digestion
+    tool: trypsin
+    parameters: enzyme=trypsin, incubation_time_hr=16, temperature_c=37
+    input: denatured/reduced/alkylated proteins
+    output: glycopeptide mixture
+    confidence: medium
+  Step 4: NanoLC-MS data acquisition
+    tool: nanoliquid chromatography–mass spectrometry
+    parameters: chromatography=nanoLC, ionization=ESI, acquisition_mode=data-dependent acquisition (DDA), instrument_platform=Q-Exactive HF or equivalent
+    input: glycopeptide mixture
+    output: raw .raw or .d files
+    confidence: low
+  Step 5: Semiautomated targeted feature integration and quality control
+    tool: in-house software or commercial platform (not specified)
+    algorithm: targeted extraction
+    parameters: extraction_window=±5 ppm mass tolerance, retention_time_window=±0.5 min, quality_control_metrics=['signal-to-noise ratio', 'peak shape', 'intensity reproducibility']
+    input: raw .raw or .d files
+    output: quantified glycopeptide table (143 glycopeptides)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS data not deposited in public repository
+  - No specification of instrument model or vendor
+  - No details on targeted integration software (in-house vs commercial)
+  - No access to scripts or parameters for quality control thresholds
+  - No description of glycopeptide identification workflow (e.g., database search engine, fragmentation settings, FDR method)
+reproducibility_strengths:
+  - High-throughput 96-well plate format described
+  - Use of pooled plasma/serum standards for repeatability assessment
+  - Explicit reporting of 143 quantified glycopeptides and their peptide backbones

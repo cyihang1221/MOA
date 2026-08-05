@@ -1,0 +1,139 @@
+========== reproducibility_recipe entry ==========
+paper_title: Hybrid-DIA: intelligent data acquisition integrates targeted and discovery proteomics to analyze phospho-signaling in single spheroids.
+source_paper: Martínez-Val A et al. (2023), Nature communications, DOI: 10.1038/s41467-023-39347-y, PMID: 37328457
+overall_reproducibility_score: 58/100
+
+workflow_steps: 10
+  Step 1: Sample lysis and protein extraction
+    tool: Boiling lysis buffer + sonication
+    parameters: lysis_buffer_composition=['5% SDS', '5–10 mM TCEP', '10 mM CAA', '100 mM Tris pH 8.5'], boiling_time_min=10, sonication_protocol=1–2 min, 1 sec on/off, 50–80% amplitude, probe type specified
+    input: cultured cells or spheroids
+    output: protein lysate
+    confidence: high
+  Step 2: Protein digestion and cleanup
+    tool: KingFisher robot with Protein Aggregation Capture (PAC) protocol
+    algorithm: PAC-55
+    parameters: protein_input_amount_ug=[1000, 150, 10, 20], bead_to_protein_ratio=['1:2 (A549)', '16:1 (spheroids)'], enzyme_ratios={'LysC_A549': '1:500', 'trypsin_A549': '1:250', 'LysC_spheroids': '1:100', 'trypsin_spheroids': '1:50'}, digestion_time_hr=[16, 6], digestion_buffer=['50 mM ammonium bicarbonate', '50 mM triethylammonium bicarbonate'], quenching_agent=['1% TFA', '10% formic acid']
+    input: protein lysate
+    output: peptide mixture
+    confidence: high
+  Step 3: Desalting and concentration
+    tool: Sep-Pak C18 cartridges/96-well plates
+    parameters: elution_solvents=['40% ACN', '60% ACN', '80% ACN'], concentration_method=SpeedVac at 45°C, final_volume_ul=20
+    input: peptide mixture
+    output: desalted/concentrated peptides
+    confidence: medium
+  Step 4: Phosphopeptide enrichment
+    tool: KingFisher robot with Ti-IMAC or Zr-IMAC beads
+    algorithm: Ti/Zr-IMAC enrichment
+    parameters: bead_type=['MagReSyn® Ti-IMAC HP', 'MagReSyn® ZrIMAC-HP'], bead_volume_ul=5, bead_concentration_mg_ml=20, loading_buffer_glycolic_acid_m=[1.0, 0.1], washing_buffers=['WB1: loading buffer', 'WB2: 80% ACN/5% TFA', 'WB3: 10% ACN/0.2% TFA'], elution_buffer=1% NH4OH, elution_volume_ul=[200, 100], sequential_enrichments=2
+    input: desalted peptides
+    output: enriched phosphopeptides
+    confidence: high
+  Step 5: Spike-in of heavy isotope standards
+    tool: SureQuant™ Multipathway Phosphopeptide Standard
+    parameters: spike_in_volume_ul=0.5, stock_concentration_fmoluL=100, final_amount_fmols=50
+    input: enriched phosphopeptides
+    output: spiked phosphopeptide sample
+    confidence: high
+  Step 6: LC separation
+    tool: Evosep One system
+    parameters: column=['EV-1112 (15 cm × 75 µm, 1.9 µm)', 'IonOpticks Aurora™ (15 cm × 75 µm, 1.6 µm)'], temperature_c=40, gradient_profile=not fully specified (Evosep 21-min method implied), flow_rate_nLmin=not explicitly stated (standard Evosep flow ~300 nL/min)
+    input: spiked phosphopeptide sample
+    output: LC-separated analytes
+    confidence: low
+  Step 7: Hybrid-DIA mass spectrometry acquisition
+    tool: Orbitrap Exploris 480 + moonshot_v1.3 API (vv1.3 or higher)
+    algorithm: API-driven dynamic intercalation of DIA and multiplexed PRM
+    parameters: acquisition_time_ms=None, mass_tolerance_ppm=None, first_mass_mz=None, nce_ev=None, isolation_width_da=None, agc_target=None, max_it_ms=None, ms_trigger_intensity_threshold=None, dynamic_exclusion_s=None, rt_window_min=None, fragment_threshold_count=None
+    input: LC-separated analytes
+    output: hybrid-DIA raw files (.raw)
+    confidence: low
+  Step 8: Data processing for targeted quantification
+    tool: Skyline
+    algorithm: PRM transition-based quantification
+    parameters: transition_settings_source=Table 1, quantification_method=peak area of heavy/light transitions, integration_method=not specified
+    input: hybrid-DIA .raw files
+    output: targeted phosphopeptide quantification table
+    confidence: medium
+  Step 9: Data processing for discovery phosphoproteomics
+    tool: DIA-NN or Spectronaut (inferred)
+    algorithm: DIA spectral library searching or direct DIA analysis
+    parameters: library_source=hybrid-DIA or SureQuant runs used to build spectral library, fdr_threshold=0.01, modification_search=phosphorylation (STY)
+    input: hybrid-DIA .raw files
+    output: discovery phosphopeptide identification & quantification table
+    confidence: low
+  Step 10: Statistical analysis and pathway reconstruction
+    tool: Perseus or custom R/Python scripts (inferred)
+    algorithm: t-test, ANOVA, hierarchical clustering, kinase-substrate enrichment
+    parameters: statistical_test=['two-sided t-test', 'ANOVA with post-hoc'], p_value_cutoff=0.05, fdr_correction=Benjamini-Hochberg, clustering_method=hierarchical, pathway_database=['PhosphoSitePlus', 'KEGG', 'Reactome']
+    input: quantification tables (targeted + discovery)
+    output: differentially phosphorylated sites, pathway maps, kinase activity scores
+    confidence: low
+
+data_availability:
+  raw_data: available (PRIDE: PXD037892)
+  processed_data: available (PRIDE: PXD037892)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/pride/archive/projects/PXD037892
+
+code_availability: not_mentioned
+
+figure_recipes: 9
+  Fig. 1: [workflow_diagram]
+    caption: Schematic illustration of hybrid-DIA method integrating DIA and targeted MSx scans via API.
+    produced_by_step: [7]
+    visualization_tool: Adobe Illustrator or similar (not specified)
+  Fig. 2: [bar_chart]
+    caption: Evaluation of quantitative accuracy and precision of hybrid-DIA using spiked-in standards.
+    produced_by_step: [8]
+    visualization_tool: GraphPad Prism or similar (not specified)
+    statistical_test: CV% calculation, linear regression R²
+  Fig. 3: [volcano_plot]
+    caption: Comparison of phosphopeptide detection sensitivity between hybrid-DIA and standard DIA.
+    produced_by_step: [9]
+    visualization_tool: Perseus or R/ggplot2 (not specified)
+    statistical_test: t-test p-value and log2 fold-change
+  Fig. 4: [boxplot]
+    caption: Depth of phosphoproteome coverage achieved by DIA component of hybrid-DIA datasets.
+    produced_by_step: [9]
+    visualization_tool: Perseus or R/ggplot2
+    statistical_test: Wilcoxon rank-sum test
+  Fig. 5: [scatter_plot]
+    caption: Benchmark of hybrid-DIA versus SureQuant for sensitive phosphoproteomics analysis.
+    produced_by_step: [8, 9]
+    visualization_tool: GraphPad Prism or R
+    statistical_test: Pearson/Spearman correlation, Bland-Altman analysis
+  Fig. 6: [pathway_map]
+    caption: Comparison of hybrid-DIA and SureQuant for EGF signaling pathway reconstruction.
+    produced_by_step: [10]
+    visualization_tool: Cytoscape or PathwayCommons (not specified)
+    statistical_test: kinase activity enrichment (not specified)
+  Fig. 7: [heatmap]
+    caption: Hybrid-DIA targeted analysis of response to 5-fluorouracil in cell culture models for colorectal cancer.
+    produced_by_step: [8, 10]
+    visualization_tool: Perseus or R/pheatmap
+    statistical_test: ANOVA with time/treatment interaction
+  Fig. 8: [line_chart]
+    caption: Discovery phosphoproteomics analysis using hybrid-DIA allows to describe temporal response and kinase activation after 5-fluorouracil treatment in 2D and 3D model.
+    produced_by_step: [9, 10]
+    visualization_tool: R/ggplot2 or Python/matplotlib
+    statistical_test: linear mixed-effects model or trend analysis
+  Table 1: [table]
+    caption: Transition settings used in Skyline when importing hybrid-DIA or SureQuant data.
+    produced_by_step: [8]
+    visualization_tool: Skyline export
+
+reproducibility_gaps:
+  - Exact LC gradient profile not reported
+  - Hybrid-DIA API parameters (mass tolerance, NCE, isolation width, AGC, injection times) not numerically specified
+  - No public code repository for custom analysis scripts or API configuration files
+  - DIA data processing software (DIA-NN/Spectronaut version) and settings not declared
+  - Statistical analysis code and parameters (e.g., exact clustering distance metric, kinase enrichment algorithm) not provided
+  - moonshot_v1.3 API is proprietary Thermo software — not publicly accessible without instrument license
+reproducibility_strengths:
+  - Raw and processed data deposited in PRIDE (PXD037892)
+  - Detailed wet-lab protocols including bead ratios, enzyme amounts, and buffer compositions
+  - Explicit spike-in standard amount and preparation method
+  - Clear experimental design with replicate numbers and exclusion rationale
+  - Figure captions explicitly link analyses to methods (e.g., Table 1 → Skyline)

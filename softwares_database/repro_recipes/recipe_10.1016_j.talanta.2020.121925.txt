@@ -1,0 +1,62 @@
+========== reproducibility_recipe entry ==========
+paper_title: Integration of LC/MS-based molecular networking and classical phytochemical approach allows in-depth annotation of the metabolome of non-model organisms - The case study of the brown seaweed Taonia atomaria.
+source_paper: Carriot N et al. (2021), Talanta, DOI: 10.1016/j.talanta.2020.121925, PMID: 33592802
+overall_reproducibility_score: 45/100
+
+workflow_steps: 6
+  Step 1: Fractionation of algal crude extract
+    tool: Flash chromatography
+    input: algal organic crude extract
+    output: fractionated extracts
+    confidence: high
+  Step 2: Structural elucidation of isolated compounds
+    tool: NMR spectroscopy (1D and 2D) and HRMS
+    input: isolated pure compounds
+    output: fully characterized chemical structures
+    confidence: high
+  Step 3: UHPLC-MS/MS data acquisition
+    tool: UHPLC coupled to tandem mass spectrometry
+    input: fractionated extracts
+    output: raw .mzML or vendor files (implied)
+    confidence: medium
+  Step 4: Molecular networking construction (MN-1, restrictive)
+    tool: GNPS (Global Natural Products Social Molecular Networking)
+    algorithm: cosine similarity
+    parameters: minimum_cosine_score=0.7, minimum_matched_peaks=6, maximum_shift=500, precursor_mass_tolerance=0.02, fragment_mass_tolerance=0.02
+    input: UHPLC-MS/MS peak lists (.mgf)
+    output: molecular network (clustered MS/MS spectra)
+    confidence: medium
+  Step 5: Cluster annotation using reference standards and database matching
+    tool: GNPS library search + in-house chemical standards
+    algorithm: spectral similarity (cosine score) + manual curation
+    parameters: library_match_threshold=0.7, reference_standard_matching=yes
+    input: molecular network clusters + MS/MS spectra of 8 characterized standards
+    output: annotated metabolite clusters (e.g., glycerolipids, phospholipids, novel terpene-glycerolipids)
+    confidence: high
+  Step 6: Iterative molecular networking with decreasing restrictiveness
+    tool: GNPS
+    algorithm: cosine similarity with relaxed parameters
+    parameters: minimum_cosine_score=0.3, minimum_matched_peaks=4, precursor_mass_tolerance=0.5, fragment_mass_tolerance=0.5
+    input: same UHPLC-MS/MS data as step 4
+    output: expanded molecular networks with increased annotation coverage
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (GNPS)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw MS/MS data not deposited in GNPS or public repository (no accession ID reported)
+  - Exact GNPS parameter values (e.g., cosine thresholds, mass tolerances) only partially specified — 'restrictive' and 'less constrained' are qualitative
+  - No details on UHPLC gradient, column, or MS instrument settings (e.g., collision energy, ionization mode)
+  - No sharing of in-house spectral libraries or annotated network files
+  - No code/scripts for data preprocessing (e.g., peak picking, MGF generation) disclosed
+reproducibility_strengths:
+  - Use of open web platform GNPS enables partial reproducibility
+  - Chemical standards fully characterized and used as annotation anchors
+  - Multi-tiered MN strategy explicitly described (restrictive → relaxed)

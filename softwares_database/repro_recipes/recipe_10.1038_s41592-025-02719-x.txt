@@ -1,0 +1,98 @@
+========== reproducibility_recipe entry ==========
+paper_title: Assessment of false discovery rate control in tandem mass spectrometry analysis using entrapment.
+source_paper: Wen B et al. (2025), Nature methods, DOI: 10.1038/s41592-025-02719-x, PMID: 40524023
+overall_reproducibility_score: 52/100
+
+workflow_steps: 10
+  Step 1: Raw data conversion to standard format
+    tool: MSConvert (v3.0.24031)
+    algorithm: ProteoWizard conversion
+    parameters: demultiplexing=True, exclude_isb18=True
+    input: vendor-specific raw MS files (.raw, .wiff, .d, etc.)
+    output: .mgf or .mzML files
+    confidence: high
+  Step 2: Entrapment database generation (random shuffling)
+    tool: Custom in-house script (pseudocode in Supplementary Algorithm 1)
+    algorithm: C-terminal–fixed peptide shuffling with uniqueness checking
+    parameters: protease=trypsin, missed_cleavages=1, peptide_length_min=7, peptide_length_max=35, max_shuffle_attempts_per_peptide=20, max_total_attempts_per_peptide=20 + r, r=≥1 (fold-entrapment factor)
+    input: UniProt protein FASTA (human/yeast/mouse, Feb 2024)
+    output: shuffled entrapment peptide database (FASTA)
+    confidence: medium
+  Step 3: Entrapment database generation (foreign species)
+    tool: Custom in-house script (pseudocode in Supplementary Algorithm 2)
+    algorithm: Foreign-species peptide selection with target-matching exclusion
+    parameters: protease=trypsin, missed_cleavages=1, peptide_length_min=7, peptide_length_max=35, foreign_species=['Arabidopsis thaliana', 'Saccharomyces cerevisiae', 'Macaca mulatta', 'Callithrix jacchus', 'Papio anubis', 'Mus musculus'], r=≥1 (entrapment-to-target ratio)
+    input: UniProt protein FASTA from multiple species (Feb–Apr 2024)
+    output: foreign-species entrapment peptide database (FASTA)
+    confidence: medium
+  Step 4: Database search (DDA/DIA)
+    tool: Crux (tide-search, tide-index) (vv4.1.6809338)
+    algorithm: Tide target-decoy search with automatic tolerance selection
+    parameters: search_mode=narrow, fragment_tolerance=auto, precursor_tolerance=auto, scoring_function=XCorr
+    input: .mgf/.mzML files + concatenated target+entrapment+decoy FASTA
+    output: PSM-level search results (tabular TSV)
+    confidence: high
+  Step 5: Peptide-level score aggregation
+    tool: Custom PSM-and-peptide protocol
+    algorithm: Double competition: (1) PSM-level best-match assignment; (2) target–decoy pair-wise max-score selection with tie-breaking
+    parameters: tie_breaking=random, no_psm_score=lowest_possible
+    input: PSM search results
+    output: peptide-level (W_i, L_i) pairs
+    confidence: high
+  Step 6: FDR control via Target-Decoy Competition (TDC)
+    tool: Custom implementation of TDC
+    algorithm: TDC with correction D_k + 1 / max(T_k, 1) ≤ α
+    parameters: alpha=0.01
+    input: ordered (W_i, L_i) pairs
+    output: list of target peptides with FDR-controlled discoveries
+    confidence: high
+  Step 7: FDR control via Benjamini–Hochberg (BH)
+    tool: R base stats
+    algorithm: p.adjust(method = 'BH')
+    input: peptide scores + decoy score distribution
+    output: adjusted p-values (FDR thresholds)
+    confidence: high
+  Step 8: FDR control via Storey’s q-value
+    tool: qvalue R package (v2.34)
+    algorithm: Storey’s π₀ estimation + q-value calculation
+    parameters: default_parameters=True
+    input: peptide scores + decoy score distribution
+    output: q-values (FDR thresholds)
+    confidence: high
+  Step 9: False Discovery Proportion (FDP) estimation
+    tool: Custom evaluation script
+    algorithm: Empirical FDP = (# false positives) / (# reported targets) over known ground truth (ISB18)
+    parameters: ground_truth=ISB18 18-protein mixture
+    input: reported target peptides + known true targets
+    output: FDP estimate per replicate
+    confidence: high
+  Step 10: FDR estimation via bootstrap averaging
+    tool: Custom R/script
+    algorithm: Average of 100 FDP estimates across shuffled database replicates
+    parameters: n_replicates=100, coverage=0.95
+    input: 100× FDP estimates
+    output: mean FDR estimate with 95% coverage bands
+    confidence: high
+
+data_availability:
+  raw_data: available (PRIDE: PXD023325)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+  data_urls: https://regis-web.systemsbiology.net/PublicDatasets/database, https://www.ebi.ac.uk/pride/archive/projects/PXD023325
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Custom entrapment database generation scripts not shared (Supplementary Algorithms 1 & 2 are pseudocode only)
+  - No repository link for analysis code (R scripts, TDC/qvalue wrappers, FDP estimator)
+  - Crux tide-search parameters (e.g., fragment ion types, modifications) not fully specified beyond 'automatic tolerances'
+  - No public access to the 100 shuffled databases or joined search files used in ISB18 evaluation
+  - Foreign species UniProt accessions and exact download dates only partially specified (e.g., '02/2024', '04/2024' — no day or version checksums)
+reproducibility_strengths:
+  - Raw data publicly available via PRIDE (PXD023325)
+  - ISB18 dataset and extended database explicitly linked
+  - All software tools named with versions (MSConvert v3.0.24031, Crux v4.1.6809338, qvalue v2.34)
+  - Mathematical definitions of TDC and BH/Storey procedures fully specified
+  - Detailed entrapment generation logic provided in pseudocode (Suppl. Algorithms 1 & 2)

@@ -1,0 +1,85 @@
+========== reproducibility_recipe entry ==========
+paper_title: High-confidence structural annotation of metabolites absent from spectral libraries.
+source_paper: Hoffmann MA et al. (2022), Nature biotechnology, DOI: 10.1038/s41587-021-01045-9, PMID: 34650271
+overall_reproducibility_score: 87/100
+
+workflow_steps: 4
+  Step 1: In silico structure database generation
+    tool: SmiLib v2.0 (vv2.0)
+    algorithm: combinatorial scaffold-building
+    parameters: scaffolds=322, building_blocks=91, tautomer_standardization=PubChem standardization procedure, stereochemistry_handling=removed before database generation
+    input: SMILES scaffolds and building blocks
+    output: combinatorial structure database (e.g., 28,630 bile acid conjugates)
+    confidence: high
+  Step 2: MS/MS spectral preprocessing and feature extraction
+    tool: SIRIUS
+    algorithm: peak detection, deconvolution, formula annotation
+    parameters: ion_mode=positive, instrument_types=['Orbitrap', 'QTOF']
+    input: raw .mzML or vendor files (Q Exactive Plus, Sciex X500R)
+    output: .ms files and MassBank records
+    confidence: medium
+  Step 3: In silico structure annotation via CSI:FingerID
+    tool: CSI:FingerID
+    algorithm: Input Output Kernel Regression (IOKR)
+    parameters: training_datasets=['MassBank', 'GNPS', 'NIST 2017', 'MassHunter Forensics/Toxicology PCDL'], training_size=23965, structure_database=biomolecule DB (HMDB+ChEBI+KEGG+UNPD), PubChem, CASMI 2016 DB, SmiLib bile acid DB
+    input: SIRIUS-processed MS/MS spectra (.ms files)
+    output: candidate structure rankings with fingerprint similarity scores
+    confidence: high
+  Step 4: Confidence scoring and FDR control
+    tool: COSMIC
+    algorithm: kernel density P value estimation + directionally constrained SVM
+    parameters: FDR_control=structure-disjoint cross-validation, novelty_definition=no identical 2D structure in training MS/MS data, stereochemistry_handling=ignored (2D only)
+    input: CSI:FingerID candidate rankings + metadata
+    output: high-confidence structural annotations with FDR estimates
+    confidence: high
+
+data_availability:
+  raw_data: available (CASMI contest website: CASMI 2016)
+  processed_data: available (GNPS: GNPS Library ID: MASSBANK-GNPS-2017)
+  metadata: in_paper_only
+  data_urls: http://casmi-contest.org/2016/, https://pubchem.ncbi.nlm.nih.gov/rest/pug/, http://melolab.org/smilib/
+
+code_availability: repository_linked
+  code_url: https://github.com/boecker-lab/cosmic
+  license: GPL-3.0
+
+figure_recipes: 6
+  Figure 1: [workflow_diagram]
+    caption: Schematic overview of the COSMIC workflow, integrating in silico database generation, CSI:FingerID annotation, and confidence scoring.
+    produced_by_step: [1, 2, 3, 4]
+    visualization_tool: Inkscape or Adobe Illustrator (not specified)
+  Figure 2: [volcano_plot]
+    caption: Separation of correct vs. incorrect hits by COSMIC score compared to other in silico tools on CASMI 2016 submissions.
+    produced_by_step: [4]
+    visualization_tool: R/ggplot2 (inferred from typical usage; not explicitly stated)
+    statistical_test: kernel density P value estimation
+  Figure 3: [roc_curve]
+    caption: Evaluation of hit separation performance when searching in the biomolecule structure database.
+    produced_by_step: [4]
+    visualization_tool: R/ggplot2 or Python/matplotlib (inferred)
+    statistical_test: FDR-controlled ranking evaluation
+  Figure 4: [table]
+    caption: Examples of top-scoring but incorrect structural annotations, illustrating limitations of confidence scoring.
+    produced_by_step: [4]
+    visualization_tool: LaTeX or word processor (not specified)
+  Figure 5: [bar_chart]
+    caption: Comparison of COSMIC against spectral library search and non–structure-disjoint evaluation, showing improved FDR control.
+    produced_by_step: [4]
+    visualization_tool: R/ggplot2 (inferred)
+    statistical_test: exact FDR computation via reference truth
+  Figure 6: [boxplot]
+    caption: Application of COSMIC to annotate novel bile acid conjugates in mice fecal metabolomics data.
+    produced_by_step: [1, 4]
+    visualization_tool: R/ggplot2 or similar (inferred)
+    statistical_test: manual validation + synthetic standard confirmation
+
+reproducibility_gaps:
+  - Exact LC gradient parameters for CASMI 2016 not fully specified (only 'C18 column' mentioned)
+  - No public link to the full combinatorial bile acid database (only SmiLib generation described)
+  - Sciex OS 2.0 preprocessing details (e.g., peak picking thresholds) not reported
+  - No specification of SIRIUS version or exact parameters used for .ms file generation
+reproducibility_strengths:
+  - COSMIC source code publicly available on GitHub with Zenodo DOI
+  - All reference datasets (CASMI 2016, GNPS, MassBank, NIST) are publicly accessible
+  - Structure-disjoint cross-validation protocol explicitly defined and reproducible
+  - PubChem standardization procedure and SmiLib v2.0 usage fully documented

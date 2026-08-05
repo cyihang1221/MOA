@@ -1,0 +1,67 @@
+========== reproducibility_recipe entry ==========
+paper_title: GC-orbitrap-HRMS with ROIMCR and MSident targeted and non-targeted analysis of persistent organic pollutants in fish-based certified reference materials.
+source_paper: Queral-Beltran A et al. (2026), Analytica chimica acta, DOI: 10.1016/j.aca.2025.344892, PMID: 41352930
+overall_reproducibility_score: 30/100
+
+workflow_steps: 7
+  Step 1: Sample extraction and GC-HRMS analysis
+    tool: GC-Orbitrap-HRMS
+    input: fish-based certified reference material (CRM) extracts
+    output: raw .raw files (Thermo Fisher)
+    confidence: low
+  Step 2: Targeted quantification using ROIMCR
+    tool: ROIMCR
+    algorithm: Regions of Interest Multivariate Curve Resolution
+    input: raw .raw files
+    output: quantified concentrations of certified POPs (HCBz, HCBu, PeCB, HCH isomers)
+    confidence: low
+  Step 3: Targeted quantification using vendor software for comparison
+    tool: Xcalibur
+    algorithm: vendor-provided integration/quantitation
+    input: raw .raw files
+    output: quantified concentrations of certified POPs
+    confidence: medium
+  Step 4: Statistical validation of quantification
+    tool: two-tailed t-test
+    algorithm: Student's t-test
+    parameters: alpha=0.05
+    input: quantitative results from ROIMCR and Xcalibur vs certified values
+    output: p-values and agreement assessment
+    confidence: high
+  Step 5: Non-targeted data processing with ROIMCR
+    tool: ROIMCR
+    algorithm: Regions of Interest Multivariate Curve Resolution (non-targeted mode)
+    input: raw .raw files (non-targeted acquisition)
+    output: deconvolved chromatographic profiles and mass spectra for unknown features
+    confidence: low
+  Step 6: Metabolite annotation/identification
+    tool: MSident
+    algorithm: chemical identification via spectral matching and retention time alignment
+    input: ROIMCR-processed features (chromatograms + spectra)
+    output: annotated compounds (PAHs, OCPs, phthalates, PCBs)
+    confidence: low
+  Step 7: Confirmation with standard mixture
+    tool: validation standard mixture (43 POPs)
+    input: GC-HRMS analysis of 43-PoP standard mixture
+    output: retention time and spectral confirmation of annotated compounds
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - ROIMCR and MSident are not publicly described software — no source code, documentation, or installation instructions provided
+  - Raw GC-HRMS data (.raw files) not deposited in any public repository
+  - No details on ROIMCR parameterization (e.g., number of components, constraints, ROI definitions)
+  - No details on MSident matching criteria (mass tolerance, RT window, scoring algorithm)
+  - Xcalibur version and quantitation settings unspecified
+  - CRM batch numbers and extraction protocol details omitted
+reproducibility_strengths:
+  - Use of certified reference materials (ERM®-CE100, ERM®-CE103) enables method validation
+  - Explicit mention of statistical test (two-tailed t-test) with significance threshold

@@ -1,0 +1,46 @@
+========== reproducibility_recipe entry ==========
+paper_title: Metabolomic and Proteomic Analysis of ApoE4-Carrying H4 Neuroglioma Cells in Alzheimer's Disease Using OrbiSIMS and LC-MS/MS.
+source_paper: Lu L et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.4c01201, PMID: 38989551
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Chemical filtering screening via OrbiSIMS
+    tool: Orbitrap Secondary Ion Mass Spectrometry (OrbiSIMS)
+    algorithm: secondary ion mass spectrometry imaging with Orbitrap detection
+    input: intact ApoE4-carrying H4 neuroglioma cells vs. wild-type H4 cells (cultured monolayers)
+    output: molecular ion maps and fragment spectra (e.g., lipid, amino acid, peptide-related ions)
+    confidence: medium
+  Step 2: Targeted metabolomics confirmation
+    tool: LC-MS/MS
+    algorithm: targeted multiple reaction monitoring (MRM) or selected reaction monitoring (SRM)
+    input: cell extracts from same ApoE4 vs. wild-type H4 cell lines
+    output: quantified metabolite concentrations for glycerophospholipids, sphingolipids, amino acids (alanine, aspartate, glutamate), taurine/hypotaurine, glutamine
+    confidence: low
+  Step 3: Proteomic analysis of protein-level alterations
+    tool: LC-MS/MS proteomics
+    algorithm: data-dependent acquisition (DDA) or data-independent acquisition (DIA)
+    input: tryptic digests of ApoE4 vs. wild-type H4 cell lysates
+    output: protein identification and quantification; functional enrichment of aminoacyl-tRNA biosynthesis, RNA splicing
+    confidence: low
+  Step 4: Metabolic pathway enrichment analysis
+    tool: not explicitly named
+    algorithm: pathway enrichment mapping
+    input: differentially altered metabolites and proteins
+    output: enriched KEGG/Reactome pathways: glycerophospholipid metabolism, sphingolipid metabolism, alanine/aspartate/glutamate metabolism, aminoacyl-tRNA biosynthesis, taurine/hypotaurine metabolism, RNA splicing
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw OrbiSIMS and LC-MS/MS spectral data not deposited in public repository (e.g., MetaboLights, PRIDE, GNPS)
+  - No details on LC gradient profiles, column types, MS instrument parameters (e.g., resolution, AGC targets, isolation windows), or software versions for data acquisition/processing
+  - No description of peak integration, alignment, normalization, or statistical methods (e.g., FDR correction, fold-change thresholds, multivariate modeling)
+  - No information on database search settings (e.g., UniProt version, enzyme specificity, PTM allowances) for proteomics
+  - No code, scripts, or workflow documentation provided for multi-omics integration or pathway analysis

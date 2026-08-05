@@ -1,0 +1,79 @@
+========== reproducibility_recipe entry ==========
+paper_title: Building Block Extractor: An MS/MS Data Mining Tool for Targeted Discovery of Natural Products with Specified Features.
+source_paper: Zhu D et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c00744, PMID: 37430188
+overall_reproducibility_score: 82/100
+
+workflow_steps: 5
+  Step 1: MS/MS data preprocessing and molecular networking
+    tool: GNPS
+    algorithm: Molecular Networking (Cosine score)
+    parameters: cosine_score_threshold=0.7, min_matched_peaks=6, max_mass_diff=1.0003
+    input: centroided .mgf files
+    output: molecular network graph (Cytoscape-compatible)
+    confidence: medium
+  Step 2: Building block definition and feature specification
+    tool: Building Block Extractor (v1.0)
+    algorithm: Rule-based MS/MS pattern matching
+    parameters: product_ion_list=['m/z 121.065', 'm/z 107.049', 'm/z 93.033'], neutral_loss_list=['18.011', '36.022', '44.026'], sequential_neutral_loss_enabled=True, ion_abundance_weighting=True, minimum_relative_intensity=0.05
+    input: molecular network nodes + corresponding MS/MS spectra
+    output: filtered node list with annotated building blocks
+    confidence: high
+  Step 3: Targeted dereplication and novelty assessment
+    tool: GNPS Library Search
+    algorithm: Spectral similarity (dot product)
+    parameters: min_similarity_score=0.5, top_k_matches=5
+    input: extracted MS/MS spectra
+    output: dereplicated candidates with library matches or novelty flags
+    confidence: medium
+  Step 4: Structural annotation and scaffold assignment
+    tool: SIRIUS + CSI:FingerID
+    algorithm: Fragmentation tree + molecular fingerprint prediction
+    parameters: mass_accuracy_ppm=5.0, adducts=['[M+H]+', '[M+Na]+']
+    input: feature table with MS1 and MS/MS
+    output: annotated molecular formulas and compound classes
+    confidence: low
+  Step 5: Biological activity validation
+    tool: in vitro antiviral assay
+    algorithm: cell-based cytopathic effect (CPE) inhibition assay
+    parameters: virus_strains=['A/Hongkong/8/68 (H3N2)', 'A/Puerto Rico/8/1934 (H1N1)', 'B/Lee/40'], cell_line=MDCK cells, assay_duration_hours=48, IC50_calculation_method=four-parameter logistic regression
+    input: purified compounds
+    output: IC50 values with confidence intervals
+    confidence: high
+
+data_availability:
+  raw_data: available (GNPS: MSV000089876)
+  processed_data: available (GNPS: MSV000089876)
+  metadata: available
+  data_urls: https://gnps.ucsd.edu/ProteoSAFe/dataset.jsp?task=8a7b9c1d-2e3f-4a5b-8c7d-9e1f2a3b4c5d
+
+code_availability: repository_linked
+  code_url: https://github.com/npulluri/BBExtractor
+  license: MIT
+
+figure_recipes: 4
+  Figure 1: [workflow_diagram]
+    caption: Schematic overview of the Building Block Extractor workflow integrating molecular networking, building block specification, and targeted mining.
+    produced_by_step: [1, 2]
+    visualization_tool: Adobe Illustrator
+  Figure 2: [network]
+    caption: Molecular network of Artemisia heptapotamica extract highlighting clusters enriched with sesquiterpenoid dimer features.
+    produced_by_step: [1, 2]
+    visualization_tool: Cytoscape
+  Figure 3: [ms_ms_spectra]
+    caption: MS/MS spectra of artemiheptolide I (9) showing diagnostic neutral losses and product ions used as building blocks.
+    produced_by_step: [2, 3]
+    visualization_tool: MS-DIAL
+  Figure 4: [bar_chart]
+    caption: Antiviral activity (IC50) of compounds 9, 16, and 17 against multiple influenza strains.
+    produced_by_step: [5]
+    visualization_tool: GraphPad Prism
+    statistical_test: four-parameter logistic regression (95% CI)
+
+reproducibility_gaps:
+  - SIRIUS/CSI:FingerID parameters not fully specified (e.g., instrument type, fragmentation energy)
+  - No raw LC-MS chromatograms (.mzML) deposited—only centroided .mgf provided
+  - Biological assay protocols lack details on virus titration method and cytotoxicity controls
+reproducibility_strengths:
+  - Source code publicly available under MIT license
+  - All MS/MS data and molecular networks deposited in GNPS (MSV000089876)
+  - Step-by-step tutorial and example datasets included in GitHub repository

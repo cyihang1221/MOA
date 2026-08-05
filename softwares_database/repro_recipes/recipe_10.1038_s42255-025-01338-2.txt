@@ -1,0 +1,89 @@
+========== reproducibility_recipe entry ==========
+paper_title: Conservation and divergence of metabolic phenotypes between patient tumours and matched xenografts.
+source_paper: Rao AD et al. (2025), Nature metabolism, DOI: 10.1038/s42255-025-01338-2, PMID: 40731149
+overall_reproducibility_score: 52/100
+
+workflow_steps: 8
+  Step 1: Sample collection and preparation
+    tool: Manual protocol
+    parameters: tissue_mass_range_mg=[25, 100], homogenization_solvent=80:20 methanol:water (v/v), centrifugation_1=13000 g, 15 min, 4°C, centrifugation_2_for_isotope=16000 g, 20 min, 4°C, freeze_thaw_cycles=3, internal_standard=d27-myristic acid (1 µL), derivatization_reagent=MTBSTFA, derivatization_time_min=60, derivatization_temperature_C=70
+    input: snap-frozen tumour tissue
+    output: extracted metabolite supernatants (for LC-MS or GC-MS)
+    confidence: high
+  Step 2: LC-HRMS metabolomics analysis
+    tool: Thermo Scientific QExactive HF-X
+    algorithm: HILIC chromatography + Orbitrap detection
+    parameters: column=Millipore ZIC-pHILIC, 5 µm, 2.1 × 150 mm, mobile_phase_A=10 mM ammonium acetate in water (pH 9.8), mobile_phase_B=acetonitrile, flow_rate_ml_per_min=0.25, mass_accuracy_ppm=5
+    input: metabolite extracts resuspended in 80% acetonitrile
+    output: raw .raw files (Thermo format)
+    confidence: high
+  Step 3: GC-MS isotope tracing analysis
+    tool: Agilent 6890/5973.N or 7890/5975C
+    algorithm: Derivatization-based GC-MS
+    parameters: derivatization_agent=MTBSTFA + methoxyamine in pyridine, injection_volume_ul=1–2, mass_accuracy_ppm=5
+    input: derivatized metabolite extracts
+    output: raw .D files (Agilent format)
+    confidence: high
+  Step 4: Metabolite identification
+    tool: Custom workflow
+    algorithm: Three-tier identification
+    parameters: mass_tolerance_ppm=5, retention_time_tolerance_percent=5, fragment_matching_tolerance_ppm=5, reference_standards_used=True
+    input: LC-MS raw files and GC-MS raw files
+    output: annotated metabolite peak table with confidence levels
+    confidence: high
+  Step 5: Relative quantitation (LC-MS)
+    tool: Custom script / vendor software (unspecified)
+    algorithm: TIC-normalized peak area integration
+    parameters: integration_window_ppm=5, normalization_method=total ion chromatogram (TIC)
+    input: LC-MS feature tables
+    output: TIC-normalized relative abundance matrix
+    confidence: medium
+  Step 6: Isotope correction and fractional enrichment calculation
+    tool: Custom R script
+    algorithm: Natural isotope correction
+    parameters: correction_method=custom isotope correction, library_source=in-house derivatized standard library
+    input: GC-MS raw data + reference library
+    output: corrected M+0 to M+n abundances per metabolite
+    confidence: high
+  Step 7: Statistical analysis of isotope ratios
+    tool: R (unspecified packages)
+    algorithm: Two-way ANOVA and two-sample t-test
+    parameters: anova_factors=['origin', 'type'], t_test_comparison=early-passage vs late-passage PDXs, significance_threshold=0.05
+    input: CitM2/PyrM3 ratio matrix
+    output: ANOVA p-values, t-test statistics and effect sizes
+    confidence: medium
+  Step 8: Metabolic fingerprint stability assessment
+    tool: Unspecified multivariate analysis
+    algorithm: Unspecified (likely PCA or correlation-based clustering)
+    parameters: passage_range_analysed=P0 to P6, cohort_size=nearly 200 PDXs
+    input: TIC-normalized metabolite abundance matrix
+    output: stability metrics (e.g., correlation coefficients, PCA trajectory)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: https://github.com/wencgu/nac
+
+figure_recipes: 1
+  Extended Data Figure 2a: [bar_chart]
+    caption: Visualization of CitM2/PyrM3 ratio across patient tumours (P0), early-passage (P2/P3) and late-passage (P6) PDXs from four origins, showing effects of origin and passage type.
+    produced_by_step: [7]
+    visualization_tool: Unknown (likely ggplot2 or GraphPad)
+    statistical_test: two-way ANOVA and two-sample t-test
+
+reproducibility_gaps:
+  - Raw mass spectrometry data (.raw or .D files) not deposited in public repository
+  - No details on LC-MS data processing software (e.g., XCMS, Compound Discoverer, or vendor tools) or parameters (peak picking, alignment, RT correction)
+  - No description of multivariate methods used for 'metabolic fingerprint' analysis (step 8)
+  - No access information for in-house GC-MS spectral library
+  - No metadata schema or structured sample annotation provided beyond Supplementary Table 1
+  - Commercial instruments (Thermo QExactive HF-X, Agilent GC-MS) require proprietary acquisition software not described
+reproducibility_strengths:
+  - Custom isotope correction R script publicly available on GitHub
+  - Detailed experimental protocols for tissue processing, extraction, derivatization, and infusion dosing
+  - Explicit mass accuracy (5 ppm) and retention time tolerance (5%) criteria for metabolite ID
+  - Clear description of statistical tests and design factors (origin, passage type)

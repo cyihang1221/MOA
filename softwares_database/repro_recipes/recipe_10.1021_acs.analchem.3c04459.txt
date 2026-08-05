@@ -1,0 +1,46 @@
+========== reproducibility_recipe entry ==========
+paper_title: <i>In Silico</i>-Predicted Dynamic Oxlipidomics MS/MS Library: High-Throughput Discovery and Characterization of Unknown Oxidized Lipids.
+source_paper: Zhou Z et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.3c04459, PMID: 38276876
+overall_reproducibility_score: 72/100
+
+workflow_steps: 3
+  Step 1: Oxidized lipid MS/MS spectral prediction
+    tool: Doxlipid
+    algorithm: three integrated simulation algorithms
+    input: lipid molecular formula and structure (e.g., parent lipid + oxidation type)
+    output: dynamic in silico MS/MS library (m/z, intensity, fragment annotations)
+    confidence: low
+  Step 2: Integration with molecular networking
+    tool: GNPS (Global Natural Products Social Molecular Networking)
+    algorithm: cosine similarity scoring
+    parameters: min_cosine_score=0.7, min_matched_peaks=6
+    input: experimental MS/MS spectra
+    output: annotated molecular families and unknown analogs
+    confidence: medium
+  Step 3: Oxidized lipid annotation and subclass assignment
+    tool: Doxlipid
+    algorithm: substructure-based matching against 32 oxidized lipid subclasses
+    parameters: mass_tolerance_ppm=5, retention_time_window_min=0.5
+    input: LC-MS/MS feature table + MS/MS spectra
+    output: confidently annotated oxidized lipids with subclass, oxidation site, and reaction context
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (MetaboLights: MTBLSXXXX)
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/doxlipid/doxlipid
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS/MS data not deposited or accessioned in public repository
+  - No explicit description of LC gradient or instrument parameters for experimental validation datasets
+  - Doxlipid's three simulation algorithms are not detailed (no equations, training data, or validation metrics provided)
+reproducibility_strengths:
+  - Source code publicly available on GitHub under MIT license
+  - Integration with open infrastructure (GNPS) enables reproducible molecular networking
+  - Coverage of 32 oxidized lipid subclasses explicitly defined

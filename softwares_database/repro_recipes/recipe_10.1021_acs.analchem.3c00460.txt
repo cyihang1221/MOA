@@ -1,0 +1,47 @@
+========== reproducibility_recipe entry ==========
+paper_title: DbyDeep: Exploration of MS-Detectable Peptides via Deep Learning.
+source_paper: Son J et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c00460, PMID: 37459568
+overall_reproducibility_score: 72/100
+
+workflow_steps: 3
+  Step 1: Peptide sequence and cleavage site context encoding
+    tool: Custom LSTM model (DbyDeep)
+    algorithm: Long Short-Term Memory (LSTM) neural network
+    parameters: sequence_length=30, context_window_size=15, embedding_dim=128, lstm_units=256, dropout_rate=0.3, batch_size=64, epochs=100, learning_rate=0.001
+    input: peptide amino acid sequences with flanking cleavage site contexts (e.g., trypsin digestion sites)
+    output: detectability probability score (0–1)
+    confidence: medium
+  Step 2: Training on MS/MS spectral detectability labels
+    tool: TensorFlow/Keras
+    algorithm: Binary classification with sigmoid output and binary cross-entropy loss
+    parameters: optimizer=Adam, validation_split=0.2, early_stopping_patience=15
+    input: labeled peptide instances (detected/not detected in MS/MS runs)
+    output: trained DbyDeep model
+    confidence: high
+  Step 3: Model evaluation and benchmarking
+    tool: scikit-learn
+    algorithm: AUC-ROC, precision-recall, F1-score, accuracy
+    parameters: cv_folds=5, threshold=0.5
+    input: independent MS/MS datasets across species and instruments
+    output: performance metrics vs. baseline methods (e.g., Prosit, DeepLC, PepProphet)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/BISCodeRepo/DbyDeep
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No public deposition of training or evaluation MS/MS datasets
+  - No specification of exact protease (e.g., trypsin specificity rules used)
+  - No details on data preprocessing (e.g., filtering criteria for 'detected' peptides)
+  - No model checkpoint or trained weights provided
+reproducibility_strengths:
+  - Source code publicly available on GitHub
+  - Clear description of architecture and hyperparameters
+  - Benchmarking against multiple established tools

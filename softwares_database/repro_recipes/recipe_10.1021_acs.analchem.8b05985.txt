@@ -1,0 +1,45 @@
+========== reproducibility_recipe entry ==========
+paper_title: Trace, Machine Learning of Signal Images for Trace-Sensitive Mass Spectrometry: A Case Study from Single-Cell Metabolomics.
+source_paper: Liu Z et al. (2019), Analytical chemistry, DOI: 10.1021/acs.analchem.8b05985, PMID: 30929422
+overall_reproducibility_score: 30/100
+
+workflow_steps: 3
+  Step 1: Raw data import and preprocessing
+    tool: Trace
+    algorithm: machine_learning-based_feature_selection
+    input: raw .mzML files
+    output: preprocessed signal images
+    confidence: low
+  Step 2: Trace-level signal extraction
+    tool: Trace
+    algorithm: ML-optimized_feature_detection
+    input: preprocessed signal images
+    output: trace-level feature table
+    confidence: low
+  Step 3: Validation against manually curated data
+    tool: custom_evaluation_script
+    algorithm: accuracy_and_sensitivity_assessment
+    parameters: metrics=['sensitivity', 'accuracy', 'robustness', 'throughput']
+    input: trace-level feature table, manually curated ground truth
+    output: performance metrics report
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No repository or accession ID provided for raw or processed data
+  - Trace software not linked to GitHub, CRAN, or other public repository
+  - No version number or installation instructions for Trace
+  - No ML model architecture, training parameters, or hyperparameters disclosed
+  - No details on 'manually curated data sets' — format, size, curation criteria, or availability
+reproducibility_strengths:
+  - Supports open mzML format
+  - Described in context of single-cell metabolomics with CE-HRMS
+  - Explicitly validated on Xenopus laevis embryo data

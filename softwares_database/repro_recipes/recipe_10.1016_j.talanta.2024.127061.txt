@@ -1,0 +1,47 @@
+========== reproducibility_recipe entry ==========
+paper_title: Statistically sound identification of compounds by low-resolution GC-MS: Identification of tear agents in tear gas sprays.
+source_paper: Salgueiro PAS et al. (2025), Talanta, DOI: 10.1016/j.talanta.2024.127061, PMID: 39447344
+overall_reproducibility_score: 40/100
+
+workflow_steps: 3
+  Step 1: Monte Carlo simulation of ion abundance ratios
+    tool: Microsoft Excel
+    algorithm: Monte Carlo Method (MCM) with Cholesky decomposition
+    parameters: n_simulations=10000, covariance_matrix_source=experimental ion abundance data from calibrator and sample, confidence_level=0.95
+    input: raw ion abundance data (characteristic ions) from GC-MS spectra
+    output: statistically validated ion abundance ratio tolerance limits
+    confidence: high
+  Step 2: Retention time and mass spectral match evaluation
+    tool: Microsoft Excel
+    algorithm: joint statistical test combining retention time deviation and ion ratio deviations
+    parameters: rt_tolerance_seconds=None, rt_confidence_level=0.95, ion_ratio_tolerance_method=multivariate MCM-derived confidence ellipsoid, min_ions_required=3
+    input: GC-MS chromatograms (TIC or extracted ion chromatograms), peak-aligned retention times, characteristic ion abundances
+    output: compound identification decision (match/no-match) with false identification rate control
+    confidence: medium
+  Step 3: Comparison with SANTE criteria
+    tool: Microsoft Excel
+    algorithm: rule-based binary matching (SANTE 2021/692 guidelines)
+    parameters: sanete_rt_tolerance=±0.05 min or ±0.5 % of RT, sanete_ion_ratio_tolerance=±10 % for base peak, ±20 % for other ions, sanete_min_ions=4, sanete_min_relative_intensity=10
+    input: same GC-MS data used in step 2
+    output: binary identification result per compound, false positive rate estimate
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw GC-MS data not deposited or referenced
+  - Excel spreadsheet tool not publicly shared or archived
+  - No specification of GC column, temperature program, or MS acquisition parameters (e.g., scan range, dwell time)
+  - Cholesky decomposition implementation details and covariance matrix estimation method not fully described
+  - No validation dataset or benchmark spectra provided
+reproducibility_strengths:
+  - Explicit statistical framework grounded in Monte Carlo simulation
+  - Clear comparison against established SANTE guidelines
+  - Method designed for low-resolution GC-MS — addresses real-world instrumentation constraints

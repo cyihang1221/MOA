@@ -1,0 +1,130 @@
+========== reproducibility_recipe entry ==========
+paper_title: Spatially and temporally probing distinctive glycerophospholipid alterations in Alzheimer's disease mouse brain via high-resolution ion mobility-enabled sn-position resolved lipidomics.
+source_paper: Xu S et al. (2024), Nature communications, DOI: 10.1038/s41467-024-50299-9, PMID: 39048572
+overall_reproducibility_score: 52/100
+
+workflow_steps: 12
+  Step 1: Lipid extraction
+    tool: Modified Folch method
+    algorithm: Liquid-liquid extraction with chloroform/methanol/PBS
+    parameters: tissue_weight=0.01, PBS_volume_ml=0.5, methanol_volume_ml=0.5, chloroform_volume_ml=1.0, vortex_time_min=0.167, centrifugation_g=10000, centrifugation_temp_c=4, centrifugation_time_min=15, extraction_repeats=3
+    input: Frozen mouse brain tissue (hippocampus, cerebellum, cortex)
+    output: Lipid extract in chloroform phase
+    confidence: high
+  Step 2: PLA2 digestion for sn-position resolution
+    tool: Phospholipase A2 (porcine pancreas)
+    algorithm: Enzymatic hydrolysis at sn-1 position
+    parameters: enzyme_concentration_u_mg=600, incubation_temp_c=37, incubation_time_h=4, CaCl2_concentration_mm=100, buffer_composition=PBS + 100 mM CaCl2, enzyme_volume_ul=10, lipid_amount_nmol=10
+    input: Dried glycerophospholipid standards or extracts
+    output: sn-2 lysophospholipid products
+    confidence: high
+  Step 3: LC-IM-MS/MS data acquisition
+    tool: Agilent 1290 UHPLC + 6560 IM-QTOF (vMassHunter Workstation v11.0)
+    algorithm: Data-independent (Alternating frames) and data-dependent (Auto MS/MS) acquisition
+    parameters: column=Phenomenex Kinetex C18, 150 mm × 2.1 mm, 1.7 µm, column_temp_c=50, mobile_phase_A=5 mM ammonium acetate in methanol/acetonitrile/water (1:1:1), mobile_phase_B=5 mM ammonium acetate in isopropanol/acetonitrile (5:1), flow_rate_ml_min=0.3, gradient_duration_min=25, gradient_profile=[[0, 0.75, 20], [0.75, 2.5, '20→40'], [2.5, 4.5, '40→60'], [4.5, 19.5, '60→98'], [19.5, 21, '98→20'], [21, 25, 20]], mass_range_mz=[50, 1700], sheath_gas_temp_c=350, sheath_gas_flow_l_min=12, dry_gas_temp_c=325, dry_gas_flow_l_min=8, nebulizer_pressure_psi=35, capillary_voltage_v=3500, drift_time_max_ms=60, scan_rate_fps=0.9, trap_filling_us=1800, trap_release_us=200, pulsing_sequence_length_bits=5, drift_tube_pressure_torr=3.95, collision_energy_positive_v=25, collision_energy_negative_v=30, entrance_voltage_v=1500, exit_voltage_v=250
+    input: Reconstituted lipid extracts in methanol
+    output: Multiplexed raw IM-MS files (.d)
+    confidence: high
+  Step 4: Demultiplexing and drift time deconvolution
+    tool: PNNL PreProcessor (vv4.0 build 2022.02.17)
+    algorithm: Data interpolation-based demultiplexing
+    parameters: interpolate_drift_bins=3, demultiplexing_mode=chromatography/infusion, moving_average_window=3, signal_intensity_threshold_counts=20, spike_removal_adjacent_points=1
+    input: Multiplexed raw IM-MS files (.d)
+    output: Demultiplexed .cdf files
+    confidence: high
+  Step 5: Ion mobility feature extraction
+    tool: MassHunter IM-MS Browser (vv10.0)
+    algorithm: Ion Mobility Feature Extraction (IMFE)
+    parameters: processing_mode=Chromatography, isotopic_model=Common organic molecules, max_charge_state=2, ion_intensity_threshold=100
+    input: Demultiplexed .cdf files
+    output: IM-MS feature list (m/z, RT, drift time, intensity)
+    confidence: high
+  Step 6: High-resolution demultiplexing (HRdm) enhancement
+    tool: High-Resolution Demultiplexer (vv2.0)
+    algorithm: Post-processing IM resolving power enhancement
+    parameters: hr_processing_level=High, mz_width_multiplier=6, if_multiplier=1
+    input: IM-MS feature list
+    output: HRdm-enhanced feature list with improved Rₚ(IM)
+    confidence: medium
+  Step 7: Collision cross-section (CCS) determination
+    tool: MassHunter IM-MS Browser (vv10.0)
+    algorithm: Single-field CCS calibration using Agilent tune mix
+    parameters: calibrant=Agilent ESI low-concentration tune mix, method=single-field, drift_gas=nitrogen
+    input: HRdm-enhanced features + calibrant runs
+    output: CCS values (Å²) per ion
+    confidence: high
+  Step 8: 4D lipid library construction
+    tool: Skyline-daily (vv22.2.1)
+    algorithm: Transition list-based peak integration and annotation
+    parameters: transition_list_fields=['m/z', 'RT', 'CCS', 'precursor_drift_time', 'fragment_ions', 'neutral_losses'], quality_control_criteria=['≥5 pooled runs', '±5 ppm mass accuracy', '±2 min RT window', '±0.3% CCS deviation'], iRT_standards=10 isotope-labeled lipids from EquiSPLASH, validation_standards=6 GP classes (PC, PE, PS, etc.)
+    input: CCS-annotated features + MS/MS spectra + structural metadata
+    output: Experimental 4D GP library (498 GPs)
+    confidence: high
+  Step 9: In silico GP structural simulation and CCS prediction
+    tool: ['RDKit', 'Gaussian 16', 'IMoS'] (v{'RDKit': 'unknown', 'Gaussian 16': 'unknown', 'IMoS': 'v1.13'})
+    algorithm: Conformer generation → UFF optimization → DFT geometry optimization → TM-based CCS calculation
+    parameters: conformers_per_molecule=500, force_field=UFF, dft_functional=B3LYP, basis_set_initial=3-21G, basis_set_final=6-31G+(d), ccs_method=trajectory method, orientations=3, gas_molecules_per_orientation=300000, drift_gas=nitrogen
+    input: SMILES strings of adducted GPs
+    output: Theoretical CCS values and RT-predictive descriptors
+    confidence: medium
+  Step 10: Machine learning–based CCS and RT prediction model training
+    tool: Custom ML pipeline (not specified)
+    algorithm: Supervised regression (unspecified algorithm)
+    parameters: training_set_size=335, validation_set_size=84, training_ratio=0.8, lipid_classes=['PC', 'PE', 'PS'], total_lipids_in_training=419, features=SMILES-derived molecular descriptors
+    input: Experimental CCS and RT values + SMILES
+    output: Extended 4D GP library (2500 GPs)
+    confidence: low
+  Step 11: sn-Position resolved lipid identification and quantification
+    tool: Skyline-daily + manual curation (vv22.2.1)
+    algorithm: 4D alignment (m/z + RT + CCS + MS/MS) + PLA2 digestion pattern matching
+    parameters: identification_confidence_criteria=['MS/MS spectral match', 'CCS deviation ≤0.3%', 'RT deviation ≤2 min', 'sn-isomer pair co-elution in IM dimension'], quantification_method=Area under curve (AUC) with isotope-labeled internal standards
+    input: LC-IM-MS/MS runs + 4D library (experimental + extended)
+    output: Quantified sn-position-resolved GP table (592 GPs, 130 isomer pairs)
+    confidence: high
+  Step 12: Temporal and spatial statistical analysis
+    tool: Unknown (likely R/Python or commercial stats software)
+    algorithm: Univariate statistics (ANOVA/t-test) across genotype (WT vs APP/PS1) and age (3 vs 8 months) and brain region (hippocampus, cerebellum, cortex)
+    parameters: statistical_tests=['ANOVA with post-hoc Tukey', 'two-way ANOVA (genotype × age)', 'paired t-test per region'], significance_threshold=0.05, correction_method=Benjamini-Hochberg FDR
+    input: Quantified GP table (592 lipids × samples)
+    output: Differentially altered sn-position isomers in AD progression
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (MetaboLights: MTBLSXXXX)
+  processed_data: not_mentioned (Not specified)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 4
+  Supplementary Fig. 30: [workflow_diagram]
+    caption: Illustrates the dissection protocol for hippocampus, cerebellum, and cortex from mouse brain.
+    produced_by_step: [1]
+    visualization_tool: Adobe Illustrator or similar
+  Supplementary Fig. 31: [workflow_diagram]
+    caption: Shows the workflow for LC-high resolution-IM-MS/MS-based 4D sn-resolved GP library construction.
+    produced_by_step: [3, 4, 5, 6, 7, 8]
+    visualization_tool: Adobe Illustrator or similar
+  Supplementary Fig. 17b: [workflow_diagram]
+    caption: Schematics of GP identification strategy integrating MS/MS, CCS, RT, and PLA2 digestion patterns.
+    produced_by_step: [2, 8, 11]
+    visualization_tool: Adobe Illustrator or similar
+  Supplementary Table 1: [table]
+    caption: Validation of RT and CCS accuracy using GP standards across 6 lipid classes.
+    produced_by_step: [7, 8]
+    visualization_tool: Microsoft Excel or similar
+
+reproducibility_gaps:
+  - Raw LC-IM-MS/MS data not deposited in public repository (e.g., MetaboLights or GNPS)
+  - No code or scripts shared for HRdm processing, Skyline transition list generation, or ML model training
+  - Machine learning algorithm and hyperparameters unspecified (Step 10)
+  - Statistical analysis software and exact R/Python packages not named (Step 12)
+  - Agilent MassHunter and High-Resolution Demultiplexer are commercial tools requiring licenses
+  - PLA2 digestion protocol lacks enzyme activity unit validation per batch
+  - No description of batch correction or QC sample placement in LC-IM-MS/MS runs
+reproducibility_strengths:
+  - Detailed LC gradient and MS instrument parameters fully reported
+  - All chemical reagents and vendors explicitly named
+  - Comprehensive quality control criteria for library curation provided (±5 ppm, ±2 min RT, ±0.3% CCS)
+  - Use of isotope-labeled internal standards (EquiSPLASH) for quantification
+  - Publicly available open-source tools used (PNNL PreProcessor, Skyline-daily, RDKit, IMoS)

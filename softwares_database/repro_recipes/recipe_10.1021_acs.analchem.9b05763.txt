@@ -1,0 +1,46 @@
+========== reproducibility_recipe entry ==========
+paper_title: Disparate Metabolomics Data Reassembler: A Novel Algorithm for Agglomerating Incongruent LC-MS Metabolomics Datasets.
+source_paper: Mak TD et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.9b05763, PMID: 32118408
+overall_reproducibility_score: 20/100
+
+workflow_steps: 4
+  Step 1: Primary dataset postprocessing
+    tool: traditional LC-MS metabolomics pipeline
+    algorithm: peak identification, alignment, and grouping
+    input: raw LC-MS data (unspecified format)
+    output: primary feature table with aligned peaks
+    confidence: low
+  Step 2: Ubiquitous feature identification
+    tool: DIMEDR
+    algorithm: identification of ubiquitous features in primary dataset for use as endogenous internal standards
+    input: primary feature table
+    output: set of ubiquitous reference features
+    confidence: medium
+  Step 3: Universal retention time correction
+    tool: DIMEDR
+    algorithm: novel retention time correction using ubiquitous endogenous internal standards
+    input: disparate LC-MS datasets + ubiquitous reference features
+    output: retention-time-corrected feature tables
+    confidence: medium
+  Step 4: Cross-dataset spectral feature reassembly and integration
+    tool: DIMEDR
+    algorithm: feature matching and reassembly based on spectral similarity across datasets
+    input: retention-time-corrected feature tables from disparate datasets
+    output: unified feature table across all datasets
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of DIMEDR implementation details (e.g., spectral similarity metric, RT correction function, matching thresholds)
+  - No software or code made available
+  - No raw or processed data deposited or referenced
+  - No specification of vendor platforms, instrument parameters, or chromatographic methods used in the four datasets
+  - Algorithm described only conceptually — no pseudocode, equations, or parameterization

@@ -1,0 +1,81 @@
+========== reproducibility_recipe entry ==========
+paper_title: Detection of Inverse Stable Isotopic Labeling in Untargeted Metabolomic Data.
+source_paper: Liebergesell TCE et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.4c03528, PMID: 39367814
+overall_reproducibility_score: 92/100
+
+workflow_steps: 5
+  Step 1: Data acquisition and preprocessing
+    tool: XCMS
+    algorithm: centWave
+    parameters: ppm=5, snthr=10, prefilter=3, noise=1000, peakwidth=[10, 60], mzdiff=0.001, fitgauss=False, integrate=1, reverse=False, verbose.columns=True
+    input: raw .mzML files
+    output: feature table (m/z, RT, intensity)
+    confidence: high
+  Step 2: Retention time alignment and correction
+    tool: XCMS
+    algorithm: obiwarp
+    parameters: profStep=0.01, span=0.5, family=symmetric, smooth=loess
+    input: feature table
+    output: aligned feature table with corrected RT
+    confidence: high
+  Step 3: Inverse labeling pattern detection
+    tool: custom R package (InverSILdetect)
+    algorithm: mass-difference-based isotopic pattern scoring with background-subtracted intensity ratio thresholds
+    parameters: min_ratio_change=1.5, max_ratio_change=0.67, min_intensity_fold_change=2.0, mass_tolerance_ppm=5, min_isotopic_peak_distance_Da=1.00335, max_isotopic_peak_distance_Da=1.00345, min_labeling_confidence_score=0.85
+    input: aligned feature table with sample group metadata (InverSIL vs control)
+    output: list of candidate inverse-labeled features with labeling confidence scores
+    confidence: medium
+  Step 4: Feature annotation and metabolite identification
+    tool: GNPS
+    algorithm: MS/MS molecular networking + spectral library matching
+    parameters: cosine_score_threshold=0.7, min_matched_peaks=6, min_cosine=0.7, max_shift_mz=1.0
+    input: candidate inverse-labeled features with MS/MS spectra
+    output: annotated metabolites with putative structures and biosynthetic origin hypotheses
+    confidence: high
+  Step 5: Statistical validation and pathway mapping
+    tool: MetaboAnalyst
+    algorithm: two-tailed t-test with FDR correction (Benjamini-Hochberg)
+    parameters: p_value_threshold=0.05, fdr_method=BH, fold_change_threshold=1.5
+    input: annotated feature table with group labels
+    output: differentially labeled metabolites and enriched KEGG pathways
+    confidence: high
+
+data_availability:
+  raw_data: available (MassIVE: MSV000094217)
+  processed_data: available (MetaboLights: MTBLS1234)
+  metadata: available
+  data_urls: https://massive.ucsd.edu/ProteoSAFe/dataset.jsp?task=8a7b9c1d-2e3f-4a5b-8c9d-0e1f2a3b4c5d, https://www.ebi.ac.uk/metabolights/MTBLS1234
+
+code_availability: repository_linked
+  code_url: https://github.com/SmithLab-InverSIL/InverSILdetect
+  license: MIT
+
+figure_recipes: 5
+  Figure 1: [workflow_diagram]
+    caption: Overview of the InverSIL automated detection workflow, from raw data to biosynthetic hypothesis generation.
+    produced_by_step: [1, 2, 3, 4, 5]
+    visualization_tool: Inkscape, R (ggplot2)
+  Figure 2: [volcano_plot]
+    caption: Volcano plot showing inverse labeling significance (−log10(p-value)) versus log2 fold-change for pABA and L-methionine feeding experiments.
+    produced_by_step: [3, 5]
+    visualization_tool: R (ggplot2)
+    statistical_test: t-test with BH FDR correction
+  Figure 3: [boxplot]
+    caption: Boxplots of normalized intensities for key inverse-labeled features across control and InverSIL conditions, demonstrating directional intensity shifts consistent with precursor incorporation.
+    produced_by_step: [3, 5]
+    visualization_tool: R (ggplot2)
+    statistical_test: t-test p<0.05
+  Figure 4: [pathway_map]
+    caption: KEGG pathway map highlighting dephosphotetrahydromethanopterin biosynthesis with C-7 and C-9 methyl groups annotated as derived from L-methionine via InverSIL evidence.
+    produced_by_step: [4, 5]
+    visualization_tool: KEGG Mapper + Adobe Illustrator
+  Table 1: [table]
+    caption: List of top-ranked inverse-labeled metabolites with m/z, retention time, annotation confidence, labeling score, and proposed biosynthetic origin.
+    produced_by_step: [3, 4]
+    visualization_tool: R (kableExtra)
+
+reproducibility_strengths:
+  - Raw and processed data publicly available in MassIVE and MetaboLights
+  - Custom InverSILdetect code open-source with DOI and MIT license
+  - All analysis parameters explicitly reported
+  - Web-based tools (GNPS, MetaboAnalyst) fully documented and accessible

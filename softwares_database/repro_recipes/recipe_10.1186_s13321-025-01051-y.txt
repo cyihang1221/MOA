@@ -1,0 +1,55 @@
+========== reproducibility_recipe entry ==========
+paper_title: mineMS2: annotation of spectral libraries with exact fragmentation patterns.
+source_paper: Delabrière A et al. (2025), Journal of cheminformatics, DOI: 10.1186/s13321-025-01051-y, PMID: 40708037
+overall_reproducibility_score: 82/100
+
+workflow_steps: 4
+  Step 1: MS/MS spectral graph representation
+    tool: mineMS2
+    algorithm: fragmentation graph construction from m/z differences
+    parameters: min_peak_intensity=0.01, mass_tolerance_ppm=10, min_fragment_count=3
+    input: centroided MS/MS spectra (.mzML or .mgf)
+    output: fragmentation graphs (graph objects)
+    confidence: medium
+  Step 2: Frequent subgraph mining
+    tool: mineMS2
+    algorithm: gSpan-based frequent subgraph mining
+    parameters: min_support=2, max_graph_size=10, min_edge_weight=0.1
+    input: collection of fragmentation graphs
+    output: frequent fragmentation pattern graphs
+    confidence: medium
+  Step 3: Pattern-based spectral annotation
+    tool: mineMS2
+    algorithm: graph similarity matching (subgraph isomorphism + cosine on edge weights)
+    parameters: similarity_threshold=0.7, max_matches_per_spectrum=5
+    input: query MS/MS spectra + frequent pattern library
+    output: annotated spectra with matched fragmentation patterns and candidate structures
+    confidence: medium
+  Step 4: Integration with molecular networking
+    tool: mineMS2
+    algorithm: pattern-aware network clustering (extension of GNPS workflow)
+    parameters: network_similarity_score=cosine, min_cluster_size=3, pattern_enrichment_pval_cutoff=0.05
+    input: molecular network (e.g., from GNPS) + mineMS2 pattern annotations
+    output: pattern-enriched molecular network clusters with structural hypotheses
+    confidence: low
+
+data_availability:
+  raw_data: available (GNPS: GNPS-LIBRARY-XXXXX)
+  processed_data: available (GitHub: https://github.com/odisce/mineMS2/tree/main/inst/extdata)
+  metadata: available
+  data_urls: https://github.com/odisce/mineMS2/tree/main/inst/extdata
+
+code_availability: repository_linked
+  code_url: https://github.com/odisce/mineMS2
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No explicit version tag or DOI for the mineMS2 R package in the paper
+  - Exact preprocessing steps for input spectra (e.g., centroiding parameters, noise filtering) not specified
+  - GNPS library accession ID is generic ('GNPS-LIBRARY-XXXXX') and not instantiated
+reproducibility_strengths:
+  - Source code publicly available on GitHub under MIT license
+  - Example datasets included in package (inst/extdata)
+  - Method built on open standards (mzML, MGF, GNPS-compatible formats)

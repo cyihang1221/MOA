@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: Efficient Hydrogen-Deuterium Exchange in Matrix-Assisted Laser Desorption/Ionization Mass Spectrometry Imaging for Confident Metabolite Identification.
+source_paper: Rensner JJ et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.2c00978, PMID: 35917496
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Hydrogen-deuterium exchange (HDX) in MALDI source
+    tool: Custom low-vacuum MALDI source
+    parameters: D2O_vapor_pressure=not_specified, source_temperature=heated, deuterium_labeled_matrix=used, HDX_efficiency_range_percent=[73, 85], max_labile_hydrogens_resolved=17
+    input: MALDI tissue sections (Lemna minor fronds)
+    output: deuterium-labeled MSI data (.imzML or vendor raw)
+    confidence: medium
+  Step 2: MSI data acquisition
+    tool: MALDI-MS imaging platform
+    parameters: ionization_mode=positive_or_negative_not_specified, mass_resolution=not_specified, mz_range=not_specified, spatial_resolution=not_specified, laser_settings=not_specified
+    input: HDX-treated tissue sections
+    output: raw MSI datasets (per surface/section)
+    confidence: low
+  Step 3: Metabolite annotation with METASPACE
+    tool: METASPACE
+    algorithm: high-throughput annotation engine
+    parameters: database=BraChem, false_discovery_rate=0.1, ionization_mode_assumed=not_specified, adducts_considered=not_specified
+    input: raw MSI data (.imzML)
+    output: on-sample annotations (56 total)
+    confidence: high
+  Step 4: HDX-based annotation validation and refinement
+    tool: Custom interpretation logic
+    algorithm: labile hydrogen counting via observed D-incorporation
+    parameters: matching_criterion=observed D-count matches predicted labile H count within tolerance, structural_filtering=elimination of inconsistent isomers/tautomers
+    input: METASPACE annotations + HDX mass shifts
+    output: validated annotations (31 confirmed), refined structural hypotheses (for remaining 45)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw MSI data deposited in public repository (e.g., MetaboLights, MassIVE, or GNPS)
+  - No details on MALDI instrument configuration, laser settings, or vacuum parameters
+  - No specification of D₂O vapor delivery method, temperature, exposure time, or pressure
+  - No description of deuterium-labeled matrix synthesis or identity (e.g., D₄-DHB, D₈-CHCA)
+  - Custom HDX interpretation logic not shared or algorithmically formalized
+  - METASPACE job parameters (e.g., adducts, ionization mode, tolerances) not reported
+reproducibility_strengths:
+  - Use of publicly accessible METASPACE platform
+  - Clear reporting of FDR threshold (10%) and database (BraChem)
+  - Quantitative HDX efficiency range (73–85%) and max labile H resolved (17) provided

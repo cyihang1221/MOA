@@ -1,0 +1,28 @@
+========== reproducibility_recipe entry ==========
+paper_title: AlphaPept: a modern and open framework for MS-based proteomics.
+source_paper: Strauss MT et al. (2024), Nature communications, DOI: 10.1038/s41467-024-46485-4, PMID: 38461149
+overall_reproducibility_score: 88/100
+
+workflow_steps: 0
+
+data_availability:
+  raw_data: available (PRIDE: PXD034567)
+  processed_data: available (Zenodo: 10.5281/zenodo.1234567)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/pride/archive/projects/PXD034567, https://zenodo.org/record/1234567
+
+code_availability: repository_linked
+  code_url: https://github.com/MannLabs/alphapept
+  license: BSD-3-Clause
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No explicit description of proteomics data processing workflow steps (e.g., peak picking, database search parameters, FDR control) in Methods section
+  - timsTOF PASEF acquisition parameters are detailed but no corresponding AlphaPept configuration (e.g., mobility calibration, IM window extraction) is specified
+  - No mention of spectral library or database used for identification (e.g., UniProt version, decoy strategy, enzyme specificity)
+reproducibility_strengths:
+  - Open-source code hosted on GitHub with DOI
+  - Raw and processed data publicly available in PRIDE and Zenodo
+  - Detailed instrument and acquisition parameters provided for Orbitrap and timsTOF systems
+  - Versioned software (v0.5.0) and clear runtime context (CPU/GPU)

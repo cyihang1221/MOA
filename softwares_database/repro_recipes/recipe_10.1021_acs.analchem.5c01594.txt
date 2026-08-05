@@ -1,0 +1,68 @@
+========== reproducibility_recipe entry ==========
+paper_title: CSU-MS&lt;sup&gt;2&lt;/sup&gt;: A Contrastive Learning Framework for Cross-Modal Compound Identification from MS/MS Spectra to Molecular Structures.
+source_paper: Xie T et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c01594, PMID: 40539908
+overall_reproducibility_score: 88/100
+
+workflow_steps: 6
+  Step 1: In-silico MS/MS spectrum generation
+    tool: CFM-ID
+    algorithm: fragmentation prediction
+    input: molecular structures (SMILES)
+    output: in-silico MS/MS spectra
+    confidence: medium
+  Step 2: In-silico MS/MS spectrum generation
+    tool: ICEBERG
+    algorithm: deep learning-based fragmentation prediction
+    input: molecular structures (SMILES)
+    output: in-silico MS/MS spectra
+    confidence: medium
+  Step 3: Pretraining of cross-modal contrastive model
+    tool: CSU-MS² (custom PyTorch framework)
+    algorithm: cross-modal contrastive learning with External Space Attention Aggregation (ESA)
+    parameters: embedding_dim=768, temperature=0.07, batch_size=256, learning_rate=0.0001, optimizer=AdamW, scheduler=cosine annealing
+    input: paired in-silico MS/MS spectra and SMILES
+    output: unified spectral-structural embedding space
+    confidence: high
+  Step 4: Fine-tuning on experimental MS/MS data
+    tool: CSU-MS²
+    algorithm: supervised fine-tuning with contrastive loss
+    parameters: learning_rate=5e-05, epochs=20, warmup_ratio=0.1
+    input: experimental MS/MS spectra and ground-truth SMILES
+    output: domain-adapted embedding model
+    confidence: high
+  Step 5: Compound retrieval via cross-modal similarity search
+    tool: CSU-MS²
+    algorithm: cosine similarity search in unified embedding space
+    parameters: top_k=10, similarity_threshold=None
+    input: query MS/MS spectrum
+    output: ranked list of candidate molecular structures (SMILES)
+    confidence: high
+  Step 6: Database construction: Spectrum-searchable Structural Feature Database (SSFDB)
+    tool: Custom pipeline
+    algorithm: structural feature extraction + embedding indexing
+    parameters: source_databases=23, feature_representation=ECFP4 + RDKit descriptors, indexing_method=FAISS
+    input: molecular structures from 23 structural databases
+    output: searchable structural feature database (SSFDB)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: available (GitHub)
+  metadata: available
+  data_urls: https://github.com/CSU-MS2/CSU-MS2
+
+code_availability: repository_linked
+  code_url: https://github.com/CSU-MS2/CSU-MS2
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw experimental MS/MS spectra used for fine-tuning not explicitly deposited in a public repository (only 'high-quality experimental data' mentioned)
+  - Exact composition of the 23 structural databases in SSFDB not enumerated
+  - No details on CFM-ID/ICEBERG version or configuration parameters used for in-silico data generation
+reproducibility_strengths:
+  - Full source code publicly available under MIT license
+  - Pretrained models and SSFDB provided
+  - Web server deployed and openly accessible
+  - Validation performed on three well-known external benchmarks (MTBLS265, PMhub, CASMI 2022)

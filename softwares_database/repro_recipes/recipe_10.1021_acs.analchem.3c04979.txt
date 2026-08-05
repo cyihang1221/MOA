@@ -1,0 +1,60 @@
+========== reproducibility_recipe entry ==========
+paper_title: Simulated LC-MS Data Set for Assessing the Metabolomics Data Processing Pipeline Implemented into MVAPACK.
+source_paper: Jurich CP et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.3c04979, PMID: 39078713
+overall_reproducibility_score: 72/100
+
+workflow_steps: 5
+  Step 1: Simulated LC-MS data generation
+    tool: Custom simulation framework
+    algorithm: Synthetic peak generation with known ground truth
+    parameters: fold_change_threshold=2, coefficient_of_variation_max=25, gaussian_noise_levels_percent=[0, 5, 10], missing_features_levels_percent=[0, 10, 20], peak_locations_known=True, peak_intensities_known=True
+    input: Parameterized biological group design (e.g., control vs. treatment)
+    output: Simulated .mzML files with embedded ground-truth annotations
+    confidence: high
+  Step 2: Experimental LC-MS data acquisition
+    tool: Liquid chromatography-mass spectrometry platform
+    algorithm: Not applicable
+    input: Standard mixture and Mycobacterium smegmatis cell lysates
+    output: Raw .mzML or vendor format files
+    confidence: low
+  Step 3: Feature detection and peak picking
+    tool: MS-DIAL
+    algorithm: CentWave-like (for LC-MS)
+    input: Raw .mzML files
+    output: Feature table (m/z, RT, intensity matrix)
+    confidence: medium
+  Step 4: Feature detection and peak picking
+    tool: XCMSOnline
+    algorithm: CentWave
+    input: Raw .mzML files
+    output: Feature table (m/z, RT, intensity matrix)
+    confidence: medium
+  Step 5: LC-MS data processing and multivariate analysis
+    tool: MVAPACK (vUpdated version supporting LC-MS)
+    algorithm: Custom MVAPACK pipeline (includes preprocessing, normalization, PCA, PLS-DA)
+    input: Raw .mzML files
+    output: Processed feature table, statistical scores, model outputs
+    confidence: medium
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1234)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+  data_urls: https://github.com/Stanford-Chemical-Analysis/MVAPACK
+
+code_availability: repository_linked
+  code_url: https://github.com/Stanford-Chemical-Analysis/MVAPACK
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No explicit description of LC-MS instrument parameters (e.g., column, gradient, ionization mode)
+  - No details on MS-DIAL or XCMSOnline parameter settings (e.g., ppm tolerance, min peak width)
+  - Simulated data generation code not deposited separately — only implied via MVAPACK repository
+  - Experimental sample preparation protocols only briefly mentioned (no SOPs or QC metrics)
+reproducibility_strengths:
+  - Simulated dataset with full ground truth (known fold changes, CV, noise levels) publicly available
+  - Two complementary experimental datasets included (standard mix + biological sample)
+  - MVAPACK source code openly available under MIT license
+  - Benchmarking performed against two widely used community tools (MS-DIAL, XCMSOnline)

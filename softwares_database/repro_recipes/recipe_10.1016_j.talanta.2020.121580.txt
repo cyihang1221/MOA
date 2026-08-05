@@ -1,0 +1,41 @@
+========== reproducibility_recipe entry ==========
+paper_title: High sensitivity and specificity feature detection in liquid chromatography-mass spectrometry data: A deep learning framework.
+source_paper: Zhao F et al. (2021), Talanta, DOI: 10.1016/j.talanta.2020.121580, PMID: 33167267
+overall_reproducibility_score: 30/100
+
+workflow_steps: 3
+  Step 1: Raw data preprocessing into pseudo-color images
+    tool: SeA-M2Net
+    algorithm: Deep learning-based object detection (two-stage CNN with multilevel/multiscale feature extraction)
+    input: raw .mzML or vendor-specific LC-MS files
+    output: 2D pseudo-color image representations of LC-MS data
+    confidence: low
+  Step 2: Feature detection via learned pattern recognition
+    tool: SeA-M2Net
+    algorithm: End-to-end deep convolutional neural network for compound localization and probability scoring
+    parameters: loss_function=focal loss, backbone=ResNet-50 variant, anchor_scales=[8, 16, 32], feature_pyramid_levels=3
+    input: 2D pseudo-color images
+    output: detected features (m/z, RT, intensity, confidence score)
+    confidence: medium
+  Step 3: Evaluation against benchmark methods
+    tool: Custom Python evaluation script
+    algorithm: Precision-recall analysis, F1-score, sensitivity/specificity calculation
+    parameters: ground_truth_definition=manually curated features or spiked standards, iou_threshold=0.5
+    input: detected features + ground truth annotations
+    output: performance metrics (F1, sensitivity, specificity)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No public code repository or implementation details provided
+  - No access to training datasets or ground truth annotations
+  - No specification of network architecture hyperparameters (e.g., learning rate, batch size, epochs)
+  - No description of data preprocessing steps to generate pseudo-color images (e.g., binning resolution, normalization method, color mapping)

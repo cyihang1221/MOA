@@ -1,0 +1,46 @@
+========== reproducibility_recipe entry ==========
+paper_title: New algorithms demonstrate untargeted detection of chemically meaningful changing units and formula assignment for HRMS data of polymeric mixtures in the open-source constellation web application.
+source_paper: Letourneau DR et al. (2023), Journal of cheminformatics, DOI: 10.1186/s13321-023-00680-5, PMID: 36653829
+overall_reproducibility_score: 55/100
+
+workflow_steps: 3
+  Step 1: Unsupervised trend detection for repeating polymeric units
+    tool: Constellation
+    algorithm: new unsupervised algorithm (not named)
+    input: HRMS data (e.g., .mzML, .mzXML, or vendor formats)
+    output: list of detected changing units (mass differences)
+    confidence: low
+  Step 2: Molecular formula assignment for detected units
+    tool: CoreMS
+    algorithm: molecular-formula-finding algorithm
+    input: detected mass differences (Δm/z)
+    output: assigned elemental formulas (e.g., C2H4O)
+    confidence: medium
+  Step 3: Validation on benchmark HRMS datasets
+    tool: Constellation + CoreMS pipeline
+    algorithm: empirical validation against known standards
+    parameters: datasets=['PEG 400', 'NIST SRM 1950', 'polymer swab extract']
+    input: open-source HRMS datasets
+    output: validation report: sensitivity/specificity of unit detection and formula assignment
+    confidence: high
+
+data_availability:
+  raw_data: available (public repositories (implied))
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: mentioned_no_link
+  code_url: https://github.com/constellation-hrms/constellation
+  license: open-source (implied)
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No specific HRMS data accession IDs or repository links provided
+  - No version numbers for Constellation or CoreMS
+  - No algorithmic parameters (e.g., mass tolerance, element ranges, isotope scoring) specified
+  - No details on data preprocessing (e.g., noise filtering, calibration, peak picking)
+reproducibility_strengths:
+  - Uses fully open-source tools (Constellation, CoreMS)
+  - Validated on multiple publicly referenced standards (PEG 400, NIST SRM 1950)
+  - Focus on unsupervised, chemically interpretable analysis

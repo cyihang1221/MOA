@@ -1,0 +1,59 @@
+========== reproducibility_recipe entry ==========
+paper_title: Dual column chromatography combined with high-resolution mass spectrometry improves coverage of non-targeted analysis of plant root exudates.
+source_paper: Bennett AA et al. (2024), Analytica chimica acta, DOI: 10.1016/j.aca.2024.343126, PMID: 39266059
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Sample extraction and cleanup
+    tool: manual protocol
+    parameters: growth_medium=Hoagland's solution, growth_duration_days=14, extraction_sequence=['water', '24-h regeneration', 'methanol'], purpose_of_second_extraction=reduce ion suppression and retention time shifting
+    input: plant root exudate samples
+    output: extracted metabolite solutions
+    confidence: high
+  Step 2: Chromatographic separation
+    tool: LC system with dual column setup
+    parameters: column_1=pentafluorophenyl (PFP), column_2=porous graphitic carbon (PGC), comparison_method=single-column (PFP only) vs. dual-column (PFP + PGC), sample_cleanup_prior_to_injection=removal of high ionic strength nutrient solution
+    input: extracted metabolite solutions
+    output: chromatographic raw data (.raw or equivalent)
+    confidence: high
+  Step 3: Data acquisition
+    tool: high-resolution mass spectrometry
+    parameters: ionization_mode=not specified, mass_resolution=high-resolution (no numeric value given), acquisition_mode=full-scan MS (implied by non-targeted analysis)
+    input: chromatographic eluent
+    output: raw mass spectrometry files
+    confidence: medium
+  Step 4: Data preprocessing and feature detection
+    tool: three preprocessing methods: targeted, proprietary, open-source
+    parameters: mock_compound_set_size=43, confidence_level_1_identifications=True, performance_metric=number of correctly identified mock compounds
+    input: raw mass spectrometry files
+    output: feature table (peak list with m/z, RT, intensity)
+    confidence: low
+  Step 5: Compound identification confidence assessment
+    tool: confidence level 1 annotation criteria
+    parameters: confidence_level_1_criteria=not defined in text
+    input: feature table
+    output: annotated metabolite list (confidence level 1)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited or referenced
+  - No details on HRMS instrument model, resolution specs, or acquisition parameters
+  - No description of chromatographic gradient, flow rate, temperature, or injection volume
+  - No specification of which 'targeted', 'proprietary', or 'open-source' preprocessing tools were used
+  - Confidence level 1 annotation criteria undefined
+  - Ionization mode (ESI+/−), polarity switching, or fragmentation method (DDA/DIA) not stated
+  - No repository accession or public data link provided
+reproducibility_strengths:
+  - Clear experimental design (Hoagland’s growth, two-step extraction)
+  - Explicit comparison of single vs. dual column chromatography
+  - Quantitative benchmark using 43 mock root exudate compounds
+  - Performance reporting per preprocessing approach (43/31/38 hits)

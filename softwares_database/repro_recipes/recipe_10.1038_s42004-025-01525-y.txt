@@ -1,0 +1,78 @@
+========== reproducibility_recipe entry ==========
+paper_title: Dual fragmentation via collision-induced and oxygen attachment dissociations using water and its radicals for C=C position-resolved lipidomics.
+source_paper: Takeda H et al. (2025), Communications chemistry, DOI: 10.1038/s42004-025-01525-y, PMID: 40360765
+overall_reproducibility_score: 42/100
+
+workflow_steps: 7
+  Step 1: Lipid extraction
+    tool: Bligh and Dyer method
+    algorithm: liquid-liquid extraction
+    parameters: solvent_ratio_vv=MeOH/CHCl3/H2O = 10:4:4, sonication_time_min=5, centrifugation_g=16000, centrifugation_temp_c=4, centrifugation_time_min=5, second_phase_ratio_vv=CHCl3:H2O = 235:155, second_centri_time_min=15, internal_standard_dilution_factor=200, EquiSPLASH_concentration_ng_ml=500
+    input: frozen brain tissue
+    output: lipid extract in MeOH
+    confidence: high
+  Step 2: LC-MS acquisition (method optimization)
+    tool: Shimadzu LCMS-9030 with OAD RADICAL SOURCE I
+    algorithm: dual fragmentation (CID + OAD)
+    parameters: ion_mode=['positive', 'negative'], injection_volume_ul=1, mobile_phase_A=MeCN/MeOH/H2O (1:1:3 v/v/v) + 10 nM EDTA + 5 mM ammonium acetate, mobile_phase_B=MeCN/IPA (1:9 v/v) + 10 nM EDTA + 5 mM ammonium acetate, flow_rate_ul_min=600, column=Unison UK-C18 MF (50 × 2.0 mm, 3 μm), gradient_profile_min=[[0.1, 0.1], [0.2, 15], [1.1, 30], [1.4, 48], [5.6, 82], [6.9, 99.9], [7.1, 99.9], [7.2, 0.1], [8.6, 0.1]], column_temperature_c=65, post_column_adduct_reagent=50% MeOH + 200 μM sodium acetate (10–50 μL/min), nebulizing_gas_flow_l_min=3.0, heating_gas_flow_l_min=10.0, drying_gas_flow_l_min=10.0, interface_temperature_c=300, DL_temperature_c=250, heat_block_temperature_c=400, interface_voltage_kv={'positive': 4, 'negative': -4}, Q1_resolution_da=4, TOF_mass_range_mz=[75, 1250], MS_scan_event_time_ms=200, MS_MS_scan_event_time_ms=100, CID_gas_pressure_kpa={'H2O_radicals': 17, 'Ar': 230}, collision_cell_Ar_partial_pressure_pa={'high': 0.2, 'low': 0.04}, H2O_partial_pressure_pa=0.2, H2_gas_partial_pressure_pa=0.04
+    input: lipid extract in MeOH
+    output: raw .lcd/.qgd files (Shimadzu native format)
+    confidence: high
+  Step 3: LC-MS acquisition (biological samples)
+    tool: Shimadzu LCMS-9030 with OAD RADICAL SOURCE I
+    algorithm: OAciD dual fragmentation
+    parameters: injection_volume_ul=2, mobile_phase_A=MeCN/MeOH/H2O (1:1:3 v/v/v) + 10 nM EDTA + 5 mM ammonium acetate, mobile_phase_B=MeCN/IPA (1:9 v/v) + 10 nM EDTA + 5 mM ammonium acetate, flow_rate_ul_min=300, column=Unison UK-C18 MF (50 × 2.0 mm, 3 μm), gradient_profile_min=[[1.0, 0.5], [5.0, 40], [7.5, 64], [12.0, 71], [12.5, 82.5], [19.0, 85], [20.0, 99], [22.0, 99], [22.1, 0.5], [25.0, 0.5]], column_temperature_c=45, nebulizing_gas_flow_l_min=3.0, heating_gas_flow_l_min=10.0, drying_gas_flow_l_min=10.0, interface_temperature_c=300, DL_temperature_c=250, heat_block_temperature_c=400, interface_voltage_kv={'positive': 4, 'negative': -4}, Q1_resolution_da=4, TOF_mass_range_mz=[75, 1250], MS_scan_event_time_ms=200, MS_MS_scan_event_time_ms=100, CID_gas_pressure_kpa={'H2O_radicals': 17, 'Ar': 230}, collision_cell_Ar_partial_pressure_pa={'high': 0.2, 'low': 0.04}, H2O_partial_pressure_pa=0.2, H2_gas_partial_pressure_pa=0.04
+    input: lipid extract in MeOH
+    output: raw .lcd/.qgd files (Shimadzu native format)
+    confidence: high
+  Step 4: MS/MS structural validation
+    tool: SCIEX ZenoTOF 7600
+    algorithm: electron-activated dissociation (EAD) + CID
+    parameters: ion_source_gas1_psi=40, ion_source_gas2_psi=80, curtain_gas_psi=30, CAD_gas=7, temperature_c=250, polarity=positive, spray_voltage_v=5500, declustering_potential_v=80, collision_energy_v=10, mass_range_mz_MS1=[75, 1250], mass_range_mz_MS2=[100, 1250], accumulation_time_ms_MS1=200, accumulation_time_ms_MS2=100, time_bins_to_sum_MS1=4, time_bins_to_sum_MS2=8, electron_beam_current_na=7000, zeno_threshold_cps=1000000, kinetic_energy_ev=[14, 18], EAD_RF_da=150, reaction_time_ms=98
+    input: selected lipid standards (e.g., PC 16:0_16:1, PC 16:0_18:1)
+    output: high-resolution MS/MS spectra for C=C position confirmation
+    confidence: high
+  Step 5: Peak detection and alignment
+    tool: MS-DIAL 5.1 (v5.1)
+    algorithm: centroid-based peak picking
+    parameters: minimum_peak_height=100, retention_time_tolerance_min=0.15, MS1_mass_tolerance_da=0.01, MS2_mass_tolerance_da=0.025
+    input: raw .lcd/.qgd files
+    output: feature table (m/z, RT, intensity)
+    confidence: high
+  Step 6: Lipid annotation with C=C position resolution
+    tool: MS-DIAL 5.1 with theoretical OAD fragment library (v5.1)
+    algorithm: spectral matching against in silico OAD/CID fragment libraries
+    parameters: fragment_library=theoretical OAciD fragments implemented in MS-DIAL 5, adducts_per_subclass=listed in Supplementary Data 4, manual_curation_required=True
+    input: feature table + MS/MS spectra
+    output: C=C position-resolved lipid annotation table (e.g., PC 16:0_18:1(Δ9))
+    confidence: medium
+  Step 7: Data normalization and quantification
+    tool: MS-DIAL 5.1 / custom calculation (v5.1)
+    algorithm: dry weight + internal standard (EquiSPLASH)-based normalization
+    parameters: normalization_basis=['dry_weight_of_tissue', 'EquiSPLASH_ion_abundance'], quantification_level=LSI Level 3, internal_standards=listed in Supplementary Data 4
+    input: C=C position-resolved lipid annotation table
+    output: normalized quantitative lipidome matrix
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository (e.g., MetaboLights, MassIVE)
+  - Shimadzu .lcd/.qgd raw files require proprietary software (LabSolutions) for conversion — no open converter specified
+  - OAD RADICAL SOURCE I is proprietary hardware with undocumented gas mixing/pressure control firmware
+  - No access provided to the in-house theoretical OAD fragment library implemented in MS-DIAL 5
+  - Supplementary Data 4 referenced but not included in text or linked; critical parameters (adducts per subclass, internal standards) remain inaccessible
+  - ZenoTOF 7600 EAD method details (e.g., electron energy calibration, pulse timing) insufficient for replication
+  - No description of statistical analysis pipeline (e.g., differential abundance testing, isomer ratio estimation)
+reproducibility_strengths:
+  - Detailed LC gradient profiles (with time/resolution), column specs, and mobile phase compositions provided
+  - Explicit MS instrument parameters (voltages, temperatures, gas flows, pressures) reported for both Shimadzu and SCIEX platforms
+  - Use of community-standard lipid nomenclature (Lipidomics Standards Initiative)
+  - Reference to established extraction (Bligh & Dyer) and internal standard (EquiSPLASH/UltimateSPLASH) protocols

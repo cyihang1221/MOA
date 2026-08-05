@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: LibGen: Generating High Quality Spectral Libraries of Natural Products for EAD-, UVPD-, and HCD-High Resolution Mass Spectrometers.
+source_paper: Kong F et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c02263, PMID: 37939222
+overall_reproducibility_score: 50/100
+
+workflow_steps: 4
+  Step 1: Mass error correction
+    tool: LibGen
+    algorithm: mass recalibration using reference ions or internal calibration
+    input: raw MS/MS spectra (.mzML or vendor format)
+    output: mass-calibrated MS/MS spectra
+    confidence: low
+  Step 2: Denoising via subformula assignment
+    tool: LibGen
+    algorithm: subformula-based noise filtering
+    parameters: noise_threshold_intensity_fraction=0.1
+    input: mass-calibrated MS/MS spectra
+    output: denoised MS/MS spectra
+    confidence: high
+  Step 3: Spectral quality control
+    tool: LibGen
+    algorithm: explained intensity and spectral entropy calculation
+    parameters: explained_intensity_threshold=None, spectral_entropy_threshold=None, min_quality_fraction=0.1
+    input: denoised MS/MS spectra
+    output: quality-filtered spectral library entries
+    confidence: medium
+  Step 4: Library compilation and curation
+    tool: LibGen
+    algorithm: automated spectral curation pipeline
+    parameters: structural_diversity_filter=Tanimoto similarity < 0.2, chemical_class_coverage=140 classes
+    input: quality-filtered spectra + compound metadata (SMILES, InChI, class)
+    output: curated spectral library (MassBank format)
+    confidence: medium
+
+data_availability:
+  raw_data: available (MassBank.us)
+  processed_data: available (MassBank.us)
+  metadata: available
+  data_urls: https://massbank.us
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - LibGen source code not publicly available or linked
+  - No version number or commit hash for LibGen
+  - No details on mass error correction algorithm (e.g., calibration method, reference ions)
+  - No quantitative thresholds reported for explained intensity or spectral entropy QC metrics
+  - Instrument-specific acquisition parameters (e.g., collision energy, resolution, AGC targets) not specified for HCD/UVPD/EAD
+reproducibility_strengths:
+  - Three curated spectral libraries publicly available at MassBank.us
+  - Clear quality filter criterion: spectra with >10% noise intensity excluded
+  - Structural diversity quantified via Tanimoto similarity (<0.2), enabling reproducible chemical space assessment

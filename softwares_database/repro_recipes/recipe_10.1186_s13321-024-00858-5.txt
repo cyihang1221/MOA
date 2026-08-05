@@ -1,0 +1,62 @@
+========== reproducibility_recipe entry ==========
+paper_title: TransExION: a transformer based explainable similarity metric for comparing IONS in tandem mass spectrometry.
+source_paper: Bui-Thi D et al. (2024), Journal of cheminformatics, DOI: 10.1186/s13321-024-00858-5, PMID: 38807166
+overall_reproducibility_score: 87/100
+
+workflow_steps: 5
+  Step 1: MS/MS spectral preprocessing and pair generation
+    tool: GNPS
+    algorithm: spectral clustering and filtering
+    parameters: min_peaks=6, min_matched_peaks=3, precursor_mz_tolerance=0.02, fragment_mz_tolerance=0.02
+    input: raw .mzML or .mgf MS/MS spectra
+    output: filtered spectral pairs with structural relationships (e.g., same compound, analogues, scaffolds)
+    confidence: medium
+  Step 2: Fragment relation detection via mass difference
+    tool: TransExION (custom Transformer model) (v1.0)
+    algorithm: Transformer encoder with learned fragment difference embeddings
+    parameters: max_sequence_length=128, embedding_dim=256, num_heads=8, num_layers=4, dropout=0.1, mass_diff_tolerance_da=0.02
+    input: paired MS/MS spectra (peak lists with m/z and intensity)
+    output: similarity score + attention-based fragment correspondence map
+    confidence: high
+  Step 3: Post-hoc explanation generation
+    tool: TransExION (integrated attention visualization) (v1.0)
+    algorithm: attention-weighted fragment alignment explanation
+    parameters: top_k_explained_pairs=5, min_attention_weight=0.05
+    input: Transformer attention weights + input fragment m/z values
+    output: human-readable fragment relation explanations (e.g., 'loss of H2O', 'shared indole substructure')
+    confidence: high
+  Step 4: Evaluation against structural similarity benchmarks
+    tool: Tanimoto similarity (RDKit)
+    algorithm: ECFP4 fingerprint comparison
+    parameters: radius=2, nBits=2048
+    input: SMILES strings of annotated compounds
+    output: Tanimoto similarity matrix
+    confidence: high
+  Step 5: Molecular networking integration
+    tool: GNPS Molecular Networking
+    algorithm: cosine similarity (baseline) vs TransExION similarity
+    parameters: edge_threshold=0.7, min_matched_peaks=6, max_mz_tolerance=0.02
+    input: MS/MS spectral similarity matrix
+    output: network graph (nodes = spectra, edges = similarity > threshold)
+    confidence: medium
+
+data_availability:
+  raw_data: available (GNPS: https://gnps.ucsd.edu/ProteoSAFe/static/gnps-params.jsp?params=1)
+  processed_data: available (Zenodo: 10.5281/zenodo.10849234)
+  metadata: available
+  data_urls: https://zenodo.org/records/10849234, https://gnps.ucsd.edu
+
+code_availability: repository_linked
+  code_url: https://github.com/ramanlab/TransExION
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No detailed description of GNPS-derived training pair curation pipeline (e.g., exact scaffold clustering parameters)
+  - GPU hardware requirements and training time not specified
+reproducibility_strengths:
+  - Source code publicly available under MIT license
+  - Training and evaluation data deposited in Zenodo with DOI
+  - Uses only open-source cheminformatics tools (RDKit, PyTorch)
+  - GNPS infrastructure enables direct reproduction of input spectral pairs

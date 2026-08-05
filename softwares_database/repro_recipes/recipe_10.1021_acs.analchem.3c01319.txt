@@ -1,0 +1,43 @@
+========== reproducibility_recipe entry ==========
+paper_title: Glycoproteomics-Compatible MS/MS-Based Quantification of Glycopeptide Isomers.
+source_paper: Maliepaard JCL et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c01319, PMID: 37319314
+overall_reproducibility_score: 30/100
+
+workflow_steps: 3
+  Step 1: LC-MS/MS acquisition with collision energy gradients
+    tool: LC-MS/MS platform (unspecified vendor)
+    algorithm: collision energy gradient ramping
+    parameters: collision_energy_gradient=explicitly used but not numerically specified
+    input: isomerically defined glycopeptide standards and mixtures
+    output: MS/MS spectra across collision energy series
+    confidence: low
+  Step 2: Fragmentation behavior analysis for isomer discrimination
+    tool: custom interpretation of MS/MS spectra
+    algorithm: empirical comparison of galactosylation/sialylation branching and linkage-specific fragment ion intensities
+    parameters: fragment_ions_monitored=['galactose-related', 'sialic_acid_linkage-dependent']
+    input: MS/MS spectra across collision energy gradients
+    output: isomer-discriminatory component variables
+    confidence: medium
+  Step 3: Relative quantification of glycopeptide isomers
+    tool: custom quantitative method
+    algorithm: ratio calculation based on isomer-specific component variables
+    parameters: assumption=quantification largely independent of peptide portion for small peptides
+    input: component variables derived from fragmentation behavior
+    output: isomer ratios in mixtures
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No instrument parameters (e.g., CE ramp range, scan settings, LC gradient) specified
+  - No software tools named for data processing or quantification
+  - No public data deposition reported
+  - No code or scripts shared
+  - Isomer standards not described in terms of source or preparation

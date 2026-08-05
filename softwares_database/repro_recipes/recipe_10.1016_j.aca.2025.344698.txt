@@ -1,0 +1,45 @@
+========== reproducibility_recipe entry ==========
+paper_title: DIATAGeR: Triacylglycerol annotation of data-independent acquisition based lipidomics.
+source_paper: Lee VCL et al. (2025), Analytica chimica acta, DOI: 10.1016/j.aca.2025.344698, PMID: 41135998
+overall_reproducibility_score: 75/100
+
+workflow_steps: 3
+  Step 1: TG-centric spectral matching
+    tool: DIATAGeR
+    algorithm: logistic regression machine learning
+    parameters: fdr_threshold=0.1, target_decoy=True
+    input: DIA MS2 spectra (vendor-neutral format, e.g., mzML)
+    output: molecular-species-level TG annotations with FDR-controlled confidence scores
+    confidence: high
+  Step 2: Reference database search
+    tool: DIATAGeR
+    algorithm: TG-centric target search
+    parameters: database_customizable=True
+    input: custom TG reference database (e.g., defined fatty acyl combinations)
+    output: matched TG candidates with retention time-aligned spectral evidence
+    confidence: medium
+  Step 3: False discovery rate control
+    tool: DIATAGeR
+    algorithm: target-decoy approach
+    input: TG candidate matches (target + decoy)
+    output: FDR-filtered TG identifications (FDR < 0.1)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/Velenosi-Lab/DIATAGeR
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw DIA lipidomics data (liver/plasma mouse MASH study) not deposited in public repository
+  - No details on LC gradient, column, or instrument parameters for method reproducibility
+  - No specification of logistic regression feature set (e.g., fragment intensities, RT alignment metrics, isotope patterns)
+reproducibility_strengths:
+  - DIATAGeR is open-source and publicly available on GitHub
+  - Uses vendor-neutral input (mzML), enabling broad instrument compatibility
+  - Explicit FDR threshold (0.1) and target-decoy strategy reported

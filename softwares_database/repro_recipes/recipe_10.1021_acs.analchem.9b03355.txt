@@ -1,0 +1,45 @@
+========== reproducibility_recipe entry ==========
+paper_title: XY-Meta: A High-Efficiency Search Engine for Large-Scale Metabolome Annotation with Accurate FDR Estimation.
+source_paper: Li D et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.9b03355, PMID: 32212716
+overall_reproducibility_score: 45/100
+
+workflow_steps: 3
+  Step 1: Decoy spectrum generation
+    tool: XY-Meta
+    algorithm: forged spectra generation preserving original reference signals to simulate isomers
+    input: reference target spectral library (e.g., GNPS)
+    output: decoy spectral database
+    confidence: medium
+  Step 2: Database search
+    tool: XY-Meta
+    algorithm: spectral matching against combined target + decoy database
+    input: experimental MS/MS spectra (.mzML or .mgf)
+    output: matched spectral annotations with scores
+    confidence: medium
+  Step 3: FDR estimation and control
+    tool: XY-Meta
+    algorithm: target-decoy strategy with forged decoys
+    parameters: fdr_threshold=0.01
+    input: database search results (target/decoy hit list)
+    output: FDR-filtered metabolite annotations
+    confidence: high
+
+data_availability:
+  raw_data: available (GNPS)
+  processed_data: not_mentioned
+  metadata: not_mentioned
+  data_urls: https://gnps.ucsd.edu
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - XY-Meta implementation not publicly released or linked
+  - No version number or source code repository provided
+  - No parameters specified for decoy generation (e.g., noise model, peak retention, fragmentation simulation settings)
+  - GNPS accession IDs for the 35 benchmark datasets not listed
+reproducibility_strengths:
+  - Method evaluated on public GNPS data
+  - Clear FDR threshold recommendation (0.01) for large-scale annotation
+  - Benchmarked against Passatutto framework

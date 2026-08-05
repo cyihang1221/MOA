@@ -1,0 +1,31 @@
+========== reproducibility_recipe entry ==========
+paper_title: AllCCS2: Curation of Ion Mobility Collision Cross-Section Atlas for Small Molecules Using Comprehensive Molecular Representations.
+source_paper: Zhang H et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c02267, PMID: 37664900
+overall_reproducibility_score: 85/100
+
+workflow_steps: 0
+
+data_availability:
+  raw_data: available (AllCCS2 database)
+  processed_data: available (AllCCS2 database)
+  metadata: available
+  data_urls: http://allccs.zhulab.cn/
+
+code_availability: repository_linked
+  code_url: http://allccs.zhulab.cn/
+  license: CC BY-NC 4.0
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of training data preprocessing pipeline (e.g., CCS value harmonization across DTIMS/TWIMS/TIMS platforms)
+  - No details on neural network architecture (layer types, widths, activation functions, optimizer settings)
+  - No information on molecular representation generation (e.g., GCN implementation, descriptor sets used, MS feature extraction method)
+  - No code repository link (e.g., GitHub) — only web interface provided
+  - No validation of model reproducibility (e.g., random seed control, train/validation/test splits)
+reproducibility_strengths:
+  - AllCCS2 database and prediction tools publicly accessible via web interface
+  - Training data size and composition explicitly reported (10,384 records, 7713 unified CCS values)
+  - Performance metrics fully reported (MedRE per dataset split)
+  - Cross-platform compatibility (DTIMS, TWIMS, TIMS) documented
+  - Uncertainty analysis methodology described at high level (structure similarity + model variation)

@@ -1,0 +1,84 @@
+========== reproducibility_recipe entry ==========
+paper_title: HypoRiPPAtlas as an Atlas of hypothetical natural products for mass spectrometry database search.
+source_paper: Lee YY et al. (2023), Nature communications, DOI: 10.1038/s41467-023-39905-4, PMID: 37452020
+overall_reproducibility_score: 82/100
+
+workflow_steps: 8
+  Step 1: BGC extraction and import
+    tool: IMG-ABC, antiSMASH-DB, BiG-SLiCE, RefSeq/IMG-M
+    algorithm: Database import and genome mining
+    input: microbial/plant genome assemblies (FASTA)
+    output: biosynthetic gene clusters (BGCs)
+    confidence: medium
+  Step 2: RiPP BGC identification using HMMs
+    tool: HMMER
+    algorithm: Hidden Markov Model scanning
+    parameters: evalue_threshold=1e-05
+    input: genome sequences (FASTA)
+    output: RiPP-associated BGCs with enzyme domain annotations
+    confidence: high
+  Step 3: ORF prediction from BGCs
+    tool: bgc2orf
+    algorithm: CNN-LSTM sequence classification
+    parameters: min_orf_length_aa=10, probability_threshold=0.5, sequence_padding_length=200, embedding_dim=100, learning_rate_initial=0.001, learning_rate_decay=0.9, learning_rate_decay_epoch_interval=40
+    input: BGC genomic regions
+    output: hypothetical structural ORFs (amino acid sequences)
+    confidence: high
+  Step 4: Core peptide detection from ORFs
+    tool: orf2core
+    algorithm: CNN-LSTM-CRF sequence labeling (cleavage site prediction)
+    parameters: core_length_range_aa=[3, 30], sequence_padding_length=200, embedding_dim=25, evalue_threshold_blast=0.001
+    input: ORF amino acid sequences
+    output: putative core peptides
+    confidence: high
+  Step 5: Hypothetical RiPP structure generation
+    tool: core2ripp
+    algorithm: graph-based motif matching and substructure modification via subgraph isomorphism
+    parameters: modification_format=SMILES motif + disconnect/connect/add/remove commands, hydrogen_removal=True, atom_labeling_method=breadth-first traversal from first non-hydrogen atom
+    input: core peptides + tailoring enzyme annotations (domain HMM hits)
+    output: hypothetical RiPP molecular graphs → SMILES
+    confidence: high
+  Step 6: Fragmentation graph precomputation
+    tool: Dereplicator+
+    algorithm: in silico fragmentation tree generation
+    input: SMILES structures of hypothetical RiPPs
+    output: binary fragmentation graphs (.fgb files)
+    confidence: medium
+  Step 7: Tandem MS database search
+    tool: Dereplicator+ (GNPS-integrated)
+    algorithm: target-decoy spectral matching with Poisson-Binomial p-value approximation
+    parameters: fdr_method=target-decoy analysis, fragment_annotation_model=Bernoulli trials, scoring_distribution_assumption=Poisson-Binomial
+    input: LC-MS/MS spectra + HypoRiPPAtlas fragmentation graphs or SMILES
+    output: peptide-spectrum matches (PSMs) with FDR and p-values
+    confidence: high
+  Step 8: Molecular networking
+    tool: GNPS Feature-Based Molecular Networking
+    algorithm: cosine similarity clustering of MS/MS spectra
+    parameters: min_cosine_score=0.7, min_matched_peaks=6, max_shift_mz=1.0
+    input: feature table + MS/MS spectra
+    output: molecular network (Cytoscape-compatible .gml)
+    confidence: medium
+
+data_availability:
+  raw_data: available (GNPS)
+  processed_data: available (HypoRiPPAtlas website)
+  metadata: available
+  data_urls: https://hyporippatlas.ucsd.edu/, https://gnps.ucsd.edu/ProteoSAFe/static/gnps-splash.jsp
+
+code_availability: repository_linked
+  code_url: https://github.com/niemasd/seq2ripp
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No explicit accession ID provided for HypoRiPPAtlas release (e.g., Zenodo DOI or MetaboLights ID)
+  - Exact Dereplicator+ version used not specified (only 'Dereplicator+' referenced)
+  - GNPS workflow parameters (e.g., feature detection settings, cosine thresholds) not fully detailed in Methods
+  - Supplementary Tables 5, 6 and Figures 23–24 cited but not embedded or linked in Methods text
+reproducibility_strengths:
+  - Full source code for seq2ripp publicly available on GitHub under MIT license
+  - All algorithmic architectures (CNN-LSTM-CRF, graph modification logic) explicitly described with hyperparameters
+  - HMM profile count (152), training data sizes (2,726 RiPP / 19,224 non-RiPP ORFs; 3,169 cleavage-labeled ORFs), and literature sources comprehensively documented
+  - HypoRiPPAtlas accessible via public web interface with taxon-filtered SMILES and fragmentation graph downloads
+  - GNPS integration ensures standardized, reproducible spectral search infrastructure

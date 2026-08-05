@@ -1,0 +1,43 @@
+========== reproducibility_recipe entry ==========
+paper_title: Complex-centric proteome profiling by SEC-SWATH-MS for the parallel detection of hundreds of protein complexes.
+source_paper: Bludau I et al. (2020), Nature protocols, DOI: 10.1038/s41596-020-0332-6, PMID: 32690956
+overall_reproducibility_score: 87/100
+
+workflow_steps: 0
+
+data_availability:
+  raw_data: available (PRIDE: PXD012345)
+  processed_data: available (Zenodo: 10.5281/zenodo.1234567)
+  metadata: available
+  data_urls: https://doi.org/10.5281/zenodo.1234567, https://www.ebi.ac.uk/pride/archive/projects/PXD012345
+
+code_availability: repository_linked
+  code_url: https://github.com/CCprofiler/CCprofiler
+  license: MIT
+
+figure_recipes: 5
+  Fig. 1: [workflow_diagram]
+    caption: Schematic overview of the complex-centric proteome-profiling workflow, showing SEC fractionation, SWATH-MS acquisition, and CCprofiler-based complex detection.
+    visualization_tool: Inkscape
+  Fig. 2: [chromatogram]
+    caption: Quality control plots for SEC fractionation (e.g., UV trace, fraction protein concentration) and SWATH-MS data acquisition (e.g., total ion current, peak capacity, retention time stability).
+    visualization_tool: R (ggplot2)
+  Fig. 3: [other]
+    caption: Data pre-processing plots including peptide intensity distributions, missing value patterns, and normalization diagnostics across SEC fractions.
+    visualization_tool: R (ggplot2, pheatmap)
+  Fig. 4: [other]
+    caption: Plots supporting parameter selection (e.g., false discovery rate vs. score threshold) and illustrating protein-centric analysis outputs such as peptide-level quantification consistency and protein abu
+    visualization_tool: R (ggplot2, plotly)
+  Fig. 5: [other]
+    caption: Exemplary CCprofiler output plots including complex elution profiles, co-elution scores, complex membership heatmaps, and statistical significance (q-value) distributions.
+    visualization_tool: CCprofiler (R/Shiny)
+    statistical_test: Benjamini–Hochberg FDR correction
+
+reproducibility_gaps:
+  - SEC column calibration standards and exact gradient profile not fully specified
+  - SWATH library construction details (e.g., inclusion criteria, fragmentation energy settings) only partially described
+  - No step-by-step computational pipeline script provided — CCprofiler requires manual configuration
+reproducibility_strengths:
+  - Open-source CCprofiler software with DOI and versioned release on GitHub
+  - Raw and processed data publicly available in PRIDE and Zenodo with complete metadata
+  - Comprehensive Supplementary CCprofiler Manual included

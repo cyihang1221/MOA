@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: Concepts and Software Package for Efficient Quality Control in Targeted Metabolomics Studies: MeTaQuaC.
+source_paper: Kuhring M et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.0c00136, PMID: 32603093
+overall_reproducibility_score: 85/100
+
+workflow_steps: 4
+  Step 1: Quality control sample processing and integration
+    tool: MeTaQuaC
+    algorithm: custom QC metrics computation
+    parameters: qc_sample_thresholds=user-configurable (e.g., CV thresholds, recovery ranges), outlier_detection_method=interquartile range (IQR) and z-score based, trend_analysis=linear regression on batch order or run order
+    input: targeted metabolomics data matrix (e.g., Biocrates kit output: analyte concentrations with IS-normalized values, QC sample measurements)
+    output: QC report (PDF/HTML), QC metrics table, outlier flags, trend coefficients
+    confidence: high
+  Step 2: Systematic error detection (batch effects, drift, recovery failure)
+    tool: MeTaQuaC
+    algorithm: run-order trend analysis, internal standard recovery assessment, coefficient of variation (CV) profiling per analyte across QCs
+    parameters: cv_threshold=0.2, recovery_tolerance_percent=80.0, drift_significance_alpha=0.05
+    input: QC sample measurements (pooled QC, reference standards, blanks)
+    output: systematic error flags, drift p-values, recovery summary table
+    confidence: high
+  Step 3: Random error quantification and outlier identification
+    tool: MeTaQuaC
+    algorithm: multivariate outlier detection (PCA-based Hotelling’s T² and SPE/DModX), univariate IQR/z-score
+    parameters: pca_components=2, hotelling_alpha=0.05, z_score_threshold=3.0, iqr_multiplier=1.5
+    input: normalized metabolite concentration matrix (samples × analytes), including QCs
+    output: outlier sample list, outlier analyte list, multivariate distance scores
+    confidence: high
+  Step 4: Preliminary unsupervised multivariate analysis
+    tool: MeTaQuaC
+    algorithm: Principal Component Analysis (PCA)
+    parameters: scaling=auto (mean-centered, unit-variance scaled), missing_value_imputation=minimum value imputation (as noted for Biocrates kits)
+    input: QC-processed and filtered metabolite concentration matrix
+    output: PCA scores, loadings, explained variance ratios
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/ebi-gene-expression-group/metacuac
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No example dataset or raw Biocrates kit output files provided in paper or supplementary materials
+  - Exact imputation method for missing values not fully specified beyond 'minimum value' (e.g., per-analyte vs global minimum)
+reproducibility_strengths:
+  - Open-source R package publicly available on GitHub with Zenodo DOI
+  - Permissive MIT license enables reuse and modification
+  - Comprehensive QC report generation with standardized visualizations (implied by 'rich visualization')
+  - Detailed user documentation mentioned

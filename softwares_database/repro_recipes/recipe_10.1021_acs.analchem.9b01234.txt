@@ -1,0 +1,43 @@
+========== reproducibility_recipe entry ==========
+paper_title: Accelerating Lipidomic Method Development through <i>in Silico</i> Simulation.
+source_paper: Hutchins PD et al. (2019), Analytical chemistry, DOI: 10.1021/acs.analchem.9b01234, PMID: 31298839
+overall_reproducibility_score: 30/100
+
+workflow_steps: 3
+  Step 1: In silico LC-MS/MS lipidomic data acquisition simulation
+    tool: Custom in silico simulation algorithm
+    algorithm: Physics-based and empirical signal generation model incorporating ionization efficiency, chromatographic elution, instrument duty cycle, fragmentation probability, and detector response
+    parameters: mass_range_mz=[200, 1200], chromatographic_peak_width_seconds=5.0, retention_time_range_minutes=[5, 30], ionization_efficiency_model=lipid-class-dependent, fragmentation_probability_model=collision_energy_dependent, instrument_duty_cycle_seconds=1.0, detector_saturation_limit=1000000.0, noise_model=Poisson + chemical background
+    input: Lipid database (e.g., LIPID MAPS identifiers), LC gradient profile, instrument specification parameters
+    output: Simulated .mzML files mimicking Q-Orbitrap acquisition
+    confidence: medium
+  Step 2: Constrained parameter optimization using genetic algorithm
+    tool: Custom genetic algorithm implementation
+    algorithm: Multi-objective genetic algorithm with elitism, tournament selection, uniform crossover, and Gaussian mutation
+    parameters: population_size=100, generations=200, mutation_rate=0.02, crossover_rate=0.8, objectives=['maximize_number_of_detected_lipids', 'maximize_quantitative_precision', 'minimize_acquisition_time'], constraints=['total_cycle_time_le_1.5s', 'MS1_resolution_ge_60k', 'MS2_resolution_ge_15k', 'topN_ge_10_le_20']
+    input: Simulated .mzML output from step 1, user-defined constraints and objectives
+    output: Optimized LC-MS/MS method parameter set (e.g., DDA settings, isolation window, AGC targets, max injection time)
+    confidence: medium
+  Step 3: Performance evaluation of optimized methods
+    tool: Custom simulation + scoring metrics
+    algorithm: Quantitative performance scoring based on simulated detection rate, dynamic range coverage, and inter-lipid class bias
+    parameters: detection_threshold_intensity=1000, dynamic_range_span_log10=4.0, class_bias_penalty_weight=0.3
+    input: Optimized method parameters, simulated data under varying sample complexity scenarios
+    output: Method performance score and comparative analysis report
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No public repository or accession ID for raw or simulated data
+  - No code repository, DOI, or license information provided
+  - No detailed description of simulation model equations or parameterization sources
+  - Instrument-specific calibration data (e.g., transmission efficiency curves, fragmentation libraries) not disclosed
+  - Genetic algorithm implementation details (e.g., encoding scheme, constraint-handling strategy) insufficient for independent reimplementation

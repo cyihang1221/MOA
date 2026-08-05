@@ -1,0 +1,86 @@
+========== reproducibility_recipe entry ==========
+paper_title: Elucidating reactive sugar-intermediates by mass spectrometry.
+source_paper: Chang CW et al. (2025), Communications chemistry, DOI: 10.1038/s42004-025-01467-5, PMID: 40055429
+overall_reproducibility_score: 42/100
+
+workflow_steps: 8
+  Step 1: Candidate structure generation
+    tool: chemical intuition / molecule databases
+    algorithm: manual curation / database search
+    input: chemical knowledge, reaction mechanisms, molecular databases
+    output: list of candidate glycosyl cation structures
+    confidence: low
+  Step 2: Conformational search
+    tool: CREST
+    algorithm: Conformer-Rotamer Ensemble Sampling
+    parameters: method=GFN2-xTB, temperature=300
+    input: candidate molecular structures
+    output: conformer ensemble
+    confidence: medium
+  Step 3: Conformational search (alternative)
+    tool: FAFOOM
+    algorithm: genetic algorithm
+    input: candidate molecular structures
+    output: conformer ensemble
+    confidence: low
+  Step 4: Conformational search (alternative)
+    tool: MMFF94 force field
+    algorithm: distance geometry + classical force field
+    input: candidate molecular structures
+    output: conformer ensemble
+    confidence: medium
+  Step 5: Preliminary geometry optimization
+    tool: Gaussian 16 or ORCA
+    algorithm: semi-empirical PM6
+    input: conformer ensemble
+    output: preliminarily optimized conformers
+    confidence: medium
+  Step 6: High-level geometry optimization and frequency calculation
+    tool: Gaussian 16 or ORCA
+    algorithm: DFT B3LYP/6-311+G(d,p)
+    parameters: solvent_model=gas_phase, integration_grid=ultrafine
+    input: preliminarily optimized conformers
+    output: optimized geometries and harmonic frequencies
+    confidence: high
+  Step 7: Spectral processing
+    tool: custom scripts
+    algorithm: frequency scaling, Gaussian broadening, thermal corrections
+    parameters: scaling_factor=0.967, broadening_width_cm1=10, temperature_K=300
+    input: harmonic frequencies and relative energies
+    output: simulated IR spectra
+    confidence: medium
+  Step 8: Spectrum comparison and scoring
+    tool: scoring tools (e.g., SpecAlign, SpecFit, or custom)
+    algorithm: cross-correlation, RMSD, weighted similarity metrics
+    input: experimental IR spectrum, simulated IR spectra
+    output: ranked candidate assignments with similarity scores
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 2
+  Fig. 6: [workflow_diagram]
+    caption: General computational workflow to explore the conformational space of glycosyl cations and identify experimentally measured intermediates.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7, 8]
+    visualization_tool: unknown
+  Fig. 7A: [spectral_overlay]
+    caption: Comparison of experimental cryogenic IR spectrum of a glycosyl cation intermediate with simulated spectra of candidate structures, identifying the anhydro cation as best match.
+    produced_by_step: [6, 7, 8]
+    visualization_tool: unknown
+
+reproducibility_gaps:
+  - No raw or processed spectral data deposited or referenced
+  - No code or scripts for spectral processing (scaling, broadening) or scoring shared
+  - Specific CREST/Gaussian/ORCA input parameters (e.g., convergence criteria, SCF settings) not reported
+  - No details on how conformer ensembles were filtered (energy cutoff, RMSD threshold)
+  - Supplementary Table S1 is referenced but not provided in text and no accession/link given
+  - Commercial software (Gaussian 16, ORCA) required but version numbers and license constraints unspecified
+reproducibility_strengths:
+  - Open-access publication under CC-BY 4.0
+  - Explicit mention of open-source tools (CREST, GFN2-xTB, MMFF94)
+  - Clear stepwise description of computational workflow in Fig. 6

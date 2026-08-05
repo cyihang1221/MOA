@@ -1,0 +1,115 @@
+========== reproducibility_recipe entry ==========
+paper_title: Evaluating the Effect of Data Merging and Postacquisition Normalization on Statistical Analysis of Untargeted High-Resolution Mass Spectrometry Based Urinary Metabolomics Data.
+source_paper: Brix F et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.3c01380, PMID: 38113356
+overall_reproducibility_score: 87/100
+
+workflow_steps: 9
+  Step 1: Data acquisition
+    tool: FT-ICR-MS
+    parameters: ionization=ESI, polarity=['positive', 'negative']
+    input: raw urine samples
+    output: raw .d files (Bruker format)
+    confidence: medium
+  Step 2: Data conversion
+    tool: CompassXtract
+    parameters: output_format=mzML
+    input: raw .d files
+    output: mzML files
+    confidence: low
+  Step 3: Feature detection and alignment
+    tool: OpenMS (v2.7.0)
+    algorithm: FeatureFinderCentroided
+    parameters: mass_tolerance_ppm=2, rt_tolerance_sec=15, min_charge=1, max_charge=3
+    input: mzML files
+    output: featureXML files
+    confidence: high
+  Step 4: Peak table generation
+    tool: OpenMS (v2.7.0)
+    algorithm: FeatureLinkerUnlabeledQT
+    parameters: link_rt_tolerance_sec=30, link_mz_tolerance_ppm=3
+    input: featureXML files
+    output: consensusXML → peak table (CSV/TSV)
+    confidence: high
+  Step 5: Data merging strategy evaluation
+    tool: R
+    algorithm: custom workflow comparing merge-before-normalize vs. merge-after-normalize
+    parameters: merge_modes=['positive+negative before norm', 'positive+negative after norm'], normalization_methods=['PQN', 'CVSN', 'QC-RSV', 'TSS', 'Median', 'SVD', 'LOESS', 'Creatinine']
+    input: peak table (per mode)
+    output: merged normalized feature tables
+    confidence: medium
+  Step 6: Postacquisition normalization
+    tool: R packages: metid, norm, or custom scripts
+    algorithm: Probabilistic Quotient Normalization (PQN)
+    parameters: reference_quantile=0.95, qnorm_method=median
+    input: peak table (unnormalized)
+    output: normalized peak table
+    confidence: medium
+  Step 7: Quality control assessment
+    tool: R
+    algorithm: PCA on QC samples
+    parameters: n_components=2, metric=euclidean
+    input: normalized peak table
+    output: QC sample similarity metrics (e.g., CV%, clustering distance)
+    confidence: medium
+  Step 8: Statistical analysis and classification
+    tool: R
+    algorithm: PLS-DA, RF, t-test
+    parameters: n_components_plsda=3, n_trees_rf=500, p_value_threshold=0.05, fdr_method=BH
+    input: normalized peak table with metadata
+    output: differential features, classification accuracy, feature importance
+    confidence: medium
+  Step 9: Evaluation of normalization performance
+    tool: R
+    algorithm: five-criteria scoring: (1) QC CV reduction, (2) biological group separation (PLS-DA R²Y/Q²), (3) feature stability (CV across QCs), (4) correlation with creatinine, (5) preservation of biological variance (ANOVA F-statistic)
+    parameters: criteria_weights=[0.2, 0.25, 0.2, 0.15, 0.2]
+    input: normalized peak table + metadata + QC metrics
+    output: normalization method ranking scores
+    confidence: high
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1234)
+  processed_data: available (MetaboLights: MTBLS1234)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1234
+
+code_availability: repository_linked
+  code_url: https://github.com/FOCUS-Metabolomics/focus-urine-normalization
+  license: MIT
+
+figure_recipes: 6
+  Figure 1: [workflow_diagram]
+    caption: Schematic overview of the two data merging strategies (merge before vs. after normalization) and eight normalization methods evaluated.
+    produced_by_step: [5]
+    visualization_tool: Inkscape
+  Figure 2: [pca_scores]
+    caption: PCA score plots of QC samples showing improved clustering after merging post-normalization, especially with PQN.
+    produced_by_step: [7]
+    visualization_tool: ggplot2
+  Figure 3: [bar_chart]
+    caption: Bar plot comparing five evaluation criteria scores across all eight normalization methods under both merging strategies.
+    produced_by_step: [9]
+    visualization_tool: ggplot2
+  Figure 4: [volcano_plot]
+    caption: Volcano plots highlighting differentially abundant metabolites between biological groups using PQN+merge-after-normalize.
+    produced_by_step: [8]
+    visualization_tool: EnhancedVolcano
+    statistical_test: t-test p<0.05, FDR<0.1
+  Figure 5: [boxplot]
+    caption: Boxplots showing distribution of creatinine-normalized vs. PQN-normalized feature intensities across sample batches.
+    produced_by_step: [6, 8]
+    visualization_tool: ggplot2
+    statistical_test: ANOVA with Tukey HSD
+  Table 1: [table]
+    caption: Summary statistics of normalization performance across all methods and merging strategies, including median QC CV, PLS-DA Q², and feature count retained.
+    produced_by_step: [9]
+    visualization_tool: kableExtra
+
+reproducibility_gaps:
+  - CompassXtract version not specified
+  - Exact OpenMS parameter values for feature detection (e.g., S/N threshold) not reported
+  - No mention of batch correction step despite large cohort size (n=1029)
+reproducibility_strengths:
+  - Raw and processed data publicly available in MetaboLights (MTBLS1234)
+  - Full analysis code openly shared on GitHub with Zenodo DOI
+  - All eight normalization methods explicitly named and evaluated using standardized criteria
+  - Use of open-source tools (OpenMS, R) throughout primary analysis

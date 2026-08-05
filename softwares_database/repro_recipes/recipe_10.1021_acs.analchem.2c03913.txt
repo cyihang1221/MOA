@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: Unsupervised Pharmaceutical Polymorph Identification and Multicomponent Particle Mapping of ToF-SIMS Data by Non-Negative Matrix Factorization.
+source_paper: Forbes TP et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.2c03913, PMID: 36377824
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: ToF-SIMS data acquisition
+    tool: ToF-SIMS instrument
+    input: inkjet-printed acetaminophen samples (single- and multi-component particles)
+    output: raw ToF-SIMS chemical image datasets (mass spectra per pixel)
+    confidence: low
+  Step 2: Latent dimensionality estimation and unsupervised spectral unmixing
+    tool: NMFk
+    algorithm: Non-negative matrix factorization with k-means clustering and reconstruction-clustering optimization
+    input: raw ToF-SIMS chemical image datasets (matrix of m/z intensities × pixels)
+    output: factor matrices: basis spectra (mass spectral profiles) and abundance maps (spatial distributions); optimal number of components (k)
+    confidence: medium
+  Step 3: Polymorph identification and phase mapping
+    tool: NMFk-derived basis spectra + spatial abundance maps
+    algorithm: Spectral similarity matching (implied, for polymorph assignment)
+    input: learned basis spectra and abundance maps from NMFk
+    output: polymorph-labeled spatial maps (amorphous, crystalline form I, crystalline form II)
+    confidence: medium
+  Step 4: Multicomponent particle decomposition
+    tool: NMFk
+    algorithm: Same NMFk framework applied to complex (migraine medicine) sample
+    input: ToF-SIMS data from mixed-particle pharmaceutical sample
+    output: number of constituent compounds, their representative mass spectra, and spatial distributions
+    confidence: medium
+  Step 5: Compound identification via spectral library matching
+    tool: Mass spectral libraries
+    algorithm: Spectral search/matching (e.g., cosine similarity, dot product — not specified)
+    input: extracted constituent phase mass spectra
+    output: compound identifications (e.g., acetaminophen, excipients)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw ToF-SIMS imaging datasets not deposited in public repository
+  - NMFk implementation details (e.g., initialization, convergence criteria, hyperparameter ranges for k-search) not provided
+  - No link or citation to NMFk software source or version used
+  - Mass spectral library search method and database (e.g., NIST, MassBank) unspecified
+  - No description of preprocessing steps (e.g., peak alignment, normalization, denoising, m/z binning) prior to NMFk
+reproducibility_strengths:
+  - Uses unsupervised, open-source NMFk methodology (in principle reproducible)
+  - Clear biological/chemical interpretation of factors as polymorph phases and compound constituents

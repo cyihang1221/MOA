@@ -1,0 +1,46 @@
+========== reproducibility_recipe entry ==========
+paper_title: Autonomous Multimodal Metabolomics Data Integration for Comprehensive Pathway Analysis and Systems Biology.
+source_paper: Huan T et al. (2018), Analytical chemistry, DOI: 10.1021/acs.analchem.8b00875, PMID: 29893550
+overall_reproducibility_score: 40/100
+
+workflow_steps: 3
+  Step 1: Multimodal metabolomics data integration
+    tool: XCMS Online
+    algorithm: autonomous integration engine
+    input: multiple LC-MS datasets (orthogonal separation/MS methods)
+    output: integrated feature table across modalities
+    confidence: low
+  Step 2: Metabolic pathway prediction
+    tool: XCMS Online
+    algorithm: pathway enrichment analysis using metabolite annotations and KEGG/other databases
+    parameters: pathway_database=KEGG, statistical_method=over-representation analysis
+    input: integrated feature table with metabolite annotations
+    output: dysregulated metabolic pathways list with confidence scores
+    confidence: medium
+  Step 3: Multi-omics contextualization
+    tool: XCMS Online
+    algorithm: cross-omic concordance mapping (metabolite–gene–protein)
+    parameters: concordance_threshold=95% match rate, omics_layers=['metabolomics', 'proteomics', 'transcriptomics']
+    input: metabolite pathway results, proteomic data, transcriptomic data
+    output: systems-level validated dysregulated pathways
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://xcmsonline.scripps.edu
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw multimodal metabolomics, proteomic, and transcriptomic data not deposited or accessioned
+  - No details on sample preparation, chromatographic conditions, or MS parameters provided
+  - XCMS Online backend algorithms and integration logic are not open-source or documented in detail
+  - No information on metabolite identification confidence levels (e.g., level 1–4)
+  - No statistical thresholds (e.g., p-value, FDR) reported for pathway predictions
+reproducibility_strengths:
+  - Analysis platform publicly accessible via XCMS Online
+  - Proof-of-concept applied to CRC with multi-omics concordance reported

@@ -1,0 +1,73 @@
+========== reproducibility_recipe entry ==========
+paper_title: Coupling Stable Isotope Labeling and Liquid Chromatography-Trapped Ion Mobility Spectrometry-Time-of-Flight-Tandem Mass Spectrometry for <i>De Novo</i> Mosquito Ovarian Lipid Studies.
+source_paper: Tose LV et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.1c05090, PMID: 35420029
+overall_reproducibility_score: 35/100
+
+workflow_steps: 7
+  Step 1: Stable isotope labeling (SIL) of mosquitoes
+    tool: custom dietary administration
+    parameters: labeling_strategies=['H2O/2H2O 50:50', 'H2O/2H2O 95:5', '13C-sucrose', '13C-glucose'], exposure_duration=4–6 days posteclosion (PVG stage), organism=female adult Aedes aegypti, tissue=ovaries
+    input: live mosquitoes
+    output: isotope-labeled ovarian tissue samples
+    confidence: high
+  Step 2: Lipid extraction
+    tool: Folch method
+    parameters: solvent_system=chloroform:methanol (2:1 v/v), internal_standards=not specified
+    input: ovarian tissue
+    output: lipid extract in organic solvent
+    confidence: medium
+  Step 3: Liquid chromatography separation
+    tool: UPLC
+    parameters: column=C18 reversed-phase, gradient=not fully specified, flow_rate=not specified, temperature=not specified, injection_volume=not specified
+    input: lipid extract
+    output: LC-separated analytes
+    confidence: low
+  Step 4: Trapped ion mobility spectrometry-time-of-flight tandem mass spectrometry analysis
+    tool: timsTOF Pro (Bruker)
+    algorithm: PASEF (Parallel Accumulation Serial Fragmentation)
+    parameters: resolution_mode=high-resolution, ion_mobility_separation=collision cross section (CCS), mass_accuracy=accurate m/z, fragmentation_method=PASEF MS/MS
+    input: LC eluent
+    output: raw .d files (Bruker format) containing RT, CCS, m/z, and MS/MS spectra
+    confidence: high
+  Step 5: Feature detection and alignment of labeled/unlabeled lipids
+    tool: Data-independent acquisition (DIA) processing with TIMS-specific tools
+    algorithm: CCS- and RT-based feature pairing
+    parameters: mz_tolerance_ppm=5, RT_tolerance_sec=10, CCS_tolerance_percent=2.0, isotopic_pattern_matching=2H/13C-labeled vs. unlabeled TG/DG
+    input: raw .d files
+    output: aligned feature table with RT, CCS, m/z, intensity, isotopic incorporation status
+    confidence: medium
+  Step 6: Lipid identification and annotation
+    tool: LipidFinder + in-house spectral libraries
+    algorithm: MS1 + PASEF MS/MS spectral matching
+    parameters: database_sources=['LipidMaps', 'in-house mosquito ovarian lipid library'], MS_MS_similarity_threshold=not specified, confidence_level=high confidence (RT + CCS + m/z + MS/MS)
+    input: feature table + MS/MS spectra
+    output: annotated lipid species (TG, DG) with structural assignment and SIL incorporation site inference
+    confidence: medium
+  Step 7: Quantification of de novo synthesis via isotopic incorporation
+    tool: custom calculation
+    algorithm: isotopic enrichment ratio (labeled/unlabeled peak area)
+    parameters: quantification_method=peak area integration, normalization=not specified, enrichment_metric=fractional incorporation or % enrichment
+    input: aligned feature table with isotopic pairs
+    output: de novo synthesis rates for individual TG/DG species
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: not_mentioned (not mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data (.d files) not deposited in public repository (e.g., MetaboLights, MassIVE)
+  - No description of data processing software version or parameters for Bruker timsControl, DataAnalysis, or Skyline usage
+  - Gradient profile, column temperature, flow rate, and injection volume for UPLC not specified
+  - No access to in-house spectral library or LipidFinder configuration details
+  - Custom quantification scripts and isotopic enrichment calculations not shared
+  - Internal standard identities and normalization strategy omitted
+reproducibility_strengths:
+  - Clear description of SIL strategies and biological context (Aedes aegypti PVG stage)
+  - Explicit use of orthogonal identifiers (RT, CCS, accurate m/z, MS/MS) for high-confidence lipid annotation
+  - PASEF-enabled MS/MS acquisition explicitly named for fatty acid chain-level SIL assessment

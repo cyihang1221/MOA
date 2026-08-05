@@ -1,0 +1,91 @@
+========== reproducibility_recipe entry ==========
+paper_title: Multiplexed proteome analysis with neutron-encoded stable isotope labeling in cells and mice.
+source_paper: Overmyer KA et al. (2018), Nature protocols, DOI: 10.1038/nprot.2017.121, PMID: 29323663
+overall_reproducibility_score: 42/100
+
+workflow_steps: 7
+  Step 1: Metabolic labeling with NeuCode lysine isotopologs
+    tool: NeuCode SILAC/SILAM
+    parameters: labeling_time_cells=14, labeling_time_mammals=21, labeling_time_mammals_max=28
+    input: live cells or mice
+    output: metabolically labeled proteome
+    confidence: high
+  Step 2: Protein extraction and sample combination
+    tool: standard biochemical protocols
+    input: labeled cells or tissues
+    output: combined protein lysates
+    confidence: low
+  Step 3: Enzymatic digestion with Lys-C
+    tool: Lysyl endopeptidase (Lys-C)
+    input: protein lysates
+    output: peptide mixture
+    confidence: medium
+  Step 4: Chromatographic separation
+    tool: liquid chromatography (LC)
+    input: peptide mixture
+    output: fractionated peptides
+    confidence: low
+  Step 5: High-resolution MS1 acquisition
+    tool: Orbitrap mass spectrometer
+    parameters: resolving_power=240000, mz_reference=400
+    input: fractionated peptides
+    output: high-res MS1 spectra with NeuCode isotopic signatures
+    confidence: high
+  Step 6: Tandem MS (MS/MS) acquisition
+    tool: Orbitrap mass spectrometer
+    parameters: resolution_ms2=lower
+    input: peptides selected from MS1
+    output: fragment ion spectra for identification
+    confidence: medium
+  Step 7: Data processing and quantification
+    tool: NeuCode-enabled MaxQuant
+    algorithm: NeuCode-specific isotope pattern deconvolution and quantification
+    parameters: coalescence_mitigation=reduced ACG target
+    input: raw MS1 and MS/MS data (.raw files)
+    output: quantified peptide/protein table with ratios
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: mentioned_no_link
+
+figure_recipes: 6
+  Figure 1: [other]
+    caption: Illustration of lysine isotopologs and theoretical resolution calculations required to resolve NeuCode mass differences.
+    produced_by_step: [1, 5]
+    visualization_tool: custom plotting (not specified)
+  Figure 2: [workflow_diagram]
+    caption: Scan sequences used in NeuCode 3-plex analysis, showing MS1 and MS/MS acquisition order.
+    produced_by_step: [5, 6]
+    visualization_tool: custom diagram (not specified)
+  Figure 3: [other]
+    caption: Depiction of commercially available lysine isotopologs used in NeuCode labeling.
+    produced_by_step: [1]
+    visualization_tool: chemical structure diagram (not specified)
+  Figure 4: [other]
+    caption: Schematic showing multiplexing options enabled by NeuCode labels (up to 9-plex).
+    produced_by_step: [1]
+    visualization_tool: custom schematic (not specified)
+  Figure 5: [workflow_diagram]
+    caption: Suggested end-to-end workflow for NeuCode metabolic labeling in cells and mice.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7]
+    visualization_tool: custom flowchart (not specified)
+  Figure 6: [other]
+    caption: Example output plots from MaxQuant's 'Viewer' showing NeuCode 3-plex and 2-plex quantification results.
+    produced_by_step: [7]
+    visualization_tool: MaxQuant Viewer
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository
+  - NeuCode-enabled MaxQuant version not specified
+  - No link or DOI provided for modified MaxQuant software
+  - Chromatography gradient parameters not described
+  - AGC target value for coalescence mitigation not quantified
+  - No metadata schema or experimental design table provided
+reproducibility_strengths:
+  - Explicit MS resolution requirement (240,000 at m/z 400) stated
+  - Clear labeling timeframes provided for cells and mammals
+  - Use of standard enzyme (Lys-C) and widely adopted platform (Orbitrap + MaxQuant)

@@ -1,0 +1,56 @@
+========== reproducibility_recipe entry ==========
+paper_title: IsoSolve: An Integrative Framework to Improve Isotopic Coverage and Consolidate Isotopic Measurements by Mass Spectrometry and/or Nuclear Magnetic Resonance.
+source_paper: Millard P et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.1c01064, PMID: 34197087
+overall_reproducibility_score: 85/100
+
+workflow_steps: 5
+  Step 1: Isotopic measurement integration
+    tool: IsoSolve
+    algorithm: symbolic calculus
+    input: heterogeneous isotopic measurements (MS and/or NMR)
+    output: consolidated isotopic distribution data
+    confidence: high
+  Step 2: Isotopic space coverage analysis
+    tool: IsoSolve
+    algorithm: chemical structure–driven symbolic inference
+    input: molecular structure + isotopic measurements
+    output: coverage map of isotopic space
+    confidence: high
+  Step 3: Complementarity and redundancy evaluation
+    tool: IsoSolve
+    algorithm: information-theoretic comparison of measurement sets
+    input: integrated isotopic datasets from multiple platforms
+    output: complementarity/redundancy metrics
+    confidence: medium
+  Step 4: Isotopic data consolidation
+    tool: IsoSolve
+    algorithm: constraint-based symbolic solving
+    input: partial, heterogeneous isotopic measurements
+    output: fully resolved isotopic distributions
+    confidence: high
+  Step 5: Experimental design support
+    tool: IsoSolve
+    algorithm: isotopic observability simulation
+    input: tracer label (e.g., ¹³C), metabolite structure, analytical platform constraints
+    output: recommended labeling strategy and measurement configuration
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/MetaSys-LISBP/IsoSolve
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No experimental data (MS/NMR) provided or referenced
+  - No example dataset included in repository or supplementary materials
+  - No step-by-step tutorial or benchmarking dataset described in paper
+reproducibility_strengths:
+  - Open-source implementation available on GitHub and PyPI
+  - Algorithm grounded in symbolic calculus with clear chemical structure dependency
+  - Framework explicitly designed for interoperability across MS and NMR

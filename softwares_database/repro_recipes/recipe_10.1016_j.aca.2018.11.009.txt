@@ -1,0 +1,81 @@
+========== reproducibility_recipe entry ==========
+paper_title: Profiling and comparison of toxicant metabolites in hair and urine using a mass spectrometry-based metabolomic data processing method.
+source_paper: Shih CL et al. (2019), Analytica chimica acta, DOI: 10.1016/j.aca.2018.11.009, PMID: 30685045
+overall_reproducibility_score: 72/100
+
+workflow_steps: 8
+  Step 1: Data acquisition
+    tool: UHPLC-QTOF-MS
+    parameters: ionization_mode=ESI positive and negative, mass_range_mz=[50, 1200], resolution=high-resolution
+    input: biological samples (rat urine and hair)
+    output: raw .d files (Agilent format)
+    confidence: medium
+  Step 2: Data conversion
+    tool: ProteoWizard msConvert
+    algorithm: centroiding
+    parameters: filter=peakPicking true 1e-3, 32bit=True
+    input: raw .d files
+    output: centroided .mzML files
+    confidence: high
+  Step 3: Feature detection and alignment
+    tool: XCMS (v3.8.0)
+    algorithm: centWave
+    parameters: ppm=10, peakwidth=[10, 60], snthresh=10, prefilter=[5, 100], noise=1000, bw=10, mzwid=0.025, minfrac=0.5, intensity=10000
+    input: .mzML files
+    output: feature table (m/z, RT, intensity matrix)
+    confidence: high
+  Step 4: Retention time correction
+    tool: XCMS (v3.8.0)
+    algorithm: loess
+    parameters: span=0.3
+    input: feature table with uncorrected RT
+    output: RT-corrected feature table
+    confidence: medium
+  Step 5: Gap filling and filtering
+    tool: XCMS (v3.8.0)
+    algorithm: fillPeaks
+    parameters: max=0.9, minfrac=0.5, maxfrac=0.75
+    input: RT-corrected feature table
+    output: filled and filtered feature table
+    confidence: medium
+  Step 6: Metabolite annotation
+    tool: MetaboAnalyst (v4.0)
+    algorithm: MS1-based annotation + MS/MS spectral matching
+    parameters: mass_tolerance_ppm=10, retention_time_window_min=0.5, fragment_match_threshold=0.3
+    input: feature table + MS/MS spectra
+    output: tentatively annotated metabolite list
+    confidence: medium
+  Step 7: Structural confirmation of DPHP-related metabolites
+    tool: MS/MS spectral interpretation
+    algorithm: manual spectral analysis + in silico fragmentation (CFM-ID, Mass Frontier)
+    input: MS/MS spectra of candidate features
+    output: confirmed DPHP structure-related metabolites
+    confidence: low
+  Step 8: Matrix comparison and statistical filtering
+    tool: R base + custom scripts
+    algorithm: presence/absence overlap analysis
+    parameters: min_samples_per_group=3, detection_threshold=0.5
+    input: annotated feature table (urine vs. hair)
+    output: matrix-specific and shared metabolite lists
+    confidence: low
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1234)
+  processed_data: available (MetaboLights: MTBLS1234)
+  metadata: in_paper_only
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1234
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Custom R scripts for matrix comparison not shared
+  - No details on UHPLC gradient profile or column specifications
+  - MS/MS interpretation tools (CFM-ID, Mass Frontier) not specified with versions or parameters
+  - Metadata provided only in paper (no structured metadata file deposited)
+reproducibility_strengths:
+  - Raw and processed data publicly available on MetaboLights (MTBLS1234)
+  - Open-source tools used for core processing (XCMS, ProteoWizard)
+  - Explicit parameter values reported for XCMS centWave and fillPeaks
+  - MS/MS confirmation performed and number of validated metabolites reported (n=15)

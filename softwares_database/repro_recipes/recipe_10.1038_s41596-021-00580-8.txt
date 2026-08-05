@@ -1,0 +1,89 @@
+========== reproducibility_recipe entry ==========
+paper_title: Rapid ex vivo molecular fingerprinting of biofluids using laser-assisted rapid evaporative ionization mass spectrometry.
+source_paper: Plekhova V et al. (2021), Nature protocols, DOI: 10.1038/s41596-021-00580-8, PMID: 34341579
+overall_reproducibility_score: 35/100
+
+workflow_steps: 5
+  Step 1: Laser-assisted rapid evaporative ionization (LA-REIMS) data acquisition
+    tool: LA-REIMS system
+    parameters: laser_type=['optical parametric oscillator', 'CO2 laser'], ionization_mode=['positive', 'negative'], analysis_time_per_96_samples=35-40 min, evaporation_time=seconds, radiative_heating_method=laser-induced
+    input: raw biofluids (blood, urine, stool, saliva, sputum, breast milk)
+    output: raw mass spectra (m/z profiles)
+    confidence: medium
+  Step 2: Feature detection and peak picking
+    tool: not specified
+    parameters: feature_count_range=[2000, 4000], normalization_method=total ion current (TIC)
+    input: raw mass spectra
+    output: feature table (relative quantification)
+    confidence: low
+  Step 3: Data normalization for long-term reproducibility
+    tool: LOESS normalization
+    algorithm: LOESS
+    parameters: recommended_for=positive ionization mode, purpose=long-term reproducibility
+    input: feature table (TIC-normalized)
+    output: LOESS-normalized feature table
+    confidence: high
+  Step 4: Quality control assessment
+    tool: coefficient of variance (CV) analysis
+    algorithm: CV calculation
+    parameters: acceptability_threshold=30.0, reported_cv_performance=>70% of features ≤30% CV
+    input: normalized feature table
+    output: QC metrics (CV distribution)
+    confidence: high
+  Step 5: Multivariate statistical modeling
+    tool: not specified
+    algorithm: multivariate modeling
+    parameters: modeling_purpose=pathophysiological state classification
+    input: LOESS-normalized feature table
+    output: classification model (e.g., PLS-DA, PCA, OPLS-DA)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 7
+  Figure 1: [workflow_diagram]
+    caption: Schematic representation of the LA-REIMS workflow.
+    produced_by_step: [1]
+    visualization_tool: not specified
+  Figure 2: [workflow_diagram]
+    caption: Flowchart of a standard LA-REIMS biofluid analysis experiment.
+    produced_by_step: [1, 2, 3, 4, 5]
+    visualization_tool: not specified
+  Figure 3: [other]
+    caption: Typical burns for LA-REIMS analysis.
+    produced_by_step: [1]
+    visualization_tool: not specified
+  Figure 4: [other]
+    caption: Close-up of the motorized automated sampling area and its connection to the REIMS source.
+    produced_by_step: [1]
+    visualization_tool: not specified
+  Figure 5: [chromatogram]
+    caption: Typical mass spectra as obtained by LA-REIMS analysis of human biofluids.
+    produced_by_step: [1]
+    visualization_tool: not specified
+  Figure 6: [other]
+    caption: Typical m/z profiles as obtained by LA-REIMS analysis of human biofluids.
+    produced_by_step: [2]
+    visualization_tool: not specified
+  Figure 7: [pca_scores]
+    caption: Multivariate modeling of pathophysiological state based on LA-REIMS fingerprints.
+    produced_by_step: [5]
+    visualization_tool: not specified
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository
+  - No software/tool names specified for feature detection, alignment, or multivariate modeling
+  - No parameters provided for peak picking (e.g., m/z tolerance, SNR threshold, minimum peak width)
+  - No details on multivariate modeling algorithm (e.g., PLS-DA vs. OPLS-DA), cross-validation strategy, or model validation metrics
+  - LA-REIMS hardware configuration (e.g., laser energy, distance, gas flow) not fully specified
+  - No code or scripts shared for data processing or QC
+reproducibility_strengths:
+  - Explicit reporting of analytical performance (CV ≤30% for >70% features)
+  - Clear throughput metrics (96 samples in ~35–40 min)
+  - Recommendation of LOESS normalization for long-term reproducibility
+  - Detailed description of sample types and ionization modes

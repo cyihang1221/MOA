@@ -1,0 +1,51 @@
+========== reproducibility_recipe entry ==========
+paper_title: Evaluation of a characterization method of Egyptian human mummy balms by chemometric treatments of infrared data.
+source_paper: Mezzatesta E et al. (2021), Talanta, DOI: 10.1016/j.talanta.2020.121949, PMID: 33592704
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Infrared spectral acquisition
+    tool: Fourier Transform Infrared (FTIR) spectroscopy
+    input: solid balm samples (non-destructive)
+    output: 47 FTIR spectra
+    confidence: low
+  Step 2: Pure variable selection and spectral decomposition
+    tool: SIMPLISMA
+    algorithm: SIMPLISMA (Self-Modeling Mixture Analysis)
+    parameters: number_of_pure_components=6
+    input: 47 FTIR spectra
+    output: 6 pure component spectra + corresponding concentration profiles
+    confidence: high
+  Step 3: Multivariate pattern recognition and interpretation
+    tool: Principal Component Analysis (PCA)
+    algorithm: PCA
+    input: 47 FTIR spectra (and/or pure component concentration profiles)
+    output: PCA scores/loadings for interpretation
+    confidence: medium
+  Step 4: Chemical assignment of pure components
+    tool: Literature-based spectral interpretation
+    algorithm: Expert spectral assignment
+    input: 6 pure spectra + reference databases/literature
+    output: Chemically annotated pure components (e.g., proteins, polysaccharides, fat, PAHs, residual species)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw FTIR spectra not deposited in public repository
+  - SIMPLISMA implementation details (e.g., preprocessing, convergence criteria, band selection) not specified
+  - No information on spectral preprocessing (baseline correction, normalization, wavenumber range used)
+  - No software platform or version for SIMPLISMA or PCA reported
+  - No code, scripts, or parameter files shared
+  - Chemical assignments rely on unreported reference spectra or expert judgment without validation metrics
+reproducibility_strengths:
+  - Method is non-destructive and experimentally simple
+  - Clear reporting of number of pure components extracted (n=6)
+  - Interpretation aligns with archaeological/chemical expectations (e.g., PAHs → pyrolytic origin; protein → conservation marker)

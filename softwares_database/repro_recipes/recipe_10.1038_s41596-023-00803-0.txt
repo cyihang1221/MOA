@@ -1,0 +1,92 @@
+========== reproducibility_recipe entry ==========
+paper_title: Quantitative multiple fragment monitoring with enhanced in-source fragmentation/annotation mass spectrometry.
+source_paper: Bernardo-Bermejo S et al. (2023), Nature protocols, DOI: 10.1038/s41596-023-00803-0, PMID: 36755131
+overall_reproducibility_score: 42/100
+
+workflow_steps: 5
+  Step 1: EISA method optimization
+    tool: UHPLC-EISA-TOF MS
+    algorithm: enhanced in-source fragmentation/annotation (EISA)
+    parameters: isCID_values_tested=[10, 20, 30, 40, 50, 60, 70, 80, 90, 100], fragment_ions_monitored=['m/z 117', 'm/z 101', 'm/z 87', 'm/z 71'], collision_energy_optimization=systematic isCID ramping, chromatographic_resolution=UHPLC with C18 column, gradient elution
+    input: standard solutions of DL-2-HG and d3-labeled internal standard
+    output: optimized EISA parameters (isCID, fragment ions, retention time)
+    confidence: high
+  Step 2: Sample extraction
+    tool: liquid-liquid extraction / protein precipitation
+    algorithm: not applicable
+    parameters: sample_matrix=['cell pellets', 'serum'], extraction_solvent=acetonitrile:methanol:water (2:2:1, v/v/v), centrifugation=16,000 × g, 10 min, 4°C, supernatant_collection=yes
+    input: biological samples (cells, serum)
+    output: extracted analyte solution
+    confidence: high
+  Step 3: Chiral derivatization
+    tool: chemical derivatization with L-DATAN
+    algorithm: not applicable
+    parameters: derivatizing_agent=L-diethylaminothiourea (L-DATAN), reaction_time=30 min, reaction_temperature=60°C, pH_control=adjusted to pH 4.5 with formic acid, quenching=cooling on ice, dilution with water
+    input: extracted 2-HG solution
+    output: chirally resolved diastereomeric derivatives
+    confidence: high
+  Step 4: UHPLC separation and EISA-TOF detection
+    tool: UHPLC coupled to TOF-MS with EISA
+    algorithm: correlated ion monitoring (CIM) of multiple fragments
+    parameters: column=Acquity UPLC BEH C18, 1.7 µm, 2.1 × 100 mm, mobile_phase_A=0.1% formic acid in water, mobile_phase_B=0.1% formic acid in acetonitrile, gradient_profile=linear from 5% to 95% B over 8 min, flow_rate=0.3 mL/min, column_temperature=40°C, injection_volume=2 µL, TOF_resolution=≥30,000 FWHM, mass_accuracy=< 3 ppm, EISA_isCID=45, monitored_ions=['m/z 117.072', 'm/z 101.072', 'm/z 87.056', 'm/z 71.041']
+    input: derivatized sample
+    output: extracted ion chromatograms (XICs), peak areas for quantification
+    confidence: high
+  Step 5: Quantitative data analysis
+    tool: MassHunter Quantitative Analysis (Agilent)
+    algorithm: calibration curve fitting (quadratic regression)
+    parameters: internal_standard=d3-labeled 2-HG, calibration_range=0.1–100 µM, quality_controls=['LLOQ, LQC, MQC, HQC, IS accuracy'], acceptance_criteria=['±15% bias for QC samples, ≤20% CV']
+    input: peak area ratios (analyte/d3-IS)
+    output: quantified 2-HG concentrations (µM)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 7
+  Figure 1: [workflow_diagram]
+    caption: Schematic workflow for optimizing an EISA method for clinical sample analysis.
+    produced_by_step: [1]
+    visualization_tool: not specified
+  Figure 2: [chromatogram]
+    caption: UHPLC-EISA-TOF separation of D- and L-2-HG enantiomers and d3-labeled internal standard.
+    produced_by_step: [4]
+    visualization_tool: not specified
+  Figure 3: [bar_chart]
+    caption: Optimized EISA parameters including isCID, fragment selection, and retention behavior.
+    produced_by_step: [1]
+    visualization_tool: not specified
+  Figure 4: [line_plot]
+    caption: Signal-to-noise (S/N) ratio of each 2-HG enantiomer across tested isCID values.
+    produced_by_step: [1]
+    visualization_tool: not specified
+  Figure 5: [workflow_diagram]
+    caption: Extraction protocol for dl-2-HG from cell pellets or biofluids.
+    produced_by_step: [2]
+    visualization_tool: not specified
+  Figure 6: [chemical_reaction_scheme]
+    caption: Derivatization reaction scheme and protocol using L-DATAN to achieve chiral resolution.
+    produced_by_step: [3]
+    visualization_tool: not specified
+  Figure 7: [chromatogram]
+    caption: UHPLC–EISA–TOF extracted ion chromatograms of derivatized biological samples (cell lysates, serum).
+    produced_by_step: [4]
+    visualization_tool: not specified
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in any public repository
+  - No access to raw chromatograms or peak integration files
+  - Commercial software dependencies (Agilent MassHunter, TOF instrument control) not replaceable with open alternatives
+  - Exact UHPLC gradient profile only partially described (no dwell time, post-run conditions)
+  - No code or script for calibration curve fitting or QC evaluation shared
+  - L-DATAN reagent synthesis or commercial source not specified
+  - No validation data (e.g., precision, accuracy, matrix effects) provided in machine-readable format
+reproducibility_strengths:
+  - Step-by-step experimental protocol with explicit parameters (isCID, derivatization conditions, extraction solvents)
+  - Use of stable isotope-labeled internal standard (d3-2-HG) for robust quantification
+  - Inclusion of chiral derivatization strategy enabling enantiomer-specific quantification
+  - Demonstration across multiple biological matrices (cells, serum)

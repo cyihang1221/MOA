@@ -1,0 +1,51 @@
+========== reproducibility_recipe entry ==========
+paper_title: LAMAIS: A library-aided approach for efficient 1D &lt;sup&gt;1&lt;/sup&gt;H NMR qualitative analysis in plant metabolomics.
+source_paper: Xie X et al. (2024), Analytica chimica acta, DOI: 10.1016/j.aca.2024.343100, PMID: 39260912
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Reference library construction
+    tool: LAMAIS
+    algorithm: library-aided spectral similarity assessment
+    parameters: n_compounds=71, metabolite_class=primary metabolites, plant_diversity=diverse plant species
+    input: curated 1D ^1H NMR spectra of pure compounds
+    output: reference spectral library (template data)
+    confidence: medium
+  Step 2: Spectral preprocessing
+    tool: LAMAIS
+    algorithm: not specified
+    input: raw 1D ^1H NMR spectra of mixture samples
+    output: preprocessed spectra (e.g., phasing, baseline correction, referencing)
+    confidence: low
+  Step 3: Compound identification via spectral similarity
+    tool: LAMAIS
+    algorithm: similarity assessment between sample and template spectra
+    parameters: identification_criterion=spectral similarity, fitting_required=False
+    input: preprocessed sample spectra + reference library
+    output: compound identification list + full-spectrum peak assignment
+    confidence: high
+  Step 4: Interactive visualization of results
+    tool: LAMAIS
+    algorithm: interactive graphics generation
+    input: compound identification and peak assignment results
+    output: interactive graphical output
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of spectral preprocessing steps (phasing, baseline correction, referencing parameters)
+  - LAMAIS software not publicly available or linked
+  - Reference library not deposited or accessible
+  - No details on similarity metric (e.g., cosine, Pearson, spectral correlation) or matching thresholds
+  - No information on NMR acquisition parameters (pulse sequence, relaxation delay, number of scans, spectral width, etc.)
+reproducibility_strengths:
+  - Explicit reporting of library size (71 compounds) and scope (primary metabolites across diverse plant species)
+  - Clear performance metrics reported (90% in synthetic, >75% in experimental mixtures; F2 score comparison)

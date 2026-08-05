@@ -1,0 +1,45 @@
+========== reproducibility_recipe entry ==========
+paper_title: Quantitative Fragmentation Model for Bottom-Up Shotgun Lipidomics.
+source_paper: Schuhmann K et al. (2019), Analytical chemistry, DOI: 10.1021/acs.analchem.9b03270, PMID: 31441640
+overall_reproducibility_score: 78/100
+
+workflow_steps: 3
+  Step 1: Tandem mass spectrometry acquisition
+    tool: mass spectrometer
+    parameters: ionization_mode=negative, fragmentation_method=higher-energy collisional dissociation (HCD), analyte_form=molecular anions
+    input: lipid extracts in solvent
+    output: raw .raw or .wiff files (vendor format)
+    confidence: medium
+  Step 2: Carboxylate fragment detection and quantification
+    tool: LipidXte
+    algorithm: quantitative fragmentation model
+    parameters: sn_position_correction=True, chain_length_dependence=True, double_bond_number_and_position_dependence=True
+    input: tandem MS data (MS/MS spectra)
+    output: adjusted carboxylate fragment abundances
+    confidence: high
+  Step 3: Absolute molar quantification of glycerophospholipids
+    tool: LipidXte
+    algorithm: postacquisition abundance harmonization
+    parameters: standard_type=internal standards with structurally similar but non-identical fatty acyl chains, correction_target=unbiased absolute (molar) quantification
+    input: adjusted carboxylate fragment abundances + internal standard responses
+    output: absolute molar concentrations of glycerophospholipid molecular species
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/lipidomics-unit/lipidxte
+  license: GPL-3.0
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw MS/MS data not deposited in public repository
+  - No details on instrument model, HCD energy values, or chromatographic conditions (though method is 'shotgun', implying no LC)
+reproducibility_strengths:
+  - Open-source software (LipidXte) with DOI and GitHub repository
+  - Explicit description of correction parameters (sn-position, chain length, double bond effects)
+  - Method designed to be instrument- and collision-energy-independent

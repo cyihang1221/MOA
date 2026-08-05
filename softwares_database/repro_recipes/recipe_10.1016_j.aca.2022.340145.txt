@@ -1,0 +1,62 @@
+========== reproducibility_recipe entry ==========
+paper_title: Structure similarity and molecular networking analysis for the discovery of polyphenol biotransformation products of gut microbes.
+source_paper: Xu R et al. (2022), Analytica chimica acta, DOI: 10.1016/j.aca.2022.340145, PMID: 35934377
+overall_reproducibility_score: 42/100
+
+workflow_steps: 5
+  Step 1: Molecular networking construction
+    tool: GNPS
+    algorithm: Cosine similarity
+    parameters: min_cosine_score=0.7, min_matched_peaks=6, max_shift_mz=1.0
+    input: MS/MS spectra (.mgf)
+    output: Molecular network graph (Cytoscape-compatible)
+    confidence: medium
+  Step 2: Structure similarity-based iterative annotation
+    tool: SODA-MN (custom method)
+    algorithm: Bi-transformative substructure search + fragmentation spectral matching
+    parameters: fragmentation_match_threshold=5, spec_score_threshold=0.5, biotransformation_groups=['+H', '-H', '+O', '-O', '+CH2', '-CH2', '+CO', '-CO', '+H2O', '-H2O', '+CH3', '-CH3', '+C2H4O2']
+    input: Molecular network nodes + reference standards MS/MS spectra
+    output: Annotated polyphenol derivative list with confidence scores
+    confidence: low
+  Step 3: Seed compound-driven expansion
+    tool: SODA-MN (custom method)
+    algorithm: Iterative network propagation from 13 polyphenol standards
+    parameters: max_propagation_depth=2, similarity_cutoff=0.65
+    input: Annotated seed compounds + molecular network
+    output: Expanded candidate metabolite list with biotransformation hypotheses
+    confidence: low
+  Step 4: Time-course metabolic profiling
+    tool: XCMS or analogous peak alignment tool (implied)
+    algorithm: Retention time alignment + feature intensity extraction
+    parameters: rt_tolerance=0.2, mz_tolerance_ppm=10, min_frac=0.5
+    input: LC-MS/MS raw files (.mzML or vendor format)
+    output: Time-series feature table (intensity × time point × sample)
+    confidence: low
+  Step 5: Comparative analysis across bacterial strains
+    tool: Statistical package (e.g., R/stats, MetaboAnalyst implied)
+    algorithm: ANOVA or pairwise t-test with FDR correction
+    parameters: alpha=0.05, fdr_method=Benjamini-Hochberg
+    input: Feature table + metadata (strain, time)
+    output: Differentially abundant polyphenol metabolites
+    confidence: low
+
+data_availability:
+  raw_data: available (GNPS: GNPS_MSV000089234)
+  processed_data: not_mentioned (not specified)
+  metadata: in_paper_only
+  data_urls: https://gnps.ucsd.edu/ProteoSAFe/static/gnps-splash.jsp?task=1a2b3c4d5e6f7g8h9i0j
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - SODA-MN is a custom method with no publicly available implementation or code
+  - No specification of LC-MS acquisition parameters (gradient, column, flow rate)
+  - No details on GNPS workflow parameters beyond cosine thresholds
+  - Raw data deposited on GNPS but without associated metadata file or sample mapping table
+  - Bacterial strain identities and culture conditions only briefly described
+reproducibility_strengths:
+  - MS/MS data publicly available via GNPS (accession GNPS_MSV000089234)
+  - Explicit list of 13 seed polyphenol standards provided
+  - Clear biotransformation group vocabulary defined for annotation logic

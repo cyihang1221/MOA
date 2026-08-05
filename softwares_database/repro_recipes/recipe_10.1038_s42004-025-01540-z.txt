@@ -1,0 +1,125 @@
+========== reproducibility_recipe entry ==========
+paper_title: Leveraging pretrained deep protein language model to predict peptide collision cross section.
+source_paper: Nakai-Kasai A et al. (2025), Communications chemistry, DOI: 10.1038/s42004-025-01540-z, PMID: 40328890
+overall_reproducibility_score: 42/100
+
+workflow_steps: 9
+  Step 1: Peptide sample preparation
+    tool: Standard proteomic protocols
+    algorithm: Multi-enzyme digestion (trypsin, Lys-C, Lys-N, Asp-N, LysargiNase, chymotrypsin, Glu-C)
+    parameters: digestion_temperature_celsius=37, enzyme_to_protein_ratio=as per Supplementary Table 2, lysis_buffer=standard, reduction_alkylation=previously reported, desalting_method=SDB-XC StageTip, phosphopeptide_enrichment=TiO2 C8 StageTips with piperidine/pyrrolidine elution, dephosphorylation=6 units alkaline phosphatase in 100 mM Tris-HCl pH 9.0 for 3 h at 37°C, acidification=10% TFA
+    input: HeLa S3 cell lysate
+    output: Fractionated, desalted, dephosphorylated peptide samples
+    confidence: medium
+  Step 2: LC/IMS/MS/MS acquisition
+    tool: timsTOF Pro (Bruker Daltonics)
+    algorithm: PASEF (Parallel Accumulation–Serial Fragmentation)
+    parameters: column=15 cm × 100 μm in-house packed with 1.9 μm Reprosil-Pur AQ C18, flow_rate_nL_min=500, column_temperature_celsius=50, mobile_phase_A=water + 0.5% acetic acid, mobile_phase_B=20%/80% water/acetonitrile (v/v) + 0.5% acetic acid, gradient_duration_min=120, gradient_profile=5% B → 40% B over 90 min, then → 99% B in 1 min, ion_mobility_scan_range_1_over_K0_Vs_per_cm2=[0.6, 1.5], ion_accumulation_time_ms=100, ramp_time_ms=100, precursor_isolation_window_mz={'lt_700': 2, 'gt_700': 3}, exclusion_rule=singly charged ions excluded based on m/z and 1/K0, calibration_ions_mz=[622, 922, 1222], calibration_ions_1_over_K0=linear calibration
+    input: Desalted peptide samples
+    output: Raw .d files (Bruker format)
+    confidence: high
+  Step 3: Raw data conversion and database search
+    tool: Bruker DataAnalysis
+    algorithm: MGF file generation
+    input: Raw .d files
+    output: .mgf files
+    confidence: high
+  Step 4: Peptide identification
+    tool: Mascot (v2.7.0)
+    algorithm: Database search against SwissProt human (20200318)
+    parameters: database=SwissProt human (downloaded 2020-03-18), digestion_rules=protease-specific (see Supplementary Table 1), fixed_modifications=['Carbamidomethyl (C)'], variable_modifications=['Phospho (STY)', 'Oxidation (M)', 'Acetyl (Protein N-term)'], peptide_mass_tolerance_ppm=20, ms_ms_tolerance_da=0.05, max_number_of_13C=1, fdr_control_method=Percolator, fdr_threshold_q_value=0.01, fdr_level=['PSM', 'unique_peptide']
+    input: .mgf files
+    output: Identified PSMs (with q-values)
+    confidence: high
+  Step 5: Precursor re-quantification and ion mobility calibration
+    tool: IonQuant (v1.3.6)
+    algorithm: Precursor ion re-assignment
+    parameters: re_assignment_method=IonQuant-based re-assignment, removal_criterion=PSMs not assignable to any precursor ion, 1_over_K0_calibration_ions_mz=[352.33, 761.467, 933.919], 1_over_K0_calibration_method=linear
+    input: Mascot PSMs + raw .d files
+    output: Calibrated 1/K0 values + assigned precursor intensities
+    confidence: medium
+  Step 6: CCS calculation
+    tool: Custom implementation of Mason-Schamp equation
+    algorithm: Mason-Schamp equation
+    parameters: temperature_kelvin=not specified (assumed standard IMS temp, ~298 K), charge_number=Z from MS1, reduced_mass_calculation=harmonic mean of drift gas (N2) and analyte ion masses, constants_used=['e', 'k_B', 'N_0']
+    input: Calibrated 1/K0 values, charge state, molecular mass
+    output: Experimental CCS (Ω) values
+    confidence: low
+  Step 7: Feature extraction using pretrained protein language model
+    tool: ESM-1b (vESM-1b (2021))
+    algorithm: Bidirectional positional encoding (PE) aggregation
+    parameters: feature_extractor=ESM-1b, embedding_dimension=1280, positional_encoding_form=sin/cos power-based, positional_encoding_parameters={'a': 1000, 'b': 1, 'gamma': 0}, aggregation_method=bidirectional PE, sequence_partitioning=N-terminal half and C-terminal half (rounded), element_wise_operation=Hadamard product with positional encoding vectors
+    input: Amino acid sequences (unmodified peptides only)
+    output: 2560-dimensional feature vectors (1280 × 2)
+    confidence: high
+  Step 8: CCS prediction model training
+    tool: PyTorch
+    algorithm: Multilayer perceptron (MLP)
+    parameters: network_depth=10, hidden_layer_width=1000, output_layer=scalar CCS, optimizer=Adam, learning_rate=0.0003, loss_function=MSE, batch_size=200, epochs=400, early_stopping=not mentioned, validation_split=not specified
+    input: ESM-1b bidirectional PE features + experimental CCS
+    output: Trained CCS prediction model (PPLN)
+    confidence: high
+  Step 9: Model evaluation
+    tool: Custom Python script
+    algorithm: Regression metrics computation
+    parameters: metrics=['Pearson r', 'RMSE', 'MAE', 'Δ95% error'], test_set_size=18335
+    input: Test set predictions vs experimental CCS
+    output: Performance metrics (r, RMSE, MAE, Δ95%)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: not_mentioned (not mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 8
+  Fig. 1: [workflow_diagram]
+    caption: Schematic of the PPLN architecture showing ESM-1b feature extraction, bidirectional positional encoding, and MLP-based CCS prediction.
+    produced_by_step: [7, 8]
+    visualization_tool: Not specified
+  Fig. 2: [bar_chart]
+    caption: Summary statistics of the peptide dataset generated from HeLa lysate using seven different proteases.
+    produced_by_step: [1, 4]
+    visualization_tool: Not specified
+  Fig. 3: [histogram]
+    caption: Distribution of 91,677 unique peptide ions across length, charge, and mass.
+    produced_by_step: [4, 6]
+    visualization_tool: Not specified
+  Fig. 4: [scatter_plot]
+    caption: Scatter plots comparing predicted vs experimental CCS values with correlation coefficient and RMSE.
+    produced_by_step: [8, 9]
+    visualization_tool: Not specified
+    statistical_test: Pearson correlation
+  Fig. 5: [boxplot]
+    caption: Predicted and experimental CCS values grouped by charge state.
+    produced_by_step: [8, 9]
+    visualization_tool: Not specified
+  Table 1: [table]
+    caption: Ablation study results comparing PPLN variants (e.g., unidirectional vs bidirectional PE, different architectures).
+    produced_by_step: [7, 8, 9]
+    visualization_tool: Not specified
+  Fig. 6: [bar_chart]
+    caption: Execution time comparison (seconds) between PPLN and conventional bidirectional LSTM across varying training set sizes (20%, 50%, 80%).
+    produced_by_step: [8]
+    visualization_tool: Not specified
+  Fig. 7: [bar_chart]
+    caption: E. coli peptide identification rates with and without CCS error filtering.
+    produced_by_step: [8, 9]
+    visualization_tool: Not specified
+    statistical_test: Not specified
+
+reproducibility_gaps:
+  - Raw LC/IMS/MS/MS data not deposited in public repository (e.g., ProteomeXchange)
+  - Processed CCS values and peptide sequence-CCS pairs not shared
+  - No link to code repository or trained model weights
+  - Mason-Schamp equation implementation details missing (e.g., temperature, drift gas, constants precision)
+  - IonQuant version 1.3.6 is proprietary and no longer publicly available
+  - Bruker DataAnalysis and Mascot are commercial tools requiring licenses
+  - Supplementary Tables 1–3 referenced but not provided in text or linked
+reproducibility_strengths:
+  - Use of open-source ESM-1b model
+  - Full specification of PE parameters (a=1000, b=1, γ=0)
+  - Explicit network architecture (10 layers, width=1000, Adam lr=0.0003, MSE, 400 epochs, batch=200)
+  - Clear description of experimental workflow (enzymes, digestion, enrichment, LC gradient, PASEF settings)

@@ -1,0 +1,32 @@
+========== reproducibility_recipe entry ==========
+paper_title: LipoCLEAN: A Machine Learning Filter to Improve Untargeted Lipid Identification Confidence.
+source_paper: Tavis SL et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.4c04040, PMID: 39710937
+overall_reproducibility_score: 75/100
+
+workflow_steps: 1
+  Step 1: Lipid identification scoring
+    tool: LipoCLEAN
+    algorithm: machine learning model (XGBoost)
+    input: putative lipid identifications (e.g., from LipidSearch, MS-DIAL, or similar)
+    output: rescored lipid identifications with confidence scores
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/stavis1/LipoCLEAN
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposition reported
+  - No details on training data composition, size, or source datasets
+  - No specification of XGBoost hyperparameters (e.g., n_estimators, max_depth, learning_rate)
+  - No description of feature engineering (e.g., exact isotope ratio calculation method, chromatographic metrics used)
+reproducibility_strengths:
+  - Source code publicly available on GitHub
+  - Method generalizes across chromatography methods and MS instrument families (suggesting robust design)
+  - Clear performance metrics reported (50% initial false discovery rate reduced to 7%, 80% true positive retention)

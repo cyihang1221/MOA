@@ -1,0 +1,55 @@
+========== reproducibility_recipe entry ==========
+paper_title: Chronic alcohol consumption disrupts the integrity of the blood-brain barrier through the gut-brain axis.
+source_paper: Li C et al. (2025), Communications biology, DOI: 10.1038/s42003-025-09235-w, PMID: 41291207
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Untargeted metabolomics data acquisition
+    tool: LC-MS/MS
+    parameters: ionization_mode=['positive', 'negative'], normalization_method=total peak area
+    input: biological samples (human plasma/serum or tissue extracts, not explicitly specified)
+    output: raw peak intensity matrix
+    confidence: low
+  Step 2: GC-MS/MS analysis
+    tool: Trace 1300 gas chromatograph
+    parameters: column=Agilent HP-INNOWAX, carrier_gas=helium, flow_rate_mL_per_min=1.0
+    input: supernatant from metabolomics extraction
+    output: GC-MS raw data
+    confidence: low
+  Step 3: 16S rDNA sequence processing
+    tool: QIIME2
+    algorithm: dada2 denoising
+    parameters: target_region=V3-V4, database=Silva
+    input: 16S amplicon sequencing reads
+    output: ASV table with taxonomy
+    confidence: high
+  Step 4: Statistical analysis of metabolite features
+    tool: RStudio (v4.4.1)
+    algorithm: Student's two-tailed t-test, Mann–Whitney U test
+    parameters: significance_threshold=0.05, data_format=mean ± SEM, distribution_assessment=normality-dependent test selection
+    input: normalized metabolite peak table
+    output: differentially abundant metabolites (604 up, 606 down)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No repository accession or data deposition statement for LC-MS/MS or GC-MS/MS raw data
+  - No specification of sample type (plasma? serum? CSF? brain tissue?) used in metabolomics
+  - No details on LC-MS instrumentation (column, gradient, flow rate, injection volume, dwell time, fragmentation settings)
+  - No description of metabolite identification workflow (databases, scoring, MS/MS matching criteria)
+  - No mention of peak picking, alignment, retention time correction, or gap filling methods
+  - No information on normalization beyond 'total peak area' — no batch correction or QC-based normalization described
+  - No details on multivariate statistics (PCA, PLS-DA, OPLS-DA) despite implication of pattern recognition in differential findings
+  - R code and preprocessing scripts not shared or referenced
+reproducibility_strengths:
+  - 16S analysis pipeline clearly names QIIME2, dada2, and Silva database
+  - Statistical tests and software (R 4.4.1) explicitly named
+  - Ethical approvals and experimental design rigor documented

@@ -1,0 +1,74 @@
+========== reproducibility_recipe entry ==========
+paper_title: Archaeometabolomics characterizes phenotypic differences in human cortical bone at a molecular level relating to tobacco use.
+source_paper: Badillo-Sanchez D et al. (2024), Science advances, DOI: 10.1126/sciadv.adn9317, PMID: 39365867
+overall_reproducibility_score: 58/100
+
+workflow_steps: 7
+  Step 1: Data acquisition
+    tool: Liquid chromatography-high-resolution mass spectrometry
+    input: cortical bone tissue extracts
+    output: raw .raw files (vendor format)
+    confidence: low
+  Step 2: Untargeted metabolomics data processing
+    tool: XCMS
+    algorithm: centWave
+    parameters: peakwidth=[10, 60], ppm=5, snthresh=10
+    input: raw .raw files
+    output: feature table (m/z–RT matrix)
+    confidence: medium
+  Step 3: Retention time alignment and correction
+    tool: XCMS
+    algorithm: obiwarp
+    parameters: profiling=true
+    input: feature table
+    output: aligned feature table
+    confidence: medium
+  Step 4: Gap filling and missing value imputation
+    tool: XCMS
+    algorithm: fillpeaks
+    parameters: method=loess
+    input: aligned feature table
+    output: complete feature table with imputed values
+    confidence: medium
+  Step 5: Feature filtering
+    tool: custom R script
+    algorithm: variance-based and prevalence-based filtering
+    parameters: cv_threshold=30, prevalence_threshold=0.5
+    input: complete feature table
+    output: filtered feature table
+    confidence: low
+  Step 6: Statistical analysis and feature selection
+    tool: MetaboAnalyst
+    algorithm: univariate t-test with FDR correction
+    parameters: p_value_cutoff=0.05, fdr_method=BH
+    input: filtered feature table
+    output: 45 discriminating molecular features
+    confidence: medium
+  Step 7: Multivariate classification modeling
+    tool: SIMCA-P+
+    algorithm: OPLS-DA
+    parameters: n_components=1, n_permutations=200
+    input: filtered feature table
+    output: classification model for tobacco use status prediction
+    confidence: low
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1892)
+  processed_data: available (MetaboLights: MTBLS1892)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1892
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - SIMCA-P+ is commercial software requiring license and not specified version
+  - No code or custom R scripts shared
+  - LC gradient profile and column details not fully specified
+  - No MS/MS annotation details or database search parameters reported
+  - No description of sample preparation protocol (extraction solvent, derivatization, etc.)
+reproducibility_strengths:
+  - Raw and processed data publicly available in MetaboLights (MTBLS1892)
+  - Uses widely adopted open-source tools (XCMS) for core preprocessing
+  - FDR-corrected statistical thresholds explicitly stated

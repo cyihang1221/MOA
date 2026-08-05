@@ -1,0 +1,75 @@
+========== reproducibility_recipe entry ==========
+paper_title: High-resolution <sup>13</sup>C metabolic flux analysis.
+source_paper: Long CP et al. (2019), Nature protocols, DOI: 10.1038/s41596-019-0204-0, PMID: 31471597
+overall_reproducibility_score: 72/100
+
+workflow_steps: 5
+  Step 1: Parallel labeling experiments
+    tool: custom experimental protocol
+    parameters: tracer=13C-labeled glucose, number_of_cultures=2
+    input: microbial cultures (E. coli ΔtpiA)
+    output: biomass samples for isotopic analysis
+    confidence: high
+  Step 2: Isotopic labeling measurement via GC-MS
+    tool: gas chromatography-mass spectrometry
+    parameters: analytes=['protein-bound amino acids', 'glycogen-bound glucose', 'RNA-bound ribose']
+    input: biomass samples
+    output: raw GC-MS data (CDF format)
+    confidence: high
+  Step 3: Mass isotopomer distribution integration
+    tool: custom or vendor software (not specified)
+    input: raw GC-MS CDF files
+    output: integrated mass isotopomer distributions (MIDs)
+    confidence: low
+  Step 4: Metabolic network modeling
+    tool: Metran
+    algorithm: nonlinear least-squares optimization
+    parameters: confidence_level=0.95, fitting_method=weighted least squares
+    input: integrated MIDs, metabolic network model (Supplementary Data 3 & 4)
+    output: flux estimates with confidence intervals
+    confidence: medium
+  Step 5: Statistical analysis and goodness-of-fit assessment
+    tool: Metran
+    algorithm: χ² test, Monte Carlo sampling for confidence intervals
+    parameters: alpha=0.05, monte_carlo_iterations=1000
+    input: flux estimation results
+    output: goodness-of-fit statistics, flux confidence intervals (≤2% SD)
+    confidence: medium
+
+data_availability:
+  raw_data: available (Springer Nature Supplementary Data: Supplementary Data 1)
+  processed_data: available (Springer Nature Supplementary Data: Supplementary Data 2, 6)
+  metadata: in_paper_only
+  data_urls: https://doi.org/10.1038/s41596-019-0204-0
+
+code_availability: not_mentioned
+
+figure_recipes: 4
+  Figure 1: [workflow_diagram]
+    caption: Overview of procedure for high-resolution 13C metabolic flux analysis.
+    produced_by_step: [1, 2, 3, 4, 5]
+    visualization_tool: not specified
+  Figure 2: [other]
+    caption: Batch culture sampling to assess changes.
+    produced_by_step: [1]
+    visualization_tool: not specified
+  Figure 3: [workflow_diagram]
+    caption: Overview of procedures.
+    produced_by_step: [1, 2, 3, 4, 5]
+    visualization_tool: not specified
+  Figure 4: [workflow_diagram]
+    caption: Demonstration of the workflow for 13C-MFA for the E. coli ΔtpiA case study.
+    produced_by_step: [1, 2, 3, 4, 5]
+    visualization_tool: not specified
+
+reproducibility_gaps:
+  - Metran is commercial software requiring license and not open-source
+  - No source code or script repository provided for data processing or statistical analysis
+  - GC-MS data processing pipeline (CDF → MID) not described in detail or automated
+  - No explicit version of Metran reported
+  - No metadata schema or sample annotation table provided
+reproducibility_strengths:
+  - Raw GC-MS data (CDF) and integrated MIDs publicly available as Supplementary Data
+  - Full metabolic network model and Metran input files provided (Supplementary Data 3–5)
+  - Complete flux results with confidence intervals provided (Supplementary Data 6)
+  - Detailed case study with troubleshooting guidance

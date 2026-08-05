@@ -1,0 +1,59 @@
+========== reproducibility_recipe entry ==========
+paper_title: Analytical Data Review on an Artificial Intelligence Platform for Doping Control in Horse Racing.
+source_paper: Lai CS et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c00510, PMID: 40494640
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Chromatogram image acquisition
+    tool: LC/MS instrument software (unspecified)
+    input: raw LC/MS data files (.raw, .d, or equivalent)
+    output: chromatogram images (PNG/JPEG)
+    confidence: low
+  Step 2: Manual chromatogram classification
+    tool: Internal expert review
+    parameters: classes=['POS', 'NEG']
+    input: chromatogram images
+    output: labeled training dataset (binary labels)
+    confidence: high
+  Step 3: AI model training for binary image classification
+    tool: Alteryx Designer
+    algorithm: image recognition tool (built-in CNN-based classifier)
+    parameters: training_set_size=6000, validation_set_size=None, test_set_size=700, classes=['POS', 'NEG']
+    input: labeled chromatogram images
+    output: trained binary classification model
+    confidence: medium
+  Step 4: Model evaluation
+    tool: Alteryx Designer
+    algorithm: classification accuracy assessment
+    parameters: accuracy_threshold=0.9, metric=accuracy, false_negative_tolerance=zero
+    input: held-out test set of 700 manually classified chromatograms
+    output: performance metrics (accuracy, sensitivity, specificity)
+    confidence: high
+  Step 5: Model deployment on in-house screening methods
+    tool: Alteryx Designer
+    algorithm: batch inference on chromatogram images
+    parameters: methods_analyzed=2, drug_targets_per_method=>300, output_classes=['SUS', 'POS', 'NEG']
+    input: new chromatogram images from two LC/MS screening methods
+    output: classified batch results (SUS/POS/NEG flags)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw chromatogram images and labeled dataset not publicly available
+  - Alteryx Designer is commercial software requiring license and proprietary workflow
+  - No details on image preprocessing (size, normalization, color mode, cropping)
+  - No specification of LC/MS instrument models, acquisition parameters, or chromatogram export settings
+  - No model architecture, hyperparameters, or training duration disclosed
+  - Workflow inflexibility to other instruments/software prevents generalization
+reproducibility_strengths:
+  - Clear description of training/test set sizes
+  - Explicit performance metric (accuracy >90%, zero false negatives)
+  - Defined output classes (SUS/POS/NEG) and application context

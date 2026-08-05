@@ -1,0 +1,81 @@
+========== reproducibility_recipe entry ==========
+paper_title: Multicenter evaluation of label-free quantification in human plasma on a high dynamic range benchmark set.
+source_paper: Distler U et al. (2025), Nature communications, DOI: 10.1038/s41467-025-64501-z, PMID: 41038884
+overall_reproducibility_score: 78/100
+
+workflow_steps: 7
+  Step 1: Sample preparation (PYE benchmark set generation)
+    tool: Biomek i7 robotic pipetting platform
+    algorithm: semi-automated filter-aided sample preparation (FASP)
+    parameters: protein_amount_per_well=30, unit=µg, enzyme_to_protein_ratio=1:50, trypsin_amount_per_well=0.6, unit_trypsin=µg, reduction_conditions=8 mM DTT, 15 min at 56 °C, alkylation_conditions=50 mM IAA, 20 min at RT, quenching_conditions=8 mM DTT, 15 min at 56 °C, digestion_temperature=37, unit_temperature=°C, digestion_duration=overnight, wash_buffers=['urea-based wash buffer (8 M urea, 0.1 M Tris-HCl, pH 8.5)', '50 mM NH4HCO3'], acidification=0.1% formic acid (v/v)
+    input: intact protein extracts (human plasma, S. cerevisiae, E. coli)
+    output: tryptic peptide stock solutions (PYE1/3/9 A/B)
+    confidence: high
+  Step 2: LC-MS data acquisition
+    tool: various LC-MS platforms across 12 sites
+    algorithm: data-dependent acquisition (DDA) or data-independent acquisition (DIA)
+    parameters: injection_order=['blank', 'HeLa QC', 'blank', 'PYE A9', 'PYE B9', 'PYE A3', 'PYE B3', 'PYE A1', 'PYE B1', 'blank'], replicates_per_sample=3–6, gradient_length=not specified, on_column_load=not specified, acquisition_mode=['DDA', 'DIA']
+    input: tryptic peptide samples (PYE and neat plasma)
+    output: raw MS files (.raw, .d, .wiff, etc.)
+    confidence: low
+  Step 3: Raw data conversion (ZenoTOF only)
+    tool: MSConvert (v3.0.20280)
+    algorithm: vendor peak picking
+    parameters: output_format=mzML
+    input: vendor raw files (e.g., .d, .wiff)
+    output: mzML files
+    confidence: high
+  Step 4: DDA data processing and label-free quantification
+    tool: MaxQuant (v2.3.1.0)
+    algorithm: LFQ with match-between-runs (MBR)
+    parameters: database=custom SwissProt human/yeast/E. coli + contaminants (UniProtKB 2020_03, 31,039 entries), lfq_minimum_ratio_count=2, enzyme=trypsin, missed_cleavages=2, fixed_modifications=['carbamidomethylation of cysteine'], variable_modifications=['methionine oxidation'], fdr_psm_level=0.01, fdr_protein_level=0.01, match_between_runs_enabled=True
+    input: raw MS files (DDA mode)
+    output: proteinGroups.txt, peptides.txt, evidence.txt (MaxQuant output)
+    confidence: high
+  Step 5: DIA data processing (library-free)
+    tool: DIA-NN (v1.8.1)
+    algorithm: library-free DIA analysis
+    parameters: database=same as MaxQuant, protease=trypsin, missed_cleavages=1, fixed_modifications=['carbamidomethylation'], variable_modifications_max_count=0, peptide_length_min=7, peptide_length_max=30, precursor_mz_range=[300, 1800], product_mz_range=[200, 1800], quantification_strategy=robust LC (high precision), cross_run_normalization=RT-dependent median-based, ms1_ms2_mass_accuracy_optimization=auto, scan_window_size_optimization=auto, precursor_fdr=0.01
+    input: raw MS files (DIA mode)
+    output: DIA-NN report (protein, peptide, precursor tables)
+    confidence: high
+  Step 6: Alternative DIA/DDA processing via FragPipe
+    tool: FragPipe (v23.0)
+    algorithm: LFQ-MBR (DDA) / DIA_SpecLib_Quant (DIA) / diaPASEF-specific workflow
+    parameters: database=same as MaxQuant/DIA-NN (with decoys), precursor_mass_tolerance_ppm=20, fragment_mass_tolerance_ppm=20, missed_cleavages=1, variable_modifications=['methionine oxidation'], fdr_filtering_flag=--prot 0.01, picked_flag=--picked, cross_run_normalization=['disabled for DDA', 'disabled for DIA via --no-norm'], dia_quantification_tool=DIA-NN v1.8.2 beta 8, spectrum_deconvolution=diaTracer (for diaPASEF)
+    input: mzML files (DDA/DIA)
+    output: FragPipe reports (protein, peptide, PSM tables)
+    confidence: high
+  Step 7: Downstream quantitative analysis
+    tool: custom R/Python scripts (not named)
+    algorithm: statistical filtering and aggregation
+    parameters: contaminant_removal=True, reverse_sequence_removal=True, minimum_peptides_per_protein=2, q_value_threshold=0.01, pg_q_value_threshold=0.01, lib_q_value_threshold=0.01, lib_pg_q_value_threshold=0.01
+    input: protein-level reports from MaxQuant/DIA-NN/FragPipe
+    output: filtered protein abundance matrices, CV calculations, identification overlap metrics, accuracy/precision metrics
+    confidence: low
+
+data_availability:
+  raw_data: available (PRIDE: PXD042187)
+  processed_data: available (Zenodo: 10.5281/zenodo.10923456)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/pride/archive/projects/PXD042187, https://zenodo.org/records/10923456
+
+code_availability: not_mentioned
+
+figure_recipes: 1
+  Figure 1a: [workflow_diagram]
+    caption: Schematic illustration of PYE sample composition ratios for PYE1 A/B, PYE3 A/B, and PYE9 A/B.
+    produced_by_step: [1]
+    visualization_tool: not specified
+
+reproducibility_gaps:
+  - No source code or analysis scripts shared for downstream statistical analysis (Step 7)
+  - LC-MS gradient profiles, column specifications, and flow rates not reported in main text or methods (only in Extended Material — not machine-accessible)
+  - No explicit versioning or containerization (e.g., Docker/Singularity) provided for MaxQuant or DIA-NN analyses
+  - FragPipe DIA-NN integration uses beta version (1.8.2 beta 8) without public release tag or reproducible build
+reproducibility_strengths:
+  - Raw data deposited in PRIDE (PXD042187) with full metadata
+  - Processed data and PYE sample formulation details available on Zenodo
+  - All major software tools (MaxQuant, DIA-NN, FragPipe, MSConvert) are open or freely available
+  - Standardized database, FDR thresholds, mass tolerances, and peptide filters across workflows
+  - Explicit parameter settings documented for all key tools (including version numbers)

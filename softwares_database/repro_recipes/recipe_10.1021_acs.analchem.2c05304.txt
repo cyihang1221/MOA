@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: Characterization of a Newly Available Coastal Marine Dissolved Organic Matter Reference Material (TRM-0522).
+source_paper: Felgate SL et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.2c05304, PMID: 37052954
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Direct infusion HRMS molecular formula assignment
+    tool: HRMS
+    algorithm: molecular formula assignment (exact mass, isotope pattern)
+    parameters: mass_tolerance_ppm=5
+    input: direct infusion HRMS spectra
+    output: assigned molecular formulas (>3000)
+    confidence: medium
+  Step 2: Van Krevelen space visualization
+    tool: custom script or plotting tool
+    algorithm: H/C vs O/C scatter plot
+    parameters: H_C_range=[1.0, 1.5], O_C_range=[0.3, 0.7]
+    input: assigned molecular formulas
+    output: van Krevelen plot
+    confidence: low
+  Step 3: UPLC-HRMS/MS feature detection and processing
+    tool: MZmine3
+    algorithm: chromatographic peak detection and alignment
+    parameters: polarity=['positive', 'negative'], features_resolved=494
+    input: UPLC-HRMS/MS raw files
+    output: feature table (494 features)
+    confidence: medium
+  Step 4: NMR data acquisition and interpretation
+    tool: NMR spectroscopy
+    algorithm: qualitative spectral interpretation (proton NMR)
+    parameters: SUVA254=1.52, units=L mg C^-1 m^-1
+    input: 1H NMR spectra
+    output: structural class abundance (carboxylic-rich aliphatics > carbohydrates > aliphatics)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw HRMS and NMR data not deposited in public repository
+  - No accession ID or repository for TRM-0522 reference material
+  - MZmine3 parameters (e.g., noise threshold, min time span, RT tolerance) not specified
+  - No details on NMR acquisition parameters (field strength, pulse sequence, processing)
+  - No code or workflow scripts shared for data processing or visualization
+reproducibility_strengths:
+  - Use of open-source MZmine3 for LC-MS feature detection
+  - Explicit reporting of SUVA254 value and van Krevelen ranges

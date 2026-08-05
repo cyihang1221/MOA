@@ -1,0 +1,94 @@
+========== reproducibility_recipe entry ==========
+paper_title: Deep learning prediction of electrospray ionization tandem mass spectra of chemically derived molecules.
+source_paper: Chen B et al. (2024), Nature communications, DOI: 10.1038/s41467-024-52805-5, PMID: 39333165
+overall_reproducibility_score: 72/100
+
+workflow_steps: 9
+  Step 1: Public spectral dataset curation
+    tool: MassBank of North America (MoNA)
+    algorithm: manual filtering and merging
+    parameters: ionization_mode=positive, ionization_source=ESI, MoNA_rank_threshold=4, fragment_merging=all collision energies merged per molecule
+    input: raw ESI-MS/MS spectra from MoNA
+    output: 6790 merged ESI-MS/MS spectra of underived molecules
+    confidence: high
+  Step 2: Base model training (NEIMS MLP)
+    tool: NEIMS (vref. 20)
+    algorithm: multilayer perceptron (MLP)
+    parameters: input_fingerprint=ECFP4 (radius=2, length=4096), architecture=3 layers × 500 nodes, activation_function=ReLU, training_data=MoNA dataset (6790 spectra)
+    input: SMILES + MoNA merged spectra
+    output: pre-trained generic spectrum prediction model (NEIMS)
+    confidence: medium
+  Step 3: Transfer learning for dansylated molecules (Dns-MS)
+    tool: TensorFlow
+    algorithm: fine-tuning with layer freezing
+    parameters: frozen_layers=all except last layer, training_set_size=507, validation_split=0.1, test_set_size=167, collision_energy_range_eV=[10, 50], instrument=HESI Q-Exactive Plus Orbitrap, ion_mode=positive, precursor_tolerance_Da=0.25, msms_scans_accumulated=10
+    input: SMILES of dansylated molecules + experimental merged ESI-MS/MS spectra
+    output: Dns-MS fine-tuned model
+    confidence: high
+  Step 4: Transfer learning for benzoylated molecules (Bz-MS)
+    tool: TensorFlow
+    algorithm: fine-tuning with layer freezing
+    parameters: frozen_layers=all except last layer, training_set_size=503, validation_split=0.1, test_set_size=168, collision_energy_range_eV=[10, 50], instrument=HESI Q-Exactive Plus Orbitrap, ion_mode=positive, precursor_tolerance_Da=0.25, msms_scans_accumulated=10
+    input: SMILES of benzoylated molecules + experimental merged ESI-MS/MS spectra
+    output: Bz-MS fine-tuned model
+    confidence: high
+  Step 5: In silico derivatization and virtual library generation
+    tool: RDKit
+    algorithm: SMARTS-based reaction simulation
+    parameters: derivatizing_agents=['DnsCl', 'DnsHz'], target_functional_groups=['amine', 'hydroxyl', 'carboxyl'], resolution=1 Da, output_format=SDF, input_structures=DSSTox SDF (accessed March 31, 2022)
+    input: DSSTox chemical structures (SDF)
+    output: dansylated SMILES → SDF → predicted ESI-MS/MS spectra → DnsBank
+    confidence: high
+  Step 6: Spectral prediction evaluation
+    tool: custom Python implementation
+    algorithm: weighted cosine similarity (WCS), cosine similarity, spectra entropy
+    parameters: WCS_exponent_mass=0.5, WCS_exponent_intensity=0.5, cosine_exponent_mass=1.0, cosine_exponent_intensity=0.5, entropy_formula=S = -sum(I_p * ln(I_p)), primary_metric=WCS, WCS_threshold_for_annotation=0.6
+    input: predicted vs experimental MS/MS spectra pairs
+    output: model performance metrics (WCS, cosine, entropy)
+    confidence: high
+  Step 7: Non-targeted LC-MS data processing
+    tool: MZmine 3 (vref. 50)
+    algorithm: peak detection and alignment
+    parameters: software=MZmine 3, chromatographic_gradient=t=0min:5%B; t=3min:5%B; t=4min:15%B; t=14min:65%B; t=16min:95%B; t=18min:95%B; t=18.01min:5%B; t=20min:5%B, column=C18 (2.1 mm × 100 mm, 1.8 μm), flow_rate_uL_min=300, temperature_C=25, mobile_phase_A=0.1% formic acid in water, mobile_phase_B=0.1% formic acid in acetonitrile
+    input: raw .raw files from Q-Exactive Plus
+    output: feature table (peak list)
+    confidence: high
+  Step 8: Metabolite annotation using DnsBank
+    tool: DnsBank + custom matching
+    algorithm: spectral matching with WCS ≥ 0.6
+    parameters: matching_score=WCS, WCS_threshold=0.6, mass_tolerance_ppm=10, adduct=[M+H]+, ion_mode=positive, scoring_function=DotProduct, confidence_level=3, reference=Schymanski et al. 2014
+    input: feature table + MS/MS spectra + DnsBank spectra
+    output: annotated molecules (CSV)
+    confidence: high
+  Step 9: Statistical analysis and visualization
+    tool: GraphPad Prism
+    algorithm: unpaired t-test, one-way ANOVA, UMAP
+    parameters: significance_threshold=0.05, test_type=two-tailed, UMAP_neighbors=None, UMAP_min_dist=None, UMAP_n_components=2
+    input: annotation results, WCS scores, sample metadata
+    output: statistical significance values, UMAP plots
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: in_paper_only
+  data_urls: https://epa.figshare.com/articles/dataset/Chemistry_Dashboard_Data_DSSTox_SDF/5491516, https://cfmid.wishartlab.com/predict, https://cfmid.wishartlab.com/identify
+
+code_availability: repository_linked
+  code_url: http://github.com/ADNLab-SCU/DeepCDMs
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS/MS data from wastewater study not deposited in public repository
+  - Experimental dansylated/benzoylated spectral datasets not publicly shared (only sizes reported)
+  - GraphPad Prism is commercial software requiring license
+  - No details on UMAP hyperparameters (n_neighbors, min_dist, n_components)
+  - No access link or versioning for NEIMS (ref. 20) codebase
+  - Custom 'SMART reaction' derivatization script only described conceptually, not provided in full
+reproducibility_strengths:
+  - Source code for DeepCDM models publicly available on GitHub
+  - All derivatization protocols fully detailed (reagents, concentrations, times, temperatures)
+  - LC gradients, instrument parameters, and data processing tools explicitly named
+  - Public databases used (MoNA, DSSTox, PubChem, HMDB, MassBank)
+  - Evaluation metrics (WCS, cosine, entropy) fully mathematically defined

@@ -1,0 +1,111 @@
+========== reproducibility_recipe entry ==========
+paper_title: Self-supervised learning of molecular representations from millions of tandem mass spectra using DreaMS.
+source_paper: Bushuiev R et al. (2026), Nature biotechnology, DOI: 10.1038/s41587-025-02663-3, PMID: 40410407
+overall_reproducibility_score: 82/100
+
+workflow_steps: 10
+  Step 1: LC–MS/MS data mining from MassIVE/GNPS
+    tool: Custom pipeline
+    algorithm: Dataset selection by GNPS prefix + metabolomics annotation
+    parameters: datasets_count=4467, file_formats=['.mzML', '.mzXML'], selection_criteria=GNPS-prefixed, explicitly labeled as metabolomics
+    input: Raw .mzML/.mzXML files from MassIVE
+    output: 338,649 candidate files (249,422 with MS/MS)
+    confidence: high
+  Step 2: Spectral quality filtering (file-level)
+    tool: Custom algorithms (Algorithm 1 & 2)
+    algorithm: Retention time ordering check, MS level sequence validation, XIC-based instrument accuracy estimation
+    parameters: min_spectra_per_file=3, ms_level_sequence_valid=['MS1', 'MS2'], xic_tolerance_round1=0.5, xic_tolerance_round2=0.01, min_xic_peaks_round1=5, min_xic_peaks_round2=5
+    input: Raw .mzML/.mzXML files
+    output: High-quality file list (filtered out unordered RT, invalid MS levels, missing MS1)
+    confidence: high
+  Step 3: Spectral quality filtering (spectrum-level)
+    tool: Custom algorithms (Algorithm 2)
+    algorithm: Centroid/profile detection, charge state filtering, m/z and intensity thresholds
+    parameters: max_mz=1000.0, ionization_mode=positive, min_peaks_per_spectrum=5, intensity_amplitude_ratio_threshold=None, exclude_multicharge=True, exclude_noncentroided=True
+    input: MS/MS spectra
+    output: Cleaned MS/MS spectra (714 million retained)
+    confidence: medium
+  Step 4: GeMS variant construction (A/B/C)
+    tool: Custom filtering pipeline
+    algorithm: Tiered quality filtering based on instrument accuracy, charge ambiguity, and spectral peak statistics
+    parameters: gems_a_spectra_count=42000000, gems_b_spectra_count=100000000, gems_c_spectra_count=201000000, accuracy_threshold_gems_a=≈4 decimal places in m/z
+    input: Filtered MS/MS spectra
+    output: Three GeMS variants (A, B, C) with increasing size and relaxed criteria
+    confidence: high
+  Step 5: LSH-based spectral clustering and deduplication
+    tool: Custom LSH implementation
+    algorithm: Random projection hashing for cosine similarity approximation
+    parameters: hash_bits=64, mz_range_min=0.0, mz_range_max=1000.0, bin_width=1.0, vector_dimension=1000, cluster_representatives_max_per_cluster=[10, 1000]
+    input: Binned MS/MS spectra (1000-D vectors)
+    output: Clustered GeMS subsets (e.g., GeMS-A1, GeMS-B1000, GeMS-C1000)
+    confidence: high
+  Step 6: Murcko histogram computation for molecular scaffold characterization
+    tool: Custom algorithm (Algorithm 3)
+    algorithm: Murcko scaffold extraction → ring/linker decomposition → (rings_neighboring, linkers_adjacent) histogram
+    parameters: min_ring_atoms=3, min_ring_count_for_relocation=4, histogram_distance_threshold=5
+    input: Molecular graph (e.g., from InChI or SMILES)
+    output: Murcko histogram per molecule
+    confidence: high
+  Step 7: Murcko histogram-disjoint train/validation splitting
+    tool: Custom algorithm (Algorithm 4 implied)
+    algorithm: Histogram distance–based fold assignment (relaxed identity)
+    parameters: relocation_distance_threshold=5, min_rings_for_relocation=4
+    input: Murcko histograms
+    output: Train/validation/test splits robust to scaffold similarity and fragmentation bias
+    confidence: high
+  Step 8: Self-supervised pre-training of DreaMS transformer
+    tool: Custom PyTorch transformer model
+    algorithm: Masked spectral peak prediction + retention order prediction
+    parameters: pretraining_objectives=['masked_peak_prediction', 'retention_order_prediction'], masking_rate=None, sequence_length=None, embedding_dim=None, num_layers=None, num_heads=None
+    input: GeMS-C1000 (201M clustered MS/MS spectra) + retention metadata
+    output: Pre-trained DreaMS encoder weights
+    confidence: low
+  Step 9: Fine-tuning DreaMS for downstream tasks
+    tool: Custom fine-tuning pipeline
+    algorithm: Task-specific head training (e.g., fingerprint prediction, structure classification)
+    parameters: fine_tuning_datasets=['GNPS libraries', 'MassBank', 'HMDB'], tasks=['molecular fingerprint prediction', 'compound class prediction', 'spectral similarity ranking']
+    input: Pre-trained DreaMS weights + annotated spectral libraries
+    output: Task-optimized models
+    confidence: medium
+  Step 10: DreaMS Atlas construction
+    tool: Custom molecular networking pipeline
+    algorithm: DreaMS-based spectral similarity scoring + clustering
+    parameters: atlas_size=201000000, similarity_metric=DreaMS embedding cosine similarity, clustering_method=community detection on similarity graph
+    input: DreaMS embeddings of all GeMS-C spectra
+    output: DreaMS Atlas: molecular network of 201M MS/MS spectra
+    confidence: high
+
+data_availability:
+  raw_data: available (MassIVE: MassIVE GNPS repository (public, uncurated))
+  processed_data: available (GNPS: GeMS dataset (GeMS-A/B/C, clustered variants))
+  metadata: available
+  data_urls: https://gnps.ucsd.edu/ProteoSAFe/static/gems/, https://massive.ucsd.edu/
+
+code_availability: repository_linked
+  code_url: https://github.com/dreams-ml
+  license: MIT
+
+figure_recipes: 3
+  Figure 2b: [bar_chart]
+    caption: Details of applied filters for GeMS A/B/C subsets, showing counts at each filtering stage.
+    produced_by_step: [3, 4]
+    visualization_tool: Matplotlib or Seaborn
+  Figure 2c: [bar_chart]
+    caption: Sizes of resulting clustered GeMS datasets (e.g., GeMS-A1, GeMS-B1000), demonstrating impact of LSH clustering parameters.
+    produced_by_step: [5]
+    visualization_tool: Matplotlib or Seaborn
+  Extended Data Fig. 4a: [other]
+    caption: Examples of Murcko histograms and corresponding molecular structures illustrating scaffold decomposition logic.
+    produced_by_step: [6]
+    visualization_tool: RDKit + Matplotlib
+
+reproducibility_gaps:
+  - Exact hyperparameters of DreaMS transformer architecture (layers, heads, dimensions) not specified
+  - Masking strategy and retention order prediction loss weighting not quantified
+  - No public link to 'technical report 79' containing full filtering statistics
+  - No specification of random seeds for LSH or Murcko histogram splitting
+reproducibility_strengths:
+  - GeMS dataset publicly released via GNPS with versioned HDF5 format
+  - All core algorithms (Algorithms 1–4) fully described pseudocode
+  - Code repository linked with MIT license and Zenodo DOI
+  - Clear mapping from raw MassIVE data to final GeMS variants and DreaMS Atlas

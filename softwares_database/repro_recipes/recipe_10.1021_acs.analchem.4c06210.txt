@@ -1,0 +1,47 @@
+========== reproducibility_recipe entry ==========
+paper_title: SMART: An Approach for Accurate Formula Assignment in Spatially Resolved Metabolomics.
+source_paper: Cao Y et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.4c06210, PMID: 40660746
+overall_reproducibility_score: 45/100
+
+workflow_steps: 3
+  Step 1: Construction of KnownSet database
+    tool: SMART
+    algorithm: database integration
+    parameters: source_databases=['HMDB', 'ChEMBL', 'PubChem', 'KEGG'], formula_count=2800000, edge_types=['ChemEdges', 'BioEdges']
+    input: chemical structure databases and biological reaction networks
+    output: KnownSet database (formula network with edges)
+    confidence: high
+  Step 2: Formula network extraction
+    tool: SMART
+    algorithm: multiple linear regression model
+    parameters: target_mz=input m/z value, scoring_criteria=['linked_formulas', 'database_existence_score', 'ChemEdges/BioEdges', 'ppm_error']
+    input: feature m/z list (from MSI data)
+    output: ranked formula candidates with scores
+    confidence: medium
+  Step 3: Formula assignment and ranking
+    tool: SMART
+    algorithm: scoring-based ranking
+    parameters: mass_tolerance_ppm=None, max_rank=None, min_score_threshold=None
+    input: extracted formula networks and candidate formulas
+    output: annotated formula assignments per m/z feature
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No repository link or DOI provided for SMART source code
+  - No public deposition of raw or processed MSI data (e.g., mouse embryo imaging data)
+  - Critical parameters for formula scoring (e.g., ppm tolerance, score weights, rank cutoff) not specified
+  - No description of input data format (e.g., imzML, .d directory, peak list) expected by SMART
+  - Training or benchmarking dataset details (e.g., reference standards used, instrument parameters) not provided
+reproducibility_strengths:
+  - SMART is explicitly described as open-source
+  - KnownSet construction sources are fully enumerated (HMDB, ChEMBL, PubChem, KEGG)
+  - Core algorithmic principles (multiple linear regression, edge-augmented scoring) are transparently stated

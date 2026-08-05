@@ -1,0 +1,55 @@
+========== reproducibility_recipe entry ==========
+paper_title: Development and validation of a systematic platform for broad-scale profiling of microbial metabolites.
+source_paper: Wang XN et al. (2019), Talanta, DOI: 10.1016/j.talanta.2019.03.087, PMID: 31036220
+overall_reproducibility_score: 20/100
+
+workflow_steps: 5
+  Step 1: Aqueous-lipophilic biphasic extraction
+    tool: biphasic extraction protocol
+    input: biological samples (E. coli, P. aeruginosa, mouse intestinal contents)
+    output: extracted metabolite fractions (aqueous and organic phases)
+    confidence: medium
+  Step 2: Chemical derivatization
+    tool: designed chemical derivatization
+    input: extracted metabolite fractions
+    output: derivatized metabolite samples
+    confidence: low
+  Step 3: LC-MS data acquisition
+    tool: liquid chromatography-mass spectrometry
+    input: derivatized and non-derivatized extracts
+    output: raw .raw or .d files (vendor format)
+    confidence: low
+  Step 4: Data-dependent automatable metabolite annotation
+    tool: self-developed algorithm
+    algorithm: data-dependent MS/MS matching
+    input: raw MS/MS spectra
+    output: putatively annotated metabolites (875 features, 292 metabolites)
+    confidence: low
+  Step 5: Database matching against self-collected databases
+    tool: self-collected metabolite databases
+    algorithm: spectral matching
+    input: MS/MS spectra
+    output: annotated metabolite list with chemical family assignment
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw LC-MS data deposited in public repository
+  - No description of LC gradient, column, or MS parameters
+  - No details on biphasic extraction protocol (solvents, ratios, pH, temperature)
+  - Chemical derivatization reagents and conditions not specified
+  - Self-developed annotation algorithm not shared or described in sufficient detail
+  - Self-collected databases not made publicly available
+  - No software/tool names or versions provided for data processing
+reproducibility_strengths:
+  - Clear biological application context (E. coli, P. aeruginosa, colitis mice)
+  - Explicit reporting of annotation outcomes (292 metabolites, 875 features, 25 chemical families)
+  - Conceptual framework for complementary detection via biphasic extraction + derivatization

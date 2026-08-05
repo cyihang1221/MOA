@@ -1,0 +1,58 @@
+========== reproducibility_recipe entry ==========
+paper_title: UV-Vis absorption spectrophotometry and LC-DAD-MS-ESI(+)-ESI(-) coupled to chemometrics analysis of the monitoring of sulfamethoxazole degradation by chlorination, photodegradation, and chlorination/photodegradation.
+source_paper: Queral-Beltran A et al. (2023), Analytica chimica acta, DOI: 10.1016/j.aca.2023.341563, PMID: 37573101
+overall_reproducibility_score: 35/100
+
+workflow_steps: 5
+  Step 1: UV-Vis spectrophotometric time-series acquisition
+    tool: UV-Vis spectrophotometer
+    parameters: wavelength_range_nm=[200, 400], sampling_interval_min=5, path_length_cm=1
+    input: aqueous SMX samples under degradation
+    output: absorbance matrix (wavelength × time)
+    confidence: medium
+  Step 2: LC-DAD analysis
+    tool: liquid chromatography coupled to diode array detector
+    parameters: column=C18, mobile_phase=['water + 0.1% formic acid', 'acetonitrile'], gradient_profile=not fully specified, flow_rate_ml_min=0.8, detection_wavelengths_nm=[200, 265, 320]
+    input: degraded SMX samples
+    output: chromatographic DAD data cube (retention_time × wavelength × intensity)
+    confidence: low
+  Step 3: LC-MS analysis in ESI(+) and ESI(−) modes
+    tool: liquid chromatography coupled to mass spectrometry
+    parameters: ionization_mode=['ESI(+)', 'ESI(-)'], mass_range_mz=[50, 1000], resolution=not specified, collision_energy=not specified
+    input: degraded SMX samples
+    output: LC-MS feature matrices (retention_time × m/z × intensity) per ionization mode
+    confidence: low
+  Step 4: Multivariate Curve Resolution–Alternating Least Squares (MCR-ALS)
+    tool: MCR-ALS
+    algorithm: Alternating Least Squares
+    parameters: number_of_components=selected based on model fit and chemical sense, closure_constraint=applied, non-negativity_constraint=applied, unimodality_constraint=applied
+    input: UV-Vis absorbance matrix, LC-DAD data cube, LC-MS matrices (separately and fused)
+    output: resolved concentration profiles (vs. time or retention time) and spectral profiles (absorption spectra, DAD spectra, mass spectra)
+    confidence: medium
+  Step 5: Data fusion of UV-Vis, LC-DAD, and LC-MS datasets
+    tool: custom MCR-ALS-based fusion strategy
+    algorithm: augmented data matrix fusion (e.g., horizontal/vertical concatenation with appropriate preprocessing)
+    parameters: fusion_strategy=new data fusion analysis strategy, preprocessing=['centering', 'scaling', 'chromatographic alignment not explicitly described']
+    input: preprocessed UV-Vis, LC-DAD, and LC-MS data
+    output: jointly resolved profiles across techniques
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw UV-Vis, LC-DAD, and LC-MS data not deposited in any public repository
+  - No details on LC gradient program or MS acquisition parameters
+  - No description of chromatographic alignment or retention time correction methods
+  - Custom data fusion strategy not algorithmically specified or shared
+  - MCR-ALS implementation details (e.g., software package, version, initialization) not provided
+  - No code or scripts made available
+reproducibility_strengths:
+  - Explicit use of MCR-ALS — a well-established open methodology
+  - Clear experimental design comparing three degradation pathways

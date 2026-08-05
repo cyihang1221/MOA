@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: Using stable carbon isotope ratio analysis to detect adulteration in red yeast rice dietary supplements.
+source_paper: Hannon KM et al. (2024), Talanta, DOI: 10.1016/j.talanta.2023.125076, PMID: 37625290
+overall_reproducibility_score: 45/100
+
+workflow_steps: 5
+  Step 1: Initial screening for monacolin K/lovastatin
+    tool: LC-MS
+    input: raw RYR dietary supplement extracts
+    output: presence/absence and semi-quantitative levels of monacolin K/lovastatin
+    confidence: low
+  Step 2: HPLC-UV peak detection and fraction collection
+    tool: HPLC-UV
+    input: RYR extract samples
+    output: collected fractions containing monacolin K/lovastatin
+    confidence: medium
+  Step 3: Matrix cleanup via solid-phase extraction
+    tool: SPE with graphitized carbon black cartridges
+    input: HPLC-collected fractions
+    output: purified monacolin K/lovastatin isolates
+    confidence: high
+  Step 4: Stable carbon isotope ratio measurement
+    tool: EA-IRMS
+    input: purified monacolin K/lovastatin isolates
+    output: δ¹³C values (‰)
+    confidence: high
+  Step 5: Adulteration assessment
+    tool: threshold-based decision rule
+    algorithm: comparison to δ¹³C cutoff (-28.3‰) and concentration threshold (0.8 mg/g)
+    parameters: concentration_threshold_mg_per_g=0.8, delta13C_cutoff_per_mil=-28.3
+    input: δ¹³C values and quantified monacolin K/lovastatin concentrations
+    output: adulteration classification (likely adulterated / likely natural)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw analytical data (chromatograms, EA-IRMS raw signals) not deposited
+  - No details on LC-MS or HPLC-UV method parameters (e.g., column, gradient, flow rate, detection wavelength)
+  - No description of EA-IRMS calibration standards or correction protocols
+  - No access to sample metadata (e.g., batch IDs, supplier info, lot numbers)
+  - No shared scripts or decision logic beyond threshold values
+reproducibility_strengths:
+  - Explicit isotopic fractionation validation using spiked blank matrices
+  - Clear quantitative thresholds for inclusion and adulteration call
+  - Inter-laboratory collaborative validation reported

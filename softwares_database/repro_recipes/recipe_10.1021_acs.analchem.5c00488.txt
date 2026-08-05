@@ -1,0 +1,67 @@
+========== reproducibility_recipe entry ==========
+paper_title: Harmonization of FT-ICR-MS Instruments for Interoperable Multi-Laboratory Comprehensive Compositional Profiling.
+source_paper: Pieczonka SA et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c00488, PMID: 40208963
+overall_reproducibility_score: 30/100
+
+workflow_steps: 6
+  Step 1: Sample preparation and direct infusion
+    tool: Direct infusion ESI
+    parameters: infusion_rate=not specified, solvent_composition=not specified, sample_concentration=not specified
+    input: pet food extracts
+    output: raw FT-ICR-MS spectra
+    confidence: low
+  Step 2: Data acquisition on FT-ICR-MS instruments
+    tool: Bruker solariX (12 T) and scimaX (7 T)
+    parameters: cell_type=['Infinity Cell', 'ParaCell'], calibration_method=linear calibration (specialized calibration methods deemed unnecessary), resolving_power_target=not numerically specified, mass_error_target=not numerically specified
+    input: prepared samples
+    output: raw .d directories (Bruker format)
+    confidence: medium
+  Step 3: Spectral processing and feature detection
+    tool: Bruker DataAnalysis and custom scripts
+    algorithm: peak picking with S/N threshold and mass tolerance
+    parameters: signal_to_noise_threshold=not specified, mass_tolerance_ppm=not numerically specified (implied tight, given <i>m</i>/<i>z</i> distribution similarity), minimum_intensity=not specified
+    input: raw .d files
+    output: feature list (m/z, intensity, retention time not applicable — DI-MS)
+    confidence: low
+  Step 4: Feature alignment and overlap analysis
+    tool: Custom in-house workflow
+    algorithm: m/z-based alignment with tolerance window
+    parameters: alignment_tolerance_ppm=not specified, intensity_threshold_for_overlap=higher-intensity features (qualitative)
+    input: feature lists from two instruments
+    output: overlap statistics (78% total, 95% high-intensity)
+    confidence: low
+  Step 5: Relative abundance comparison and variability assessment
+    tool: Custom calculation
+    algorithm: coefficient of variation (CV) across replicates/instruments
+    parameters: cv_calculation_basis=relative abundances per feature, median_cv_range=[23.4, 49.2, 15.5, 29.5]
+    input: aligned feature table with intensities
+    output: CV summary statistics per instrument/sample
+    confidence: medium
+  Step 6: Unsupervised multivariate analysis
+    tool: PCA
+    algorithm: Principal Component Analysis
+    parameters: scaling=not specified (likely Pareto or unit variance), data_preprocessing=log-transformation or not — not specified, components_retained=not specified
+    input: feature intensity matrix (samples × m/z features)
+    output: PCA scores and loadings
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw FT-ICR-MS data not deposited in public repository (e.g., MetaboLights, MassIVE)
+  - No access to custom scripts for feature alignment, overlap calculation, or CV analysis
+  - Instrument parameters (e.g., transient length, number of scans, ICR cell excitation/detection settings) not reported
+  - Calibration standards and exact mass tolerance used for feature detection not specified
+  - No details on spectral preprocessing (apodization, zero-filling, phase correction) or peak integration method
+  - PCA implementation details (software, scaling, missing value handling) omitted
+reproducibility_strengths:
+  - Explicit reporting of instrument models and cell types (solariX/Infinity Cell, scimaX/ParaCell)
+  - Quantitative performance metrics reported (resolving power, mass error, feature count, S/N, m/z distribution)
+  - Clear definition of comparability outcomes (78% → 95% overlap, CV ranges, PCA consistency)

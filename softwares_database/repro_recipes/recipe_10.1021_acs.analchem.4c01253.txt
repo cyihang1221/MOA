@@ -1,0 +1,33 @@
+========== reproducibility_recipe entry ==========
+paper_title: MobiLipid: A Tool for Enhancing CCS Quality Control of Ion Mobility-Mass Spectrometry Lipidomics by Internal Standardization.
+source_paper: Hildebrand F et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.4c01253, PMID: 38693701
+overall_reproducibility_score: 45/100
+
+workflow_steps: 1
+  Step 1: CCS quality control via internal standardization
+    tool: MobiLipid
+    algorithm: lipid class- and adduct-specific CCS bias correction using internal U¹³C-labeled standards
+    parameters: internal_standards_per_class_adduct=3, lipid_classes_covered=10, reference_library=DTCCS_N2 library for uniformly ¹³C-labeled lipids, library_size=377
+    input: TIM-MS lipidomics data with spiked U¹³C-labeled lipids
+    output: corrected CCS_N2 values with reduced mean absolute bias
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw TIM-MS data not deposited in public repository
+  - MobiLipid source code repository URL not provided
+  - No details on R Markdown implementation (e.g., R version, package dependencies)
+  - DTCCS_N2 library not publicly accessible or linked (no repository or download link)
+  - Exact U¹³C-labeled yeast extract preparation protocol not described
+reproducibility_strengths:
+  - Tool described as open-source R Markdown
+  - Clear specification of internal standard requirements (3 per class-adduct, 10 classes)
+  - Quantitative performance metrics reported (0.78% and 0.33% mean absolute bias pre-correction)

@@ -1,0 +1,69 @@
+========== reproducibility_recipe entry ==========
+paper_title: Metandem: An online software tool for mass spectrometry-based isobaric labeling metabolomics.
+source_paper: Hao L et al. (2019), Analytica chimica acta, DOI: 10.1016/j.aca.2019.08.046, PMID: 31623721
+overall_reproducibility_score: 30/100
+
+workflow_steps: 7
+  Step 1: Feature extraction
+    tool: Metandem
+    algorithm: not specified
+    input: raw .raw or .mzML files (implied by platform support)
+    output: feature table (peak list with m/z, RT, intensity)
+    confidence: low
+  Step 2: Metabolite quantification using isobaric MS/MS reporter ions
+    tool: Metandem
+    algorithm: isobaric reporter ion integration
+    input: MS/MS spectra with isobaric tags (e.g., TMT, iTRAQ)
+    output: quantified metabolite intensities per sample/channel
+    confidence: medium
+  Step 3: Metabolite identification
+    tool: Metandem
+    algorithm: MS1 and MS/MS matching
+    input: feature table + MS/MS spectra
+    output: annotated metabolite list (putative IDs)
+    confidence: low
+  Step 4: Batch processing of multiple data files
+    tool: Metandem
+    algorithm: automated pipeline orchestration
+    input: multiple raw/converted files
+    output: integrated quantification matrix
+    confidence: medium
+  Step 5: Online parameter optimization for custom datasets
+    tool: Metandem
+    algorithm: interactive tuning (e.g., mass tolerance, RT window, S/N threshold)
+    parameters: mass_tolerance_ppm=None, rt_window_sec=None, signal_to_noise_threshold=None
+    input: user-uploaded dataset
+    output: optimized processing parameters
+    confidence: low
+  Step 6: Data normalization
+    tool: Metandem
+    algorithm: not specified (likely global median or total sum normalization)
+    input: quantification matrix
+    output: normalized quantification matrix
+    confidence: low
+  Step 7: Statistical analysis
+    tool: Metandem
+    algorithm: not specified (implied: t-test, ANOVA, fold-change)
+    input: normalized quantification matrix
+    output: differentially abundant metabolites list
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: http://metandem.com/web/
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposition reported
+  - No description of algorithms, parameters, or statistical methods used
+  - Metandem is a black-box web tool with no source code access or versioning
+  - No benchmark datasets or example workflows provided for validation
+  - Platform-specific acquisition parameters (e.g., CE-MS/MS method) not detailed
+reproducibility_strengths:
+  - Tool is freely accessible online
+  - Supports multiple platforms (UPLC-, nanoLC-, CE-, MALDI-MS/MS) and plexities (duplex to 12-plex)

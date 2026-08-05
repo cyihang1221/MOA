@@ -1,0 +1,43 @@
+========== reproducibility_recipe entry ==========
+paper_title: MetCohort: Precise Feature Detection and Correspondence for Untargeted Metabolomics in Large-Scale Cohort Studies.
+source_paper: Yang J et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.4c04906, PMID: 40327722
+overall_reproducibility_score: 30/100
+
+workflow_steps: 3
+  Step 1: Chromatogram profile alignment and local anchor matching
+    tool: MetCohort
+    algorithm: chromatogram profile alignment + local anchor matching + outlier removal
+    input: raw LC-HRMS data (vendor format)
+    output: retention time-aligned raw data
+    confidence: low
+  Step 2: Region of interest (ROI) detection
+    tool: MetCohort
+    algorithm: holistic scale feature detection via 2D ROI-matrix construction
+    input: retention time-aligned raw data
+    output: 2D ROI-matrix (samples × retention time)
+    confidence: low
+  Step 3: Feature detection and quantification with automatic correspondence
+    tool: MetCohort
+    algorithm: image processing-based feature detection on 2D ROI-matrix
+    input: 2D ROI-matrix
+    output: feature table (m/z, RT, intensity matrix)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No mention of raw or processed data deposition
+  - No software repository link or version specified
+  - No parameters (e.g., m/z tolerance, RT window, SNR thresholds) reported
+  - No description of validation datasets or benchmarking protocol
+  - Algorithmic details (e.g., anchor selection, outlier criteria, image processing filters) not specified
+reproducibility_strengths:
+  - Introduces a novel conceptual framework (2D ROI-matrix + image processing) for feature detection
+  - Explicitly targets reproducibility challenges in large-scale cohort metabolomics

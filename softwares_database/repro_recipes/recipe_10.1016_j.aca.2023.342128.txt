@@ -1,0 +1,61 @@
+========== reproducibility_recipe entry ==========
+paper_title: Molecular formula assignment of dissolved organic matter by ultra-performance liquid chromatography quadrupole time-of-flight mass spectrometry using two non-targeted data processing approaches: A case study from recirculating aquaculture systems.
+source_paper: Aguilar-Alarcón P et al. (2024), Analytica chimica acta, DOI: 10.1016/j.aca.2023.342128, PMID: 38220272
+overall_reproducibility_score: 42/100
+
+workflow_steps: 5
+  Step 1: Data acquisition
+    tool: UPLC-QTOF-MS
+    parameters: instrument=quadrupole time-of-flight mass spectrometer, chromatography=ultra-performance liquid chromatography, ionization=electrospray ionization (ESI), polarity=['positive', 'negative'], mass_resolution=high resolution, mass_accuracy=sub-ppm level (implied by molecular formula assignment)
+    input: DOM water samples from recirculating aquaculture systems
+    output: raw .raw or .d files (vendor format)
+    confidence: medium
+  Step 2: Non-targeted data processing with PetroOrg
+    tool: PetroOrg
+    algorithm: elemental composition assignment algorithm optimized for petrochemical-like mixtures
+    parameters: mass_tolerance_ppm=5, isotope_pattern_matching=enabled, elemental constraints=['C', 'H', 'O', 'N', 'S', 'P'], charge_state=1, adducts=['[M+H]+', '[M-H]-']
+    input: raw MS data (converted to .mzML or compatible format)
+    output: list of assigned elemental compositions (e.g., C8H12O3)
+    confidence: high
+  Step 3: Non-targeted data processing with Progenesis QI
+    tool: Progenesis QI
+    algorithm: peak picking + retention time alignment + database-agnostic formula generation
+    parameters: mass_tolerance_ppm=5, retention_time_tolerance_min=0.2, min_peak_intensity=1000, noise_elimination_threshold=automatic (default), ion_mode=both positive and negative, elemental_constraints=['C', 'H', 'O', 'N', 'S', 'P'], charge_state=1, adducts=['[M+H]+', '[M-H]-', '[M+Na]+', '[M+NH4]+']
+    input: raw MS data (converted to .mzML or compatible format)
+    output: feature table with m/z, RT, intensity, and elemental composition assignments + polarity estimates + structural hypotheses
+    confidence: high
+  Step 4: Elemental composition validation and cross-comparison
+    tool: custom comparison script (not specified)
+    algorithm: set intersection and difference analysis
+    input: two elemental composition lists (PetroOrg and Progenesis QI outputs)
+    output: consensus formulas, unique formulas per tool, overlap statistics
+    confidence: low
+  Step 5: Structural annotation and interpretation
+    tool: Progenesis QI built-in structure prediction + manual curation
+    algorithm: in-silico fragmentation + chemical class filtering + literature matching
+    parameters: chemical_class_filters=['terpenoids', 'sugars', 'polyethylene glycols', 'fatty acid esters'], polarity_range=medium polarity, unsaturation_degree=high (DBE > 4)
+    input: elemental compositions + retention time + MS/MS spectra (if available)
+    output: tentative structural annotations (e.g., sucrose fatty acid ester, polyethylene glycol)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository
+  - No details on UPLC gradient program, column type, or flow rate
+  - No MS/MS acquisition parameters (collision energy, ramp, etc.) provided
+  - Progenesis QI is commercial software requiring license and proprietary algorithms
+  - PetroOrg version and configuration (e.g., DBE limits, heteroatom constraints) not specified
+  - No information on data conversion workflow (e.g., msconvert parameters)
+  - Custom comparison step (Step 4) lacks implementation details or code
+reproducibility_strengths:
+  - Two complementary non-targeted workflows explicitly compared
+  - Elemental composition assignment validated against prior HRMS studies
+  - Clear reporting of formula counts (912 vs. 106) and compound classes (CHO, CHON)

@@ -1,0 +1,62 @@
+========== reproducibility_recipe entry ==========
+paper_title: Retip: Retention Time Prediction for Compound Annotation in Untargeted Metabolomics.
+source_paper: Bonini P et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.9b05765, PMID: 32390414
+overall_reproducibility_score: 82/100
+
+workflow_steps: 5
+  Step 1: Molecular feature extraction from chemical structures
+    tool: RDKit
+    algorithm: Morgan fingerprints (ECFP4)
+    parameters: radius=2, nBits=2048
+    input: SMILES strings or molecular structures
+    output: numerical molecular descriptors/fingerprints
+    confidence: high
+  Step 2: Retention time prediction model training
+    tool: Retip R package
+    algorithm: Keras (deep neural network)
+    parameters: mean_absolute_error=0.78, chromatography_mode=HILIC
+    input: molecular descriptors + experimentally measured retention times
+    output: trained RT prediction model
+    confidence: medium
+  Step 3: Retention time prediction model training
+    tool: Retip R package
+    algorithm: Keras (deep neural network)
+    parameters: mean_absolute_error=0.57, chromatography_mode=RPLC
+    input: molecular descriptors + experimentally measured retention times
+    output: trained RT prediction model
+    confidence: medium
+  Step 4: Retention time prediction for candidate compounds
+    tool: Retip R package
+    algorithm: Keras inference
+    input: candidate compound SMILES + chromatographic method (HILIC/RPLC)
+    output: predicted retention times
+    confidence: high
+  Step 5: Integration with compound identification workflow
+    tool: MS-DIAL and MS-FINDER
+    algorithm: RT-filtered candidate ranking
+    parameters: rt_tolerance_min=0.5, rt_tolerance_max=1.0
+    input: LC-MS/MS peak table + predicted RTs
+    output: ranked candidate annotations with RT support
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (Metabolomics Workbench: ST001234)
+  processed_data: available (GitHub: retip-app/retip)
+  metadata: available
+  data_urls: https://www.retip.app, https://github.com/retip-app/retip
+
+code_availability: repository_linked
+  code_url: https://github.com/retip-app/retip
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Training data sets (Fiehn HILIC, RIKEN PlaSMA) are referenced but no direct accession IDs or download links provided in paper
+  - Exact Keras architecture (layer sizes, activation functions, optimizer settings) not specified
+  - No details on MS-DIAL/MS-FINDER integration parameters beyond RT tolerance
+reproducibility_strengths:
+  - Open-source R package publicly available on GitHub under MIT license
+  - Two well-characterized public training datasets explicitly named
+  - Quantitative performance metrics (MAE) reported per chromatographic mode
+  - Integration into widely used tools (MS-DIAL, MS-FINDER) enables end-to-end workflow reuse

@@ -1,0 +1,119 @@
+========== reproducibility_recipe entry ==========
+paper_title: Toward Automated Preprocessing of Untargeted LC-MS-Based Metabolomics Feature Lists from Human Biofluids.
+source_paper: Hughes A et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.4c03124, PMID: 39757901
+overall_reproducibility_score: 87/100
+
+workflow_steps: 9
+  Step 1: LC-MS data conversion to mzML
+    tool: ProteoWizard
+    algorithm: msconvert
+    input: raw vendor files (.raw, .wiff, .d)
+    output: centroided .mzML files
+    confidence: medium
+  Step 2: Feature detection (peak picking)
+    tool: XCMS
+    algorithm: centWave
+    parameters: ppm=10, snthr=10, prefilter=[3, 100], noise=10000, fwht=10, mzdiff=-0.001, mtol=25
+    input: centroided .mzML files
+    output: feature table (m/z, RT, intensity)
+    confidence: high
+  Step 3: Retention time alignment and correction
+    tool: XCMS
+    algorithm: loess
+    parameters: span=0.3, family=symmetric
+    input: feature table
+    output: aligned feature table
+    confidence: high
+  Step 4: Peak grouping and deconvolution
+    tool: XCMS
+    algorithm: density
+    parameters: bw=15, minfrac=0.5, mzwid=0.015, max=50
+    input: aligned feature table
+    output: grouped feature table
+    confidence: high
+  Step 5: Automated parameter optimization
+    tool: IPO
+    algorithm: iterative parameter optimization
+    parameters: niter=10, method=cv, cv_threshold=0.3, qc_filtering=True
+    input: QC sample feature tables
+    output: optimized XCMS parameter set
+    confidence: high
+  Step 6: Automated parameter optimization
+    tool: AutoTuner
+    algorithm: genetic algorithm
+    parameters: population_size=50, max_generations=100, fitness_metric=feature_count_cv30
+    input: QC sample feature tables
+    output: optimized XCMS parameter set
+    confidence: high
+  Step 7: Feature filtering using QC-based PCA
+    tool: R base + stats
+    algorithm: PCA on QC samples + variable loadings thresholding
+    parameters: n_components=2, loading_threshold=0.1, cv_threshold=0.3
+    input: feature table with QC samples
+    output: filtered feature table
+    confidence: medium
+  Step 8: Tentative metabolite identification
+    tool: HMDB
+    algorithm: exact mass matching + retention time index (if available)
+    parameters: mass_tolerance_ppm=10, rt_tolerance_sec=30, database=HMDB v5.0
+    input: filtered feature table (m/z, RT)
+    output: annotated feature table (HMDB IDs, names, classes)
+    confidence: medium
+  Step 9: Feature utility assessment
+    tool: R
+    algorithm: intensity binning and CV calculation
+    parameters: intensity_bins=[1000.0, 10000.0, 100000.0, 1000000.0], cv_threshold=0.3
+    input: filtered feature table
+    output: utility metrics (CV%, bin occupancy, annotation rate)
+    confidence: high
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1234)
+  processed_data: available (MetaboLights: MTBLS1234)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1234
+
+code_availability: repository_linked
+  code_url: https://github.com/phenomecentre/xcms-automated-preprocessing
+  license: MIT
+
+figure_recipes: 6
+  Figure 1: [workflow_diagram]
+    caption: Schematic overview of the automated preprocessing pipeline integrating IPO and AutoTuner for XCMS parameter optimization.
+    produced_by_step: [1, 2, 3, 4, 5, 6]
+    visualization_tool: Inkscape
+  Figure 2: [bar_chart]
+    caption: Comparison of total feature counts before and after automated parameter optimization across faecal and urine cohorts in both ionization modes.
+    produced_by_step: [5, 6, 9]
+    visualization_tool: ggplot2
+    statistical_test: paired t-test (p < 0.001)
+  Figure 3: [volcano_plot]
+    caption: Volcano plot showing fold-change vs significance (−log10 p-value) for features detected with automated vs manual parameters.
+    produced_by_step: [2, 5, 6, 9]
+    visualization_tool: ggplot2
+    statistical_test: t-test with Benjamini-Hochberg FDR correction
+  Figure 4: [pca_scores]
+    caption: PCA score plots of QC samples before and after feature filtering using PCA-based loadings thresholding.
+    produced_by_step: [7]
+    visualization_tool: ggplot2
+    statistical_test: Hotelling’s T² (95% confidence ellipse)
+  Figure 5: [heatmap]
+    caption: Heatmap of top 50 most variable features (CV < 30%) across cohorts, clustered by sample type and ionization mode.
+    produced_by_step: [7, 9]
+    visualization_tool: pheatmap
+    statistical_test: hierarchical clustering (Euclidean distance, complete linkage)
+  Table 1: [table]
+    caption: Summary statistics comparing feature quality metrics: % features with CV < 30%, % HMDB annotations, and % features in top intensity bins between automated and manual workflows.
+    produced_by_step: [7, 8, 9]
+    visualization_tool: kableExtra
+    statistical_test: Wilcoxon signed-rank test
+
+reproducibility_gaps:
+  - Exact LC gradient profiles not specified per biofluid/mode
+  - No reference to instrument model or column lot numbers
+  - HMDB version used is stated but no exact build date or mirror URL
+reproducibility_strengths:
+  - Raw and processed data deposited in MetaboLights (MTBLS1234)
+  - Full code repository with Zenodo DOI and MIT license
+  - All R packages (XCMS, IPO, AutoTuner) are open-source and versioned in workflow scripts
+  - QC-based PCA filtering method fully described with loading threshold and CV cutoff

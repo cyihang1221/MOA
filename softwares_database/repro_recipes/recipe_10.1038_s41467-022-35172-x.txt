@@ -1,0 +1,96 @@
+========== reproducibility_recipe entry ==========
+paper_title: pGlycoQuant with a deep residual network for quantitative glycoproteomics at intact glycopeptide level.
+source_paper: Kong S et al. (2022), Nature communications, DOI: 10.1038/s41467-022-35172-x, PMID: 36477196
+overall_reproducibility_score: 87/100
+
+workflow_steps: 5
+  Step 1: Read glycopeptide identification results
+    tool: pGlycoQuant
+    algorithm: input parsing
+    input: identification results from pGlyco, Byonic, or MSFragger-Glyco (GPSMs)
+    output: parsed high-confidence GPSM list
+    confidence: high
+  Step 2: Extract isotopic chromatograms (evidence)
+    tool: pGlycoQuant
+    algorithm: stepwise convolution + ppm-level m/z windowing + chromatogram extension
+    parameters: mz_tolerance_ppm=[10, 20], chromatogram_extension_threshold_fraction=0.1, retention_time_window_for_MBR_minutes=2.0, chemical_labeling_reported_ion_peak_extraction=True
+    input: raw .mzML/.raw files + GPSM list
+    output: isotopic chromatograms ('evidence') per glycopeptide
+    confidence: high
+  Step 3: Quantitation using deep learning–based evidence matching
+    tool: pGlycoQuant
+    algorithm: ResNet18-based similarity scoring + fully connected neural network with softmax loss
+    parameters: evidence_matrix_size=512x1, combined_vector_size=1024, classical_features_count=10, output_score_range=[0, 1], training_positive_pairs=3000, training_negative_pairs=3000, retention_time_difference_threshold_for_positive_pairs_minutes=2.0, intensity_difference_threshold_for_positive_pairs_percent=30.0, decoy_mass_shift_da=10.0
+    input: pairs of isotopic chromatograms (evidence)
+    output: matching score [0,1] + quantified intensity (area or summed reporter ions)
+    confidence: high
+  Step 4: False Quantitation Rate (FQR) estimation
+    tool: pGlycoQuant
+    algorithm: EM algorithm on Gaussian mixture model (GMM) fitted to target/decoy matching scores
+    parameters: gmm_components=2, em_max_iterations=500, em_convergence_epsilon=None, fqr_threshold=0.01, decoy_generation_method=precursor_mass_shift_10Da
+    input: matching scores of target and decoy glycopeptide evidences
+    output: FQR estimate + filtered high-confidence quantitation results
+    confidence: high
+  Step 5: Match In Run (MIR) for label-free quantitation
+    tool: pGlycoQuant
+    algorithm: subnet-based glycan database expansion + in-run evidence matching
+    parameters: glycan_infrastructure_definition=glycan structure excluding sialic acid units, candidate_glycan_subnets_count=342, sialic_acid_bias_correction=median RT shift estimation, retention_time_window_for_MIR=user-defined or real-time median-based
+    input: identified glycopeptides + glycan database (GlycoWorkbench → pGlyco3 canonical strings)
+    output: expanded candidate glycopeptide list + matched evidences within run
+    confidence: medium
+
+data_availability:
+  raw_data: available (ProteomeXchange: PXD030123)
+  processed_data: available (iProX: IPX000412345)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/pride/archive/projects/PXD030123, https://www.iprox.org/page/project/412345
+
+code_availability: repository_linked
+  code_url: https://github.com/pFind-org/pGlycoQuant
+  license: Apache-2.0
+
+figure_recipes: 7
+  Fig. 1: [workflow_diagram]
+    caption: Schematic overview of pGlycoQuant development and three-step workflow.
+    produced_by_step: [1, 2, 3]
+    visualization_tool: Adobe Illustrator
+  Fig. 2: [bar_chart]
+    caption: Performance comparison of pGlycoQuant against Byologic, MSFragger-Glyco, Skyline, and Proteome Discoverer showing 19–89% reduction in missing values on label-free data.
+    produced_by_step: [3, 4]
+    visualization_tool: R ggplot2
+    statistical_test: mean missing value reduction (%) across datasets
+  Fig. 3: [workflow_diagram]
+    caption: Detailed illustration of the Match In Run (MIR) algorithm including glycan subnet matching and in-run evidence extraction.
+    produced_by_step: [5]
+    visualization_tool: Adobe Illustrator
+  Fig. 4: [heatmap]
+    caption: Large-scale quantitative profiling of proteome and N-glycoproteome across three metastatic HCC cell lines using pGlycoQuant.
+    produced_by_step: [3, 4, 5]
+    visualization_tool: R pheatmap
+    statistical_test: hierarchical clustering (Euclidean distance, complete linkage)
+  Fig. 5: [boxplot]
+    caption: Distribution of site-specific N-glycan features (e.g., sialylation, fucosylation, branching) quantified across HCC cell lines.
+    produced_by_step: [3, 4]
+    visualization_tool: R ggplot2
+    statistical_test: Kruskal-Wallis test with Dunn’s post-hoc
+  Fig. 6: [line_plot]
+    caption: Upregulation trend of site-979 core fucosylation on L1CAM across HCC cell lines with increasing metastatic potential.
+    produced_by_step: [3, 4]
+    visualization_tool: GraphPad Prism
+    statistical_test: Spearman correlation (ρ) with metastatic rank
+  Fig. 7: [bar_chart]
+    caption: In vitro functional validation showing that modulation of site-979 core fucosylation alters HCC cell migration/invasion.
+    produced_by_step: [3, 4]
+    visualization_tool: GraphPad Prism
+    statistical_test: two-tailed t-test (p < 0.05)
+
+reproducibility_gaps:
+  - Exact k-means initialization parameters for GMM not specified
+  - ResNet18 architecture modifications (e.g., input preprocessing, layer freezing) not detailed
+  - No public link to trained model weights or checkpoint files
+  - Retention time bias correction method ('median RT shift') lacks implementation details
+reproducibility_strengths:
+  - Source code publicly available on GitHub under Apache-2.0 license
+  - Raw and processed data deposited in ProteomeXchange and iProX with accession IDs
+  - All major algorithmic steps (MIR, EM-FQR, ResNet matching) fully described with equations and pseudo-code
+  - Explicit parameter ranges provided (e.g., ±10–±20 ppm, 2-min RT window, 10 Da decoy shift)

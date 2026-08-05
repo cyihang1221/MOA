@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: Tattoo Pigment Identification in Inks and Skin Biopsies of Adverse Reactions by Complementary Elemental and Molecular Bioimaging with Mass Spectral Library Matching.
+source_paper: Brungs C et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.1c04922, PMID: 35179876
+overall_reproducibility_score: 50/100
+
+workflow_steps: 4
+  Step 1: Elemental imaging
+    tool: micro X-ray fluorescence (μXRF)
+    input: skin biopsy tissue sections
+    output: elemental distribution maps (e.g., Fe, Ti, Ba, Cr)
+    confidence: medium
+  Step 2: Molecular imaging via LDI-MS
+    tool: laser desorption ionization-mass spectrometry (LDI-MS)
+    parameters: laser_wavelength=355 nm, laser_energy=optimized for pigment absorption, no_matrix_applied=True
+    input: same skin biopsy tissue sections used for μXRF
+    output: spatially resolved LDI-MS¹ spectra (m/z profiles per pixel)
+    confidence: high
+  Step 3: Spectral clustering and consensus spectrum generation
+    tool: custom computational workflow
+    algorithm: clustering of spatially resolved LDI-MS scans
+    parameters: clustering_method=not specified, similarity_threshold=not specified, consensus_spectrum_generation=redundant signal merging
+    input: spatially resolved LDI-MS¹ spectra
+    output: consensus spectra per pigment region
+    confidence: low
+  Step 4: Compound annotation via spectral library matching
+    tool: mass spectral library matching
+    algorithm: library search (exact mass, isotope pattern, adducts, in-source fragments)
+    parameters: library_type=tattoo-specific open mass spectral libraries, matching_criteria=['isotopic pattern', 'ion adducts', 'in-source fragments', 'exact mass']
+    input: consensus spectra
+    output: confident compound annotations (14 organic structures + 2 inorganic pigments)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: not_mentioned
+  data_urls: https://tattoo-analysis.github.io
+
+code_availability: repository_linked
+  code_url: https://tattoo-analysis.github.io
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No deposition of raw μXRF or LDI-MS imaging data in public repositories (e.g., MetaboLights, Zenodo, or MassIVE)
+  - Custom clustering workflow not described algorithmically or made available as code
+  - Instrument parameters for μXRF (e.g., excitation energy, dwell time, detector type) not specified
+  - No details on LDI-MS instrument platform (e.g., MALDI-TOF vs. AP-LDI-Orbitrap), resolution, or calibration method
+  - Tattoo pigment spectral libraries are referenced but no versioning, format (e.g., MSP, mzML), or access mechanism (downloadable files vs. web interface) is provided
+reproducibility_strengths:
+  - Open website hosting tattoo-specific spectral libraries and documentation
+  - Multimodal approach co-registering elemental and molecular data on same tissue section
+  - Annotation strategy explicitly leverages diagnostic spectral features (isotopes, adducts, fragments)

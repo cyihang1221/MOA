@@ -1,0 +1,106 @@
+========== reproducibility_recipe entry ==========
+paper_title: Ozone-enabled fatty acid discovery reveals unexpected diversity in the human lipidome.
+source_paper: Menzel JP et al. (2023), Nature communications, DOI: 10.1038/s41467-023-39617-9, PMID: 37402773
+overall_reproducibility_score: 72/100
+
+workflow_steps: 8
+  Step 1: Lipid extraction
+    tool: Matyash et al. protocol (modified)
+    algorithm: Folch-based liquid-liquid extraction with MTBE/methanol/ammonium acetate
+    parameters: cell_count_LNCaP=5000000, cell_count_MCF7=1000000, MTBE_volume=370, methanol_volume=110, solvent_mixture_volume=390, ammonium_acetate_concentration=150, ammonium_acetate_volume=100, centrifugation_g=2000, centrifugation_time_min=5
+    input: cell pellets or plasma samples
+    output: organic phase lipid extract
+    confidence: high
+  Step 2: Acid hydrolysis and fatty acid liberation
+    tool: tetrabutylammonium hydroxide
+    algorithm: alkaline hydrolysis
+    parameters: reagent_volume_methanol=0.2, reagent_volume_TBAH=0.2, temperature_C=75, duration_h=2, pentane_volume_per_extraction=1.5, HCl_volume=0.3, extraction_repeats=2
+    input: lipid extract
+    output: free fatty acids in pentane phase
+    confidence: high
+  Step 3: Fixed-charge derivatization
+    tool: AMPP or 4-I-AMPP
+    algorithm: carbodiimide-mediated amide coupling
+    parameters: EDC_volume=10, HOBt_volume=40, AMPP_concentration_mM=20, AMPP_volume_mL=0.1, reaction_temperature_C=65, reaction_duration_min=30, dilution_factor=6
+    input: free fatty acids
+    output: derivatized fatty acid esters (AMPP-FA or 4-I-AMPP-FA)
+    confidence: high
+  Step 4: LC-OzID-MS(/MS) acquisition
+    tool: Waters SYNAPT G2S i with ozone-modified IMS cell
+    algorithm: gas-phase ozonolysis in traveling-wave ion mobility cell
+    parameters: column=Waters Acquity CSH C18, 2.1 × 100 mm, 1.7 μm, column_temperature_C=60, flow_rate_mL_min=0.4, mobile_phase_A=water + 0.1% formic acid, mobile_phase_B=acetonitrile + 0.1% formic acid, gradient_profile=[{'time_min': 0.0, 'B_percent': 20}, {'time_min': 0.5, 'B_percent': 20}, {'time_min': 16.0, 'B_percent': 90}, {'time_min': 17.35, 'B_percent': 100}, {'time_min': 20.35, 'B_percent': 100}, {'time_min': 21.0, 'B_percent': 20}], injection_volume_uL=[1, 10], ion_mode=positive, source_temperature_C=120, desolvation_temperature_C=550, capillary_voltage_V=2500, sampling_cone_V=40, source_offset_V=40, cone_gas_L_h=100, desolvation_gas_L_h=900, nebulizer_bar=6.5, trap_gas_mL_min=2.0, He_cell_gas_mL_min=180, IMS_gas_mL_min=10, IMS_traveling_wave_velocity_ms=650, IMS_traveling_wave_height_V=28, transfer_traveling_wave_velocity_ms=1000, transfer_traveling_wave_height_V=2, ozone_concentration_g_m3=[200, 250], ozone_flow_mL_min=400, IMS_pressure_mbar=3, scan_time_s=0.1, lockmass_solution=200 pg/μL leucine enkephalin in 50:50 ACN/water + 0.1% FA
+    input: derivatized fatty acid solution
+    output: raw .raw files (Waters format)
+    confidence: high
+  Step 5: Direct infusion ESI-MS acquisition
+    tool: Waters SYNAPT G2S i (no column)
+    algorithm: direct infusion without chromatography or OzID
+    parameters: infusion_solvent=50:50 acetonitrile/water + 0.1% formic acid, flow_rate_mL_min=0.4, acquisition_duration_min=2, scan_time_s=0.1
+    input: derivatized fatty acid solution
+    output: raw .raw files (Waters format)
+    confidence: high
+  Step 6: Data preprocessing and lockmass correction
+    tool: Skyline (v20.2)
+    algorithm: lockmass calibration using leucine enkephalin
+    parameters: lockmass_mz=556.2771, correction_method=on-load
+    input: raw .raw files
+    output: lockmass-corrected peak lists
+    confidence: high
+  Step 7: Semi-automated isomer-resolved fatty acid analysis
+    tool: custom Python scripts
+    algorithm: isotope pattern deconvolution, double bond position inference from ozonolysis fragment masses
+    parameters: isotope_correction=enabled, 13C_correction=applied, mass_tolerance_ppm=4, retention_time_tolerance_s=0.15, target_list_inclusion=±150 mDa & ±0.15 s
+    input: Skyline-exported peak lists and raw data
+    output: annotated fatty acid isomer table (DB position, chain length, unsaturation)
+    confidence: medium
+  Step 8: Quantitative profiling and statistical comparison
+    tool: Microsoft Excel, OriginPro 9.1G (v9.1G)
+    algorithm: relative abundance calculation, fold-change, standard deviation across technical replicates
+    parameters: replicates_NIST=3, statistical_error_sources=['hydrolysis', 'derivatization', 'instrumental analysis', 'data analysis']
+    input: annotated fatty acid isomer table
+    output: quantitative fatty acid isomer profiles per sample type
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: https://github.com/ozfad-workflow
+
+figure_recipes: 5
+  Fig. 1: [workflow_diagram]
+    caption: Schematic overview of the OzFAD workflow for de novo fatty acid isomer analysis using LC-OzID-MS(/MS).
+    produced_by_step: [1, 2, 3, 4, 6, 7]
+    visualization_tool: custom Python + matplotlib
+  Fig. 2: [chromatogram]
+    caption: LC-OzID-MS(/MS) chromatograms and fragment spectra for selected fatty acids in human plasma, demonstrating isomer separation and diagnostic ozonolysis fragments.
+    produced_by_step: [4, 6, 7]
+    visualization_tool: Skyline, OriginPro 9.1G
+  Fig. 3: [bar_chart]
+    caption: Quantitative fatty acid profiles from NIST SRM 1950 human plasma, showing expanded coverage including non-methylene-interrupted isomers.
+    produced_by_step: [7, 8]
+    visualization_tool: OriginPro 9.1G
+    statistical_test: standard deviation across n=3 technical replicates
+  Fig. 4: [heatmap]
+    caption: Discovery of non-methylene-interrupted ω-3 fatty acids in vernix caseosa, visualized by relative abundance across isomer classes.
+    produced_by_step: [7, 8]
+    visualization_tool: OriginPro 9.1G
+  Fig. 5: [boxplot]
+    caption: Comparative fatty acid profiles of MCF7 and LNCaP cancer cell lines, with and without SCD1 inhibition, highlighting isomer-level metabolic perturbations.
+    produced_by_step: [7, 8]
+    visualization_tool: OriginPro 9.1G
+    statistical_test: qualitative abundance comparison (no explicit test stated)
+
+reproducibility_gaps:
+  - Raw .raw mass spectrometry data not deposited in public repository (e.g., MetaboLights, MassIVE)
+  - Waters MassLynx and Skyline are commercial tools requiring licenses
+  - Exact ozone gas mixing ratios and IMS cell ozone partial pressure not quantitatively reported
+  - Custom Python scripts depend on unspecified Windows-specific dependencies (e.g., Skyline Runner, Visual Studio Code setup)
+  - No details on Skyline template file structure or how target lists are generated
+reproducibility_strengths:
+  - GitHub repository explicitly referenced for workflow templates and settings
+  - Full experimental parameters for LC gradient, MS settings, derivatization chemistry, and hydrolysis provided
+  - Use of NIST SRM 1950 enables cross-lab method validation
+  - Detailed cell culture, authentication, and ethics documentation enhances biological reproducibility

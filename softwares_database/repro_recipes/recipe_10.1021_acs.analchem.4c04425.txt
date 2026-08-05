@@ -1,0 +1,59 @@
+========== reproducibility_recipe entry ==========
+paper_title: Comprehensive Data Evaluation Methods Used in Developing the SWGDRUG Mass Spectral Reference Library for Seized Drug Identification.
+source_paper: Ji W et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.4c04425, PMID: 39378263
+overall_reproducibility_score: 40/100
+
+workflow_steps: 5
+  Step 1: Chemical information verification
+    tool: NIST MS Interpreter
+    algorithm: structure-based spectral interpretation
+    input: chemical structure and name metadata
+    output: validated compound identity
+    confidence: medium
+  Step 2: Product ion verification
+    tool: NIST MS Interpreter
+    algorithm: fragment assignment using structure-aware rules
+    input: mass spectrum (GC/MS) and chemical structure
+    output: verified fragment ion assignments
+    confidence: medium
+  Step 3: Cross-library spectral comparison
+    tool: NIST MS Search software (with three search methods)
+    algorithm: library search (dot-product, probability-based, reverse search)
+    parameters: num_libraries_compared=6
+    input: query mass spectrum
+    output: spectral similarity scores and matches across libraries
+    confidence: low
+  Step 4: Retention index validation
+    tool: NIST Artificial Intelligence Retention Indices (AIRI)
+    algorithm: AI-based retention index prediction and matching
+    input: GC/MS chromatogram and spectrum
+    output: retention index consistency assessment
+    confidence: medium
+  Step 5: Spectrum quality filtering and rejection
+    tool: Internal MSDC curation workflow
+    algorithm: manual + rule-based quality assessment
+    parameters: rejection_criteria=['low signal-to-noise', 'missing molecular ion', 'inconsistent fragments', 'cross-library mismatch']
+    input: validated spectrum with structural, spectral, and retention evidence
+    output: final curated spectrum (inclusion/exclusion decision)
+    confidence: low
+
+data_availability:
+  raw_data: available (NIST Mass Spectral Database: SWGDRUG v3.13)
+  processed_data: available (NIST Mass Spectral Database: SWGDRUG v3.13)
+  metadata: available
+  data_urls: https://www.nist.gov/srd/nist-standard-reference-database-1a
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - NIST MS Interpreter and AIRI are proprietary tools with no public algorithmic or parameter documentation
+  - Three library search methods are named only generically (no parameters, thresholds, or scoring details)
+  - No description of curation decision rules or inter-rater reliability
+  - Raw GC/MS data files (e.g., .D directories or .mzML) not deposited—only final library spectra provided
+  - No version-controlled workflow scripts or configuration files shared
+reproducibility_strengths:
+  - Final SWGDRUG v3.13 library is publicly available via NIST SRD
+  - All 3598 compounds and associated metadata (structures, names, spectra) are openly accessible
+  - Use of standardized, widely recognized reference libraries supports external validation

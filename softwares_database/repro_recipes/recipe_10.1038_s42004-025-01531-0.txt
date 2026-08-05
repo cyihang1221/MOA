@@ -1,0 +1,75 @@
+========== reproducibility_recipe entry ==========
+paper_title: Recombinant Protein Spectral Library (rPSL) DIA-MS method improves identification and quantification of low-abundance cancer-associated and kynurenine pathway proteins.
+source_paper: Krishnamurthy S et al. (2025), Communications chemistry, DOI: 10.1038/s42004-025-01531-0, PMID: 40348885
+overall_reproducibility_score: 52/100
+
+workflow_steps: 7
+  Step 1: Tissue and cell line sample collection and lysis
+    tool: Manual protocol
+    parameters: lysis_buffer=RIPA (50 mM Tris-HCl pH 7.0, 150 mM NaCl, 10 mM CaCl2, 100 μM EDTA, 0.5% NP-40, 0.5% sodium deoxycholate) + protease inhibitors, cell_lysis_buffer=0.1 M TEAB + 1% SDC, sonication=probe sonicator, short pulses, moderate amplitude, centrifugation=1500 g, 10 min, 4 °C, BCA_assay_kit=Pierce BCA Protein Assay (Thermo Fisher 23225)
+    input: frozen tissue samples, cultured cancer cell lines
+    output: protein lysates with quantified concentration
+    confidence: high
+  Step 2: Protein reduction, alkylation, and trypsin digestion
+    tool: Manual protocol
+    parameters: reduction=15 mM DTT, 60 °C, 30 min, alkylation=30 mM IAA, dark, RT, 30 min, trypsin_ratio_tissue=1:30 (enzyme:substrate), trypsin_ratio_recombinant=1:20 (enzyme:substrate), digestion_time=overnight (16 h), digestion_temperature=37 °C, peptide_length_range=[9, 50], precursor_mass_range_da=[500, 5000]
+    input: protein lysates
+    output: tryptic peptide mixtures
+    confidence: high
+  Step 3: Peptide cleanup and fractionation
+    tool: StageTips (C18)
+    parameters: cleanup_method=Octadecyl C18 47 mm extraction disks (3M 66883-U) StageTips, fractionation_method=high-pH reversed-phase C18 (HpH), column=ZORBAX 300 Extend-C18 2.1 × 150 mm, 3.5 µm, buffers=['5 mM ammonium formate (A)', '5 mM ammonium formate + 90% ACN (B)'], flow_rate_ml_min=0.3, fractions=20
+    input: tryptic peptide mixtures
+    output: fractionated, purified peptides
+    confidence: high
+  Step 4: DDA-MS data acquisition for spectral library generation
+    tool: Orbitrap Exploris 480
+    algorithm: Data-Dependent Acquisition (DDA)
+    parameters: scan_range_mz=[350, 1450], ms1_resolution=60000, charge_states=[2, 3, 4, 5, 6], intensity_threshold_counts=5000, cycle_time_sec=1.5, hcd_collision_energy_percent=27, ms2_resolution=15000, micro_scans_per_scan=1, monoisotopic_selection=peptide mode, dynamic_exclusion_n=1, exclusion_duration_sec=15, mass_tolerance_ppm=10
+    input: fractionated peptides (biological) or recombinant protein digests
+    output: DDA raw files (.raw)
+    confidence: high
+  Step 5: Spectral library generation
+    tool: FragPipe (v22.0)
+    algorithm: SpecLib workflow
+    parameters: search_engine=MSFragger v4.1, post_processing=Philosopher v4.4.0, library_format=EasyPQP v0.1.44, enzyme=trypsin, missed_cleavages=1, peptide_length_range=[9, 50], precursor_mass_range_da=[500, 5000], fixed_modifications=['Carbamidomethyl of cysteine'], variable_modifications=['Oxidation of methionine', 'Acetylation of protein N-termini'], max_modifications_per_peptide=5, database=UniProtKB/Swiss-Prot UP000005640 (reviewed only, 20,400 entries), + contaminants + decoys, database_date_accessed=2024-03-08
+    input: DDA raw files
+    output: spectral libraries (.sptxt, .tsv, or .pqp)
+    confidence: high
+  Step 6: DIA-MS data acquisition
+    tool: Orbitrap Exploris 480
+    algorithm: Data-Independent Acquisition (DIA)
+    parameters: scan_range_mz=[350, 1450], ms1_resolution=60000, num_isolation_windows=20, hcd_collision_energy_percent=27, ms2_resolution=35000, gradient_duration_min=86, gradient_composition_start_end=['2.5% B → 37.5% B'], wash_gradient=95% B for 7 min, flow_rate_nl_min=300, column=ReproSil-Pur 120 C18-AQ, 75 μm × 30 cm
+    input: purified peptides (non-fractionated, 600 ng per injection)
+    output: DIA raw files (.raw)
+    confidence: high
+  Step 7: DIA data processing and quantification
+    tool: DIA-NN (v1.8.1)
+    algorithm: Neural network-based peak detection & library matching
+    parameters: enzyme=trypsin, missed_cleavages=1, peptide_length_range=[9, 50], precursor_charge_range=[1, 4], precursor_mz_range=[300, 1800], fixed_modifications=['Carbamidomethyl of cysteine'], variable_modifications=['Oxidation of methionine', 'Acetylation of protein N-termini'], max_modifications_per_peptide=3, interference_correction=gene-level, quantification_strategy=robust LC (high precision), neural_network_mode=single-pass, fdr_threshold=0.01, unrelated_runs_and_isotopologues=True
+    input: DIA raw files + spectral library (.pqp or .sptxt)
+    output: protein-level quantification matrix (normalized intensities, presence/absence, FDR-filtered)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (PRIDE)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository (no PRIDE/ProteomeXchange accession stated)
+  - No link to FragPipe/DIA-NN configuration files or parameter sets used
+  - No access to custom rPSL or biological-rPSL spectral libraries (e.g., .pqp files)
+  - Supplementary Table 1 listing recombinant proteins is referenced but not provided in text or linked
+  - Exact high-pH fractionation elution schedule (e.g., %B vs time) not specified
+  - No description of downstream statistical analysis (e.g., differential expression, pathway analysis) — methods cut off mid-sentence
+reproducibility_strengths:
+  - Detailed, step-by-step wet-lab protocols (lysis, digestion, cleanup)
+  - Full instrument parameters reported for both DDA and DIA acquisitions
+  - Explicit software versions (FragPipe 22.0, MSFragger 4.1, Philosopher 4.4.0, EasyPQP 0.1.44, DIA-NN 1.8.1)
+  - Clear specification of database (UniProt reviewed, date-stamped), modifications, and search constraints
+  - Explicit grouping logic for recombinant proteins by molecular weight to balance molar loading

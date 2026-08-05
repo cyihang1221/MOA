@@ -1,0 +1,55 @@
+========== reproducibility_recipe entry ==========
+paper_title: A guide to reverse metabolomics-a framework for big data discovery strategy.
+source_paper: Charron-Lamoureux V et al. (2025), Nature protocols, DOI: 10.1038/s41596-024-01136-2, PMID: 40021805
+overall_reproducibility_score: 72/100
+
+workflow_steps: 4
+  Step 1: Obtain MS/MS spectra of interest (Universal Spectrum Identifier generation)
+    tool: GNPS Molecular Networking
+    algorithm: Molecular networking clustering
+    input: MS/MS spectra (peak list or .mzML)
+    output: Universal Spectrum Identifier (USI)
+    confidence: medium
+  Step 2: Search public repositories using MS/MS spectra
+    tool: Mass Spectrometry Search Tool (MSST)
+    algorithm: Spectral similarity search (e.g., cosine score)
+    parameters: min_cosine_score=0.7
+    input: USI or raw MS/MS spectrum
+    output: List of matching mass spectrometry files (e.g., .mzML, .mgf) and associated metadata links
+    confidence: low
+  Step 3: Link spectral matches to sample metadata
+    tool: Reanalysis Data User Interface (RDUi) framework
+    algorithm: Metadata harmonization and cross-repository mapping
+    input: Matched file identifiers + public repository accession IDs
+    output: Annotated dataset linking spectra to phenotypes (e.g., disease state, biofluid, organism, intervention)
+    confidence: low
+  Step 4: Validation of phenotype associations
+    tool: GNPS-based statistical enrichment and visualization
+    algorithm: Fisher’s exact test / hypergeometric testing for metadata term enrichment
+    parameters: p_value_threshold=0.05, FDR_correction=Benjamini-Hochberg
+    input: Annotated dataset from Step 3
+    output: Validated biological associations (e.g., 'phenylalanine-cholic acid enriched in liver vs. plasma', 'associated with IBD')
+    confidence: medium
+
+data_availability:
+  raw_data: available (GNPS: NA)
+  processed_data: available (GNPS: NA)
+  metadata: available
+  data_urls: https://gnps.ucsd.edu
+
+code_availability: repository_linked
+  code_url: https://github.com/CCMS-UCSD/GNPSDocumentation
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No explicit description of MSST parameter settings beyond 'cosine score'
+  - RDUi framework not publicly documented or archived as standalone software
+  - No details on chromatographic or instrument parameters used to generate source spectra
+  - Supplementary figures referenced but not described in methods text
+reproducibility_strengths:
+  - Uses fully open-source infrastructure (GNPS)
+  - All key tools (GNPS, MSST, RDUi) are web-accessible and free
+  - Source data for Figs. 6 and 8 provided as downloadable XLSX
+  - DOI-linked primary references include reproducible protocols

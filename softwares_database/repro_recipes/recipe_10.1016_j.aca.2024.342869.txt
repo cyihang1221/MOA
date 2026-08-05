@@ -1,0 +1,47 @@
+========== reproducibility_recipe entry ==========
+paper_title: Exploring the chemical subspace of RPLC: A data driven approach.
+source_paper: van Herwerden D et al. (2024), Analytica chimica acta, DOI: 10.1016/j.aca.2024.342869, PMID: 39029998
+overall_reproducibility_score: 45/100
+
+workflow_steps: 3
+  Step 1: Retention index prediction using molecular fingerprints
+    tool: Random Forest
+    algorithm: RF regression
+    parameters: n_trees=500, mtry=sqrt(p), nodesize=5
+    input: molecular fingerprints (Morgan, MACCS, RDKit)
+    output: predicted retention index (RI)
+    confidence: medium
+  Step 2: RPLC subspace classification
+    tool: Random Forest
+    algorithm: RF classification
+    parameters: n_trees=500, mtry=sqrt(p), nodesize=1
+    input: predicted retention indices from three RF regression models + molecular descriptors
+    output: RPLC subspace label ('inside', 'maybe', 'outside')
+    confidence: medium
+  Step 3: Application to NORMAN SusDat database
+    tool: Custom Python/R pipeline
+    algorithm: RF classification inference
+    input: 91,737 small molecules (≤1000 Da) from NORMAN SusDat with computed fingerprints and descriptors
+    output: subspace assignment per compound
+    confidence: low
+
+data_availability:
+  raw_data: available (NORMAN SusDat: https://www.norman-network.com/nds/susdat/)
+  processed_data: not_mentioned
+  metadata: not_mentioned
+  data_urls: https://www.norman-network.com/nds/susdat/
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No source code or trained model files shared
+  - No details on fingerprint generation parameters (e.g., radius, bit length)
+  - No description of descriptor calculation (e.g., RDKit version, settings)
+  - No validation dataset or split strategy explicitly reported (e.g., train/test split ratio, stratification)
+  - No information on RI calibration standards or experimental RPLC data used to train regression models
+reproducibility_strengths:
+  - Uses open-source ML algorithms (Random Forest)
+  - Leverages publicly available NORMAN SusDat database
+  - Clear problem framing and evaluation metric (92% test accuracy)

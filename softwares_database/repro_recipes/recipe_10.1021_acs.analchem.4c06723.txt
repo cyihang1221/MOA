@@ -1,0 +1,81 @@
+========== reproducibility_recipe entry ==========
+paper_title: Robust Multiclass Feature Selection for the Authentication of Honey Botanical Origin via Nontargeted LC-MS Analysis.
+source_paper: Chahal S et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.4c06723, PMID: 40498957
+overall_reproducibility_score: 45/100
+
+workflow_steps: 8
+  Step 1: Nontargeted LC-MS data acquisition
+    tool: LC-MS platform unspecified
+    input: honey extracts
+    output: raw .raw or .d files (vendor format)
+    confidence: low
+  Step 2: Feature detection and alignment
+    tool: XCMS
+    algorithm: centWave
+    parameters: ppm=5, peakwidth=[10, 60], snthresh=10, prefilter=[3, 100], noise=10000, bw=30, mzdiff=0.001, fitgauss=False, group=True, max=10, mzwid=0.025, minfrac=0.5, intensities=True
+    input: raw vendor files
+    output: feature table (m/z, RT, intensity matrix)
+    confidence: medium
+  Step 3: Retention time correction
+    tool: XCMS
+    algorithm: obiwarp
+    parameters: profStep=0.01, span=0.5, smooth=loess
+    input: feature table with uncorrected RT
+    output: RT-corrected feature table
+    confidence: medium
+  Step 4: Gap filling and missing value imputation
+    tool: XCMS
+    algorithm: fillPeaks
+    parameters: method=loess, max=3
+    input: RT-corrected feature table
+    output: filled feature table with imputed values
+    confidence: medium
+  Step 5: Feature filtering
+    tool: custom R pipeline
+    algorithm: variance thresholding + inter-sample CV filter
+    parameters: cv_threshold=0.3, variance_percentile=75
+    input: filled feature table
+    output: filtered feature table (2028 features)
+    confidence: medium
+  Step 6: Recursive feature elimination (RFE) with SVM
+    tool: scikit-learn
+    algorithm: SVM-RFE
+    parameters: estimator=SVC(kernel='rbf', gamma='scale', C=1.0), n_features_to_select=54, step=10, verbose=1
+    input: filtered feature table (2028 features)
+    output: optimized 54-feature subset
+    confidence: high
+  Step 7: k-nearest neighbors label filtering
+    tool: custom R/Python implementation
+    algorithm: k-NN consensus filter
+    parameters: k=5, consensus_threshold=0.6
+    input: feature matrix + imperfect class labels
+    output: cleaned label vector for nested CV
+    confidence: medium
+  Step 8: Nested cross-validation with MCC evaluation
+    tool: scikit-learn
+    algorithm: nested StratifiedKFold (outer: 5-fold, inner: 5-fold)
+    parameters: scoring=matthews_corrcoef, n_splits_outer=5, n_splits_inner=5
+    input: 54-feature matrix + cleaned labels
+    output: MCC = 0.803 ± 0.046, classification report
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (MetaboLights: MTBLSXXXX)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS data not deposited in public repository
+  - No link to code repository or scripts for RFE pipeline, k-NN filter, or XCMS parameterization
+  - LC-MS instrument parameters (column, gradient, flow rate, ionization mode) not specified
+  - Vendor file conversion tool (e.g., msConvert) not named or configured
+  - SVM hyperparameter tuning details (grid search bounds, kernel selection rationale) omitted
+  - No description of how 'imperfect labels' were generated or quantified
+reproducibility_strengths:
+  - Explicit feature count reduction (2028 → 54) and performance metric (MCC ± SD) reported
+  - Use of open-source tools (XCMS, scikit-learn) confirmed
+  - Key algorithmic innovations described (k-NN filter, extended RFE beyond peak score)

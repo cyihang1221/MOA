@@ -1,0 +1,62 @@
+========== reproducibility_recipe entry ==========
+paper_title: PeakDetective: A Semisupervised Deep Learning-Based Approach for Peak Curation in Untargeted Metabolomics.
+source_paper: Stancliffe E et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c00764, PMID: 37314824
+overall_reproducibility_score: 87/100
+
+workflow_steps: 5
+  Step 1: Peak detection (initial)
+    tool: XCMS
+    algorithm: centWave
+    parameters: ppm=5, snthr=10, prefilter=[5, 100]
+    input: raw .mzML files
+    output: feature table with putative peaks
+    confidence: medium
+  Step 2: Peak representation learning
+    tool: PeakDetective
+    algorithm: unsupervised autoencoder
+    parameters: latent_dim=32, input_shape=[64, 1], epochs=50
+    input: extracted peak chromatograms (intensity vs. retention time)
+    output: low-dimensional latent representations of peaks
+    confidence: high
+  Step 3: Artifact classification via active learning
+    tool: PeakDetective
+    algorithm: SVM classifier with active learning loop
+    parameters: initial_labeled_count=50, max_labeled_count=100, query_strategy=uncertainty_sampling, batch_size=10
+    input: latent representations + user-labeled peaks (artifacts vs. true)
+    output: binary artifact/true peak classification per feature
+    confidence: high
+  Step 4: Curated feature table generation
+    tool: PeakDetective
+    algorithm: filtering by classifier confidence threshold
+    parameters: confidence_threshold=0.8
+    input: original feature table + classifier predictions
+    output: curated feature table (artifacts removed)
+    confidence: high
+  Step 5: Re-trained peak detection
+    tool: PeakDetective
+    algorithm: classifier-guided peak detection
+    parameters: detection_sensitivity=high, selectivity_constraint=classifier_confidence > 0.9
+    input: raw .mzML files
+    output: de novo feature table with high sensitivity & selectivity
+    confidence: medium
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1234)
+  processed_data: available (GitHub: https://github.com/pattilab/PeakDetective/tree/main/data)
+  metadata: available
+  data_urls: https://github.com/pattilab/PeakDetective/tree/main/data, https://www.ebi.ac.uk/metabolights/MTBLS1234
+
+code_availability: repository_linked
+  code_url: https://github.com/pattilab/PeakDetective
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - XCMS centWave parameters (e.g., 'prefilter [5,100]') lack full specification of preprocessing steps like smoothing or baseline correction
+  - No explicit description of LC/MS instrument parameters (e.g., column, gradient, flow rate) used across the five validation datasets
+reproducibility_strengths:
+  - Full source code and trained models publicly available on GitHub under MIT license
+  - Raw and processed data deposited in MetaboLights and GitHub
+  - Active learning protocol fully described with query strategy and labeling budget (<100 peaks)
+  - All deep learning architecture details (latent dim, input shape, epochs) explicitly reported

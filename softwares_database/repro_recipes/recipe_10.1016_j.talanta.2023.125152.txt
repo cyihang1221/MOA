@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: Paper spray mass spectrometry profiling of olive oil unsaponifiable fraction for commercial categories classification.
+source_paper: Talarico IR et al. (2024), Talanta, DOI: 10.1016/j.talanta.2023.125152, PMID: 37688893
+overall_reproducibility_score: 30/100
+
+workflow_steps: 6
+  Step 1: Sample preparation and paper spray ionization
+    tool: Paper spray mass spectrometry
+    input: unsaponifiable fraction of olive oil
+    output: raw MS spectra
+    confidence: low
+  Step 2: Tandem and high-resolution MS analysis for metabolite identification
+    tool: Tandem MS (MS/MS) and high-resolution MS
+    input: selected ions from MS survey
+    output: putative metabolite identifications
+    confidence: low
+  Step 3: Data preprocessing and peak table generation
+    tool: Not specified
+    input: raw MS spectra
+    output: feature table (m/z-intensity)
+    confidence: low
+  Step 4: Unsupervised chemometric analysis
+    tool: PCA and HCA
+    input: feature table
+    output: score plots, dendrograms
+    confidence: medium
+  Step 5: Supervised chemometric classification
+    tool: kNN and LDA
+    input: feature table with class labels (EVOO/VOO/POO)
+    output: classification models, prediction accuracy
+    confidence: medium
+  Step 6: Validation using direct infusion MS
+    tool: Direct infusion mass spectrometry
+    input: unsaponifiable fraction
+    output: comparative classification performance
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No software tools specified for data preprocessing or chemometrics
+  - No instrument parameters (e.g., spray voltage, solvent composition, mass analyzer settings) reported
+  - No details on peak picking, alignment, or normalization methods
+  - Raw or processed data not deposited in any public repository
+  - No code or scripts shared
+  - No parameter values for kNN (k value) or LDA (prior probabilities, covariance handling) provided

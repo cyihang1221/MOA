@@ -1,0 +1,63 @@
+========== reproducibility_recipe entry ==========
+paper_title: Non-targeted screening methodology to characterise human internal chemical exposure: Application to halogenated compounds in human milk.
+source_paper: Pourchet M et al. (2021), Talanta, DOI: 10.1016/j.talanta.2020.121979, PMID: 33592727
+overall_reproducibility_score: 25/100
+
+workflow_steps: 6
+  Step 1: Sample preparation
+    tool: homemade protocol
+    parameters: extraction_method=simple and fast, matrix=human milk
+    input: raw human milk samples
+    output: extracted analytes for LC- and GC-HRMS
+    confidence: low
+  Step 2: Chromatographic analysis
+    tool: LC-HRMS and GC-HRMS
+    parameters: platforms=['liquid chromatography', 'gas chromatography'], detector=high resolution mass spectrometry
+    input: extracted analytes
+    output: raw .raw or vendor-specific files
+    confidence: medium
+  Step 3: Data processing and feature detection
+    tool: homemade bioinformatics tools
+    input: raw MS data
+    output: feature table (m/z, RT, intensity)
+    confidence: low
+  Step 4: Suspect and non-targeted screening
+    tool: homemade bioinformatics tools
+    parameters: focus=halogenated compounds, mass_defect_filtering=True
+    input: feature table
+    output: candidate halogenated features
+    confidence: low
+  Step 5: Method assessment and validation
+    tool: reference standard mix + statistical approach
+    algorithm: statistical approach (unspecified)
+    parameters: reference_mix=30 chlorinated and brominated contaminants, substance_groups=various
+    input: processed features + reference standards
+    output: method performance metrics (e.g., sensitivity, selectivity)
+    confidence: medium
+  Step 6: Metabolite/contaminant identification
+    tool: homemade bioinformatics tools
+    parameters: identification_level=confirmed identification of known compounds (e.g., hexachlorobenzene, p,p'-DDE, 4-hydroxychlorothalonil)
+    input: candidate features + reference standards
+    output: annotated halogenated biomarkers of exposure
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Homemade bioinformatics tools not shared or described in detail
+  - No information on raw data deposition
+  - No software names, versions, or parameters for data processing
+  - No description of statistical approach used for method assessment
+  - Chromatographic conditions (e.g., columns, gradients, temperatures) not specified
+  - No access to reference mix composition beyond '30 chlorinated and brominated contaminants'
+reproducibility_strengths:
+  - Explicit focus on halogenated compounds provides analytical rationale
+  - Use of both LC- and GC-HRMS increases coverage
+  - Validation with known legacy and emerging contaminants demonstrates feasibility

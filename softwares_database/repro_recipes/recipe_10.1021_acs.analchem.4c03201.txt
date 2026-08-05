@@ -1,0 +1,50 @@
+========== reproducibility_recipe entry ==========
+paper_title: Nucleo-SAFARI: Automated Identification of Fragment Ions in Top-Down MS/MS Spectra of Nucleic Acids.
+source_paper: Lanzillotti MB et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.4c03201, PMID: 39365982
+overall_reproducibility_score: 75/100
+
+workflow_steps: 4
+  Step 1: In silico fragment ion generation
+    tool: Nucleo-SAFARI
+    algorithm: theoretical fragment ion prediction for nucleic acids
+    input: sequence of nucleic acid (e.g., RNA up to 100 nt)
+    output: list of theoretical fragment ions with m/z and charge states
+    confidence: medium
+  Step 2: Theoretical isotopic distribution modeling
+    tool: Nucleo-SAFARI
+    algorithm: isotopic pattern simulation
+    input: theoretical fragment ions
+    output: simulated isotopic distributions
+    confidence: medium
+  Step 3: Algorithmic assessment of experimental isotopic distributions
+    tool: Nucleo-SAFARI
+    algorithm: experimental-theoretical isotopic pattern matching
+    input: experimental Orbitrap MS/MS spectra
+    output: annotated fragment ion assignments with confidence metrics
+    confidence: medium
+  Step 4: Interactive visualization and validation of fragment assignments
+    tool: Nucleo-SAFARI (Shiny app)
+    algorithm: interactive HTML-based spectral annotation interface
+    input: annotated fragment ion assignments
+    output: user-validated fragment ion table and annotated spectrum plots
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/mblanzillotti/Nucleo-SAFARI
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of input MS/MS data format (e.g., .mzML, .raw conversion details)
+  - No specification of Orbitrap instrument parameters (resolution, AGC target, max IT) used for training or validation
+  - No example datasets or benchmark spectra provided with the repository
+  - No documentation of parameter thresholds for isotopic pattern matching (e.g., correlation cutoff, intensity threshold)
+reproducibility_strengths:
+  - Source code publicly available on GitHub
+  - Built entirely in R with Shiny — no commercial dependencies
+  - Explicitly targets Orbitrap platforms, enabling platform-specific optimization

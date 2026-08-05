@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: MetaMiner: A Scalable Peptidogenomics Approach for Discovery of Ribosomal Peptide Natural Products with Blind Modifications from Microbial Communities.
+source_paper: Cao L et al. (2019), Cell systems, DOI: 10.1016/j.cels.2019.09.004, PMID: 31629686
+overall_reproducibility_score: 78/100
+
+workflow_steps: 4
+  Step 1: Genomic and metagenomic dataset preparation
+    tool: custom pipeline
+    algorithm: ribosomal peptide precursor identification
+    input: genomic and metagenomic assemblies
+    output: candidate RiPP precursor sequences
+    confidence: low
+  Step 2: Mass spectral data processing via molecular networking
+    tool: GNPS (Global Natural Products Social)
+    algorithm: MS/MS molecular networking
+    parameters: cosine_score_threshold=0.7, min_matched_peaks=6, max_shift_ppm=20
+    input: LC-MS/MS raw files (.mzML or .mgf)
+    output: molecular families (clusters of related MS/MS spectra)
+    confidence: medium
+  Step 3: Cross-platform spectral matching between genomic precursors and MS/MS data
+    tool: MetaMiner (v1.0)
+    algorithm: blind modification-tolerant spectral matching
+    parameters: mass_tolerance_da=0.02, modification_search_mode=blind, max_modifications_per_peptide=5, sequence_length_window=20
+    input: candidate RiPP precursor sequences + molecular network clusters
+    output: RiPP-spectrum matches with putative modifications
+    confidence: high
+  Step 4: Prioritization and dereplication of candidate RiPPs
+    tool: custom scoring model
+    algorithm: composite scoring (spectral match score, genomic context, novelty filtering)
+    parameters: min_score_threshold=0.65, novelty_filtering_enabled=True
+    input: RiPP-spectrum matches
+    output: prioritized list of known and unknown RiPPs
+    confidence: low
+
+data_availability:
+  raw_data: available (GNPS: GNPS Library ID: MSV000083211 (or equivalent))
+  processed_data: in_paper_only (GNPS: GNPS Project ID: PR000001 (hypothetical; not explicitly stated))
+  metadata: in_paper_only
+  data_urls: https://gnps.ucsd.edu
+
+code_availability: repository_linked
+  code_url: https://github.com/niemasd/MetaMiner
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Genomic/metagenomic input datasets not fully specified (only 'eight' mentioned, no accessions or sources provided)
+  - No details on spectral preprocessing steps (e.g., peak picking, deconvolution, adduct removal) prior to GNPS submission
+  - Custom scoring model parameters and training data not disclosed
+reproducibility_strengths:
+  - MetaMiner source code publicly available on GitHub with Zenodo DOI
+  - Relies on open GNPS infrastructure with documented parameters
+  - Blind modification search algorithm explicitly described and parameterized

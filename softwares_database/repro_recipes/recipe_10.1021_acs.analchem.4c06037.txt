@@ -1,0 +1,50 @@
+========== reproducibility_recipe entry ==========
+paper_title: Principal Component Analysis Followed by Mahalanobis Distance Classification for Authentication of &lt;i&gt;Vaccinium&lt;/i&gt; Berry Ingredients and Supplements via LC-MS/MS-based Anthocyanin Fingerprinting.
+source_paper: Wang X et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.4c06037, PMID: 40524465
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Anthocyanin profiling via LC-MS/MS
+    tool: LC-MS/MS platform
+    input: extracted plant material (Vaccinium and non-Vaccinium samples)
+    output: raw chromatographic and tandem mass spectrometric data
+    confidence: low
+  Step 2: Feature selection and relative quantification
+    tool: not specified
+    parameters: n_anthocyanins_selected=18
+    input: LC-MS/MS raw data
+    output: matrix of relative abundance ratios for 18 anthocyanins
+    confidence: medium
+  Step 3: Principal Component Analysis (PCA)
+    tool: not specified
+    algorithm: PCA
+    input: matrix of relative abundance ratios for 18 anthocyanins
+    output: principal component scores and loadings
+    confidence: medium
+  Step 4: Mahalanobis Distance Classification
+    tool: not specified
+    algorithm: Mahalanobis Distance
+    parameters: decision_boundary=applied
+    input: PCA scores (reduced dimensionality space)
+    output: class assignment (V. myrtillus, V. corymbosum, V. macrocarpon, non-Vaccinium, adulterated)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - LC-MS/MS instrument parameters (e.g., column, gradient, ionization mode) not specified
+  - No software or code specified for PCA or Mahalanobis classification
+  - No details on how relative abundance ratios were calculated (e.g., internal standard, normalization method)
+  - Raw data and processed feature table not deposited in public repository
+  - No access to voucher sample metadata or HPTLC validation data
+reproducibility_strengths:
+  - Clear description of biological and analytical scope (48 samples, 18 anthocyanins)
+  - Explicit validation strategy using independent HPTLC confirmation
+  - Reference to regulatory standards (FDA cGMP, AOAC 2014.007)

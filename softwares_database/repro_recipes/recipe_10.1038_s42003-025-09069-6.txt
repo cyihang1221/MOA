@@ -1,0 +1,107 @@
+========== reproducibility_recipe entry ==========
+paper_title: Metabolomic and lipidomic atlas of human hair across its length.
+source_paper: van de Lavoir M et al. (2025), Communications biology, DOI: 10.1038/s42003-025-09069-6, PMID: 41291190
+overall_reproducibility_score: 58/100
+
+workflow_steps: 11
+  Step 1: Sample decontamination and segmentation
+    tool: Manual protocol
+    algorithm: Sequential solvent wash
+    parameters: wash_sequence=['dichloromethane', 'acetone', 'ultrapure water', 'acetone'], wash_duration_per_solvent_min=2, drying_time_min=2, segmentation=['S1', 'S2', 'S3', 'T']
+    input: Intact hair strands
+    output: Segmented, decontaminated, pulverized hair powder
+    confidence: high
+  Step 2: Liquid-liquid extraction (LLE)
+    tool: Manual protocol
+    algorithm: Biphasic LLE
+    parameters: solvent_ratio_v_v_v=[8, 4, 3], solvent_composition=CHCl3/MeOH/H2O, polar_fraction_additives=['0.5 mM L-ascorbic acid', '1 mM EDTA'], apolar_fraction_additive=1 mM BHT, ISTD_count=12, ISTD_concentration_ng_per_uL=10, ISTD_volume_uL=20, sample_mass_mg=30
+    input: Pulverized hair powder
+    output: Polar and apolar extract fractions
+    confidence: high
+  Step 3: Reconstitution and QC pooling
+    tool: Manual protocol
+    algorithm: Equal-volume pooling
+    parameters: polar_reconstitution_solvent=MeCN/H2O (65/35, v/v), apolar_reconstitution_solvent=IPA/MeOH (35/65, v/v), QC_pooling_strategy=equal volumes of all sample extracts excluding blanks, QC_injection_frequency=every 4 samples
+    input: Dried polar/apolar extracts
+    output: Reconstituted extracts for LC-HRMS; QC pools per platform/ion mode
+    confidence: high
+  Step 4: LC-(DTIM)-HRMS data acquisition
+    tool: Agilent Instrumentation Suite
+    algorithm: Full-scan MS1 with in-run calibration and auto-MS/MS
+    parameters: instrument_polar=['Agilent 1290 Infinity UPLC + 6530 QToF'], instrument_apolar=['Agilent 1290 Infinity II LC + 6560 DTIM-QToF'], ionization_modes=['ESI (+)', 'ESI (−)'], columns_polar=['iHILIC-Fusion (zwitterionic, silica)', 'iHILIC-Fusion(P) (zwitterionic, polymer)'], columns_apolar=['ACQUITY UPLC BEH C18'], mass_accuracy_calibration_ppm=10, dynamic_range_mode=extended dynamic mode at 2 GHz, reference_ions=[{'mode': 'ESI (+)', 'mz': [121.0508, 922.0097]}, {'mode': 'ESI (−)', 'mz': [119.0363, 1033.9881]}], auto_MSMS_collision_energies_eV=[10, 20, 40], active_exclusion_injections=9, DTIM_mode=single pulse, system_suitability_criteria={'peak_height_min_counts': 5000, 'peak_height_rsd_max_percent': 30, 'mass_error_max_ppm': 10, 'retention_time_deviation_max_min': 0.2}
+    input: Reconstituted extracts
+    output: Raw .d files (Agilent format)
+    confidence: high
+  Step 5: Data conversion and preprocessing
+    tool: MSConvert (v65)
+    algorithm: Centroiding, noise filtering, format conversion
+    parameters: input_format=.d, output_format=.mzML, centroiding=True, noise_filtering=True
+    input: Raw .d files
+    output: .mzML files
+    confidence: high
+  Step 6: Feature detection and alignment
+    tool: MS-DIAL
+    algorithm: CentWave (for polar), AIF (for apolar/DTIM)
+    parameters: mass_tolerance_ppm=5, rt_tolerance_min=0.3, min_peak_height=1000, min_intensity=100, deisotoping=True, duplicate_removal=True
+    input: .mzML files
+    output: Aligned feature table (m/z, RT, intensity)
+    confidence: medium
+  Step 7: Drift correction and quality filtering
+    tool: MS-FLO (v66)
+    algorithm: Cubic spline drift correction
+    parameters: drift_correction_method=cubic spline, blank_contribution_threshold_percent=5, snr_threshold=10, qc_rsd_threshold_percent=30, d_ratio_threshold=None, group_detection_rate_min_percent=80, qc_retention_rate_min_percent=50, q_score_threshold=70.0
+    input: MS-DIAL feature table
+    output: High-quality filtered feature table
+    confidence: medium
+  Step 8: DTIM-CCS calibration and feature extraction
+    tool: IM-MS Reprocessor, IM-MS Browser, Mass Profiler (v['10.00', '10.0', '10.0.1'])
+    algorithm: Single-field DT CCS calibration using ESI Tune mix
+    parameters: calibration_reference=Agilent ESI Tune mix, ccs_calculation_method=Beta and TFix coefficients, dt_ccs_n2_tolerance_percent=3, mass_tolerance_ppm_plus_md=[15.0, 2.0], rt_tolerance_abs_min=0.3, min_ion_intensity=100, charge_state_range=[1, 1]
+    input: DTIM-MS raw .d files (apolar QC pool)
+    output: Feature table with m/z, RT, drift time, DT CCS N2
+    confidence: high
+  Step 9: Metabolite and lipid annotation
+    tool: MS-DIAL, LipidMatch, LipidHunter, GNPS, MassBank, HMDB, METLIN, NIST, LipidBlast
+    algorithm: MS/MS spectral matching + retention time/CCS validation
+    parameters: ms_ms_library_sources=['MS-DIAL public libraries', 'in-house library', 'MassBank', 'HMDB', 'METLIN', 'GNPS', 'NIST v.23', 'LipidBlast', 'LipidMatch', 'LipidHunter'], msi_annotation_confidence_level_min=2, rt_validation_window_min=0.2, ccs_error_threshold_percent=3, isotopic_pattern_check=True, fragment_interpretation_guidelines=ILS shorthand notation
+    input: Filtered feature table + MS/MS spectra (QC pooled)
+    output: Annotated metabolite/lipid list with confidence levels
+    confidence: medium
+  Step 10: Quantification and normalization
+    tool: MassHunter (v10.0)
+    algorithm: Internal standard calibration curve (5-point, 1:2 dilution)
+    parameters: calibration_acceptance=residuals and back-calculated concentrations within ±15% (±20% for lowest point), istd_adduct_based_quantification=True, isotope_correction=Type I (¹³C correction), normalization_basis=sample weight (30 mg), quantification_level=Level 2 (semi-quantitative, relative to ISTD)
+    input: Annotated feature table + QC calibration series
+    output: Quantified concentration table (ng/µL or nmol/g equivalent)
+    confidence: high
+  Step 11: Statistical analysis and visualization
+    tool: Custom R/Python + MetaboAnalyst (implied)
+    algorithm: PCA, t-test/ANOVA (implied by longitudinal variation claims), volcano plots, heatmaps
+    parameters: statistical_tests=['t-test', 'ANOVA'], multivariate_analysis=['PCA'], significance_threshold_p=0.05, fold_change_threshold_percent=50, missing_value_imputation=zero for missing samples (per Mass Profiler setting)
+    input: Quantified concentration table
+    output: Differential features, pathway-enriched lists, visualizations
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (Not specified)
+  processed_data: available (https://metabolomics.cloud/hair/)
+  metadata: in_paper_only
+  data_urls: https://metabolomics.cloud/hair/
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw .d files not deposited in public repository (e.g., MetaboLights, PRIDE, or MassIVE)
+  - No code/scripts shared for statistical analysis, PCA, or visualization
+  - MS-DIAL, MS-FLO, and Mass Profiler parameters only referenced in Supplementary Tables (not embedded in text)
+  - Agilent proprietary software (IM-MS Reprocessor, Mass Profiler, MassHunter) requires commercial license
+  - No description of pathway enrichment or multi-omics integration methods despite atlas claims
+  - Supplementary Tables 1–4 and Data 1–6 are cited but not accessible in provided text
+reproducibility_strengths:
+  - Publicly accessible processed data portal (https://metabolomics.cloud/hair/)
+  - Detailed experimental protocols including decontamination, LLE, and QC criteria
+  - Use of open-source tools (MSConvert, MS-DIAL, MS-FLO) for core processing
+  - Transparent annotation workflow with MSI confidence levels and four-step manual validation
+  - Comprehensive instrument parameters reported (mobile phases, columns, calibration, system suitability)

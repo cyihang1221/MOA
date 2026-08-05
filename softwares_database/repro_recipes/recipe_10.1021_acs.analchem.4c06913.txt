@@ -1,0 +1,50 @@
+========== reproducibility_recipe entry ==========
+paper_title: Efficient Compression of Mass Spectrometry Images via Contrastive Learning-Based Encoding.
+source_paper: Radziński P et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.4c06913, PMID: 40689435
+overall_reproducibility_score: 45/100
+
+workflow_steps: 4
+  Step 1: MSI data encoding via contrastive learning
+    tool: Custom Python implementation
+    algorithm: Contrastive learning-based encoding
+    input: Raw mass spectrometry imaging (MSI) data cubes (m/z × x × y)
+    output: Fixed-length encoded vectors per pixel
+    confidence: low
+  Step 2: Image segmentation using k-means
+    tool: scikit-learn
+    algorithm: k-means clustering
+    input: Raw MSI data cubes or encoded vectors
+    output: Segmentation labels per pixel
+    confidence: low
+  Step 3: Image segmentation using iterative k-means
+    tool: Custom Python implementation
+    algorithm: Iterative k-means clustering
+    input: Encoded MSI vectors
+    output: Refined segmentation labels per pixel
+    confidence: low
+  Step 4: Dimensionality reduction for visualization
+    tool: scikit-learn
+    algorithm: t-SNE
+    input: Encoded MSI vectors
+    output: 2D/3D t-SNE embeddings
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/kskrajny/MSI-Segmentation
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of contrastive learning architecture (e.g., encoder backbone, loss function, augmentations)
+  - No specification of MSI data format (e.g., imzML, HDF5), preprocessing steps (e.g., peak picking, normalization), or m/z binning parameters
+  - No details on t-SNE parameters (perplexity, iterations, learning rate)
+  - No validation metrics reported for segmentation accuracy (e.g., Dice score, ARI)
+  - No access information for mouse bladder or Barrett's esophagus datasets
+reproducibility_strengths:
+  - Source code publicly available on GitHub
+  - Clear problem framing and evaluation strategy (segmentation accuracy, t-SNE feasibility)

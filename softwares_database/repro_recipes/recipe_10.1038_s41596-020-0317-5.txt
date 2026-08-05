@@ -1,0 +1,92 @@
+========== reproducibility_recipe entry ==========
+paper_title: Reproducible molecular networking of untargeted mass spectrometry data using GNPS.
+source_paper: Aron AT et al. (2020), Nature protocols, DOI: 10.1038/s41596-020-0317-5, PMID: 32405051
+overall_reproducibility_score: 92/100
+
+workflow_steps: 6
+  Step 1: Data upload and registration
+    tool: GNPS
+    algorithm: web-based submission
+    input: raw .mzML or .mgf files containing MS/MS spectra
+    output: registered dataset with unique GNPS job ID
+    confidence: high
+  Step 2: Spectral pre-processing
+    tool: GNPS
+    algorithm: peak filtering, deisotoping, dereplication
+    parameters: min_peak_intensity=0.001, max_number_of_peaks_per_spectrum=100, precursor_mass_tolerance=0.02, fragment_mass_tolerance=0.02
+    input: raw MS/MS spectra
+    output: cleaned, centroided MS/MS spectra
+    confidence: high
+  Step 3: Molecular networking via spectral similarity
+    tool: GNPS
+    algorithm: Cosine similarity (modified dot product)
+    parameters: cosine_score_threshold=0.7, min_matched_peaks=6, max_shift_mz=1.0, min_precursor_difference=5.0, max_precursor_difference=1000.0
+    input: pre-processed MS/MS spectra
+    output: molecular network (graph: nodes = spectra, edges = cosine scores ≥ threshold)
+    confidence: high
+  Step 4: Annotation propagation and spectral library matching
+    tool: GNPS
+    algorithm: library search against GNPS Mass Spectrometry Reference Library
+    parameters: library_match_threshold=0.7, min_matched_peaks_for_annotation=6, mass_error_tolerance_ppm=20.0
+    input: molecular network nodes (spectra)
+    output: annotated molecular network with compound IDs and confidence levels
+    confidence: high
+  Step 5: Network visualization and subnetwork extraction
+    tool: Cytoscape
+    algorithm: force-directed layout (e.g., Prefuse Force Directed)
+    parameters: node_size_attribute=number_of_spectra, edge_thickness_attribute=cosine_score
+    input: GNPS-exported network (edges.csv, nodes.csv)
+    output: interactive network visualization, subnetworks (e.g., molecular families)
+    confidence: medium
+  Step 6: Cross-dataset propagation and knowledge sharing
+    tool: GNPS
+    algorithm: job cloning and annotation inheritance
+    input: existing GNPS job ID
+    output: cloned job with inherited annotations and updated network
+    confidence: high
+
+data_availability:
+  raw_data: available (MassIVE: ['MSV000083381', 'MSV000083359'])
+  processed_data: available (GNPS: ['GNPS Job ID: JOB#XXXXX'])
+  metadata: available
+  data_urls: https://massive.ucsd.edu/ProteoSAFe/static/massive/gnps-splash.jsp?task=MSV000083381, https://massive.ucsd.edu/ProteoSAFe/static/massive/gnps-splash.jsp?task=MSV000083359
+
+code_availability: repository_linked
+  code_url: https://github.com/CCMS-UCSD/GNPS_Workflows
+  license: Apache-2.0
+
+figure_recipes: 6
+  Fig. 1: [workflow_diagram]
+    caption: Schematic of molecular network generation from tandem mass spectra, showing preprocessing, spectral comparison, network construction, and annotation.
+    produced_by_step: [1, 2, 3, 4]
+    visualization_tool: Adobe Illustrator / GNPS web interface
+  Fig. 2: [workflow_diagram]
+    caption: Flowchart of the full protocol through Step 32, highlighting core molecular networking steps and optional downstream analyses.
+    produced_by_step: [1, 2, 3, 4, 5, 6]
+    visualization_tool: Lucidchart / GNPS documentation
+  Fig. 3: [network]
+    caption: Mouse duodenum global molecular network visualized in Cytoscape, illustrating metabolite diversity and clustering by spectral similarity.
+    produced_by_step: [3, 5]
+    visualization_tool: Cytoscape
+  Fig. 6: [network]
+    caption: Propagation of molecular networking to reveal cross-sample relationships between structurally related molecules.
+    produced_by_step: [6]
+    visualization_tool: Cytoscape / GNPS web viewer
+  Fig. 7: [network]
+    caption: Stenothricin molecular family subnetwork showing strain-specific and shared detections across Streptomyces isolates.
+    produced_by_step: [3, 4, 5]
+    visualization_tool: Cytoscape
+  Fig. 8: [network]
+    caption: Quinolone molecular family subnetwork detected in lung tissue and Pseudomonas isolates, demonstrating host–microbe metabolic overlap.
+    produced_by_step: [3, 4, 5]
+    visualization_tool: Cytoscape
+
+reproducibility_gaps:
+  - Cytoscape layout parameters (e.g., exact force-directed algorithm settings) not fully specified
+  - No explicit versioning of GNPS web interface used in protocol (though backend workflows are versioned on GitHub)
+reproducibility_strengths:
+  - All raw data deposited in MassIVE with public accession IDs
+  - GNPS workflows are open-source and version-controlled on GitHub
+  - Every analysis job is shareable/clonable with full provenance
+  - Protocol includes step numbers (1–53) and explicit parameter thresholds for cosine scoring and library matching
+  - Uses only free, web-accessible tools (GNPS) and open-source visualization (Cytoscape)

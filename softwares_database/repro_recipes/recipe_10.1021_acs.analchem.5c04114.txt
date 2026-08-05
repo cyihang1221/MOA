@@ -1,0 +1,64 @@
+========== reproducibility_recipe entry ==========
+paper_title: Not One Method to Rule Them All: A Comparative Study of Chromatographic Platforms (RP-LC-, HILIC-, SFC-, and IC-HRMS) for Water Analysis.
+source_paper: Zweigle J et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c04114, PMID: 41198048
+overall_reproducibility_score: 30/100
+
+workflow_steps: 6
+  Step 1: Chromatographic analysis across four platforms
+    tool: RP-LC-HRMS, HILIC-HRMS, SFC-HRMS, IC-HRMS
+    parameters: platforms=['RP-LC', 'HILIC', 'SFC', 'IC'], ionization_modes=['positive', 'negative'], sample_types=['solvent standards', 'spiked groundwater (vacuum-evaporated)']
+    input: 127 environmentally relevant compounds (logD_pH7.4 -5.6 to 6.6)
+    output: raw mass spectrometry data (.raw, .d, or equivalent vendor formats)
+    confidence: medium
+  Step 2: Data acquisition across multiple laboratories
+    tool: Four independent laboratories
+    parameters: instrument_distribution={'RP-LC-HRMS': 5, 'HILIC-HRMS': 3, 'SFC-HRMS': 2, 'IC-HRMS': 2}
+    input: raw chromatographic/MS data from step 1
+    output: multi-lab raw datasets
+    confidence: high
+  Step 3: Feature detection with standard tools
+    tool: standard feature detection tools (unspecified)
+    input: raw mass spectrometry data
+    output: feature tables (m/z, RT, intensity)
+    confidence: low
+  Step 4: EIC-based method-agnostic detection workflow
+    tool: extracted ion chromatogram (EIC)-based workflow
+    algorithm: targeted EIC extraction
+    parameters: extraction_window=±5–10 ppm, peak_detection=manual or semi-automated integration
+    input: raw mass spectrometry data
+    output: compound detection calls (yes/no per compound/platform)
+    confidence: medium
+  Step 5: Detection coverage assessment
+    tool: custom analysis (descriptive statistics)
+    algorithm: frequency counting per logD bin and platform
+    parameters: logD_bins=['logD_pH7.4 > 0', 'logD_pH7.4 < 0'], metrics=['detection frequency', 'peak width (s)', 'retention time correlation', 'ionization efficiency']
+    input: EIC-based detection results
+    output: coverage tables, performance metrics per platform
+    confidence: high
+  Step 6: Matrix effect evaluation
+    tool: spiked groundwater analysis with vacuum evaporation
+    parameters: enrichment_method=vacuum evaporation, matrix=groundwater
+    input: spiked environmental matrix samples
+    output: reduced coverage metrics (73% vs. solvent)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in any public repository
+  - Specific HRMS instruments, acquisition parameters (e.g., resolution, AGC targets, isolation windows), and chromatographic conditions (gradients, columns, flow rates, temperatures) not reported
+  - EIC workflow implementation details (software, tolerance windows, integration criteria) not specified
+  - Standard feature detection tools not named — prevents replication of initial false-negative assessment
+  - No code, scripts, or computational protocols shared for coverage analysis or EIC processing
+  - Laboratory-specific metadata (e.g., instrument models, calibration procedures, QC practices) omitted
+reproducibility_strengths:
+  - Comprehensive compound set (n=127) with physicochemical properties (logD_pH7.4) provided
+  - Explicit experimental design: 12 methods across 4 platforms, multi-lab setup, solvent vs. groundwater comparison
+  - Quantitative performance metrics reported (e.g., peak widths: SFC ∼2.5 s, IC ∼17 s; coverage percentages per logD bin)

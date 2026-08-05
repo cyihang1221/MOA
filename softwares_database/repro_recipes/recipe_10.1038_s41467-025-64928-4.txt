@@ -1,0 +1,65 @@
+========== reproducibility_recipe entry ==========
+paper_title: Carafe enables high quality in silico spectral library generation for data-independent acquisition proteomics.
+source_paper: Wen B et al. (2025), Nature communications, DOI: 10.1038/s41467-025-64928-4, PMID: 41198693
+overall_reproducibility_score: 72/100
+
+workflow_steps: 5
+  Step 1: Peptide detection from DIA data
+    tool: DIA-NN (v1.8.1)
+    algorithm: library-free search
+    parameters: fdr_threshold=0.01, precursor_fdr=0.01
+    input: raw DIA .wiff/.d/.raw files
+    output: peptide identifications (precursor-level, 1% FDR)
+    confidence: high
+  Step 2: Training data generation for fragment ion intensity prediction
+    tool: custom Python pipeline (based on AlphaPeptDeep)
+    algorithm: spectrum-centric + peptide-centric shared peak detection
+    parameters: mass_tolerance_ppm=10, shared_peak_correlation_threshold=0.8, peak_shape_score_boundary_intensity_ratio=0.1, peak_shape_score_boundary_intensity_ratio_adjusted=0.25, peak_shape_score_intensity_ratio_cutoff=0.5, max_shared_peak_fraction_for_inclusion=0.5, fragment_ion_types=['b', 'y'], phospho_fragment_ion_types=['b', 'y', 'neutral_loss_-98'], charge_states_considered=[1, 2], normalization_method=linear_to_max_intensity_1
+    input: DIA-NN peptide identifications + raw DIA spectra
+    output: labeled fragment ion intensity matrices with shared peak masking annotations
+    confidence: medium
+  Step 3: Fragment ion intensity prediction model training
+    tool: AlphaPeptDeep (modified transformer)
+    algorithm: transformer with embedding, positional encoding, 4 transformer layers, 2 FC layers; peak-masking-aware loss
+    parameters: pretrained_weights_url=https://github.com/MannLabs/alphapeptdeep, epochs=20, warmup_epochs=10, learning_rate=0.0001, batch_size=512, loss_function=L1, instrument_metadata={'TripleTOF_5600': {'instrument_type': 'Lumos', 'nce': 27}, 'Orbitrap_Astral': {'instrument_type': 'Lumos', 'nce': None}}, input_features=['amino_acid_sequence', 'modifications', 'charge_state', 'nce', 'instrument_type']
+    input: labeled fragment ion intensity matrices
+    output: fine-tuned fragment ion intensity prediction model
+    confidence: high
+  Step 4: Retention time (RT) prediction model training
+    tool: AlphaPeptDeep (hybrid CNN-BiLSTM)
+    algorithm: convolutional neural network + bidirectional LSTM
+    parameters: epochs=40, warmup_epochs=10, learning_rate=0.0001, batch_size=1024, loss_function=L1, rt_normalization_range=[0, 1], rt_normalization_factor=max_rt_or_user_defined
+    input: peptidoform RT annotations (from DIA-NN identifications)
+    output: fine-tuned RT prediction model
+    confidence: high
+  Step 5: In silico spectral library generation
+    tool: Carafe (integrated in Skyline)
+    algorithm: in silico digestion + peptidoform enumeration + model-based prediction
+    parameters: enzyme=trypsin, max_missed_cleavages=2, peptide_length_min=7, peptide_length_max=30, fixed_modifications=['Carbamidomethyl (C)'], variable_modifications={'global_proteome': [], 'phosphoproteome': ['Phospho (S)', 'Phospho (T)', 'Phospho (Y)']}, precursor_charge_range=[2, 3, 4], mz_scan_range_filter=True, top_fragment_ions_per_precursor=20, peak_masking_during_prediction=False, rt_scale_conversion=multiply_by_training_normalization_factor
+    input: protein database + fine-tuned Carafe models + DIA run metadata (m/z range, RT normalization factor)
+    output: experiment-specific spectral library (.sky or .tsv format)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (PRIDE)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: https://github.com/MannLabs/alphapeptdeep
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw DIA mass spectrometry data not deposited in public repository (e.g., PRIDE or Panorama)
+  - Carafe source code not explicitly released — only described as integrated into Skyline; no standalone repository or DOI provided
+  - No access to trained Carafe model weights or example spectral libraries
+  - Instrument-specific NCE values for Orbitrap Astral not specified (only 'Lumos' instrument type assigned)
+  - Exact gradient profile, column specifications, and LC parameters omitted from methods
+  - Supplementary Figures 1–4 referenced but not included in provided text — critical for shared peak detection validation
+reproducibility_strengths:
+  - Uses open-source tools: DIA-NN (v1.8.1), AlphaPeptDeep (MIT licensed, GitHub-hosted)
+  - Detailed hyperparameters reported for all deep learning training steps (epochs, LR, batch size, loss)
+  - Explicit fragment ion types, mass tolerance (10 ppm), and shared peak logic described
+  - Clear description of peptidoform generation rules and spectral library filtering criteria

@@ -1,0 +1,56 @@
+========== reproducibility_recipe entry ==========
+paper_title: A Novel Analytical Framework for Simultaneous Background Correction and Chemical Characterization in Aerosol Molecular Composition Online Mass Spectrometry.
+source_paper: Liu Y et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c01723, PMID: 40553428
+overall_reproducibility_score: 20/100
+
+workflow_steps: 5
+  Step 1: Raw spectral data input
+    tool: custom Python pipeline
+    algorithm: none
+    input: time-resolved mass spectra (m/z vs intensity, near-raw)
+    output: matrix of m/z-intensity-time
+    confidence: low
+  Step 2: Synchronous mass-spectral analysis and background removal
+    tool: SMART-PMF framework
+    algorithm: Positive Matrix Factorization (PMF)
+    parameters: number_of_factors=not specified, robust_mode=likely enabled, error_model=not specified, non-negativity_constraints=True
+    input: matrix of m/z-intensity-time
+    output: factor profiles (mass spectra) and time series (source contributions)
+    confidence: medium
+  Step 3: Atmospheric signal extraction and background separation
+    tool: SMART-PMF framework
+    algorithm: temporal pattern discrimination
+    parameters: temporal resolution=field-deployed time series (implied sub-hourly), pattern orthogonality constraint=implied
+    input: PMF factor profiles and time series
+    output: atmospheric factor(s), instrumental background factor(s)
+    confidence: medium
+  Step 4: Chemical characterization and molecular formula assignment
+    tool: custom peak fitting and formula assignment
+    algorithm: mass defect filtering + elemental composition assignment
+    parameters: mass_accuracy_threshold=not specified, elemental constraints=C, H, O, N, S assumed, maximum_atoms=not specified
+    input: atmospheric factor mass spectra
+    output: annotated molecular formulas and compound classes
+    confidence: low
+  Step 5: Validation against collocated AMS measurements
+    tool: linear regression / correlation analysis
+    algorithm: Pearson correlation, time-series comparison
+    parameters: correlation_metric=Pearson r, aggregation_interval=not specified
+    input: SMART-PMF atmospheric factor time series and AMS organic aerosol time series
+    output: validation statistics (r, slope, RMSE)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: not_mentioned (not mentioned)
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - SMART-PMF implementation is not publicly available or described in sufficient detail
+  - No parameters for PMF (e.g., number of factors, error model, FPEAK, rotational control) provided
+  - No information on raw data format, calibration, or m/z alignment procedure
+  - No code, repository, or software link provided
+  - Validation methodology lacks quantitative thresholds or statistical rigor description

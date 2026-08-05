@@ -1,0 +1,94 @@
+========== reproducibility_recipe entry ==========
+paper_title: Spatial mapping of the brain metabolome lipidome and glycome.
+source_paper: Clarke HA et al. (2025), Nature communications, DOI: 10.1038/s41467-025-59487-7, PMID: 40355410
+overall_reproducibility_score: 58/100
+
+workflow_steps: 9
+  Step 1: MALDI MSI data acquisition (metabolome)
+    tool: Bruker timsTOF fleX (vFlexImaging 6.0)
+    algorithm: autopilot-guided acquisition with standardized .mis mask file
+    parameters: ion_mode=negative, scan_range_mz=[20, 750], pixel_size_um=50, laser_raster_um=[46, 46], laser_power_percent=90, shots_per_burst=396, laser_frequency_hz=10000, summation_rate=544, collision_energy_ev=7, collision_rf_vpp=700, transfer_voltage_maldi_plate_offset_v=30, transfer_voltage_deflection1_delta_v=-60, funnel1_rf_vpp=200, funnel2_rf_vpp=200, multipole_rf_vpp=200
+    input: frozen tissue sections on Bruker IntelliSlides
+    output: raw .d directory (Bruker format)
+    confidence: high
+  Step 2: MALDI MSI data acquisition (lipidome)
+    tool: Bruker timsTOF fleX (vFlexImaging 6.0)
+    algorithm: autopilot-guided acquisition with same .mis mask file as metabolome
+    parameters: ion_mode=negative, scan_range_mz=[300, 2000], pixel_size_um=50, laser_raster_um=[46, 46], laser_power_percent=80, shots_per_burst=300, laser_frequency_hz=10000, summation_rate=same as metabolome (not numerically specified), collision_energy_ev=7, collision_rf_vpp=700, transfer_voltage_maldi_plate_offset_v=30, transfer_voltage_deflection1_delta_v=-60, funnel1_rf_vpp=200, funnel2_rf_vpp=200, multipole_rf_vpp=200
+    input: same slide post-metabolome imaging (NEDC matrix stripped, formalin-fixed)
+    output: raw .d directory (Bruker format)
+    confidence: high
+  Step 3: MALDI MSI data acquisition (glycome/glycogen)
+    tool: Bruker timsTOF fleX (vFlexImaging 6.0)
+    algorithm: autopilot-guided acquisition with same .mis mask file
+    parameters: ion_mode=positive, scan_range_mz=[700, 4000], pixel_size_um=50, laser_raster_um=[46, 46], laser_power_percent=37, shots_per_burst=320, laser_frequency_hz=10000, summation_rate=210, collision_energy_ev=10, collision_rf_vpp=4000, transfer_voltage_maldi_plate_offset_v=50, transfer_voltage_deflection1_delta_v=70, funnel1_rf_vpp=500, funnel2_rf_vpp=500, multipole_rf_vpp=500
+    input: same slide post-lipid imaging (enzymatically treated: isoamylase + PNGase F)
+    output: raw .d directory (Bruker format)
+    confidence: high
+  Step 4: Peak detection and feature extraction
+    tool: MetaboScape®
+    algorithm: T-ReX® 2D algorithm
+    parameters: intensity_threshold=500, speckle_width=3, speckle_height=3, max_speckles=200, ion_deconvolution_targets=['[M-H]⁻', '[M+Cl]⁻', '[M-H2O]⁻']
+    input: raw .d directories (Bruker format)
+    output: .srd files → peak table (.mca) → refined CSV
+    confidence: high
+  Step 5: MS1 annotation and library matching
+    tool: MetaboScape®
+    algorithm: hierarchical spectral library search + SmartFormula
+    parameters: mass_tolerance_ppm={'min': 5, 'max': 10}, msigma={'min': 25, 'max': 250}, libraries_used=['7k curated mammalian metabolites', 'MCube lipid library', 'in-house 50k endogenous metabolite library', 'HMDB', 'MoNA', 'MassBank', 'FiehnLib LipidBlast', 'MetaboBASE® Personal Library 2023', 'Bruker Sumner MetaboBASE®', 'NIST 2022']
+    input: .mca files (MetaboScape output)
+    output: annotated peak table with putative IDs
+    confidence: medium
+  Step 6: Data export and pixel-wise tabular conversion
+    tool: SCiLS Lab R API
+    algorithm: csv export via SCiLS Lab API
+    parameters: intensity_measure=peak_area, normalization_applied=False
+    input: refined .mca files
+    output: omics-specific CSV files (pixel × m/z feature)
+    confidence: high
+  Step 7: Co-registration and spatial alignment
+    tool: custom Python (Sami framework)
+    algorithm: coordinate-based co-registration using embedded X/Y metadata
+    parameters: feature_filter_mz_count=400
+    input: omics-specific CSV files
+    output: co-registered CSV files
+    confidence: high
+  Step 8: Multiomics integration and normalization
+    tool: Sami (preprocess.py)
+    algorithm: csv2h5ad + pooldata
+    parameters: normalization_method=total ion count, transformation=log1p
+    input: co-registered CSV files
+    output: integrated .h5ad AnnData object
+    confidence: high
+  Step 9: Correlation analysis
+    tool: custom Python (Sami)
+    algorithm: Pearson correlation
+    parameters: reference_feature=specific lipid m/z value (not specified), correlation_threshold=None
+    input: integrated .h5ad AnnData object
+    output: correlation matrix
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (Not specified)
+  processed_data: in_paper_only (Not specified)
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: https://github.com/XinBiostats/SAMI
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw MALDI imaging data (.d directories) not deposited in public repository (e.g., MetaboLights, MassIVE)
+  - No accession ID or repository link provided for supplementary CSV files
+  - Critical instrument parameters missing for some runs (e.g., exact summation rate for lipids, full transfer settings for glycomics)
+  - Reference lipid m/z for correlation analysis unspecified
+  - No details on high-dimensional clustering, spatial mapping, cluster marker identification, or pathway enrichment algorithms or parameters
+  - MetaboScape® and SCiLS Lab are commercial tools requiring licenses; no open-source alternatives or parameter export protocols described
+  - Enzyme application protocol lacks quantitative validation (e.g., activity units per mm², incubation uniformity)
+reproducibility_strengths:
+  - Sami framework source code publicly available on GitHub
+  - Detailed MALDI acquisition parameters reported per omic layer
+  - Explicit description of co-registration strategy (X/Y coordinate embedding)
+  - Comprehensive list of spectral libraries used for annotation
+  - Standardized .mis mask file usage ensures cross-omic spatial alignment

@@ -1,0 +1,31 @@
+========== reproducibility_recipe entry ==========
+paper_title: Generalized Tree Structure to Annotate Untargeted Metabolomics and Stable Isotope Tracing Data.
+source_paper: Li S et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.2c05810, PMID: 37018697
+overall_reproducibility_score: 40/100
+
+workflow_steps: 1
+  Step 1: Ion relationship modeling and neutral mass inference
+    tool: khipu
+    algorithm: generalized tree structure conversion from mass distance networks
+    input: mass distance network (e.g., from feature table with m/z and RT)
+    output: tree-structured ion annotation (JSON format) linking adducts, isotopes, fragments to putative neutral metabolites
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposition reported
+  - khipu package URL or repository not provided
+  - No description of input data format requirements (e.g., expected columns, file types)
+  - No benchmark datasets or parameter settings for tree construction (e.g., mass tolerance, RT window, adduct rules) specified
+  - No validation workflow or integration instructions with common upstream tools (e.g., XCMS, MS-DIAL, OpenMS)
+reproducibility_strengths:
+  - Algorithm conceptually well-defined (tree-based generalization of ion relationships)
+  - Output format standardized (JSON), enabling interoperability

@@ -1,0 +1,97 @@
+========== reproducibility_recipe entry ==========
+paper_title: Identifying unknown metabolites using NMR-based metabolic profiling techniques.
+source_paper: Garcia-Perez I et al. (2020), Nature protocols, DOI: 10.1038/s41596-020-0343-3, PMID: 32681152
+overall_reproducibility_score: 42/100
+
+workflow_steps: 8
+  Step 1: Sample preparation including solid-phase extraction (SPE) and LC fraction collection
+    tool: Solid-phase extraction (SPE)
+    input: biological samples (urine, plasma)
+    output: fractionated samples for NMR/MS analysis
+    confidence: medium
+  Step 2: One-dimensional (1D) NMR data acquisition
+    tool: NMR spectrometer
+    input: prepared biological samples
+    output: 1D NMR spectra
+    confidence: low
+  Step 3: Statistical Total Correlation Spectroscopy (STOCSY) analysis
+    tool: STOCSY
+    algorithm: correlation-based signal clustering
+    parameters: correlation_threshold=0.7
+    input: 1D NMR spectra
+    output: correlated signal networks (putative metabolite groups)
+    confidence: high
+  Step 4: Subset Optimization by Reference Matching (STORM) analysis
+    tool: STORM
+    algorithm: reference-matching subset optimization
+    parameters: reference_signal=user-defined, subset_size=optimized
+    input: 1D NMR spectra + reference signal
+    output: enhanced signal identification for target metabolite
+    confidence: medium
+  Step 5: Resolution-Enhanced STORM (RED-STORM) analysis
+    tool: RED-STORM
+    algorithm: resolution-enhanced reference matching
+    parameters: smoothing_window=adaptive, resolution_factor=user-tuned
+    input: 1D NMR spectra + reference signal
+    output: higher-resolution correlated signals
+    confidence: medium
+  Step 6: Two-dimensional (2D) NMR experiments (e.g., COSY, TOCSY, HSQC, HMBC)
+    tool: NMR spectrometer
+    input: fractionated or enriched samples
+    output: 2D NMR spectra (structural connectivity data)
+    confidence: low
+  Step 7: LC-NMR-MS hyphenated analysis
+    tool: LC-NMR-MS platform
+    input: complex biological extracts
+    output: chromatographic fractions with simultaneous NMR and MS detection
+    confidence: low
+  Step 8: Metabolite identification via database matching and spiking with authentic standards
+    tool: NMR/MS databases (e.g., HMDB, BMRB, GNPS), manual interpretation
+    algorithm: spectral matching + chemical validation
+    parameters: matching_threshold=qualitative, spike_concentration=matched to endogenous level
+    input: 2D NMR spectra, LC-NMR-MS data, reference standards
+    output: confirmed metabolite identities
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: mentioned_no_link
+
+figure_recipes: 5
+  Fig. 1: [workflow_diagram]
+    caption: Overview of the eight modular workflows for NMR-based metabolite identification, arranged sequentially by difficulty.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7, 8]
+    visualization_tool: Adobe Illustrator or similar
+  Fig. 2: [other]
+    caption: Metabolome-wide association study results linking ascorbic acid to BMI using sequential 1D NMR, STOCSY, STORM, 2D NMR and standard spiking.
+    produced_by_step: [2, 3, 4, 6, 8]
+    visualization_tool: NMR processing software (e.g., TopSpin, Mnova) + custom MATLAB
+    statistical_test: metabolome-wide association (MWAS), p-value not specified
+  Fig. 3: [other]
+    caption: Identification of 2PY and 4PY in mouse urine using 1D NMR, STOCSY, 2D NMR, SPE, and standard spiking.
+    produced_by_step: [1, 2, 3, 6, 8]
+    visualization_tool: NMR processing software + MATLAB
+  Fig. 4: [other]
+    caption: Identification of NAcSPCSO as an onion intake biomarker using STORM, RED-STORM, LC-NMR-MS, and 2D NMR.
+    produced_by_step: [2, 4, 5, 7, 6, 8]
+    visualization_tool: NMR/MS software + MATLAB
+  Fig. 5: [other]
+    caption: LC-NMR-MS and 2D-NMR analysis confirming NAcSPCSO identity in human urine.
+    produced_by_step: [7, 6, 8]
+    visualization_tool: LC-NMR-MS vendor software (e.g., Bruker HyStar, Thermo Compound Discoverer) + Mnova
+
+reproducibility_gaps:
+  - Raw NMR and LC-NMR-MS data not deposited in public repository
+  - No access link or DOI provided for MATLAB-based STOCSY/STORM/RED-STORM code
+  - NMR acquisition parameters (pulse sequences, acquisition times, processing settings) not specified
+  - Commercial NMR and LC-NMR-MS platforms require proprietary hardware/software licenses
+  - No details on spectral processing (zero-filling, apodization, phasing, baseline correction)
+  - SPE and LC fractionation protocols lack column types, solvents, gradients, and collection criteria
+reproducibility_strengths:
+  - Modular, stepwise workflow clearly described
+  - Use of established open statistical spectroscopic methods (STOCSY, STORM)
+  - Integration of orthogonal techniques (NMR, MS, chromatography, spiking)
+  - Reference to prior protocol (Orbán-Németh et al. Nat Protoc 2018) for foundational methods

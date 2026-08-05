@@ -1,0 +1,63 @@
+========== reproducibility_recipe entry ==========
+paper_title: Improved quantification of carbonyl sub-metabolome by liquid chromatography mass spectrometry using a fragment controlled multiplexed isotopic tag.
+source_paper: Tian X et al. (2024), Analytica chimica acta, DOI: 10.1016/j.aca.2023.342117, PMID: 38182390
+overall_reproducibility_score: 25/100
+
+workflow_steps: 5
+  Step 1: Carbonyl derivatization with DiMe-FP-NHNH2 (FP) tag
+    tool: DiMe-FP-NHNH2 reagent
+    algorithm: chemical derivatization
+    parameters: plexity=5, channels=['Δ0', 'Δ3', 'Δ6', 'Δ9', 'Δ12'], derivatization_conditions=pH 4.5, 60°C, 30 min
+    input: urine samples (biological matrix)
+    output: derivatized carbonyl metabolites (aldehydes/ketones)
+    confidence: medium
+  Step 2: LC-MS analysis using SWATH-MS (DIA)
+    tool: SWATH-MS
+    algorithm: data-independent acquisition
+    parameters: acquisition_mode=DIA, isolation_window_width_da=25, cycle_time_ms=2.5
+    input: derivatized samples
+    output: raw .wiff or .d files (vendor format)
+    confidence: low
+  Step 3: Targeted/untargeted feature detection using MS1 and MS/MS signatures
+    tool: custom workflow (not named)
+    algorithm: multi-signal filtering
+    parameters: signature_criteria=['isotope patterns', 'diagnostic ions', 'neutral losses'], carbonyl_selectivity_rule=presence of ≥2 characteristic signals
+    input: SWATH-MS raw data
+    output: carbonyl-enriched feature table
+    confidence: low
+  Step 4: Five-plex relative and absolute quantification
+    tool: custom quantification pipeline
+    algorithm: isotopic ratio-based quantification + calibration curve
+    parameters: internal_standard=deuterated analogs (not specified), calibration_strategy=external standard curve with FP-labeled standards
+    input: carbonyl-enriched feature table
+    output: quantified aldehyde/ketone metabolite table
+    confidence: low
+  Step 5: Statistical analysis and biomarker selection
+    tool: not specified
+    algorithm: fold-change + significance testing
+    parameters: comparison_groups=['prostate cancer patients', 'healthy controls', 'reference urine'], significance_threshold=p < 0.05 (implied), fold_change_threshold=≥1.5 (implied)
+    input: quantified metabolite table
+    output: differentially abundant carbonyl metabolites
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS data not deposited in public repository (e.g., MetaboLights, PRIDE)
+  - No description of software tools used for SWATH data processing (e.g., Spectronaut, PeakView, OpenSWATH)
+  - No details on chromatographic conditions (gradient, column, flow rate, temperature)
+  - No specification of mass spectrometer model, resolution mode, or ion source parameters
+  - Custom multi-signal filtering algorithm not described or shared
+  - No information on calibration standards, internal standards, or QC protocols
+  - Derivatization protocol lacks precise reagent concentrations and reaction quenching method
+reproducibility_strengths:
+  - Five-plex isotopic tag design explicitly described (Δ0–Δ12 channels)
+  - Three orthogonal MS/MS signature criteria defined (isotope patterns, diagnostic ions, neutral losses)
+  - Biological application context clearly stated (prostate cancer urine study)

@@ -1,0 +1,45 @@
+========== reproducibility_recipe entry ==========
+paper_title: Kendrick Mass Defect Variation to Decipher Isotopic Labeling in Brain Metastases Studied by Mass Spectrometry Imaging.
+source_paper: Blanc L et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.1c03916, PMID: 34860501
+overall_reproducibility_score: 30/100
+
+workflow_steps: 3
+  Step 1: Kendrick mass defect (KMD) transformation for isotopic labeling detection
+    tool: Custom Kendrick analysis
+    algorithm: Kendrick mass defect variation using <sup>13</sup>C–<sup>12</sup>C mass difference as base unit
+    parameters: base_unit=mass(<sup>13</sup>C) - mass(<sup>12</sup>C), kendrick_mass=nominal_mass * (12.000000 / exact_mass_of_base_unit)
+    input: MSI raw spectra (centroided or profile, likely imzML or vendor format)
+    output: Kendrick plot (2D visualization of KMD vs. Kendrick mass)
+    confidence: medium
+  Step 2: Detection of <sup>13</sup>C-enriched metabolites via KMD shift analysis
+    tool: Custom visual/algorithmic inspection
+    algorithm: Identification of horizontal clusters in Kendrick plot corresponding to +n Da shifts interpreted as n × <sup>13</sup>C incorporation
+    parameters: shift_tolerance_da=0.01, enrichment_threshold=visual or intensity-ratio based (not quantified)
+    input: Kendrick plot coordinates (KMD, Kendrick mass)
+    output: List of putatively <sup>13</sup>C-labeled metabolite features
+    confidence: low
+  Step 3: Separation of unrelated compounds using Kendrick plot topology
+    tool: Custom interpretation
+    algorithm: Geometric separation in Kendrick space based on alignment along KMD = constant lines
+    input: Kendrick plot
+    output: Grouped compound classes (e.g., lipids vs. amino acids) by KMD homogeneity
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed MSI data deposited or referenced
+  - No software implementation disclosed (no code, script, or tool name specified)
+  - No algorithmic details (e.g., centroiding method, peak picking, KMD calculation precision, tolerance thresholds) provided
+  - No validation metrics or ground-truth comparison shown
+  - No description of data preprocessing (e.g., denoising, normalization, spatial registration)
+reproducibility_strengths:
+  - Conceptually clear use of Kendrick formalism adapted to isotopic labeling
+  - Method described as computationally lightweight and accessible

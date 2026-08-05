@@ -1,0 +1,90 @@
+========== reproducibility_recipe entry ==========
+paper_title: Is Nontarget Analysis Ready for Regulatory Application? Influence of Peak-Picking Algorithms on Data Analysis.
+source_paper: Schulze B et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c03003, PMID: 38061068
+overall_reproducibility_score: 30/100
+
+workflow_steps: 10
+  Step 1: Data acquisition
+    tool: Liquid chromatography coupled to high-resolution mass spectrometry
+    input: biological/environmental samples (passive sampler extracts from drinking water catchments)
+    output: raw vendor files (.wiff, .raw, or equivalent)
+    confidence: low
+  Step 2: Peak picking (feature detection)
+    tool: SCIEX OS
+    parameters: parameters_kept_identical_when_possible=True
+    input: raw vendor files
+    output: feature table (m/z, RT, intensity)
+    confidence: medium
+  Step 3: Peak picking (feature detection)
+    tool: MSDial
+    parameters: parameters_kept_identical_when_possible=True
+    input: raw vendor files
+    output: feature table (m/z, RT, intensity)
+    confidence: medium
+  Step 4: Peak picking (feature detection)
+    tool: self-adjusting-feature-detection
+    parameters: parameters_kept_identical_when_possible=True
+    input: raw vendor files
+    output: feature table (m/z, RT, intensity)
+    confidence: low
+  Step 5: Peak picking (feature detection)
+    tool: MarkerView
+    algorithm: two algorithms within MarkerView
+    parameters: parameters_kept_identical_when_possible=True
+    input: raw vendor files
+    output: feature table (m/z, RT, intensity)
+    confidence: medium
+  Step 6: Feature list comparison and overlap analysis
+    tool: Custom analysis (not specified)
+    algorithm: set-based overlap calculation
+    parameters: overlap_threshold=picked by >3 algorithms, single_algorithm_threshold=74%
+    input: five feature tables
+    output: overlap statistics (7.2%, 74%)
+    confidence: low
+  Step 7: Trend evaluation via multivariate analysis
+    tool: Principal component analysis (PCA)
+    algorithm: PCA
+    input: feature tables (per algorithm)
+    output: PCA scores plots, trend identification (temporal/spatial)
+    confidence: medium
+  Step 8: Differential feature selection
+    tool: Statistical filtering
+    algorithm: p-value and log fold change thresholding
+    parameters: p_value_threshold=0.01, log_fold_change_threshold=2
+    input: feature table + metadata (time/site)
+    output: features of interest list
+    confidence: high
+  Step 9: Manual validation of features of interest
+    tool: Manual inspection (chromatograms, spectra)
+    input: features of interest + raw data
+    output: false positive rate estimates (>70% or <30%)
+    confidence: high
+  Step 10: Internal standard recovery assessment
+    tool: Manual or semi-automated QC check
+    input: feature tables + internal standard metadata
+    output: internal standard detection success rate
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository
+  - No details on LC-MS acquisition parameters (gradient, column, ionization mode, resolution, mass accuracy)
+  - No specification of vendor file formats or conversion steps (e.g., .wiff → mzML)
+  - No parameter values reported for any peak-picking algorithm (e.g., m/z tolerance, RT window, SNR thresholds)
+  - No information on software versions (SCIEX OS, MarkerView, MSDial)
+  - No description of PCA implementation (scaling, centering, number of components, software used)
+  - No code, scripts, or workflow documentation shared
+  - Internal standards identity and expected retention times not disclosed
+  - Manual validation criteria (e.g., what constitutes 'incorrectly picked') not defined
+reproducibility_strengths:
+  - Explicit comparison across five widely used peak-picking tools
+  - Clear statistical thresholds stated (p < 0.01, logFC > 2)
+  - Quantitative reporting of feature overlap (7.2%, 74%) and false positive rates

@@ -1,0 +1,55 @@
+========== reproducibility_recipe entry ==========
+paper_title: Microflow Liquid Chromatography Coupled to Multinozzle Electrospray Ionization for Improved Lipidomics Coverage of 3D Clear Cell Renal Cell Carcinoma.
+source_paper: Girel S et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.4c06337, PMID: 39998250
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Chromatographic separation
+    tool: microflow liquid chromatography (μF-LC)
+    parameters: flow_rate_per_nozzle=600, flow_rate_unit=nL/min, runtime=19, runtime_unit=min, chromatographic_regime=microflow
+    input: lipid extract from 3D ccRCC model
+    output: LC-separated analytes
+    confidence: medium
+  Step 2: Ionization
+    tool: multinozzle electrospray ionization (mnESI)
+    parameters: number_of_nozzles=5, flow_rate_per_nozzle=600, flow_rate_unit=nL/min
+    input: LC-separated analytes
+    output: ionized analytes
+    confidence: high
+  Step 3: Mass spectrometric detection
+    tool: high-resolution mass spectrometry (HRMS)
+    parameters: ionization_mode=ESI, acquisition_mode=untargeted, ms_level=MS2
+    input: ionized analytes
+    output: raw .mzML or vendor format files
+    confidence: medium
+  Step 4: Lipid annotation
+    tool: MS2-based annotation
+    input: raw MS2 spectra
+    output: MS2-annotated lipids
+    confidence: low
+  Step 5: Quality control assessment
+    tool: pooled QC sample variation analysis
+    parameters: variation_threshold=10, variation_unit=%
+    input: feature table with QC samples
+    output: QC-stable lipid features (<10% RSD)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository
+  - No details on HRMS instrument model, acquisition parameters (e.g., resolution, AGC target, max IT), or vendor software used for data acquisition
+  - No description of data processing pipeline (e.g., feature detection, alignment, normalization tools or parameters)
+  - No information on lipid identification software (e.g., LipidSearch, MS-DIAL, Sirius), databases used, or confidence levels (e.g., LIPID MAPS, HMDB, GNPS)
+  - Microfabricated mnESI emitter design and fabrication details not provided
+  - No metadata schema or experimental design details beyond 'multidrug combination therapy' and '3D ccRCC model'
+reproducibility_strengths:
+  - Explicit quantitative performance metrics reported (16-fold median increase, 1270 vs 752 MS2-annotated lipids, QC RSD thresholds)
+  - Clear comparison between μF/mnESI and AF/ESI platforms using same runtime and biological context

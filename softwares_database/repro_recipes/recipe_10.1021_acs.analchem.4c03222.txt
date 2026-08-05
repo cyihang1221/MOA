@@ -1,0 +1,49 @@
+========== reproducibility_recipe entry ==========
+paper_title: A High-Throughput Integrated Nontargeted Metabolomics and Lipidomics Workflow Using Microelution Enhanced Matrix Removal-Lipid for Comparative Analysis of Human Maternal and Umbilical Cord Blood Metabolomes.
+source_paper: Wu W et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.4c03222, PMID: 39883156
+overall_reproducibility_score: 20/100
+
+workflow_steps: 4
+  Step 1: Sample pretreatment using EMR-lipid microelution plates
+    tool: EMR-Lipid microelution 96-well plates
+    parameters: sample_volume=reduced amount (not numerically specified), organic_solvent_volume=significantly reduced (not numerically specified), elution_sequence=non-lipid small metabolites first, then lipids
+    input: human maternal and umbilical cord blood serum
+    output: fractionated non-lipid metabolite extract and lipid extract from single aliquot
+    confidence: low
+  Step 2: UHPLC-HRMS analysis
+    tool: Ultrahigh-performance liquid chromatography-high resolution mass spectrometry
+    parameters: chromatographic_columns=3, column_types=not specified (e.g., C18, HILIC, mixed-mode)
+    input: fractionated metabolite and lipid extracts
+    output: raw .raw or .d files (vendor format, unspecified)
+    confidence: low
+  Step 3: Metabolite and lipid annotation
+    tool: not specified
+    parameters: annotation_level=>2500 metabolites annotated, shared_metabolites=>1000 shared between maternal and cord blood
+    input: UHPLC-HRMS raw data
+    output: annotated metabolite/lipid feature table
+    confidence: low
+  Step 4: Comparative analysis of maternal vs. umbilical cord blood metabolomes
+    tool: not specified
+    input: annotated feature table
+    output: biologically interpreted metabolite list (nutrient transfer, hormonal regulation, etc.)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No mention of raw MS data deposition (e.g., in MetaboLights, MassIVE, or GNPS)
+  - No specification of UHPLC column chemistries, gradient methods, or MS acquisition parameters
+  - No identification of software used for peak picking, alignment, annotation, or statistics
+  - No description of annotation strategy (e.g., MS1 m/z tolerance, MS/MS spectral matching, databases used)
+  - EMR-Lipid kit usage lacks protocol details (volumes, wash/elution solvents, flow rates, conditioning steps)
+  - No statistical methods reported (e.g., p-value correction, fold-change thresholds, multivariate modeling)
+reproducibility_strengths:
+  - Describes a novel integrated sample preparation workflow enabling dual metabolome–lipidome profiling from one aliquot
+  - Reports high-level biological interpretation of shared metabolites across maternal–cord pairs

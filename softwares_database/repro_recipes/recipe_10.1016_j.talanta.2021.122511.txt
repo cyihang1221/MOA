@@ -1,0 +1,58 @@
+========== reproducibility_recipe entry ==========
+paper_title: A mathematical method for calibrating the signal drift in liquid chromatography - mass spectrometry analysis.
+source_paper: Hu YN et al. (2021), Talanta, DOI: 10.1016/j.talanta.2021.122511, PMID: 34215126
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Calibrant preparation
+    tool: custom chemical synthesis
+    parameters: calibrant_type=d4-DMED-coded normal fatty acids, chain_length_range=C5-C23
+    input: chemical standards
+    output: internal calibration mixture
+    confidence: high
+  Step 2: LC-HRMS data acquisition with calibrants
+    tool: LC-HRMS platform (unspecified vendor)
+    parameters: calibrant_spiking=added to all samples and blanks, acquisition_mode=full-scan HRMS
+    input: biological samples (human serum extract, rat brain extract)
+    output: raw .raw or .d files (vendor format)
+    confidence: medium
+  Step 3: Signal drift calibration using RIM
+    tool: MATLAB-based RIM program
+    algorithm: RIM (Retention time, Intensity, and Mass accuracy calibration)
+    parameters: drift_compensation_target=['MS signal intensity', 'mass accuracy', 'retention time'], calibrant_constraints=['d4-DMED mass shift', 'linear RT vs. carbon number']
+    input: raw LC-HRMS files
+    output: drift-corrected feature table (intensity-normalized, RT-aligned, m/z-calibrated)
+    confidence: high
+  Step 4: Validation of calibration performance
+    tool: custom validation protocol
+    algorithm: spike-recovery assessment
+    parameters: spike_level=34 standards in human serum extract, metrics=['CV% before/after RIM', 'mass error (ppm)', 'RT deviation (min)']
+    input: spiked human serum extract raw data
+    output: validation report (precision, accuracy, stability metrics)
+    confidence: medium
+  Step 5: Application to untargeted metabolome analysis
+    tool: untargeted workflow (unspecified)
+    parameters: biological_matrix=rat brain extract, analysis_goal=untargeted metabolome profiling
+    input: RIM-corrected feature table
+    output: biologically interpreted metabolite list (no statistical or ID details provided)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-HRMS data not deposited or referenced
+  - MATLAB RIM program not publicly accessible (no URL, repository, or license stated)
+  - No details on downstream untargeted analysis tools (feature detection, alignment, annotation)
+  - LC gradient method, column, and MS parameters not specified
+  - No statistical or multivariate analysis methods described for rat brain data
+reproducibility_strengths:
+  - Explicit description of calibrant design (d4-DMED-C5–C23)
+  - Clear validation strategy using 34 spiked standards
+  - Conceptual framework (RIM) well-defined: simultaneous correction of RT, intensity, and m/z drift

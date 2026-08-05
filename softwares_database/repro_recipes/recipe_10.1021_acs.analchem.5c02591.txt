@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: Increasing the Scale of the Mass Spectrometry Query Language Compendium with Explainable AI.
+source_paper: Harwood TV et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c02591, PMID: 40851452
+overall_reproducibility_score: 20/100
+
+workflow_steps: 5
+  Step 1: Tandem mass spectrometry data embedding
+    tool: ChemEcho
+    algorithm: sparse feature vector generation using peak and neutral mass subformulae
+    input: tandem mass spectra (MS/MS)
+    output: sparse feature vectors
+    confidence: low
+  Step 2: Decision tree training for molecular attribute prediction
+    tool: decision trees
+    algorithm: supervised decision tree learning
+    input: ChemEcho sparse feature vectors + labeled molecular attributes
+    output: interpretable decision trees
+    confidence: medium
+  Step 3: MassQL query generation
+    tool: rule translation from decision trees
+    algorithm: direct translation of decision tree paths to MassQL syntax
+    input: trained decision trees
+    output: MassQL queries
+    confidence: high
+  Step 4: Query performance evaluation
+    tool: precision and recall calculation
+    algorithm: binary classification metrics against ground-truth structural annotations
+    parameters: top_k=50
+    input: MassQL queries + reference spectral annotations
+    output: ranked MassQL queries (top 50)
+    confidence: medium
+  Step 5: Application to public metabolomics dataset
+    tool: MassQL engine
+    algorithm: query matching against MS/MS spectra
+    input: public metabolomics MS/MS dataset + top 50 MassQL queries
+    output: enhanced structural annotations
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - ChemEcho implementation not publicly available or described in sufficient detail
+  - No repository link or code DOI provided
+  - No specification of the public metabolomics dataset used (e.g., no MetaboLights or GNPS accession)
+  - No details on decision tree hyperparameters (e.g., depth, min_samples_split)
+  - No MassQL compendium version or integration mechanism disclosed

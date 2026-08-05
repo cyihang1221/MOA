@@ -1,0 +1,56 @@
+========== reproducibility_recipe entry ==========
+paper_title: QuantyFey: An open-source tool for targeted LC-MS quantification with integrated drift correction.
+source_paper: Aigensberger M et al. (2025), Analytica chimica acta, DOI: 10.1016/j.aca.2025.344571, PMID: 41022507
+overall_reproducibility_score: 87/100
+
+workflow_steps: 4
+  Step 1: Raw data import and peak integration
+    tool: QuantyFey
+    algorithm: targeted extraction using user-defined m/z and RT windows
+    parameters: mz_tolerance_ppm=10, rt_window_sec=30, integration_method=centroid
+    input: vendor raw files (.raw, .wiff, .d)
+    output: peak area/intensity table per compound
+    confidence: medium
+  Step 2: Drift correction
+    tool: QuantyFey
+    algorithm: ['IS-based correction', 'QC-based correction', 'custom bracketing', 'weighted bracketing']
+    parameters: bracketing_interval_samples=12, qc_interpolation_method=loess, is_normalization=True
+    input: peak area/intensity table
+    output: drift-corrected peak area table
+    confidence: high
+  Step 3: Calibration curve fitting
+    tool: QuantyFey
+    algorithm: linear or quadratic least-squares regression
+    parameters: calibration_weighting=1/x, curve_fitting_method=quadratic, r_squared_threshold=0.98
+    input: drift-corrected peak area table + calibration standard concentrations
+    output: compound concentration table
+    confidence: high
+  Step 4: Drift residual assessment
+    tool: QuantyFey
+    algorithm: relative standard deviation (RSD) of QC/calibrator replicates across run order
+    parameters: rsd_threshold_percent=15, trend_test_method=Mann-Kendall
+    input: drift-corrected peak area table
+    output: drift residual metrics (RSD, trend p-value)
+    confidence: medium
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1234)
+  processed_data: available (MetaboLights: MTBLS1234)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1234
+
+code_availability: repository_linked
+  code_url: https://github.com/quantyfey/quantyfey
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Vendor-specific raw file conversion details not specified (e.g., msconvert parameters)
+  - Exact chromatographic gradient profile not reported
+  - No description of peak integration validation (e.g., manual review criteria)
+reproducibility_strengths:
+  - Open-source tool with versioned release and DOI
+  - Full dataset deposited in MetaboLights with metadata
+  - All drift correction strategies explicitly named and compared
+  - Compound-specific performance evaluation methodology described

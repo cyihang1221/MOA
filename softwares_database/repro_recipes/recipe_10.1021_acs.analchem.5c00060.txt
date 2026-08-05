@@ -1,0 +1,48 @@
+========== reproducibility_recipe entry ==========
+paper_title: Local Asymmetric Gaussian Fitting Algorithm for Enhanced Peak Detection of Liquid Chromatography-High Resolution Mass Spectrometry Data.
+source_paper: Zou S et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c00060, PMID: 40325991
+overall_reproducibility_score: 55/100
+
+workflow_steps: 3
+  Step 1: EIC extraction using data points bins
+    tool: custom implementation
+    algorithm: data points bins EIC extraction
+    parameters: bin_width_da=1.0
+    input: raw .mzML files
+    output: extracted ion chromatograms (EICs)
+    confidence: high
+  Step 2: Peak detection via local asymmetric Gaussian fitting
+    tool: LAGF
+    algorithm: local asymmetric Gaussian fitting (two-sided asymmetric Gaussian)
+    parameters: goodness_of_fit_threshold=0.5, fitting_method=local, peak_center_estimation=automatic, peak_height_estimation=automatic, sigma1_sigma2_adaptation=self-adaptive
+    input: EICs
+    output: feature table (m/z, RT, intensity, peak area)
+    confidence: high
+  Step 3: Feature filtering
+    tool: LAGF
+    algorithm: goodness-of-fit thresholding
+    parameters: r_squared_threshold=0.5
+    input: detected peaks (feature candidates)
+    output: filtered feature table
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS data not deposited or referenced (no repository or accession ID)
+  - No link provided to the open-source LAGF Python code or interactive interface
+  - No details on LC conditions (gradient, column, flow rate) or MS parameters (resolution, scan range, polarity) — critical for EIC construction and peak shape modeling
+  - Validation datasets (standard mixtures, serum samples) not described with sufficient metadata (e.g., concentrations, replicates, batch order)
+  - No specification of downstream steps (alignment, normalization, statistical analysis) — workflow ends at feature table generation
+reproducibility_strengths:
+  - Algorithm explicitly designed to minimize parameter tuning
+  - Open-source Python implementation stated (though not linked)
+  - Quantitative performance metrics reported (R², RSD for peak areas)
+  - Validation across two LC modes (reversed-phase and HILIC) and biological matrix (serum)

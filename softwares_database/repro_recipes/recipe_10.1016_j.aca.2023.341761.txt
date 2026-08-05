@@ -1,0 +1,76 @@
+========== reproducibility_recipe entry ==========
+paper_title: Tracing the identity of Parmigiano Reggiano "Prodotto di Montagna - Progetto Territorio" cheese using NMR spectroscopy and multivariate data analysis.
+source_paper: Cavallini N et al. (2023), Analytica chimica acta, DOI: 10.1016/j.aca.2023.341761, PMID: 37709437
+overall_reproducibility_score: 42/100
+
+workflow_steps: 7
+  Step 1: NMR data acquisition
+    tool: Bruker AVANCE III spectrometer
+    parameters: field_strength=600, unit=MHz, pulse_sequence=1D NOESYPR1D, temperature=298, unit_temperature=K, relaxation_delay=4, unit_relaxation_delay=s, acquisition_time=2.73, unit_acquisition_time=s, scans=64, spectral_width=20.02, unit_spectral_width=ppm
+    input: liquid-state 1H NMR raw FID files (.fid)
+    output: processed 1D NMR spectra (.jdx or .csv)
+    confidence: high
+  Step 2: Spectral preprocessing
+    tool: TopSpin 3.6.3 (v3.6.3)
+    algorithm: Fourier transform, phase correction, baseline correction, chemical shift referencing (TSP at 0 ppm)
+    parameters: zero_filling=64, apodization=exponential multiplication (LB = 0.3 Hz), phasing=manual or automatic, referencing=TSP internal standard
+    input: raw FID files
+    output: preprocessed 1H NMR spectra (intensity vs. ppm)
+    confidence: high
+  Step 3: Data reduction and bucketing
+    tool: MATLAB R2021a (vR2021a)
+    algorithm: Binning (bucketing) with adaptive bin width
+    parameters: bin_width_ppm=0.004, region_ppm=[0.5, 10.0], exclusion_regions_ppm=[[4.7, 4.9], [2.15, 2.25]], normalization=Probabilistic Quotient Normalization (PQN)
+    input: preprocessed NMR spectra
+    output: binned intensity matrix (samples × bins)
+    confidence: medium
+  Step 4: Multivariate Curve Resolution–Alternating Least Squares (MCR-ALS)
+    tool: Custom MATLAB toolbox (developed in-house)
+    algorithm: MCR-ALS with selectivity constraints
+    parameters: number_of_components=10, closure_constraint=True, nonnegativity_constraint=True, selectivity_constraints=reconstructed pure profiles used as initial estimates and targets, convergence_threshold=1e-06, max_iterations=500
+    input: binned intensity matrix or full spectra
+    output: resolved pure component profiles (spectral) and concentrations (sample-wise)
+    confidence: low
+  Step 3.1: Alternative MCR-ALS on manually-defined spectral intervals
+    tool: Custom MATLAB toolbox (developed in-house)
+    algorithm: MCR-ALS applied per interval
+    parameters: intervals_ppm=[[0.5, 1.5], [1.5, 2.0], [2.0, 2.5], [2.5, 3.0], [3.0, 3.5], [3.5, 4.0], [4.0, 4.7], [4.9, 5.5], [5.5, 6.5], [6.5, 10.0]], number_of_components_per_interval=2
+    input: preprocessed NMR spectra
+    output: interval-specific resolved profiles and concentrations
+    confidence: low
+  Step 5: Metabolite identification and annotation
+    tool: Chenomx NMR Suite 9.0 (v9.0)
+    algorithm: Spectral fitting and database matching
+    parameters: library=Chenomx Human Metabolome Database (HMDB)-based library for dairy, fitting_range_ppm=[0.5, 10.0], tolerance_ppm=0.02, quantification_method=relative concentration (arbitrary units)
+    input: resolved pure profiles (from MCR-ALS) and/or binned spectra
+    output: putatively annotated metabolite features with relative concentrations
+    confidence: high
+  Step 6: Multivariate statistical analysis
+    tool: MATLAB R2021a + custom scripts (vR2021a)
+    algorithm: PCA, PLS-DA, OPLS-DA
+    parameters: cross_validation=7-fold, permutation_test=200, model_validation=['R2X', 'R2Y', 'Q2Y'], scaling=Pareto scaling
+    input: metabolite feature table (concentrations or binned intensities)
+    output: discriminatory models, loadings, VIP scores, classification results
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: in_paper_only
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw NMR FID data not deposited in any public repository
+  - Custom MATLAB MCR-ALS toolbox not shared (no GitHub/DOI/link provided)
+  - No details on sample metadata structure (e.g., batch, season, farm ID, ripening time) beyond 'conventional-PDO' vs 'Mountain-CQ'
+  - Chenomx NMR Suite is commercial software requiring license and proprietary database access
+  - TopSpin and MATLAB are commercial tools with version-specific workflows not fully reproducible without licenses
+  - No reporting of exact MCR-ALS initialization strategy or convergence diagnostics
+reproducibility_strengths:
+  - Explicit NMR acquisition parameters reported (field strength, pulse sequence, temperature, relaxation delay)
+  - Preprocessing steps clearly described (referencing to TSP, apodization, zero-filling)
+  - Binning parameters (width, regions, exclusions) and PQN normalization specified
+  - Use of established chemometric methods (MCR-ALS, PLS-DA, OPLS-DA) with key settings (7-fold CV, 200 permutations)

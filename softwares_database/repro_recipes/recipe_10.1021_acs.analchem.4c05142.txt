@@ -1,0 +1,45 @@
+========== reproducibility_recipe entry ==========
+paper_title: Human Untargeted Metabolomics in High-Throughput Gut Microbiome Research: Ethanol vs Methanol.
+source_paper: Zuffa S et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.4c05142, PMID: 40015251
+overall_reproducibility_score: 30/100
+
+workflow_steps: 3
+  Step 1: Sample extraction
+    tool: Matrix Method pipeline
+    parameters: ethanol_concentration_pct=95, methanol_concentration_pct=50
+    input: fresh/frozen human fecal samples
+    output: extracted metabolite solution
+    confidence: medium
+  Step 2: Metabolome stability assessment
+    tool: untargeted metabolomics platform (unspecified)
+    parameters: storage_duration_days=7, storage_temperature_c=25
+    input: ethanol-extracted samples stored at room temperature
+    output: metabolite intensity profiles over time
+    confidence: low
+  Step 3: Data normalization and transformation
+    tool: robust centered log ratio (rCLR) transformation
+    algorithm: centered log ratio with robust centering (median-based or similar)
+    parameters: transformation=robust CLR, purpose=remove variance from sample weight and concentration differences
+    input: feature intensity table (e.g., peak area matrix)
+    output: rCLR-transformed feature table
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No mass spectrometry platform or acquisition parameters specified (e.g., LC-MS instrument, column, gradient, polarity)
+  - No data processing software (e.g., XCMS, MS-DIAL) or parameters mentioned
+  - No details on feature detection, alignment, or annotation methods
+  - Raw and processed data not deposited in public repository
+  - No code or workflow scripts shared
+  - Matrix Method pipeline not publicly documented or linked
+reproducibility_strengths:
+  - Explicit recommendation of rCLR transformation for batch- and weight-invariant normalization
+  - Clear experimental comparison (ethanol vs methanol) with defined concentrations and storage conditions

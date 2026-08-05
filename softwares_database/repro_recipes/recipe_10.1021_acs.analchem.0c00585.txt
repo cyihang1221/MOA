@@ -1,0 +1,52 @@
+========== reproducibility_recipe entry ==========
+paper_title: SMfinder: Small Molecules Finder for Metabolomics and Lipidomics Analysis.
+source_paper: Martano G et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.0c00585, PMID: 32501676
+overall_reproducibility_score: 45/100
+
+workflow_steps: 4
+  Step 1: MS2 spectral processing and library matching
+    tool: SMfinder
+    algorithm: MS2 false discovery rate (FDR) based on single spectral permutation
+    input: MS2 spectra (e.g., .mzML, .mgf)
+    output: annotated small molecule identifications with FDR control
+    confidence: medium
+  Step 2: Instrument-independent metabolite identification
+    tool: SMfinder
+    algorithm: Library search using public MS2 spectral libraries (e.g., GNPS, MassBank, LipidBlast)
+    parameters: library_matching_tolerance=instrument-independent, fdr_threshold=0.01
+    input: processed MS2 spectra and reference spectral libraries
+    output: confidently annotated metabolites/lipids with FDR-controlled matches
+    confidence: low
+  Step 3: Quantification and integration with untargeted workflows
+    tool: SMfinder
+    algorithm: Peak area integration from MS1 features linked to MS2 identifications
+    input: MS1 feature table + matched MS2 identifications
+    output: quantified, annotated metabolite/lipid table
+    confidence: low
+  Step 4: Support for targeted and flux analysis
+    tool: SMfinder
+    algorithm: Retention time alignment and isotope pattern-based quantification (for flux)
+    input: targeted acquisition data or isotopically labeled datasets
+    output: targeted quantification results or isotopic enrichment values
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: http://www.ifom.eu/SMfinder
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposition reported
+  - No details on spectral library versions or matching parameters (e.g., cosine threshold, min matched peaks)
+  - No description of MS1 feature detection or alignment methods used upstream of SMfinder
+  - Website (ifom.eu/SMfinder) is not a persistent software repository (no versioning, no archived release)
+  - No benchmarking dataset or tutorial data provided in paper or supplementary materials
+reproducibility_strengths:
+  - Open-source tool publicly available
+  - Introduces novel MS2 FDR method via spectral permutation
+  - Explicit support for multiple analysis modes (untargeted, targeted, flux)

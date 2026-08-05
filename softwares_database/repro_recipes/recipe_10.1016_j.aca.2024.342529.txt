@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: Target and suspect screening of psychoactive substances in seizures and oral fluid exploiting retention time prediction and LC-MS/MS analysis.
+source_paper: Di Francesco G et al. (2024), Analytica chimica acta, DOI: 10.1016/j.aca.2024.342529, PMID: 38609268
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Retention time prediction for sMRM method development
+    tool: QSRR model
+    algorithm: Multiple Linear Regression
+    parameters: validation_strategy=['training_set', 'external_validation_set', 'leave-one-out']
+    input: chemical structures (SMILES or similar) and experimentally measured retention times of reference standards
+    output: predicted retention times for target and suspect compounds
+    confidence: medium
+  Step 2: Target analysis method development and validation
+    tool: LC-MS/MS with scheduled MRM (sMRM)
+    algorithm: scheduled MRM acquisition
+    parameters: number_of_target_analytes=65, matrix=oral fluid, validation_metrics=['recovery', 'accuracy', 'precision', 'matrix_effect']
+    input: authentic reference standards, oral fluid samples
+    output: quantified concentrations of 65 drugs
+    confidence: high
+  Step 3: Suspect screening via information-dependent acquisition (IDA)
+    tool: LC-MS/MS with IDA
+    algorithm: Information Dependent Acquisition (IDA) triggering EPI spectra upon sMRM detection
+    parameters: trigger_criteria=sMRM signal exceeding threshold, acquisition_mode=enhanced product ion (EPI), suspect_list_size=146
+    input: samples (seizures, oral fluid), predicted RTs, suspect compound list
+    output: putative identifications based on MS/MS spectral matching
+    confidence: high
+  Step 4: Method performance evaluation for suspect screening
+    tool: LC-MS/MS analysis
+    algorithm: spiked mixture testing
+    parameters: test_mixtures=8, reference_standards_excluded_from_training=True, sample_types=['seizures', 'real oral fluid']
+    input: spiked mixtures, real forensic samples
+    output: putative identifications (n=4 NPS)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposited in public repository
+  - QSRR model implementation details (descriptors, software, code) not provided
+  - LC-MS/MS instrument parameters (gradient, column, flow rate, dwell times) not fully specified
+  - No access to IDA trigger thresholds or EPI acquisition settings
+  - Commercial LC-MS/MS platform (e.g., Sciex, Thermo, Waters) not named — limits method transfer
+reproducibility_strengths:
+  - Clear analytical objective and workflow logic described
+  - Validation strategies for QSRR model explicitly named (training, external, LOO)
+  - Explicit distinction between target (65) and suspect (146) analyte lists

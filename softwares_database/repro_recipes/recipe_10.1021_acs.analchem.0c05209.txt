@@ -1,0 +1,68 @@
+========== reproducibility_recipe entry ==========
+paper_title: An Integrated Strategy for Mass Spectrometry-Based Multiomics Analysis of Single Cells.
+source_paper: Li Y et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.0c05209, PMID: 34643370
+overall_reproducibility_score: 30/100
+
+workflow_steps: 6
+  Step 1: Single-cell capture and on-chip tandem extraction
+    tool: custom microwell chip
+    parameters: extraction_solvent_metabolites=acetonitrile/water/formic_acid, extraction_solvent_proteins=8M urea/50mM ammonium bicarbonate, digestion_enzyme=trypsin, digestion_time_hr=16, digestion_temperature_c=37
+    input: intact single cells
+    output: metabolite extract + digested peptide mixture
+    confidence: medium
+  Step 2: Metabolome profiling
+    tool: direct electrospray ionization mass spectrometry
+    algorithm: untargeted MS1 analysis
+    parameters: ionization_mode=positive, mass_range_mz=[50, 1200], resolution=not specified, collision_energy=not specified
+    input: metabolite extract
+    output: raw .d files (Thermo) or equivalent
+    confidence: low
+  Step 3: Proteome and phosphoproteome profiling
+    tool: data-independent acquisition mass spectrometry (DIA-MS)
+    algorithm: DIA spectral library generation and library-free deconvolution
+    parameters: DIA_window_width_da=25, number_of_windows=32, precursor_isolation_window_da=25, MS1_resolution=not specified, MS2_resolution=not specified, gradient_length_min=120
+    input: digested peptide mixture
+    output: raw DIA .d files
+    confidence: low
+  Step 4: Metabolite annotation
+    tool: XCMS + CAMERA + METLIN + HMDB
+    algorithm: peak detection, grouping, retention time alignment, adduct annotation, database matching
+    parameters: mass_tolerance_ppm=10, rt_tolerance_sec=30, min_peak_width_sec=5, sn_threshold=6
+    input: raw .d files
+    output: putatively annotated metabolite table (132 compounds)
+    confidence: medium
+  Step 5: Protein and phosphosite identification/quantification
+    tool: Spectronaut
+    algorithm: library-based DIA quantification
+    parameters: FDR_threshold=0.01, peptide_confidence=high, phosphosite_localization_probability=0.75
+    input: raw DIA .d files + spectral library
+    output: protein abundance table + phosphosite table (>1200 proteins, large-scale phosphoproteome)
+    confidence: medium
+  Step 6: Multiomics integration and perturbation analysis
+    tool: custom R scripts
+    algorithm: correlation analysis, clustering, differential expression
+    parameters: p_value_cutoff=0.05, fold_change_threshold=1.5, clustering_method=hierarchical
+    input: metabolite table + protein table + phosphosite table
+    output: integrated multiomics profiles, differentially regulated features
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: not_mentioned (not mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository
+  - Custom microwell chip fabrication protocol not detailed
+  - No spectral library or DIA processing parameters fully specified
+  - Spectronaut is commercial software requiring license and proprietary settings
+  - Custom R scripts for integration not shared
+  - No instrument method files or gradient profiles provided
+reproducibility_strengths:
+  - Strategy described at conceptual level with key reagents and workflows
+  - Use of standard open-source tools (XCMS/CAMERA) for metabolomics
+  - Clear reporting of output metrics (132 metabolites, >1200 proteins)

@@ -1,0 +1,52 @@
+========== reproducibility_recipe entry ==========
+paper_title: Targeted Profiling of Short-, Medium-, and Long-Chain Fatty Acyl-Coenzyme As in Biological Samples by Phosphate Methylation Coupled to Liquid Chromatography-Tandem Mass Spectrometry.
+source_paper: Li P et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.1c00664, PMID: 33620217
+overall_reproducibility_score: 40/100
+
+workflow_steps: 4
+  Step 1: Acyl-CoA derivatization via phosphate methylation
+    tool: chemical derivatization
+    parameters: reagent=methyl iodide, solvent=anhydrous acetonitrile, temperature=0 °C, reaction_time=30 min, quenching=ammonium hydroxide
+    input: biological extracts (HeLa cells, human platelets)
+    output: methylated acyl-CoA derivatives
+    confidence: medium
+  Step 2: Sample cleanup and enrichment
+    tool: mixed-mode solid-phase extraction (SPE)
+    parameters: cartridge=Oasis MAX, elution_solvent=5% methanol in 0.1% formic acid, washing_steps=['water', '10% methanol']
+    input: derivatized acyl-CoA samples
+    output: purified methylated acyl-CoA extracts
+    confidence: medium
+  Step 3: LC-MS/MS analysis with targeted SRM acquisition
+    tool: liquid chromatography-tandem mass spectrometry
+    algorithm: scheduled SRM (multiple reaction monitoring)
+    parameters: chromatography=C18 column (2.1 × 100 mm, 1.7 μm), gradient=not fully specified (binary gradient A: 0.1% formic acid in water; B: 0.1% formic acid in acetonitrile), flow_rate=0.3 mL/min, column_temperature=40 °C, injection_volume=5 μL, mass_analyzer=triple quadrupole, ionization=ESI negative mode, SRM_transitions=based on common fragmentation pattern: [M−H]⁻ → m/z 428 (adenosine diphosphate moiety)
+    input: purified methylated acyl-CoA extracts
+    output: quantitative SRM peak areas
+    confidence: low
+  Step 4: Quantification using isotope-labeled internal standards
+    tool: internal standard calibration
+    algorithm: ratio-based quantification (analyte peak area / IS peak area)
+    parameters: internal_standards=['uniformly ^13C-labeled yeast metabolite extract', 'odd-chain and stable isotope-labeled acyl-CoAs'], calibrants=surrogate matrix-matched calibrants, LOQ_range_nM=[4.2, 16.9]
+    input: SRM peak areas + IS responses
+    output: absolute concentrations (nM)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS/MS data not deposited in public repository
+  - Exact LC gradient profile incompletely described
+  - No access to SRM transition list or instrument method files
+  - No code or scripts for quantification or data processing shared
+  - Derivatization protocol lacks details on reagent purity, handling of moisture-sensitive methyl iodide
+reproducibility_strengths:
+  - Use of well-characterized isotopic internal standards
+  - Detailed description of SPE cartridge and elution conditions
+  - Reported LOQs per analyte class support method sensitivity claims

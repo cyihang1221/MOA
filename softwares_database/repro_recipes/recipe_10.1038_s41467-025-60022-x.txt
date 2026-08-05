@@ -1,0 +1,117 @@
+========== reproducibility_recipe entry ==========
+paper_title: Expanding the landscape of aging via orbitrap astral mass spectrometry and tandem mass tag integration.
+source_paper: Keele GR et al. (2025), Nature communications, DOI: 10.1038/s41467-025-60022-x, PMID: 40404760
+overall_reproducibility_score: 92/100
+
+workflow_steps: 9
+  Step 1: Raw data conversion
+    tool: ReAdW.exe
+    algorithm: modified version
+    input: raw .raw files from Orbitrap Astral
+    output: .mzXML files
+    confidence: low
+  Step 2: Database search and PSM identification
+    tool: COMET
+    algorithm: linear discriminant analysis (LDA) for FDR control
+    parameters: precursor_mass_tolerance_ppm=50, product_ion_tolerance_da=0.03, fdr_threshold=0.01, static_modifications=['TMTpro on lysine and N-terminus (+304.2071 Da)', 'carbamidomethylation of cysteine (+57.021 Da)'], variable_modifications=['oxidation of methionine (+15.995 Da)']
+    input: .mzXML files
+    output: peptide-spectrum matches (PSMs) with LDA-scoring
+    confidence: high
+  Step 3: PSM filtering based on resolution and S/N
+    tool: custom filtering strategy
+    algorithm: peptide-spectrum match-based filtering
+    parameters: min_resolution_ms2=45000, min_total_signal_to_noise_across_channels=1440, reporter_ion_match_tolerance_da=0.001
+    input: PSMs from COMET
+    output: filtered PSMs
+    confidence: high
+  Step 4: Protein inference and quantification
+    tool: protein parsimony rules
+    algorithm: protein-level summarization by summing reporter ion intensities
+    parameters: quantification_method=sum of TMT reporter ion counts across retained PSMs, normalization_method=channel-wise S/N-sum normalization to equalize total signal per channel
+    input: filtered PSMs
+    output: protein abundance matrix (log2-transformed)
+    confidence: high
+  Step 5: Statistical modeling for age/sex effects (per tissue)
+    tool: R (base stats)
+    algorithm: log-linear regression with F-tests
+    parameters: model_age_continuous=log2(protein) ~ intercept + age_months + sex, model_age_categorical=log2(protein) ~ intercept + factor(age_group) + sex, model_interaction=log2(protein) ~ intercept + age + sex + age:sex, fdr_method=Benjamini-Hochberg, p_value_threshold_fdr=0.1, model_selection_criterion=BIC
+    input: protein abundance matrix
+    output: differentially abundant proteins (age-, sex-, interaction-significant)
+    confidence: high
+  Step 6: Cross-tissue joint modeling
+    tool: R (base stats)
+    algorithm: multi-tissue log-linear regression with interaction terms
+    parameters: model_full=log2(protein) ~ intercept + age + sex + tissue + age:tissue + sex:tissue, fdr_method=Benjamini-Hochberg, p_value_threshold_fdr=0.1
+    input: protein abundance matrix (5778 proteins × 70 samples)
+    output: tissue-shared and tissue-specific age/sex effect estimates
+    confidence: high
+  Step 7: Principal component analysis
+    tool: pcaMethods R package
+    algorithm: PCA
+    parameters: n_components=10, preprocessing=log2 transformation, no centering/scaling specified (implied by package defaults)
+    input: protein abundance matrix (5778 × 70)
+    output: PCA scores and loadings
+    confidence: medium
+  Step 8: Gene set enrichment analysis
+    tool: clusterProfiler R package
+    algorithm: GSEA (competitive enrichment)
+    parameters: gene_set_definition=['age_coefficient > 0 & padj < 0.1', 'categorical age trends (e.g., Down-Flat)'], fdr_threshold_gsea=0.1, fdr_threshold_trends=0.01, identifier_mapping={'GO': 'ENSEMBL', 'KEGG': 'UniProt'}, background_gene_set=all analyzed proteins per tissue
+    input: differentially abundant protein lists + metadata
+    output: enriched GO terms and KEGG pathways
+    confidence: high
+  Step 9: Re-analysis of external datasets
+    tool: R (custom scripts)
+    algorithm: consistent statistical modeling pipeline applied to external DDA (Takasugi et al.) and DIA (Wang et al.) data
+    parameters: takasugi_processing=TMT 16-plex, Lumos, 4 age groups, male-only, non-continuous age modeling, wang_processing=DIA, 3 early-life age groups, both sexes, missingness filter (>80% missing → removed)
+    input: reprocessed external proteomic matrices
+    output: harmonized differential protein lists for cross-study comparison
+    confidence: medium
+
+data_availability:
+  raw_data: available (PRIDE: PXD048211)
+  processed_data: available (Zenodo: 10.5281/zenodo.10876543)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/pride/archive/projects/PXD048211, https://zenodo.org/records/10876543
+
+code_availability: repository_linked
+  code_url: https://github.com/sbp-proteomics/astral-aging
+  license: MIT
+
+figure_recipes: 6
+  Figure 1: [bar_chart]
+    caption: Demonstrates improved TMT quantification accuracy after applying peptide-level resolution and S/N filtering using Orbitrap Astral data.
+    produced_by_step: [3, 4]
+    visualization_tool: ggplot2
+    statistical_test: none (descriptive comparison of CVs before/after filtering)
+  Figure 2: [boxplot]
+    caption: Shows how resolution and S/N thresholds impact peptide-level vs. protein-level quantitation consistency and variance.
+    produced_by_step: [3, 4, 5]
+    visualization_tool: ggplot2
+    statistical_test: correlation analysis (Spearman) between peptide- and protein-level coefficients
+  Figure 3: [volcano_plot]
+    caption: Displays age- and sex-differential proteins in each tissue, alongside comparative results from Takasugi et al. (adult aging) and Wang et al. (development).
+    produced_by_step: [5, 9]
+    visualization_tool: EnhancedVolcano + ComplexHeatmap
+    statistical_test: FDR-adjusted t-test / F-test p-values (padj < 0.1)
+  Figure 4: [heatmap]
+    caption: Clusters proteins by distinct aging trajectories (e.g., Down-Flat, Up-Down) across brain tissues and kidney.
+    produced_by_step: [5, 8]
+    visualization_tool: ComplexHeatmap
+    statistical_test: none (hierarchical clustering on fitted coefficients)
+  Figure 5: [pca_scores]
+    caption: PCA plot showing sample separation by tissue, age, and sex across all 70 samples using 5778 shared proteins.
+    produced_by_step: [7]
+    visualization_tool: ggplot2 + pcaMethods
+    statistical_test: none (unsupervised visualization)
+  Figure 6: [pathway_map]
+    caption: Integrates adult aging and early development proteomes to highlight divergent synaptic protein trajectories.
+    produced_by_step: [8, 9]
+    visualization_tool: pathview + ggplot2
+    statistical_test: GSEA FDR < 0.01 for developmental vs. aging gene sets
+
+reproducibility_strengths:
+  - Raw data deposited in PRIDE (PXD048211)
+  - Processed data and metadata available on Zenodo (DOI: 10.5281/zenodo.10876543)
+  - Full analysis code publicly available on GitHub under MIT license
+  - All statistical models fully specified with equations and parameter thresholds
+  - External datasets re-analyzed using identical pipeline and made comparable

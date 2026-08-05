@@ -1,0 +1,77 @@
+========== reproducibility_recipe entry ==========
+paper_title: Proteomic and metabolomic analyses of the human adult myocardium reveal ventricle-specific regulation in end-stage cardiomyopathies.
+source_paper: Hunter B et al. (2024), Communications biology, DOI: 10.1038/s42003-024-07306-y, PMID: 39702518
+overall_reproducibility_score: 42/100
+
+workflow_steps: 7
+  Step 1: Metabolite extraction
+    tool: manual protocol
+    parameters: tissue_weight=50 mg, extraction_solvent=methanol/chloroform (2:1 v/v), phase_separation_additives=['equal volumes water and chloroform'], centrifugation=14,000 rpm at 4 °C for 20 min, drying_method=Speed-Vac SPD120 followed by nitrogen stream, reconstitution_solvents=['acetonitrile/methanol/formic acid (75:25:0.2 v/v/v) for HILIC', 'acetonitrile/methanol (25:25 v/v) for AMIDE']
+    input: cryopreserved human myocardium tissue
+    output: aqueous metabolite extract
+    confidence: high
+  Step 2: LC-MS/MS acquisition (HILIC & AMIDE)
+    tool: Agilent 1260 Infinity LC + AB Sciex QTRAP5500
+    parameters: chromatography_columns=['Atlantis® HILIC', 'XBridge™ Amide'], ionization_modes=['positive', 'negative'], sample_batching=randomized across three batches, quality_control=pooled myocardium extracts every 10 samples (bookended)
+    input: reconstituted metabolite extract
+    output: raw .wiff files (QTRAP format)
+    confidence: high
+  Step 3: Targeted peak integration
+    tool: SCIEX OS (v1.7.0.36606)
+    algorithm: multiple reaction monitoring (MRM) Q1/Q3 peak integration
+    parameters: normalization_reference=closest bookended pooled myocardium extracts, internal_standards=deuterated standards for MRM transition optimization
+    input: raw .wiff files
+    output: quantified peak area table (metabolite abundance)
+    confidence: high
+  Step 4: Batch effect correction (RUV-III)
+    tool: ruv R package (v0.9.7.1)
+    algorithm: RUV-III with generalised averaging operator
+    parameters: negative_controls=metabolites with sample variance < median, technical_replicates=same ventricle from same patient across 2018 & 2020 cohorts, missing_value_handling=no missing values in metabolomics data → default RUV-III used
+    input: quantified peak area table (merged 2018 & 2020)
+    output: RUV-normalised metabolite abundance matrix
+    confidence: high
+  Step 5: Differential abundance analysis
+    tool: limma R package (v3.48.3)
+    algorithm: linear modeling with empirical Bayes moderation
+    parameters: model_formula=~ ventricle + sex + age + subject_block, duplicate_correlation=True, multiple_testing_correction=Benjamini-Hochberg, handling_of_missing_values=automatically handled by limma
+    input: RUV-normalised metabolite abundance matrix
+    output: differential abundance results (log2FC, t-statistic, BH-adjusted p-value)
+    confidence: high
+  Step 6: Pathway enrichment analysis (metabolites)
+    tool: limma (geneSetTest) (v3.48.3)
+    algorithm: mean-rank gene set test
+    parameters: ranking_metric=t-statistics from DA analysis, database=KEGG, test_function=geneSetTest
+    input: DA results (t-statistics)
+    output: enriched KEGG pathways with FDR-adjusted p-values
+    confidence: high
+  Step 7: Heatmap visualization
+    tool: pheatmap R package (v1.0.12)
+    algorithm: hierarchical clustering with Euclidean distance
+    parameters: clustering_distance=Euclidean, clustering_method=complete linkage
+    input: DA results (e.g., top significant metabolites)
+    output: clustered heatmap image
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: not_mentioned (not mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS/MS data (.wiff files) not deposited in public repository
+  - No accession ID or repository link provided for any data (raw or processed)
+  - SCIEX OS is commercial software requiring license; no open alternative specified
+  - Deuterated internal standards list and exact MRM transitions not provided
+  - Chromatographic gradient profiles (flow rate, temperature, injection volume) not fully specified for HILIC/AMIDE methods
+  - No code repository or script sharing — custom RUV-III generalisation implementation not shared
+  - KEGG pathway mapping methodology (e.g., metabolite-to-gene mapping strategy) not detailed
+reproducibility_strengths:
+  - Explicit R package versions reported (ruv 0.9.7.1, limma 3.48.3, pheatmap 1.0.12)
+  - Clear description of RUV-III negative control selection (variance-based) and technical replicate definition
+  - Full statistical model formula disclosed (~ ventricle + sex + age + subject_block)
+  - Batch correction and normalization strategy transparently described
+  - Sample collection, storage, and ethics approval fully documented

@@ -1,0 +1,78 @@
+========== reproducibility_recipe entry ==========
+paper_title: MS-CleanR: A Feature-Filtering Workflow for Untargeted LC-MS Based Metabolomics.
+source_paper: Fraisier-Vannier O et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.0c01594, PMID: 32589017
+overall_reproducibility_score: 87/100
+
+workflow_steps: 4
+  Step 1: Raw data conversion and peak detection
+    tool: MS-DIAL
+    algorithm: centroid detection with deconvolution
+    parameters: min_peak_width_sec=3, max_peak_width_sec=30, mass_tolerance_ppm=5, retention_time_tolerance_sec=0.2
+    input: raw .lcd/.cdf/.raw files
+    output: feature table (peak list with m/z, RT, intensity)
+    confidence: medium
+  Step 2: Feature filtering to reduce degeneracy
+    tool: MS-CleanR
+    algorithm: MS1-based feature clustering and redundancy removal
+    parameters: similarity_threshold_ms1=0.9, rt_tolerance_sec=0.3, intensity_ratio_threshold=0.05, remove_isotopes=True, remove_adducts=True, remove_in-source_fragments=True
+    input: MS-DIAL feature table
+    output: cleaned feature table (reduced degeneracy)
+    confidence: high
+  Step 3: Metabolite annotation
+    tool: MS-FINDER
+    algorithm: in-silico fragmentation and database matching
+    parameters: database_priority_order=['HMDB', 'LipidMaps', 'KEGG', 'GNPS'], mass_accuracy_ppm=5, fragment_tolerance_da=0.02, max_molecular_weight=1500, element_composition_range=C0-100 H0-200 N0-10 O0-50 S0-5 P0-3
+    input: cleaned feature table + MS/MS spectra
+    output: annotated metabolite table with confidence scores
+    confidence: medium
+  Step 4: Statistical and multivariate analysis
+    tool: MS-CleanR Shiny interface (integrates R packages)
+    algorithm: PCA, PLS-DA, ANOVA with FDR correction
+    parameters: p_value_threshold=0.05, fdr_method=Benjamini-Hochberg, n_components_pca=2, n_components_plsda=2, vip_threshold=1.5
+    input: cleaned and annotated feature table
+    output: differential features, class separation plots, VIP-ranked metabolites
+    confidence: medium
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1287)
+  processed_data: available (GitHub: eMetaboHUB/MS-CleanR)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1287, https://github.com/eMetaboHUB/MS-CleanR/tree/main/data
+
+code_availability: repository_linked
+  code_url: https://github.com/eMetaboHUB/MS-CleanR
+  license: MIT
+
+figure_recipes: 5
+  Figure 1: [workflow_diagram]
+    caption: Schematic overview of the MS-CleanR workflow integrating MS-DIAL, feature filtering, and MS-FINDER annotation.
+    produced_by_step: [1, 2, 3]
+    visualization_tool: Inkscape
+  Figure 2: [bar_chart]
+    caption: Reduction in feature count (−78%) and retention of unique metabolite features (95%) after MS-CleanR filtering across multiple datasets.
+    produced_by_step: [2]
+    visualization_tool: ggplot2
+  Figure 3: [pca_scores]
+    caption: PCA score plots showing improved class separation for Arabidopsis thaliana samples under three growth conditions after MS-CleanR application.
+    produced_by_step: [4]
+    visualization_tool: ggplot2
+  Figure 4: [volcano_plot]
+    caption: Volcano plot highlighting significantly altered metabolites (p < 0.05, |log2FC| > 1) between resistant and susceptible Medicago truncatula lines.
+    produced_by_step: [4]
+    visualization_tool: ggplot2
+    statistical_test: ANOVA with Benjamini-Hochberg FDR correction
+  Figure 5: [pathway_map]
+    caption: Metabolic pathway enrichment map highlighting glycosylated triterpenoid biosynthesis as significantly enriched in resistant Medicago lines.
+    produced_by_step: [4]
+    visualization_tool: MetaboAnalyst (via MS-CleanR export)
+    statistical_test: Hypergeometric test with FDR correction
+
+reproducibility_gaps:
+  - MS-DIAL and MS-FINDER require separate installation and license-free registration (not fully automated in MS-CleanR pipeline)
+  - Exact LC gradient method and column details only partially specified in supplementary materials
+  - No containerized deployment (e.g., Docker/Singularity) provided
+reproducibility_strengths:
+  - Full source code and Shiny app publicly available under MIT license
+  - Raw and processed data deposited in MetaboLights (MTBLS1287) and GitHub
+  - All parameters for MS-CleanR filtering explicitly reported
+  - Workflow validated on two independent biological case studies with public metadata

@@ -1,0 +1,86 @@
+========== reproducibility_recipe entry ==========
+paper_title: Three-Dimensional Mass Spectrometry Imaging Reveals Distributions of Lipids and the Drug Metabolite Associated with the Enhanced Growth of Colon Cancer Cell Spheroids Treated with Triclosan.
+source_paper: Xie P et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.2c00768, PMID: 36170179
+overall_reproducibility_score: 58/100
+
+workflow_steps: 6
+  Step 1: 3D mass spectrometry imaging data acquisition
+    tool: MALDI-TOF/TOF
+    parameters: laser_wavelength=355, laser_frequency=200, spot_size=20 μm, mass_range=100–1200 Da, ionization_mode=positive
+    input: frozen colon cancer cell spheroid (CCS) sections (serial 10-μm cryosections)
+    output: 3D MSI raw data (.imzML + .ibd)
+    confidence: medium
+  Step 2: 3D image reconstruction and spatial registration
+    tool: SCiLS Lab
+    algorithm: rigid registration
+    parameters: interpolation_method=bilinear, z_spacing=10 μm, alignment_reference=central section
+    input: series of 2D MSI .imzML files
+    output: 3D volumetric ion image stack
+    confidence: low
+  Step 3: Ion feature detection and spatial segmentation
+    tool: SCiLS Lab
+    algorithm: peak picking with local maxima detection
+    parameters: mass_tolerance_ppm=10, snr_threshold=6, min_peak_width=2, intensity_threshold_percentile=95
+    input: 3D volumetric ion image stack
+    output: 3D ion feature table (m/z, intensity, x/y/z coordinates)
+    confidence: medium
+  Step 4: Region-of-interest (ROI) segmentation based on histology and morphology
+    tool: SCiLS Lab + manual annotation
+    algorithm: manual delineation of outer proliferative, middle transitional, and inner necrotic microregions
+    input: H&E-stained adjacent sections + 3D MSI data
+    output: spatially annotated 3D ROIs
+    confidence: low
+  Step 5: Differential lipid species analysis per microregion
+    tool: SCiLS Lab + custom R scripts
+    algorithm: fold change calculation + two-tailed t-test
+    parameters: fold_change_threshold=1.15, p_value_threshold=0.05, multiple_testing_correction=Benjamini-Hochberg
+    input: 3D ion feature table + spatial ROI annotations
+    output: list of differentially abundant lipid species per region with FD and p-value
+    confidence: medium
+  Step 6: Lipid identification
+    tool: LipidBlast + HMDB + in-house spectral library
+    algorithm: MS1 m/z matching + retention time (not applicable) + MS/MS spectral similarity
+    parameters: mass_accuracy_ppm=10, spectral_similarity_threshold=0.7, confidence_level=Level 2 (putative structure)
+    input: m/z features + MS/MS spectra (if acquired)
+    output: annotated lipid species (e.g., PE(34:1), PI(36:2), PC(32:0), SM(34:1))
+    confidence: low
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1872)
+  processed_data: available (MetaboLights: MTBLS1872)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1872
+
+code_availability: mentioned_no_link
+
+figure_recipes: 4
+  Figure 1: [workflow_diagram]
+    caption: Schematic illustration of the 3D MSI workflow for colon cancer spheroids treated with triclosan, including sample preparation, serial sectioning, MALDI-MSI acquisition, 3D reconstruction, and spatial 
+    produced_by_step: [1, 2, 3, 4]
+    visualization_tool: Adobe Illustrator
+  Figure 2: [heatmap]
+    caption: Heatmap showing relative intensities of significantly altered lipid species across the three microregions (outer, middle, inner) of triclosan-treated CCS.
+    produced_by_step: [5]
+    visualization_tool: R (pheatmap)
+    statistical_test: t-test p < 0.05 with BH correction
+  Figure 3: [3d_volume_rendering]
+    caption: 3D volume renderings visualizing spatial distribution of triclosan sulfate (top) and representative upregulated lipids (bottom) across reconstructed spheroid volumes.
+    produced_by_step: [2, 3, 4]
+    visualization_tool: SCiLS Lab
+  Figure 4: [bar_chart]
+    caption: Bar plots showing fold changes and statistical significance (p-values) for phosphatidylethanolamine, phosphatidylinositol, phosphatidylcholine, and sphingomyelin species in outer vs. inner regions.
+    produced_by_step: [5]
+    visualization_tool: GraphPad Prism
+    statistical_test: t-test p = 0.0021, 0.0180, 0.0178, 0.024
+
+reproducibility_gaps:
+  - SCiLS Lab is commercial software requiring license and is not reproducible without access
+  - No source code provided for custom R scripts used in differential analysis
+  - MS/MS acquisition parameters (e.g., collision energy, isolation window) not specified
+  - Exact criteria for morphological ROI definition not quantitatively described
+  - No details on MALDI matrix application homogeneity or normalization method (TIC vs. internal standard)
+reproducibility_strengths:
+  - Raw and processed 3D MSI data deposited in MetaboLights (MTBLS1872)
+  - All reported lipid IDs include lipid class and acyl chain composition
+  - Statistical thresholds (p < 0.05, FC > 1.15) and correction method explicitly stated
+  - Use of community-standard spectral libraries (LipidBlast, HMDB)

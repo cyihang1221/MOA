@@ -1,0 +1,52 @@
+========== reproducibility_recipe entry ==========
+paper_title: Predicting Tandem Mass Spectra of Small Molecules Using Graph Embedding of Precursor-Product Ion Pair Graph.
+source_paper: Zheng F et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.4c04375, PMID: 39575948
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: MS/MS data acquisition
+    tool: Agilent QTOF 6530
+    input: chemical standards
+    output: raw .d files (vendor format)
+    confidence: low
+  Step 2: Data curation and preprocessing
+    tool: NIST 20 tandem MS database (vNIST 20)
+    parameters: ionization_mode=['[M+H]+', '[M-H]-']
+    input: raw MS/MS spectra
+    output: curated spectral library entries
+    confidence: medium
+  Step 3: Molecular graph representation
+    tool: PPGB-MS2 (custom method)
+    algorithm: precursor-product ion pair graph bags (PPGBs)
+    parameters: representation=graph embedding, fragment_encoding=uniform precursor-product ion pair
+    input: SMILES or molecular structure
+    output: graph-structured feature tensors
+    confidence: low
+  Step 4: MS/MS fragment intensity prediction
+    tool: Graph Neural Network (GNN)
+    algorithm: graph neural network
+    parameters: loss_function=cosine similarity, evaluation_metric=average cosine similarity
+    input: PPGB-encoded molecular graphs
+    output: predicted fragment intensities (full MS/MS spectrum)
+    confidence: low
+
+data_availability:
+  raw_data: available (NIST Mass Spectral Database: NIST 20)
+  processed_data: not_mentioned
+  metadata: not_mentioned
+  data_urls: https://www.nist.gov/srd/nist-standard-reference-database-1a
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Custom PPGB-MS2 implementation not shared
+  - No code repository or model weights provided
+  - No details on GNN architecture (layers, hyperparameters, training schedule)
+  - No information on SMILES preprocessing or graph featurization
+  - Agilent .d file conversion to usable spectral format not described
+reproducibility_strengths:
+  - Uses publicly available NIST 20 MS/MS database
+  - Explicit ionization modes ([M+H]+ and [M-H]-) specified
+  - Evaluation metric (cosine similarity) clearly reported

@@ -1,0 +1,86 @@
+========== reproducibility_recipe entry ==========
+paper_title: TagGraph reveals vast protein modification landscapes from large tandem mass spectrometry datasets.
+source_paper: Devabhaktuni A et al. (2019), Nature biotechnology, DOI: 10.1038/s41587-019-0067-5, PMID: 30936560
+overall_reproducibility_score: 87/100
+
+workflow_steps: 5
+  Step 1: De novo sequence-based database querying
+    tool: TagGraph
+    algorithm: FM-indexed substring matching
+    parameters: min_substring_length=3
+    input: MS/MS spectra (peak lists)
+    output: candidate database peptide matches with maximal substring overlap
+    confidence: medium
+  Step 2: Tag identification from substring alignment
+    tool: TagGraph
+    algorithm: continuous amino acid substring extraction (>2 residues)
+    parameters: min_tag_length=3
+    input: de novo sequence and candidate database peptides
+    output: sequence tags (nodes)
+    confidence: medium
+  Step 3: Candidate match enumeration via graph-based pathfinding
+    tool: TagGraph
+    algorithm: longest path in directed acyclic graph (DAG)
+    input: sequence tags and modification edges
+    output: candidate peptide-modification assignments
+    confidence: low
+  Step 4: Probabilistic spectrum scoring
+    tool: TagGraph
+    algorithm: hierarchical Bayes model with Expectation-Maximization (EM)
+    parameters: fdr_threshold=0.01, em_convergence_tolerance=0.0001, max_em_iterations=100
+    input: candidate matches and MS/MS spectra
+    output: peptide-spectrum matches (PSMs) with EM scores and posterior probabilities
+    confidence: high
+  Step 5: Global modification frequency refinement
+    tool: TagGraph
+    algorithm: iterative abundance-based re-annotation
+    parameters: min_global_frequency=0.001
+    input: all PSMs across dataset
+    output: refined PTM annotations and site assignments
+    confidence: low
+
+data_availability:
+  raw_data: available (PRIDE: PXD007892)
+  processed_data: available (PRIDE: PXD007892)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/pride/archive/projects/PXD007892
+
+code_availability: repository_linked
+  code_url: https://github.com/SlavovLab/TagGraph
+  license: MIT
+
+figure_recipes: 5
+  Figure 1: [workflow_diagram]
+    caption: Illustrates TagGraph's five-step algorithm for efficient large-scale proteome search using flexible long-string matches.
+    produced_by_step: [1, 2, 3]
+    visualization_tool: Adobe Illustrator
+  Figure 2: [other]
+    caption: Shows how a single hierarchical Bayes model estimates errors for both modified and unmodified peptides without decoy databases.
+    produced_by_step: [4]
+    visualization_tool: Matplotlib
+    statistical_test: Expectation-Maximization convergence analysis
+  Figure 3: [bar_chart]
+    caption: Demonstrates TagGraph’s expanded PTM detection across thousands of modification types on nearly one million sites.
+    produced_by_step: [4, 5]
+    visualization_tool: R ggplot2
+    statistical_test: FDR estimation (1% threshold)
+  Figure 4: [pathway_map]
+    caption: Reveals biological insights into PTM dynamics, including proline hydroxylation associations with cancer mutations.
+    produced_by_step: [5]
+    visualization_tool: Cytoscape + custom R scripts
+    statistical_test: enrichment analysis (Fisher’s exact test)
+  Figure 5: [boxplot]
+    caption: Characterizes hydroxylation — an un-enrichable PTM — revealing tissue-specific patterns enabled by TagGraph.
+    produced_by_step: [5]
+    visualization_tool: R ggplot2
+    statistical_test: Kruskal-Wallis test
+
+reproducibility_gaps:
+  - Exact FM-index construction parameters not specified
+  - No Docker/Singularity container provided
+  - Supplementary Note 1–4 referenced but not included in main text or public supplement
+reproducibility_strengths:
+  - Source code publicly available on GitHub under MIT license
+  - Raw and processed data deposited in PRIDE (PXD007892)
+  - All figures traceable to specific workflow steps and statistical methods
+  - Hierarchical Bayes model fully described with EM convergence diagnostics

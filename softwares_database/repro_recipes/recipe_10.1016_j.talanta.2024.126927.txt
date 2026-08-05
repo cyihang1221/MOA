@@ -1,0 +1,51 @@
+========== reproducibility_recipe entry ==========
+paper_title: Enhancing mass spectrometry interpretability by ComDim-ICA multi-block analysis: Geographical and varietal traceability of Brazilian Coffea canephora.
+source_paper: Baqueta MR et al. (2025), Talanta, DOI: 10.1016/j.talanta.2024.126927, PMID: 39306944
+overall_reproducibility_score: 25/100
+
+workflow_steps: 4
+  Step 1: Sample preparation and dual-phase extraction
+    tool: manual_protocol
+    parameters: extraction_solvents=['water', 'organic solvent (not specified)'], sample_type=roasted Coffea canephora beans, extracts_analyzed=['aqueous extract', 'organic extract']
+    input: roasted coffee beans
+    output: two separate mass spectrometry data blocks (polar/nonpolar)
+    confidence: medium
+  Step 2: Direct infusion mass spectrometry analysis
+    tool: direct_infusion_ESI-MS
+    parameters: ionization=electrospray ionization (ESI), infusion_mode=direct infusion, chromatography=LC injector used without column (peak tube connection), analysis_mode=untargeted
+    input: aqueous and organic extracts
+    output: raw mass spectra (.raw or vendor format, unspecified)
+    confidence: low
+  Step 3: Multi-block data integration and decomposition
+    tool: ComDim-ICA
+    algorithm: Independent Component Analysis (ICA) applied to iteratively reweighted concatenated data blocks
+    parameters: blocks=2, block_1=aqueous extract mass spectra, block_2=organic extract mass spectra, contrast_function=statistical independence (ICA objective), vs_comdim_pca=ComDim-ICA replaces PCA with ICA in the ComDim framework
+    input: two preprocessed mass spectral data blocks (ion intensities per sample)
+    output: independent components (ICs) with loadings and scores highlighting discriminant ions per block
+    confidence: low
+  Step 4: Discriminant ion identification and biological interpretation
+    tool: manual_interpretation_and_annotation
+    algorithm: ion intensity correlation with class labels + literature-based annotation
+    parameters: annotation_level=MS1-level putative identification, discrimination_criterion=significant ions contributing to separation of geographical origin and botanical variety
+    input: ComDim-ICA component loadings and scores
+    output: list of discriminant m/z features with putative metabolite assignments
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in any public repository
+  - No details on MS instrument parameters (e.g., mass range, resolution, polarity, acquisition mode)
+  - Organic solvent identity unspecified (critical for metabolite coverage)
+  - No description of spectral preprocessing (peak picking, alignment, normalization)
+  - ComDim-ICA implementation not described — no software name, code reference, or algorithmic details beyond conceptual distinction from ComDim-PCA
+  - No information on how 'significant ions' were statistically selected (thresholds, tests, FDR control)
+  - No metadata schema or sample coding provided beyond descriptive labels
+  - No validation strategy (e.g., cross-validation, permutation testing) reported

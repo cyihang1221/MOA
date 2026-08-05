@@ -1,0 +1,101 @@
+========== reproducibility_recipe entry ==========
+paper_title: SubCellBarCode: integrated workflow for robust spatial proteomics by mass spectrometry.
+source_paper: Arslan T et al. (2022), Nature protocols, DOI: 10.1038/s41596-022-00699-2, PMID: 35732783
+overall_reproducibility_score: 78/100
+
+workflow_steps: 6
+  Step 1: Subcellular fractionation
+    tool: Wet-lab protocol
+    parameters: digitonin_concentration_ug_ml=42, digitonin_incubation_time_min=7, digitonin_temperature_c=4, centrifugation_speed_fp1_rpm=low-speed, centrifugation_speed_fp2_rpm=medium-speed, ultracentrifugation_g=100000, ultracentrifugation_duration_h=1
+    input: intact cultured cells
+    output: subcellular fractions (FS1, FS2, FP1, FP2, FP3)
+    confidence: high
+  Step 2: Peptide pre-fractionation and LC-MS analysis
+    tool: LC-MS platform
+    parameters: pre_fractionation_methods=['HiRIEF', 'high-pH reverse-phase', 'direct long-gradient LC-MS'], HiRIEF_pH_ranges=['3–10', '3.4–4.8'], gradient_length_minutes=not fully specified (see Supplementary Table 1)
+    input: peptide mixtures from subcellular fractions
+    output: raw MS data (.raw or .wiff files)
+    confidence: medium
+  Step 3: Protein quantification
+    tool: TMT-based quantification
+    algorithm: gene-centric protein inference
+    parameters: FDR_threshold=0.01, minimum_PSMs_for_quantification=1, quantification_strategy=TMT ratios across 5 fractions × 2 replicates = 10 channels
+    input: raw MS data
+    output: quantitative protein matrix (TMT ratios per fraction/replicate)
+    confidence: high
+  Step 4: Subcellular localization classification
+    tool: SubCellBarCode R package (vBioconductor devel version (2022))
+    algorithm: Support Vector Machine (SVM)
+    parameters: classification_levels=['15 compartments', '4 neighborhoods'], input_features=fractionation profiles (5 fractions × 2 replicates → 10 values per protein), probability_output=True, cross_validation=implied but not explicitly detailed
+    input: quantitative protein matrix
+    output: SVM-derived classification labels and probabilities per protein
+    confidence: high
+  Step 5: Differential localization analysis
+    tool: SubCellBarCode R package (vBioconductor devel version (2022))
+    algorithm: Wilcoxon signed-rank test (two-sided)
+    parameters: statistical_test=Wilcoxon signed-rank test, comparison_groups=['HiRIEF vs high-pH', 'HiRIEF vs long-gradient']
+    input: SVM classification probabilities and agreement status
+    output: differentially localized proteins, classification agreement metrics
+    confidence: high
+  Step 6: Visualization of SubCellBarCodes
+    tool: SubCellBarCode R package (vBioconductor devel version (2022))
+    algorithm: custom bar-code plotting
+    parameters: neighborhood_classes=4, compartment_classes=15, probability_threshold_for_display=not specified
+    input: SVM classification probabilities
+    output: SubCellBarCode plots (neighborhood & compartment level)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (PRIDE: not explicitly stated in text)
+  processed_data: available (SubCellBarCode.org: www.subcellbarcode.org)
+  metadata: in_paper_only
+  data_urls: https://bioconductor.org/packages/devel/bioc/html/SubCellBarCode.html, www.subcellbarcode.org
+
+code_availability: repository_linked
+  code_url: https://bioconductor.org/packages/devel/bioc/html/SubCellBarCode.html
+  license: Artistic-2.0
+
+figure_recipes: 7
+  Figure 1: [workflow_diagram]
+    caption: Overview of SubCellBarCode method in three parts: fractionation, MS analysis, and bioinformatics classification.
+    produced_by_step: [1, 2, 4]
+    visualization_tool: Custom R/ggplot2 (implied by Bioconductor package)
+  Figure 2: [workflow_diagram]
+    caption: Timeline of the protocol from cell harvest to classification output, indicating duration of each step.
+    produced_by_step: [1, 2, 3, 4]
+    visualization_tool: Custom diagram (likely Illustrator or R)
+  Figure 3: [workflow_diagram]
+    caption: Detailed schematic of subcellular fractionation and MS sample preparation steps.
+    produced_by_step: [1, 2]
+    visualization_tool: Custom diagram
+  Figure 4: [bar_chart]
+    caption: Comparison of PSM counts, protein identifications, and quantification depth across HiRIEF, high-pH, and long-gradient MS approaches.
+    produced_by_step: [2, 3]
+    visualization_tool: R/ggplot2 or similar (implied by Bioconductor context)
+  Figure 5: [bar_chart]
+    caption: Evaluation of known marker proteins' classification accuracy in HeLa HiRIEF analysis.
+    produced_by_step: [4]
+    visualization_tool: R/ggplot2
+  Figure 6: [boxplot]
+    caption: Classification probability distributions and agreement metrics across MS strategies for compartment and neighborhood classifications.
+    produced_by_step: [4, 5]
+    visualization_tool: R/ggplot2
+    statistical_test: Wilcoxon signed-rank test (two-sided)
+  Figure 7: [heatmap]
+    caption: Protein co-localization patterns and differential localization analysis (e.g., treatment-induced relocalization).
+    produced_by_step: [4, 5, 6]
+    visualization_tool: R/ggplot2 or ComplexHeatmap
+    statistical_test: Wilcoxon signed-rank test (two-sided) implied for differential analysis
+
+reproducibility_gaps:
+  - Raw mass spectrometry data accession IDs not provided (no PRIDE/ProteomeXchange ID stated)
+  - Exact LC gradient profiles (slope, time, flow rate) only referenced in Supplementary Table 1 (XLSX), not embedded or described numerically in methods
+  - SVM training parameters (kernel, cost, gamma, cross-validation folds) not specified
+  - No description of how 'classification agreement' between methods is computed algorithmically
+  - Digitonin lot variability and Dounce homogenizer pestle clearance specifications omitted
+reproducibility_strengths:
+  - Fully open-source R package available via Bioconductor with vignette
+  - Public web resource (subcellbarcode.org) hosting processed classifications and data
+  - Comprehensive supplementary tables with quantitative data (TMT ratios, classifications, PSM counts)
+  - Multiple orthogonal MS strategies evaluated and compared with statistical rigor
+  - Detailed wet-lab protocol including troubleshooting (e.g., DNA 'threads' artifact)

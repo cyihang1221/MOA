@@ -1,0 +1,60 @@
+========== reproducibility_recipe entry ==========
+paper_title: Removal of batch effects using stratified subsampling of metabolomic data for in vitro endocrine disruptors screening.
+source_paper: Boccard J et al. (2019), Talanta, DOI: 10.1016/j.talanta.2018.11.019, PMID: 30625615
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Untargeted LC-HRMS data acquisition
+    tool: Liquid chromatography coupled to high-resolution mass spectrometry
+    input: H295R cell culture extracts
+    output: raw .raw or .d files (vendor format)
+    confidence: low
+  Step 2: Automated steroid metabolite annotation
+    tool: Accurate mass and isotopic pattern matching
+    algorithm: accurate mass + isotopic pattern
+    parameters: mass_tolerance_ppm=None, isotopic_fit_threshold=None
+    input: feature table with m/z and RT
+    output: annotated steroid metabolite list (n = 130)
+    confidence: low
+  Step 3: Chemometric decomposition of variability sources
+    tool: Experimental design-based chemometrics
+    algorithm: ANOVA-simultaneous component analysis (ASCA) or similar
+    parameters: design_factors=['chemical', 'batch', 'replicate']
+    input: normalized feature abundance matrix
+    output: decomposed variation components (chemical effect, batch effect, residual)
+    confidence: medium
+  Step 4: Stratified subsampling for batch effect removal
+    tool: Custom stratified subsampling
+    algorithm: stratified random subsampling by batch
+    parameters: n_subsamples_per_batch=1, strata=['chemical', 'batch']
+    input: batch-affected feature matrix
+    output: batch-corrected feature matrix
+    confidence: medium
+  Step 5: Extended steroidomic profiling and subgroup identification
+    tool: Unsupervised clustering / similarity analysis
+    algorithm: hierarchical clustering or PCA-based grouping
+    parameters: distance_metric=Euclidean, clustering_method=average linkage
+    input: batch-corrected steroid metabolite abundances
+    output: chemical subgroups with similar steroid patterns
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-HRMS data not deposited in public repository
+  - No software tools explicitly named (e.g., XCMS, MS-DIAL, MetaboAnalyst)
+  - No version numbers or parameters for annotation or chemometric steps
+  - Custom stratified subsampling method not algorithmically described
+  - No code or scripts shared
+  - Instrumental methods (LC gradient, column, HRMS settings) insufficiently detailed for replication
+reproducibility_strengths:
+  - Clear experimental design (6 chemicals + control, 3 independent repeats)
+  - Defined analyte scope (130 potential steroid metabolites)
+  - Explicit biological model (H295R cells) and exposure conditions

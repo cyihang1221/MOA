@@ -1,0 +1,90 @@
+========== reproducibility_recipe entry ==========
+paper_title: New perspectives on 'Breathomics': metabolomic profiling of non-volatile organic compounds in exhaled breath using DI-FT-ICR-MS.
+source_paper: Malik M et al. (2024), Communications biology, DOI: 10.1038/s42003-024-05943-x, PMID: 38431745
+overall_reproducibility_score: 42/100
+
+workflow_steps: 9
+  Step 1: Breath sample collection
+    tool: SensAbues® filter-based device
+    parameters: collection_method=tidal exhalation, breaths_per_sample=30, replicates_per_participant=3, fasting_period_hours=2, storage_temperature=-80, storage_duration_max_months=6
+    input: exhaled breath (biological specimen)
+    output: electret filter with captured nVOCs
+    confidence: high
+  Step 2: Sample extraction and preparation
+    tool: manual liquid extraction
+    parameters: solvent=methanol/H2O (1:1, v/v), extraction_volume_total_ml=5.0, extraction_steps=5, volume_per_step_ml=1.0, interval_minutes=10, drying_temperature_c=45, drying_method=vacuum concentrator (SpeedVac), reconstitution_volume_ul=350, final_dilution_factor=10, control_samples={'negative_controls': 6, 'positive_controls': 6, 'positive_control_compounds': ['phenylalanine', 'tyrosine', 'lysine', 'glutathione', 'glucose', 'palmitic acid', 'dipalmitoyl phosphatidyl choline'], 'positive_control_concentration_mol_l': 2e-05, 'positive_control_amount_pmol_per_substance': 200}
+    input: electret filter with captured nVOCs
+    output: liquid extract in methanol/H2O (1:1), 1:10 diluted
+    confidence: high
+  Step 3: DI-FT-ICR-MS acquisition
+    tool: Bruker Solari-XR-X FT-ICR-MS (7 Tesla)
+    algorithm: direct infusion (no chromatography)
+    parameters: ionisation_mode=['positive', 'negative'], mass_range_method_1_mz=[65, 300], mass_range_method_2_mz=[95, 1500], flow_rate_ml_min=0.01, injection_volume_ul=80, solvent_composition=methanol/H2O (1:1, v/v), drying_gas=nitrogen, drying_gas_flow_l_min=4, drying_gas_temperature_c=200, nebuliser_gas_pressure_bar=1, tof_section_ms=[0.35, 0.6], quadrupole_mass_mz=[80, 120], icr_cell_excitation_power_percent=18, scans_average_method_1=292, scan_accumulation_time_s_method_1=0.5, scans_average_method_2=268, scan_accumulation_time_s_method_2=0.1, mass_resolution_at_mz_400=488000, mass_accuracy_ppm=1.0, calibration_standard=sodium trifluoroacetate, calibration_accuracy_ppm=0.5, qc_frequency=every 12–24 samples + start/end, qc_total_per_method=34, qc_composition=pooled sample (10 µL each)
+    input: liquid extract (1:10 diluted)
+    output: raw .d files (Bruker format)
+    confidence: high
+  Step 4: Raw data recalibration and feature detection
+    tool: MetaboScape 2021b (v2021b)
+    algorithm: local calibration list (>60 matrix metabolites)
+    parameters: recalibration_accuracy_ppm=1.0, import_separately_by_method=True, ionisation_modes_processed_separately=True
+    input: raw .d files
+    output: calibrated feature tables (bucket tables)
+    confidence: high
+  Step 5: Metabolite annotation
+    tool: ['HMDB 5.0', 'HBDB'] (v['5.0', '2023 download version'])
+    algorithm: mass matching + isotopic fine structure
+    parameters: mass_error_ppm=1.0, isotopic_fine_structure_error=300, allowed_adducts=['Na+', 'K+', 'Cl-']
+    input: calibrated feature tables
+    output: annotated metabolite table with putative IDs
+    confidence: high
+  Step 6: Data normalisation and batch correction
+    tool: R 4.3 (v4.3)
+    algorithm: PQN (probabilistic quotient normalisation) + QC-based + median normalisation
+    parameters: normalisation_strategy=PQN + QC + median, lod_imputation_value_counts=200000, min_detection_frequency_percent=15.0, qc_samples_used_for_normalisation=True
+    input: annotated metabolite table
+    output: normalised, batch-corrected metabolite intensity matrix
+    confidence: medium
+  Step 7: Multi-method/ion-mode merging and deduplication
+    tool: custom R workflow (Brix et al. 76 inspired)
+    algorithm: mode-selection-by-detection-frequency → tie-breaker-by-intensity → duplicate-removal-by-max-intensity
+    parameters: detection_frequency_threshold_per_mode=2, tie_breaker_criterion=total_intensity, duplicate_removal_rule=retain_feature_with_highest_overall_intensity
+    input: normalised intensity matrices (positive/negative mode, two mass ranges)
+    output: merged, deduplicated, single-intensity-per-metabolite matrix
+    confidence: low
+  Step 8: Replicate aggregation
+    tool: custom R workflow
+    algorithm: presence thresholding + mean aggregation
+    parameters: min_replicates_detected=2, aggregation_method=mean, missing_replicate_handling=set_to_not_detected
+    input: merged metabolite intensity matrix (3 replicates per subject)
+    output: subject-level metabolite intensity matrix (n=101)
+    confidence: high
+  Step 9: Phenotype-based grouping and statistical analysis
+    tool: MetaboAnalyst 5.0 (v5.0)
+    algorithm: unpaired t-test, ANOVA, random forest
+    parameters: statistical_test=unpaired t-test, imputation_method=fixed value = 1/5 LOD (2e5 counts), filtering_threshold=present in ≥15% of samples, classifier=random forest, rf_oob_error=0.0099, data_format=samples_in_columns, grouping_variables=['gender', 'oral_contraceptive_use', 'alcohol_consumption', 'smoking_status', 'diet', 'physical_activity', 'supplement_intake']
+    input: subject-level metabolite intensity matrix
+    output: differential metabolites, classification models, feature importance
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data (.d files) not deposited in public repository (e.g., MetaboLights, MassIVE)
+  - Processed metabolite tables and R scripts for merging/deduplication/replicate handling not shared
+  - Custom PQN implementation details and QC-based batch correction parameters not specified
+  - MetaboScape 2021b is commercial software requiring license and proprietary algorithms
+  - No accession ID or repository link provided for HMDB/HBDB versions used
+  - Exact gradient profile not applicable (DI-MS), but solvent composition and flow rate are reported — no gap here
+reproducibility_strengths:
+  - Detailed DI-FT-ICR-MS acquisition parameters reported (ppm accuracy, resolution, scan settings, QC scheme)
+  - Explicit description of sample collection, extraction, and storage protocols
+  - Clear annotation criteria (mass error, adducts, databases)
+  - Transparent statistical filtering (15% detection threshold, LOD imputation)
+  - Use of established open databases (HMDB, HBDB) and free web platform (MetaboAnalyst)

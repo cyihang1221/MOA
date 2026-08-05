@@ -1,0 +1,91 @@
+========== reproducibility_recipe entry ==========
+paper_title: Single-cell metabolic fingerprints discover a cluster of circulating tumor cells with distinct metastatic potential.
+source_paper: Zhang W et al. (2023), Nature communications, DOI: 10.1038/s41467-023-38009-3, PMID: 37120634
+overall_reproducibility_score: 42/100
+
+workflow_steps: 9
+  Step 1: Cell sample preparation and metabolite extraction
+    tool: Manual protocol
+    parameters: pre_extraction_incubation_h=2, rinse_buffer=cold isotonic saline (0.9% NaCl, 4 °C), lysis_volume_ml=1.5
+    input: cultured colorectal cancer cell lines (SW480, SW620, HT-29, COLO 205)
+    output: cell lysate for metabolomics
+    confidence: high
+  Step 2: Untargeted metabolomic profiling by UPLC-HRMS
+    tool: UPLC Ultimate 3000 + Q-Exactive
+    algorithm: full scan + data-dependent MS/MS (Top10)
+    parameters: column=Phenomenex Kinetex C18 (2.1 mm × 100 mm, 2.6 μm, 100 Å), mobile_phase_A=water + 0.1% formic acid, mobile_phase_B=acetonitrile + 0.1% formic acid, flow_rate_ml_min=0.4, gradient_program_min=[[0, 10], [1, 30], [19, 95], [20, 95]], column_temperature_c=40, sample_temperature_c=4, ionization_mode=['positive', 'negative'], spray_voltage_kv_positive=3.5, spray_voltage_kv_negative=-2.5, capillary_temperature_c=300, aux_gas_flow_arb=13, mass_range_mz=[67, 1000], resolution_full_scan=70000, agc_target_full_scan=1000000, max_injection_time_ms_full_scan=100, resolution_ms2=17500, agc_target_ms2=100000, max_injection_time_ms_ms2=50, nce_range=[15, 45], nce_increment=15, qc_frequency=every 5th sample, blank_frequency=after each QC
+    input: cell lysate
+    output: raw .raw files (Thermo)
+    confidence: high
+  Step 3: Raw data preprocessing and feature table generation
+    tool: MS-DIAL (v4.80)
+    algorithm: centroid detection, peak alignment, filtering
+    parameters: peak_height_threshold=10000, min_sample_detection_rate=0.8, min_snr=3, noise_estimation_method=average signal across blank runs, normalization_factors=['protein amount', 'internal standard (acetaminophen)', 'pooled QC sample'], missing_value_imputation=1/10 minimum peak area
+    input: raw .raw files
+    output: normalized feature table (m/z, adduct, intensity)
+    confidence: high
+  Step 4: Unsupervised quality control and batch assessment
+    tool: SIMCA (v14.1)
+    algorithm: PCA
+    input: normalized feature table
+    output: PCA scores plot, model diagnostics
+    confidence: medium
+  Step 5: Supervised biomarker discovery
+    tool: SIMCA (v14.1)
+    algorithm: OPLS-DA
+    parameters: vip_threshold=1, log2fc_threshold=1.0, p_value_threshold=0.05, comparison_pairs=['SW480 vs SW620', 'HT-29 vs COLO 205']
+    input: normalized feature table
+    output: list of significant metabolic features (VIP > 1, |log2FC| > 1, p < 0.05)
+    confidence: high
+  Step 6: Metabolite identification
+    tool: MS-DIAL internal database + reference standards (v4.80)
+    algorithm: MS/MS spectral matching + RT/mass accuracy matching
+    parameters: ms_ms_matching_tolerance_da=None, rt_tolerance_sec=None, mass_accuracy_ppm=None
+    input: significant metabolic features (m/z, RT, MS/MS spectra)
+    output: annotated metabolites (level 1–2 confidence)
+    confidence: low
+  Step 7: Pathway and functional enrichment analysis
+    tool: MetaboAnalyst
+    algorithm: KEGG pathway mapping + MSEA
+    parameters: database=KEGG, analysis_type=Metabolite Set Enrichment Analysis (MSEA)
+    input: list of identified metabolites
+    output: enriched pathways, pathway impact scores
+    confidence: medium
+  Step 8: Single-cell CTC sampling and targeted quantification
+    tool: Home-built nanocapillary platform + AB SCIEX QTRAP 5500
+    algorithm: MRM-based quantification
+    parameters: extraction_volume_fl=120, internal_standard=isotope-labeled, distance_to_ms_inlet_mm=5, curtain_gas=10, ion_spray_voltage_v=-2250, temperature_c=0, gas1=0, gas2=0, electro_osmosis_assisted=True
+    input: individual CTCs
+    output: absolute or relative quantification of 4 target metabolites per CTC
+    confidence: high
+  Step 9: Molecular subtyping of CTCs
+    tool: Custom machine learning pipeline
+    algorithm: Non-negative matrix factorization (NMF) + logistic regression
+    parameters: input_features=4, subgroups=['C1', 'C2'], validation_method=None
+    input: quantified metabolite intensities per single CTC
+    output: CTC subgroup assignment (C1/C2)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository (e.g., MetaboLights, GNPS)
+  - SIMCA 14.1 is commercial software requiring license and not open-source
+  - No code or scripts provided for NMF + logistic regression pipeline
+  - Critical instrument parameters for QTRAP MRM (transition lists, dwell times, declustering potentials) not reported
+  - No details on MRM optimization procedure or validation (LLOQ, precision, recovery)
+  - Capillary pulling parameters lack reproducibility context (e.g., filament condition, humidity control)
+  - Missing metadata: exact cell passage numbers, culture conditions (serum %, O2 level), CTC isolation method
+reproducibility_strengths:
+  - Detailed UPLC gradient and MS acquisition parameters provided
+  - MS-DIAL v4.80 used with clearly stated preprocessing thresholds
+  - Use of pooled QC and blanks for run quality control
+  - Internal standard (acetaminophen) and protein normalization described
+  - Public web tool (MetaboAnalyst) used for pathway analysis

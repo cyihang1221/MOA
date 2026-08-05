@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: Accurate Determination of Circulatory Lipids Using a Combination of HILIC-MRM and RPLC-PRM.
+source_paper: Kim KS et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.4c06409, PMID: 40315190
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: HILIC-based lipid screening
+    tool: LC-MS/MS with MRM
+    algorithm: multiple reaction monitoring (MRM)
+    parameters: lipid_classes=18, total_lipid_species_screened=1966
+    input: human plasma extracts
+    output: lipid species list by class, quantitative MRM data
+    confidence: medium
+  Step 2: RPLC-based isobar resolution
+    tool: LC-HRMS with PRM
+    algorithm: parallel reaction monitoring (PRM)
+    parameters: target_lipids=489 HILIC-MRM-identified lipids from SRM 1950, additional_features_identified=70
+    input: same plasma extracts analyzed by HILIC-MRM
+    output: refined lipid identifications, isobar-resolved quantification
+    confidence: medium
+  Step 3: Cross-platform data integration and correlation analysis
+    tool: custom statistical analysis
+    algorithm: Pearson correlation
+    parameters: correlation_coefficient_threshold=0.81, subset_condition=lipid species without isobaric interferences
+    input: quantitative lipid concentrations from HILIC-MRM and RPLC-PRM
+    output: integrated lipid concentration matrix, correlation metrics
+    confidence: low
+  Step 4: Clinical cohort lipid phenotyping
+    tool: statistical lipidomics analysis
+    algorithm: not specified
+    parameters: cohort_size=284, population=chronic kidney disease patients, subtypes_analyzed=CKD subtypes
+    input: integrated lipid concentration matrix
+    output: lipidomic phenotypes per CKD subtype
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS/MS data not deposited in public repository
+  - No details on instrument parameters (e.g., gradient, column, ion source settings)
+  - No software or scripts for data integration or statistical analysis provided
+  - No description of lipid identification criteria (e.g., retention time alignment, spectral matching thresholds)
+  - Commercial platforms (MRM/PRM) require vendor-specific software (e.g., Skyline, MultiQuant, Thermo Compound Discoverer) not specified
+reproducibility_strengths:
+  - Clear experimental design using NIST SRM 1950 as benchmark
+  - Explicit reporting of lipid counts per platform and overlap
+  - Use of orthogonal chromatographic modes (HILIC + RPLC) enhances analytical rigor

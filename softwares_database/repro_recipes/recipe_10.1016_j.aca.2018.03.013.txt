@@ -1,0 +1,60 @@
+========== reproducibility_recipe entry ==========
+paper_title: Hierarchical cluster analysis of technical replicates to identify interferents in untargeted mass spectrometry metabolomics.
+source_paper: Caesar LK et al. (2018), Analytica chimica acta, DOI: 10.1016/j.aca.2018.03.013, PMID: 29681286
+overall_reproducibility_score: 35/100
+
+workflow_steps: 5
+  Step 1: Data acquisition
+    tool: UPLC-MS
+    parameters: instrument_platform=ultraperformance liquid chromatography coupled to mass spectrometry, replication_design=triplicate injections per sample, sample_types=['pools of metabolites from Angelica keiskei Koidzumi', 'spiked with known metabolites'], concentration_levels=multiple
+    input: chemical samples (botanical extracts + spikes)
+    output: raw .raw or .d files (vendor format, unspecified)
+    confidence: medium
+  Step 2: Peak detection and feature extraction
+    tool: XCMS
+    algorithm: centWave
+    parameters: peak_width=[10, 60], ppm=5, snthr=10
+    input: raw MS data files
+    output: feature table (m/z–RT pairs with peak areas)
+    confidence: high
+  Step 3: Interferent identification via relative variance filtering
+    tool: custom R script
+    algorithm: within-triplicate relative peak area variance thresholding
+    parameters: replicates_per_sample=3, variance_metric=coefficient of variation (CV) or relative standard deviation, variance_threshold=empirically determined (not numerically specified), filtering_logic=remove features showing high variance across technical replicates despite identical sample origin
+    input: feature table with peak areas
+    output: filtered feature table (interferents removed)
+    confidence: low
+  Step 4: Hierarchical cluster analysis (HCA) of technical replicates
+    tool: R (stats::hclust)
+    algorithm: average linkage clustering
+    parameters: distance_metric=Euclidean distance, data_transformation=log transformation applied prior to HCA, clustering_input=peak area matrix (samples × features)
+    input: feature table (before and after filtering)
+    output: dendrogram and cluster assignments
+    confidence: medium
+  Step 5: Assessment of replicate clustering fidelity
+    tool: custom R evaluation
+    algorithm: visual and qualitative assessment of HCA dendrograms
+    parameters: success_criterion=technical replicates cluster together in same clade
+    input: HCA dendrograms
+    output: binary assessment (clustering success/failure)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository
+  - No access to custom R scripts used for variance-based filtering and HCA evaluation
+  - Exact variance threshold and implementation details of relative peak area variance metric not specified
+  - UPLC-MS method parameters (gradient, column, ionization mode, mass analyzer type, scan range, resolution) not fully reported
+  - No mention of data conversion tool (e.g., msconvert) or version used to generate input for XCMS
+reproducibility_strengths:
+  - Explicit description of experimental design (triplicate injections, spiking strategy, botanical matrix)
+  - Use of open-source XCMS with identifiable parameters (centWave, ppm=5, snthr=10, peak_width=[10,60])
+  - Clear biological and technical rationale for interferent detection via technical replicate variance

@@ -1,0 +1,57 @@
+========== reproducibility_recipe entry ==========
+paper_title: rIDIMS: A novel tool for processing direct-infusion mass spectrometry data.
+source_paper: Mansoldo FRP et al. (2025), Talanta, DOI: 10.1016/j.talanta.2024.127273, PMID: 39586215
+overall_reproducibility_score: 70/100
+
+workflow_steps: 5
+  Step 1: High-quality scan selection from total ion chronograms (TIC)
+    tool: rIDIMS
+    algorithm: novel statistically reliable TIC scan selection function
+    input: raw .mzML or vendor format files (implied for DIMS/AMS)
+    output: curated set of representative scans per sample
+    confidence: medium
+  Step 2: Grouping of isotopologues and adducts
+    tool: rIDIMS
+    algorithm: isotopologue and adduct grouping
+    input: curated scans
+    output: grouped feature table (consolidated m/z features)
+    confidence: medium
+  Step 3: Data alignment and binning
+    tool: rIDIMS
+    algorithm: data alignment and m/z binning
+    input: grouped feature table
+    output: aligned, binned feature matrix
+    confidence: medium
+  Step 4: Filtering
+    tool: rIDIMS
+    algorithm: feature filtering (e.g., prevalence, intensity thresholds)
+    input: aligned, binned feature matrix
+    output: filtered feature table
+    confidence: medium
+  Step 5: Statistical analysis and visualization
+    tool: rIDIMS
+    algorithm: unspecified statistical methods (e.g., t-test, PCA, classification)
+    input: filtered feature table
+    output: statistical results, publication-quality figures, tables
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/BioinovarLab/rIDIMS
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of specific algorithms or parameters for scan selection, alignment, binning, or filtering
+  - No details on statistical tests or machine learning methods used in case studies
+  - Raw data sources for the three demonstration cases not deposited or accessioned
+  - No mention of metadata standards or formats used
+  - No version number or release tag for rIDIMS software
+reproducibility_strengths:
+  - Open-source Shiny web application publicly available on GitHub
+  - Browser-based GUI lowers barrier for non-programmers
+  - HTML report export enables transparent, publication-ready output

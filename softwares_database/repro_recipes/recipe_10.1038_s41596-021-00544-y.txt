@@ -1,0 +1,96 @@
+========== reproducibility_recipe entry ==========
+paper_title: Comprehensive analysis of glycosphingolipid glycans by lectin microarrays and MALDI-TOF mass spectrometry.
+source_paper: Du H et al. (2021), Nature protocols, DOI: 10.1038/s41596-021-00544-y, PMID: 34099941
+overall_reproducibility_score: 42/100
+
+workflow_steps: 8
+  Step 1: GSL extraction from cell pellets
+    tool: manual protocol
+    input: cultured cell pellets
+    output: crude GSL extract
+    confidence: low
+  Step 2: N-monodeacylation using sphingolipid ceramide N-deacylase
+    tool: sphingolipid ceramide N-deacylase (SCDase)
+    parameters: incubation_time_h=16, temperature_c=37
+    input: crude GSL extract
+    output: lyso-GSLs
+    confidence: medium
+  Step 3: Fluorescence labeling of lyso-GSL amine group
+    tool: 2-aminobenzoic acid (2-AA) or similar fluorophore
+    parameters: labeling_reagent=2-AA, reaction_time_h=2, temperature_c=65
+    input: lyso-GSLs
+    output: fluorescently labeled GSL glycans
+    confidence: medium
+  Step 4: Lectin microarray preparation
+    tool: custom lectin microarray platform
+    parameters: lectins=['ConA', 'WGA', 'SNA', 'MAA', 'PNA', 'UEA-I', 'RCA120'], spotting_buffer=50 mM sodium phosphate, pH 7.4, humidity_control=yes
+    input: purified lectins
+    output: functionalized lectin microarray slide
+    confidence: medium
+  Step 5: GSL-glycan analysis by lectin microarray
+    tool: microarray scanner (e.g., Axon GenePix)
+    algorithm: fluorescence intensity quantification
+    parameters: excitation_wavelength_nm=488, emission_wavelength_nm=520, scan_resolution_um=5
+    input: fluorescently labeled GSL glycans
+    output: lectin-binding intensity matrix (raw fluorescence units)
+    confidence: high
+  Step 6: Complementary MALDI-TOF mass spectrometry analysis
+    tool: MALDI-TOF MS
+    algorithm: linear and reflector mode acquisition
+    parameters: matrix=2,5-dihydroxybenzoic acid (DHB), laser_frequency_hz=200, detector_voltage_v=1800, mass_range_mz=[500, 3000], shot_number=100
+    input: GSL glycans (released or intact)
+    output: MALDI-TOF mass spectra (m/z vs intensity)
+    confidence: high
+  Step 7: MALDI-TOF/TOF-MS fragmentation and structural annotation
+    tool: MALDI-TOF/TOF MS
+    algorithm: collision-induced dissociation (CID)
+    parameters: collision_energy_ev=1, precursor_ion_selection_window_da=1.0, fragment_mass_range_mz=[50, 2000]
+    input: selected precursor ions from MALDI-TOF
+    output: MS/MS spectra, annotated glycan structures
+    confidence: high
+  Step 8: Data integration and glycan linkage inference
+    tool: manual curation + pattern matching
+    algorithm: lectin binding specificity mapping + MS annotation cross-validation
+    parameters: lectin_specificity_database=CFG Glycan Binding Database, linkage_inference_rules=empirical lectin reactivity profiles
+    input: lectin microarray intensities + MALDI-TOF/TOF annotations
+    output: glycan structure and linkage assignments
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: in_paper_only
+  data_urls: https://doi.org/10.1038/s41596-021-00544-y, https://doi.org/10.1021/acs.analchem.9b01945
+
+code_availability: not_mentioned
+
+figure_recipes: 4
+  Fig. 1: [workflow_diagram]
+    caption: Flowchart illustrating the seven-step protocol for GSL glycan analysis.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7, 8]
+    visualization_tool: Adobe Illustrator or equivalent
+  Fig. 2: [heatmap]
+    caption: Lectin microarray binding intensities across four hepatocellular carcinoma cell lines.
+    produced_by_step: [5, 8]
+    visualization_tool: GenePix Pro or custom R/ggplot2
+    statistical_test: none explicitly stated; likely row-wise z-score normalization
+  Fig. 3: [mass_spectrum]
+    caption: MALDI-TOF mass spectra showing annotated GSL glycan masses and proposed structures.
+    produced_by_step: [6, 8]
+    visualization_tool: FlexAnalysis (Bruker) or similar vendor software
+  Fig. 4: [ms_ms_spectrum]
+    caption: MALDI-TOF/TOF-MS fragmentation spectra used to confirm glycan sequences and linkages.
+    produced_by_step: [7, 8]
+    visualization_tool: FlexAnalysis or BioTools (Bruker)
+
+reproducibility_gaps:
+  - No raw mass spectrometry data deposited in public repository (e.g., GlycoPOST, MetaboLights)
+  - No lectin microarray raw intensity files shared
+  - No code/scripts for data integration or linkage inference provided
+  - Critical reagents (e.g., specific lectin lots, SCDase enzyme source) not fully specified
+  - MALDI matrix application method and crystallization conditions not detailed
+reproducibility_strengths:
+  - Step-by-step wet-lab protocol described in detail
+  - Key reference (Anal. Chem. 2019) provides experimental validation
+  - Source data for Figs. 2–4 available as XLSX files (though without metadata context)
+  - DOI-linked supplementary information includes figures and tables

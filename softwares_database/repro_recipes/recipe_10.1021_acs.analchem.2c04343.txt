@@ -1,0 +1,62 @@
+========== reproducibility_recipe entry ==========
+paper_title: MeRgeION: a Multifunctional R Pipeline for Small Molecule LC-MS/MS Data Processing, Searching, and Organizing.
+source_paper: Liu Y et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.2c04343, PMID: 37218737
+overall_reproducibility_score: 82/100
+
+workflow_steps: 5
+  Step 1: LC-MS/MS data preprocessing and feature detection
+    tool: meRgeION
+    algorithm: XCMS-based peak picking and alignment
+    parameters: polarity=positive_or_negative, ppm_tolerance=5, min_fraction=0.5, peak_width=[10, 60]
+    input: raw .mzML or .cdf files
+    output: feature table (m/z, RT, intensity matrix)
+    confidence: medium
+  Step 2: Spectral library search and annotation
+    tool: meRgeION
+    algorithm: MS/MS spectral matching against in-house or public libraries (e.g., GNPS, MassBank)
+    parameters: cosine_score_threshold=0.7, min_matched_peaks=3, fragment_mz_tolerance=0.02
+    input: feature table + MS/MS spectra
+    output: annotated metabolite list with confidence scores
+    confidence: high
+  Step 3: Molecular networking construction
+    tool: meRgeION
+    algorithm: GNPS-style cosine similarity network clustering
+    parameters: cosine_threshold=0.7, min_matched_peaks=6, max_edge_weight=1.0
+    input: MS/MS spectra
+    output: molecular network (graph object, edge list, cluster assignments)
+    confidence: high
+  Step 4: Spectral database building and curation
+    tool: meRgeION
+    algorithm: Consensus spectrum generation and metadata annotation
+    parameters: min_cluster_size=2, intensity_cutoff_percent=1.0, retention_time_window=30
+    input: clustered MS/MS spectra from molecular networking
+    output: curated spectral database (JSON or MSP format)
+    confidence: medium
+  Step 5: Chemical space visualization and interpretation
+    tool: meRgeION
+    algorithm: t-SNE or UMAP embedding of molecular network clusters
+    parameters: embedding_method=UMAP, n_neighbors=15, min_dist=0.1
+    input: molecular network + cluster annotations
+    output: 2D/3D chemical space plot
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/daniellyz/meRgeION2
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS/MS data not deposited or referenced
+  - No accession IDs or repository links for validation datasets used
+  - Default parameter values for XCMS steps not fully specified (e.g., exact chromatogram smoothing or retention time correction method)
+reproducibility_strengths:
+  - Fully open-source R package with modular design
+  - Public GitHub repository with documentation and examples
+  - Explicit specification of key spectral matching and networking thresholds
+  - Support for standard formats (mzML, MSP, JSON) enabling interoperability

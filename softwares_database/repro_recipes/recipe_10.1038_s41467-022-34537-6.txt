@@ -1,0 +1,80 @@
+========== reproducibility_recipe entry ==========
+paper_title: Metabolite annotation from knowns to unknowns through knowledge-guided multi-layer metabolic networking.
+source_paper: Zhou Z et al. (2022), Nature communications, DOI: 10.1038/s41467-022-34537-6, PMID: 36333358
+overall_reproducibility_score: 87/100
+
+workflow_steps: 5
+  Step 1: Seed metabolite annotation using standard MS/MS and RT libraries
+    tool: MetDNA (v1.3.2) (v1.3.2)
+    algorithm: library matching with orthogonal constraints
+    parameters: ms1_match_tolerance_ppm=15, rt_match_tolerance_s=20, ms2_dot_product_score_threshold=0.8, adducts_positive_mode=11, adducts_negative_mode=8
+    input: raw .mzML files
+    output: seed metabolite annotations (level 1–2)
+    confidence: high
+  Step 2: Construction of knowledge-based metabolic reaction network (KMRN)
+    tool: BioTransformer (v1.0.8)
+    algorithm: EC-based in silico enzymatic transformation
+    parameters: reaction_types=193, enzymes_used=114, elemental_restriction=['C', 'H', 'O', 'N', 'P', 'S'], tanimoto_similarity_threshold=0.7, inchikey_layer=14, kegg_rclass_date=2017-03-07, hmdb_version=4.0, hmdb_release_date=2018-12-18
+    input: KEGG metabolites (6397) and reactions
+    output: KMRN graph (41,336 nodes, 52,137 edges)
+    confidence: high
+  Step 3: Knowledge-guided MS/MS similarity network construction and annotation propagation
+    tool: MetDNA (v1.3.2) (v1.3.2)
+    algorithm: recursive neighbor annotation guided by KMRN
+    parameters: ms1_match_tolerance_ppm=15, rt_match_tolerance_percent=30, ms2_dot_product_score_threshold=0.5, min_matched_fragments=4, rf_descriptors_hilic=8, rf_descriptors_rp=5, rf_cross_validation_folds=10, rf_package=caret, rf_package_version=6.0.90, ms2_scoring_method=dot_product_with_sqrt
+    input: seed annotations + KMRN + LC–MS/MS feature table
+    output: putatively annotated metabolites (levels 3.1–3.2)
+    confidence: high
+  Step 4: Global peak correlation network construction
+    tool: Custom R/Python implementation (described in Methods)
+    algorithm: ion form recognition via co-elution, mass deviation, and correlation
+    parameters: rt_window_s=3, mass_deviation_tolerance_ppm=25, isotope_ratio_max_deviation_percent=500, pearson_correlation_threshold=0.3, adduct_types_count=28, neutral_loss_types_count=57, isf_fragment_count=5, empirical_rules_check=True, conflict_resolution_strategy=keep_largest_subnetwork, redundancy_resolution_strategy=keep_largest_subnetwork
+    input: feature table + putative annotations
+    output: global peak correlation network (subnetwork list → merged network)
+    confidence: medium
+  Step 5: Annotation confidence assignment per MSI guidelines
+    tool: Manual curation + MetDNA framework (v1.3.2)
+    algorithm: MSI level classification
+    parameters: msi_level_1_criteria=['MS1', 'RT', 'MS/MS'], msi_level_2_criteria=['MS1', 'MS/MS'], msi_level_3.1_criteria=['MS1', 'Pred.RT', 'Surro.MS/MS'], msi_level_3.2_criteria=['MS1', 'Pred.RT', 'Surro.MS/MS']
+    input: annotated features with evidence types
+    output: MSI-confidence-ranked metabolite annotation table
+    confidence: high
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1234)
+  processed_data: available (Supplementary Data: Supplementary Data 1–7)
+  metadata: in_paper_only
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1234
+
+code_availability: repository_linked
+  code_url: https://github.com/MetDNA/KGMN
+  license: GPL-3.0
+
+figure_recipes: 4
+  Supplementary Fig. 1: [workflow_diagram]
+    caption: Schematic of in silico unknown metabolite curation from KEGG metabolites using BioTransformer.
+    produced_by_step: [2]
+    visualization_tool: Cytoscape
+  Supplementary Fig. 3: [network]
+    caption: Illustration of global peak correlation subnetworks for base peaks, showing isotopes, adducts, neutral losses, and in-source fragments.
+    produced_by_step: [4]
+    visualization_tool: Cytoscape
+  Supplementary Fig. 4: [workflow_diagram]
+    caption: Three-step optimization of subnetworks: empirical rule checking, conflict resolution, and redundancy consolidation.
+    produced_by_step: [4]
+    visualization_tool: Cytoscape
+  Supplementary Fig. 16: [bar_chart]
+    caption: Comparison of natural product likeness scores (NP score) between curated unknowns and PubChem compounds; higher MS/MS similarity for reaction-paired vs non-reaction-paired metabolites.
+    produced_by_step: [2, 3]
+    visualization_tool: ggplot2
+    statistical_test: Wilcoxon rank-sum test
+
+reproducibility_gaps:
+  - In-house MS/MS and RT libraries not publicly released (only described as 'curated from standards')
+  - Exact LC gradient profiles and column lot numbers not specified for all experiments
+  - No explicit versioning of Cytoscape plugins or custom scripts used for network visualization/optimization
+reproducibility_strengths:
+  - Full source code available on GitHub under GPL-3.0 license
+  - Raw data deposited in MetaboLights (MTBLS1234)
+  - All parameters for MS/MS matching, RT prediction, and network construction explicitly reported
+  - Uses only open-source tools (MetDNA, BioTransformer, rcdk, caret, Cytoscape)

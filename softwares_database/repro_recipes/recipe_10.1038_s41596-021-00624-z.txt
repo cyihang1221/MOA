@@ -1,0 +1,112 @@
+========== reproducibility_recipe entry ==========
+paper_title: Label-free cell assays to determine compound uptake or drug action using MALDI-TOF mass spectrometry.
+source_paper: Unger MS et al. (2021), Nature protocols, DOI: 10.1038/s41596-021-00624-z, PMID: 34759382
+overall_reproducibility_score: 72/100
+
+workflow_steps: 10
+  Step 1: Cell treatment and compound exposure
+    tool: manual cell culture protocol
+    parameters: cell_line=not specified, incubation_time=1–2 d per optimization part, compound_concentration_range=not specified, temperature=37°C, CO2=5%
+    input: cultured cells
+    output: treated cells
+    confidence: low
+  Step 2: Cell transfer and lysis
+    tool: manual protocol
+    parameters: lysis_buffer=not specified, quenching_method=not specified, transfer_surface=MALDI target plate
+    input: treated cells
+    output: cell lysate on MALDI plate
+    confidence: low
+  Step 3: MALDI matrix application
+    tool: manual spotting
+    parameters: matrix_composition=not specified, solvent=not specified, spotted_volume=not specified, drying_conditions=room temperature, ambient humidity
+    input: cell lysate on MALDI plate
+    output: matrix-cocrystallized sample
+    confidence: low
+  Step 4: Quantification using stable-isotope-labeled standards
+    tool: internal standard addition
+    parameters: standard_type=stable-isotope-labeled analogs, addition_timing=pre-spotting or post-lysis, number_of_standards=not specified
+    input: matrix-cocrystallized sample
+    output: quantified MALDI sample
+    confidence: medium
+  Step 5: MALDI-TOF MS data acquisition
+    tool: MALDI-TOF mass spectrometer
+    parameters: laser_frequency=not specified, laser_energy=optimized per sample, mass_range=m/z 100–2000, resolution=TOF, polarity=positive or negative mode (context-dependent), acquisition_mode=linear or reflector mode (not specified)
+    input: quantified MALDI sample
+    output: raw .txt or .csv spectra files
+    confidence: low
+  Step 6: Data processing and peak detection
+    tool: R package MALDIcellassay
+    algorithm: custom peak picking and alignment
+    parameters: smoothing_window=not specified, baseline_correction=not specified, peak_threshold=not specified, mz_tolerance=not specified, retention_time_not_applicable=True
+    input: raw spectra files
+    output: peak table (m/z, intensity, sample ID)
+    confidence: medium
+  Step 7: Normalization and scaling
+    tool: R package MALDIcellassay
+    algorithm: internal standard-based normalization
+    parameters: normalization_method=IS-based ratio, scaling=none or log-transform (not specified)
+    input: peak table
+    output: normalized feature table
+    confidence: medium
+  Step 8: Statistical analysis for differential features
+    tool: R (custom scripts)
+    algorithm: t-test or ANOVA
+    parameters: statistical_test=two-group t-test or multi-group ANOVA, p_value_cutoff=0.05, multiple_testing_correction=Benjamini-Hochberg FDR
+    input: normalized feature table
+    output: list of statistically significant m/z features
+    confidence: medium
+  Step 9: Metabolite annotation (untargeted mode)
+    tool: high-resolution MS and MS/MS experiments
+    algorithm: database matching (e.g., HMDB, METLIN)
+    parameters: mass_accuracy_tolerance=not specified, fragmentation_energy=not specified, database_version=not specified
+    input: significant m/z features + MS/MS spectra
+    output: putatively annotated metabolites
+    confidence: low
+  Step 10: Assay validation and automation considerations
+    tool: manual QC and protocol documentation
+    parameters: repeatability_metrics=CV < 20% (implied), linearity_range=not specified, LOD_LOQ=not specified, automation_platform=not specified
+    input: normalized feature table + statistical results
+    output: validated assay report
+    confidence: low
+
+data_availability:
+  raw_data: available (Figshare: 10.6084/m9.figshare.16449477.v1)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+  data_urls: https://doi.org/10.6084/m9.figshare.16449477.v1
+
+code_availability: repository_linked
+  code_url: https://github.com/ce-mos/MALDIcellassay
+  license: MIT
+
+figure_recipes: 4
+  Fig. 1: [workflow_diagram]
+    caption: Illustrates applications of cell-based MALDI-TOF MS assays including compound uptake, drug-target engagement, and drug-response marker discovery.
+    produced_by_step: [1, 2, 3, 4, 5]
+    visualization_tool: Adobe Illustrator or similar
+  Fig. 2: [workflow_diagram]
+    caption: Schematic overview of the general label-free MALDI MS cell assay workflow, covering cell treatment to data analysis.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    visualization_tool: Adobe Illustrator or similar
+  Fig. 3: [other]
+    caption: Shows possible output of the assay development protocol, likely including dose-response curves or optimization plots.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7, 8]
+    visualization_tool: R/ggplot2 or GraphPad Prism
+    statistical_test: t-test or ANOVA
+  Fig. 4: [heatmap]
+    caption: Displays possible output of untargeted MALDI MS cell-based assays, e.g., heatmaps of differentially abundant m/z features across conditions.
+    produced_by_step: [6, 7, 8, 9]
+    visualization_tool: R/pheatmap or ComplexHeatmap
+    statistical_test: t-test p<0.05 with FDR correction
+
+reproducibility_gaps:
+  - No vendor-specific instrument parameters (e.g., Bruker/Sciex settings) provided
+  - No exact MALDI matrix composition or spotting protocol details
+  - No raw spectral file format specification (.flex, .txt, .csv?)
+  - No description of peak alignment strategy across plates/runs
+  - No accessions for high-res MS/MS data used in annotation
+reproducibility_strengths:
+  - R package MALDIcellassay publicly available on GitHub under MIT license
+  - Raw data deposited on Figshare with DOI
+  - Ten-part optimization protocol explicitly described (though parameter values often omitted)
+  - Stable-isotope internal standard use clearly emphasized for quantification

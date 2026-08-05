@@ -1,0 +1,50 @@
+========== reproducibility_recipe entry ==========
+paper_title: Acyl-CoA Identification in Mouse Liver Samples Using the In Silico CoA-Blast Tandem Mass Spectral Library.
+source_paper: Keshet U et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.1c03272, PMID: 35119811
+overall_reproducibility_score: 72/100
+
+workflow_steps: 3
+  Step 1: In silico MS/MS spectral library generation
+    tool: MassFrontier
+    algorithm: fragmentation rule-based spectral simulation
+    parameters: precursor_ion_modes=['[M+H]+', '[M-H]-'], instrument_platforms=['ion trap', 'triple quadrupole', 'Q-TOF', 'Orbital Ion Trap'], collision_energies=various (not numerically specified), number_of_species=1562, spectra_per_species_per_condition=2, total_spectra_generated=10934
+    input: literature-derived acyl-CoA structures and experimental MS/MS spectra (n=53)
+    output: in silico MS/MS spectral library (.msp format)
+    confidence: medium
+  Step 2: Library import and spectral matching
+    tool: commercial or freely available mass spectral search tool
+    algorithm: mass spectral similarity search (e.g., dot product, reverse search)
+    parameters: mass_tolerance_ppm=None, minimum_match_score=None, peak_filtering_rules=not specified
+    input: experimental LC-MS/MS data from mouse liver samples
+    output: annotated acyl-CoA identifications
+    confidence: low
+  Step 3: Metabolite annotation and novelty assessment
+    tool: manual curation + literature/database comparison
+    algorithm: identity confirmation via accurate mass, retention time (if used), and spectral match
+    parameters: databases_consulted=['NIST20', 'MoNA', 'pathway databases'], novelty_criteria=not present in published literature or major databases as of Oct 2020
+    input: spectral matches from step 2
+    output: list of annotated acyl-CoAs (including novel species)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: available (GitHub: urikeshet/CoA-Blast)
+  metadata: not_mentioned
+  data_urls: https://github.com/urikeshet/CoA-Blast
+
+code_availability: repository_linked
+  code_url: https://github.com/urikeshet/CoA-Blast
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw LC-MS/MS data from mouse liver experiments deposited or referenced
+  - No details on LC conditions (gradient, column, flow rate) or instrument parameters (e.g., collision energy, isolation window)
+  - No description of sample preparation protocol for mouse liver (extraction method, quenching, derivatization if any)
+  - MassFrontier is commercial software with no version or license details; workflow not scriptable or automatable from description
+  - Spectral matching parameters (tolerance, scoring, filtering) not reported
+reproducibility_strengths:
+  - In silico spectral library publicly available under MIT license on GitHub
+  - Clear documentation of library scope (1562 species, 10,934 spectra, ion modes, instrument types)
+  - Explicit benchmark against existing libraries (NIST20, MoNA) and literature

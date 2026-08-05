@@ -1,0 +1,46 @@
+========== reproducibility_recipe entry ==========
+paper_title: IDSL_MINT: a deep learning framework to predict molecular fingerprints from mass spectra.
+source_paper: Baygi SF et al. (2024), Journal of cheminformatics, DOI: 10.1186/s13321-024-00804-5, PMID: 38238779
+overall_reproducibility_score: 75/100
+
+workflow_steps: 3
+  Step 1: MS/MS spectrum preprocessing
+    tool: IDSL_MINT
+    algorithm: Transformer-based neural network
+    input: raw MS/MS spectra (mz/intensity pairs)
+    output: preprocessed spectral tensors
+    confidence: low
+  Step 2: Molecular fingerprint prediction
+    tool: IDSL_MINT
+    algorithm: Transformer encoder-decoder architecture
+    parameters: fingerprint_type=customizable, max_spectrum_length=500, embedding_dim=256, num_heads=8, num_layers=6
+    input: preprocessed spectral tensors
+    output: molecular fingerprint vectors (e.g., ECFP4, MACCS, or user-defined)
+    confidence: medium
+  Step 3: Spectral annotation via fingerprint similarity
+    tool: IDSL_MINT
+    algorithm: Tanimoto similarity search against reference compound database
+    parameters: similarity_threshold=0.7, top_k_candidates=10
+    input: predicted molecular fingerprints
+    output: ranked candidate compounds with structural annotations
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/idslme/IDSL_MINT
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No specific training dataset details (e.g., LipidMaps subset size, split ratios) provided
+  - No exact hyperparameter values (e.g., learning rate, batch size, optimizer) reported
+  - No validation metrics or evaluation scripts included in description
+reproducibility_strengths:
+  - Source code publicly available on GitHub under MIT license
+  - Framework described as customizable and trainable on user-provided libraries
+  - Benchmarking performed using public LipidMaps database

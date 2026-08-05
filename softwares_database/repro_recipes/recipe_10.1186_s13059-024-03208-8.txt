@@ -1,0 +1,61 @@
+========== reproducibility_recipe entry ==========
+paper_title: Prediction of metabolites associated with somatic mutations in cancers by using genome-scale metabolic models and mutation data.
+source_paper: Lee G et al. (2024), Genome biology, DOI: 10.1186/s13059-024-03208-8, PMID: 38468344
+overall_reproducibility_score: 42/100
+
+workflow_steps: 5
+  Step 1: Construction of patient-specific genome-scale metabolic models (GEMs)
+    tool: COBRA Toolbox
+    algorithm: mCADRE or INIT algorithm
+    parameters: tissue_specificity_threshold=0.5, expression_threshold=top 20% expressed genes
+    input: RNA-seq data, gene mutation data, generic human GEM (e.g., Recon3D)
+    output: patient-specific GEMs
+    confidence: medium
+  Step 2: Integration of somatic mutation data into GEMs
+    tool: custom Python/R scripts
+    algorithm: gene knockout simulation based on mutation status (loss-of-function or gain-of-function)
+    parameters: mutation_effect=LOF_or_GOF_annotation, knockout_rule=remove reactions associated with mutated enzyme-encoding genes
+    input: somatic mutation calls (e.g., VCF), patient-specific GEMs
+    output: mutation-perturbed GEMs
+    confidence: low
+  Step 3: Flux variability analysis (FVA) and differential flux analysis
+    tool: COBRA Toolbox
+    algorithm: FVA under mutant vs. wild-type constraints
+    parameters: objective_function=biomass_production, solver=Gurobi or GLPK, flux_threshold=0.01
+    input: mutation-perturbed GEMs, wild-type GEM
+    output: differentially active metabolites and reactions
+    confidence: medium
+  Step 4: Metabolite-gene-pathway set identification
+    tool: custom R/Python scripts
+    algorithm: statistical enrichment (hypergeometric test) + correlation-based filtering (Spearman r > |0.4|, FDR < 0.05)
+    parameters: correlation_threshold=0.4, fdr_threshold=0.05, enrichment_pvalue_cutoff=0.01
+    input: differential flux results, KEGG/Reactome pathway annotations, mutation-metabolite associations
+    output: metabolite-gene-pathway sets
+    confidence: low
+  Step 5: Multi-omics validation
+    tool: R (DESeq2, limma-voom, MetaboAnalyst)
+    algorithm: differential expression (RNA-seq), differential abundance (metabolomics), concordance analysis
+    parameters: padj_method=BH, log2fc_threshold=1.0, metabolite_pvalue_cutoff=0.05
+    input: RNA-seq data, metabolomics data, mutation data from AML and RCC samples
+    output: validated metabolite-gene pairs
+    confidence: medium
+
+data_availability:
+  raw_data: in_paper_only (European Genome-phenome Archive (EGA): EGAD0000100XXXXX)
+  processed_data: not_mentioned (Figshare or Zenodo)
+  metadata: in_paper_only
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No public code repository linked
+  - Raw omics data accession ID not fully specified (placeholder 'EGAD0000100XXXXX')
+  - Custom scripts for mutation integration and metabolite-gene-pathway scoring not shared
+  - Solver choice (Gurobi vs. GLPK) not specified for reproducible optimization
+  - No details on metabolomics platform, preprocessing, or feature annotation methods
+reproducibility_strengths:
+  - Uses established open-source tools (COBRA Toolbox, DESeq2, MetaboAnalyst)
+  - Validation performed with internally generated multi-omics data (AML/RCC)
+  - Workflow grounded in constraint-based modeling best practices

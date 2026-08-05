@@ -1,0 +1,99 @@
+========== reproducibility_recipe entry ==========
+paper_title: Pipelines and Systems for Threshold-Avoiding Quantification of LC-MS/MS Data.
+source_paper: Sánchez Brotons A et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.1c01892, PMID: 34355890
+overall_reproducibility_score: 89/100
+
+workflow_steps: 7
+  Step 1: Raw data conversion to open format
+    tool: ProteoWizard
+    algorithm: msconvert
+    parameters: 32bit=True, filter=['peakPicking true 1-3', 'zeroSampleRate false']
+    input: vendor-specific .raw files
+    output: .mzML files
+    confidence: high
+  Step 2: Retention time alignment
+    tool: PASTAQ (v1.0.0)
+    algorithm: dynamic time warping (DTW) with adaptive windowing
+    parameters: rt_window=60, rt_step=5, max_shift=120
+    input: .mzML files
+    output: RT-aligned .mzML files
+    confidence: high
+  Step 3: Feature detection and quantification (MS1-based)
+    tool: PASTAQ (v1.0.0)
+    algorithm: threshold-avoiding peak integration using adaptive local noise modeling
+    parameters: min_intensity=1000, min_rt_width=10, max_rt_width=60, mass_tolerance_ppm=5, sn_threshold=3
+    input: RT-aligned .mzML files
+    output: feature table (intensity matrix)
+    confidence: high
+  Step 4: Feature linking across runs
+    tool: PASTAQ (v1.0.0)
+    algorithm: consensus feature mapping with RT and m/z tolerance-guided clustering
+    parameters: rt_tolerance_sec=15, mz_tolerance_ppm=5, min_overlap_runs=2
+    input: per-run feature tables
+    output: consensus feature table with missing value imputation
+    confidence: high
+  Step 5: Annotation integration from multiple identification engines
+    tool: PASTAQ (v1.0.0)
+    algorithm: evidence-weighted consensus scoring across search engines (e.g., MaxQuant, MSFragger, Comet)
+    parameters: min_engines=2, score_threshold=0.95, fdr_threshold=0.01
+    input: consensus feature table + peptide/protein identifications (.tsv/.pqp)
+    output: annotated consensus table with confidence-ranked identifications
+    confidence: medium
+  Step 6: Quality control plot generation
+    tool: PASTAQ (v1.0.0)
+    algorithm: automated QC metrics computation and visualization
+    parameters: qc_metrics=['median intensity CV', 'missingness per run', 'RT shift distribution', 'peak width distribution']
+    input: consensus feature table + metadata
+    output: QC report (PDF/HTML with plots)
+    confidence: high
+  Step 7: Statistical analysis and differential expression
+    tool: R (limma)
+    algorithm: empirical Bayes moderated t-test
+    parameters: trend=True, robust=True, adjust_method=BH
+    input: normalized consensus feature table
+    output: differentially abundant features (p-value, log2FC, FDR)
+    confidence: medium
+
+data_availability:
+  raw_data: available (PRIDE: PXD021456)
+  processed_data: available (MetaboLights: MTBLS1872)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/pride/archive/projects/PXD021456, https://www.ebi.ac.uk/metabolights/MTBLS1872
+
+code_availability: repository_linked
+  code_url: https://github.com/pastaq/pastaq
+  license: MIT
+
+figure_recipes: 5
+  Figure 1: [workflow_diagram]
+    caption: Schematic overview of the PASTAQ pipeline architecture, showing modules for RT alignment, threshold-avoiding quantification, annotation integration, and QC reporting.
+    produced_by_step: [2, 3, 4, 5, 6]
+    visualization_tool: Inkscape
+  Figure 2: [boxplot]
+    caption: Distribution of median intensity CVs across technical replicates for PASTAQ vs. MaxQuant and DIA-NN, demonstrating lower variability with PASTAQ.
+    produced_by_step: [7]
+    visualization_tool: ggplot2
+    statistical_test: Kruskal-Wallis test with Dunn’s post-hoc, p < 0.001
+  Figure 3: [volcano_plot]
+    caption: Volcano plot of differential abundance analysis in human serum comparing male vs. female samples, highlighting gender-associated proteins identified by PASTAQ.
+    produced_by_step: [7]
+    visualization_tool: ggplot2
+    statistical_test: limma moderated t-test, FDR < 0.05
+  Figure 4: [pca_scores]
+    caption: PCA score plot of PASTAQ-processed serum samples showing clear separation between male and female groups.
+    produced_by_step: [7]
+    visualization_tool: ggplot2
+    statistical_test: PERMANOVA (R² = 0.28, p = 0.002)
+  Supplementary Figure S3: [chromatogram]
+    caption: Overlay of extracted ion chromatograms (XICs) for a low-abundance peptide before and after PASTAQ RT alignment and quantification, illustrating improved peak co-elution.
+    produced_by_step: [2, 3]
+    visualization_tool: R (ggplot2 + xcms)
+
+reproducibility_gaps:
+  - Exact version of ProteoWizard used not specified (only 'latest stable' mentioned)
+  - No containerization (Docker/Singularity) provided in repository
+reproducibility_strengths:
+  - Full source code publicly available on GitHub under MIT license
+  - All raw and processed data deposited in PRIDE and MetaboLights with DOIs
+  - Automated QC plots generated internally reduce manual intervention
+  - Parameter values fully reported for core PASTAQ steps

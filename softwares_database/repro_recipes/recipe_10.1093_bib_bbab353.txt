@@ -1,0 +1,61 @@
+========== reproducibility_recipe entry ==========
+paper_title: Comparison of imputation and imputation-free methods for statistical analysis of mass spectrometry data with missing data.
+source_paper: Taylor S et al. (2022), Briefings in bioinformatics, DOI: 10.1093/bib/bbab353, PMID: 34472591
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Missing value simulation
+    tool: custom R simulation
+    algorithm: random missingness generation
+    parameters: missingness_levels=[0.1, 0.25, 0.5], sample_sizes=[10, 20, 50], number_of_simulations=100
+    input: complete synthetic or real metabolomics feature table
+    output: feature table with controlled missingness
+    confidence: medium
+  Step 2: Imputation
+    tool: R packages (VIM, missForest, imputeLCMD)
+    algorithm: ['k-nearest neighbor', 'random forest', 'quantile regression']
+    parameters: k=5, ntree=100, q=0.5
+    input: feature table with missing values
+    output: imputed feature table
+    confidence: high
+  Step 3: Statistical testing (imputation-based)
+    tool: R base / stats
+    algorithm: Wilcoxon rank-sum test
+    parameters: alternative=two.sided, conf.int=True
+    input: imputed feature table
+    output: p-values and effect size estimates (e.g., median difference)
+    confidence: high
+  Step 4: Statistical testing (imputation-free)
+    tool: R packages (NADA, NMML, missRanger)
+    algorithm: ['Tobit regression', 'nonparametric multiple imputation for inference', 'permutation tests with missing data']
+    parameters: maxiter=100, alpha=0.05
+    input: feature table with missing values
+    output: p-values and confidence intervals
+    confidence: low
+  Step 5: Performance evaluation
+    tool: custom R script
+    algorithm: false discovery rate (FDR) control, power calculation, bias estimation
+    parameters: fdr_method=Benjamini-Hochberg, true_positives_threshold=0.05
+    input: statistical test results + ground truth (simulated differential status)
+    output: power, FDR, bias in effect size estimates
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposited
+  - No code repository or supplementary scripts provided
+  - Imputation-free methods not fully specified (e.g., exact Tobit implementation, convergence criteria)
+  - Ground truth definition for differential compounds not described
+  - No details on real-data benchmarking datasets (if used)
+reproducibility_strengths:
+  - Explicit description of simulation parameters (missingness levels, sample sizes)
+  - Clear reporting of statistical methods and R packages used
+  - Systematic comparison framework across missingness and sample size

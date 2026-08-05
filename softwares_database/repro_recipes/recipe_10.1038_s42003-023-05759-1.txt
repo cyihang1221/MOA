@@ -1,0 +1,118 @@
+========== reproducibility_recipe entry ==========
+paper_title: Oral D-ribose causes depressive-like behavior by altering glycerophospholipid metabolism via the gut-brain axis.
+source_paper: Xu K et al. (2024), Communications biology, DOI: 10.1038/s42003-023-05759-1, PMID: 38195757
+overall_reproducibility_score: 42/100
+
+workflow_steps: 8
+  Step 1: Raw data acquisition
+    tool: Thermo UHPLC-Q Exactive HF-X
+    parameters: column=ACQUITY UPLC T3 (100 mm × 2.1 mm i.d., 1.8 μm), column_temperature_celsius=40, flow_rate_ml_per_min=0.4, injection_volume_ul=2, ionization_mode_positive=electrospray ionization (+), ionization_mode_negative=electrospray ionization (−), solvent_a_positive=0.1% formic acid in water, solvent_b_positive=0.1% formic acid in acetonitrile, solvent_c_negative=6.5 mM ammonium bicarbonate in water, solvent_d_negative=6.5 mM ammonium bicarbonate in 95% methanol, source_temperature_celsius=425, sheath_gas_flow_rate_arb=50, aux_gas_flow_rate_arb=13, ion_spray_voltage_v_positive=3500, ion_spray_voltage_v_negative=-3500, nce_values_ev=[20, 40, 60], nce_mode=rolling
+    input: biological samples (serum, colon wall, fecal, hippocampus)
+    output: raw .raw files
+    confidence: high
+  Step 2: Data preprocessing and feature detection
+    tool: Progenesis QI
+    parameters: baseline_filtering=True, peak_identification=True, peak_integration=True, retention_time_correction=True, peak_alignment=True, normalization=True, internal_standard=L-2-chlorophenylalanine (0.02 mg/mL in methanol)
+    input: raw .raw files
+    output: feature table (peak intensity matrix)
+    confidence: high
+  Step 3: Metabolite identification
+    tool: ['HMDB', 'METLIN', 'self-built databases']
+    input: feature table with m/z and RT
+    output: annotated metabolite table (level 1–2 identification)
+    confidence: medium
+  Step 4: Unsupervised multivariate analysis
+    tool: Progenesis QI / custom R
+    algorithm: Principal Component Analysis (PCA)
+    input: normalized feature table
+    output: PCA scores and loadings plots
+    confidence: medium
+  Step 5: Supervised multivariate analysis
+    tool: Progenesis QI / custom R
+    algorithm: Orthogonal Partial Least-Squares Discriminant Analysis (OPLS-DA)
+    input: normalized feature table
+    output: OPLS-DA scores, S-plots, VIP scores
+    confidence: medium
+  Step 6: Differential metabolite selection
+    tool: SPSS 20 / R Studio (vR 3.6.0)
+    algorithm: Student’s t-test, Mann-Whitney U test
+    parameters: significance_threshold_p_value=0.05, fold_change_threshold=None, vip_threshold_opls_da=1.0
+    input: normalized feature table
+    output: list of differential metabolites
+    confidence: high
+  Step 7: Pathway enrichment analysis
+    tool: MetaboAnalyst 5.0 (v5.0)
+    algorithm: Metabolite Set Enrichment Analysis (MSEA)
+    parameters: database=['KEGG', 'HMDB'], organism=Mus musculus / Homo sapiens, method=hypergeometric test, multiple_testing_correction=FDR
+    input: differential metabolite list (with KEGG IDs)
+    output: enriched metabolic pathways (p-value, FDR, impact score)
+    confidence: high
+  Step 8: Microbiota-metabolite correlation analysis
+    tool: R Studio (v3.6.0)
+    algorithm: Spearman correlation
+    parameters: correlation_threshold_abs_r=0.6, significance_threshold_p_value=0.05, fdr_correction=True
+    input: OTU table (16S) + metabolite abundance table
+    output: correlation network (genera–metabolite edges)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 8
+  Figure 1: [workflow_diagram]
+    caption: Schematic overview of experimental design and analytical workflow linking D-ribose intake to depressive-like behavior via gut-brain axis dysregulation.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7, 8]
+    visualization_tool: Adobe Illustrator / GraphPad Prism
+  Figure 2: [bar_chart]
+    caption: D-ribose levels are significantly elevated in urine of MDD patients and hippocampus of depression model rats compared to controls.
+    produced_by_step: [6]
+    visualization_tool: GraphPad Prism
+    statistical_test: Student’s t-test, p < 0.05
+  Figure 3: [boxplot]
+    caption: Behavioral tests show reduced sucrose preference and increased immobility time in RIB-fed mice.
+    produced_by_step: [6]
+    visualization_tool: GraphPad Prism
+    statistical_test: Student’s t-test, p < 0.05
+  Figure 4: [pca_scores]
+    caption: PCA score plots reveal clear separation between CON and RIB groups in serum, colon, fecal, and hippocampal metabolomes.
+    produced_by_step: [4]
+    visualization_tool: Progenesis QI / ggplot2
+  Figure 5: [pls_da_scores]
+    caption: OPLS-DA score plots demonstrate group separation with validation (permutation test, p < 0.01).
+    produced_by_step: [5]
+    visualization_tool: Progenesis QI / ggplot2
+    statistical_test: Permutation test (200 permutations)
+  Figure 6: [heatmap]
+    caption: Heatmap of significantly altered glycerophospholipids (PCs and PEs) across sample types.
+    produced_by_step: [6, 7]
+    visualization_tool: R (pheatmap)
+    statistical_test: t-test p < 0.05
+  Figure 7: [network]
+    caption: Correlation network linking differential bacterial genera (e.g., Akkermansia) and glycerophospholipids (PC/PE).
+    produced_by_step: [8]
+    visualization_tool: Cytoscape
+    statistical_test: Spearman correlation, FDR-corrected p < 0.05
+  Figure 8: [pathway_map]
+    caption: KEGG pathway enrichment map highlighting glycerophospholipid metabolism as the top dysregulated pathway.
+    produced_by_step: [7]
+    visualization_tool: MetaboAnalyst 5.0
+    statistical_test: Hypergeometric test, FDR < 0.05
+
+reproducibility_gaps:
+  - Raw mass spectrometry data (.raw files) not deposited in public repository (e.g., MetaboLights, GNPS)
+  - Progenesis QI is commercial software requiring license; no open-source alternative or parameter export details provided
+  - No description of peak picking parameters (e.g., mass tolerance, RT window, min peak width) in Progenesis QI
+  - No access to self-built metabolite database used for annotation
+  - No code/scripts shared for correlation analysis (Step 8), OPLS-DA validation, or integration figures
+  - 16S sequence data not linked to public repository (e.g., SRA, ENA); only 'Shanghai Majorbio' sequencing mentioned
+  - R version 3.6.0 is outdated and unsupported; no script reproducibility guarantees
+reproducibility_strengths:
+  - Detailed LC-MS instrument and acquisition parameters reported
+  - Use of standard databases (HMDB, METLIN, KEGG) for metabolite ID and pathway analysis
+  - Explicit statistical methods stated (t-test, Mann-Whitney, Spearman, FDR correction)
+  - Internal standard (L-2-chlorophenylalanine) and QC usage described
+  - MetaboAnalyst 5.0 web platform ensures partial computational reproducibility for pathway analysis

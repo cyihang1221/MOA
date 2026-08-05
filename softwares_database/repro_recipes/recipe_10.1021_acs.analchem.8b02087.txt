@@ -1,0 +1,60 @@
+========== reproducibility_recipe entry ==========
+paper_title: glyXtool<sup>MS</sup>: An Open-Source Pipeline for Semiautomated Analysis of Glycopeptide Mass Spectrometry Data.
+source_paper: Pioch M et al. (2018), Analytical chemistry, DOI: 10.1021/acs.analchem.8b02087, PMID: 30252445
+overall_reproducibility_score: 82/100
+
+workflow_steps: 5
+  Step 1: Oxonium ion-based spectral filtering
+    tool: glyXtoolMS
+    algorithm: oxonium ion scoring scheme
+    input: raw MS/MS spectra (.mzML)
+    output: filtered fragment spectra
+    confidence: medium
+  Step 2: In silico proteolytic digestion and glycopeptide candidate generation
+    tool: glyXtoolMS
+    algorithm: protein sequence digestion + glycan composition enumeration
+    parameters: protease=trypsin, max_missed_cleavages=2, glycan_database=user-defined or built-in
+    input: protein sequences (FASTA) + glycan composition library
+    output: theoretical glycopeptide candidate list
+    confidence: medium
+  Step 3: Precursor matching to glycan-peptide combinations
+    tool: glyXtoolMS
+    algorithm: mass tolerance-based precursor matching
+    parameters: mass_tolerance_ppm=None, charge_state_range=[2, 5]
+    input: filtered MS/MS spectra + theoretical glycopeptide candidates
+    output: matched glycopeptide precursor assignments
+    confidence: low
+  Step 4: Fragment ion annotation
+    tool: glyXtoolMS
+    algorithm: glycopeptide-specific fragment ion annotation (Y/B/C/Z ions, oxonium, glycan cleavages)
+    input: matched precursors + MS/MS spectra
+    output: annotated glycopeptide spectra (featureXML or custom format)
+    confidence: high
+  Step 5: Visualization and manual curation
+    tool: glyXtoolMS Evaluator
+    algorithm: interactive spectrum viewer with annotation overlay
+    input: annotated glycopeptide spectra
+    output: curated glycopeptide identifications (tabular + annotated spectra)
+    confidence: high
+
+data_availability:
+  raw_data: available (ProteomeXchange: PXD009716)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+  data_urls: http://www.ebi.ac.uk/pride/archive/projects/PXD009716
+
+code_availability: repository_linked
+  code_url: https://github.com/glyXera/glyXtoolMS
+  license: GPL-3.0
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Exact mass tolerance (ppm) for precursor matching not specified
+  - Glycan composition database source and version not detailed
+  - No explicit description of TOPPAS workflow configuration (.toppas file) or parameter files
+reproducibility_strengths:
+  - Full source code publicly available under GPL-3.0
+  - Test data deposited in ProteomeXchange (PXD009716)
+  - Modular, OpenMS-based pipeline ensures interoperability with standard proteomics tools
+  - Graphical pipeline editor (TOPPAS) enables transparency and reproducibility of workflow steps

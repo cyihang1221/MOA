@@ -1,0 +1,41 @@
+========== reproducibility_recipe entry ==========
+paper_title: An integrated deep learning framework for the interpretation of untargeted metabolomics data.
+source_paper: Tian L et al. (2023), Briefings in bioinformatics, DOI: 10.1093/bib/bbad244, PMID: 37369636
+overall_reproducibility_score: 20/100
+
+workflow_steps: 3
+  Step 1: Feature-metabolite annotation relationship modeling
+    tool: Custom deep learning framework
+    algorithm: Gradual sparsification neural network incorporating metabolic network topology and feature-metabolite ambiguity mapping
+    input: Feature table (m/z, RT, intensity), metabolite database annotations (e.g., HMDB, METLIN), metabolic network graph (e.g., KEGG, Reactome)
+    output: Feature-metabolite matching likelihood matrix
+    confidence: low
+  Step 2: Metabolite importance scoring
+    tool: Custom deep learning framework
+    algorithm: Gradual sparsification neural network with embedded biological constraints
+    input: Feature table, feature-metabolite likelihood matrix, metabolic network
+    output: Metabolite importance scores
+    confidence: low
+  Step 3: Disease sub-network selection
+    tool: Custom deep learning framework
+    algorithm: Topological sparsity-driven sub-network extraction from metabolic network using importance-weighted edges
+    input: Metabolite importance scores, metabolic network graph
+    output: Interpretable disease-associated metabolic sub-networks
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of data preprocessing (e.g., peak picking, alignment, normalization)
+  - No specification of input feature table format or metadata structure
+  - No details on metabolic network source, version, or curation
+  - No hyperparameters, training procedure, or architecture details for the neural network
+  - No code, model weights, or training scripts provided
+  - No validation protocol or benchmarking against standard methods (e.g., XCMS + MetaboAnalyst)

@@ -1,0 +1,59 @@
+========== reproducibility_recipe entry ==========
+paper_title: Equidistant regions of interest - multivariate curve resolution for clean spectra from plant-metabolomics by gas chromatography with high resolution mass spectrometry.
+source_paper: Gao Z et al. (2025), Analytica chimica acta, DOI: 10.1016/j.aca.2025.344171, PMID: 40447401
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Raw data acquisition
+    tool: GC-Orbitrap HRMS
+    input: plant tissue extracts
+    output: raw .raw files (Thermo)
+    confidence: low
+  Step 2: Data reduction via equidistant Region of Interest (eROI)
+    tool: custom implementation
+    algorithm: equidistant ROI binning
+    parameters: roi_width_seconds=None, n_rois=None, mz_resolution=high_resolution
+    input: raw .raw files
+    output: structured matrix with standardized dimensions preserving m/z
+    confidence: low
+  Step 3: Multivariate curve resolution (MCR)
+    tool: MCR-ALS
+    algorithm: Alternating Least Squares
+    parameters: n_components=None, constraints=['non-negativity', 'unimodality'], max_iterations=500, tolerance=1e-06
+    input: eROI-structured matrix
+    output: pure component elution profiles and mass spectra
+    confidence: medium
+  Step 4: Metabolite annotation
+    tool: NIST MS Search + in-house spectral interpretation
+    algorithm: fragmentation pattern analysis + predictive spectral modeling
+    parameters: mass_accuracy_threshold_ppm=5, min_match_factor=700
+    input: pure component mass spectra (from MCR)
+    output: annotated metabolite list with confidence levels
+    confidence: medium
+  Step 5: Validation using volatile-metabolomics fingerprints
+    tool: comparative spectral analysis
+    algorithm: cross-species spectral consistency assessment
+    parameters: species_pair=['Cyperus rotundus', 'Curcumae Radix']
+    input: annotated spectra from both species
+    output: validated metabolite annotations with cross-species support
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposited or referenced
+  - eROI parameters (e.g., ROI width, number of ROIs) not specified
+  - Custom eROI implementation not shared or described algorithmically
+  - No software version or configuration details for MCR-ALS
+  - No access to in-house spectral interpretation scripts or predictive models
+reproducibility_strengths:
+  - Clear methodological framework (eROI-MCR integration)
+  - Use of widely accepted reference tools (NIST MS Search)
+  - Cross-species validation strategy described

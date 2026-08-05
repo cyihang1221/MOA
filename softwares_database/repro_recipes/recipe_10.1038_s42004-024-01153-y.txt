@@ -1,0 +1,81 @@
+========== reproducibility_recipe entry ==========
+paper_title: nanoRAPIDS as an analytical pipeline for the discovery of novel bioactive metabolites in complex culture extracts at the nanoscale.
+source_paper: Nuñez Santiago I et al. (2024), Communications chemistry, DOI: 10.1038/s42004-024-01153-y, PMID: 38561415
+overall_reproducibility_score: 72/100
+
+workflow_steps: 7
+  Step 1: LC-MS data acquisition
+    tool: Thermo LTQ Orbitrap XL
+    algorithm: FT-MS full scan + data-dependent CID MS/MS
+    parameters: ionization_mode=positive, mass_range_mz=[100, 2000], ft_resolution=30000, capillary_voltage_v=5, spray_voltage_kv=3.5, capillary_temperature_c=300, auxiliary_gas_flow_arbitrary_units=10, sheath_gas_flow_arbitrary_units=50, ms2_acquisition=top_3_most_intense_ions, collision_induced_dissociation=True
+    input: raw .raw files (Thermo)
+    output: mzXML files
+    confidence: high
+  Step 2: Data conversion
+    tool: ProteoWizard msconvert
+    algorithm: conversion to mzXML
+    input: Thermo .raw files
+    output: mzXML files
+    confidence: medium
+  Step 3: Feature detection and chromatogram building
+    tool: MZmine 2.53 (v2.53)
+    algorithm: centroid peak detection + local minimum search deconvolution
+    parameters: ms_noise_level=10000, ms2_noise_level=0, min_group_size=10, mz_tolerance_da=0.001, group_intensity_threshold=10000, min_peak_height=50000, rt_search_range_min=0.1, chromatographic_threshold_percent=90, min_relative_height_percent=1, min_absolute_height=10000, peak_top_edge_ratio=2, peak_duration_range_min=0.05, peak_duration_range_max=3, isotope_mz_tolerance_da=0.001, isotope_rt_tolerance_min=0.1, duplicate_filtering_mz_tolerance_da=0.001, duplicate_filtering_rt_tolerance_min=0.05, duplicate_filtering_mz_tolerance_da_fallback=1, keep_only_ms2_peaks=True
+    input: mzXML files
+    output: feature table (CSV) + MS2 spectral summary (mgf)
+    confidence: high
+  Step 4: Feature-based molecular networking
+    tool: GNPS
+    algorithm: cosine similarity network clustering
+    parameters: precursor_mass_tolerance_da=0.02, fragment_mass_tolerance_da=0.9, cosine_score_threshold=0.7, min_matched_peaks=3, library_match_score_threshold=0.7, library_match_min_matched_peaks=3
+    input: feature quantification table + MS2 spectral summary (mgf)
+    output: molecular network (graphML/Cytoscape-ready)
+    confidence: high
+  Step 5: Network annotation enhancement
+    tool: GNPS MolNetEnhancer
+    algorithm: network propagation + in silico annotation integration
+    parameters: annotation_sources=['GNPS Library Search', 'Network Annotation Propagation', 'Dereplicator'], chemical_class_annotation_tool=ClassyFire
+    input: molecular network + spectral libraries
+    output: annotated molecular network with chemical class labels
+    confidence: high
+  Step 6: Chromatogram alignment (MS vs bioactivity)
+    tool: custom semi-automated procedure
+    algorithm: time-shift correction + resampling + center alignment
+    parameters: delay_determined_by_nalidixic_acid=0.3, bioassay_time_resolution=6 s per nanofraction, alignment_method=center-based synchronization, normalization_method=median normalization per plate
+    input: MS chromatogram (from MZmine) + bioactivity fluorescence readout (plate reader)
+    output: aligned time-series datasets (MS intensity & bioactivity response per fraction)
+    confidence: low
+  Step 7: Bioactivity visualization and prioritization
+    tool: GraphPad Prism 8 (v8)
+    algorithm: normalized response plotting
+    parameters: normalization_method=median of all wells per plate, x_axis=fraction collection time (min), y_axis=normalized fluorescence (resazurin reduction)
+    input: aligned bioactivity time series
+    output: bioactivity chromatograms
+    confidence: high
+
+data_availability:
+  raw_data: available (MassIVE: MSV000094019)
+  processed_data: available (GNPS: 1ba65a809b17413694522c27b0d952df, 15e986d4356f41b4962baab398c571fa)
+  metadata: in_paper_only
+  data_urls: https://gnps.ucsd.edu/ProteoSAFe/status.jsp?task=1ba65a809b17413694522c27b0d952df, https://gnps.ucsd.edu/ProteoSAFe/status.jsp?task=15e986d4356f41b4962baab398c571fa, https://massive.ucsd.edu/ProteoSAFe/dataset.jsp?task=MSV000094019
+
+code_availability: not_mentioned
+
+figure_recipes: 1
+  Figure S1: [chromatogram]
+    caption: Demonstrates determination of delay between MS and bioassay traces using nalidixic acid injection.
+    produced_by_step: [6]
+    visualization_tool: GraphPad Prism 8
+
+reproducibility_gaps:
+  - Custom semi-automated chromatogram alignment script not shared
+  - No repository link or DOI for nanoRAPIDS pipeline code or workflow scripts
+  - No detailed description of GraphPad Prism analysis settings beyond 'normalized response'
+  - No metadata schema or sample annotation file provided (only described in text)
+  - NanoMate Triversa and Waters Acquity UPLC control parameters not fully specified (e.g., column temperature, injection volume precision, fraction collection timing jitter)
+reproducibility_strengths:
+  - Raw LC-MS/MS data publicly available in MassIVE (MSV000094019)
+  - Fully reproducible GNPS molecular networking jobs with public task IDs
+  - All key MZmine 2.53 parameters explicitly reported
+  - Complete LC gradient and ESI source settings documented
+  - Open-access web tools used (GNPS, ClassyFire, Cytoscape)

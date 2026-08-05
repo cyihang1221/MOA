@@ -1,0 +1,52 @@
+========== reproducibility_recipe entry ==========
+paper_title: Glycoform analysis of intact erythropoietin by MALDI FT-ICR mass spectrometry.
+source_paper: Lippold S et al. (2021), Analytica chimica acta, DOI: 10.1016/j.aca.2021.339084, PMID: 34711323
+overall_reproducibility_score: 35/100
+
+workflow_steps: 4
+  Step 1: Sample preparation for intact EPO analysis
+    tool: manual_protocol
+    parameters: desalting_method=microcolumn-based desalting, matrix=2,5-dihydroxybenzoic_acid_(DHB), matrix_application=dried_droplet_method, sialic_acid_preservation=optimized_matrix_and_sample_handling_to_prevent_decarboxylation
+    input: purified_intact_EPO_protein_samples
+    output: MALDI_target_plate_with_EPO_samples
+    confidence: medium
+  Step 2: Mass spectrometry data acquisition
+    tool: MALDI_FT-ICR_MS
+    parameters: instrument_model=Bruker_solarix_7T_FT-ICR_MS, ionization_mode=positive_mode, charge_state_analyzed=doubly_charged_ions_(2+), mass_range_mz=[3000, 4500], resolution=≥300,000_FWHM_at_m/z_400, laser_frequency=1000_Hz, number_of_scans_per_spectrum=100, accumulation_time_per_scan=1.5_s
+    input: MALDI_target_plate_with_EPO_samples
+    output: raw_mzML_or_binary_raw_files
+    confidence: high
+  Step 3: Glycoform assignment without deconvolution
+    tool: Bruker_Compass_DataAnalysis
+    algorithm: manual_peak_annotation_based_on_mass_accuracy_and_glycan_composition_rules
+    parameters: mass_tolerance_ppm=1.0, allowed_modifications=['sialylation', 'acetylation', 'N-acetyllactosamine_repeats'], glycoform_composition_space=C/H/N/O/S_atom_count_constraints_based_on_known_EPO_backbone_and_glycan_units
+    input: raw_mzML_or_binary_raw_files
+    output: annotated_glycoform_table_(mz,_charge,_composition,_assignment_confidence)
+    confidence: low
+  Step 4: Validation against orthogonal methods
+    tool: cross-platform_comparison
+    algorithm: literature_consensus_matching
+    parameters: validation_sources=['released_glycan_MS', 'glycopeptide_MS/MS', 'ESI_MS_data_from_prior_studies']
+    input: annotated_glycoform_table
+    output: validated_glycoform_profile_with_agreement_metrics
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository
+  - No details on Bruker Compass DataAnalysis workflow parameters (e.g., peak picking thresholds, isotope pattern settings)
+  - No sharing of glycoform composition annotation rules or scripts
+  - Instrument method files (.ctrl/.xml) and calibration details not provided
+  - No description of how sialic acid preservation was empirically validated
+reproducibility_strengths:
+  - High mass accuracy (≤1 ppm) and resolution (≥300,000) explicitly reported
+  - Clear specification of charge state (2+) and m/z range used for glycoform assignment
+  - Explicit listing of key glycosylation features analyzed (sialylation, acetylation, LacNAc repeats)

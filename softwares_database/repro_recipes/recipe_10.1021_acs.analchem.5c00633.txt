@@ -1,0 +1,62 @@
+========== reproducibility_recipe entry ==========
+paper_title: Met-ID: An Open-Source Software for Comprehensive Annotation of Multiple On-Tissue Chemical Modifications in MALDI-MSI.
+source_paper: Bjärterot P et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c00633, PMID: 40253716
+overall_reproducibility_score: 78/100
+
+workflow_steps: 5
+  Step 1: Data import and preprocessing
+    tool: Met-ID
+    algorithm: not specified
+    input: MALDI-MSI raw data (e.g., imzML, .tdf, or vendor formats)
+    output: preprocessed spectral data with optional recalibration
+    confidence: medium
+  Step 2: m/z recalibration
+    tool: Met-ID
+    algorithm: internal recalibration using user-provided known m/z standards
+    parameters: recalibration_method=linear or polynomial fit, reference_ions_count=user-defined
+    input: raw or preprocessed spectra + list of reference m/z values
+    output: recalibrated m/z values per spectrum
+    confidence: medium
+  Step 3: Derivatization-aware feature annotation
+    tool: Met-ID
+    algorithm: targeted annotation using derivatization chemistry rules (e.g., FMP-10 adducts on phenolic OH/amine groups)
+    parameters: derivatization_agent=FMP-10, allowed_modification_sites=['phenolic_hydroxyl', 'primary_amine', 'secondary_amine'], max_modifications_per_molecule=2
+    input: recalibrated m/z features + derivatization chemistry model
+    output: annotated feature table with derivatized molecular formulas and modification sites
+    confidence: high
+  Step 4: MS2 spectral matching
+    tool: Met-ID
+    algorithm: cosine similarity or spectral dot product
+    parameters: min_similarity_score=0.7, fragment_tolerance_da=0.5, min_matched_peaks=3
+    input: user-uploaded tissue MS2 spectra + internal FMP-10-derivatized MS2 database
+    output: MS2-based metabolite identifications with confidence scores
+    confidence: medium
+  Step 5: Database extension and customization
+    tool: Met-ID
+    algorithm: user-defined database import (e.g., CSV, MSP)
+    parameters: database_format=MSP or tabular, required_fields=['name', 'precursor_mz', 'adduct', 'smiles', 'ms2_peaks']
+    input: user-provided MS2 spectral library or structural database
+    output: extended in-software MS2 database
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/Met-ID/Met-ID
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw MALDI-MSI datasets provided or referenced for validation
+  - No example workflow parameters (e.g., mass tolerance, RT window) specified for feature detection or alignment
+  - FMP-10 derivatization reaction mechanism not quantitatively modeled (e.g., no yield assumptions or side-product filtering)
+  - No description of spectral preprocessing (peak picking, noise filtering) prior to MS2 matching
+reproducibility_strengths:
+  - Fully open-source (MIT licensed) and hosted on GitHub
+  - Built-in FMP-10–specific MS2 database with neurotransmitters and metabolites
+  - FAIR-aligned design with extensible database and recalibration support
+  - Combines MS1 annotation logic with MS2 spectral matching in one GUI tool

@@ -1,0 +1,55 @@
+========== reproducibility_recipe entry ==========
+paper_title: SteroidXtract: Deep Learning-Based Pattern Recognition Enables Comprehensive and Rapid Extraction of Steroid-Like Metabolic Features for Automated Biology-Driven Metabolomics.
+source_paper: Xing S et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.0c04834, PMID: 33784068
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: MS² spectral preprocessing and augmentation
+    tool: Custom Python pipeline
+    algorithm: Data augmentation
+    parameters: intensity_thresholding=True, gaussian_noise_std=not specified, noise_addition_probability=not specified, spectral binning=not specified, mz_range=not specified, bin_width_da=not specified
+    input: MS² spectra (mz/intensity pairs)
+    output: Augmented, normalized MS² spectral images (2D tensors)
+    confidence: low
+  Step 2: Steroid pattern recognition via CNN
+    tool: SteroidXtract
+    algorithm: Convolutional Neural Network
+    parameters: architecture=CNN (details not specified), optimizer=not specified, learning_rate=not specified, batch_size=not specified, epochs=not specified, validation_split=nested cross-validation, early_stopping=not specified, dropout_rate=not specified, number_of_conv_layers=not specified, filter_sizes=not specified, activation_function=not specified
+    input: Preprocessed MS² spectral images
+    output: Steroid likelihood score per feature
+    confidence: low
+  Step 3: Model comparison with tree-based classifiers
+    tool: scikit-learn
+    algorithm: Random Forest, XGBoost
+    parameters: cross_validation_scheme=nested cross-validation, scoring_metric=not specified, n_estimators_rf=not specified, max_depth_rf=not specified, n_estimators_xgb=not specified, learning_rate_xgb=not specified
+    input: Same spectral features as CNN input
+    output: Classifier performance metrics (e.g., AUC, accuracy)
+    confidence: low
+  Step 4: Steroid-like feature extraction from untargeted metabolomics data
+    tool: SteroidXtract
+    algorithm: CNN inference on LC-MS/MS feature tables
+    parameters: feature_table_format=peak table with MS² spectra linked by ID, minimum_spectrum_quality=not specified, score_threshold=not specified, top_k_candidates_per_feature=not specified
+    input: Untargeted LC-MS/MS feature table + associated MS² spectra
+    output: Ranked list of steroid-like metabolic features
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No repository link or DOI provided for SteroidXtract code
+  - No raw or processed metabolomics datasets deposited or referenced
+  - CNN architecture and training hyperparameters not reported
+  - MS² spectral preprocessing details (binning, normalization, m/z range) omitted
+  - No description of how MS² spectra were linked to LC-MS features in input data
+  - SteroidXtract is described as a 'tool' but no installation instructions, dependencies, or version control information provided
+reproducibility_strengths:
+  - Use of public MoNA database for training
+  - Explicit mention of data augmentation strategies (intensity thresholding, Gaussian noise)
+  - Comparison against established ML baselines (Random Forest, XGBoost)

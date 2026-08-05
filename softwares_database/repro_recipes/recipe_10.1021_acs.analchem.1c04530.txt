@@ -1,0 +1,34 @@
+========== reproducibility_recipe entry ==========
+paper_title: CPExtract, a Software Tool for the Automated Tracer-Based Pathway Specific Screening of Secondary Metabolites in LC-HRMS Data.
+source_paper: Seidl B et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.1c04530, PMID: 35166525
+overall_reproducibility_score: 70/100
+
+workflow_steps: 1
+  Step 1: Isotopolog pattern definition
+    tool: CPExtract
+    algorithm: custom rule-based isotopolog pattern matching
+    parameters: isotopolog_presence_absence_rules=user-defined, relative_intensity_ratios=user-defined tolerance thresholds, chromatographic_coelution_window=user-defined (retention time tolerance), MS_scan_level_verification=True, chromatographic_domain_verification=True, tracer_approach_mode=['labeled_tracer_in_unlabeled_sample', 'unlabeled_tracer_in_globally_labeled_sample']
+    input: LC-HRMS raw data (.mzML or vendor format)
+    output: list of verified isotopolog pattern matches with RT, m/z, intensity, and pattern score
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://metabolomics-ifa.boku.ac.at/CPExtract
+  license: noncommercial_use_only
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-HRMS data not deposited in public repository
+  - No details on instrument parameters (e.g., gradient, column, MS settings) provided
+  - No example rule sets or parameter configurations included in paper or supplementary material
+  - No benchmark dataset or test data provided with CPExtract download
+reproducibility_strengths:
+  - CPExtract software freely available for noncommercial use
+  - Algorithm described with clear conceptual workflow (MS-scan + chromatographic verification)
+  - Tracer approach flexibility explicitly documented (forward/reverse labeling)

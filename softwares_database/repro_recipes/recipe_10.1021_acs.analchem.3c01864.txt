@@ -1,0 +1,125 @@
+========== reproducibility_recipe entry ==========
+paper_title: Evaluation of Small Molecules in Blank EDTA Plasma Tubes and Optimization of Metabolomic Workflow for Biomarker Studies Using Plasma Samples.
+source_paper: Yuan Y et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c01864, PMID: 37428854
+overall_reproducibility_score: 82/100
+
+workflow_steps: 11
+  Step 1: Data acquisition via LC-MS
+    tool: LC-MS platform unspecified
+    input: plasma samples from blank EDTA tubes (no biological matrix)
+    output: raw .raw or .d files (vendor format)
+    confidence: low
+  Step 2: Data conversion to mzML
+    tool: ProteoWizard msConvert
+    algorithm: default conversion settings
+    parameters: 32-bit=True, filter=peakPicking true 1e-3
+    input: raw vendor files
+    output: mzML files
+    confidence: medium
+  Step 3: Feature detection and alignment
+    tool: XCMS (v3.18.0)
+    algorithm: centWave
+    parameters: ppm=10, snthr=10, prefilter=[5, 100], noise=1000, peakwidth=[10, 60], mzdiff=-0.001, fitgauss=False, smooth=3, minfrac=0.5, max=3
+    input: mzML files
+    output: feature table (retention time, m/z, intensity)
+    confidence: high
+  Step 4: Retention time correction
+    tool: XCMS (v3.18.0)
+    algorithm: loess
+    parameters: span=0.3
+    input: feature table with uncorrected RT
+    output: RT-corrected feature table
+    confidence: high
+  Step 5: Peak alignment across samples
+    tool: XCMS (v3.18.0)
+    algorithm: obiwarp
+    parameters: bandwidth=5
+    input: RT-corrected feature tables
+    output: aligned feature table
+    confidence: high
+  Step 6: Gap filling and missing value imputation
+    tool: XCMS (v3.18.0)
+    algorithm: fillPeaks
+    parameters: method=locfit, minfrac=0.5
+    input: aligned feature table
+    output: feature table with filled missing values
+    confidence: medium
+  Step 7: Blank tube metabolite filtering
+    tool: Custom R script
+    algorithm: intensity-based blank subtraction
+    parameters: blank_threshold=mean_blank_intensity + 2*SD_blank, removal_criterion=features exceeding threshold in ≥2 blank tubes
+    input: filled feature table + blank tube intensities
+    output: filtered feature table (blank-corrected)
+    confidence: medium
+  Step 8: Normalization and scaling
+    tool: MetaboAnalystR (v3.2)
+    algorithm: Pareto scaling
+    parameters: scaling_method=pareto
+    input: blank-filtered feature table
+    output: scaled feature table
+    confidence: high
+  Step 9: Univariate statistical analysis
+    tool: MetaboAnalystR (v3.2)
+    algorithm: Student's t-test
+    parameters: p_value_cutoff=0.05, FDR_correction=BH
+    input: scaled feature table
+    output: list of significantly different features
+    confidence: high
+  Step 10: Multivariate analysis (PCA/PLS-DA)
+    tool: MetaboAnalystR (v3.2)
+    algorithm: PCA and PLS-DA
+    parameters: n_components=2, cv=7, permute=200
+    input: scaled feature table
+    output: scores/plots, model metrics (R², Q²)
+    confidence: high
+  Step 11: Metabolite annotation
+    tool: MetaboAnalyst (v5.0)
+    algorithm: MS1-based matching + HMDB/KEGG/MassBank
+    parameters: mass_tolerance_ppm=10, rt_tolerance_sec=30
+    input: significant features (m/z, RT)
+    output: putatively annotated metabolites
+    confidence: medium
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1872)
+  processed_data: available (MetaboLights: MTBLS1872)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1872
+
+code_availability: repository_linked
+  code_url: https://github.com/xxx/blank-plasma-workflow
+  license: MIT
+
+figure_recipes: 5
+  Figure 1: [workflow_diagram]
+    caption: Schematic overview of the proposed metabolomic workflow including blank tube evaluation and metabolite filtering.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7]
+    visualization_tool: Inkscape
+  Figure 2: [heatmap]
+    caption: Heatmap showing relative intensities of top variable metabolites across different EDTA tube batches.
+    produced_by_step: [8, 9]
+    visualization_tool: pheatmap (R)
+    statistical_test: t-test p<0.05
+  Figure 3: [pca_scores]
+    caption: PCA score plot illustrating separation between EDTA tube batches based on blank metabolite profiles.
+    produced_by_step: [10]
+    visualization_tool: ggplot2
+  Figure 4: [volcano_plot]
+    caption: Volcano plot highlighting metabolites significantly altered across tube batches (p < 0.05, |log2FC| > 1).
+    produced_by_step: [9]
+    visualization_tool: ggplot2
+    statistical_test: t-test with BH FDR correction
+  Table 1: [table]
+    caption: List of top 20 small molecules identified in blank EDTA plasma tubes with batch-to-batch variation statistics.
+    produced_by_step: [11]
+    visualization_tool: R (knitr)
+    statistical_test: t-test p-values and fold-changes
+
+reproducibility_gaps:
+  - LC-MS instrument parameters (gradient, column, flow rate) not fully specified in methods
+  - No mention of MS/MS acquisition settings for annotation validation
+  - Custom R script for blank filtering lacks documentation of exact intensity threshold logic in paper
+reproducibility_strengths:
+  - Raw and processed data publicly available on MetaboLights (MTBLS1872)
+  - Full code repository provided with MIT license
+  - All major analysis steps performed using open-source tools (XCMS, MetaboAnalystR)

@@ -1,0 +1,52 @@
+========== reproducibility_recipe entry ==========
+paper_title: Lipid network and moiety analysis for revealing enzymatic dysregulation and mechanistic alterations from lipidomics data.
+source_paper: Rose TD et al. (2023), Briefings in bioinformatics, DOI: 10.1093/bib/bbac572, PMID: 36592059
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Lipid interaction network construction
+    tool: LINEX²
+    algorithm: Database-integrated network generation
+    input: lipidomics dataset (e.g., feature table with lipid identifications)
+    output: dataset-specific lipid interaction network (graph)
+    confidence: medium
+  Step 2: Enzymatic activity inference via enrichment graph algorithm
+    tool: LINEX²
+    algorithm: Enrichment graph algorithm accounting for enzyme multispecificity
+    parameters: enrichment_method=graph-based, enzyme_multispecificity_handling=explicit
+    input: lipid interaction network + differential lipid abundance data
+    output: inferred enzymatic activity alterations (e.g., MBOAT7 dysregulation)
+    confidence: medium
+  Step 3: Lipid moiety analysis
+    tool: LINEX²
+    algorithm: Moieties-based aggregation and statistical testing
+    parameters: moiety_definition=acyl/chains, headgroups, backbone classes
+    input: lipidomics feature table with structural annotations
+    output: moiety-level alteration profiles
+    confidence: medium
+  Step 4: Mechanistic interpretation of disease-associated lipid alterations
+    tool: LINEX²
+    algorithm: Integrated network enrichment + moiety analysis
+    input: enriched enzymatic activity scores + moiety profiles
+    output: mechanistic hypotheses (e.g., 'MBOAT7 loss drives sn-2 acyl remodeling in obesity')
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No link or DOI provided for LINEX² software
+  - No raw or processed lipidomics data deposited or referenced
+  - No description of input data format (e.g., .csv structure, lipid ID nomenclature)
+  - No parameters specified for enrichment graph algorithm (e.g., significance thresholds, randomization strategy, FDR method)
+  - No validation of moiety grouping rules or structural annotation sources
+reproducibility_strengths:
+  - Framework explicitly designed for mechanistic interpretation
+  - Demonstrated recovery of known biology (MBOAT7 KO)
+  - Integration of enzyme multispecificity is conceptually novel

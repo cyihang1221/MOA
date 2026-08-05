@@ -1,0 +1,39 @@
+========== reproducibility_recipe entry ==========
+paper_title: Deep Learning for the Precise Peak Detection in High-Resolution LC-MS Data.
+source_paper: Melnikov AD et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.9b04811, PMID: 31841624
+overall_reproducibility_score: 70/100
+
+workflow_steps: 2
+  Step 1: Peak detection in raw LC-MS data
+    tool: peakonly
+    algorithm: convolutional neural network
+    input: raw LC-MS data (high-resolution)
+    output: detected peaks (retention time, m/z, intensity)
+    confidence: low
+  Step 2: Peak integration
+    tool: peakonly
+    algorithm: convolutional neural network
+    input: raw LC-MS data (high-resolution)
+    output: integrated peak areas
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/arseha/peakonly
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of training data, validation strategy, or model architecture
+  - No benchmarking parameters (e.g., mass tolerance, RT window, SNR thresholds) specified
+  - No example input data format or preprocessing requirements provided
+  - No evaluation metrics reported (e.g., precision/recall/F1 scores) in abstract or provided context
+reproducibility_strengths:
+  - Source code publicly available on GitHub
+  - Permissive MIT license
+  - Explicitly targets high-resolution LC-MS metabolomics data

@@ -1,0 +1,68 @@
+========== reproducibility_recipe entry ==========
+paper_title: High-Performance Chemical Isotope Labeling Liquid Chromatography Mass Spectrometry for Exosome Metabolomics.
+source_paper: Luo X et al. (2018), Analytical chemistry, DOI: 10.1021/acs.analchem.8b01726, PMID: 29920066
+overall_reproducibility_score: 35/100
+
+workflow_steps: 7
+  Step 1: Exosome isolation
+    tool: Ultracentrifugation
+    parameters: volume_input=2.0, unit=mL, fluid_type=human serum, cycles=multiple
+    input: raw human serum
+    output: isolated exosome pellet
+    confidence: medium
+  Step 2: Exosome lysis and metabolite extraction
+    tool: Freeze-thaw cycles
+    parameters: solvent_composition=50% methanol/water, cycles=freeze-thaw
+    input: exosome pellet
+    output: metabolite extract
+    confidence: medium
+  Step 3: Chemical isotope labeling (CIL)
+    tool: Dansylation reagent
+    parameters: labeling_target=['amine', 'phenol'], isotopes=['^12C', '^13C'], internal_standard=pooled ^13C-labeled sample
+    input: metabolite extract
+    output: differentially labeled metabolites (light/heavy pairs)
+    confidence: high
+  Step 4: Nanoflow LC-MS analysis
+    tool: nLC-MS with captivespray
+    parameters: instrument_platform=not specified, column=not specified, gradient=not specified, flow_rate=nanoflow
+    input: dansyl-labeled metabolite extract
+    output: raw MS data (.raw or vendor format)
+    confidence: low
+  Step 5: Peak pair detection and alignment
+    tool: MyCompoundID
+    parameters: database=MyCompoundID metabolome database, mass_accuracy_threshold=accurate mass matching
+    input: raw MS data
+    output: peak pair table (light/heavy) with accurate mass matches
+    confidence: medium
+  Step 6: Metabolite identification
+    tool: MyCompoundID
+    parameters: identification_level=positive identification, evidence=accurate mass + dansylation chemistry
+    input: peak pair table
+    output: annotated metabolite list
+    confidence: medium
+  Step 7: Relative quantification
+    tool: Internal standard normalization
+    parameters: reference=^13C-labeled pooled exosome sample, quantification_method=light/heavy peak pair intensity ratio
+    input: peak pair table
+    output: relative abundance table (pre- vs post-treatment)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in any public repository
+  - No details on LC gradient, column type, or MS instrument parameters
+  - MyCompoundID is not open-source nor publicly documented; no version or access method provided
+  - No code, scripts, or workflow documentation shared
+  - No metadata schema or sample annotation details provided beyond 'pre/post chemotherapy'
+reproducibility_strengths:
+  - Explicit description of dansylation chemistry and labeling strategy
+  - Clear experimental design (paired pre/post samples, internal ^13C standard)
+  - Quantitative rationale (light/heavy peak ratios) explicitly stated

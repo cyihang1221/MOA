@@ -1,0 +1,119 @@
+========== reproducibility_recipe entry ==========
+paper_title: Unifying the analysis of bottom-up proteomics data with CHIMERYS.
+source_paper: Frejno M et al. (2025), Nature methods, DOI: 10.1038/s41592-025-02663-w, PMID: 40263583
+overall_reproducibility_score: 42/100
+
+workflow_steps: 9
+  Step 1: In silico protein digestion and decoy generation
+    tool: CHIMERYS internal
+    algorithm: mimic entrapment generator logic
+    parameters: decoy_strategy=shuffled, isobaric_handling=single-representative-per-isobaric-group
+    input: FASTA protein database
+    output: in silico peptide library with decoys
+    confidence: medium
+  Step 2: Coarse first search for recalibration
+    tool: CHIMERYS
+    algorithm: fast fragment ion indexing (MSFragger-like)
+    parameters: min_matched_ions=3, base_peak_required=True, top3_peak_required=True, isomer_handling=I/L collapsed to one representative
+    input: raw MS2 spectra (.raw, .mzML, or vendor format)
+    output: high-confidence PSMs for calibration
+    confidence: high
+  Step 3: Retention time and fragmentation model calibration
+    tool: CHIMERYS
+    algorithm: linear discriminant analysis (LDA)
+    parameters: rt_window_quantile=100, rt_security_factor=2.5, nce_refinement=True, mz_tolerance_recals=True
+    input: high-confidence PSMs from coarse search
+    output: refined RT model, optimized NCE, recalibrated m/z tolerances
+    confidence: high
+  Step 4: Main spectrum-centric search with RT filtering
+    tool: CHIMERYS
+    algorithm: fragment ion indexing + intensity/peak-count scoring
+    parameters: rt_tolerance_window=±(100% quantile of |ΔRT|) × 2.5, candidate_filtering=post-scoring based on RT and intensity criteria
+    input: raw MS2 spectra + calibrated models
+    output: ranked candidate peptides per spectrum
+    confidence: high
+  Step 5: Chimeric spectrum deconvolution via LASSO regression
+    tool: CHIMERYS
+    algorithm: non-negative L1-regularized linear regression (LASSO)
+    parameters: objective_function=sum((I_exp - I_pred·β)^2) + λ||β||₁, λ_selection=corrected Akaike information criterion (AICc), constraint=β_p ≥ 0, mass_channel_definition=union of matched + unmatched fragment ions within tolerance
+    input: predicted spectra matrix (P×M) + experimental spectrum intensities
+    output: CHIMERYS coefficients β_p, shadow spectra
+    confidence: high
+  Step 6: Shadow-spectrum-based re-scoring
+    tool: CHIMERYS
+    algorithm: intensity-based and counting-based scoring on interference-corrected spectra
+    parameters: quality_criteria=['min_shared_abundant_peaks'], shared_ion_handling=distributed via β optimization
+    input: shadow spectra + CHIMERYS coefficients
+    output: final scored PSMs (target/decoy)
+    confidence: medium
+  Step 7: PSM-level FDR estimation
+    tool: mokapot (vv.0.10.0+ (post-merge with streaming/RAM optimizations))
+    algorithm: machine learning–based FDR control (SVM + posterior error probability)
+    parameters: training_fdr=0.01, training_subset_size=400000, iterations=10, top_psm_per_scan_retention=False
+    input: target/decoy PSM list with scores
+    output: q-values, SVM scores, posterior error probabilities
+    confidence: high
+  Step 8: I/L isomer ambiguity resolution
+    tool: CHIMERYS internal
+    algorithm: score propagation + flagging
+    parameters: isomer_propagation=identical scores assigned to all I/L variants, flag=ambiguous
+    input: FDR-filtered PSMs
+    output: final PSM table with ambiguity flags
+    confidence: high
+  Step 9: MS2-based quantification
+    tool: CHIMERYS
+    algorithm: coefficient-weighted retention time apex estimation + peak width quantile integration borders
+    parameters: apex_calculation=CHIMERYS coefficient-weighted mean of RT deltas, integration_borders=99% quantile of peak widths at base (≥3 PSMs at 1% FDR), inclusion_file_handling=fallback RT estimation using external inclusion list
+    input: PSMs with coefficients and RTs
+    output: precursor-level quantitative features (apex, borders, integrated intensity)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/wfondrie/mokapot
+  license: BSD-3-Clause
+
+figure_recipes: 6
+  Figure 1: [workflow_diagram]
+    caption: Illustration of chimeric spectrum deconvolution in data-dependent acquisition (DDA) using CHIMERYS.
+    produced_by_step: [5]
+    visualization_tool: custom (not specified)
+  Figure 2: [other]
+    caption: Demonstration of how data acquisition parameters can be optimized to improve deconvolution performance.
+    produced_by_step: [3, 5]
+    visualization_tool: custom (not specified)
+  Figure 3: [workflow_diagram]
+    caption: Deconvolution of chimeric spectra in data-independent acquisition (DIA) mode.
+    produced_by_step: [5]
+    visualization_tool: custom (not specified)
+  Figure 4: [bar_chart]
+    caption: Coefficient-based quantification showing relative contributions of co-eluting peptides in chimeric spectra.
+    produced_by_step: [5, 9]
+    visualization_tool: custom (not specified)
+  Figure 5: [chromatogram]
+    caption: Direct infusion data illustrating spectral complexity without chromatographic separation.
+    produced_by_step: [5]
+    visualization_tool: custom (not specified)
+  Figure 6: [heatmap]
+    caption: Comparative analysis of identification and quantification performance between DDA and DIA data using CHIMERYS.
+    produced_by_step: [7, 9]
+    visualization_tool: custom (not specified)
+    statistical_test: not specified
+
+reproducibility_gaps:
+  - CHIMERYS source code not publicly available (no repository link provided)
+  - INFERYS prediction server implementation details and models not shared
+  - No raw proteomics data deposited or accession IDs reported
+  - Vendor-specific raw file formats (.raw) implied but no conversion or preprocessing steps described
+  - Cloud infrastructure (Kubernetes/AWS) setup not reproducible without configuration artifacts
+  - Custom scoring functions and shadow-spectrum logic lack mathematical or code-level specification
+  - No benchmark datasets or parameter tuning protocols disclosed for LASSO λ selection beyond AICc
+reproducibility_strengths:
+  - mokapot integration fully open-source with public GitHub repository and merged enhancements
+  - Clear mathematical formulation of LASSO objective and constraints
+  - Explicit description of RT window derivation and security factor
+  - Detailed decoy generation and I/L isomer handling logic

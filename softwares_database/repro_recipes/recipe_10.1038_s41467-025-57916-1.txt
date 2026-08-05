@@ -1,0 +1,108 @@
+========== reproducibility_recipe entry ==========
+paper_title: In-depth plasma N-glycoproteome profiling using narrow-window data-independent acquisition on the Orbitrap Astral mass spectrometer.
+source_paper: Jager S et al. (2025), Nature communications, DOI: 10.1038/s41467-025-57916-1, PMID: 40082474
+overall_reproducibility_score: 72/100
+
+workflow_steps: 7
+  Step 1: Sample preparation: plasma digestion and glycopeptide enrichment
+    tool: Cotton-HILIC SPE
+    algorithm: manual solid-phase extraction
+    parameters: sample_volume=10, unit=µL, enrichment_solvent_loading=80% ACN/0.1% TFA, wash_solvent=80% ACN/0.1% TFA, elution_solvent=50% ACN/0.1% TFA, repetitions_loading=30, repetitions_wash=3, repetitions_elution=3, elution_volume_total=300, unit_elution_volume=µL
+    input: pooled human plasma (VisuCon-F)
+    output: glycopeptide-enriched or crude peptide digest
+    confidence: high
+  Step 2: LC-MS/MS acquisition using nGlycoDIA on Orbitrap Astral
+    tool: Thermo Orbitrap Astral MS + Vanquish Neo UHPLC
+    algorithm: narrow-window DIA (nDIA)
+    parameters: ms1_resolution=120000, ms1_scan_range_mz=[955, 1655], ms1_max_injection_time_ms=100, ms1_agc_target=500, dia_isolation_window_th=3, dia_collision_energy_percent=[25, 27, 30, 35], dia_precursor_mass_range_mz=[955, 1655], dia_scan_range_mz=[150, 2000], dia_max_injection_time_ms=4, dia_agc_target=800, charge_state_default=2, dial_window_placement_optimization=True, gradient_durations_min=[10, 20, 30, 40], column_temperature_c=55, flow_rate_ul_min_initial=0.55, flow_rate_ul_min_reduced=0.3, mobile_phase_a=water + 0.1% formic acid, mobile_phase_b=80% acetonitrile + water + 0.1% formic acid
+    input: peptide digests (crude or enriched)
+    output: raw .raw files
+    confidence: high
+  Step 3: Database search for glycopeptide identification
+    tool: Byonic (v5.5.2)
+    algorithm: spectral library-free glycopeptide search
+    parameters: database=focused plasma proteome (3107 entries, Human Protein Atlas + NextProt isoforms), decoy_strategy=reverse decoys, digestion=trypsin/LysC, fully specific, max 2 missed cleavages, precursor_mass_tolerance_ppm=10, fragment_mass_tolerance_ppm=20, fixed_modifications=['carbamidomethylation of C'], variable_modifications=['oxidation of M/W', 'pyroglutamic acid on N-term Q/E'], max_modifications_per_peptide=2, max_glycans_per_peptide=1, glycan_database_size=279, max_precursors_per_ms2=2
+    input: raw .raw files
+    output: PSM-level glycopeptide identifications
+    confidence: high
+  Step 4: Alternative glycopeptide identification with open-source tools
+    tool: FragPipe (MSFragger + diaTracer + DIA-NN) (vFragPipe v22.0, MSFragger v4.1, diaTracer v1.1.5, DIA-NN v1.8.2beta8)
+    algorithm: DIA-Umpire pseudo-MS2 + library-based N-glyco-DIA
+    parameters: database=reviewed human UniProt fasta with isoforms (UP000005640), precursor_mass_tolerance_ppm=10, fragment_mass_tolerance_ppm=20, digestion=trypsin (KR), strict, max 2 miscleavages, variable_modifications=['oxidation (M, max 3)', 'pyroglutamic acid (N-term Q/C/E, max 1)'], max_modifications_per_peptide=3, workflows_enabled=['validation', 'PTM-Shepherd', 'Glyco'], dia_umpire_settings={'pseudo_ms2_enabled': True, 'mass_defect_filter': False}
+    input: raw .raw files
+    output: PSM-level glycopeptide identifications (cross-validated)
+    confidence: high
+  Step 5: False discovery rate filtering and replicate consistency filtering
+    tool: R custom script (v4.3.1)
+    algorithm: run-specific PSM score thresholding + 2/4 replicate consensus
+    parameters: psm_fdr_threshold=0.01, replicate_consensus_min=2, replicates_per_condition=4, mean_score_cutoff=167, score_cutoff_ci_lower=163.8, score_cutoff_ci_upper=176.0
+    input: Byonic PSM output tables
+    output: filtered glycoPSM table (FDR ≤1%, replicate-consistent)
+    confidence: high
+  Step 6: Statistical analysis and visualization
+    tool: R (tidyverse, ComplexHeatmap, ggplot2, etc.) (v4.3.1)
+    algorithm: ANOVA + Tukey HSD post-hoc
+    parameters: statistical_test=ANOVA, post_hoc_correction=Tukey HSD, confidence_interval_method=rcompanion::ci, clustering_method=hierarchical clustering (ComplexHeatmap default)
+    input: filtered glycoPSM table
+    output: differentially detected glycoPSMs, heatmaps, volcano-like plots, UpSet plots
+    confidence: high
+  Step 7: Ion coverage and structural glycan modeling
+    tool: multi-annotator (Rust) + GLYCAM-Web (vnot specified (GitHub repos: snijderlab/annotator, snijderlab/rustyms))
+    algorithm: manual spectral assignment + computational glycan modeling
+    parameters: structural_features_inferred=['fucose position', 'bisecting GlcNAc'], modeling_platform=GLYCAM-Web, literature_sources_used=True
+    input: fragmentation spectra + glycan composition annotations
+    output: 3D glycan models and microheterogeneity annotations
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (PRIDE)
+  processed_data: in_paper_only (Supplementary Data 1–3)
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: https://github.com/snijderlab/annotator, https://github.com/snijderlab/rustyms
+
+figure_recipes: 7
+  Fig. 1: [workflow_diagram]
+    caption: Evaluation of data-independent acquisition (DIA) of plasma glycopeptides.
+    produced_by_step: [2, 3, 4]
+    visualization_tool: ggplot2, ComplexHeatmap
+  Fig. 2: [heatmap]
+    caption: nGlycoDIA glycoproteomics data obtained for crude and glycopeptide-enriched plasma samples.
+    produced_by_step: [5, 6]
+    visualization_tool: ComplexHeatmap
+  Fig. 3: [chromatogram]
+    caption: Effect of collision energy on glycopeptide fragmentation spectra.
+    produced_by_step: [2, 3]
+    visualization_tool: ggplot2
+  Fig. 4: [bar_chart]
+    caption: Evaluation of the depth and annotatable microheterogeneity of both high abundant and low abundant plasma glycoproteins following analysis by nGlycoDIA.
+    produced_by_step: [5, 6, 7]
+    visualization_tool: ggplot2
+    statistical_test: ANOVA + Tukey HSD
+  Fig. 5: [boxplot]
+    caption: GlycoPSMs detected on low abundant cytokines in MS-based plasma proteomics.
+    produced_by_step: [5, 6]
+    visualization_tool: ggplot2
+    statistical_test: ANOVA + Tukey HSD
+  Fig. 6: [line_plot]
+    caption: Evaluating the time-efficiency of the DIA glycoproteomics methods.
+    produced_by_step: [2, 5, 6]
+    visualization_tool: ggplot2
+  Table 1: [table]
+    caption: Overview and comparison of key experimental parameters in the DDA, standard nDIA and nGlycoDIA methods.
+    produced_by_step: [2]
+    visualization_tool: Microsoft Excel / openxlsx
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository (e.g., PRIDE or MassIVE)
+  - Byonic v5.5.2 is commercial software requiring license and is not open-source
+  - Exact gradient profiles beyond duration (e.g., exact %B vs time functions) not fully specified
+  - No link to Supplementary Data 1–3 (glycan list, score cutoffs, R script) — only described as 'available'
+  - GLYCAM-Web usage lacks version or parameter details for reproducible modeling
+reproducibility_strengths:
+  - Open-source FragPipe pipeline fully specified with versions
+  - Custom Rust-based annotation tools publicly available on GitHub
+  - All R packages and versions explicitly listed
+  - Comprehensive parameter reporting for LC-MS and search engines
+  - Replicate design (4× per condition) and statistical validation (ANOVA+Tukey) clearly described

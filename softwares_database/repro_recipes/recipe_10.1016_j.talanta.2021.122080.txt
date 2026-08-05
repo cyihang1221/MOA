@@ -1,0 +1,83 @@
+========== reproducibility_recipe entry ==========
+paper_title: Feasibility study on exhaled-breath analysis by untargeted Selected-Ion Flow-Tube Mass Spectrometry in children with cystic fibrosis, asthma, and healthy controls: Comparison of data pretreatment and classification techniques.
+source_paper: Segers K et al. (2021), Talanta, DOI: 10.1016/j.talanta.2021.122080, PMID: 33592793
+overall_reproducibility_score: 30/100
+
+workflow_steps: 9
+  Step 1: SIFT-MS data acquisition
+    tool: SIFT-MS instrument
+    parameters: reagent_ions=['H3O+', 'NO+', 'O2+'], sample_type=exhaled breath, subject_groups=['cystic fibrosis', 'asthma', 'healthy controls'], n_samples=55
+    input: raw breath gas samples
+    output: full-scan SIFT-MS spectra (three ion modes per sample)
+    confidence: high
+  Step 2: Data pretreatment / preprocessing
+    tool: Direct Orthogonal Signal Correction (DOSC)
+    algorithm: DOSC
+    input: full-scan SIFT-MS spectra
+    output: DOSC-corrected spectra
+    confidence: medium
+  Step 3: Alternative preprocessing
+    tool: single value imputation + Pareto scaling
+    algorithm: single value imputation, Pareto scaling
+    parameters: imputation_method=single value imputation, scaling_method=Pareto scaling
+    input: full-scan SIFT-MS spectra
+    output: imputed and Pareto-scaled feature matrix
+    confidence: medium
+  Step 4: Classification modeling
+    tool: Linear Discriminant Analysis (LDA)
+    algorithm: LDA
+    input: preprocessed spectra (feature matrix)
+    output: class prediction model
+    confidence: low
+  Step 5: Classification modeling
+    tool: Quadratic Discriminant Analysis (QDA)
+    algorithm: QDA
+    input: preprocessed spectra (feature matrix)
+    output: class prediction model
+    confidence: low
+  Step 6: Classification modeling
+    tool: Soft Independent Modelling by Class Analogy (SIMCA)
+    algorithm: SIMCA
+    input: preprocessed spectra (feature matrix)
+    output: class prediction model
+    confidence: low
+  Step 7: Classification modeling
+    tool: Partial Least Squares - Discriminant Analysis (PLS-DA)
+    algorithm: PLS-DA
+    input: preprocessed spectra (feature matrix)
+    output: class prediction model
+    confidence: low
+  Step 8: Classification modeling
+    tool: K-Nearest Neighbours (KNN)
+    algorithm: KNN
+    input: preprocessed spectra (feature matrix)
+    output: class prediction model
+    confidence: low
+  Step 9: Classification modeling
+    tool: Classification and Regression Trees (CART)
+    algorithm: CART
+    input: preprocessed spectra (feature matrix)
+    output: class prediction model
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw SIFT-MS spectral data not deposited in any public repository
+  - No description of spectral preprocessing steps (e.g., peak alignment, baseline correction, noise filtering)
+  - No specification of software environment (e.g., R version, packages used for LDA/QDA/PLS-DA/SIMCA/KNN/CART)
+  - No code or scripts provided for DOSC implementation or combined preprocessing
+  - No details on feature selection or dimensionality reduction prior to modeling
+  - No cross-validation strategy explicitly described (e.g., k-fold, leave-one-out)
+  - No reporting of model hyperparameters (e.g., number of PLS components, K for KNN, tree depth for CART)
+reproducibility_strengths:
+  - Clear description of experimental design (n=55, three clinical groups)
+  - Explicit enumeration of six classification algorithms evaluated
+  - Transparent reporting of performance metrics (sensitivity/specificity, calibration vs. cross-validation accuracy)

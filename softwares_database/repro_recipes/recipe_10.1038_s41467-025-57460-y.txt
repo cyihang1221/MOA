@@ -1,0 +1,50 @@
+========== reproducibility_recipe entry ==========
+paper_title: Discovery of mammalian collagens I and III within ancient poriferan biopolymer spongin.
+source_paper: Ehrlich H et al. (2025), Nature communications, DOI: 10.1038/s41467-025-57460-y, PMID: 40082406
+overall_reproducibility_score: 30/100
+
+workflow_steps: 0
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 7
+  Fig. 1: [tem_micrograph]
+    caption: TEM micrographs of ultramicrotomy of non-stained, naturally occurring spongin fiber of Hippospongia communis demosponge origin.
+    visualization_tool: Digital Micrograph (Gatan)
+  Fig. 2: [nmr_spectrum]
+    caption: 13C-CP-MAS NMR spectra of collagen.
+    visualization_tool: Bruker TopSpin or similar spectrometer software
+  Fig. 3: [raman_spectrum]
+    caption: Raman spectroscopy of individual spongin fiber.
+    visualization_tool: MATLAB (MathWorks Inc.)
+  Fig. 4: [protein_gel_electrophoresis]
+    caption: Identification of collagens within spongin fibers of H. communis marine demosponge.
+    visualization_tool: Coomassie/silver staining; gel imaging system (not specified)
+  Table 1: [table]
+    caption: Proteins identified in spongin by LC-MS/MS
+    visualization_tool: ProteinScape 3.0 / DataAnalysis 4.0 (Bruker Daltonics)
+  Fig. 5: [hplc_chromatogram]
+    caption: Reverse phase C−18 HPLC chromatogram of spongin acid hydrolysis.
+    visualization_tool: HyStar 3.2 / micrOTOF-control 3.0 (Bruker Daltonics)
+  Fig. 6: [molecular_model]
+    caption: Molecular models of crosslinked collagens type I and III.
+    visualization_tool: Molecular dynamics modeling software (not specified, e.g., GROMACS, CHARMM, or commercial packages)
+
+reproducibility_gaps:
+  - No raw mass spectrometry data (e.g., .d, .raw, or mzML files) deposited or referenced
+  - No proteomics search parameters (database, enzyme specificity, FDR threshold, modifications) reported
+  - No details on LC-MS/MS data processing pipeline (peak picking, alignment, quantification, identification algorithms)
+  - No accession numbers or repository links for proteomics data (e.g., PRIDE, MassIVE)
+  - Molecular dynamics simulation software, force field, simulation length, and validation metrics not specified
+  - No code or scripts shared for MATLAB-based Raman processing (e.g., msbackadj usage, normalization logic)
+  - No metadata schema or sample annotation table provided beyond brief experimental descriptions
+reproducibility_strengths:
+  - Detailed instrument parameters for TEM, NMR, Raman, and LC-MS/MS reported
+  - Explicit chromatographic gradient and MS acquisition settings provided for LC-MS/MS
+  - Standardized collagen extraction protocols (Methods A–C) described with reagents, times, temperatures, and centrifugation conditions
+  - Use of widely recognized commercial instruments and software (Bruker, ThermoFisher, Gatan, Leica, Kaiser, Mettler Toledo)

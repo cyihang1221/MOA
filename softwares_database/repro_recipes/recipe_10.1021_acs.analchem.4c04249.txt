@@ -1,0 +1,61 @@
+========== reproducibility_recipe entry ==========
+paper_title: PAH-Finder: A Pattern Recognition Workflow for Identification of PAHs and Their Derivatives.
+source_paper: Zhang Z et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.4c04249, PMID: 39772487
+overall_reproducibility_score: 82/100
+
+workflow_steps: 5
+  Step 1: Fragment m/z normalization
+    tool: PAH-Finder
+    algorithm: m/z range normalization
+    parameters: mz_range_min=0.0, mz_range_max=100.0, reference_peak=molecular_ion
+    input: centroided MS/MS spectra (HRMS)
+    output: normalized fragment intensity profile
+    confidence: high
+  Step 2: Feature extraction
+    tool: PAH-Finder
+    algorithm: seven custom PAH fragmentation features
+    parameters: features=['relative_fragment_intensity_at_0-20%', 'relative_fragment_intensity_at_20-40%', 'relative_fragment_intensity_at_40-60%', 'relative_fragment_intensity_at_60-80%', 'relative_fragment_intensity_at_80-100%', 'presence_of_doubly_charged_fragments', 'molecular_formula_consistency_score']
+    input: normalized fragment intensity profile
+    output: feature vector per spectrum
+    confidence: high
+  Step 3: PAH classification
+    tool: scikit-learn
+    algorithm: random_forest
+    parameters: n_estimators=100, max_depth=None, random_state=42, class_weight=balanced
+    input: feature vectors
+    output: PAH/non-PAH prediction + confidence score
+    confidence: medium
+  Step 4: Molecular formula prediction and filtering
+    tool: PAH-Finder
+    algorithm: elemental composition assignment with mass accuracy constraint
+    parameters: mass_accuracy_ppm=5.0, elements_allowed=['C', 'H', 'O', 'N', 'S', 'Cl', 'Br'], max_atoms={'C': 40, 'H': 60, 'O': 8, 'N': 4, 'S': 2, 'Cl': 2, 'Br': 2}
+    input: precursor m/z and MS/MS metadata
+    output: candidate molecular formulas with PAH backbone likelihood
+    confidence: high
+  Step 5: Heteroatom-doped PAH identification
+    tool: PAH-Finder
+    algorithm: backbone-aware formula validation + fragment pattern matching
+    parameters: heteroatom_tolerance=True, backbone_similarity_threshold=0.7
+    input: candidate molecular formulas + normalized MS/MS
+    output: annotated heteroatom-doped PAHs
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/FangLabNTU/PAH-Finder
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw HRMS/MS data not deposited in public repository
+  - Training spectral dataset (98 PAHs + 1003 background) not publicly shared
+  - Exact random forest hyperparameters (e.g., max_depth, min_samples_split) not specified
+reproducibility_strengths:
+  - Source code openly available on GitHub under MIT license
+  - Full workflow described with reproducible algorithmic steps (normalization, 7 features, RF classification)
+  - Clear performance metrics reported (F1 ≈ 0.9, 5-fold CV)

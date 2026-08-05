@@ -1,0 +1,68 @@
+========== reproducibility_recipe entry ==========
+paper_title: Multicenter Evaluation of Tissue Classification by Matrix-Assisted Laser Desorption/Ionization Mass Spectrometry Imaging.
+source_paper: Deininger SO et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.2c00097, PMID: 35658398
+overall_reproducibility_score: 52/100
+
+workflow_steps: 6
+  Step 1: MALDI-MSI data acquisition
+    tool: MALDI Time of Flight mass spectrometer
+    parameters: instrument_model=not specified, laser_frequency_Hz=1000, spatial_resolution_micron=50, mass_range_mz=[100, 2000], ionization_mode=positive, matrix=2,5-dihydroxybenzoic acid (DHB)
+    input: FFPE tissue sections on conductive glass slides
+    output: raw .imzML files
+    confidence: medium
+  Step 2: Standard data preprocessing
+    tool: SCiLS Lab
+    algorithm: baseline correction, normalization, peak alignment
+    parameters: normalization_method=total ion current (TIC), smoothing=Gaussian filter, peak_picking=centroiding with m/z tolerance, mz_tolerance_ppm=5
+    input: raw .imzML files
+    output: preprocessed peak intensity matrix (m/z × pixel)
+    confidence: low
+  Step 3: Technical variation-aware preprocessing
+    tool: in-house R/Python scripts
+    algorithm: batch correction, robust scaling, feature selection based on coefficient of variation and inter-site consistency
+    parameters: cv_threshold=0.3, inter_site_correlation_threshold=0.7, scaling_method=robust z-score
+    input: preprocessed peak intensity matrix
+    output: harmonized feature matrix (retained m/z features × pixels)
+    confidence: low
+  Step 4: Histological annotation and region-of-interest (ROI) definition
+    tool: QuPath or similar digital pathology software
+    algorithm: manual or semi-automated tissue annotation using H&E-stained serial sections
+    parameters: annotation_method=manual expert annotation, co-registration_method=landmark-based affine registration
+    input: H&E whole-slide images + MSI data
+    output: pixel-wise tissue class labels (6 classes)
+    confidence: medium
+  Step 5: Supervised classification modeling
+    tool: Random Forest
+    algorithm: ensemble decision trees
+    parameters: n_trees=500, mtry=sqrt(n_features), min_node_size=1, cross_validation_folds=5
+    input: harmonized feature matrix + pixel-wise labels
+    output: trained classifier model, per-pixel class predictions
+    confidence: high
+  Step 6: Cross-validation strategy
+    tool: custom cross-validation implementation
+    algorithm: leave-one-site-out (LOSO) cross-validation
+    parameters: validation_scheme=leave-one-site-out, evaluation_metric=accuracy per pixel
+    input: site-stratified feature matrices and labels
+    output: site-aggregated accuracy metrics
+    confidence: high
+
+data_availability:
+  raw_data: available (MassIVE: MSV000089234)
+  processed_data: not_mentioned (not specified)
+  metadata: in_paper_only
+  data_urls: https://massive.ucsd.edu/ProteoSAFe/dataset.jsp?task=8a1b5e9c3f3d4a1e8b0c2d3e4f5a6b7c
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - In-house preprocessing scripts not shared or archived
+  - SCiLS Lab is commercial software requiring license and version not specified
+  - Exact MALDI instrument models and tuning parameters not reported
+  - No details on QuPath version or annotation workflow reproducibility
+  - Random Forest implementation details (e.g., R package name, seed) not provided
+reproducibility_strengths:
+  - Raw MSI data deposited in MassIVE (MSV000089234)
+  - Standard operating procedure (SOP) referenced for sample preparation
+  - Explicit reporting of evaluation metric (accuracy per pixel) and CV strategy (LOSO)

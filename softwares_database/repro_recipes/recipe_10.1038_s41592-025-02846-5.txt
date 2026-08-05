@@ -1,0 +1,69 @@
+========== reproducibility_recipe entry ==========
+paper_title: Uncovering hidden protein modifications with native top-down mass spectrometry.
+source_paper: Bennett JL et al. (2025), Nature methods, DOI: 10.1038/s41592-025-02846-5, PMID: 41023435
+overall_reproducibility_score: 72/100
+
+workflow_steps: 6
+  Step 1: Protein expression and purification
+    tool: Standard biochemical protocols
+    parameters: buffer_composition=['20 mM HEPES pH 7.5', '100 mM NaCl', '1 mM DTT', '5 mM MgCl2', '50 mM sodium phosphate pH 7.5', 'HNG buffer (50 mM HEPES pH 8.0, 150 mM NaCl, 5% glycerol)'], centrifugation_conditions=[{'g_force': 31000, 'duration_min': 60, 'temperature_c': 4}, {'g_force': 20000, 'duration_min': 20, 'temperature_c': 4}, {'g_force': 180000, 'duration_min': 60, 'temperature_c': 4}, {'g_force': 500, 'duration_min': None, 'temperature_c': None}], detergent_concentrations=['1.5% w/v n-dodecyl-β-D-maltoside', '0.15% cholesteryl hemisuccinate', '2× CMC DDM/CHS'], enzymatic_treatments=['Neuraminidase A', 'β1–4 Galactosidase S', 'β-N-Acetylhexosaminidase', 'O-Glycosidase', 'TEV protease'], reduction_conditions={'TCEP_concentration': '5 mM', 'temperature_c': 50, 'duration_min': 15}
+    input: Biological samples (cell lines, tissues, purified proteins)
+    output: Purified native protein complexes in ammonium acetate buffer
+    confidence: high
+  Step 2: Native top-down mass spectrometry (nTDMS) data acquisition
+    tool: Orbitrap Ascend Structural Biology Tribrid (vTune v.4.1.4223)
+    parameters: instrument_mode=intact protein mode, pressure_mtorr=[8, 20], resolution_ms1=[17500, 60000], resolution_ms2=240000, mass_range_ms2=['m/z 500–4000', 'm/z 1000–4000'], automatic_gain_control_target=[40000, 400000], max_inject_time_ms=500, nESI_voltage_kv=[0.8, 1.2], in_source_activation_offset_v=[0, 250], retarding_compensation_v=3, scan_averaging=999, smoothing=minimal Gaussian, laser=60-W CO2 laser (Firestar Ti60)
+    input: Purified protein complexes in ammonium acetate
+    output: Raw .raw files (Thermo Fisher format)
+    confidence: high
+  Step 3: Spectral conversion and preprocessing
+    tool: QualBrowser (vv.4.5.4747.0)
+    parameters: output_format=space-delimited text
+    input: Thermo .raw files
+    output: Deconvolution-ready text files (tab/space-delimited)
+    confidence: high
+  Step 4: Spectral deconvolution
+    tool: precisION
+    algorithm: ['continuous wavelet transformation', 'modified Richardson–Lucy deconvolution']
+    parameters: deconvolution_workflow=['rapid', 'extensive'], window_width_mz=100, point_spread_function=Gaussian with m/z-dependent sigma, iterations=None
+    input: Space-delimited text spectra
+    output: Deconvolved peak lists
+    confidence: high
+  Step 5: Isotopic envelope identification
+    tool: precisION (integrated THRASH & TopFD)
+    algorithm: ['THRASH', 'TopFD (MS-Deconv scoring)', 'TopFD (EnvCNN scoring)']
+    parameters: THRASH_fit_thresholds=varied (4 iterations), TopFD_scoring_methods=['MS-Deconv', 'EnvCNN'], envelope_clustering=by mass, features_calculated=['signal-to-noise ratio (modal peak intensity as noise)', 'custom fit score', 'interference score', 'fraction of missing peaks', 'mass errors per isotopologue', 'χ²']
+    input: Deconvolved peak lists
+    output: Annotated isotopic envelopes (fragment ions)
+    confidence: high
+  Step 6: Fragment-level open search for modification detection
+    tool: precisION
+    algorithm: Data-driven fragment-level open search
+    parameters: search_scope=unrestricted mass shifts, localization=fragment-level, quantification=intensity-based, modification_types_targeted=['phosphorylation', 'glycosylation', 'lipidation']
+    input: Annotated isotopic envelopes
+    output: Identified and localized hidden modifications (proteoforms)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: mentioned_no_link
+  code_url: https://github.com/precisION-dev/precisION
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository (e.g., ProteomeXchange, MassIVE)
+  - No accession IDs or repository links provided for raw or processed data
+  - Instrument method files (e.g., Tune settings, isolation windows) referenced but not shared
+  - Supplementary Figures (e.g., Supplementary Fig. 1, Extended Data Fig. 3) described but not included in provided text
+  - Exact chromatographic or buffer exchange conditions for gel filtration not specified (e.g., column type, flow rate, fraction collection criteria)
+reproducibility_strengths:
+  - precisION is open-source (Python 3), documented, and provides portable executables
+  - Detailed nTDMS acquisition parameters (voltages, resolution, AGC, averaging) fully reported
+  - All protein purification protocols include precise buffer compositions, centrifugation specs, and enzymatic treatments
+  - Two complementary deconvolution and envelope detection algorithms explicitly named and parameterized
+  - Software system requirements (OS, RAM) and compatibility (Orbitrap, FT-ICR) clearly stated

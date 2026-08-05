@@ -1,0 +1,66 @@
+========== reproducibility_recipe entry ==========
+paper_title: One-phase extraction coupled with photochemical reaction allows the in-depth lipid characterization of hempseeds by untargeted lipidomics.
+source_paper: Cerrato A et al. (2024), Talanta, DOI: 10.1016/j.talanta.2024.125686, PMID: 38244310
+overall_reproducibility_score: 35/100
+
+workflow_steps: 6
+  Step 1: Solid-liquid extraction optimization
+    tool: Custom experimental comparison
+    parameters: extraction_protocols_tested=5, one_phase_vs_two_phase=True
+    input: hempseed pool sample (ground)
+    output: optimized lipid extract
+    confidence: medium
+  Step 2: Photochemical derivatization via aza-Paternò-Büchi reaction
+    tool: Custom photochemical setup
+    parameters: reagent=6-azauracil, reaction_type=[2+2] cycloaddition, light_source=UV lamp, reaction_time=not specified
+    input: underivatized lipid extract
+    output: derivatized lipids (for double bond regiochemistry assignment)
+    confidence: low
+  Step 3: Untargeted HRMS data acquisition
+    tool: Orbitrap mass spectrometer
+    parameters: instrument=Thermo Scientific Q Exactive HF-X, ionization=ESI positive/negative mode, resolution=120,000, mass_range=m/z 100–1500, polarity_switching=True
+    input: derivatized and underivatized lipid extracts
+    output: raw .raw files
+    confidence: high
+  Step 4: Data processing and lipid annotation (underivatized)
+    tool: Compound Discoverer (v3.3 or later (inferred))
+    algorithm: Custom workflow for polar lipidomics
+    parameters: database_search=LipidBlast, HMDB, mzCloud, mass_tolerance_ppm=5, retention_time_window_min=0.5, min_peak_intensity=not specified, peak_grouping=enabled
+    input: raw .raw files
+    output: annotated polar lipid features (26 FAs + 158 phospholipids)
+    confidence: medium
+  Step 5: MS/MS spectral interpretation for double bond regiochemistry
+    tool: Manual and expert-driven MS/MS analysis
+    algorithm: aza-Paternò-Büchi fragment pattern matching
+    parameters: diagnostic_ions=C=N-containing fragments indicating double bond position, fragmentation_energy=HCD, stepped NCE
+    input: MS/MS spectra of derivatized lipids
+    output: regiochemical assignment of C=C bonds in fatty acyl chains
+    confidence: low
+  Step 6: Cross-sample lipid profiling
+    tool: Compound Discoverer (quantitative comparison) (v3.3 or later (inferred))
+    algorithm: Peak area-based relative quantification
+    parameters: samples_analyzed=9, strains=different hemp cultivars, normalization=internal standard not specified, filtering=presence in ≥80% of samples
+    input: Feature table from Compound Discoverer
+    output: Strain-comparative lipid profile (184 annotated lipids)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw HRMS data (.raw files) not deposited in public repository
+  - Compound Discoverer is commercial software with no open workflow export or script sharing
+  - No details on photochemical reactor setup (wavelength, irradiation time, reactor geometry)
+  - No description of internal standards or normalization strategy for cross-sample comparison
+  - Custom Compound Discoverer lipidomics workflow not shared or documented in detail
+  - MS/MS interpretation rules for aza-Paternò-Büchi fragments not codified or validated
+reproducibility_strengths:
+  - Explicit identification of derivatization chemistry ([2+2] with 6-azauracil)
+  - Clear reporting of total annotated lipids (184) and subclass breakdown (26 FAs, 158 PLs including N-acyl-PE)
+  - Comparison of 5 extraction protocols reported to justify method selection

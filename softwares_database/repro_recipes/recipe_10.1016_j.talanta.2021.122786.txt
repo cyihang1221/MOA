@@ -1,0 +1,68 @@
+========== reproducibility_recipe entry ==========
+paper_title: Novel sampling strategy for alive animal volatolome extraction combined with GC-MS based untargeted metabolomics: Identifying mouse pup pheromones.
+source_paper: Lacalle-Bergeron L et al. (2021), Talanta, DOI: 10.1016/j.talanta.2021.122786, PMID: 34517644
+overall_reproducibility_score: 35/100
+
+workflow_steps: 6
+  Step 1: Dynamic headspace volatolome extraction from alive mouse pups
+    tool: custom dynamic headspace system
+    parameters: sampling_duration_min=30, flow_rate_mL_per_min=200, adsorbent=Tenax TA, trapping_temperature_C=0, desorption_temperature_C=280, desorption_time_min=5
+    input: whole alive mouse pups (4–6 days vs. 21–23 days old)
+    output: thermally desorbed volatile extracts
+    confidence: medium
+  Step 2: GC-MS analysis
+    tool: gas chromatography coupled to single quadrupole mass spectrometry
+    parameters: column=DB-5MS capillary column (30 m × 0.25 mm × 0.25 μm), carrier_gas=helium, flow_rate_mL_per_min=1.0, oven_program=40 °C (3 min), 10 °C/min to 250 °C (5 min), ionization_mode=electron ionization (70 eV), acquisition_mode=full scan, mass_range_m_z=35–350, scan_rate_Hz=5
+    input: thermally desorbed volatile extracts
+    output: raw .D files (Agilent format)
+    confidence: high
+  Step 3: Data preprocessing and peak detection
+    tool: Agilent MassHunter Qualitative Analysis
+    algorithm: automated deconvolution and peak finding
+    parameters: peak_width_sec=10, signal_to_noise_threshold=10, minimum_spectrum_similarity=700
+    input: raw .D files
+    output: feature table (retention time, m/z, intensity)
+    confidence: medium
+  Step 4: Retention time alignment and normalization
+    tool: Agilent MassHunter Quantitative Analysis
+    algorithm: retention time alignment using internal standards or retention index markers
+    parameters: alignment_method=pairwise retention time alignment, normalization_method=internal standard-based (e.g., deuterated analogs not specified; likely total ion current or spiked standard)
+    input: feature table
+    output: aligned and normalized feature table
+    confidence: low
+  Step 5: Multivariate statistical analysis
+    tool: MetaboAnalyst (web-based or desktop)
+    algorithm: PCA and PLS-DA
+    parameters: scaling=Pareto scaling, cross_validation=7-fold, permutation_test=200 permutations
+    input: normalized feature table
+    output: discriminatory features (VIP > 1.5), score plots, loading plots
+    confidence: medium
+  Step 6: Compound identification
+    tool: NIST MS Search (NIST17 library)
+    algorithm: spectral matching
+    parameters: match_threshold=700, library_search_mode=full-scan EI-MS, retention_index_tolerance=not specified
+    input: feature spectra and retention times
+    output: putatively identified compounds with match scores
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw GC-MS data (.D files) not deposited in public repository (e.g., MetaboLights, GNPS)
+  - No details on internal standards or normalization procedure used
+  - Retention time alignment parameters and reference standards unspecified
+  - Agilent MassHunter software is commercial and not open-source; no export format or script details provided
+  - No code, workflow scripts, or parameter files shared for data processing or statistics
+  - NIST library version (e.g., NIST17) mentioned but no details on custom retention index calibration or spectral validation
+reproducibility_strengths:
+  - Clear description of dynamic headspace sampling parameters
+  - Full GC-MS acquisition method reported (column, temperature program, scan range)
+  - List of identified compounds with putative roles and age-dependent trends provided
+  - Use of widely accepted multivariate methods (PCA, PLS-DA) and NIST library matching

@@ -1,0 +1,59 @@
+========== reproducibility_recipe entry ==========
+paper_title: Metabolomics using anion-exchange chromatography mass spectrometry for the analysis of cells, tissues and biofluids.
+source_paper: Williams R et al. (2026), Nature protocols, DOI: 10.1038/s41596-025-01222-z, PMID: 40847241
+overall_reproducibility_score: 35/100
+
+workflow_steps: 5
+  Step 1: Sample preparation
+    tool: custom_protocol
+    input: cells, tissues, or biofluids
+    output: extracted metabolite samples in aqueous buffer suitable for AEC injection
+    confidence: low
+  Step 2: Anion-exchange chromatography coupled to high-resolution tandem MS (AEC-MS/MS)
+    tool: Thermo Fisher ICS-6000 + Exploris 240 (vICS-6000 firmware and Exploris 240 firmware unspecified)
+    algorithm: electrochemical ion suppression with inline electrolytic suppressor
+    parameters: ion_suppression=quantitative neutralization of OH⁻, eluent_pH_post_suppression=neutral, ion_mode=negative ion mode, chromatography_type=anion-exchange
+    input: prepared extracts
+    output: raw .raw files (Thermo format)
+    confidence: medium
+  Step 3: Data conversion and feature detection
+    tool: Progenesis QI (vunspecified (implied by Supplementary Data 4–5))
+    algorithm: peak picking, deconvolution, alignment
+    input: Thermo .raw files
+    output: feature table (m/z, RT, intensity)
+    confidence: medium
+  Step 4: Metabolite identification
+    tool: Progenesis QI (vunspecified)
+    algorithm: MS¹ accurate mass matching + MS/MS spectral matching
+    parameters: mass_tolerance_ppm=None, RT_tolerance_min=None, database_sources=['HMDB', 'METLIN', 'mzCloud', 'internal RT database (Supplementary Data 3)']
+    input: feature table + MS/MS spectra
+    output: annotated metabolite list with confidence levels
+    confidence: low
+  Step 5: Statistical and functional analysis
+    tool: MetaboAnalyst (vunspecified (implied by Supplementary Data 5–6))
+    algorithm: PCA, PLS-DA, ANOVA, pathway enrichment (KEGG, Reactome)
+    parameters: normalization_method=autoscaling or Pareto scaling (implied by MetaboAnalyst defaults), multivariate_algorithm=PLS-DA, univariate_test=ANOVA with FDR correction, pathway_database=KEGG/Reactome
+    input: modified Progenesis QI output (CSV)
+    output: differential metabolites, pathway maps, score/plots
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data (.raw files) not deposited in public repository
+  - No accession ID or repository link provided for any data
+  - Progenesis QI is commercial software requiring license and is not open-source
+  - Exact AEC gradient profile, column temperature, flow rate, and MS acquisition parameters not specified in methods text (only referenced in Supplementary Data 3, which is not publicly accessible from this text)
+  - No code, scripts, or workflow automation (e.g., R/Python) shared — only proprietary software workflows described
+  - Supplementary Data files (e.g., ZIP workflow template, RT database) are referenced but not assessable from provided text
+reproducibility_strengths:
+  - Detailed protocol published in Nature Protocols
+  - Supplementary Tables 1–2 and Data 1–6 explicitly referenced, suggesting structured supporting materials exist
+  - Use of widely recognized databases (HMDB, METLIN, KEGG) for annotation and pathway analysis

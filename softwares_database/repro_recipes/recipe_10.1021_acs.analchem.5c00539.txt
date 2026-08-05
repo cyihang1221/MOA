@@ -1,0 +1,59 @@
+========== reproducibility_recipe entry ==========
+paper_title: Integrative Analysis of Nontargeted LC-HRMS and High-Throughput Metabarcoding Data for Aquatic Environmental Studies Using Combined Multivariate Statistical Approaches.
+source_paper: Vosough M et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c00539, PMID: 40436373
+overall_reproducibility_score: 20/100
+
+workflow_steps: 5
+  Step 1: Nontarget LC-HRMS data acquisition
+    tool: LC-HRMS
+    input: raw biological/environmental water samples
+    output: raw .raw or .d files (vendor format)
+    confidence: low
+  Step 2: Region of interest-based multivariate curve resolution-alternating least squares (ROIMCR)
+    tool: ROIMCR
+    algorithm: MCR-ALS
+    parameters: region_of_interest_definition=user-defined, number_of_components=not specified, convergence_criteria=not specified
+    input: raw LC-HRMS chromatograms (likely converted to matrix format)
+    output: highly compressed NTS data matrix (resolved elution profiles & spectra)
+    confidence: low
+  Step 3: ANOVA-simultaneous component analysis (ASCA)
+    tool: ASCA
+    algorithm: ASCA decomposition
+    parameters: design_matrix_factors=['time', 'treatment', 'time:treatment_interaction'], centering=per factor level, scaling=not specified
+    input: ROIMCR-compressed NTS data + metabarcoding data matrices
+    output: global, common, and distinct variation subspaces
+    confidence: medium
+  Step 4: Structural learning and integrative decomposition (SLIDE)
+    tool: SLIDE
+    algorithm: integrative decomposition with structural learning
+    parameters: integration_mode=joint decomposition, sparsity_regularization=not specified, rank_constraints=not specified
+    input: ASCA-decomposed subspaces + aligned metabarcoding features
+    output: decomposed variation sources: global shared, partial common, distinct
+    confidence: low
+  Step 5: SLIDE-ASCA integration
+    tool: SLIDE-ASCA
+    algorithm: combined ASCA + SLIDE framework
+    parameters: variance_partitioning=temporal (74.6%), treatment, interaction, shared_space_threshold=41% global shared variance
+    input: ROIMCR-compressed NTS + 18S V9 + full-length 16S rRNA gene metabarcoding data
+    output: interpreted variation sources with chemical–biological associations
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw LC-HRMS or metabarcoding data deposition stated
+  - ROIMCR and SLIDE are not publicly documented or available software tools
+  - No implementation details for MCR-ALS parameters (e.g., number of components, constraints, convergence)
+  - No description of data preprocessing steps (peak picking, alignment, normalization) prior to ROIMCR
+  - No code, scripts, or workflow repository provided
+  - Vendor-specific raw file formats not convertible without proprietary software
+reproducibility_strengths:
+  - Explicit experimental design (mesocosm, time × treatment) described
+  - Clear conceptual framework (SLIDE-ASCA) with quantitative variance partitioning reported

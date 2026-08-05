@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: Regions of Interest Multivariate Curve Resolution Liquid Chromatography with Data-Independent Acquisition Tandem Mass Spectrometry.
+source_paper: Pérez-López C et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.2c05704, PMID: 37146285
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Data acquisition using DIA-LC-QTOF-MS
+    tool: quadrupole-time-of-flight MS
+    parameters: acquisition_mode=data-independent acquisition (DIA), chromatography=liquid chromatography
+    input: raw instrument files (.d, .raw, or equivalent vendor format)
+    output: raw MS1 and MS2 DIA data matrices
+    confidence: medium
+  Step 2: Regions of Interest Multivariate Curve Resolution (ROIMCR)
+    tool: ROIMCR
+    algorithm: multivariate curve resolution (MCR) applied to user-defined regions of interest (ROIs)
+    parameters: constraint=non-negativity, bilinear_structure_assumption=True, no_peak_matching_alignment_modeling=True
+    input: raw MS1 and MS2 DIA data matrices
+    output: resolved elution profiles and spectral profiles (MS1 & MS2) for all detectable components
+    confidence: low
+  Step 3: Compound annotation and identification
+    tool: spectral library matching
+    algorithm: direct comparison of ROIMCR-resolved MS1/MS2 spectra
+    parameters: reference_sources=['standards', 'mass spectral libraries']
+    input: ROIMCR-resolved MS1 and MS2 spectra
+    output: annotated/identified compounds
+    confidence: medium
+  Step 4: Quantification via calibration curves
+    tool: calibration modeling
+    algorithm: linear or nonlinear regression using ROIMCR elution profiles
+    parameters: response_measure=integrated elution profile area/amplitude, calibration_samples=standard mixtures
+    input: ROIMCR-resolved elution profiles + standard concentration data
+    output: predicted concentrations in unknown samples
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - ROIMCR method not publicly implemented — no software, code, or algorithmic details provided (e.g., ROI definition strategy, initialization, convergence criteria, rank estimation)
+  - Raw DIA-LC-QTOF-MS data not deposited in any public repository
+  - No information on vendor-specific data conversion (e.g., .d → open format), making raw data inaccessible to open tools
+  - Spectral library sources (e.g., NIST, MassBank, in-house) not specified
+  - No parameters for LC gradient, column, or MS settings beyond generic 'DIA' and 'QTOF'
+reproducibility_strengths:
+  - Method avoids common preprocessing steps (peak alignment, matching, modeling), reducing pipeline complexity
+  - Bilinear structure assumption explicitly stated, enabling theoretical reproducibility
+  - Application demonstrated across standard mixtures and real environmental samples (hen/gull eggs), supporting practical utility

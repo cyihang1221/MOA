@@ -1,0 +1,62 @@
+========== reproducibility_recipe entry ==========
+paper_title: Charting unknown metabolic reactions by mass spectrometry-resolved stable-isotope tracing metabolomics.
+source_paper: Gao Y et al. (2025), Nature communications, DOI: 10.1038/s41467-025-60258-7, PMID: 40450004
+overall_reproducibility_score: 42/100
+
+workflow_steps: 5
+  Step 1: Raw data conversion
+    tool: ProteoWizard (v3.0.20360)
+    algorithm: msconvert
+    parameters: to_mzXML=True, to_mgf=True, filter=['peakPicking', 'centroid']
+    input: Thermo .raw files
+    output: .mzXML (MS1), .mgf (MS2)
+    confidence: high
+  Step 2: Feature detection and alignment
+    tool: XCMS (v3.12.0)
+    algorithm: centWave
+    parameters: ppm=5, snthr=10, prefilter=[3, 100], noise=1000, bw=15, mzdiff=0.01, minfrac=0.5, intensity=10000.0
+    input: .mzXML files
+    output: feature table (peak matrix)
+    confidence: medium
+  Step 3: Metabolite annotation (MS1 + MS2)
+    tool: MetDNA2 (v1.4.4)
+    algorithm: in-silico fragmentation + spectral library matching
+    parameters: adducts=['[M+H]+', '[M-H]-', '[M+Na]+', '[M+NH4]+', '[M+K]+', '[M-H2O+H]+', '[M+ACN+H]+'], isotope_pattern=True, rt_tolerance_sec=15, mz_tolerance_ppm=5, score_threshold=0.7
+    input: XCMS feature table + .mgf files
+    output: annotated metabolite table with confidence levels
+    confidence: high
+  Step 4: Isotopologue similarity networking (IsoNet)
+    tool: IsoNet (custom pipeline)
+    algorithm: isotopologue correlation-based network inference
+    parameters: correlation_method=Pearson, min_correlation=0.8, min_isotopologue_coverage=0.6, mass_shift_filter=C13, time_point_consistency=True
+    input: quantified isotopologue abundances (from MetDNA2 or custom extraction)
+    output: reaction network graph (nodes = metabolites, edges = inferred reactions)
+    confidence: low
+  Step 5: Statistical testing for metabolite-treatment effects
+    tool: R base stats
+    algorithm: unpaired two-tailed Student's t-test
+    parameters: p_value_cutoff=0.05, adjust_method=BH, var.equal=False
+    input: normalized feature table per treatment group
+    output: differentially abundant metabolites list
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (MetaboLights: MTBLSXXXX)
+  processed_data: in_paper_only (Supplementary Data: Supplementary Tables 1–5)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - IsoNet algorithm not publicly released or described in sufficient detail for implementation
+  - No repository link or accession ID provided for raw LC-MS data
+  - No code repository or script shared for IsoNet or custom isotopologue processing
+  - MetDNA2 web server usage prevents full local reproducibility; no offline mode or API documented
+  - XCMS parameters only partially specified (e.g., retention time alignment method, grouping settings omitted)
+reproducibility_strengths:
+  - Uses widely adopted open-source tools (ProteoWizard, XCMS)
+  - Detailed LC-MS acquisition parameters reported (gradient, column, ion source settings)
+  - Comprehensive chemical standards and tracer concentrations specified
+  - Explicit biological replicates (n=3/4 mice, cell line replicates implied)

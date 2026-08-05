@@ -1,0 +1,71 @@
+========== reproducibility_recipe entry ==========
+paper_title: An LC-MS/MS assay and complementary web-based tool to quantify and predict compound accumulation in E. coli.
+source_paper: Geddes EJ et al. (2021), Nature protocols, DOI: 10.1038/s41596-021-00598-y, PMID: 34480129
+overall_reproducibility_score: 72/100
+
+workflow_steps: 3
+  Step 1: LC-MS/MS-based intracellular compound accumulation quantification
+    tool: LC-MS/MS
+    parameters: instrumentation=triple quadrupole mass spectrometer, chromatography=reverse-phase HPLC, detection_mode=multiple reaction monitoring (MRM), sample_type=E. coli cell lysates after compound exposure and washing
+    input: biological samples (E. coli cultures treated with small molecules)
+    output: quantified intracellular compound concentrations (nmol/10^12 CFUs)
+    confidence: medium
+  Step 2: Physicochemical property calculation for eNTRy rules
+    tool: Open Babel
+    algorithm: canonical SMILES generation
+    parameters: smiles_canonicalization=True
+    input: SMILES strings
+    output: calculated properties: ionizable nitrogen count, 3D descriptor (e.g., PMI, PBF), rigidity (e.g., number of rotatable bonds, ring count)
+    confidence: high
+  Step 3: Accumulation prediction using eNTRy rules
+    tool: eNTRyway
+    algorithm: rule-based classification (eNTRy: ionizable Nitrogen, low Three-dimensionality, Rigid)
+    parameters: ionizable_nitrogen_threshold=1, three_dimensionality_threshold=low (defined by principal moment of inertia ratio or similar 3D shape descriptor), rigidity_threshold=high (e.g., rotatable bond count ≤ 3, ≥2 rings)
+    input: SMILES strings + calculated physicochemical properties
+    output: binary accumulation prediction (yes/no) and prioritized ranking
+    confidence: medium
+
+data_availability:
+  raw_data: in_paper_only (Source Data Fig. 4)
+  processed_data: in_paper_only (Source Data Fig. 4)
+  metadata: in_paper_only
+  data_urls: https://doi.org/10.1038/s41596-021-00598-y, https://www.nature.com/articles/s41596-021-00598-y#Sec33
+
+code_availability: repository_linked
+  code_url: https://entryway.illinois.edu
+  license: not_mentioned
+
+figure_recipes: 5
+  Fig. 1: [workflow_diagram]
+    caption: Schematic overview of the accumulation workflow, including experimental assay and computational prediction stages.
+    produced_by_step: [1, 3]
+    visualization_tool: not_mentioned
+  Fig. 2: [workflow_diagram]
+    caption: Detailed step-by-step LC-MS/MS accumulation assay workflow, from bacterial culture to MRM quantification.
+    produced_by_step: [1]
+    visualization_tool: not_mentioned
+  Fig. 3: [workflow_diagram]
+    caption: User interface and prediction process in eNTRyway web tool, showing SMILES input and rule-based output.
+    produced_by_step: [2, 3]
+    visualization_tool: not_mentioned
+  Fig. 4: [bar_chart]
+    caption: Validation of predicted vs. experimentally measured accumulation for benchmark compounds (e.g., ampicillin, penicillin, DNM).
+    produced_by_step: [1, 3]
+    visualization_tool: not_mentioned
+    statistical_test: correlation analysis (R² reported)
+  Fig. 5: [calibration_curve]
+    caption: LC-MS/MS calibration curve and representative MRM chromatogram/spectrum for quantification.
+    produced_by_step: [1]
+    visualization_tool: not_mentioned
+    statistical_test: linear regression (R² > 0.99)
+
+reproducibility_gaps:
+  - Raw LC-MS/MS raw files (.raw, .wiff, .d) not deposited in public repository (e.g., MetaboLights, MassIVE)
+  - Exact LC gradient method, column temperature, flow rate, and MRM transitions not specified in methods text
+  - No access to underlying eNTRyway source code or training data for the eNTRy rules
+  - No description of internal validation metrics (e.g., cross-validation strategy, test set size) for eNTRyway model
+reproducibility_strengths:
+  - Web tool eNTRyway publicly accessible and functional
+  - SMILES-based input standardizes compound representation
+  - Source Data spreadsheets provided for Figs. 4 and 5 (quantitative accumulation values and calibration data)
+  - Key physicochemical descriptors explicitly defined (ionizable N, 3D, rigidity)

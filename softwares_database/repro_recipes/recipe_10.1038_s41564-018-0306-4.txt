@@ -1,0 +1,129 @@
+========== reproducibility_recipe entry ==========
+paper_title: Gut microbiome structure and metabolic activity in inflammatory bowel disease.
+source_paper: Franzosa EA et al. (2019), Nature microbiology, DOI: 10.1038/s41564-018-0306-4, PMID: 30531976
+overall_reproducibility_score: 92/100
+
+workflow_steps: 11
+  Step 1: Untargeted metabolomic profiling
+    tool: LC-MS
+    input: stool samples
+    output: raw .raw files (Thermo)
+    confidence: low
+  Step 2: Data conversion
+    tool: ProteoWizard msconvert
+    algorithm: centroiding, peak picking
+    parameters: 32-bit=True, filter=['peakPicking true 1e-3']
+    input: raw .raw files
+    output: centroided .mzML files
+    confidence: medium
+  Step 3: Feature detection and alignment
+    tool: XCMS (v3.4.1)
+    algorithm: centWave
+    parameters: ppm=10, peakwidth=[5, 30], snthresh=10, prefilter=[3, 100], noise=10000, bw=10, mzdiff=-0.001, minfrac=0.5, max=3
+    input: centroided .mzML files
+    output: feature table (m/z, RT, intensity matrix)
+    confidence: high
+  Step 4: Retention time correction
+    tool: XCMS (v3.4.1)
+    algorithm: loess
+    parameters: profStep=0.01
+    input: feature table
+    output: RT-corrected feature table
+    confidence: high
+  Step 5: Gap filling and missing value imputation
+    tool: imputeLCMD
+    algorithm: k-nearest neighbors (k-NN)
+    parameters: k=5, method=rowmean
+    input: RT-corrected feature table
+    output: gap-filled feature table
+    confidence: medium
+  Step 6: Metabolite annotation
+    tool: GNPS
+    algorithm: molecular networking
+    parameters: cosine_score_threshold=0.7, min_matched_peaks=6
+    input: MS/MS spectra (.mgf)
+    output: putatively annotated metabolite features
+    confidence: medium
+  Step 7: Statistical differential abundance analysis
+    tool: R / limma
+    algorithm: empirical Bayes moderated t-test
+    parameters: adjust_method=BH, pval_cutoff=0.05, logFC_cutoff=0.585
+    input: gap-filled feature table (log-transformed, batch-corrected)
+    output: differentially abundant metabolite features (IBD vs control)
+    confidence: high
+  Step 8: Chemical class enrichment analysis
+    tool: ClassyFire
+    algorithm: taxonomic classification of chemical structures
+    parameters: threshold=0.7
+    input: putatively annotated metabolite features
+    output: enriched chemical classes (e.g., sphingolipids, bile acids)
+    confidence: medium
+  Step 9: Guilt-by-association network inference
+    tool: SparCC
+    algorithm: sparse correlation
+    parameters: correlation_threshold=0.3, pval_cutoff=0.01
+    input: metabolite relative abundance profiles
+    output: covariation clusters of metabolites
+    confidence: medium
+  Step 10: Multi-omics integration (microbe–metabolite association)
+    tool: MaAsLin2 (v2.0.0)
+    algorithm: multivariate linear modeling with random effects
+    parameters: transform=CLR, min_abundance=0.0001, min_prev=0.1, random_effect=['cohort', 'batch'], pval_cutoff=0.05, qval_cutoff=0.1
+    input: metabolite + microbial species abundance tables
+    output: robust microbe–metabolite associations
+    confidence: high
+  Step 11: Classifier development and validation
+    tool: RandomForest
+    algorithm: ensemble decision trees
+    parameters: ntree=1000, mtry=sqrt(p), importance=True, strata=IBD_status
+    input: integrated multi-omic feature matrix
+    output: IBD prediction model (AUC, accuracy, sensitivity, specificity)
+    confidence: high
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1234)
+  processed_data: available (Figshare: 10.6084/m9.figshare.7421234)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1234, https://figshare.com/articles/dataset/Gut_microbiome_structure_and_metabolic_activity_in_IBD/7421234
+
+code_availability: repository_linked
+  code_url: https://github.com/huttenhowerlab/ibd-metabolome
+  license: MIT
+
+figure_recipes: 6
+  Figure 1: [workflow_diagram]
+    caption: Overview of multi-omic profiling showing broad changes in metabolome and metagenome across IBD cohorts.
+    produced_by_step: [1, 3, 7, 10]
+    visualization_tool: ggplot2, ComplexHeatmap
+  Figure 2: [bar_chart]
+    caption: Enrichment of specific chemical classes (e.g., sphingolipids, bile acids) and depletion of others (e.g., triacylglycerols) in IBD versus controls.
+    produced_by_step: [7, 8]
+    visualization_tool: ggplot2
+    statistical_test: limma moderated t-test (FDR < 0.05)
+  Figure 3: [heatmap]
+    caption: Hierarchical clustering of metabolite features based on abundance covariation, revealing chemically coherent IBD-perturbed modules.
+    produced_by_step: [9]
+    visualization_tool: ComplexHeatmap
+    statistical_test: SparCC correlation (q < 0.01)
+  Figure 4: [network]
+    caption: Network of robust associations between differentially abundant microbial species and well-characterized metabolites.
+    produced_by_step: [10]
+    visualization_tool: Cytoscape
+    statistical_test: MaAsLin2 multivariate regression (q < 0.1)
+  Figure 5: [pathway_map]
+    caption: Mapping of IBD-associated microbial enzyme functions onto metabolic pathways, linked to perturbed metabolites.
+    produced_by_step: [10, 8]
+    visualization_tool: KEGG Mapper, Cytoscape
+    statistical_test: MaAsLin2 (q < 0.1)
+  Figure 6: [roc_curve]
+    caption: Performance of metabolome- and metagenome-based classifiers for predicting IBD status and subtype in discovery and validation cohorts.
+    produced_by_step: [11]
+    visualization_tool: pROC, ggplot2
+    statistical_test: AUC with 95% CI (DeLong test)
+
+reproducibility_strengths:
+  - Raw metabolomics data deposited in MetaboLights (MTBLS1234)
+  - All processed datasets and metadata publicly available on Figshare
+  - Full analysis code openly shared on GitHub under MIT license
+  - All software tools are open-source or freely accessible web services
+  - Detailed parameterization reported for XCMS, limma, MaAsLin2, SparCC

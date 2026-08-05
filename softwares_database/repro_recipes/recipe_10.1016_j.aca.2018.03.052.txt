@@ -1,0 +1,56 @@
+========== reproducibility_recipe entry ==========
+paper_title: MetExpert: An expert system to enhance gas chromatography‒mass spectrometry-based metabolite identifications.
+source_paper: Qiu F et al. (2018), Analytica chimica acta, DOI: 10.1016/j.aca.2018.03.052, PMID: 30292308
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: In silico derivatization
+    tool: MetExpert
+    algorithm: TMS-derivatization simulation
+    input: molecular structure (e.g., SMILES)
+    output: derivatized molecular structures
+    confidence: medium
+  Step 2: Metabolite-likeness evaluation
+    tool: MetExpert
+    algorithm: metabolite-likeness scoring model
+    input: candidate molecular structures (from PubChem or other databases)
+    output: metabolite-likeness scores
+    confidence: medium
+  Step 3: Retention index prediction
+    tool: MetExpert
+    algorithm: artificial neural network (ANN)
+    input: molecular descriptors
+    output: predicted retention indices (RI)
+    confidence: medium
+  Step 4: Substructure prediction
+    tool: MetExpert
+    algorithm: PLS-DA-based quantitative structure–spectra relationship (QSSR) model
+    input: EI-MS spectra
+    output: predicted substructures
+    confidence: medium
+  Step 5: Weighted candidate scoring and ranking
+    tool: MetExpert
+    algorithm: weighted integration of three orthogonal scores (metabolite-likeness, RI match, substructure match)
+    input: candidate molecules with metabolite-likeness scores, predicted vs. observed RI residuals, substructure match scores
+    output: ranked metabolite identification candidates
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No mention of raw GC-MS data availability
+  - MetExpert software not publicly released or linked
+  - No version, source code, or installation instructions provided
+  - ANN and PLS-DA model architectures and training data not described
+  - Weighting scheme for orthogonal scores unspecified
+  - No benchmark dataset or parameter settings disclosed for reproduction
+reproducibility_strengths:
+  - Explicit description of four functional modules and their biological/chemical rationale
+  - Clear conceptual framework using orthogonal evidence (formula, RI, spectrum)

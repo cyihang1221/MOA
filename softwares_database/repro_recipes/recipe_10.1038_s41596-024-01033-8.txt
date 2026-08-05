@@ -1,0 +1,52 @@
+========== reproducibility_recipe entry ==========
+paper_title: Massively parallel sample preparation for multiplexed single-cell proteomics using nPOP.
+source_paper: Leduc A et al. (2024), Nature protocols, DOI: 10.1038/s41596-024-01033-8, PMID: 39117766
+overall_reproducibility_score: 40/100
+
+workflow_steps: 0
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/ParallelSquared/QuantQC
+  license: MIT
+
+figure_recipes: 7
+  Figure 1: [workflow_diagram]
+    caption: Schematic overview of the nPOP workflow for massively parallel single-cell sample preparation.
+    visualization_tool: Adobe Illustrator or similar vector graphics software
+  Figure 2: [bar_chart]
+    caption: Comparison of sample preparation time and MS throughput using nPOP versus conventional methods.
+    visualization_tool: GraphPad Prism or R/ggplot2
+  Figure 3: [other]
+    caption: Droplet camera images assessing droplet stability on glass slides during nPOP processing.
+    visualization_tool: Custom image analysis (not specified)
+  Figure 4: [other]
+    caption: Head camera images used to evaluate slide quality and droplet deposition fidelity.
+    visualization_tool: Custom image analysis (not specified)
+  Figure 5: [table]
+    caption: Summary statistics of plexDIA 3-plex data generated via nPOP, including protein IDs, median CVs, and dynamic range.
+    visualization_tool: R/QuantQC or Excel
+  Figure 6: [boxplot]
+    caption: Assessment of quantitative accuracy across plexDIA samples using spike-in standards or technical replicates.
+    visualization_tool: R/QuantQC or GraphPad Prism
+    statistical_test: Pearson correlation, coefficient of variation (CV) calculation
+  Figure 7: [bar_chart]
+    caption: Throughput demonstration showing >1,000 single cells processed per day with 800–1,200 proteins quantified per cell using isobaric tagging and pSCoPE.
+    visualization_tool: R/QuantQC or GraphPad Prism
+
+reproducibility_gaps:
+  - No description of mass spectrometry data processing pipeline (e.g., search engine, FDR settings, quantification method)
+  - No details on LC-MS acquisition parameters (gradient, column, instrument method)
+  - No specification of proteomics software stack beyond QuantQC (e.g., MaxQuant version, search database, enzyme specificity, modifications)
+  - Raw MS data not deposited in public repository (e.g., PRIDE, MassIVE)
+  - nPOP hardware dependency on proprietary CellenONE robot without open alternative
+  - plexDIA and pSCoPE multiplexing reagents not publicly available or characterized in detail
+reproducibility_strengths:
+  - QuantQC R package publicly available on GitHub with MIT license
+  - Supplementary Data 1 and 2 provided as QuantQC reports (implied availability)
+  - Protocol published in Nature Protocols with step-by-step experimental instructions
+  - Reference to MaxQuant modification table for TMT 32-plex in Supplementary Software 1

@@ -1,0 +1,55 @@
+========== reproducibility_recipe entry ==========
+paper_title: Single-cell structural lipidomics using a miniature dual-LIT mass spectrometer.
+source_paper: Cai Z et al. (2026), Chemical science, DOI: 10.1039/d5sc08665e, PMID: 41497174
+overall_reproducibility_score: 25/100
+
+workflow_steps: 5
+  Step 1: Single-cell lipid extraction and spotting
+    tool: manual microextraction
+    input: single mammalian cell (MDA-MB-468, K562)
+    output: lipid extract on MALDI target
+    confidence: low
+  Step 2: Mass spectrometry data acquisition
+    tool: miniature dual-LIT mass spectrometer
+    algorithm: multi-stage MS^n (n = 2–4)
+    parameters: ms_levels=[2, 3, 4], ion_processing_mode=enhanced ion utilization
+    input: lipid extract on MALDI target
+    output: MS1, MS2, MS3, MS4 spectra
+    confidence: medium
+  Step 3: Lipid annotation at multiple structural levels
+    tool: custom interpretation of MS^n spectral trees
+    algorithm: fragment pattern matching for sn-position, C=C location, acyl sum composition
+    parameters: annotation_levels=['acyl-chain sum composition', 'sn-position', 'C=C location', 'C=C/sn-position combined'], lipid_classes_targeted=['PC', 'PE']
+    input: MS1–MS4 spectra
+    output: structurally annotated lipid list (≥100 species per cell)
+    confidence: low
+  Step 4: Comparative structural isomer analysis
+    tool: manual or semi-automated spectral comparison
+    algorithm: relative fragment intensity analysis across cell populations
+    parameters: comparisons=['doxorubicin-resistant vs. sensitive K562'], isomer_types_analyzed=['sn-position', 'C=C location']
+    input: annotated lipid spectra per cell
+    output: differential structural isomer profiles
+    confidence: low
+  Step 5: Biological correlation with ferroptosis response
+    tool: statistical correlation analysis
+    algorithm: not specified
+    input: structural lipidomic profiles + ferroptosis response data
+    output: lipidome–ferroptosis response correlations
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw spectral data deposited in public repository (e.g., MetaboLights, MassIVE)
+  - Miniature dual-LIT instrument is custom-built; no hardware specifications or firmware version provided
+  - No software tools, scripts, or spectral interpretation pipelines shared or cited
+  - No details on lipid extraction protocol (solvents, volumes, internal standards, replication)
+  - No statistical methods or significance thresholds reported for isomer comparisons or ferroptosis correlations
+  - All annotation steps described qualitatively — no validation metrics (e.g., FDR, match scores) or reference standards used

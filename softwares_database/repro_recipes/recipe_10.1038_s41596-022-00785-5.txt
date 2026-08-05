@@ -1,0 +1,106 @@
+========== reproducibility_recipe entry ==========
+paper_title: Comprehensive multi-attribute method workflow for biotherapeutic characterization and current good manufacturing practices testing.
+source_paper: Millán-Martín S et al. (2023), Nature protocols, DOI: 10.1038/s41596-022-00785-5, PMID: 36526726
+overall_reproducibility_score: 42/100
+
+workflow_steps: 6
+  Step 1: Proteolytic digestion
+    tool: Trypsin
+    parameters: digestion_time_min=120, temperature_celsius=37, pH=8.0
+    input: intact biotherapeutic protein sample
+    output: tryptic peptide mixture
+    confidence: medium
+  Step 2: Reversed-phase chromatographic separation
+    tool: UHPLC
+    parameters: column_type=C18, column_dimensions=['150 × 2.1 mm', '250 × 2.1 mm'], particle_size_um=[3.0, 2.2], gradient_profile=not fully specified, flow_rate_ml_min=not specified, temperature_celsius=not specified
+    input: tryptic peptide mixture
+    output: chromatographically separated peptides
+    confidence: low
+  Step 3: High-resolution LC-MS analysis (discovery phase)
+    tool: High-resolution mass spectrometer
+    parameters: mass_resolution=high_resolution, mass_tolerance_ppm=not specified, scan_mode=data-dependent acquisition (DDA), ionization_mode=electrospray ionization (ESI)
+    input: chromatographically separated peptides
+    output: raw .raw or .d files (vendor format)
+    confidence: low
+  Step 4: Peptide identification and library creation
+    tool: Proteomics search engine (e.g., Byonic, Proteome Discoverer, or similar)
+    algorithm: database search against biopharmaceutical primary sequence
+    parameters: enzyme=trypsin, max_missed_cleavages=2, fixed_modifications=['carbamidomethylation of C'], variable_modifications=['oxidation of M', 'deamidation of N/Q'], mass_tolerance_ppm=not specified, FDR_threshold=0.01
+    input: raw MS data + protein sequence database
+    output: targeted peptide library (retention time + accurate mass)
+    confidence: medium
+  Step 5: Targeted monitoring phase with differential analysis
+    tool: Targeted LC-MS software (e.g., Thermo Compound Discoverer, Skyline, or equivalent)
+    algorithm: new peak detection via differential analysis
+    parameters: rt_window_min=0.5, mass_tolerance_ppm=not specified, threshold_for_change=not quantified, baseline_correction=implied
+    input: raw MS data + targeted peptide library
+    output: quantified PQAs (presence/absence/change of modifications/impurities)
+    confidence: low
+  Step 6: System suitability testing (SST)
+    tool: NISTmAb tryptic digest reference standard
+    parameters: acceptance_criteria=['peak shape', 'retention time reproducibility', 'signal-to-noise ratio', 'peak area precision'], columns_tested=['Hypersil Gold', 'Acclaim C18']
+    input: reference standard digest
+    output: SST report (pass/fail per attribute)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 10
+  Figure 1: [workflow_diagram]
+    caption: Overview of the MAM workflow from process development to product characterization.
+    produced_by_step: [1, 2, 3, 4, 5, 6]
+    visualization_tool: Not specified
+  Figure 2: [workflow_diagram]
+    caption: In-solution trypsin digestion workflow for IgG1 monoclonal antibodies.
+    produced_by_step: [1]
+    visualization_tool: Not specified
+  Figure 3: [workflow_diagram]
+    caption: Automated trypsin digestion workflow for IgG1 monoclonal antibodies.
+    produced_by_step: [1]
+    visualization_tool: Not specified
+  Figure 4: [bar_chart]
+    caption: Comparison of in-solution versus automated digestion workflows.
+    produced_by_step: [1]
+    visualization_tool: Not specified
+  Figure 5: [table]
+    caption: System suitability test (SST) summary.
+    produced_by_step: [6]
+    visualization_tool: Not specified
+  Figure 6: [chromatogram]
+    caption: Peptide mapping analysis for three different biopharmaceuticals used to develop the MAM workflow.
+    produced_by_step: [3, 4]
+    visualization_tool: Not specified
+  Figure 7: [other]
+    caption: Data processing summary screenshot.
+    produced_by_step: [4, 5]
+    visualization_tool: Not specified
+  Figure 8: [bar_chart]
+    caption: SST performed on two different C18 columns using NISTmAb tryptic digest.
+    produced_by_step: [6]
+    visualization_tool: Not specified
+  Figure 9: [chromatogram]
+    caption: Evaluation of NISTmAb peptide mapping after in-solution trypsin digestion on three different UHPLC systems.
+    produced_by_step: [2, 3, 4]
+    visualization_tool: Not specified
+  Figure 10: [chromatogram]
+    caption: Identification and integration of oxidized peptide WQQGNVFSCSVMHEALHNHYTQK over cell culture batch time.
+    produced_by_step: [4, 5]
+    visualization_tool: Not specified
+
+reproducibility_gaps:
+  - Raw LC-MS data not deposited in public repository
+  - No access to vendor-specific raw file formats (.raw, .d) or conversion tools
+  - Commercial software tools (e.g., Byonic, Compound Discoverer) not specified by version or configuration
+  - Exact LC gradient profiles, flow rates, column temperatures, and MS acquisition parameters omitted
+  - No code or scripts shared for data processing or differential analysis
+  - No statistical thresholds (e.g., fold-change, p-value) defined for 'change' detection in monitoring phase
+reproducibility_strengths:
+  - Detailed experimental workflow described (digestion, columns, standards)
+  - Use of community reference standard (NISTmAb)
+  - Explicit description of two digestion workflows (in-solution vs automated)
+  - SST criteria outlined qualitatively (peak shape, RT reproducibility, S/N, precision)

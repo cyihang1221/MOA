@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: rMSIfragment: improving MALDI-MSI lipidomics through automated in-source fragment annotation.
+source_paper: Baquer G et al. (2023), Journal of cheminformatics, DOI: 10.1186/s13321-023-00756-2, PMID: 37715285
+overall_reproducibility_score: 72/100
+
+workflow_steps: 4
+  Step 1: In-source fragment annotation of lipid features
+    tool: rMSIfragment
+    algorithm: adduct- and fragmentation-pathway-based scoring
+    parameters: score_threshold=None, adduct_list=None, fragmentation_rules=None
+    input: MALDI-MSI peak list (m/z, intensity, spatial coordinates)
+    output: ranked lipid annotations with confidence scores
+    confidence: medium
+  Step 2: Annotation confidence evaluation
+    tool: ROC analysis
+    algorithm: Receiver Operating Characteristic
+    parameters: auc_threshold=0.7
+    input: rMSIfragment annotation scores vs. HPLC-MS validated ground truth
+    output: AUC metric, ranking performance assessment
+    confidence: high
+  Step 3: Target-decoy validation
+    tool: Target-decoy strategy
+    algorithm: decoy annotation generation and false discovery rate estimation
+    parameters: decoy_generation_method=None, FDR_control=None
+    input: annotated lipid candidates (target + decoy)
+    output: FDR-calibrated annotation confidence
+    confidence: medium
+  Step 4: Comparative annotation error analysis
+    tool: custom R analysis
+    algorithm: false positive count comparison (with vs. without in-source fragment consideration)
+    parameters: comparison_metric=number_of_incorrect_annotations
+    input: two annotation sets: standard vs. rMSIfragment-augmented
+    output: quantified reduction in false positives
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/ramanlab/rMSIfragment
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw MALDI-MSI datasets not deposited in public repository
+  - No specification of exact adduct lists or fragmentation rules used
+  - No details on HPLC-MS validation dataset (source, parameters, accession)
+reproducibility_strengths:
+  - rMSIfragment is open-source (MIT license) and hosted on GitHub
+  - Uses standard, reproducible validation frameworks (ROC, target-decoy)
+  - Method explicitly designed for multi-platform MALDI-MSI applicability

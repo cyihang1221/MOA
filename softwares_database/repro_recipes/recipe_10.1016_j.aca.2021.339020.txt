@@ -1,0 +1,80 @@
+========== reproducibility_recipe entry ==========
+paper_title: Cannabinoids vs. whole metabolome: Relevance of cannabinomics in analyzing Cannabis varieties.
+source_paper: Vásquez-Ocmín PG et al. (2021), Analytica chimica acta, DOI: 10.1016/j.aca.2021.339020, PMID: 34625242
+overall_reproducibility_score: 72/100
+
+workflow_steps: 8
+  Step 1: Data acquisition via untargeted LC-MS
+    tool: LC-MS platform unspecified
+    input: plant tissue extracts (Cannabis sativa varieties)
+    output: raw .d or .raw files (vendor format)
+    confidence: low
+  Step 2: Data preprocessing and feature detection
+    tool: XCMS
+    algorithm: centWave
+    parameters: peakwidth=[10, 60], mzdiff=-0.001, snthresh=10, prefilter=[3, 100], noise=1000, sleep=0
+    input: raw vendor files
+    output: feature table (m/z, RT, intensity)
+    confidence: medium
+  Step 3: Retention time alignment and correction
+    tool: XCMS
+    algorithm: obiwarp
+    parameters: profStep=0.002
+    input: feature list from centWave
+    output: aligned feature table
+    confidence: medium
+  Step 4: Gap filling and missing value imputation
+    tool: XCMS
+    algorithm: fillPeaks
+    parameters: max=0.3, minfrac=0.5
+    input: aligned feature table
+    output: filled/filtered feature matrix
+    confidence: medium
+  Step 5: Statistical analysis and differential feature selection
+    tool: MetaboAnalyst
+    algorithm: univariate t-test with FDR correction
+    parameters: p_value_cutoff=0.05, fdr_method=Benjamini-Hochberg
+    input: filled/filtered feature matrix
+    output: list of statistically significant features
+    confidence: high
+  Step 6: Multivariate statistical analysis
+    tool: MetaboAnalyst
+    algorithm: PCA and PLS-DA
+    parameters: n_components=2, cv=7, perm_num=200
+    input: normalized feature matrix
+    output: scores/plots, VIP scores, model metrics
+    confidence: high
+  Step 7: Metabolite annotation
+    tool: MetaboAnalyst
+    algorithm: MS1-based annotation using HMDB, KEGG, LipidMaps
+    parameters: mass_tolerance_ppm=5, rt_tolerance_sec=30
+    input: significant m/z features
+    output: putatively annotated metabolites
+    confidence: medium
+  Step 8: Targeted phytocannabinoid quantification
+    tool: HPLC-DAD or LC-MS/MS (unspecified)
+    input: same plant extracts
+    output: concentrations of 11 phytocannabinoids (e.g., Δ⁹-THC, CBD)
+    confidence: low
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1529)
+  processed_data: available (MetaboLights: MTBLS1529)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1529
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of LC gradient method or column specifications
+  - No details on sample preparation (extraction solvent, duration, temperature)
+  - Targeted quantification method not specified (instrument, parameters, standards)
+  - No mention of R scripts or custom code used for integration or visualization
+  - XCMS parameter values reported but no version or R environment details
+reproducibility_strengths:
+  - Raw and processed data publicly available in MetaboLights (MTBLS1529)
+  - Uses widely adopted open-source (XCMS) and free web-based tools (MetaboAnalyst)
+  - Clear statistical thresholds and FDR correction method stated
+  - Consistent use of standard databases (HMDB, KEGG) for annotation

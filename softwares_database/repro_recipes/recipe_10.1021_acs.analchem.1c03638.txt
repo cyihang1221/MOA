@@ -1,0 +1,79 @@
+========== reproducibility_recipe entry ==========
+paper_title: Comprehensive Evaluation of Blood Plasma and Serum Sample Preparations for HRMS-Based Chemical Exposomics: Overlaps and Specificities.
+source_paper: Chaker J et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.1c03638, PMID: 34985855
+overall_reproducibility_score: 35/100
+
+workflow_steps: 8
+  Step 1: Sample preparation using 12 methods
+    tool: custom laboratory protocols
+    parameters: methods=['phospholipid and protein removal plates (PLR)', 'solid phase extraction plates (SPE)', 'supported liquid extraction cartridge (SLE)', 'protein precipitation (PPT)'], biological_matrix=['blood plasma', 'serum'], replicates=3
+    input: fresh/frozen blood plasma and serum samples
+    output: extracted samples ready for LC-HRMS analysis
+    confidence: medium
+  Step 2: LC-HRMS data acquisition
+    tool: liquid chromatography-high-resolution mass spectrometry
+    parameters: instrumentation=not specified, chromatography=not fully specified, mass_analyzer=high-resolution (e.g., Q-TOF or Orbitrap), ionization=ESI (implied by context of small molecules and exposome), polarity=['positive', 'negative']
+    input: prepared extracts
+    output: raw .d or .raw files (vendor format)
+    confidence: low
+  Step 3: Feature detection and peak picking
+    tool: XCMS
+    algorithm: centWave
+    parameters: peak_width=[5, 30], mz_tolerance_ppm=5, snthresh=10
+    input: raw .d/.raw files
+    output: feature table (m/z, RT, intensity)
+    confidence: medium
+  Step 4: Retention time alignment and correction
+    tool: XCMS
+    algorithm: loess
+    parameters: span=0.3
+    input: feature list from multiple runs
+    output: aligned feature table
+    confidence: medium
+  Step 5: Gap filling and missing value imputation
+    tool: XCMS
+    algorithm: fillPeaks
+    parameters: max_gap=0.25, max_fill=0.5
+    input: aligned feature table
+    output: filled feature table with reduced missingness
+    confidence: medium
+  Step 6: Quality control and repeatability assessment
+    tool: in-house R scripts / custom metrics
+    parameters: metrics=['detection frequency', 'recoveries', 'repeatability (CV%)', 'matrix effect', 'low-level spiking significance', 'method detection limits', 'throughput', 'ease of use']
+    input: filled feature table + QC sample intensities
+    output: quantitative/qualitative SPM performance scores
+    confidence: low
+  Step 7: Batch repeatability monitoring
+    tool: custom statistical evaluation
+    parameters: samples=['cohort plasma', 'cohort serum'], SPM_compared=['PPT', 'PLR'], injection_replicates=3
+    input: feature table from cohort samples
+    output: batch-to-batch CV%, feature overlap statistics (43–54%)
+    confidence: medium
+  Step 8: Metabolite annotation
+    tool: in-house annotation pipeline
+    algorithm: MS1 + MS/MS matching
+    parameters: databases=['HMDB', 'METLIN', 'ChemSpider', 'mzCloud'], mass_tolerance_ppm=5, RT_tolerance_sec=10, fragment_match_threshold=0.3
+    input: feature table + MS/MS spectra
+    output: annotated chemical features (level 1–2)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-HRMS data not deposited in public repository (e.g., MetaboLights, MassIVE)
+  - No details on LC gradient, column type, flow rate, or HRMS instrument model/settings
+  - XCMS parameters only partially reported (e.g., no 'prefilter' or 'bw' values given)
+  - Custom R scripts and annotation pipeline not shared or described in sufficient detail
+  - No access to SPM-specific metadata (e.g., lot numbers, reagent batches, operator IDs)
+  - Quantitative criteria implementation (e.g., 'low-level spiking significance') not algorithmically defined
+reproducibility_strengths:
+  - 12 sample preparation methods explicitly named and categorized
+  - Clear reporting of key performance metrics (43–54% feature overlap, CV%, MDL)
+  - Use of open-source XCMS for core feature detection and alignment

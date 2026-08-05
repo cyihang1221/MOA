@@ -1,0 +1,61 @@
+========== reproducibility_recipe entry ==========
+paper_title: Rapid Selective Detection of Phosphatidylethanols by Neutral Loss Scans in Tandem Mass Spectrometry to Evaluate Alcohol Consumption.
+source_paper: Ali MM et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c04552, PMID: 41350237
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Sample preparation and cationization
+    tool: chemical derivatization
+    algorithm: aziridination + adduct formation
+    parameters: cations_tested=['Li+', 'Na+', 'NH4+'], optimal_cation=Na+
+    input: whole blood or dried blood spot (DBS) samples
+    output: Na+-adducted PEth species
+    confidence: high
+  Step 2: Neutral loss (NL) scanning for selective detection
+    tool: triple quadrupole mass spectrometer
+    algorithm: neutral loss scan (NL = 126 Da)
+    parameters: neutral_loss_mass=126, ion_mode=positive, precursor_ion=Na+-adducted PEth
+    input: Na+-adducted PEth extracts
+    output: NL-selected chromatographic peaks
+    confidence: high
+  Step 3: MS/MS and MS³ fragmentation analysis
+    tool: linear ion trap mass spectrometer
+    algorithm: product ion scan followed by MS³
+    parameters: fragmentation_mode=CID, ms3_precursor_selection=NL 126 Da fragment
+    input: Na+-adducted PEth ions
+    output: MS² and MS³ spectra for structural confirmation
+    confidence: high
+  Step 4: Quantification via calibration curves
+    tool: instrument-specific quantitation software
+    algorithm: linear regression
+    parameters: analyte=PEth 16:0-18:1, r_squared_threshold=0.97, linearity_r2_nl=0.98, linearity_r2_msms=0.97
+    input: NL scan and product ion scan peak areas
+    output: quantified PEth concentration (ppm)
+    confidence: high
+  Step 5: Method validation against reference LC-MS
+    tool: LC-MS (reference method)
+    algorithm: comparative quantification
+    parameters: validation_sample=DBS from heavy alcohol user, reported_values=['1.23 ± 0.09 ppm', '1.43 ± 0.12 ppm']
+    input: same DBS extract analyzed by NL-MS/MS and LC-MS
+    output: concordance assessment (bias, precision)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in any public repository
+  - No instrument method files (e.g., MRM transitions, scan parameters, LC gradients) provided
+  - No details on DBS extraction protocol or matrix effects characterization
+  - Commercial instruments (triple quadrupole, linear ion trap) require proprietary software for method setup and data acquisition — no exportable method files shared
+  - Aziridination chemistry reagents and conditions not fully specified (e.g., reaction time, temperature, quenching)
+reproducibility_strengths:
+  - Clear identification of diagnostic neutral loss (126 Da) and its biochemical origin (ethyl phosphate headgroup)
+  - Explicit reporting of quantitative performance (R², precision, cross-platform concordance)
+  - Systematic comparison of cation adducts and fragmentation behavior

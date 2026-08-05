@@ -1,0 +1,51 @@
+========== reproducibility_recipe entry ==========
+paper_title: Machine-Learning Classification of Bacteria Using Two-Dimensional Tandem Mass Spectrometry.
+source_paper: Gonzalez LE et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c04016, PMID: 37937965
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Sample preparation
+    tool: manual extraction protocol
+    parameters: extraction_method=simple extraction, ion_mode=negative
+    input: bacterial cell cultures
+    output: cell extracts
+    confidence: low
+  Step 2: Data acquisition via 2D tandem mass spectrometry
+    tool: modified linear quadrupole ion-trap mass spectrometer
+    parameters: acquisition_time=5, scan_averaging=5, ionization_mode=negative
+    input: bacterial cell extracts
+    output: 2D MS/MS data domain (image-like matrix)
+    confidence: medium
+  Step 3: Machine learning classification
+    tool: random forest, k-nearest neighbor, multilayer perceptron
+    algorithm: supervised classification
+    parameters: classification_target=species-level bacteria, accuracy_threshold=0.99
+    input: 2D MS/MS data domain
+    output: bacterial species predictions
+    confidence: low
+  Step 4: Image-based classification using CNN
+    tool: convolutional neural network
+    algorithm: image recognition
+    parameters: input_format=2D MS/MS as image data
+    input: 2D MS/MS data domain (treated as image)
+    output: bacterial species predictions
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed 2D MS/MS data deposited or referenced
+  - No machine learning code or model parameters shared
+  - Instrument configuration details (e.g., collision energies, isolation windows, m/z ranges) not specified
+  - No description of data preprocessing (e.g., normalization, denoising, binning) before ML input
+  - No validation strategy (e.g., cross-validation folds, train/test split ratio) reported
+reproducibility_strengths:
+  - Clear high-level workflow described (extraction → 2D MS/MS → ML classification)
+  - Multiple ML models benchmarked with reported accuracy (>99%)

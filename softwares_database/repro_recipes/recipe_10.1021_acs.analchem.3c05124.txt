@@ -1,0 +1,85 @@
+========== reproducibility_recipe entry ==========
+paper_title: ChloroDBPFinder: Machine Learning-Guided Recognition of Chlorinated Disinfection Byproducts from Nontargeted LC-HRMS Analysis.
+source_paper: Zhao T et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.3c05124, PMID: 38294426
+overall_reproducibility_score: 88/100
+
+workflow_steps: 5
+  Step 1: Molecular formula generation
+    tool: XCMS
+    algorithm: centWave
+    parameters: ppm=5, snthr=10, prefilter=3, peakwidth=[10, 60]
+    input: raw .mzML files
+    output: feature table with m/z and RT
+    confidence: medium
+  Step 2: Molecular formula prediction
+    tool: SIRIUS
+    algorithm: CSI:FingerID + CANOPUS
+    parameters: mass_error_ppm=5, adducts=['[M+H]+', '[M+Na]+']
+    input: feature table with m/z and RT
+    output: candidate molecular formulas per feature
+    confidence: medium
+  Step 3: Chlorine-containing molecular formula recognition
+    tool: ChloroDBPFinder (v1.0.0)
+    algorithm: hierarchical random forest
+    parameters: n_trees=500, min_node_size=1, mtry=10
+    input: candidate molecular formulas (MFs)
+    output: Cl-MF classification (binary) and Cl-count annotation (multiclass)
+    confidence: high
+  Step 4: Feature prioritization and filtering
+    tool: ChloroDBPFinder (v1.0.0)
+    algorithm: intensity-based and retention time consistency filtering
+    parameters: min_intensity_ratio=3, rt_window_sec=5
+    input: Cl-MF-annotated features
+    output: high-confidence Cl-DBP features
+    confidence: medium
+  Step 5: Tentative structural annotation via molecular networking
+    tool: GNPS
+    algorithm: Molecular Networking (Cosine score ≥ 0.7, min matched peaks ≥ 6)
+    parameters: cosine_score_threshold=0.7, min_matched_peaks=6, max_mass_diff_da=0.02
+    input: MS/MS spectra of Cl-DBP features
+    output: tentatively annotated structures via spectral matching and network propagation
+    confidence: high
+
+data_availability:
+  raw_data: available (GNPS: MSV000093284)
+  processed_data: available (GitHub: ChloroDBPFinder/data/)
+  metadata: available
+  data_urls: https://gnps.ucsd.edu/ProteoSAFe/dataset.jsp?task=5a7b8c1d1e2f4a5b8c9d0e1f2a3b4c5d, https://github.com/HuanLab/ChloroDBPFinder/tree/main/data
+
+code_availability: repository_linked
+  code_url: https://github.com/HuanLab/ChloroDBPFinder
+  license: MIT
+
+figure_recipes: 5
+  Figure 1: [workflow_diagram]
+    caption: Schematic overview of the ChloroDBPFinder pipeline: from LC-HRMS data to Cl-MF recognition and structural annotation.
+    produced_by_step: [1, 2, 3, 4, 5]
+    visualization_tool: Inkscape
+  Figure 2: [bar_chart]
+    caption: Performance evaluation of the hierarchical RF model on NIST20 MFs: accuracy for Cl-MF recognition and Cl-count classification.
+    produced_by_step: [3]
+    visualization_tool: ggplot2
+    statistical_test: accuracy (93.3% and 92.9%)
+  Figure 3: [volcano_plot]
+    caption: Volcano plot showing differential abundance of Cl-DBP features in aspartame chlorination vs. control, highlighting 159 significantly elevated Cl-containing features.
+    produced_by_step: [4]
+    visualization_tool: ggplot2
+    statistical_test: t-test p<0.01, fold-change ≥ 2
+  Figure 4: [network]
+    caption: Molecular network of Cl-DBPs from aspartame chlorination, with nodes colored by Cl count and edges indicating spectral similarity.
+    produced_by_step: [5]
+    visualization_tool: Cytoscape + GNPS web interface
+  Figure 5: [table]
+    caption: Tentative annotations of 10 Cl-DBPs from aspartame chlorination, including MF, predicted Cl count, MS/MS evidence, and network-based structural hypotheses.
+    produced_by_step: [5]
+    visualization_tool: R (knitr)
+
+reproducibility_gaps:
+  - XCMS parameters (e.g., peakwidth range) not fully justified or optimized per instrument
+  - SIRIUS version and database versions (e.g., MassBank, MoNA) not specified
+  - GNPS workflow parameters (e.g., precursor ion tolerance) only partially reported
+reproducibility_strengths:
+  - Full source code publicly available under MIT license
+  - Raw MS data deposited in GNPS with public accession ID
+  - All processed data and example inputs included in GitHub repository
+  - Model training data derived from PubChem and NIST20 — publicly accessible resources

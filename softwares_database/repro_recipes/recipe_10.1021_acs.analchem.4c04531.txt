@@ -1,0 +1,52 @@
+========== reproducibility_recipe entry ==========
+paper_title: QuanFormer: A Transformer-Based Precise Peak Detection and Quantification Tool in LC-MS-Based Metabolomics.
+source_paper: Zhang Z et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.4c04531, PMID: 39868899
+overall_reproducibility_score: 72/100
+
+workflow_steps: 4
+  Step 1: Peak detection and quantification
+    tool: QuanFormer
+    algorithm: Transformer-based object detection with CNN-Transformer hybrid architecture and bipartite matching
+    parameters: training_rois_count=20000, average_precision=0.965, accuracy_without_retraining=0.9
+    input: raw .mzML files
+    output: quantified feature table (retention time, m/z, intensity)
+    confidence: high
+  Step 2: Retention time correction and peak alignment
+    tool: QuanFormer
+    algorithm: Learned retention time shift correction (integrated within QuanFormer pipeline)
+    input: raw .mzML files or chromatographic ROI tensors
+    output: aligned feature table
+    confidence: medium
+  Step 3: Comparative benchmarking against existing tools
+    tool: ['MZmine 3', 'PeakDetective']
+    algorithm: Standard peak picking workflows (centWave in MZmine 3; unspecified algorithm in PeakDetective)
+    input: raw .mzML files
+    output: feature tables for comparison
+    confidence: low
+  Step 4: Clinical biomarker discovery
+    tool: QuanFormer + downstream statistical analysis
+    algorithm: Unspecified (implied t-test/ANOVA, fold-change, VIP scoring)
+    input: QuanFormer-quantified feature table + clinical metadata
+    output: candidate biomarkers list
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/LinShuhaiLAB/QuanFormer
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS data from breast cancer cohort not deposited or referenced
+  - No details on preprocessing steps before QuanFormer input (e.g., noise filtering, centroiding)
+  - No specification of MZmine 3 or PeakDetective parameters used for benchmarking
+  - Downstream statistical analysis methods (e.g., p-value correction, fold-change thresholds, multivariate modeling) not described
+  - Training dataset (20,000 annotated ROIs) not publicly available or accessible
+reproducibility_strengths:
+  - QuanFormer is open-source with public GitHub repository
+  - Core algorithm design (CNN-Transformer + bipartite matching) clearly articulated
+  - Quantitative performance metrics reported (96.5% AP, >90% accuracy without retraining)

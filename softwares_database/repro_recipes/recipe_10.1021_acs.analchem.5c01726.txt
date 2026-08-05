@@ -1,0 +1,56 @@
+========== reproducibility_recipe entry ==========
+paper_title: DuReS: An R Package for Denoising Experimental Tandem Mass Spectra and Metabolite Annotation.
+source_paper: Banerjee S et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c01726, PMID: 40476626
+overall_reproducibility_score: 78/100
+
+workflow_steps: 4
+  Step 1: Input preparation
+    tool: DuReS
+    algorithm: replicate-based spectral recurrence filtering
+    parameters: acquisition_mode=DDA
+    input: raw .mzML files and feature list (e.g., from XCMS or MS-DIAL)
+    output: preprocessed spectra grouped by precursor ion and replicate
+    confidence: high
+  Step 2: Denoising via replicate spectral recurrence
+    tool: DuReS
+    algorithm: recurrence frequency thresholding (F_threshold)
+    parameters: F_threshold=data-set-specific, determined empirically or via tuning module
+    input: grouped tandem spectra per precursor ion across replicates
+    output: denoised .mzML files with noise peaks removed
+    confidence: medium
+  Step 3: Optional automated F_threshold optimization
+    tool: DuReS
+    algorithm: tuning module using spectral consistency metrics
+    parameters: tuning_strategy=minimize false positives while preserving low-intensity diagnostic fragments
+    input: raw tandem spectra + replicate metadata
+    output: optimized F_threshold value
+    confidence: medium
+  Step 4: Metabolite annotation using denoised spectra
+    tool: DuReS
+    algorithm: spectral matching against reference libraries (e.g., GNPS, MassBank, HMDB)
+    parameters: matching_score=dot product or cosine similarity, min_match_peaks=3, mass_tolerance_ppm=10
+    input: denoised .mzML files + feature table
+    output: annotated metabolite list with confidence scores
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (MetaboLights: not specified)
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/BiosystemEngineeringLab-IITB/dures
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No accession IDs provided for the eight tested datasets
+  - No details on feature list format or required columns (e.g., m/z, RT, intensity)
+  - F_threshold tuning criteria not quantitatively defined (e.g., objective function, convergence threshold)
+  - Reference library versions and matching parameters (e.g., minimum cosine score) not specified
+reproducibility_strengths:
+  - Source code publicly available on GitHub under MIT license
+  - Explicit support for standard input formats (.mzML, feature tables)
+  - Designed for DDA mode — clearly scoped applicability
+  - Empirically validated on multiple public datasets

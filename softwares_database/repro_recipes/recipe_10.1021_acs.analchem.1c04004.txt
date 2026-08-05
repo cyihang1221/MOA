@@ -1,0 +1,48 @@
+========== reproducibility_recipe entry ==========
+paper_title: Data-Driven Soft Independent Modeling of Class Analogy in Paper Spray Ionization Mass Spectrometry-Based Metabolomics for Rapid Detection of Prostate Cancer.
+source_paper: Pinto FG et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.1c04004, PMID: 35060703
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Data acquisition via paper spray ionization mass spectrometry
+    tool: Paper spray ionization mass spectrometry (PSI-MS)
+    parameters: ionization_mode=positive, mass_range_mz=[50, 1000], resolution=unit resolution (implied by lack of chromatography and tandem MS capability), sample_type=urine
+    input: raw urine samples
+    output: raw .raw or .d files (vendor format, unspecified)
+    confidence: low
+  Step 2: Preprocessing: peak detection and feature table generation
+    tool: XCMS or similar (not explicitly named)
+    input: raw PSI-MS data files
+    output: feature intensity matrix (m/z–RT–intensity)
+    confidence: low
+  Step 3: Data-driven Soft Independent Modeling of Class Analogy (DD-SIMCA) modeling
+    tool: SIMCA-P+
+    algorithm: DD-SIMCA
+    parameters: modeling_approach=data-driven (no prior healthy reference required), class_definition=['prostate cancer (PC)', 'normal/healthy'], validation_method=training set vs. test set classification, performance_metrics=['sensitivity', 'specifity']
+    input: preprocessed feature intensity matrix
+    output: binary classification model, class membership probabilities
+    confidence: medium
+  Step 4: Model evaluation
+    tool: SIMCA-P+ or custom script
+    algorithm: classification accuracy assessment
+    parameters: metric=['sensitivity', 'specificity', 'correct classification rate'], threshold=100% correct classification reported for training and test sets
+    input: DD-SIMCA model output + sample labels
+    output: classification performance report
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw PSI-MS data not deposited in any public repository
+  - No description of preprocessing steps (peak picking, alignment, filtering, normalization)
+  - SIMCA-P+ is commercial software requiring license and is not open-source or reproducible without access
+  - No details on m/z tolerance, RT alignment parameters, or feature filtering thresholds
+  - No information on urine sample preparation, PSI-MS hardware configuration, or instrument settings
+  - DD-SIMCA implementation details (e.g., number of principal components, significance level α, cross-validation strategy) not specified

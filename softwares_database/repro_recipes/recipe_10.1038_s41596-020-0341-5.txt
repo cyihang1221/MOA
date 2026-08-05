@@ -1,0 +1,83 @@
+========== reproducibility_recipe entry ==========
+paper_title: Development of a plasma pseudotargeted metabolomics method based on ultra-high-performance liquid chromatography-mass spectrometry.
+source_paper: Zheng F et al. (2020), Nature protocols, DOI: 10.1038/s41596-020-0341-5, PMID: 32581297
+overall_reproducibility_score: 42/100
+
+workflow_steps: 6
+  Step 1: Untargeted UHPLC-HRMS profiling of pooled sample
+    tool: UHPLC-HRMS
+    algorithm: multi-energy MS acquisition (positive and negative modes)
+    parameters: collision_energies=multiple, ionization_mode=['positive', 'negative']
+    input: pooled plasma sample mixture
+    output: raw HRMS data (.raw or .d format)
+    confidence: medium
+  Step 2: Feature detection and alignment
+    tool: XCMS
+    algorithm: centWave or matchedFilter (not specified, but standard for XCMS)
+    parameters: peak_width=None, mz_tolerance_ppm=5, snthresh=10
+    input: raw HRMS data
+    output: feature table (m/z, RT, intensity)
+    confidence: low
+  Step 3: Adduct and isotope annotation
+    tool: CAMERA
+    algorithm: grouping by adducts, isotopes, and biotransformations
+    parameters: ppm=5, nSlaves=4
+    input: XCMS feature table
+    output: annotated feature groups
+    confidence: medium
+  Step 4: MRM transition selection
+    tool: MRM-Ion Pair Finder
+    algorithm: precursor-to-product ion pair identification from HRMS data
+    parameters: retention_time_window=±0.2 min, mass_error_tolerance_ppm=10
+    input: CAMERA-annotated features + HRMS spectra
+    output: candidate MRM transitions (Q1/Q3, CE)
+    confidence: low
+  Step 5: Retention time calibration using internal standards
+    tool: custom/internal standard-based correction
+    algorithm: linear or spline interpolation using IS retention times
+    parameters: internal_standards_count=set used (not enumerated), rt_window_for_IS_matching=±0.1 min
+    input: candidate MRM transitions + IS retention times
+    output: calibrated RT-aligned MRM method
+    confidence: medium
+  Step 6: Pseudotargeted quantification via UHPLC-TQMS
+    tool: UHPLC-TQMS
+    algorithm: Multiple Reaction Monitoring (MRM)
+    parameters: dwell_time_ms=50, interchannel_delay_ms=5, CE_optimized_per_transition=True
+    input: calibrated MRM method + individual plasma samples
+    output: quantitative peak area matrix (metabolite × sample)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: not_mentioned (not mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 3
+  Fig. 1: [workflow_diagram]
+    caption: Schematic illustrating the retention-time calibration method using internal standards.
+    produced_by_step: [5]
+    visualization_tool: not mentioned
+  Fig. 3: [table]
+    caption: MRM transitions verified across different triple-quadrupole mass spectrometers.
+    produced_by_step: [4, 6]
+    visualization_tool: not mentioned
+  Fig. 4: [bar_chart]
+    caption: Quantitative performance evaluation (e.g., linearity, precision, LOD/LOQ) of the pseudotargeted metabolomics method.
+    produced_by_step: [6]
+    visualization_tool: not mentioned
+    statistical_test: linear regression R², CV%, LOD/LOQ calculation
+
+reproducibility_gaps:
+  - Raw HRMS and TQMS data not deposited in any public repository
+  - MRM-Ion Pair Finder tool is not publicly available or documented (no GitHub/Cran link, no license info)
+  - No specification of UHPLC gradient program, column type, or instrument parameters (e.g., ESI source settings)
+  - Internal standard identities and concentrations not listed in main text or supplementary tables provided in description
+  - XCMS and CAMERA parameter values only partially reported (e.g., no rt_method, bw, or prefilt values)
+  - No access to custom scripts for RT calibration or transition verification
+reproducibility_strengths:
+  - Clear two-phase workflow design (untargeted discovery → targeted-like quantification)
+  - Use of established open-source tools (XCMS, CAMERA) for early steps
+  - Reference to key methodological papers (e.g., Luo et al. Anal. Chem. 2015) supporting protocol validity
+  - Supplementary Tables 3–4 provide MRM transitions for NIST SRM 1950 — partial reusability

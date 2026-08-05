@@ -1,0 +1,135 @@
+========== reproducibility_recipe entry ==========
+paper_title: Analysis of DIA proteomics data using MSFragger-DIA and FragPipe computational platform.
+source_paper: Yu F et al. (2023), Nature communications, DOI: 10.1038/s41467-023-39869-5, PMID: 37438352
+overall_reproducibility_score: 78/100
+
+workflow_steps: 12
+  Step 1: Raw data conversion to mzML
+    tool: ProteoWizard (v76)
+    algorithm: vendor peak picking and demultiplexing
+    input: raw vendor files (.raw, .d, .wiff)
+    output: mzML files
+    confidence: medium
+  Step 2: Direct DIA spectral library search
+    tool: MSFragger-DIA (v3.5)
+    algorithm: fragment ion indexing-based database search
+    parameters: enzyme=restricted trypsin, fixed_modifications=['Carbamidomethyl C'], variable_modifications=['Protein N-terminal acetylation', 'Oxidation M'], max_missed_cleavages=1, decoy_generation=reversed sequences
+    input: mzML files (DIA)
+    output: peptide-spectrum matches (PSMs)
+    confidence: high
+  Step 3: Deep learning-based score refinement
+    tool: MSBooster
+    algorithm: deep learning rescoring
+    input: PSMs from MSFragger-DIA
+    output: boosted PSM scores
+    confidence: low
+  Step 4: Posterior error probability estimation and FDR control
+    tool: Percolator (v33)
+    algorithm: semi-supervised machine learning for PSM rescoring
+    parameters: fdr_threshold=0.01
+    input: boosted PSMs
+    output: FDR-filtered PSMs (1% PSM FDR)
+    confidence: high
+  Step 5: Protein inference
+    tool: ProteinProphet (v34)
+    algorithm: probabilistic protein inference
+    input: FDR-filtered PSMs
+    output: protein groups with posterior probabilities
+    confidence: low
+  Step 6: FDR filtering at peptide and protein levels
+    tool: Philosopher (v55)
+    algorithm: global and run-specific FDR filtering
+    parameters: global_peptide_fdr=0.01, global_protein_fdr=0.01, run_specific_precursor_fdr=0.01, run_specific_protein_fdr=0.01
+    input: ProteinProphet output
+    output: FDR-filtered peptide and protein lists
+    confidence: high
+  Step 7: Spectral library building
+    tool: EasyPQP
+    algorithm: library generation from identified peptides
+    parameters: fdr_threshold=0.01
+    input: FDR-filtered peptides
+    output: PQP-formatted spectral library
+    confidence: medium
+  Step 8: DIA quantification using spectral library
+    tool: DIA-NN (v1.8.1)
+    algorithm: library-based extraction and quantification
+    input: mzML files + PQP library
+    output: precursor-, peptide-, and protein-level quantification tables
+    confidence: high
+  Step 9: Peptide-to-protein roll-up and normalization
+    tool: iq R package
+    algorithm: MaxLFQ normalization
+    input: DIA-NN quantification table
+    output: normalized protein intensity matrix
+    confidence: medium
+  Step 10: Alternative quantification (Spectronaut)
+    tool: Spectronaut (v14 and 17)
+    algorithm: directDIA / directDIA+
+    parameters: precursor_fdr=0.01, run_specific_protein_fdr=0.01, global_protein_fdr=0.01
+    input: raw vendor files
+    output: normalized protein intensity matrix
+    confidence: high
+  Step 11: Library-free DIA quantification
+    tool: DIA-NN (v1.8.1)
+    algorithm: in silico spectral library prediction
+    input: mzML files + FASTA database
+    output: quantification table
+    confidence: high
+  Step 12: Hybrid DIA/DDA analysis
+    tool: MSFragger (DDA mode) + MSFragger-DIA (v3.5)
+    algorithm: integrated DDA-assisted DIA search
+    parameters: enzyme=restricted trypsin, fixed_modifications=['Carbamidomethyl C'], variable_modifications=['Protein N-terminal acetylation', 'Oxidation M'], max_missed_cleavages=1
+    input: mzML files (DIA and DDA)
+    output: combined spectral library and quantification
+    confidence: high
+
+data_availability:
+  raw_data: available (Zenodo)
+  processed_data: available (Zenodo)
+  metadata: available
+  data_urls: https://zenodo.org/record/XXXXX, https://datashare.biochem.mpg.de/s/qe1IqcKbz2j2Ruf?path=%2FDiscoveryLibraries, https://www.proteomicsdb.org/prosit/
+
+code_availability: repository_linked
+  code_url: https://github.com/Nesvilab/MSFragger
+  license: Apache-2.0
+
+figure_recipes: 6
+  Fig. 1: [workflow_diagram]
+    caption: Overview of MSFragger-DIA integration into FragPipe computational platform.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7, 8]
+    visualization_tool: Inkscape or Adobe Illustrator (not specified)
+  Fig. 2: [bar_chart]
+    caption: Performance assessment of sensitivity, false discovery rate, precision, and accuracy using the Fröhlich et al. benchmark dataset.
+    produced_by_step: [2, 4, 6, 8, 9, 10, 11]
+    visualization_tool: LFQbench 77
+    statistical_test: FDP estimation (empirical FDR), CV calculation, fold-change accuracy (25:6 ratio)
+  Fig. 3: [boxplot]
+    caption: Quantified peptides and coefficient of variation (CV) from the 2018-HeLa staggered-window DIA dataset.
+    produced_by_step: [8, 9, 10, 11]
+    visualization_tool: LFQbench 77
+    statistical_test: CV distribution (precision metric)
+  Fig. 4: [bar_chart]
+    caption: Number of quantified proteins from low-input-cell and single-cell datasets.
+    produced_by_step: [8, 9, 10, 11, 12]
+    visualization_tool: LFQbench 77 or custom R/ggplot2
+  Fig. 5: [scatter_plot]
+    caption: Number of quantified phosphopeptide sequences and runtime for the melanoma-phospho dataset.
+    produced_by_step: [2, 8, 10, 11]
+    visualization_tool: custom plotting (not specified)
+  Fig. 6: [heatmap]
+    caption: Results from the ccRCC (clear cell renal cell carcinoma) tumor proteome profiling dataset.
+    produced_by_step: [8, 9, 12]
+    visualization_tool: not specified
+
+reproducibility_gaps:
+  - Spectronaut access limited by commercial license; full pipeline not reproducible without paid license
+  - Exact ProteoWizard command-line parameters (e.g., --filter 'peakPicking true') not specified
+  - MSBooster and ProteinProphet parameter details omitted
+  - No link to FragPipe workflow configuration files or .toml/.json settings used
+  - LFQbench version and exact plotting parameters not reported
+reproducibility_strengths:
+  - All open-source tools (MSFragger, DIA-NN, Percolator, Philosopher, EasyPQP, iq) are publicly available with versions specified
+  - Detailed search parameters (enzyme, modifications, missed cleavages, FDR thresholds) provided
+  - Public Zenodo deposit referenced for parameters and data
+  - Multiple benchmark datasets explicitly named and sourced (Fröhlich, Searle, Siyal, ccRCC)
+  - FASTA sources, UniProt accessions, and download dates documented

@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: Fully Automatized Detection of Phosphocholine-Containing Lipids through an Isotopically Labeled Buffer Modification Workflow.
+source_paper: Cerrato A et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.1c02944, PMID: 34726396
+overall_reproducibility_score: 52/100
+
+workflow_steps: 4
+  Step 1: Chromatographic buffer modification with isotopically labeled acetate
+    tool: Custom LC method
+    parameters: buffer_A_light=0.1% acetic acid in water, buffer_B_light=0.1% acetic acid in 95% acetonitrile/5% water, buffer_A_heavy=0.1% deuterated acetic acid (CD3COOH) in water, buffer_B_heavy=0.1% deuterated acetic acid in 95% acetonitrile/5% water, gradient_profile=not fully specified, column=C18 reversed-phase, flow_rate=not specified, temperature=not specified, injection_volume=not specified
+    input: human plasma samples (pre-processed)
+    output: LC-MS raw data with co-eluting [M + CH3COO]−, [M + CD3COO]−, and [M − CH3]− adducts
+    confidence: medium
+  Step 2: Data acquisition on high-resolution mass spectrometer
+    tool: Orbitrap-based MS
+    parameters: mass_resolution=120,000 (at m/z 200), scan_range_mz=150–1200, polarity=negative mode, automatic_gain_control_target=1e6, maximum_injection_time_ms=100
+    input: chromatographic eluate
+    output: raw .raw files
+    confidence: high
+  Step 3: Automated lipid identification using isotopic adduct pattern recognition
+    tool: Compound Discoverer (v3.3)
+    algorithm: Isotopic pattern matching, adduct grouping, molecular formula assignment
+    parameters: adducts_included=['[M + CH3COO]−', '[M + CD3COO]−', '[M − CH3]−'], mass_tolerance_ppm=5, retention_time_window_min=0.5, isotope_pattern_similarity_threshold=not specified, grouping_algorithm=component detection with retention time alignment, filtering_rules=presence of both light/heavy acetate adduct pairs + methyl loss
+    input: raw .raw files
+    output: annotated lipid feature table with confidence-ranked identifications
+    confidence: medium
+  Step 4: False-positive reduction and manual validation streamlining
+    tool: Compound Discoverer + custom rules (v3.3)
+    algorithm: Rule-based filtering using isotopic mass shift (Δm = 3.020 Da for CD3COO− vs CH3COO−) and co-elution criteria
+    parameters: required_adduct_pairs=['[M + CH3COO]− and [M + CD3COO]−'], coelution_rt_tolerance_sec=3, minimum_signal_to_noise_ratio=not specified, exclusion_of_non-phosphocholine_lipids=True
+    input: Compound Discoverer feature table
+    output: curated phosphocholine-containing lipid list
+    confidence: low
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1728)
+  processed_data: available (MetaboLights: MTBLS1728)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1728
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Compound Discoverer is commercial software requiring license and specific version (3.3) not publicly redistributable
+  - Exact LC gradient profile, column temperature, flow rate, and injection volume not reported
+  - No access to custom Compound Discoverer workflow files (.cdw) or rule sets used for filtering
+  - Box-Behnken design parameters and optimization results not provided in sufficient detail for replication
+  - No R/Python scripts or open-source equivalents provided for isotopic adduct pattern matching
+reproducibility_strengths:
+  - Raw and processed data deposited in MetaboLights (MTBLS1728)
+  - Explicit listing of required adducts and expected mass shift (3.020 Da)
+  - Clear description of experimental rationale and biological sample type (human plasma)

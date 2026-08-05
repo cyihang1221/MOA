@@ -1,0 +1,50 @@
+========== reproducibility_recipe entry ==========
+paper_title: Selective and Accurate Quantification of <i>N</i>-Acetylglucosamine in Biotechnological Cell Samples via GC-MS/MS and GC-TOFMS.
+source_paper: Mairinger T et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.9b04582, PMID: 32096989
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Online derivatization
+    tool: automated online derivatization system
+    parameters: derivatization_steps=['alkoximation', 'trimethylsilylation'], reagent=ethoximation followed by TMS
+    input: biological cell extracts (Penicillium chrysogenum)
+    output: derivatized N-acetylglucosamine derivatives
+    confidence: medium
+  Step 2: Gas chromatographic separation
+    tool: gas chromatography
+    parameters: column=fused silica capillary column (not specified), temperature_program=not fully specified, carrier_gas=helium or hydrogen (not specified)
+    input: derivatized N-acetylglucosamine derivatives
+    output: chromatographically separated analytes
+    confidence: low
+  Step 3: Mass spectrometric detection and quantification
+    tool: GC-MS/MS and GC-TOFMS
+    parameters: ionization_mode=electron ionization (EI), mass_range=not specified, detection_limit=lower femtomol range, quantification_approach=isotope dilution using biologically derived 13C-labeled internal standards
+    input: chromatographically separated analytes
+    output: absolute quantification of N-acetylglucosamine
+    confidence: high
+  Step 4: Method validation via inter-platform comparison
+    tool: comparative mass spectrometry
+    parameters: comparison_metrics=['trueness', 'limits of detection'], reference_materials=no certified reference materials available
+    input: quantification results from GC-MS/MS and GC-TOFMS
+    output: methodological agreement assessment
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw GC-MS/MS and GC-TOFMS data not deposited in public repository
+  - No details on GC temperature program or column specifications
+  - No description of data processing software or parameters (e.g., peak integration, library search settings)
+  - Automated derivatization system not commercially standardized — no vendor/model specified
+  - Biologically derived 13C-labeled internal standard preparation method not described
+reproducibility_strengths:
+  - Use of isotope dilution for absolute quantification
+  - Explicit reporting of detection limits (femtomol range)
+  - Cross-platform validation using two orthogonal MS technologies

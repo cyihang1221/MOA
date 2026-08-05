@@ -1,0 +1,65 @@
+========== reproducibility_recipe entry ==========
+paper_title: Improved Dried Blood Spot-Based Metabolomics Analysis by a Postcolumn Infused-Internal Standard Assisted Liquid Chromatography-Electrospray Ionization Mass Spectrometry Method.
+source_paper: Chepyala D et al. (2019), Analytical chemistry, DOI: 10.1021/acs.analchem.9b02050, PMID: 31361473
+overall_reproducibility_score: 30/100
+
+workflow_steps: 6
+  Step 1: DBS sample preparation
+    tool: manual extraction protocol
+    parameters: extraction_solvent=80% acetonitrile
+    input: dried blood spot (DBS) cards
+    output: extracted metabolite solution
+    confidence: high
+  Step 2: LC-ESI-MS analysis with postcolumn infused internal standard (PCI-IS)
+    tool: liquid chromatography-electrospray ionization mass spectrometry
+    parameters: internal_standard=phenylalanine-d8, infusion_mode=postcolumn
+    input: extracted metabolite solution
+    output: raw MS data (.raw or vendor format)
+    confidence: high
+  Step 3: Signal correction for spot volume and hematocrit effects
+    tool: custom correction strategy
+    algorithm: PCI-IS-based normalization
+    parameters: correlation_threshold_R2=0.9, metabolite_distribution_consideration=RBC vs plasma abundance
+    input: raw MS signal intensities
+    output: corrected metabolite intensities
+    confidence: medium
+  Step 4: Evaluation of spot volume effect
+    tool: linear correlation analysis
+    algorithm: Pearson correlation / R² calculation
+    parameters: R2_threshold=0.9
+    input: uncorrected and PCI-IS-corrected signal intensities vs spot volume
+    output: fraction of metabolites meeting R² ≥ 0.9
+    confidence: high
+  Step 5: Hematocrit (Hct) variation effect investigation
+    tool: biological distribution analysis
+    algorithm: compartmental abundance assessment (RBC vs plasma)
+    input: metabolite concentration data across Hct gradients
+    output: Hct-sensitive vs Hct-insensitive metabolite classification
+    confidence: medium
+  Step 6: Application to acetaminophen-induced liver toxicity study
+    tool: comparative metabolomics
+    algorithm: differential intensity analysis
+    input: PCI-IS-corrected metabolite intensities (control vs treated)
+    output: list of altered metabolites linked to liver toxicity
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS data not deposited in public repository
+  - No details on LC gradient, column type, or MS acquisition parameters (e.g., collision energy, scan range)
+  - No software specified for data processing (peak picking, alignment, integration)
+  - Custom PCI-IS correction method lacks mathematical formulation or implementation code
+  - No statistical thresholds or multiple testing correction reported for differential analysis
+  - Acetaminophen study design (sample size, replicates, dosing regimen) insufficiently described
+reproducibility_strengths:
+  - Explicit description of extraction solvent (80% ACN)
+  - Clear identification of internal standard (phenylalanine-d8) and infusion mode (postcolumn)
+  - Quantitative evaluation of correction efficacy via R² metric

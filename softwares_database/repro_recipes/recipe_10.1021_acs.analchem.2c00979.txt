@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: Rapid and Automatic Annotation of Multiple On-Tissue Chemical Modifications in Mass Spectrometry Imaging with Metaspace.
+source_paper: Larson EA et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.2c00979, PMID: 35708227
+overall_reproducibility_score: 55/100
+
+workflow_steps: 4
+  Step 1: Data acquisition via MALDI-MSI
+    tool: MALDI-MSI platform
+    parameters: derivatization_reagents=["Girard's T", "Girard's P", 'coniferyl aldehyde', '2-picolylamine'], target_functional_groups=['carbonyl', 'primary amines', 'carboxylic acids']
+    input: tissue sections (maize roots)
+    output: raw MSI imaging data (.imzML or vendor format)
+    confidence: medium
+  Step 2: Metabolite annotation using Metaspace
+    tool: Metaspace (vv2.0+ (implied by 2022 publication; no explicit version stated))
+    algorithm: spectral matching with in-silico fragmentation and spatial correlation scoring
+    parameters: database=CornCyc/BraChem, mass_tolerance_ppm=5, rt_tolerance_sec=None, scoring_method=robust and systematic scoring including spatial correlation and spectral similarity
+    input: raw MSI imaging data
+    output: annotated metabolite feature table with spatial maps
+    confidence: high
+  Step 3: False derivatized annotation removal
+    tool: custom method (integrated in Metaspace pipeline)
+    algorithm: reagent-specific false-positive filtering heuristic
+    parameters: removal_rate_range_percent=[5, 25], reagent_dependent=True
+    input: Metaspace annotations (derivatized candidates)
+    output: curated derivatized metabolite annotations
+    confidence: low
+  Step 4: Comparative annotation analysis
+    tool: Metaspace
+    algorithm: set-based comparison (derivatized vs. underivatized)
+    parameters: comparison_mode=unique metabolite count, reference_dataset=underivatized control
+    input: annotated feature tables (derivatized and underivatized)
+    output: differential annotation summary (e.g., +375 unique metabolites)
+    confidence: medium
+
+data_availability:
+  raw_data: available (Metaspace)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+  data_urls: https://metaspace2020.net/
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No accession ID or direct link to the maize root MSI datasets in Metaspace is provided
+  - Custom false-derivative removal method lacks algorithmic or code-level specification
+  - No details on MALDI acquisition parameters (laser settings, matrix application, spatial resolution, m/z range)
+  - Metaspace version not explicitly stated; v2.0+ assumed but not confirmed
+  - CornCyc/BraChem database version unspecified
+reproducibility_strengths:
+  - Analysis performed using publicly accessible web platform (Metaspace)
+  - Use of organism-specific database (CornCyc/BraChem) enhances biological relevance
+  - Explicit reporting of annotation gain (631 vs. 256 metabolites) enables benchmarking

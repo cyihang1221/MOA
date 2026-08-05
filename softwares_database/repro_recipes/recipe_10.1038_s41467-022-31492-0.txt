@@ -1,0 +1,77 @@
+========== reproducibility_recipe entry ==========
+paper_title: dia-PASEF data analysis using FragPipe and DIA-NN for deep proteomics of low sample amounts.
+source_paper: Demichev V et al. (2022), Nature communications, DOI: 10.1038/s41467-022-31492-0, PMID: 35803928
+overall_reproducibility_score: 88/100
+
+workflow_steps: 5
+  Step 1: Spectral library generation
+    tool: FragPipe (v15)
+    algorithm: MSFragger + PeptideProphet + ProteinProphet + EasyPQP
+    parameters: precursor_mass_tolerance_ppm=20, fragment_mass_tolerance_ppm=20, enzyme_specificity=stricttrypsin, max_missed_cleavages=2, isotope_error=[0, 1, 2], peptide_length_min=7, peptide_length_max=50, peptide_mass_min_da=500, peptide_mass_max_da=5000, fixed_modifications=['Carbamidomethylation of Cysteine'], variable_modifications=['Oxidation of Methionine', 'Acetylation of protein N-termini', '-18.0106 Da on N-terminal Glutamic acid', '-17.0265 Da on N-terminal Glutamine and Cysteine'], max_variable_mods_per_peptide=3, fdr_strategy=2D FDR, protein_fdr_threshold=0.01, peptide_fdr_threshold=0.01, psm_fdr_threshold=0.01, ion_fdr_threshold=0.01, rt_alignment_method=lowess, irt_calibration_set=extended HeLa iRT, im_alignment_reference_run=auto-selected
+    input: raw .d files or MGF files
+    output: consensus spectral library (PQP format)
+    confidence: high
+  Step 2: 2D peak picking for dia-PASEF data
+    tool: DIA-NN (v1.8.1)
+    algorithm: 2D local maximum detection with intensity-based filtering
+    parameters: im_tolerance_frames=10 * (frame scan range / 900) / (frame 1/K0 range), mz_tolerance_bins=2, im_weighted_distance_threshold=ion mobility tolerance, im_window_size_constant=True, frame_summing_enabled=True, mass_tolerance_ppm_ms1=10, mass_tolerance_ppm_ms2=10
+    input: dia-PASEF .d files
+    output: peak table (feature table with m/z, 1/K0, intensity)
+    confidence: medium
+  Step 3: Chromatogram extraction
+    tool: DIA-NN (v1.8.1)
+    algorithm: binary search + IM window filtering
+    parameters: mass_search_method=binary search, im_tolerance_auto=True, im_prediction_method=library-based alignment (observed vs. library IM values), intensity_selection=highest intensity peak within IM/mass window
+    input: peak table + spectral library
+    output: extracted chromatograms (peak areas/intensities per precursor)
+    confidence: high
+  Step 4: Spectral library processing and filtering
+    tool: DIA-NN (v1.8.1)
+    algorithm: Reannotate + species-specific filtering
+    parameters: library_filtering_mode=species-specific (human/yeast), in_silico_rt_im_generation=True, replace_spectra_with_in_silico=True, precursor_fdr_threshold=0.1, quantification_mode=Robust LC (high precision), mbr_enabled=True, protein_inference_disabled=True, relaxed_prot_inf=True, q_value_filter_precursor=0.01, q_value_filter_protein_global=0.01, q_value_filter_protein_run_specific=True
+    input: spectral library (PQP) + FASTA databases
+    output: filtered, annotated spectral library
+    confidence: high
+  Step 5: Protein inference and quantification
+    tool: DIA-NN (v1.8.1)
+    algorithm: MaxLFQ normalization + protein grouping
+    parameters: quantification_algorithm=MaxLFQ, protein_group_column=Protein.Group, quantity_column=PG.MaxLFQ, proteotypic_peptide_annotation=via Reannotate, gene_column_used_for_counting=Genes, filtering_strategy=precursor q-value < 1%, global protein q-value < 1%
+    input: chromatogram intensities + filtered library
+    output: protein-level quantification table (PG.MaxLFQ, Protein.Group)
+    confidence: high
+
+data_availability:
+  raw_data: available (PRIDE: PXD022216)
+  processed_data: available (PRIDE: PXD013658)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/pride/archive/projects/PXD022216, https://www.ebi.ac.uk/pride/archive/projects/PXD013658
+
+code_availability: repository_linked
+  code_url: https://github.com/vdemichev/dia-nn
+  license: GPL-3.0
+
+figure_recipes: 3
+  Fig. 1: [workflow_diagram]
+    caption: Illustrates the conceptual pipeline for processing trapped ion mobility proteomic data, including spectral library generation, 2D peak picking, chromatogram extraction, and quantification.
+    produced_by_step: [1, 2, 3, 4, 5]
+    visualization_tool: Adobe Illustrator / custom script
+  Fig. 2: [bar_chart]
+    caption: Compares protein detection and quantification performance across different acquisition methods and sample amounts, showing increased depth with dia-PASEF + DIA-NN/FragPipe.
+    produced_by_step: [5]
+    visualization_tool: R ggplot2 or GraphPad Prism
+  Table 1: [table]
+    caption: Lists spectral libraries used in benchmarks, including source, organism, size, and key properties.
+    produced_by_step: [1, 4]
+    visualization_tool: Microsoft Excel or R knitr
+
+reproducibility_gaps:
+  - Exact TIMS ramp time parameters and frame cycle configuration not fully specified
+  - No explicit description of how 'run-specific protein q-value <1%' was implemented programmatically in DIA-NN
+  - Corrupted file (200113_AUR_dia-PASEF_HY_200ng_15ng_90min_Slot1-5_1_1636.d) limits full benchmark reproducibility
+  - No public link to FragPipe workflow configuration files (.json/.xml)
+reproducibility_strengths:
+  - All raw and processed data deposited in PRIDE (PXD022216, PXD013658)
+  - Open-source tools with versioned releases (FragPipe v15, DIA-NN v1.8.1)
+  - Detailed parameterization of MSFragger, Philosopher, and DIA-NN settings
+  - Public GitHub repository with DOI for DIA-NN
+  - Explicit FDR calculation methodology and π₀ correction formula provided

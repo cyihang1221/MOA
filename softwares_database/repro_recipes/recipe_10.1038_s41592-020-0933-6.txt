@@ -1,0 +1,60 @@
+========== reproducibility_recipe entry ==========
+paper_title: Feature-based molecular networking in the GNPS analysis environment.
+source_paper: Nothias LF et al. (2020), Nature methods, DOI: 10.1038/s41592-020-0933-6, PMID: 32839597
+overall_reproducibility_score: 87/100
+
+workflow_steps: 4
+  Step 1: Chromatographic feature detection and alignment
+    tool: MZmine
+    algorithm: GNPSExport module
+    input: raw .mzML files
+    output: feature table (peak list with RT, m/z, intensity)
+    confidence: medium
+  Step 2: Feature-based molecular networking (FBMN)
+    tool: GNPS
+    algorithm: feature-based clustering using MS/MS spectral similarity (cosine score)
+    parameters: min_cosine_score=0.7, min_matched_peaks=6, max_shift_mz=0.02, precursor_mass_tolerance=0.02
+    input: feature table + MS/MS spectra
+    output: molecular network (graph of related features)
+    confidence: high
+  Step 3: Spectral clustering and annotation propagation
+    tool: MZmine
+    algorithm: spectral clustering (SIRIUS export integration)
+    input: MS/MS spectra
+    output: clustered spectra with putative annotations
+    confidence: low
+  Step 4: Cross-platform data export and integration
+    tool: OpenMS, XCMS, MS-DIAL, MetaboScape
+    algorithm: GNPSExport tools for format conversion
+    input: platform-specific processed data (e.g., peak tables)
+    output: GNPS-compatible .mgf + feature metadata
+    confidence: medium
+
+data_availability:
+  raw_data: available (GNPS)
+  processed_data: available (GNPS)
+  metadata: available
+  data_urls: https://gnps.ucsd.edu
+
+code_availability: repository_linked
+  code_url: https://github.com/CCMS-UCSD/GNPS_Workflows
+  license: MIT
+
+figure_recipes: 2
+  Figure 1: [workflow_diagram]
+    caption: Schematic overview of the FBMN workflow in GNPS, showing integration of feature detection, alignment, and molecular networking.
+    produced_by_step: [1, 2, 4]
+    visualization_tool: Adobe Illustrator
+  Figure 2: [network]
+    caption: Side-by-side comparison of classical molecular networking (MN) versus feature-based molecular networking (FBMN), highlighting improved isomer resolution and quantitative capability.
+    produced_by_step: [2]
+    visualization_tool: Cytoscape + GNPS web interface
+
+reproducibility_gaps:
+  - Exact MZmine parameter settings (e.g., chromatogram building, deconvolution thresholds) not fully specified
+  - No reference to specific GNPS workflow version or job ID for reproducible execution
+reproducibility_strengths:
+  - All code open-source on GitHub with DOI
+  - Raw and processed data publicly accessible via GNPS
+  - Multi-tool interoperability documented (MZmine, OpenMS, XCMS, MS-DIAL, MetaboScape)
+  - Web-based workflow eliminates local installation barriers

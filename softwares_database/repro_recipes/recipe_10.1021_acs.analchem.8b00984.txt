@@ -1,0 +1,57 @@
+========== reproducibility_recipe entry ==========
+paper_title: Accurate Sequence Analysis of a Monoclonal Antibody by Top-Down and Middle-Down Orbitrap Mass Spectrometry Applying Multiple Ion Activation Techniques.
+source_paper: Fornelli L et al. (2018), Analytical chemistry, DOI: 10.1021/acs.analchem.8b00984, PMID: 29894161
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Intact and subunit-level sample preparation
+    tool: custom_protocol
+    parameters: intact_mass=∼150 kDa, subunit_masses=['∼25 kDa', '∼50 kDa'], digestion_type=highly_specific
+    input: purified monoclonal IgG1
+    output: intact protein and proteolytic subunits
+    confidence: medium
+  Step 2: LC-Orbitrap MS analysis
+    tool: Thermo Orbitrap
+    parameters: chromatography=liquid_chromatography, instrument_platform=Orbitrap_mass_spectrometer
+    input: intact or subunit samples
+    output: raw MS1 and MS2 spectra
+    confidence: high
+  Step 3: Ion activation and fragmentation
+    tool: UVPD, ETD HD, EThcD
+    parameters: uvpd_wavelength_nm=213, uvpd_laser_type=solid_state, etd_mode=high_capacity, ethcd_composition=ETD_HD_plus_HCD
+    input: isolated precursor ions (intact or subunit)
+    output: fragment ion spectra (MS2)
+    confidence: high
+  Step 4: Fragment ion deconvolution
+    tool: custom_deconvolution
+    algorithm: signal_to_noise_thresholding
+    parameters: snr_threshold=optimal_signal_to_noise, purpose=suppress_false_positives_while_maximizing_sequence_coverage
+    input: raw MS2 spectra
+    output: deconvoluted fragment ion list
+    confidence: low
+  Step 5: Sequence coverage calculation and validation
+    tool: TDValidator
+    algorithm: systematic_validation_of_fragment_assignment
+    input: deconvoluted fragment ions and reference sequence
+    output: validated sequence coverage (%) and confidence metrics
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository
+  - TDValidator software not publicly available or described in detail
+  - No protocol details for 'highly specific digestions' or LC gradient parameters
+  - No instrument method files (e.g., Thermo .meth) or acquisition settings provided
+  - Custom deconvolution algorithm parameters unspecified (e.g., exact SNR threshold value)
+reproducibility_strengths:
+  - Explicit ion activation methods reported (213 nm UVPD, ETD HD, EThcD)
+  - Quantitative sequence coverage metrics reported (∼40% TD, up to 90% MD)
+  - Clear experimental design distinguishing top-down vs. middle-down strategies

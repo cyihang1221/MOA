@@ -1,0 +1,109 @@
+========== reproducibility_recipe entry ==========
+paper_title: Plasma metabolomics reveals the shared and distinct metabolic disturbances associated with cardiovascular events in coronary artery disease.
+source_paper: Lv J et al. (2024), Nature communications, DOI: 10.1038/s41467-024-50125-2, PMID: 38977723
+overall_reproducibility_score: 58/100
+
+workflow_steps: 12
+  Step 1: Data conversion (raw → mzXML)
+    tool: ProteoWizard (v3.0.20360)
+    algorithm: msconvert
+    input: raw .raw files
+    output: mzXML files
+    confidence: high
+  Step 2: Peak detection, retention time correction, and peak alignment
+    tool: XCMS (v3.2)
+    algorithm: centWave
+    parameters: ppm=10, snthr=3, peakwidth=[5, 30], minfrac=0.5
+    input: mzXML files
+    output: feature table (peak matrix)
+    confidence: high
+  Step 3: Metabolite annotation (Level 1)
+    tool: MetDNA (v1.2.2)
+    algorithm: MS1+RT+MS2 spectral matching
+    parameters: chromatography_mode=['HILIC', 'RP'], collision_energy=['30', 'SNCE_20_30_40%']
+    input: feature table + MS/MS spectra from QC samples
+    output: annotated metabolite table (492 Level 1 IDs)
+    confidence: high
+  Step 4: Outlier removal and missing value imputation
+    tool: Custom R script (KNN)
+    algorithm: K-nearest neighbors
+    parameters: outlier_threshold_sd=5
+    input: feature table with intensity values
+    output: imputed feature table
+    confidence: medium
+  Step 5: Data scaling
+    tool: R base (v3.6.0)
+    algorithm: Z-score normalization
+    parameters: mean=0, sd=1
+    input: imputed feature table
+    output: scaled feature table
+    confidence: high
+  Step 6: Unsupervised multivariate analysis
+    tool: R (PLS-DA implementation) (v3.6.0)
+    algorithm: Partial Least Squares Discriminant Analysis
+    input: scaled feature table
+    output: PLS-DA scores/plots
+    confidence: medium
+  Step 7: Differential metabolite analysis
+    tool: R (wilcox.test + FDR correction) (v3.6.0)
+    algorithm: Wilcoxon rank-sum test with Benjamini-Hochberg FDR
+    parameters: fdr_threshold=0.05, fold_change_base=1.2, log_fold_change_threshold=1, mi_stroke_p_threshold=0.05
+    input: scaled feature table
+    output: list of differential metabolites
+    confidence: high
+  Step 8: Multivariate logistic regression modeling
+    tool: R (glm + glmnet) (v3.6.0)
+    algorithm: LASSO logistic regression
+    parameters: alpha=1, family=binomial
+    input: differential metabolites + clinical covariates (TIMI, NT-proBNP, hs-cTnT)
+    output: optimized metabolite biomarker panel
+    confidence: medium
+  Step 9: Prediction model evaluation
+    tool: R (pROC, rms, ResourceSelection) (v3.6.0)
+    algorithm: AUC calculation, calibration curve, Hosmer–Lemeshow GOF
+    parameters: significance_level=0.05, two_sided_test=True
+    input: logistic model predictions vs observed outcomes
+    output: discrimination and calibration metrics
+    confidence: medium
+  Step 10: Metabolic network construction
+    tool: R (pcalg) (v3.6.0)
+    algorithm: PC algorithm (conditional independence-based)
+    input: key differential metabolites (discovery set)
+    output: directed metabolic network
+    confidence: medium
+  Step 11: Network clustering
+    tool: igraph
+    algorithm: Walktrap community detection
+    input: metabolic network
+    output: metabolite clusters
+    confidence: high
+  Step 12: Pathway enrichment analysis
+    tool: MetaboAnalyst (v6.0)
+    algorithm: hypergeometric test + pathway topology analysis
+    parameters: database=KEGG, database_access_date=2023-12
+    input: differential metabolite list (HMDB-mapped)
+    output: enriched pathways with p-values and impact scores
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (MetaboLights: MTBLSXXXX)
+  processed_data: in_paper_only (Supplementary Data 16)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw .raw files not deposited in public repository (e.g., MetaboLights or PRIDE)
+  - No code repository or scripts shared for KNN imputation, LASSO modeling, or PC algorithm implementation
+  - Exact LC gradient profiles lack full specification (e.g., dwell time, column equilibration time, injection needle wash protocol)
+  - MetDNA version 1.2.2 is no longer publicly accessible; current MetDNA server uses newer versions with different defaults
+  - R version 3.6.0 is end-of-life and no longer supported; package versions (e.g., XCMS 3.2) are incompatible with modern Bioconductor
+  - No details on QC sample composition, injection order, or batch correction strategy despite known batch effects in LC-MS
+reproducibility_strengths:
+  - Full XCMS centWave parameters explicitly reported
+  - Level 1 metabolite identification criteria fully aligned with MSI standards
+  - All statistical thresholds (FDR, fold-change base, outlier SD cutoff) clearly defined
+  - Use of open-source tools (XCMS, igraph, R) for core analyses
+  - Independent clinical event adjudication and blinded metabolomics lab processing enhance methodological rigor

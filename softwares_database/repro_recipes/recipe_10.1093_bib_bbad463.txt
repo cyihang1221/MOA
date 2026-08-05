@@ -1,0 +1,67 @@
+========== reproducibility_recipe entry ==========
+paper_title: MSIpixel: a fully automated pipeline for compound annotation and quantitation in mass spectrometry imaging experiments.
+source_paper: Morosi L et al. (2023), Briefings in bioinformatics, DOI: 10.1093/bib/bbad463, PMID: 38102070
+overall_reproducibility_score: 72/100
+
+workflow_steps: 6
+  Step 1: MSI data acquisition with data-dependent acquisition (DDA)
+    tool: mass spectrometer
+    algorithm: data-dependent acquisition
+    input: tissue sample
+    output: raw MSI .imzML/.ibd files
+    confidence: low
+  Step 2: Conversion of raw MSI data to open format
+    tool: imzMLConverter
+    algorithm: imzML format conversion
+    input: vendor-specific raw MSI files
+    output: .imzML and .ibd files
+    confidence: medium
+  Step 3: Pixel-wise peak detection and feature extraction
+    tool: MSIpixel (vnot specified)
+    algorithm: pixel-based centroiding and feature table generation
+    parameters: min_snr=5, mz_tolerance_ppm=10, rt_tolerance_sec=5
+    input: .imzML/.ibd files
+    output: pixel-level feature table (m/z, RT, intensity, spatial coordinates)
+    confidence: medium
+  Step 4: Compound annotation via spectral matching and database search
+    tool: MSIpixel (vnot specified)
+    algorithm: in-silico MS/MS fragmentation + spectral library matching
+    parameters: library=GNPS, cosine_score_threshold=0.7, mass_error_ppm=10, min_matched_peaks=3
+    input: MS/MS spectra extracted per feature
+    output: annotated feature table with putative compound IDs
+    confidence: medium
+  Step 5: Quantitation and spatial normalization
+    tool: MSIpixel (vnot specified)
+    algorithm: total ion current (TIC) normalization per pixel
+    parameters: normalization_method=TIC
+    input: pixel-level feature table
+    output: normalized spatial intensity maps per annotated metabolite
+    confidence: medium
+  Step 6: Integration with bulk LC-MS/MS for annotation validation
+    tool: GNPS platform
+    algorithm: molecular networking
+    parameters: networking_cosine_threshold=0.7, min_matched_peaks=6
+    input: MS/MS spectra from MSI and parallel bulk LC-MS/MS
+    output: validated annotations via spectral similarity networks
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (MetaboLights: MTBLSXXXX)
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/MSIpixel/MSIpixel
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw MSI data accession ID not provided in paper or supplementary materials
+  - Exact instrument parameters (e.g., collision energy, isolation window) not specified
+  - No description of LC-MS/MS experimental conditions for validation dataset
+  - MSIpixel version number and commit hash not reported
+reproducibility_strengths:
+  - Open-source code hosted on GitHub under MIT license
+  - Uses community standards (imzML, GNPS)
+  - Explicit parameter values provided for key steps (e.g., mz_tolerance_ppm=10, cosine_score_threshold=0.7)

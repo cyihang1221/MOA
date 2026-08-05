@@ -1,0 +1,79 @@
+========== reproducibility_recipe entry ==========
+paper_title: Optimization of metabolomic data processing using NOREVA.
+source_paper: Fu J et al. (2022), Nature protocols, DOI: 10.1038/s41596-021-00636-9, PMID: 34952956
+overall_reproducibility_score: 78/100
+
+workflow_steps: 4
+  Step 1: Combinatorial workflow generation
+    tool: NOREVA
+    algorithm: exhaustive combinatorial search
+    parameters: min_workflow_length=3, max_workflow_length=5
+    input: peak table (feature intensity matrix)
+    output: set of candidate processing workflows
+    confidence: high
+  Step 2: Workflow execution and performance evaluation
+    tool: NOREVA
+    algorithm: multi-criteria objective assessment
+    parameters: criteria_count=5, criteria_types=['class_separation', 'batch_effect_correction', 'missing_value_ratio', 'feature_stability', 'biological_interpretability']
+    input: peak table + metadata (sample classes, time points, batches)
+    output: performance scores per workflow per criterion
+    confidence: medium
+  Step 3: Collective performance ranking
+    tool: NOREVA
+    algorithm: weighted aggregation or Pareto-optimal selection
+    parameters: ranking_method=comprehensive multi-criteria ranking
+    input: matrix of per-workflow, per-criterion scores
+    output: ranked list of optimal workflows
+    confidence: low
+  Step 4: Time-course and multiclass workflow optimization
+    tool: NOREVA
+    algorithm: study-design-aware workflow selection
+    parameters: analysis_type=['time_course', 'multiclass'], support_enabled=True
+    input: peak table + structured metadata (time points, >2 classes)
+    output: optimized workflow(s) tailored to experimental design
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not specified: not specified)
+  processed_data: not_mentioned (not specified: not specified)
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/zhufeng1989/NOREVA
+  license: GPL-3.0
+
+figure_recipes: 6
+  Figure 1: [workflow_diagram]
+    caption: Schematic illustration of peak table processing stages (S1–S4) in NOREVA.
+    produced_by_step: [1]
+    visualization_tool: R (ggplot2 or diagram package)
+  Figure 2: [line_plot]
+    caption: Performance plots showing changes in evaluation metrics before and after each processing stage (S1–S4).
+    produced_by_step: [2]
+    visualization_tool: R (ggplot2)
+  Figure 3: [heatmap]
+    caption: Heatmap visualizing performance across five independent criteria for all evaluated workflows.
+    produced_by_step: [2]
+    visualization_tool: R (pheatmap or ComplexHeatmap)
+  Figure 4: [bar_chart]
+    caption: Comprehensive performance ranking of all workflows using benchmark dataset PMID28528106.
+    produced_by_step: [3]
+    visualization_tool: R (ggplot2)
+  Figure 5: [boxplot]
+    caption: Processing results for cortisol across three representative workflows using dataset PMID29215023.
+    produced_by_step: [4]
+    visualization_tool: R (ggplot2)
+  Figure 6: [boxplot]
+    caption: Processing results for spike-in compounds (aspartic acid, malic acid) using top- and bottom-ranked workflows on dataset PMID22647087.
+    produced_by_step: [4]
+    visualization_tool: R (ggplot2)
+
+reproducibility_gaps:
+  - No raw metabolomics data or peak tables deposited in public repository
+  - Exact definitions of the five performance criteria not fully specified in methods
+  - No details on preprocessing steps (e.g., imputation, filtering) embedded within workflows
+  - Benchmark datasets referenced only by PubMed IDs (PMID), not accession IDs or repositories
+reproducibility_strengths:
+  - NOREVA R package publicly available on GitHub with Zenodo DOI
+  - Open-source GPL-3.0 license ensures modifiability and redistribution
+  - Protocol explicitly supports time-course and multiclass designs — rare in automated workflow optimizers

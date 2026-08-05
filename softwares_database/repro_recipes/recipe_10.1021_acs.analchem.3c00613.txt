@@ -1,0 +1,36 @@
+========== reproducibility_recipe entry ==========
+paper_title: Early Diagnosis: End-to-End CNN-LSTM Models for Mass Spectrometry Data Classification.
+source_paper: Seddiki K et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c00613, PMID: 37624777
+overall_reproducibility_score: 20/100
+
+workflow_steps: 2
+  Step 1: Raw LC-MS data input
+    tool: custom deep learning framework
+    algorithm: end-to-end CNN-LSTM
+    input: raw LC-MS chromatographic data (m/z-time-intensity tensors)
+    output: binary classification (tumoral vs. normal)
+    confidence: low
+  Step 2: End-to-end feature learning and classification
+    tool: CNN-LSTM hybrid architecture
+    algorithm: convolutional feature extraction + sequential temporal modeling
+    parameters: input_shape=3D tensor (m/z bins × retention time points × intensity), cnn_layers=multiple convolutional + pooling layers (exact number/architecture not specified), lstm_layers=at least one LSTM layer (exact configuration not specified), optimizer=not specified, learning_rate=not specified, batch_size=not specified, epochs=not specified, dropout_rate=not specified, activation_functions=not specified
+    input: preprocessed LC-MS data tensors (likely binned and normalized, but preprocessing details omitted)
+    output: predicted class probabilities
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of data preprocessing (binning parameters, m/z range, RT alignment, normalization method)
+  - No architectural details of CNN-LSTM (layer dimensions, kernel sizes, number of filters/LSTM units, initialization)
+  - No training configuration (optimizer, learning rate, batch size, epochs, early stopping criteria)
+  - No data source or accession information — dataset not identified or deposited
+  - No code repository or implementation details provided
+  - No validation strategy explicitly described (e.g., cross-validation folds, train/validation/test split proportions)

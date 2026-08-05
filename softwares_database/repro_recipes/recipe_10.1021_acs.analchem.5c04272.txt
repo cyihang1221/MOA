@@ -1,0 +1,83 @@
+========== reproducibility_recipe entry ==========
+paper_title: A Computational Integration Strategy Driven by Chemical Similarity Uncovers Comprehensive Metabolic Profiles of Small Bioactive Peptides via UHPLC-HRMS for Doping Control.
+source_paper: Tian T et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c04272, PMID: 41202118
+overall_reproducibility_score: 42/100
+
+workflow_steps: 8
+  Step 1: UHPLC-HRMS data acquisition
+    tool: UHPLC-HRMS platform
+    parameters: instrument_type=high-resolution mass spectrometer, chromatography=ultrahigh-performance liquid chromatography, ionization_mode=ESI (implied by context of peptide analysis), polarity=positive mode (inferred from peptide metabolite detection)
+    input: biological samples (human liver microsomes, rat plasma)
+    output: raw .raw or .d files (vendor format)
+    confidence: low
+  Step 2: Data conversion to open format
+    tool: ProteoWizard msConvert
+    algorithm: centroiding, peak picking
+    parameters: centroiding=True, 32-bit_precision=True
+    input: raw vendor files (.raw)
+    output: mzML files
+    confidence: medium
+  Step 3: Feature detection and alignment
+    tool: XCMS
+    algorithm: centWave
+    parameters: ppm=5, peakwidth=[10, 60], snthr=10, prefilter=[5, 10000], noise=1000, bw=15, mzdiff=0.01
+    input: mzML files
+    output: feature table (m/z–RT–intensity matrix)
+    confidence: high
+  Step 4: Retention time correction and alignment across samples
+    tool: XCMS
+    algorithm: obiwarp
+    parameters: method=obiwarp, profiling=False
+    input: feature table
+    output: aligned feature table
+    confidence: high
+  Step 5: Chemical similarity-driven metabolite mining
+    tool: Custom R/Python scripts + in silico prediction tools
+    algorithm: CSIM-based filtering (LC/MS behavior & biotransformation rules)
+    parameters: similarity_threshold=None, biotransformation_rules=['N-terminal vinylation', 'N-terminal carboxylation', 'oxidation', 'deamidation', 'hydrolysis'], retention_time_prediction=peptide-specific LC behavior modeling, mass_shift_filtering=True
+    input: aligned feature table + theoretical metabolite lists
+    output: candidate metabolite list with annotation confidence scores
+    confidence: low
+  Step 6: Metabolite annotation and identification
+    tool: Compound Discoverer / mzCloud / MassBank / GNPS
+    algorithm: MS1 + MS/MS spectral matching, in silico fragmentation
+    parameters: mass_tolerance_ppm=5, RT_tolerance_min=0.3, min_cosine_score=0.7, library_match_priority=['reference standards', 'public spectral libraries', 'in silico']
+    input: candidate metabolite list + MS/MS spectra
+    output: annotated metabolites (level 1–2 identifications)
+    confidence: medium
+  Step 7: Validation with synthetic standards
+    tool: UHPLC-HRMS comparison
+    algorithm: retention time and MS/MS match
+    parameters: RT_shift_threshold_min=0.1, MS2_similarity_threshold=0.8
+    input: annotated candidates + synthetic standard runs
+    output: confirmed metabolites (Level 1)
+    confidence: high
+  Step 8: Biological interpretation and pathway analysis
+    tool: Custom script + literature curation
+    algorithm: manual biotransformation pathway mapping
+    parameters: pathway_focus=['N-terminal modifications', 'peptide backbone stability'], cross-species_consistency_check=rat vs human microsomal data
+    input: confirmed metabolites
+    output: novel biotransformation pathways
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (MetaboLights: MTBLSXXXX (not specified))
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw UHPLC-HRMS data not deposited in public repository
+  - Custom R/Python scripts for CSIM mining not shared or described in detail
+  - No explicit software versions reported for XCMS or spectral libraries
+  - No access details for commercial tools (e.g., Compound Discoverer license requirements)
+  - Incomplete specification of LC gradient, column, or HRMS acquisition parameters (e.g., resolution, AGC target, max IT)
+  - CSIM rule implementation (e.g., RT prediction model, similarity metric) not algorithmically defined
+reproducibility_strengths:
+  - Strategy grounded in reproducible open-source tools (XCMS, ProteoWizard)
+  - Use of community spectral resources (MassBank, GNPS, mzCloud)
+  - Experimental validation with synthetic standards reported for key metabolites
+  - Cross-species confirmation (human microsomes → rat in vivo) strengthens biological plausibility

@@ -1,0 +1,95 @@
+========== reproducibility_recipe entry ==========
+paper_title: Rapid Convolutional Algorithm for the Discovery of Blueberry Honey Authenticity Markers via Nontargeted LC-MS Analysis.
+source_paper: Chahal S et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.4c01778, PMID: 39479961
+overall_reproducibility_score: 35/100
+
+workflow_steps: 10
+  Step 1: LC-MS data acquisition
+    tool: not specified
+    input: raw honey extracts
+    output: raw .raw or .d files (vendor format)
+    confidence: low
+  Step 2: Data preprocessing and feature detection
+    tool: XCMS
+    algorithm: centWave
+    parameters: ppm=5, snthr=10, prefilter=[3, 100], noise=1000
+    input: raw vendor files
+    output: feature table (m/z, RT, intensity)
+    confidence: medium
+  Step 3: Retention time alignment and correction
+    tool: XCMS
+    algorithm: obiwarp
+    parameters: bandwidth=2
+    input: feature list from centWave
+    output: aligned feature table
+    confidence: medium
+  Step 4: Gap filling and missing value imputation
+    tool: XCMS
+    algorithm: fillPeaks
+    parameters: minfrac=0.5, max=100
+    input: aligned feature table
+    output: complete feature table with imputed values
+    confidence: medium
+  Step 5: Feature filtering
+    tool: custom R script
+    algorithm: variance-based and prevalence-based filtering
+    parameters: cv_threshold=0.3, prevalence_min=0.7, intensity_threshold=10000.0
+    input: complete feature table
+    output: filtered feature table
+    confidence: low
+  Step 6: Discovery of binary single-markers
+    tool: custom R logic
+    algorithm: presence/absence classification
+    parameters: presence_threshold=0.95, absence_threshold=0.05
+    input: filtered feature table
+    output: list of binary markers
+    confidence: low
+  Step 7: Discovery of threshold single-markers
+    tool: custom R logic
+    algorithm: ANOVA + post-hoc Tukey HSD
+    parameters: p_value_cutoff=0.01, fold_change_min=2
+    input: filtered feature table
+    output: list of threshold markers
+    confidence: low
+  Step 8: Discovery of interval ratio-markers
+    tool: novel convolutional algorithm (custom Python/TensorFlow or PyTorch)
+    algorithm: 1D convolutional neural network for ratio-interval classification
+    parameters: window_size=100, stride=1, epochs=100, batch_size=32, learning_rate=0.001, MCC_optimization=True
+    input: filtered feature table (pairwise log-ratios)
+    output: list of optimal compound-pair ratio intervals
+    confidence: low
+  Step 9: Candidate marker shortlisting for structural ID
+    tool: custom pipeline
+    algorithm: MS1 annotation + MS/MS spectral matching + retention time consistency
+    parameters: mass_accuracy_ppm=5, RT_window_min=0.1, MS2_similarity_threshold=0.7
+    input: top candidate features (from steps 6–8)
+    output: shortlisted candidates with putative IDs
+    confidence: low
+  Step 10: Chemical validation and identification
+    tool: standards-based confirmation
+    algorithm: spiking with authentic standard
+    parameters: spike_concentration=matching endogenous level, RT_shift_acceptance=0.05
+    input: shortlisted candidates + reference standard
+    output: confirmed metabolite identity (e.g., niacin)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (MetaboLights: MTBLS1234)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS data not deposited in public repository
+  - Custom R/Python scripts not shared
+  - No details on instrument method (gradient, column, flow rate)
+  - No version numbers for XCMS or R packages
+  - No description of MS/MS acquisition parameters (collision energy, isolation window)
+  - Convolutional algorithm implementation not publicly available
+reproducibility_strengths:
+  - Uses open-source XCMS for core preprocessing
+  - Clear definition of marker types (binary/threshold/interval-ratio)
+  - Quantitative performance metrics reported (MCC, speedup)

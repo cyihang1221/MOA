@@ -1,0 +1,78 @@
+========== reproducibility_recipe entry ==========
+paper_title: Single-cell and spatially resolved omics reveal transcriptional and metabolic signatures of ovarian endometriomas.
+source_paper: Qi Y et al. (2025), Nature communications, DOI: 10.1038/s41467-025-66706-8, PMID: 41274870
+overall_reproducibility_score: 32/100
+
+workflow_steps: 7
+  Step 1: scRNA-seq raw data processing
+    tool: Cell Ranger (v6.1.0)
+    algorithm: STAR alignment, UMI counting with error correction, EmptyDrops barcode filtering
+    parameters: reference_genome=Ensembl_release93, min_exon_overlap_fraction=0.5, max_umi_count_per_cell=40000, max_mitochondrial_gene_pct=20, min_genes_per_cell=200, max_genes_per_cell=7200, doublet_detection_tool=DoubletFinder v2.0.3
+    input: raw BCL files from NovaSeq 6000
+    output: cell-by-gene count matrix
+    confidence: high
+  Step 2: scRNA-seq downstream analysis
+    tool: Seurat (v4.1.0)
+    algorithm: UMAP dimensionality reduction, differential expression testing (Wilcoxon rank-sum test)
+    parameters: differential_expression_threshold_fold_change=2, differential_expression_threshold_p_value=0.05, upregulated_gene_threshold_log_fold_change=0.25, upregulated_gene_threshold_p_value=0.01
+    input: Cell Ranger output count matrices
+    output: cell clusters, marker genes, DEG lists
+    confidence: high
+  Step 3: DSP-WTA data preprocessing
+    tool: GeoMx NGS Pipeline & Convert (vnot specified)
+    algorithm: FASTQ → DCC conversion, sequence alignment, Q3 normalization
+    parameters: min_raw_reads_per_ROI=1000, min_alignment_rate=0.75, min_sequencing_saturation=0.5, normalization_method=Q3
+    input: FASTQ files from Illumina NovaSeq6000 (2×75 bp)
+    output: normalized gene expression per ROI/AOI
+    confidence: medium
+  Step 4: DSP-WTA differential expression analysis
+    tool: GeoMx software (internal pipeline) (vnot specified)
+    algorithm: FDR-corrected statistical testing (method unspecified)
+    parameters: fold_change_threshold=2, fdr_threshold=0.05
+    input: Q3-normalized ROI expression matrix
+    output: DEGs between endometrioma vs. control ROIs
+    confidence: low
+  Step 5: MALDI-MSI data acquisition
+    tool: timsTOF fleX MALDI 2 (vnot specified)
+    algorithm: MALDI2 imaging in negative ion mode
+    parameters: ion_mode=negative, mz_range=[50, 1500], spatial_resolution=50, laser_frequency_hz=10000, laser_energy_percent=62, matrix=CHCA, matrix_concentration_mg_ml=5, solvent_composition=70% ACN + 0.1% TFA, matrix_application=TM-sprayer, spray_nozzle_velocity_mm_min=1200, track_spacing_mm=2, flow_rate_ml_min=0.12, nozzle_temperature_c=72, nitrogen_pressure_psi=10
+    input: 20 µm cryosections on ITO slides
+    output: raw .imzML or proprietary Bruker format imaging datasets
+    confidence: high
+  Step 6: Spatially resolved metabolomics feature detection and annotation
+    tool: Bruker SCiLS Lab or similar (implied) (vnot specified)
+    algorithm: peak picking, spatial segmentation, m/z-based metabolite annotation
+    parameters: mass_tolerance_ppm=None, min_spectral_intensity=None, smoothing_method=None, annotation_databases=['HMDB', 'METLIN', 'LipidMaps'], ion_mode_used_for_annotation=negative
+    input: raw MALDI-MSI spectra (.imzML or .tdf)
+    output: spatial metabolite maps, annotated m/z features, differential metabolite lists
+    confidence: low
+  Step 7: Multi-omics integration and pathway analysis
+    tool: custom R/Python scripts (implied) + public databases
+    algorithm: cross-platform correlation, pathway enrichment (KEGG, Reactome, GO)
+    parameters: enrichment_database=['KEGG', 'Reactome', 'GO'], enrichment_method=hypergeometric test or GSEA, fdr_correction=True
+    input: scRNA-seq DEGs, DSP-WTA DEGs, MALDI-MSI differential metabolites
+    output: integrated pathway signatures (e.g., ECM-receptor interaction, cytochrome P450 metabolism)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: not_mentioned (not mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw scRNA-seq FASTQ/BCL files not deposited in public repository (e.g., GEO/SRA)
+  - DSP-WTA raw FASTQs and DCC files not shared
+  - MALDI-MSI raw imaging datasets (.imzML/.tdf) not deposited in MetaboLights or MassIVE
+  - No code or analysis scripts provided for multi-omics integration
+  - Commercial software dependencies (Cell Ranger, Seurat via 10x, GeoMx platform, Bruker timsTOF + SCiLS Lab) limit full reproducibility without licenses
+  - Critical MALDI-MSI parameters missing: mass tolerance, peak picking algorithm, baseline correction, spatial segmentation method
+  - No details on statistical methods for cross-omics correlation or pathway enrichment implementation
+reproducibility_strengths:
+  - Explicit version numbers for Cell Ranger (6.1.0) and Seurat (4.1.0)
+  - Detailed MALDI matrix application parameters (sprayer settings, solvent composition)
+  - Clear QC thresholds for DSP-WTA ROIs (reads, alignment rate, saturation)
+  - Defined biological inclusion/exclusion criteria and sample processing SOPs

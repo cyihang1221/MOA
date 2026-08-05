@@ -1,0 +1,80 @@
+========== reproducibility_recipe entry ==========
+paper_title: Dual UHPLC-HRMS Metabolomics and Lipidomics and Automated Data Processing Workflow for Comprehensive High-Throughput Gut Phenotyping.
+source_paper: Vangeenderhuysen P et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.2c05371, PMID: 37220321
+overall_reproducibility_score: 52/100
+
+workflow_steps: 8
+  Step 1: Dual fecal extraction
+    tool: in-house protocol
+    parameters: extraction_solvents=['methanol', 'chloroform'], sample_amount=minimal amount, extraction_mode=dual
+    input: fresh/frozen fecal samples
+    output: extracted metabolome and lipidome fractions
+    confidence: medium
+  Step 2: UHPLC-HR-Q-Orbitrap-MS analysis
+    tool: Thermo Scientific Q Exactive HF-X
+    parameters: instrument=Q Exactive HF-X, ionization=['ESI+', 'ESI-'], chromatography=['HILIC', 'C18'], resolution=120000, mass_range=m/z 70–1200
+    input: extracted fractions
+    output: raw .raw files
+    confidence: high
+  Step 3: Data conversion to mzML
+    tool: ProteoWizard msconvert
+    parameters: 64-bit=True, filter=peakPicking true 1-2, compression=zlib
+    input: vendor .raw files
+    output: centroided .mzML files
+    confidence: medium
+  Step 4: Untargeted feature detection and alignment
+    tool: XCMS
+    algorithm: isotopologue parameter optimization + centWave
+    parameters: peakwidth=[10, 60], ppm=5, snthr=10, prefilter=[3, 100], noise=1000, bw=10, mzwid=0.015, max=500
+    input: mzML files
+    output: feature table (m/z, RT, intensity)
+    confidence: medium
+  Step 5: Targeted peak extraction
+    tool: TaPEx (R-based)
+    algorithm: targeted extraction using RT and m/z database
+    parameters: rt_tolerance_sec=5, mz_tolerance_ppm=5, min_peak_width_sec=2, signal_to_noise_threshold=3
+    input: mzML files + database (360 metabolites + 132 lipids)
+    output: targeted peak table (quantified compounds)
+    confidence: high
+  Step 6: Batch-specific quality control curation
+    tool: in-house R scripts
+    algorithm: QC-driven retention time correction and outlier removal
+    parameters: qc_sample_frequency=every 10 samples, rt_drift_correction=loess, outlier_removal_method=median absolute deviation (MAD)
+    input: TaPEx output + QC sample intensities
+    output: curated targeted quantification table
+    confidence: low
+  Step 7: Statistical validation and performance benchmarking
+    tool: R
+    algorithm: CV calculation, R² linear regression, compound detection rate comparison
+    parameters: cv_threshold=20, r2_threshold=0.9, detection_rate_metric=percent of standards detected
+    input: targeted and untargeted quantification tables
+    output: validation metrics (CV%, R², detection %)
+    confidence: high
+  Step 8: Holistic untargeted fingerprinting
+    tool: XCMS + custom R pipeline
+    algorithm: feature summarization and filtering (CV < 30%)
+    parameters: cv_filter_threshold=30, missingness_threshold=50
+    input: XCMS feature table
+    output: filtered untargeted feature table (15,319 features)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (MetaboLights: MTBLSXXXX)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: mentioned_no_link
+  code_url: https://github.com/compomics/tapex
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw .raw files not deposited in public repository
+  - TaPEx GitHub URL mentioned but not linked or archived
+  - No details on HILIC/C18 gradient profiles or mobile phase composition
+  - In-house extraction protocol lacks full SOP (e.g., homogenization time, centrifugation g-force/duration)
+  - No access information for the 836-in-house standard library (RT/mz database)
+reproducibility_strengths:
+  - Uses open-source tools (XCMS, R) for core untargeted processing
+  - Explicit performance metrics reported (CV%, R², detection rates)
+  - Benchmarking against vendor software and XCMS provides methodological transparency

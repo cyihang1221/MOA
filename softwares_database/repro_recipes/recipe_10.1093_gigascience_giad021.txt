@@ -1,0 +1,61 @@
+========== reproducibility_recipe entry ==========
+paper_title: Delineating regions of interest for mass spectrometry imaging by multimodally corroborated spatial segmentation.
+source_paper: Guo A et al. (2022), GigaScience, DOI: 10.1093/gigascience/giad021, PMID: 37039115
+overall_reproducibility_score: 20/100
+
+workflow_steps: 6
+  Step 1: Histomorphological feature extraction from H&E images
+    tool: Deep learning-based algorithm (custom)
+    algorithm: Convolutional neural network (CNN) for spatial feature encoding
+    input: Whole-slide hematoxylin and eosin (H&E) histology images
+    output: Histomorphological feature spectra (per-pixel feature vectors)
+    confidence: low
+  Step 2: Clustering of histomorphological features
+    tool: Unspecified clustering algorithm
+    algorithm: Clustering (method not specified, e.g., k-means or spectral clustering)
+    parameters: n_clusters=varied for consistency evaluation
+    input: Histomorphological feature spectra
+    output: Histology-derived segmentation map
+    confidence: low
+  Step 3: Clustering of MSI mass spectral features
+    tool: Unspecified clustering algorithm
+    algorithm: Clustering (method not specified, e.g., k-means or consensus clustering)
+    parameters: n_clusters=varied (candidate values tested)
+    input: Preprocessed MSI data (peak-aligned, normalized ion images or feature matrices)
+    output: MSI-derived segmentation map
+    confidence: low
+  Step 4: Cross-modal consistency evaluation
+    tool: Custom metric computation
+    algorithm: Spatial overlap / agreement metric (e.g., adjusted Rand index or mutual information between segmentation maps)
+    parameters: metric=consistency measure between histology and MSI segmentations
+    input: Paired histology-derived and MSI-derived segmentation maps
+    output: Consistency score per #Clusters value
+    confidence: medium
+  Step 5: Optimal #Clusters selection
+    tool: Custom decision rule
+    algorithm: Selection of #Clusters maximizing cross-modal consistency
+    input: Consistency scores across candidate #Clusters
+    output: Optimal number of clusters and corresponding multimodally corroborated ROIs
+    confidence: high
+  Step 6: Downstream spatial molecular analysis
+    tool: Unspecified statistical or visualization tools
+    algorithm: Differential expression / specificity analysis (e.g., t-test, fold-change, ROC-based marker selection)
+    input: Multimodally corroborated ROIs + MSI ion intensity data
+    output: Lipid molecules highly specific to anatomy/pathology
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of deep learning architecture or training details
+  - Clustering algorithms and parameters unspecified
+  - Consistency metric not defined or cited
+  - No public data or code repository linked
+  - No software implementation details or availability statement

@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: Large-scale benchmark study of survival prediction methods using multi-omics data.
+source_paper: Herrmann M et al. (2021), Briefings in bioinformatics, DOI: 10.1093/bib/bbaa167, PMID: 32823283
+overall_reproducibility_score: 85/100
+
+workflow_steps: 4
+  Step 1: Data acquisition and preprocessing
+    tool: TCGA
+    input: multi-omics cancer datasets (mRNA, miRNA, methylation, RPPA, clinical)
+    output: preprocessed multi-omics data matrices with matched samples
+    confidence: medium
+  Step 2: Survival outcome definition
+    tool: R
+    algorithm: censored survival time (time-to-event)
+    parameters: outcome=overall survival, censoring=right-censored
+    input: clinical data from TCGA
+    output: survival object (Surv())
+    confidence: high
+  Step 3: Model training and evaluation
+    tool: R
+    algorithm: 5-fold cross-validation with multiple repetitions
+    parameters: folds=5, repetitions=several, performance_metrics=["Uno's C-index", 'integrated Brier score']
+    input: preprocessed multi-omics + survival object
+    output: cross-validated performance estimates per method
+    confidence: medium
+  Step 4: Method comparison
+    tool: R
+    algorithm: paired performance comparison across datasets
+    parameters: reference_methods=['Kaplan-Meier', 'Cox model with clinical variables only'], methods_compared=11, group_structure_handling=['yes', 'no']
+    input: cross-validated performance estimates
+    output: ranked method performance summary, statistical significance of differences
+    confidence: high
+
+data_availability:
+  raw_data: available (The Cancer Genome Atlas (TCGA))
+  processed_data: not_mentioned
+  metadata: available
+
+code_availability: repository_linked
+  code_url: https://github.com/moritzherrmann/blockforest-survival
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No explicit description of omics data preprocessing steps (e.g., normalization, batch correction, missing value imputation)
+  - Exact number of CV repetitions not specified
+  - No details on how multi-omics blocks were defined (e.g., feature counts per omics layer)
+reproducibility_strengths:
+  - All analyses reproducible via publicly available R code on GitHub
+  - Use of standardized, publicly accessible TCGA data
+  - Clear specification of performance metrics (Uno's C-index, integrated Brier score)
+  - Inclusion of reference methods (Kaplan-Meier, clinical-only Cox)

@@ -1,0 +1,97 @@
+========== reproducibility_recipe entry ==========
+paper_title: Human metabolome variation along the upper intestinal tract.
+source_paper: Folz J et al. (2023), Nature metabolism, DOI: 10.1038/s42255-023-00777-z, PMID: 37165176
+overall_reproducibility_score: 72/100
+
+workflow_steps: 7
+  Step 1: Sample collection via ingestible device
+    tool: CapScan (Envivo Bio)
+    parameters: coating_types=[1, 2, 3, 4], target_pH_type1=5.5, target_pH_type2=6.0, target_pH_type3=7.5, target_pH_type4=7.5, time_delay_coating=True, collection_volume_max=400, collection_bladder_diameter_mm=6, collection_bladder_length_mm=33
+    input: in vivo intestinal luminal contents
+    output: capsule-collected supernatant samples
+    confidence: high
+  Step 2: Biphasic metabolite extraction
+    tool: manual biphasic extraction (MTBE/methanol/water)
+    parameters: polar_phase_solvent=aqueous (water/methanol), nonpolar_phase_solvent=MTBE, internal_standard=SPLASH LIPIDOMIX Mass Spec Standard (Avanti), temperature_control=4 °C for all steps except vortexing/sonication at RT, blanks_frequency=every 10 samples, QC_sample_type=pooled human GI tract contents from unrelated studies, stool_mass_mg=5 ± 1, methanol_volume_ul=225, MTBE_volume_ul=750, water_volume_ul=188, homogenization_method=Geno/Grinder at 1500 Hz for 1 min, centrifugation_organic_phase=14000 g for 2 min at RT, centrifugation_aqueous_phase=708 g for 12 min at 4 °C
+    input: capsule supernatant or stool homogenate
+    output: dried polar (aqueous) and nonpolar (organic) phase extracts
+    confidence: high
+  Step 3: HILIC LC–MS/MS analysis (polar metabolites)
+    tool: Thermo Vanquish LC + QExactive HF+
+    algorithm: data-dependent acquisition (DDA)
+    parameters: column=Waters Acquity UPLC BEH Amide (150 × 2.1 mm, 1.7 µm), precolumn=5 mm × 2.1 mm, 1.7 µm, mobile_phase_A=100% water + 10 mM ammonium formate + 0.125% formic acid, mobile_phase_B=95:5 acetonitrile:water + 10 mM ammonium formate + 0.125% formic acid, flow_rate_ul_min=400, column_temperature_C=45, injection_volume_ul=3, gradient_minutes=[0, 2, 7.7, 9.5, 10.25, 12.75, 17], gradient_B_percent=[100, 100, 70, 40, 30, 100, 100], ionization_mode=['positive', 'negative'], needle_voltage_V={'positive': 3500, 'negative': -3500}, capillary_temperature_C=263, auxiliary_gas_heater_temperature_C=425, sheath_gas_flow=50, auxiliary_gas_flow=13, sweep_gas_flow=3, S_lens_RF_level=50, ms_resolution=60000, ms_mass_range_mz=[60, 900], ms_agc_target=1000000, ms_max_accumulation_time_ms=100, msms_resolution=15000, msms_isolation_window_da=1, msms_max_accumulation_time_ms=50, msms_dynamic_exclusion_s=3, msms_stepped_NCE=[20, 30, 60], msms_agc_target=8000, msms_top_n=4, data_storage_mode=centroid
+    input: reconstituted aqueous phase extracts + internal standards
+    output: raw .raw files (Thermo)
+    confidence: high
+  Step 4: Lipidomics LC–MS/MS analysis (nonpolar metabolites)
+    tool: Thermo Vanquish LC + QExactive HF+
+    algorithm: data-dependent acquisition (DDA)
+    parameters: column=Waters Acquity UPLC CSH C18 (100 × 2.1 mm, 1.7 µm), precolumn=5 mm × 2.1 mm, 1.7 µm, mobile_phase_A=9:1 acetonitrile:water + 10 mM ammonium formate + 0.1% formic acid (positive mode only), mobile_phase_B=8:2 IPA:acetonitrile + 10 mM ammonium formate + 0.1% formic acid (positive mode only), reconstitution_solvent=50 µl 9:1 acetonitrile/toluene, flow_rate_ul_min=None, column_temperature_C=None, injection_volume_ul=None, gradient_profile=not fully specified (truncated in text), ionization_mode=positive ESI only, ms_resolution=60000, ms_mass_range_mz=[60, 900], msms_top_n=4, msms_stepped_NCE=[20, 30, 60], data_storage_mode=centroid
+    input: reconstituted organic phase extracts
+    output: raw .raw files (Thermo)
+    confidence: medium
+  Step 5: Metabolite feature detection and alignment
+    tool: not explicitly named
+    input: Thermo .raw files
+    output: feature table (m/z, RT, intensity)
+    confidence: low
+  Step 6: Metabolite annotation and identification
+    tool: not explicitly named
+    algorithm: MS1 + MS/MS spectral matching
+    parameters: reference_databases=['HMDB', 'LipidMaps', 'METLIN', 'GNPS'], mass_tolerance_ppm=None, RT_tolerance_sec=None, MSMS_similarity_score_threshold=None
+    input: feature table + MS/MS spectra
+    output: annotated metabolite table (1,909 metabolites)
+    confidence: low
+  Step 7: Statistical analysis and visualization
+    tool: not explicitly named
+    algorithm: ['t-test', 'ANOVA', 'correlation (Spearman)', 'hierarchical clustering']
+    parameters: statistical_significance_threshold=0.05, FDR_correction=Benjamini–Hochberg, clustering_method=hierarchical with Euclidean distance and average linkage
+    input: annotated metabolite table + metadata
+    output: differentially abundant metabolites, association plots, heatmaps
+    confidence: medium
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1927)
+  processed_data: available (MetaboLights: MTBLS1927)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1927
+
+code_availability: not_mentioned
+
+figure_recipes: 5
+  Fig. 1: [bar_chart]
+    caption: Comparison of proximal and distal upper intestinal metabolite levels reveals significant differences in a wide range of compounds.
+    produced_by_step: [6, 7]
+    visualization_tool: unknown
+    statistical_test: t-test or ANOVA with FDR correction
+  Table 1: [table]
+    caption: Participant characteristics.
+    visualization_tool: unknown
+  Fig. 2: [scatter_plot]
+    caption: Intestinal metabolite association with food types.
+    produced_by_step: [7]
+    visualization_tool: unknown
+    statistical_test: Spearman correlation
+  Fig. 3: [heatmap]
+    caption: Heat map of metabolites with strong inter-participant differences.
+    produced_by_step: [7]
+    visualization_tool: unknown
+  Extended Data Table 1: [table]
+    caption: The 20 chemical classes that exhibited the most significant differences between the proximal and distal upper intestine.
+    produced_by_step: [6, 7]
+    visualization_tool: unknown
+    statistical_test: ANOVA or t-test with FDR correction
+
+reproducibility_gaps:
+  - No explicit description of data processing software (XCMS, MS-DIAL, Compound Discoverer, or commercial platform)
+  - Incomplete LC gradient details for lipidomics method (truncated in text)
+  - No code or workflow scripts shared
+  - No parameter settings for feature detection, alignment, or annotation tools
+  - No details on batch correction or retention time alignment methods
+  - No information on missing value imputation strategy
+reproducibility_strengths:
+  - Raw and processed metabolomics data publicly available in MetaboLights (MTBLS1927)
+  - Detailed experimental protocols for sample collection, extraction, and LC–MS/MS acquisition
+  - Use of standardized internal standards (SPLASH LIPIDOMIX, CUDA)
+  - Explicit QC and blank inclusion strategy
+  - Comprehensive metadata reporting (participant characteristics, sampling timing, diet logs)

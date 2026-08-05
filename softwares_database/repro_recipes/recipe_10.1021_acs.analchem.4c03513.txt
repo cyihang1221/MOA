@@ -1,0 +1,62 @@
+========== reproducibility_recipe entry ==========
+paper_title: A Software Tool for Rapid and Automated Preprocessing of Large-Scale Serum Metabolomic Data by Multisegment Injection-Capillary Electrophoresis-Mass Spectrometry.
+source_paper: Helmeczi E et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.4c03513, PMID: 39729551
+overall_reproducibility_score: 45/100
+
+workflow_steps: 5
+  Step 1: Raw data import and format conversion
+    tool: PeakMeister
+    algorithm: custom R-based preprocessing pipeline for MSI-CE-MS
+    parameters: migration_time_correction_method=migration_time_index, internal_standards_count=11, flanking_requirement=two flanking IS or one comigrating stable-isotope IS, batch_correction=applied across three batches, sample_throughput=<4 min/sample
+    input: raw CE-MS .d files (Agilent) or vendor-native format
+    output: aligned peak table with migration time-corrected features
+    confidence: medium
+  Step 2: Migration time correction
+    tool: PeakMeister
+    algorithm: migration time index (MTI) using internal standards
+    parameters: internal_standards=11, correction_scope=nonlinear migration time shifts, transformation_type=no dynamic time warping or effective mobility scale transformation
+    input: raw electropherograms with migration time axis
+    output: migration time-aligned electropherograms
+    confidence: high
+  Step 3: Peak detection and integration
+    tool: PeakMeister
+    algorithm: custom signal processing (not centWave/MatchedFilter)
+    parameters: peak_annotation_fidelity_median_accuracy=99.9, mean_integration_bias_percent=-2.1, intermediate_precision_median_cv_percent=16.0
+    input: migration time-corrected electropherograms
+    output: quantified peak area table (metabolite × sample)
+    confidence: medium
+  Step 4: Sample position assignment and batch harmonization
+    tool: PeakMeister
+    algorithm: position inference via internal standard pattern + batch-aware normalization
+    parameters: total_batches=3, duration_of_acquisition=eight-month period, total_run_days=40, samples_per_run=13
+    input: peak table with internal standard signals
+    output: batch-corrected, position-annotated feature table
+    confidence: medium
+  Step 5: Metabolite quantification and reference range derivation
+    tool: PeakMeister
+    algorithm: internal standard-based relative quantification
+    parameters: reference_material=NIST SRM-1950, metabolites_quantified_in_reference=16, mean_quantification_bias_percent=-1.3, population=Brazilian children under 5 years (ENANI-2019), metabolites_with_reference_ranges=40
+    input: batch-corrected feature table
+    output: quantified metabolite concentrations + reference ranges (P2.5–P97.5)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: in_paper_only
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw CE-MS data not deposited in public repository (e.g., MetaboLights, MassIVE)
+  - PeakMeister source code not linked or archived (no GitHub/Bioconductor/CRAN URL provided)
+  - No description of algorithmic details (e.g., peak detection thresholds, smoothing parameters, baseline correction method)
+  - Internal standard identities and migration times not listed — critical for MTI reproducibility
+  - No information on how QC samples (n=420) were integrated into batch correction or used for filtering
+reproducibility_strengths:
+  - Explicit performance metrics reported (accuracy >99.9%, CV=16.0%, bias ≤−2.1%)
+  - Large-scale validation context clearly described (5,000 serum + 420 QC samples; 3 batches; 8 months)
+  - Method designed for nonlinear migration time shifts — avoids black-box warping
+  - Use of stable-isotope internal standards and flanking IS logic enables traceable annotation

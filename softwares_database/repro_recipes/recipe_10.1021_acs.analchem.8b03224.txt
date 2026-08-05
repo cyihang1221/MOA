@@ -1,0 +1,36 @@
+========== reproducibility_recipe entry ==========
+paper_title: Data-Driven Rescoring of Metabolite Annotations Significantly Improves Sensitivity.
+source_paper: C Silva AS et al. (2018), Analytical chemistry, DOI: 10.1021/acs.analchem.8b03224, PMID: 30188119
+overall_reproducibility_score: 75/100
+
+workflow_steps: 2
+  Step 1: Metabolite annotation search
+    tool: SM-Engine
+    algorithm: spectral matching against in-silico and experimental MS/MS libraries
+    input: mass spectrometry imaging (MSI) data files (e.g., imzML)
+    output: initial metabolite annotation results (scored candidate matches per feature)
+    confidence: medium
+  Step 2: Data-driven rescoring of metabolite annotations
+    tool: rescore-metabolites
+    algorithm: target-decoy based statistical rescoring using retention time, intensity, and spectral similarity features
+    input: initial annotation results from SM-Engine
+    output: re-scored annotation table with updated confidence metrics and FDR estimates
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/anasilviacs/sm-engine, https://github.com/anasilviacs/rescore-metabolites
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed MSI datasets described or deposited
+  - No details on spectral libraries used (e.g., MassBank, GNPS, HMDB versions)
+  - No parameter settings for SM-Engine search (e.g., mass tolerance, RT window, scoring weights) specified in abstract
+reproducibility_strengths:
+  - Full source code publicly available on GitHub for both search and rescoring
+  - Explicit use of target-decoy strategy for FDR control

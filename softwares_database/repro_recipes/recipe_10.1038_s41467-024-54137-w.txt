@@ -1,0 +1,83 @@
+========== reproducibility_recipe entry ==========
+paper_title: MS-DIAL 5 multimodal mass spectrometry data mining unveils lipidome complexities.
+source_paper: Takeda H et al. (2024), Nature communications, DOI: 10.1038/s41467-024-54137-w, PMID: 39609386
+overall_reproducibility_score: 82/100
+
+workflow_steps: 7
+  Step 1: Raw data import and centroiding
+    tool: MS-DIAL 5 (v5)
+    algorithm: Vendor API-based centroid conversion
+    parameters: data_acquisition_type=centroid, minimum_peak_amplitude=1000, mz_tolerance_ppm=None, rt_tolerance_sec=None
+    input: vendor raw files (.wiff, .raw, .d, .abf, .mzML)
+    output: centroided MS1/MS2 spectra
+    confidence: medium
+  Step 2: Feature detection and alignment
+    tool: MS-DIAL 5 (v5)
+    algorithm: Retention time-aligned peak picking (not explicitly named, but implied by LC-MS workflow and alignment functionality)
+    parameters: rt_tolerance_sec=30, mz_tolerance_ppm=5, peak_width_min_sec=1.0, peak_width_max_sec=30.0, snr_threshold=3.0
+    input: centroided MS1 spectra
+    output: aligned feature table (m/z, RT, intensity matrix)
+    confidence: medium
+  Step 3: EAD-MS/MS spectral acquisition optimization
+    tool: SCIEX ZenoTOF 7600
+    algorithm: Targeted MRM HR scanning with EAD fragmentation
+    parameters: electron_kinetic_energy_ev=14, collision_energy_ev=12, ce_spread_ev=0, accumulation_time_ms=100, electron_beam_current_na=7000, electron_transfer_coefficient_percent=100, ion_source_temperature_c=275, declustering_potential_v=80, spray_voltage_v=5500, curtain_gas=35, cad_gas=7, ion_source_gas_1=50, ion_source_gas_2=50, tof_start_mass_da=170, mobile_phase_a=ACN:MeOH:H2O (1:1:3) + 5 mM ammonium acetate + 10 nM EDTA, mobile_phase_b=ACN:IPA (1:9) + 5 mM ammonium acetate + 10 nM EDTA, gradient_mode=isocratic, organic_percentage=80, column_temperature_c=40, flow_rate_ml_per_min=0.2, column=InertSustainSwift C18, 30 mm × 2.1 mm, 3 μm
+    input: LC-MS feature list (targeted m/z)
+    output: EAD-MS/MS spectra (centroided, binned at 0.05 Da)
+    confidence: high
+  Step 4: EAD-MS/MS spectral processing and subtraction
+    tool: MS-DIAL 5 (v5)
+    algorithm: Background-subtracted spectral accumulation
+    parameters: bin_size_da=0.05, background_rt_window_sec=30, negative_intensity_floor=0
+    input: EAD-MS/MS chromatographic traces
+    output: Background-corrected, binned EAD-MS/MS spectra
+    confidence: high
+  Step 5: Lipid structural annotation (sn-/C=C-/OH-position)
+    tool: MS-DIAL 5 (v5)
+    algorithm: EAD pattern recognition (V-shaped CRF analysis, H-loss/H-gain/radical ion mapping)
+    parameters: eadi_ke_ev=14, crf_pattern_recognition_enabled=True, c_c_position_resolution_threshold=V-shaped valley + flanking high peaks, h_gain_diagnostic_ke_ev=18, radical_stabilization_rule=resonance-assisted cleavage, mclafferty_rearrangement_model=True
+    input: Background-corrected EAD-MS/MS spectra
+    output: Structurally annotated lipid features (sn1/sn2, C=C position, OH position)
+    confidence: high
+  Step 6: Metabolite library matching and prioritization
+    tool: MS-DIAL 5 (v5)
+    algorithm: Multi-library MSP search with priority-weighted scoring
+    parameters: library_search_mode=multi-MSP, relative_abundance_cutoff_percent=0.1, absolute_abundance_cutoff=50, product_ion_mass_tolerance_da=0.05, mass_binning_value_da=1.0, intensity_scale_factor=0.5, max_scale_value=100, scoring_method=modified_dot_product
+    input: EAD-MS/MS spectra + feature table
+    output: Annotated metabolite table with confidence levels
+    confidence: high
+  Step 7: MSI data integration and molecular localization
+    tool: MS-DIAL 5 (v5)
+    algorithm: Species/tissue-specific lipidome database mapping with predicted CCS values
+    parameters: database_type=species_tissue_specific_lipidome, ccs_prediction_enabled=True, spatial_resolution=pixel-level, ionization_mode=positive, matrix_assisted=True
+    input: MS imaging (MSI) data + annotated lipid features
+    output: Spatially resolved lipid distribution maps
+    confidence: medium
+
+data_availability:
+  raw_data: available (RIKEN DROPMet: DROPMet accession numbers for 716 chemicals (Supplementary Data 1 & 2))
+  processed_data: available (RIKEN DROPMet: EAD-MS/MS spectra, spectral networks, CRF patterns)
+  metadata: available
+  data_urls: https://dropmet.riken.jp/, https://www.iroatech.com/large-scale-metabolite-library-of-standards/
+
+code_availability: repository_linked
+  code_url: https://github.com/systemsomicslab/MsdialWorkbench
+  license: MIT
+
+figure_recipes: 1
+  Figure 1: [ms_ms_spectra]
+    caption: EAD-MS/MS spectra showing V-shaped CRF patterns for DOPC, DOPE, and DAPC at varying electron kinetic energies (10–18 eV), illustrating sn-position and C=C location via radical/H-loss/H-gain ion intens
+    produced_by_step: [3, 4, 5]
+    visualization_tool: ggplot2 (R)
+
+reproducibility_gaps:
+  - SCIEX ZenoTOF 7600 instrument control parameters require proprietary software (Analyst, PeakView) not open-source
+  - Rawdataviewer.exe is bundled but source not separately licensed or documented in GitHub repo
+  - Exact LC gradient profile for lipid analysis is isocratic but solvent composition details lack full pH/buffer specification
+  - CCS prediction model implementation details (algorithm, training data) not disclosed in methods or codebase
+reproducibility_strengths:
+  - Full source code publicly available under MIT license on GitHub
+  - All EAD-MS/MS spectra deposited in RIKEN DROPMet with accession links
+  - Detailed, reproducible EAD acquisition parameters (KE, CE, accumulation time, gas settings)
+  - Multi-library annotation framework with explicit scoring parameters and binning rules
+  - Companion rawdataviewer.exe enables empirical peak-picking parameter optimization
