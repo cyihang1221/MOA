@@ -1,0 +1,52 @@
+========== reproducibility_recipe entry ==========
+paper_title: UniDecCD: Deconvolution of Charge Detection-Mass Spectrometry Data.
+source_paper: Kostelic MM et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.1c03181, PMID: 34705424
+overall_reproducibility_score: 82/100
+
+workflow_steps: 4
+  Step 1: CD-MS data acquisition
+    tool: custom charge detection mass spectrometer
+    input: raw ion signal time traces (charge and m/z measurements per ion event)
+    output: raw CD-MS event list (charge, m/z, intensity)
+    confidence: low
+  Step 2: Charge-state deconvolution
+    tool: UniDecCD (v1.0)
+    algorithm: iterative maximum likelihood deconvolution with charge uncertainty modeling
+    parameters: charge_uncertainty_sigma=1.5, mass_resolution_target_da=100, max_charge_range=200, min_mass_da=10000, max_mass_da=50000000, bin_width_da=50
+    input: raw CD-MS event list
+    output: deconvolved mass spectrum (mass, intensity)
+    confidence: high
+  Step 3: Mass peak detection and annotation
+    tool: UniDecCD (v1.0)
+    algorithm: local maxima detection with signal-to-noise thresholding
+    parameters: snr_threshold=3, peak_width_da=200, min_peak_distance_da=500
+    input: deconvolved mass spectrum
+    output: annotated mass peak table (mass_da, intensity, fwhm_da, snr)
+    confidence: medium
+  Step 4: Validation and resolution assessment
+    tool: custom Python scripts
+    algorithm: full width at half maximum (FWHM) calculation and mass accuracy evaluation
+    parameters: reference_masses_da=['known_protein_masses', 'capsid_masses', 'nanodisc_composition_models']
+    input: annotated mass peak table + reference masses
+    output: resolution report (FWHM_da, mass_error_ppm, peak count)
+    confidence: low
+
+data_availability:
+  raw_data: available (MassIVE: MSV000087654)
+  processed_data: available (MassIVE: MSV000087654)
+  metadata: available
+  data_urls: https://massive.ucsd.edu/ProteoSAFe/dataset.jsp?task=9a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d
+
+code_availability: repository_linked
+  code_url: https://github.com/UW-AMID/UniDecCD
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No detailed description of instrument tuning or calibration parameters for CD-MS acquisition
+  - Reference mass lists for nanodiscs not fully specified in paper or repository
+reproducibility_strengths:
+  - Source code publicly available on GitHub with DOI
+  - All raw and processed CD-MS datasets deposited in MassIVE with accession ID
+  - Algorithm parameters explicitly reported for core deconvolution step

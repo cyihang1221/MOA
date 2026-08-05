@@ -1,0 +1,49 @@
+========== reproducibility_recipe entry ==========
+paper_title: Analysis of Synthetic Monodisperse Polysaccharides by Wide Mass Range Ultrahigh-Resolution MALDI Mass Spectrometry.
+source_paper: Nicolardi S et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.1c00239, PMID: 33667082
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: MALDI sample preparation
+    tool: manual
+    parameters: matrix=2,5-dihydroxybenzoic acid (DHB), cocrystallization_method=dried droplet
+    input: synthetic monodisperse polysaccharides (16-, 64-, 100-, 151-mers)
+    output: MALDI target plate with co-crystallized analyte-matrix spots
+    confidence: medium
+  Step 2: Ultrahigh-resolution mass spectrometry acquisition
+    tool: FT-ICR MS
+    parameters: ionization_mode=MALDI, mass_range=wide_mass_range, resolution=ultrahigh_resolution, instrument_model=not_specified
+    input: MALDI target plate
+    output: raw mass spectra (.fid or vendor format)
+    confidence: low
+  Step 3: In-source decay (ISD) fragmentation analysis
+    tool: MALDI-ISD
+    parameters: fragmentation_type=glycosidic_bond_cleavage, secondary_fragmentation=cross-ring_cleavage
+    input: raw mass spectra
+    output: fragment ion spectra for structural inference
+    confidence: medium
+  Step 4: Monosaccharide composition and linkage determination
+    tool: manual interpretation
+    parameters: interpretation_basis=mass differences of fragment ions, reference_standards_used=False
+    input: fragment ion spectra
+    output: annotated carbohydrate composition and linkage type
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw spectral data deposited in public repository
+  - No instrument parameters (e.g., laser energy, accumulation time, transient length, number of scans) specified
+  - No software version or data processing pipeline described
+  - No calibration method or internal/external standard details provided
+  - Fragment ion assignment criteria not quantitatively defined
+reproducibility_strengths:
+  - Clear description of synthetic carbohydrate standards used (16-, 64-, 100-, 151-mers)
+  - Explicit identification of fragmentation types (glycosidic vs. cross-ring) supporting structural inference

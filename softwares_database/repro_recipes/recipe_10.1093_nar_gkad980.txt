@@ -1,0 +1,47 @@
+========== reproducibility_recipe entry ==========
+paper_title: RefMetaPlant: a reference metabolome database for plants across five major phyla.
+source_paper: Shi H et al. (2024), Nucleic acids research, DOI: 10.1093/nar/gkad980, PMID: 37953341
+overall_reproducibility_score: 40/100
+
+workflow_steps: 4
+  Step 1: LC-MS data acquisition
+    tool: advanced LC-MS platform
+    input: biological samples from >150 plant species across five major phyla
+    output: untargeted mass spectral raw data (.raw or vendor format)
+    confidence: low
+  Step 2: Reference metabolome construction
+    tool: self-developed computation protocol
+    input: untargeted mass spectral raw data
+    output: reference metabolome for 153 plant species
+    confidence: low
+  Step 3: Standard compound spectral library integration
+    tool: custom pipeline
+    input: reference metabolome + standard compound spectra
+    output: integrated standard compound mass spectral libraries
+    confidence: low
+  Step 4: Tool development for metabolite query and profiling
+    tool: LC-MS/MS Query, RefMetaBlast, CompoundLibBlast
+    input: mass spectral data (query) + reference metabolome + spectral libraries
+    output: metabolite annotations, identifications, and profiling results
+    confidence: medium
+
+data_availability:
+  raw_data: available (RefMetaPlant database)
+  processed_data: available (RefMetaPlant database)
+  metadata: available
+  data_urls: https://www.biosino.org/RefMetaDB/
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of LC-MS instrument parameters (e.g., column, gradient, ionization mode, scan range)
+  - No details on data processing algorithms or parameters (e.g., peak picking, alignment, filtering)
+  - Self-developed computation protocol not publicly documented or shared
+  - No information on spectral library curation criteria or standards used
+  - No access to source code for 'LC-MS/MS Query', 'RefMetaBlast', or 'CompoundLibBlast'
+reproducibility_strengths:
+  - Reference metabolome and spectral libraries publicly accessible via web interface
+  - Data covers broad phylogenetic diversity (five major plant phyla)
+  - Database includes integrated analytical tools for end-user queries

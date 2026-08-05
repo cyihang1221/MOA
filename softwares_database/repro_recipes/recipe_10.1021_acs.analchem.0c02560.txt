@@ -1,0 +1,69 @@
+========== reproducibility_recipe entry ==========
+paper_title: LiPydomics: A Python Package for Comprehensive Prediction of Lipid Collision Cross Sections and Retention Times and Analysis of Ion Mobility-Mass Spectrometry-Based Lipidomics Data.
+source_paper: Ross DH et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.0c02560, PMID: 33119270
+overall_reproducibility_score: 72/100
+
+workflow_steps: 6
+  Step 1: Lipid feature detection and alignment
+    tool: LiPydomics
+    algorithm: not specified
+    input: raw HILIC-IM-MS data (likely .imzML or vendor formats)
+    output: aligned feature table with m/z, RT, CCS
+    confidence: low
+  Step 2: Collision cross section (CCS) prediction
+    tool: LiPydomics
+    algorithm: machine learning model (not specified, e.g., RF or XGBoost implied by 'prediction models')
+    parameters: lipid_classes=22, training_data_size=large experimental dataset
+    input: m/z, adduct type, lipid class
+    output: predicted CCS values
+    confidence: medium
+  Step 3: HILIC retention time prediction
+    tool: LiPydomics
+    algorithm: machine learning model (not specified)
+    parameters: lipid_classes=23, training_data_size=large experimental dataset
+    input: m/z, adduct type, lipid class
+    output: predicted retention times
+    confidence: medium
+  Step 4: Lipid identification at multiple confidence levels
+    tool: LiPydomics
+    algorithm: database matching against predicted + experimental database (145,388 entries)
+    parameters: mass_tolerance_ppm=None, CCS_tolerance_Å2=None, RT_tolerance_min=None, confidence_levels=['Level 1–4 per LIPID MAPS']
+    input: feature table (m/z, CCS, RT), experimental metadata
+    output: annotated lipid identifications with confidence levels
+    confidence: low
+  Step 5: Statistical and multivariate analysis
+    tool: LiPydomics
+    algorithm: multivariate statistics (PCA, PLS-DA, OPLS-DA implied by 'multivariate analyses')
+    parameters: statistical_test=t-test or ANOVA not explicitly specified, n_components=None, scaling=auto
+    input: normalized lipid abundance matrix
+    output: differential lipids, model metrics, score/plots
+    confidence: low
+  Step 6: Visualization of results
+    tool: LiPydomics
+    algorithm: plot generation via 'plotting' module
+    input: statistical output, identification results
+    output: plots (e.g., PCA scores, PLS-DA, volcano, heatmap)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: not_mentioned (not mentioned)
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/ebartom/LiPydomics
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw IM-MS data not deposited or referenced
+  - No specification of mass/CCS/RT tolerances used in identification
+  - No details on statistical parameters (e.g., FDR correction, scaling method, PLS-DA validation)
+  - Training data for prediction models not publicly accessible
+  - No description of HILIC gradient or IM calibration procedure
+reproducibility_strengths:
+  - Open-source Python package with Zenodo DOI
+  - Comprehensive experimental CCS and RT database assembled and used for training
+  - Modular design (stats, plotting, identification, interactive modules)
+  - Supports LIPID MAPS confidence level framework

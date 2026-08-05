@@ -1,0 +1,60 @@
+========== reproducibility_recipe entry ==========
+paper_title: AntDAS-GCMS: A New Comprehensive Data Analysis Platform for GC-MS-Based Untargeted Metabolomics with the Advantage of Addressing the Time Shift Problem.
+source_paper: Ma GM et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.4c00100, PMID: 38805056
+overall_reproducibility_score: 30/100
+
+workflow_steps: 6
+  Step 1: Total ion chromatogram (TIC) peak detection
+    tool: AntDAS-GCMS
+    algorithm: not specified
+    input: raw GC-MS .cdf or .qgd files
+    output: detected TIC peaks
+    confidence: low
+  Step 2: Peak resolution
+    tool: AntDAS-GCMS
+    algorithm: not specified
+    input: TIC peaks
+    output: resolved chromatographic peaks
+    confidence: low
+  Step 3: Time shift correction using inherent landmarks
+    tool: AntDAS-GCMS
+    algorithm: landmark-based alignment using mass spectra and elution profiles
+    parameters: landmark_selection_strategy=inherent compound-based, alignment_method=elution profile + spectral similarity
+    input: resolved chromatographic peaks across samples
+    output: retention time-aligned peak table
+    confidence: medium
+  Step 4: Component registration
+    tool: AntDAS-GCMS
+    algorithm: not specified
+    input: time-shift-corrected peak table
+    output: registered feature matrix (samples × components)
+    confidence: low
+  Step 5: Statistical analysis
+    tool: AntDAS-GCMS
+    algorithm: not specified
+    input: registered feature matrix
+    output: differentially abundant components
+    confidence: low
+  Step 6: Compound identification
+    tool: AntDAS-GCMS
+    algorithm: mass spectral library matching + retention index validation
+    parameters: library=NIST, RI_tolerance=±5 units
+    input: aligned features with MS spectra and retention times
+    output: putatively identified metabolites
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - AntDAS-GCMS software not publicly available or described in sufficient detail for independent implementation
+  - No source code, repository, or installation instructions provided
+  - Algorithmic details for peak detection, resolution, component registration, and statistical testing omitted
+  - Raw data and metadata not deposited or referenced
+  - No parameter values reported for core steps (e.g., peak width, SNR thresholds, alignment window size, RI calibration method)

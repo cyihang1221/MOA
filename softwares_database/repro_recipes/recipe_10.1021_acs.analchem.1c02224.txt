@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: Comparison of High-Resolution Fourier Transform Mass Spectrometry Platforms for Putative Metabolite Annotation.
+source_paper: Huang D et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.1c02224, PMID: 34460220
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Mass spectrometry data acquisition
+    tool: Orbitrap ID-X
+    parameters: resolution=[120000, 240000, 500000], automatic_gain_control_target=[50000, 100000, 500000]
+    input: chemical standards (n=104, m/z 75–466)
+    output: raw .raw files (Orbitrap) and .fid files (FT-ICR)
+    confidence: high
+  Step 2: Mass accuracy evaluation
+    tool: Thermo Compound Discoverer
+    algorithm: mass error calculation (ppm)
+    parameters: mass_error_unit=ppm, calibration_method=internal calibration using lock mass
+    input: raw .raw and .fid files
+    output: mass accuracy statistics (mean ppm error per condition)
+    confidence: medium
+  Step 3: Relative isotopic abundance (RIA) measurement
+    tool: solariX FT-ICR MS control software (Bruker)
+    algorithm: 13C1 and 18O1 isotopic peak intensity ratio calculation
+    parameters: isotopes_measured=['13C1', '18O1'], intensity_ratio_method=monoisotopic peak vs. first isotope peak
+    input: high-resolution FT-ICR spectra
+    output: RIA values for candidate formulas
+    confidence: medium
+  Step 4: Elemental formula assignment
+    tool: Bruker DataAnalysis + Formularity
+    algorithm: heuristic filtering with RIA constraints and mass tolerance
+    parameters: mass_tolerance_ppm=1.0, elemental_constraints=['C', 'H', 'N', 'O', 'P', 'S'], valence_rules_applied=True, isotopic_pattern_matching=True
+    input: accurate mass lists + RIA measurements
+    output: putatively annotated metabolites with elemental formulas
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository
+  - No details on chromatographic conditions (UPLC method, column, gradient, flow rate)
+  - No description of sample preparation or infusion protocol
+  - Commercial software (Compound Discoverer, DataAnalysis, Formularity) requires license and is not open-source
+  - No parameter files, search settings, or formula generation scripts shared
+  - Heuristic rules and constraints used in formula assignment are not algorithmically specified
+reproducibility_strengths:
+  - Explicit reporting of resolution and AGC settings across tested conditions
+  - Clear definition of performance metric (mass accuracy in ppm) and validation set (104 metabolites, m/z 75–466)
+  - Inclusion of RIA-based filtering as a reproducible orthogonal criterion

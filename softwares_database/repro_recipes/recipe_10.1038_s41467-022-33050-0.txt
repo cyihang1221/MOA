@@ -1,0 +1,104 @@
+========== reproducibility_recipe entry ==========
+paper_title: An online atlas of human plasma metabolite signatures of gut microbiome composition.
+source_paper: Dekkers KF et al. (2022), Nature communications, DOI: 10.1038/s41467-022-33050-0, PMID: 36151114
+overall_reproducibility_score: 42/100
+
+workflow_steps: 9
+  Step 1: Metagenomic sequencing and quality control
+    tool: Bowtie2 (vv2.3.2)
+    algorithm: read alignment to human reference genome GRCh38
+    parameters: default_settings=True
+    input: raw Illumina Novaseq 6000 FASTQ files
+    output: human-read-filtered reads
+    confidence: high
+  Step 2: Metagenomic assembly and gene catalog mapping
+    tool: MEGAHIT (vv1.1.1)
+    algorithm: de novo assembly
+    input: human-filtered reads
+    output: assembled contigs
+    confidence: medium
+  Step 3: Species abundance profiling
+    tool: BWA mem (vv0.7.16a)
+    algorithm: mapping to custom 14M-gene catalog
+    input: assembled contigs / raw reads
+    output: species-level count matrix (signature genes)
+    confidence: high
+  Step 4: Microbial diversity calculation
+    tool: vegan R package (vv2.5-7)
+    algorithm: Shannon diversity on downsized gene counts
+    parameters: downsampling_depth=210430, method=Shannon
+    input: signature gene count table
+    output: alpha diversity (Shannon index) per sample
+    confidence: high
+  Step 5: Plasma metabolome profiling
+    tool: Metabolon Inc. proprietary platform
+    algorithm: UPLC-MS/MS (RP−/RP+/HILIC, dual ionization modes)
+    parameters: detection_threshold=instrument-specific, imputation=minimum observed value, batch_normalization=median peak area per plate (144 samples)
+    input: frozen plasma samples
+    output: quantified metabolite intensity matrix (1321 metabolites)
+    confidence: medium
+  Step 6: Metabolite annotation and classification
+    tool: Metabolon’s in-house library & EggNOG-mapper (vEggNOG-mapper v2.0.1)
+    algorithm: m/z + retention index + MS/MS spectral matching
+    parameters: library_size=3300, pathway_annotation_levels=['metabolite class', 'metabolite subclass']
+    input: raw UPLC-MS/MS data
+    output: annotated metabolite table with class/subclass
+    confidence: medium
+  Step 7: Data preprocessing and transformation
+    tool: R base + custom scripts (vR v4.1.1)
+    algorithm: log+1 transformation (non-drug metabolites); binary encoding (xenobiotics/drugs); zero-count filtering (≥100 non-zero measurements for species/metabolites)
+    parameters: min_nonzero_metabolites=100, min_nonzero_species=100, drug_imputation=binary
+    input: metabolite intensity matrix, species abundance matrix
+    output: transformed and filtered feature matrices
+    confidence: high
+  Step 8: Association analysis: alpha diversity–metabolite correlations
+    tool: ppcor R package (vv1.1)
+    algorithm: partial Spearman rank correlation
+    parameters: adjustment_variables=['age', 'sex', 'place_of_birth', 'study_site', 'microbial_extraction_plate', 'metabolomics_delivery_batch'], categorical_encoding=dummy variables (last level dropped)
+    input: Shannon diversity vector, log+1 metabolite matrix
+    output: 997 significant associations (FDR-corrected)
+    confidence: high
+  Step 9: Association analysis: species–metabolite correlations
+    tool: R base + custom parallelized correlation pipeline (vR v4.1.1)
+    algorithm: pairwise partial Spearman correlation (1528 species × 1321 metabolites)
+    parameters: adjustment_variables=['age', 'sex', 'place_of_birth', 'study_site', 'microbial_extraction_plate', 'metabolomics_delivery_batch'], multiple_testing_correction=FDR
+    input: species abundance matrix, metabolite matrix
+    output: 546819 significant associations (FDR-corrected)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (European Nucleotide Archive (ENA))
+  processed_data: available (GutSyAtlas online resource: https://gutsyatlas.serve.scilifelab.se/)
+  metadata: in_paper_only
+  data_urls: https://gutsyatlas.serve.scilifelab.se/
+
+code_availability: not_mentioned
+
+figure_recipes: 3
+  Table 1: [table]
+    caption: Main sociodemographic and clinical characteristics of participants from Malmö and Uppsala SCAPIS study sites.
+    produced_by_step: [1, 4, 5, 7]
+    visualization_tool: R (unspecified packages)
+  Fig. 1: [volcano_plot]
+    caption: Partial Spearman’s rank correlation between species alpha diversity and 1321 plasma metabolites, adjusted for multiple covariates.
+    produced_by_step: [8]
+    visualization_tool: R v4.1.1 (unspecified plotting library)
+    statistical_test: partial Spearman correlation with FDR correction
+  Fig. 2: [heatmap]
+    caption: Associations of gut microbiota with plasma metabolome showing variation across groups of species and metabolites.
+    produced_by_step: [9]
+    visualization_tool: R v4.1.1 (unspecified heatmap library)
+    statistical_test: FDR-corrected partial Spearman correlations
+
+reproducibility_gaps:
+  - Raw metagenomic FASTQ files not deposited in public repository (ENA/SRA accession not provided)
+  - Raw UPLC-MS/MS data (mzML or .raw) not publicly available — only processed intensities via online atlas
+  - Metabolon’s proprietary data processing pipeline (peak detection, integration, annotation) is closed and unreproducible
+  - No code repository or scripts shared for association analyses (steps 8–9), despite use of R
+  - Batch variable construction details (how 'study site', 'extraction plate', 'delivery batch' were combined) lack full specification
+  - No description of FDR threshold used (e.g., q < 0.05 vs. q < 0.1) for reporting 997 / 546819 associations
+reproducibility_strengths:
+  - Large-scale, deeply phenotyped cohort (n=8583) with harmonized protocols
+  - Public online atlas with interactive access to all reported associations
+  - Use of open-source tools for core bioinformatics (Bowtie2, MEGAHIT, BWA, vegan, ppcor, R)
+  - Detailed experimental parameters (e.g., downsampling depth = 210430 reads, Illumina Novaseq specs, extraction kit)

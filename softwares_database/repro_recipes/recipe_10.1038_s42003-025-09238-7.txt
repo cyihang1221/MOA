@@ -1,0 +1,44 @@
+========== reproducibility_recipe entry ==========
+paper_title: Host cell KRT-18 as a non-redox dependent interactor of Cryptosporidium parvum PDI enables parasite infection.
+source_paper: Wang L et al. (2025), Communications biology, DOI: 10.1038/s42003-025-09238-7, PMID: 41275047
+overall_reproducibility_score: 30/100
+
+workflow_steps: 0
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 5
+  Figure 1: [other]
+    caption: Identification and subcellular localization of native CpPDI in C. parvum sporozoites and infected host cells.
+    visualization_tool: Indirect immunofluorescence microscopy (IFA), confocal imaging
+  Figure 2: [bar_chart]
+    caption: Transcriptional (RT-qPCR) and protein expression (Western blot) levels of CpPDI across developmental stages in vitro and in vivo.
+    visualization_tool: CFX384 Real-Time PCR system, Amersham ImageQuant 800
+    statistical_test: 2–ΔΔCT method with error bars representing SEM
+  Figure 3: [bar_chart]
+    caption: In vitro neutralization assay showing reduced C. parvum invasion into HCT-8 cells upon treatment with anti-CpPDI antibodies or PDI inhibitors (bacitracin, DNTB).
+    visualization_tool: Nano-Glo Luciferase Assay + Synergy HTX reader
+    statistical_test: Data presented as mean ± SEM; statistical significance not specified in text
+  Figure 4: [table]
+    caption: CpPDI-interacting proteins identified via GST-pull down coupled with LC-MS/MS.
+    visualization_tool: LC-MS/MS, Co-immunoprecipitation (Co-IP)
+  Figure 5: [other]
+    caption: Validation of CpPDI–KRT-18 interaction using co-immunoprecipitation and functional knockdown assays.
+    visualization_tool: Western blot, RT-qPCR, IFA
+
+reproducibility_gaps:
+  - No metabolomics data or analysis described — paper is molecular parasitology/biochemistry, not metabolomics
+  - No LC-MS/MS data processing parameters (e.g., search engine, FDR threshold, database, instrument settings) provided for Figure 4
+  - No raw or processed proteomics data deposition mentioned
+  - No code, scripts, or computational workflows shared for AlphaFold modeling, SAVES evaluation, or bioinformatics analyses
+  - Critical reagents (e.g., anti-CpPDI antiserum, tagged parasite strains) not publicly available or deposited
+  - Incomplete methods for LC-MS/MS — no vendor, instrument model, acquisition mode (DDA/DIA), or software specified
+reproducibility_strengths:
+  - Primers and plasmid constructs referenced in Supplementary Table 1 (though table not provided in text)
+  - Standard commercial kits and instruments explicitly named (e.g., Nano-Glo, CFX384, Amersham ImageQuant)
+  - Detailed experimental protocols for cell infection, excystation, Western blot, and IFA

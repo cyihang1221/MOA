@@ -1,0 +1,50 @@
+========== reproducibility_recipe entry ==========
+paper_title: The 'ForensOMICS' approach for postmortem interval estimation from human bone by integrating metabolomics, lipidomics, and proteomics.
+source_paper: Bonicelli A et al. (2022), eLife, DOI: 10.7554/elife.83658, PMID: 36583441
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Sample collection and preparation
+    tool: manual_protocol
+    parameters: anatomical_site=anterior_midshaft_tibial_bone, donor_demographics=four_female_body_donors, pmi_timepoints_days=[219, 790, 834, 872]
+    input: fresh_and_postmortem_human_bone_tissue
+    output: extracted_omics_samples
+    confidence: high
+  Step 2: Untargeted LC-MS data acquisition
+    tool: liquid_chromatography_mass_spectrometry
+    parameters: omics_types=['metabolomics', 'lipidomics', 'proteomics'], mode=untargeted
+    input: extracted_omics_samples
+    output: raw_lcms_data_files
+    confidence: medium
+  Step 3: Independent univariate and multivariate analysis per omics block
+    tool: unknown
+    parameters: analysis_types=['univariate', 'multivariate']
+    input: raw_lcms_data_files
+    output: per_omics_differential_features_and_models
+    confidence: low
+  Step 4: Multi-omics data integration and biomarker discovery
+    tool: DIABLO
+    algorithm: Data Integration Analysis for Biomarker discovery using Latent variable approaches for Omics studies
+    input: per_omics_feature_tables
+    output: integrated_biomarker_panel_and_discriminative_model
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS data not deposited in public repository
+  - No details on LC-MS instrumentation (column, gradient, ionization mode, mass analyzer)
+  - No description of data preprocessing (peak picking, alignment, normalization methods)
+  - No specification of statistical parameters (p-value thresholds, FDR correction, multivariate model settings)
+  - DIABLO implementation details (number of components, sparsity tuning, cross-validation scheme) not provided
+  - No access to code or analysis scripts
+reproducibility_strengths:
+  - Explicit mention of DIABLO — a well-documented R/Bioconductor package (mixOmics)
+  - Clear experimental design with defined PMI timepoints and anatomical sampling site

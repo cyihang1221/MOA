@@ -1,0 +1,60 @@
+========== reproducibility_recipe entry ==========
+paper_title: LipiDex: An Integrated Software Package for High-Confidence Lipid Identification.
+source_paper: Hutchins PD et al. (2018), Cell systems, DOI: 10.1016/j.cels.2018.03.011, PMID: 29705063
+overall_reproducibility_score: 70/100
+
+workflow_steps: 5
+  Step 1: LC-MS/MS data import and preprocessing
+    tool: LipiDex
+    algorithm: vendor-format agnostic import
+    input: raw vendor files (.raw, .d, .wiff, etc.)
+    output: internal processed peak list with retention time, m/z, intensity
+    confidence: medium
+  Step 2: Lipid identification via in silico fragmentation matching
+    tool: LipiDex
+    algorithm: lipid-optimized MS/MS spectral matching with customizable in silico fragmentation templates
+    parameters: fragmentation_rule_set=lipid-specific, mass_tolerance_ppm=None, retention_time_window_sec=None
+    input: MS/MS spectra + precursor m/z and RT
+    output: candidate lipid identifications with confidence scores
+    confidence: low
+  Step 3: Peak purity assessment for co-isolation/co-elution
+    tool: LipiDex
+    algorithm: unique spectral and chromatographic peak purity algorithms
+    parameters: coelution_threshold=None, coisolation_score_cutoff=None
+    input: chromatographic peaks + MS/MS spectra
+    output: purity-filtered lipid identifications
+    confidence: low
+  Step 4: Ionization artifact filtering
+    tool: LipiDex
+    algorithm: artifact removal based on adduct patterns and neutral losses
+    parameters: adduct_exclusion_rules=user-configurable, neutral_loss_filtering=enabled
+    input: candidate lipid identifications
+    output: non-redundant, high-confidence lipid ID table
+    confidence: medium
+  Step 5: Integration with external LC-MS/MS software packages
+    tool: LipiDex
+    algorithm: API- and file-based interoperability
+    parameters: supported_formats=['mzML', 'mgf', 'peaklist CSV']
+    input: exported peak tables or spectra from third-party tools
+    output: unified lipid annotation report
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/ajikumar/LipiDex
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No specific parameter values reported (e.g., mass tolerance, RT window, purity thresholds)
+  - No example dataset or benchmark data provided in paper or supplementary materials
+  - Vendor-specific acquisition method details (e.g., collision energy ramp, DDA settings) not specified
+reproducibility_strengths:
+  - Source code publicly available on GitHub under MIT license
+  - Explicit support for open formats (mzML, mgf)
+  - Tool designed for interoperability with standard LC-MS/MS workflows

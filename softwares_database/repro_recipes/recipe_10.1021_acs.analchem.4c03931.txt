@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: Dynamic Measurement of Protein Translation in Mycobacteria Using Nontargeted Stable Isotope Labeling in Combination with MALDI-TOF Mass Spectrometry-Based Readout.
+source_paper: Haisch C et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.4c03931, PMID: 39995216
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Stable isotope labeling of nascent proteins
+    tool: glycerol-1,3-^13C2
+    parameters: labeling_duration=within 1/2 doubling cycle, labeling_agent=glycerol-1,3-^13C2
+    input: live mycobacterial cultures
+    output: isotopically labeled nascent proteome
+    confidence: medium
+  Step 2: Protein extraction and sample preparation
+    tool: not specified
+    input: labeled bacterial cells
+    output: protein extracts for MALDI-TOF-MS
+    confidence: low
+  Step 3: MALDI-TOF mass spectrometry acquisition
+    tool: MALDI-TOF MS
+    parameters: instrument_type=MALDI-TOF, readout_mode=intact protein profiling (implied by 'nascent fractions of specific proteins')
+    input: protein extracts
+    output: raw mass spectra (m/z vs intensity)
+    confidence: medium
+  Step 4: Quantitative data processing
+    tool: self-programmed script
+    parameters: purpose=quantitative analysis of isotopic incorporation
+    input: raw MALDI-TOF spectra
+    output: quantified nascent protein synthesis rates
+    confidence: low
+  Step 5: Comparative analysis of de novo protein synthesis
+    tool: not specified
+    parameters: comparisons=['regular growth', 'rifampicin', 'linezolid', 'bedaquiline', 'benzothiazinone-043']
+    input: quantified synthesis rates
+    output: differential synthesis profiles per protein/drug condition
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw MALDI-TOF spectral data deposited
+  - Self-programmed quantification script not shared or described
+  - No details on protein extraction protocol or MALDI matrix/spotting conditions
+  - No instrument parameters (e.g., laser energy, detector settings, calibration standards) provided
+  - No information on peak assignment, isotopic envelope fitting, or quantification algorithm
+reproducibility_strengths:
+  - Clear description of labeling strategy (glycerol-1,3-^13C2)
+  - Defined biological comparisons and temporal resolution (1/2 doubling cycle)

@@ -1,0 +1,61 @@
+========== reproducibility_recipe entry ==========
+paper_title: Characterization of Lipid Epi-Metabolites/Reactions as Diagnostic Biomarkers for Idiopathic Pulmonary Fibrosis by Lipidepifind.
+source_paper: Liu X et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c00277, PMID: 41105844
+overall_reproducibility_score: 72/100
+
+workflow_steps: 5
+  Step 1: Parent lipid identification
+    tool: XCMS or similar LC-HRMS processing pipeline
+    algorithm: not specified
+    input: raw .mzML files
+    output: list of 1479 parent lipids
+    confidence: low
+  Step 2: Epi-metabolite MS characteristic prediction
+    tool: Lipidepifind (custom R package)
+    algorithm: metabolic network expansion with 62 reaction types
+    parameters: reaction_types_count=62
+    input: list of parent lipids
+    output: predicted m/z, RT, CCS, and MS/MS spectra for epi-metabolites
+    confidence: high
+  Step 3: Epi-metabolite screening in raw data
+    tool: Lipidepifind
+    algorithm: mass tolerance-based feature matching
+    parameters: mass_tolerance_ppm=None, rt_tolerance_min=None, ccs_tolerance_percent=None
+    input: raw .mzML files + predicted epi-metabolite features
+    output: candidate epi-metabolite features
+    confidence: medium
+  Step 4: Epi-metabolite validation
+    tool: custom Lipidepifind workflow
+    algorithm: four-criteria filtering
+    parameters: validation_criteria=['MS/MS analysis', 'retention order filtering', 'retention time calibration', 'collision cross-section validation']
+    input: candidate epi-metabolite features
+    output: validated lipid epi-metabolites (n=725)
+    confidence: high
+  Step 5: Differential structural modification & reaction characterization
+    tool: multivariate statistics + epi-metabolic reaction enrichment
+    algorithm: not specified (e.g., OPLS-DA, Fisher’s exact test, hypergeometric test)
+    input: validated epi-metabolite abundance matrix
+    output: enriched reactions, differential modifications, biomarker candidates
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: not_mentioned (not mentioned)
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: https://github.com/Xinguang-Liu/Lipidepifind
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository
+  - Exact mass/RT/CCS tolerances for screening not reported
+  - Details of multivariate and enrichment statistical methods omitted
+  - No description of chromatographic conditions (gradient, column, flow rate)
+  - No information on instrument parameters (resolution, AGC target, isolation window)
+reproducibility_strengths:
+  - Open-source R package Lipidepifind publicly available on GitHub
+  - Shiny app deployed and linked for reproducible prediction
+  - Explicit enumeration of 62 reaction types used in network expansion
+  - Four clearly defined orthogonal validation criteria for epi-metabolites

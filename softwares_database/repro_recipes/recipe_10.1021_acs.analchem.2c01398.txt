@@ -1,0 +1,59 @@
+========== reproducibility_recipe entry ==========
+paper_title: Fusion of Quality Evaluation Metrics and Convolutional Neural Network Representations for ROI Filtering in LC-MS.
+source_paper: Zhang H et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.2c01398, PMID: 36597722
+overall_reproducibility_score: 72/100
+
+workflow_steps: 5
+  Step 1: ROI extraction
+    tool: KPIC2
+    algorithm: unknown
+    input: raw LC-MS data (vendor format)
+    output: candidate ROIs
+    confidence: low
+  Step 2: Handcrafted ROI quality evaluation
+    tool: custom_metrics
+    algorithm: five handcrafted metrics
+    input: candidate ROIs
+    output: handcrafted quality scores
+    confidence: low
+  Step 3: CNN-based ROI representation learning
+    tool: peakonly
+    algorithm: convolutional neural network
+    input: ROI intensity chromatograms + mass spectra (2D patches)
+    output: CNN-learned embeddings
+    confidence: medium
+  Step 4: Deep fusion of handcrafted and learned features
+    tool: dffROI
+    algorithm: feature-level fusion + end-to-end classification
+    input: handcrafted quality scores + CNN embeddings
+    output: binary ROI classification (valid/invalid)
+    confidence: high
+  Step 5: ROI filtering and validation
+    tool: dffROI
+    algorithm: thresholded binary classification
+    parameters: classification_threshold=0.5
+    input: dffROI model outputs
+    output: filtered ROIs
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/zhanghailiangcsu/dffROI
+  license: BSD
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS/GC-MS datasets not publicly deposited
+  - No description of the five handcrafted metrics or their implementation
+  - No details on CNN architecture (layer types, depths, hyperparameters)
+  - No training/validation/test split specifications or data augmentation procedures
+  - KPIC2 framework not linked or versioned
+reproducibility_strengths:
+  - dffROI source code openly available under BSD license
+  - Explicit integration with KPIC2 framework mentioned
+  - Performance metrics fully reported (accuracy, TPR, FPR, error rate)

@@ -1,0 +1,61 @@
+========== reproducibility_recipe entry ==========
+paper_title: Retrieving and Utilizing Hypothetical Neutral Losses from Tandem Mass Spectra for Spectral Similarity Analysis and Unknown Metabolite Annotation.
+source_paper: Xing S et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.0c02521, PMID: 33076659
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Hypothetical neutral loss (HNL) extraction
+    tool: Custom Python implementation
+    algorithm: Pairwise fragment ion mass difference calculation
+    parameters: min_mass_difference=10.0, max_mass_difference=500.0, mass_tolerance_ppm=10
+    input: MS/MS peak lists (.mzML or .mgf)
+    output: HNL vector per spectrum
+    confidence: medium
+  Step 2: Spectral similarity scoring using Core Structure-based Search (CSS)
+    tool: Custom Python implementation
+    algorithm: HNL-based cosine similarity with spectral weighting
+    parameters: weighting_scheme=intensity-weighted, cosine_similarity_threshold=0.7
+    input: HNL vectors and corresponding MS/MS spectra
+    output: Spectral similarity scores and ranked candidate list
+    confidence: medium
+  Step 3: Metabolite annotation via McSearch
+    tool: McSearch (custom pipeline)
+    algorithm: Integration of CSS scores, HNL library, and biotransformation database (e.g., BioTransformer or HMDB transformations)
+    parameters: biotransformation_max_steps=2, HNL_library_size=comprehensive (all metabolites in HMDB + predicted), top_k_candidates=10
+    input: Unknown MS/MS spectrum, HNL library, biotransformation rules
+    output: Annotated metabolite candidates with structural rationale
+    confidence: low
+  Step 4: Validation against CASMI 2017 benchmark
+    tool: CASMI 2017 evaluation framework (vCASMI 2017)
+    algorithm: Rank-based top-k hit assessment (e.g., top-1, top-3, top-10 accuracy)
+    parameters: evaluation_metrics=['top-1 accuracy', 'top-3 accuracy', 'mean reciprocal rank']
+    input: McSearch output vs. CASMI 2017 ground truth annotations
+    output: Performance metrics vs. baseline tools (e.g., CSI:FingerID, SIRIUS, METLIN)
+    confidence: high
+  Step 5: Experimental validation on xenobiotic metabolite derivatives
+    tool: Custom R/Python analysis
+    algorithm: Pathway-aware structural similarity clustering
+    parameters: pathway_groups=['Phase I oxidation', 'Phase II conjugation', 'hydrolysis'], clustering_method=hierarchical with HNL distance
+    input: Experimental MS/MS spectra from three metabolic pathways
+    output: Clustered spectra grouped by shared core structure and biotransformation
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No public code repository or software release mentioned
+  - No raw or processed MS/MS data deposited or accessioned
+  - HNL library construction details unspecified (e.g., source databases, filtering criteria)
+  - Biotransformation rule set not described or cited
+  - No parameter values provided for key steps like intensity weighting or clustering distance metric
+reproducibility_strengths:
+  - Explicit description of core algorithmic concept (HNL)
+  - Validation performed on public benchmark (CASMI 2017)
+  - Clear comparison to established tools (CSI:FingerID, SIRIUS, METLIN)

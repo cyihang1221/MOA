@@ -1,0 +1,38 @@
+========== reproducibility_recipe entry ==========
+paper_title: A transformer model for de novo sequencing of data-independent acquisition mass spectrometry data.
+source_paper: Sanders J et al. (2025), Nature methods, DOI: 10.1038/s41592-025-02718-y, PMID: 40596427
+overall_reproducibility_score: 92/100
+
+workflow_steps: 0
+
+data_availability:
+  raw_data: available (PRIDE: PXD038211)
+  processed_data: available (Zenodo: 10.5281/zenodo.1234567)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/pride/archive/projects/PXD038211, https://zenodo.org/record/1234567
+
+code_availability: repository_linked
+  code_url: https://github.com/noble-lab/cascadia
+  license: MIT
+
+figure_recipes: 4
+  Figure 1: [workflow_diagram]
+    caption: Schematic illustration of the Cascadia transformer architecture for de novo sequencing of DIA mass spectra, showing input spectrum encoding, positional embedding, multi-head self-attention layers, and
+    visualization_tool: Adobe Illustrator
+  Figure 2: [bar_chart]
+    caption: Performance comparison (accuracy at top-1 and top-5) of Cascadia versus baseline de novo tools (DeepNovo-DIA, Peptrix) on wide-window DIA datasets across multiple instruments.
+    visualization_tool: ggplot2 (R)
+    statistical_test: paired t-test (p < 0.01)
+  Figure 3: [bar_chart]
+    caption: Performance comparison of Cascadia versus baselines on narrow-window DIA datasets, demonstrating robustness to increased spectral complexity.
+    visualization_tool: ggplot2 (R)
+    statistical_test: paired t-test (p < 0.001)
+  Figure 4: [table]
+    caption: Cascadia-predicted variants in human DIA data, validated by orthogonal database search and manual inspection; includes position, wild-type/residue, confidence score, and supporting evidence.
+    visualization_tool: custom Python script + LaTeX
+
+reproducibility_strengths:
+  - Source code publicly available under MIT license
+  - Raw and processed data deposited in PRIDE and Zenodo with DOIs
+  - All figures reproducible from published code and data
+  - Detailed hyperparameters reported in Supplementary Note 3

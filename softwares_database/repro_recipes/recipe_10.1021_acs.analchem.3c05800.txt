@@ -1,0 +1,52 @@
+========== reproducibility_recipe entry ==========
+paper_title: Detection of Bromochloro Alkanes in Indoor Dust Using a Novel CP-Seeker Data Integration Tool.
+source_paper: McGrath TJ et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.3c05800, PMID: 38478960
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Dust sample extraction and cleanup
+    tool: manual laboratory protocol
+    parameters: extraction_method=ultrasonic extraction, cleanup_method=acidified silica cleanup, fractionation_method=neutral silica cartridge fractionation, replicates=3, recovery_range_percent=[66, 78], cv_percent_max=10
+    input: indoor dust samples
+    output: cleaned extract suitable for LC-HRMS
+    confidence: high
+  Step 2: Chromatographic and mass spectrometric analysis
+    tool: LC-ESI-Orbitrap-HRMS
+    parameters: ionization=electrospray ionization (ESI), mass_analyzer=Orbitrap high-resolution mass spectrometer, chromatography=liquid chromatography, enhancement=chloride-enhanced
+    input: cleaned extract
+    output: raw .raw files (Thermo) or equivalent vendor format
+    confidence: medium
+  Step 3: Homologue detection and peak integration
+    tool: CP-Seeker
+    algorithm: novel data integration algorithm for bromochloro alkane homologues
+    input: raw LC-HRMS data
+    output: homologue-integrated peak table (retention time, m/z, intensity, Br/Cl assignment)
+    confidence: low
+  Step 4: Compound identification and halogenation characterization
+    tool: manual interpretation + elemental composition matching
+    algorithm: elemental formula assignment based on exact mass and isotope pattern
+    parameters: halogen_ranges_observed_Br=Br₁–Br₄, Br₇, halogen_ranges_observed_Cl=Cl₂–Cl₁₁, carbon_chain_lengths_observed=['C8', 'C10', 'C12', 'C14', 'C16', 'C18', 'C24', 'C25', 'C26', 'C27', 'C28', 'C30', 'C31']
+    input: CP-Seeker output peak table + HRMS spectra
+    output: annotated BCA homologue list with carbon chain length and Br/Cl counts
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - CP-Seeker software is described as 'novel' but not publicly available, documented, or versioned
+  - No raw or processed data deposited in public repository (e.g., MetaboLights, MassIVE, GNPS)
+  - No details on LC gradient, column, flow rate, or Orbitrap resolution/settings
+  - No parameters or source code for CP-Seeker homologue detection algorithm
+  - No metadata schema or sample annotation details beyond country and n
+  - BCA-C₁₄ standard synthesis procedure not provided
+reproducibility_strengths:
+  - Detailed sample preparation recovery and precision metrics reported (n=3, CV ≤10%)
+  - Clear reporting of detected homologue ranges (C-number, Br/Cl counts)
+  - Multi-country sampling design explicitly described

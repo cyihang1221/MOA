@@ -1,0 +1,46 @@
+========== reproducibility_recipe entry ==========
+paper_title: Spatial integration of multi-omics data from serial sections using the novel Multi-Omics Imaging Integration Toolset.
+source_paper: Wess M et al. (2025), GigaScience, DOI: 10.1093/gigascience/giaf035, PMID: 40366868
+overall_reproducibility_score: 70/100
+
+workflow_steps: 3
+  Step 1: Serial section image registration
+    tool: GreedyFHist
+    algorithm: nonrigid registration
+    input: raw grayscale histology or MSI/ST image stacks
+    output: spatially aligned multi-omics image volumes
+    confidence: medium
+  Step 2: Multi-omics data integration
+    tool: MIIT
+    algorithm: spatially constrained correlation and joint feature alignment
+    input: registered ST and MSI data (e.g., gene expression matrices, metabolite ion images)
+    output: integrated spatial multi-omics dataset (e.g., gene-metabolite co-localization maps, correlation matrices)
+    confidence: low
+  Step 3: Biological validation via signature-metabolite correlation
+    tool: custom Python analysis
+    algorithm: Pearson/Spearman correlation
+    parameters: correlation_method=Pearson
+    input: ST-derived gene signature scores (citrate-spermine secretion), MSI-derived metabolite intensities (e.g., citrate, spermine)
+    output: spatially resolved correlation coefficients and significance maps
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/MIIT-Toolset/MIIT
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw MSI and ST imaging data not deposited in public repository
+  - No details on preprocessing steps for ST (e.g., normalization, spot filtering) or MSI (e.g., peak picking, denoising)
+  - No specification of spatial resolution, pixel/spot size, or instrument parameters
+  - GreedyFHist implementation details (e.g., similarity metric, regularization weights) not provided
+reproducibility_strengths:
+  - MIIT framework is open-source with MIT license
+  - Nonrigid registration algorithm GreedyFHist explicitly named and validated on 244 images
+  - Clear biological use case and validation strategy (citrate-spermine signature correlation)

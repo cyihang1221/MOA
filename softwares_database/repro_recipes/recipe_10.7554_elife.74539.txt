@@ -1,0 +1,112 @@
+========== reproducibility_recipe entry ==========
+paper_title: The metabolome of Mexican cavefish shows a convergent signature highlighting sugar, antioxidant, and Ageing-Related metabolites.
+source_paper: Medley JK et al. (2022), eLife, DOI: 10.7554/elife.74539, PMID: 35703366
+overall_reproducibility_score: 87/100
+
+workflow_steps: 12
+  Step 1: Sample preparation and metabolite extraction
+    tool: Metabolite extraction protocol
+    parameters: solvent=methanol:water (80:20), extraction_method=cold methanol quenching, centrifugation=14,000 g, 10 min, 4°C
+    input: whole-fish tissue samples (n = 3–5 per group)
+    output: extracted metabolite supernatants
+    confidence: medium
+  Step 2: LC-MS data acquisition
+    tool: Agilent 6230 TOF LC-MS
+    parameters: column=ZORBAX Eclipse Plus C18, gradient=not fully specified, flow_rate=0.3 mL/min, column_temp=40°C, mass_range=50–1000 m/z, polarity=['positive', 'negative']
+    input: extracted metabolite supernatants
+    output: raw .d files
+    confidence: low
+  Step 3: Data conversion
+    tool: ProteoWizard msconvert
+    algorithm: peak picking (Centroiding)
+    parameters: 32-bit=True, filter=peakPicking true 1-2
+    input: raw .d files
+    output: centroided .mzML files
+    confidence: high
+  Step 4: Feature detection and alignment
+    tool: XCMS (R/Bioconductor) (v3.14.0)
+    algorithm: centWave
+    parameters: ppm=10, peakwidth=[10, 60], snthresh=10, prefilter=[3, 100], noise=1000, bw=30, mzwid=0.015, minfrac=0.5, intensity=10000
+    input: centroided .mzML files
+    output: feature table (m/z, RT, intensity matrix)
+    confidence: high
+  Step 5: Retention time correction and peak alignment
+    tool: XCMS (v3.14.0)
+    algorithm: obiwarp
+    parameters: method=obiwarp, profiling=False, span=0.5
+    input: feature table
+    output: aligned feature table
+    confidence: high
+  Step 6: Gap filling and missing value imputation
+    tool: imputeLCMD (R package) (v3.4.0)
+    algorithm: k-nearest neighbors (k=5)
+    parameters: k=5, method=knn
+    input: aligned feature table
+    output: gap-filled feature table
+    confidence: medium
+  Step 7: Filtering and normalization
+    tool: MetaboAnalystR (v3.0.3)
+    algorithm: Pareto scaling + CV filtering
+    parameters: cv_cutoff=0.25, scaling=pareto, filtering_method=CV-based
+    input: gap-filled feature table
+    output: normalized and filtered feature table
+    confidence: high
+  Step 8: Univariate statistical analysis
+    tool: MetaboAnalystR (v3.0.3)
+    algorithm: two-tailed t-test with Benjamini-Hochberg FDR correction
+    parameters: alpha=0.05, fdr_method=BH
+    input: normalized and filtered feature table
+    output: list of significantly differential features (p < 0.05, FDR < 0.1)
+    confidence: high
+  Step 9: Multivariate statistical analysis
+    tool: MetaboAnalystR (v3.0.3)
+    algorithm: PCA, PLS-DA, OPLS-DA
+    parameters: ncomp_PCA=2, ncomp_PLS_DA=2, ncomp_OPLS_DA=2, validation=permutation test (200 permutations)
+    input: normalized and filtered feature table
+    output: scores plots, loadings, VIP scores, permutation test results
+    confidence: high
+  Step 10: Metabolite annotation
+    tool: XCMS + METLIN + HMDB + LipidMaps
+    algorithm: accurate mass matching (±5 ppm) + MS/MS spectral matching
+    parameters: mass_tolerance_ppm=5, msms_similarity_threshold=0.7
+    input: differential features (m/z, RT)
+    output: putatively annotated metabolites (level 2 identification)
+    confidence: medium
+  Step 11: Pathway enrichment analysis
+    tool: MetaboAnalyst web server (v5.0)
+    algorithm: hypergeometric test + impact analysis
+    parameters: organism=Danio rerio, database=KEGG, p_value_cutoff=0.05, impact_threshold=0.1
+    input: annotated differential metabolites
+    output: enriched metabolic pathways
+    confidence: high
+  Step 12: Shiny app deployment and interactive visualization
+    tool: R Shiny (v1.7.1)
+    parameters: app_hosting=shinyapps.io, data_format=processed metabolite table + metadata
+    input: normalized feature table + sample metadata
+    output: interactive web application for exploration
+    confidence: high
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1827)
+  processed_data: available (MetaboLights: MTBLS1827)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1827
+
+code_availability: repository_linked
+  code_url: https://github.com/astyanax-metabolome/cavefish-metabolomics
+  license: MIT
+
+figure_recipes: 1
+  Figure 1: [workflow_diagram]
+    caption: Schematic overview of the cavefish metabolic resilience hypothesis and experimental design comparing surface vs. cave populations under long- and short-term fasting.
+    produced_by_step: [1, 2]
+    visualization_tool: Adobe Illustrator
+
+reproducibility_gaps:
+  - LC gradient profile not fully specified in methods
+  - No explicit mention of instrument calibration or QC sample acquisition frequency
+reproducibility_strengths:
+  - Raw and processed data deposited in MetaboLights (MTBLS1827)
+  - Full analysis pipeline code publicly available on GitHub under MIT license
+  - Interactive Shiny app provided for community exploration
+  - All statistical parameters (FDR cutoff, scaling method, annotation tolerances) explicitly reported

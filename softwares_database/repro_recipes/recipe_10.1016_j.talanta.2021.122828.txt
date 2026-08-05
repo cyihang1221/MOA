@@ -1,0 +1,77 @@
+========== reproducibility_recipe entry ==========
+paper_title: Alternating in-source fragmentation with single-stage high-resolution mass spectrometry with high annotation confidence in non-targeted metabolomics.
+source_paper: Wasito H et al. (2022), Talanta, DOI: 10.1016/j.talanta.2021.122828, PMID: 34635218
+overall_reproducibility_score: 35/100
+
+workflow_steps: 7
+  Step 1: ESI parameter optimization
+    tool: experimental design principles
+    algorithm: design of experiments (DoE)
+    parameters: response_variable=analyte ion abundance and in-source fragmentation extent, key_factor=fragmentor voltage
+    input: raw LC-TOFMS data under varying ESI conditions
+    output: optimized ESI parameters (especially fragmentor voltage)
+    confidence: medium
+  Step 2: Alternating in-source fragmentation acquisition
+    tool: Agilent 6550 iFunnel Q-TOF or equivalent TOFMS
+    algorithm: alternating fragmentor voltage scanning
+    parameters: voltage_modes=['low_fragmentor', 'high_fragmentor'], cycle_time=not specified, polarity=positive or negative (implied), mass_resolution=high resolution (HRMS)
+    input: yeast extract samples
+    output: paired .d files (vendor raw) with alternating low/high fragmentor voltage scans
+    confidence: low
+  Step 3: Chromatographic separation
+    tool: Hydrophilic interaction liquid chromatography (HILIC)
+    algorithm: not applicable
+    parameters: column=not specified, mobile_phase=not fully described, gradient_profile=not specified, flow_rate=not specified, temperature=not specified
+    input: yeast extract samples
+    output: LC-separated analytes entering MS
+    confidence: low
+  Step 4: Data conversion
+    tool: open-source data processing tools
+    algorithm: vendor file conversion
+    parameters: format=to open format (e.g., mzML)
+    input: raw .d files
+    output: open-format mass spectrometry files (e.g., mzML)
+    confidence: medium
+  Step 5: Feature detection and alignment
+    tool: open-source data processing tools
+    algorithm: not specified
+    parameters: peak_detection_method=not named, rt_tolerance=not specified, mz_tolerance_ppm=not specified, min_peak_width=not specified
+    input: converted mzML files
+    output: feature table (m/z, RT, intensity)
+    confidence: low
+  Step 6: Metabolite annotation using in-source fragments
+    tool: public reference mass spectral databases
+    algorithm: spectral matching of [M+H]⁺ and in-source fragments
+    parameters: match_criteria=exact mass tolerance (unspecified), fragment pattern consistency, confidence_levels=['high', 'putative']
+    input: feature table + alternating fragmentor spectra
+    output: annotated metabolite list with confidence levels
+    confidence: medium
+  Step 7: Confidence-based filtering and reporting
+    tool: custom evaluation methodology
+    algorithm: manual or rule-based confidence assignment
+    parameters: high_confidence_threshold=≥40% of annotated metabolites (130+ total), annotation_rules=presence/absence and relative abundance of qualifier fragments across alternating voltages
+    input: annotated metabolite list
+    output: final putatively annotated metabolite table with confidence tiers
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: not_mentioned (not mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository
+  - No specification of HILIC gradient or column details
+  - No identification of open-source tools used (XCMS? OpenMS? MZmine?)
+  - No parameters for feature detection, alignment, or RT correction
+  - No description of custom annotation rules or code
+  - Commercial TOFMS instrument and vendor software (MassHunter) not accessible without license
+  - Fragmentor voltage alternation scheme (timing, sequence, dwell) not detailed
+reproducibility_strengths:
+  - Explicit mention of open-source data processing tools
+  - Use of public spectral databases for annotation
+  - Clear experimental rationale linking fragmentor voltage to annotation confidence

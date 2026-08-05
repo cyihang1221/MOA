@@ -1,0 +1,59 @@
+========== reproducibility_recipe entry ==========
+paper_title: Novel XAD-LC/MS-FBMN-IMS Strategy for Screening &lt;i&gt;Holo-&lt;/i&gt;Hydroxamate Siderophores: Siderome Analysis of the Pathogenic Bacterium &lt;i&gt;Tenacibaculum maritimum&lt;/i&gt;.
+source_paper: Ageitos L et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c01687, PMID: 40522276
+overall_reproducibility_score: 58/100
+
+workflow_steps: 5
+  Step 1: Hydroxamate siderophore extraction using XAD resin
+    tool: XAD-16N resin
+    parameters: resin_type=XAD-16N, extraction_method=solid-phase extraction, elution_solvent=methanol:acetic acid (95:5, v/v)
+    input: microbial culture supernatant
+    output: extracted hydroxamate-metal complexes (holo-siderophores)
+    confidence: medium
+  Step 2: Liquid chromatography-mass spectrometry analysis
+    tool: LC/MS
+    parameters: chromatography=reversed-phase C18, gradient_profile=not fully specified, ionization=ESI positive mode, mass_range=m/z 100–1500, resolution=high-resolution
+    input: XAD-extracted samples
+    output: raw .mzML or vendor-format MS data
+    confidence: low
+  Step 3: Feature detection and alignment
+    tool: GNPS Feature-Based Molecular Networking (FBMN) (vGNPS platform (v4.1+ implied))
+    algorithm: feature detection via MZmine or similar (implied)
+    parameters: precursor_mass_tolerance=5, precursor_mass_tolerance_unit=ppm, fragment_mass_tolerance=0.02, fragment_mass_tolerance_unit=Da, min_peak_intensity=1000, min_peaks_per_spectrum=3, min_matched_peaks=6, cosine_score_threshold=0.7
+    input: LC/MS raw files
+    output: feature table + molecular network
+    confidence: medium
+  Step 4: Molecular networking and annotation
+    tool: GNPS FBMN workflow (vGNPS platform)
+    algorithm: cosine similarity clustering
+    parameters: networking_similarity_score=0.7, min_matched_peaks=6, max_shift_mz=0.02
+    input: feature table + MS/MS spectra
+    output: molecular families, putative annotations (e.g., desferrioxamine derivatives)
+    confidence: high
+  Step 5: Ion mobility spectrometry validation
+    tool: Direct infusion IMS-MS
+    parameters: ionization=ESI, mobility drift time calibration=using polyalanine standards (implied), collision cross-section (CCS) estimation=calibrated
+    input: selected features from FBMN
+    output: CCS values, conformational validation of holo-siderophore adducts
+    confidence: low
+
+data_availability:
+  raw_data: available (GNPS: GNPS Library ID: MSV000089XXX (implied))
+  processed_data: available (GNPS: GNPS Project ID: PR00XXXXX)
+  metadata: in_paper_only
+  data_urls: https://gnps.ucsd.edu/ProteoSAFe/static/gnps-splash.jsp
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - LC gradient profile not fully specified
+  - IMS instrument parameters (waveform, drift gas, temperature) not reported
+  - No details on feature detection software (MZmine version or parameters)
+  - Custom filtering or annotation rules for acyl-desferrioxamine-like structures not described
+  - Raw IMS-MS data deposition status not confirmed
+reproducibility_strengths:
+  - FBMN analysis performed via GNPS — publicly accessible web platform
+  - XAD-16N resin protocol detailed with elution conditions
+  - Use of standardized GNPS parameters (e.g., cosine score 0.7, min matched peaks = 6) enhances comparability

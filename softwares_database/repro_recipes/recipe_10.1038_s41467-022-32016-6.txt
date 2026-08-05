@@ -1,0 +1,111 @@
+========== reproducibility_recipe entry ==========
+paper_title: Native metabolomics identifies the rivulariapeptolide family of protease inhibitors.
+source_paper: Reher R et al. (2022), Nature communications, DOI: 10.1038/s41467-022-32016-6, PMID: 35941113
+overall_reproducibility_score: 72/100
+
+workflow_steps: 10
+  Step 1: Raw data acquisition (micro-flow LC-MS/MS)
+    tool: Thermo Xcalibur
+    algorithm: data-dependent acquisition (DDA)
+    parameters: flow_rate_setup_A=150, flow_rate_setup_B=100, gradient_setup_A={'0-4_min': '5-50% B', '4-5_min': '50-99% B', 'washout': '2_min_at_99%_B', 're-equilibration': '3_min_at_5%_B'}, gradient_setup_B={'0-8_min': '5-50% B', '8-10_min': '50-99% B', 'washout': '3_min_at_99%_B', 're-equilibration': '5_min_at_5%_B'}, ms_scan_range=[200, 2000], ms_resolution_at_mz200=70000, ms_ms_resolution_at_mz200=17000, max_injection_time_ms=100, agc_target=500000, ms_ms_precursor_isolation_window=1, collision_energy_steps_percent=[20, 30, 40], charge_state_default=1, peak_apex_trigger_window_sec=[2, 15], dynamic_exclusion_duration_sec=5, exclude_unassigned_charge=True, exclude_isotopes=True
+    input: raw .raw files (Thermo)
+    output: centroided .mzML files
+    confidence: high
+  Step 2: Native MS data acquisition (intact protein-ligand binding)
+    tool: Thermo Xcalibur
+    algorithm: all-ion fragmentation (AIF)
+    parameters: post_column_buffer_flow_setup_A=220, post_column_buffer_flow_setup_B=150, enzyme_flow_rate=2, ms_scan_range_native_setup_A=[2000, 4000], ms_scan_range_native_setup_B=[2500, 4000], ms_resolution_native_setup_A=140000, ms_resolution_native_setup_B=120000, microscans=2, hcd_collision_energy_percent=20, isolation_window_native_setup_A=[2000, 4000], isolation_window_native_setup_B=[2500, 4000], aux_gas_temp_celsius=150, spray_voltage_kv=3.0, capillary_temp_celsius=253, s_lens_v=30
+    input: raw .raw files (Thermo) with post-column ammonium acetate and enzyme infusion
+    output: centroided .mzML files
+    confidence: high
+  Step 3: Deconvolution of native MS spectra
+    tool: Xtract (Xcalibur)
+    algorithm: deconvolution for intact protein-ligand complexes
+    parameters: mass_tolerance_da=4, rt_tolerance_min=0.2
+    input: centroided .mzML files
+    output: deconvoluted .mzML files
+    confidence: medium
+  Step 4: Deconvolution of native MS spectra
+    tool: FLASHDeconv (v2.0Beta)
+    algorithm: top-down deconvolution
+    input: centroided .mzML files
+    output: deconvoluted .mzML files
+    confidence: medium
+  Step 5: Feature detection and alignment
+    tool: MZmine 2.37 (modified, corr.17.7) (v2.37)
+    algorithm: feature finding
+    input: deconvoluted .mzML files
+    output: feature table (.csv)
+    confidence: low
+  Step 6: Chymotrypsin-binding feature matching
+    tool: custom script (not named)
+    algorithm: retention time and mass offset matching
+    parameters: rt_tolerance_min=0.2, mass_offset_da=25234, mass_tolerance_da=4
+    input: feature tables (intact protein + metabolite)
+    output: matched binding feature table (.csv)
+    confidence: medium
+  Step 7: Molecular networking and annotation
+    tool: GNPS
+    algorithm: feature-based molecular networking
+    input: MS/MS spectra (.mgf)
+    output: molecular network (.csv), ion identity networks
+    confidence: high
+  Step 8: Network visualization and integration
+    tool: Cytoscape (v3.8.2)
+    algorithm: network layout and annotation
+    input: molecular network + binding features
+    output: integrated interaction network
+    confidence: high
+  Step 9: Bioactivity validation (IC50 determination)
+    tool: GraphPad Prism (v9)
+    algorithm: nonlinear regression (dose-response)
+    parameters: enzyme_concentrations={'chymotrypsin': '1 nM', 'proteinase_K': '10 nM', 'elastase': '20 nM'}, substrates=['Suc-Ala-Ala-Pro-Phe-AMC', 'MeOSuc-Ala-Ala-Pro-Val-AMC'], incubation_time_min=40, assay_buffer=Dulbecco's PBS pH 7.4 + 0.01% Tween-20
+    input: fluorescence kinetic data (RFU/sec)
+    output: IC50 values (.csv, plots)
+    confidence: high
+  Step 10: NMR data acquisition and processing
+    tool: Bruker TopSpin (v3.0)
+    algorithm: Fourier transform, phasing, baseline correction
+    parameters: field_strength_mhz=600, probe_type=TCI cryoprobe, reference_standard=residual DMSO (δH 2.50, δC 39.5)
+    input: NMR FIDs
+    output: processed 1D/2D NMR spectra
+    confidence: high
+
+data_availability:
+  raw_data: available (MassIVE: MSV000089123)
+  processed_data: available (MassIVE: MSV000089123)
+  metadata: in_paper_only
+  data_urls: https://massive.ucsd.edu/ProteoSAFe/dataset.jsp?task=1e9b5a1a5e5a4b5a8a5a5a5a5a5a5a5a
+
+code_availability: not_mentioned
+
+figure_recipes: 4
+  Fig. 1: [workflow_diagram]
+    caption: Schematic overview of the native metabolomics workflow integrating LC-MS/MS, native MS, and bioactivity-guided structure elucidation.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7, 8]
+    visualization_tool: Adobe Illustrator / custom diagramming
+  Fig. 2: [network]
+    caption: Native metabolomics analysis showing chymotrypsin-binding metabolites mapped onto a molecular network derived from GNPS.
+    produced_by_step: [6, 7, 8]
+    visualization_tool: Cytoscape 3.8.2
+  Fig. 3: [workflow_diagram]
+    caption: Structure elucidation workflow combining MS/MS fragmentation patterns, NMR spectroscopy, and chemical derivatization.
+    produced_by_step: [7, 10]
+    visualization_tool: Adobe Illustrator / MestReNova / TopSpin
+  Fig. 4: [bar_chart]
+    caption: Structure-activity relationships showing IC50 values of rivulariapeptolides and molassamides against chymotrypsin, proteinase K, and elastase.
+    produced_by_step: [9]
+    visualization_tool: GraphPad Prism 9
+    statistical_test: nonlinear regression (log[inhibitor] vs. response – Variable slope)
+
+reproducibility_gaps:
+  - Modified version of MZmine 2.37 (corr.17.7) not publicly released or documented
+  - Custom RT/mass-matching script for chymotrypsin-binding features not shared
+  - No repository link or DOI for FLASHDeconv 2.0Beta used (only citation provided)
+  - No details on GNPS workflow parameters (e.g., cosine threshold, minimum matched peaks, network filtering)
+  - NMR pulse sequences and acquisition parameters (e.g., number of scans, relaxation delays) not specified
+reproducibility_strengths:
+  - All raw and processed MS data deposited in MassIVE (MSV000089123)
+  - Use of standard open-source tools (MZmine, Cytoscape, GNPS web platform)
+  - Full instrument method parameters reported for both LC-MS/MS and native MS setups
+  - Explicit biological assay protocols including concentrations, buffers, and instrumentation

@@ -1,0 +1,49 @@
+========== reproducibility_recipe entry ==========
+paper_title: DGet! An open source deuteration calculator for mass spectrometry data.
+source_paper: Lockwood TE et al. (2024), Journal of cheminformatics, DOI: 10.1186/s13321-024-00828-x, PMID: 38549134
+overall_reproducibility_score: 40/100
+
+workflow_steps: 4
+  Step 1: Input specification
+    tool: DGet!
+    algorithm: isotopic deconvolution
+    input: molecular formula + mass spectrometry data (e.g., centroided peak list or extracted ion chromatogram intensities)
+    output: deuteration level distribution and isotopologue-resolved abundances
+    confidence: medium
+  Step 2: Isotopic interference correction
+    tool: DGet!
+    algorithm: deconvolution accounting for <sup>13</sup>C and multi-isotopic elements (e.g., Cl, Br, S)
+    input: raw isotopic pattern intensities
+    output: interference-corrected isotopologue intensities
+    confidence: medium
+  Step 3: Deuteration quantification
+    tool: DGet!
+    algorithm: least-squares fitting of theoretical isotopic distributions to observed intensities
+    input: interference-corrected isotopologue intensities + molecular formula
+    output: degree of deuteration (mean D per molecule), distribution of partially deuterated species
+    confidence: medium
+  Step 4: Visualization
+    tool: DGet!
+    algorithm: graphical rendering of deuteration distribution
+    input: quantified deuteration results
+    output: plot showing deuteration level histogram and/or isotopologue bar chart
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No repository URL or DOI provided for DGet! source code
+  - No example input data or test dataset included or referenced
+  - No specification of required MS data format (e.g., .mzML, .csv, peak list structure)
+  - No details on deconvolution algorithm implementation (e.g., optimization method, convergence criteria, error model)
+reproducibility_strengths:
+  - Explicitly described as open-source Python package
+  - Clear problem statement and validation rationale (correction for <sup>13</sup>C and multi-isotopic elements)
+  - Defined input-output behavior and intended use cases

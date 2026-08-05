@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: Determining the parent and associated fragment formulae in mass spectrometry via the parent subformula graph.
+source_paper: Li S et al. (2023), Journal of cheminformatics, DOI: 10.1186/s13321-023-00776-y, PMID: 37936244
+overall_reproducibility_score: 42/100
+
+workflow_steps: 4
+  Step 1: Candidate molecular formula generation
+    tool: SIRIUS
+    algorithm: elemental composition enumeration
+    parameters: mass_tolerance_ppm=10, max_atom_count_C=50, max_atom_count_H=100, max_atom_count_N=10, max_atom_count_O=20, max_atom_count_S=5, max_atom_count_P=2
+    input: high-resolution mass spectrum (m/z and intensity)
+    output: list of candidate molecular formulae
+    confidence: medium
+  Step 2: Parent subformula graph (PSG) construction
+    tool: custom implementation
+    algorithm: subformula graph generation from candidate parent formulae and fragment peaks
+    parameters: min_fragment_intensity_ratio=0.01, mass_tolerance_ppm=10, allowed_elemental_losses=['H', 'CH3', 'H2O', 'CO', 'CH2O', 'C2H4', 'C2H2O']
+    input: candidate molecular formulae + MS/MS or EI-MS peak list
+    output: parent subformula graph (PSG) for each candidate
+    confidence: low
+  Step 3: PSG-based scoring
+    tool: custom implementation
+    algorithm: edge-count metric and normalized edge-density metric
+    parameters: edge_score_weight=1.0, density_score_weight=1.0, penalty_for_isotopic_peak_mismatch=True
+    input: constructed PSGs
+    output: ranked list of candidate parent formulae
+    confidence: low
+  Step 4: Visualization via two-dimensional fragmentation plot (2DFP)
+    tool: custom Python implementation
+    algorithm: 2D projection of fragment formulae by elemental composition (C/H vs O/N/S)
+    parameters: x_axis_elements=['C', 'H'], y_axis_elements=['O', 'N', 'S'], min_fragment_intensity_ratio=0.01
+    input: PSG with annotated fragment formulae
+    output: 2DFP figure
+    confidence: low
+
+data_availability:
+  raw_data: available (CASMI 2016: CASMI2016)
+  processed_data: available (RECETOX: RECETOX-EI-MS)
+  metadata: in_paper_only
+  data_urls: https://casmi-contest.org/2016/, https://recetox.upol.cz/
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Custom PSG construction and scoring algorithms not publicly shared
+  - No repository link or code DOI provided
+  - No parameter values for elemental loss rules fully specified (e.g., exact allowed neutral losses or valence constraints)
+  - 2DFP implementation details (e.g., layout algorithm, coloring logic) not described
+reproducibility_strengths:
+  - Uses public benchmark datasets (CASMI 2016, RECETOX)
+  - Method is parameter-light and does not require empirical fitting or ML training
+  - Clear conceptual framework (PSG) enables independent reimplementation

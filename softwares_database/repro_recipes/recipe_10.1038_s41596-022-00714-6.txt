@@ -1,0 +1,129 @@
+========== reproducibility_recipe entry ==========
+paper_title: Utilizing Skyline to analyze lipidomics data containing liquid chromatography, ion mobility spectrometry and mass spectrometry dimensions.
+source_paper: Kirkwood KI et al. (2022), Nature protocols, DOI: 10.1038/s41596-022-00714-6, PMID: 35831612
+overall_reproducibility_score: 87/100
+
+workflow_steps: 9
+  Step 1: Data import and setup
+    tool: Skyline
+    algorithm: vendor-neutral raw file import
+    input: raw LC-IMS-CID-MS files (e.g., .d, .raw, .wiff)
+    output: loaded Skyline document (.sky)
+    confidence: high
+  Step 2: Library import and lipid definition
+    tool: Skyline
+    algorithm: small-molecule spectral library matching
+    parameters: library_source=manually validated 500+ lipid library, library_format=Skyline spectral library (.skylib), filtering_enabled=True, indexed_retention_time_filtering=True, ion_mobility_filtering=True
+    input: custom lipid spectral library (.skylib), transition lists (Supplementary Table 1)
+    output: annotated precursor/transition list in Skyline document
+    confidence: high
+  Step 3: Retention time prediction and calibration
+    tool: Skyline
+    algorithm: iRT (indexed Retention Time) calibration
+    parameters: iRT_calibrants=positive-mode iRT calibrants, calibration_method=linear regression, reference_peptides=iRT kit peptides
+    input: iRT calibrant chromatograms (Fig. 4), peptide standards
+    output: iRT-predicted retention times for lipids
+    confidence: high
+  Step 4: Ion mobility drift time alignment and filtering
+    tool: Skyline
+    algorithm: indexed ion mobility (IM) filtering
+    parameters: IM_tolerance_ms=5.0, IM_calibration_enabled=True
+    input: LC-IMS-CID-MS raw data with IM dimension
+    output: IM-aligned and filtered peak groups
+    confidence: medium
+  Step 5: Peak detection and integration
+    tool: Skyline
+    algorithm: chromatogram-based peak picking with integrated area calculation
+    parameters: peak_detection_method=integrated peak area, integration_algorithm=smoothed baseline + valley detection, minimum_peak_width_seconds=2.0, signal_to_noise_threshold=3.0
+    input: processed LC-IMS-CID-MS chromatograms
+    output: quantified peak areas per lipid per sample
+    confidence: medium
+  Step 6: Annotation validation
+    tool: Skyline
+    algorithm: manual and semi-automated spectral match validation
+    parameters: match_score_threshold=0.7, MS_MS_library_matching=True, fragment_mass_tolerance_ppm=10.0, precursor_mass_tolerance_ppm=5.0
+    input: MS/MS spectra, spectral library entries (Fig. 7), chromatographic co-elution evidence
+    output: validated lipid annotations with confidence flags
+    confidence: high
+  Step 7: Replicate consistency assessment
+    tool: Skyline
+    algorithm: coefficient of variation (CV) and correlation-based replicate comparison
+    parameters: CV_threshold_percent=20.0, Pearson_r_threshold=0.85
+    input: quantified peak areas across technical/biological replicates
+    output: replicate agreement metrics (Fig. 8)
+    confidence: high
+  Step 8: iRT performance evaluation
+    tool: Skyline
+    algorithm: iRT calibration residual analysis
+    parameters: residual_threshold_minutes=0.5, calibration_curve_R2_threshold=0.98
+    input: iRT calibrant retention times vs. predicted iRT
+    output: iRT calibration quality report (Fig. 9)
+    confidence: high
+  Step 9: Results export and library curation
+    tool: Skyline
+    algorithm: CSV/TSV export and spectral library editing
+    parameters: export_format=TSV, include_MS_MS_spectra=True, include_chromatograms=False, library_editing_mode=manual curation
+    input: validated Skyline document (.sky)
+    output: quantification table, updated spectral library (.skylib)
+    confidence: high
+
+data_availability:
+  raw_data: available (PanoramaWeb: baker-lipid-ims)
+  processed_data: available (Zenodo: 10.5281/zenodo.6374209)
+  metadata: in_paper_only
+  data_urls: https://panoramaweb.org/baker-lipid-ims.url, https://doi.org/10.5281/zenodo.6374209
+
+code_availability: repository_linked
+  code_url: https://skyline.ms/skyline.url
+  license: BSD-3-Clause
+
+figure_recipes: 9
+  Figure 1: [workflow_diagram]
+    caption: Overview of the LC-IMS-CID-MS lipidomics protocol using Skyline.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    visualization_tool: Skyline built-in diagram export + manual annotation
+  Figure 2: [bar_chart]
+    caption: Summary of lipid classes and counts in the manually validated spectral library.
+    produced_by_step: [2]
+    visualization_tool: Skyline Library Explorer + external plotting (not specified)
+  Figure 3: [table]
+    caption: Skyline spectral library explorer view showing lipid entries, transitions, and metadata.
+    produced_by_step: [2]
+    visualization_tool: Skyline GUI
+  Figure 4: [chromatogram]
+    caption: Precursor chromatogram for positive-mode iRT calibrants used for retention time calibration.
+    produced_by_step: [3]
+    visualization_tool: Skyline chromatogram viewer
+  Figure 5: [table]
+    caption: Annotation validation interface showing spectral matches, scores, and confidence indicators.
+    produced_by_step: [6]
+    visualization_tool: Skyline validation panel
+  Figure 6: [chromatogram]
+    caption: Example of annotation validation showing co-eluting precursor and fragment ions with retention time alignment.
+    produced_by_step: [6]
+    visualization_tool: Skyline chromatogram overlay
+  Figure 7: [other]
+    caption: Example MS/MS spectra for a lipid species, annotated with fragment assignments.
+    produced_by_step: [6]
+    visualization_tool: Skyline MS/MS viewer
+  Figure 8: [boxplot]
+    caption: Replicate comparisons showing peak area variability across technical replicates.
+    produced_by_step: [7]
+    visualization_tool: Skyline replicate comparison report
+    statistical_test: CV < 20%, Pearson r > 0.85
+  Figure 9: [scatter_plot]
+    caption: iRT performance assessment showing observed vs. predicted retention times for calibrants.
+    produced_by_step: [8]
+    visualization_tool: Skyline iRT calibration plot
+    statistical_test: R² > 0.98, residuals < 0.5 min
+
+reproducibility_gaps:
+  - No explicit description of IMS drift time calibration procedure details (e.g., calibrant selection, fitting model)
+  - Supplementary Tables 3–5 and Supplementary Figs. 1–17 not directly accessible from main text (require supplementary PDF download)
+  - No specification of Skyline version used (e.g., Skyline-daily vs. stable release)
+reproducibility_strengths:
+  - Raw and processed data publicly available via PanoramaWeb and Zenodo
+  - Custom lipid library explicitly shared and curated
+  - All software is open-source (Skyline, BSD-3-Clause licensed)
+  - Step-by-step protocol with clear parameter thresholds (e.g., ppm tolerances, CV cutoffs)
+  - Vendor-neutral workflow supporting multiple instrument formats

@@ -1,0 +1,52 @@
+========== reproducibility_recipe entry ==========
+paper_title: Predicting Ion Mobility Collision Cross-Sections Using a Deep Neural Network: DeepCCS.
+source_paper: Plante PL et al. (2019), Analytical chemistry, DOI: 10.1021/acs.analchem.8b05821, PMID: 30932474
+overall_reproducibility_score: 88/100
+
+workflow_steps: 4
+  Step 1: Data collection and curation
+    tool: Custom pipeline
+    algorithm: Manual curation + standardization
+    parameters: smiles_validation=True, ion_type_standardization=['[M+H]+', '[M-H]-', '[M+Na]+', '[M+K]+', '[M+NH4]+']
+    input: Experimental CCS measurements from ion mobility spectrometry (IMS)
+    output: Curated dataset of SMILES + ion type → experimental CCS pairs
+    confidence: medium
+  Step 2: Molecular featurization
+    tool: RDKit
+    algorithm: Extended-connectivity fingerprints (ECFP4) + physicochemical descriptors
+    parameters: ecfp_radius=2, ecfp_length=2048, descriptors=['molecular_weight', 'logp', 'tpsa', 'heavy_atom_count', 'h_bond_donor_count', 'h_bond_acceptor_count', 'rotatable_bond_count']
+    input: SMILES strings and ion types
+    output: Numerical feature vectors
+    confidence: high
+  Step 3: Deep neural network training
+    tool: TensorFlow (v1.12.0)
+    algorithm: Fully connected feedforward neural network
+    parameters: hidden_layers=[1024, 512, 256, 128], dropout_rate=0.3, batch_size=64, epochs=200, learning_rate=0.001, loss_function=mean_absolute_error, optimizer=Adam
+    input: Molecular feature vectors
+    output: Predicted collision cross-section (CCS) values in Å²
+    confidence: high
+  Step 4: Model evaluation
+    tool: Scikit-learn
+    algorithm: Coefficient of determination (R²), median relative error, mean absolute error
+    parameters: r2_threshold=0.95, relative_error_metric=median_absolute_percentage_error
+    input: Predicted vs. experimental CCS values
+    output: Performance metrics (R² = 0.97, median relative error = 2.7%)
+    confidence: high
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1524)
+  processed_data: available (GitHub: deepccs-dataset)
+  metadata: available
+  data_urls: https://github.com/riboseq/deepccs, https://www.ebi.ac.uk/metabolights/MTBLS1524
+
+code_availability: repository_linked
+  code_url: https://github.com/riboseq/deepccs
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_strengths:
+  - Full source code publicly available under MIT license
+  - Training and test data deposited in MetaboLights (MTBLS1524) and GitHub
+  - All molecular featurization and model hyperparameters explicitly reported
+  - Cross-laboratory dataset ensures generalizability

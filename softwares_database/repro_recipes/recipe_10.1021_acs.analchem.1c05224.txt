@@ -1,0 +1,60 @@
+========== reproducibility_recipe entry ==========
+paper_title: automRm: An R Package for Fully Automatic LC-QQQ-MS Data Preprocessing Powered by Machine Learning.
+source_paper: Eilertz D et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.1c05224, PMID: 35412809
+overall_reproducibility_score: 78/100
+
+workflow_steps: 5
+  Step 1: Raw data import and format conversion
+    tool: automRm
+    algorithm: machine learning-based peak detection
+    input: raw .raw files (Agilent) or .wiff files (Sciex)
+    output: peak table with area, RT, and quality score
+    confidence: medium
+  Step 2: Chromatographic peak detection
+    tool: automRm
+    algorithm: random forest classifier trained on expert-annotated peaks
+    parameters: min_peak_width_sec=2.0, max_rt_shift_sec=5.0, mass_tolerance_ppm=None
+    input: LC-QQQ-MS MRM chromatograms
+    output: detected peaks with binary classification (valid/invalid)
+    confidence: high
+  Step 3: Peak integration and quantification
+    tool: automRm
+    algorithm: adaptive Gaussian fitting + baseline correction
+    parameters: baseline_method=asymmetric_least_squares, fitting_window_sec=10
+    input: detected peaks
+    output: quantified peak areas per transition
+    confidence: medium
+  Step 4: Quality control and confidence scoring
+    tool: automRm
+    algorithm: ML-based quality scoring (random forest output probability)
+    parameters: qc_threshold_probability=0.7
+    input: peak features with metadata (shape, SNR, symmetry, RT stability)
+    output: QC-filtered peak table with confidence scores
+    confidence: high
+  Step 5: Retention time alignment across samples
+    tool: automRm
+    algorithm: dynamic time warping (DTW) with reference sample
+    parameters: dtw_window_size_sec=15, reference_sample=median_RT_sample
+    input: QC-filtered peak table
+    output: aligned peak table with harmonized RTs
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://gitlab.gwdg.de/joerg.buescher/automrm
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS data not deposited in public repository
+  - Training dataset for ML model not shared or described in detail
+  - No specification of instrument method parameters (e.g., dwell time, collision energy, gradient profile)
+reproducibility_strengths:
+  - Source code publicly available under MIT license
+  - Uses only open-source R ecosystem (no commercial dependencies)
+  - ML model architecture and training strategy explicitly described

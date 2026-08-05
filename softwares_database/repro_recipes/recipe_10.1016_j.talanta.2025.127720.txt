@@ -1,0 +1,55 @@
+========== reproducibility_recipe entry ==========
+paper_title: Disentangling shared and unique variation in multiplatform hazelnut volatilomics using JIVE.
+source_paper: Mazzucotelli M et al. (2025), Talanta, DOI: 10.1016/j.talanta.2025.127720, PMID: 39983383
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: GC-MS data processing
+    tool: standardized data processing strategy
+    input: raw GC-MS chromatographic data
+    output: peak table (features × samples)
+    confidence: low
+  Step 2: PTR-ToF-MS data processing
+    tool: standardized data processing strategy
+    input: raw PTR-ToF-MS time-series data
+    output: peak table (features × samples)
+    confidence: low
+  Step 3: GC-IMS data processing
+    tool: automated pipeline
+    algorithm: untargeted peak extraction
+    input: raw GC-IMS ion mobility spectra
+    output: peak table (features × samples)
+    confidence: low
+  Step 4: Data integration and decomposition
+    tool: JIVE (Joint and Individual Variation Explained)
+    algorithm: JIVE decomposition
+    parameters: rank_joint=None, rank_individual=None, max_iter=100, tol=1e-06
+    input: three aligned peak tables (GC-MS, PTR-ToF-MS, GC-IMS)
+    output: joint component matrix, individual component matrices, explained variance per platform
+    confidence: medium
+  Step 5: Latent variable visualization and interpretation
+    tool: unsupervised data exploration
+    algorithm: score plots, loading plots, variable trend analysis
+    input: JIVE decomposition outputs
+    output: visualizations of shared/individual patterns, key variable trends
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposited or referenced
+  - No code or pipeline for GC-IMS automated peak extraction shared
+  - No specification of JIVE rank selection criteria or parameter tuning
+  - No description of 'standardized data processing' for GC-MS/PTR-ToF-MS (e.g., software, settings, filtering thresholds)
+  - No details on sample metadata structure (e.g., roasting timepoints, batch IDs, replicates)
+reproducibility_strengths:
+  - Explicit use of JIVE — a well-documented open-source method (R package 'r.jive')
+  - Clear experimental design (three geographical origins, roasting time series)
+  - Recognition of platform complementarity as an analytical goal

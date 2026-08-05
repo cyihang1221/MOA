@@ -1,0 +1,48 @@
+========== reproducibility_recipe entry ==========
+paper_title: Structure Database and <i>In Silico</i> Spectral Library for Comprehensive Suspect Screening of Per- and Polyfluoroalkyl Substances (PFASs) in Environmental Media by High-resolution Mass Spectrometry.
+source_paper: Getzinger GJ et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.0c04109, PMID: 33496574
+overall_reproducibility_score: 82/100
+
+workflow_steps: 3
+  Step 1: PFAS molecular structure database construction
+    tool: custom Python/R pipeline
+    algorithm: in silico biotic/abiotic transformation prediction
+    parameters: transformation_rules=['oxidation', 'decarboxylation', 'hydrolysis', 'defluorination'], precursor_lists=['curated commercial PFAS lists', 'environmental monitoring reports']
+    input: curated PFAS structure lists (SMILES, InChI)
+    output: comprehensive PFAS molecular database (structure + exact mass + formula)
+    confidence: medium
+  Step 2: In silico tandem mass spectral library generation
+    tool: CFM-ID 4.0 (v4.0)
+    algorithm: fragmentation tree prediction
+    parameters: collision_energy=20, ionization_mode=positive, adducts=['[M+H]+', '[M-H]-']
+    input: PFAS molecular database entries (structures)
+    output: predicted MS/MS spectral library (m/z, intensity, fragments)
+    confidence: high
+  Step 3: Suspect screening workflow integration
+    tool: XCMS Online / mzTab-compatible tools
+    algorithm: mass accuracy filtering, retention time alignment, spectral matching
+    parameters: mass_tolerance_ppm=5, RT_tolerance_sec=30, spectral_similarity_score=cosine > 0.7
+    input: HRMS raw data (.mzML), PFAS database + predicted MS/MS library
+    output: annotated PFAS suspects (structure, score, confidence level)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: available (Zenodo: 10.5281/zenodo.4709822)
+  metadata: available
+  data_urls: https://zenodo.org/record/4709822
+
+code_availability: repository_linked
+  code_url: https://github.com/USGS-CIDA/pfas-database
+  license: CC0-1.0
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No HRMS raw data provided for validation
+  - XCMS Online parameters not fully specified (e.g., peak detection settings)
+  - No details on RT alignment strategy or chromatographic conditions
+reproducibility_strengths:
+  - PFAS structure database and in silico MS/MS library publicly available on Zenodo with DOI
+  - Source code openly licensed (CC0) and hosted on GitHub
+  - Transformation rules and ionization parameters explicitly reported

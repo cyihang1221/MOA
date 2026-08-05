@@ -1,0 +1,64 @@
+========== reproducibility_recipe entry ==========
+paper_title: An 8-(Diazomethyl) Quinoline Derivatized Acyl-CoA in Silico Mass Spectral Library Reveals the Landscape of Acyl-CoA in Aging Mouse Organs.
+source_paper: Yu J et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.4c02113, PMID: 39150895
+overall_reproducibility_score: 30/100
+
+workflow_steps: 6
+  Step 1: Chemical derivatization of acyl-CoAs
+    tool: 8-(Diazomethyl)quinoline (8-DMQ)
+    parameters: derivatization_reagent=8-(diazomethyl)quinoline, sensitivity_increase_fold=625
+    input: biological tissue extracts (mouse organs)
+    output: derivatized acyl-CoA samples
+    confidence: high
+  Step 2: LC-MS/MS data acquisition
+    tool: not specified (instrument not named)
+    parameters: chromatographic_peak_shape=improved, ms_sensitivity=enhanced
+    input: 8-DMQ-derivatized acyl-CoA samples
+    output: raw .raw or .wiff files (inferred)
+    confidence: low
+  Step 3: In silico MS/MS spectral library generation
+    tool: custom in silico library generation pipeline
+    algorithm: MS/MS fragmentation rules learned from authentic standards
+    parameters: library_size_spectra=33344, library_size_compounds=8336, derivatization_tag=8-DMQ
+    input: MS/MS spectra of 8-DMQ-acyl-CoA authentic standards
+    output: in silico mass spectral library (.msp or similar)
+    confidence: medium
+  Step 4: Automated acyl-CoA annotation
+    tool: ['NIST MS Search', 'MSDIAL']
+    input: LC-MS/MS raw data + in silico library
+    output: annotated acyl-CoA feature table
+    confidence: medium
+  Step 5: False positive filtering via retention time prediction
+    tool: XGBoost
+    algorithm: eXtreme Gradient Boosting
+    parameters: model_type=retention_time_prediction, purpose=false_positive_screening
+    input: annotated features + chromatographic metadata
+    output: curated list of high-confidence acyl-CoA annotations
+    confidence: medium
+  Step 6: Biological interpretation
+    tool: not specified
+    parameters: analysis_focus=['organ_distribution', 'aging_dynamics']
+    input: curated acyl-CoA annotations with quantitative intensities
+    output: biological insights on organ-specificity and aging
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS/MS data not deposited in public repository
+  - No instrument or acquisition parameters specified (e.g., gradient, column, ionization mode)
+  - In silico library format and access method not described
+  - XGBoost model architecture, training data, and hyperparameters not reported
+  - Custom derivatization protocol details (reaction time, temperature, quenching) not fully specified
+  - No code or scripts shared for library generation or XGBoost modeling
+reproducibility_strengths:
+  - Use of open-source tools NIST MS Search and MSDIAL
+  - Explicit reporting of sensitivity gain (625-fold) and library size (33,344 spectra)
+  - Clear biological validation context (aging mouse organs)

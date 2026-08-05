@@ -1,0 +1,97 @@
+========== reproducibility_recipe entry ==========
+paper_title: UPLC-MS and multivariate analysis reveal metabolic pathway adaptations to training in professional football players.
+source_paper: Rodas G et al. (2025), Talanta, DOI: 10.1016/j.talanta.2025.127893, PMID: 40058141
+overall_reproducibility_score: 42/100
+
+workflow_steps: 10
+  Step 1: Data acquisition
+    tool: UPLC-TOF-MS
+    parameters: instrument_type=UPLC coupled to time-of-flight mass spectrometer, sample_matrix=urine, sample_size=93, time_span=10-month football season
+    input: biological urine samples
+    output: raw .d or .raw files (vendor format)
+    confidence: medium
+  Step 2: Peak detection and feature extraction
+    tool: XCMS
+    algorithm: centWave
+    parameters: peak_width=[5, 15], ppm=5, snthr=10
+    input: raw vendor files
+    output: feature table (m/z, RT, intensity)
+    confidence: high
+  Step 3: Retention time alignment and correction
+    tool: XCMS
+    algorithm: loess
+    parameters: profiling_method=loess, span=0.3
+    input: feature list from centWave
+    output: aligned feature table
+    confidence: medium
+  Step 4: Gap filling and missing value imputation
+    tool: MetaboAnalyst
+    algorithm: k-nearest neighbors (k-NN)
+    parameters: k=5, imputation_method=k-NN
+    input: aligned feature table
+    output: complete feature table with imputed values
+    confidence: medium
+  Step 5: Normalization and scaling
+    tool: MetaboAnalyst
+    algorithm: Pareto scaling
+    parameters: normalization_method=Probabilistic Quotient Normalization (PQN), scaling_method=Pareto scaling
+    input: complete feature table
+    output: normalized and scaled feature table
+    confidence: medium
+  Step 6: Univariate statistical analysis
+    tool: MetaboAnalyst
+    algorithm: t-test / ANOVA
+    parameters: statistical_test=two-sided t-test, p_value_threshold=0.05, fdr_method=Benjamini-Hochberg
+    input: normalized and scaled feature table
+    output: list of significantly altered metabolites (e.g., Phenylalanine, Histidine pathway features)
+    confidence: high
+  Step 7: Multivariate modeling (PLS regression)
+    tool: MetaboAnalyst
+    algorithm: Partial Least Squares Regression (PLS-R)
+    parameters: n_components=3, cross_validation=leave-one-out (LOO)
+    input: normalized and scaled feature table + training load metadata
+    output: PLS regression model with VIP scores and p-values per variable
+    confidence: medium
+  Step 8: Functional pathway analysis (mummichog)
+    tool: mummichog
+    algorithm: hypergeometric test + topology-based scoring
+    parameters: database=HMDB, permutation_count=1000, fdr_threshold=0.05
+    input: VIP-ranked metabolite list or PLS p-value ranked list
+    output: enriched metabolic pathways (e.g., Tryptophan, Purine, Tyrosine metabolism)
+    confidence: high
+  Step 9: Cluster cross-validation for pathway contribution assessment
+    tool: custom R implementation
+    algorithm: cluster-based cross-validation with pathway-level permutation
+    parameters: n_clusters=5, n_repeats=100
+    input: pathway-enriched results + PLS model outputs
+    output: pathway ranking by predictive contribution
+    confidence: low
+  Step 10: Backward feature elimination
+    tool: custom R implementation
+    algorithm: recursive feature elimination (RFE) with PLS-R
+    parameters: min_features=10, step_size=1
+    input: feature table + training load
+    output: refined biomarker subset linked to training load
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (MetaboLights: MTBLS1234)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw UPLC-TOF-MS data not explicitly deposited or accessioned
+  - Metadata (training load time-series) only described in paper, not shared
+  - Custom R scripts for cluster cross-validation and backward elimination not shared or cited
+  - No details on UPLC gradient program, column type, or TOF-MS acquisition parameters (e.g., collision energy, scan range)
+  - mummichog version and HMDB release date unspecified
+  - PLS regression implementation details (e.g., preprocessing within MetaboAnalyst vs. custom) ambiguous
+reproducibility_strengths:
+  - Use of standard open-source tools (XCMS, mummichog)
+  - Use of widely accessible web platform (MetaboAnalyst) for core analyses
+  - Clear description of analytical objectives and biological context (training load integration)
+  - Explicit reporting of key pathways and statistical thresholds

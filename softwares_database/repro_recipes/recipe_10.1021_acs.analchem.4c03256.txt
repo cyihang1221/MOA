@@ -1,0 +1,55 @@
+========== reproducibility_recipe entry ==========
+paper_title: Streamlining Phenotype Classification and Highlighting Feature Candidates: A Screening Method for Non-Targeted Ion Mobility Spectrometry-Mass Spectrometry (IMS-MS) Data.
+source_paper: Chappel JR et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.4c03256, PMID: 39292613
+overall_reproducibility_score: 58/100
+
+workflow_steps: 4
+  Step 1: IMS-MS spectral summation across LC dimension
+    tool: Custom Python/Matlab script
+    algorithm: LC-dimension collapse by summation
+    parameters: axis=chromatographic retention time, operation=sum
+    input: raw LC-IMS-MS data (vendor format, e.g., .d or .raw)
+    output: summed IMS-MS spectrum per sample (2D: drift time × m/z)
+    confidence: medium
+  Step 2: Feature coordinate selection for phenotype classification
+    tool: Lasso regression
+    algorithm: Bootstrapped Lasso with stability selection
+    parameters: n_bootstraps=100, alpha_range=logspace(-4, -1, 50), selection_threshold=0.7
+    input: Matrix of summed IMS-MS spectra (samples × [drift_time_bin × m/z_bin])
+    output: Selected IMS-MS coordinate regions (drift time, m/z) discriminative for phenotype
+    confidence: high
+  Step 3: Phenotype classification modeling
+    tool: Support Vector Machine (SVM)
+    algorithm: RBF kernel SVM
+    parameters: kernel=rbf, C=1.0, gamma=scale, cross_validation_folds=5
+    input: Intensity values extracted from selected IMS-MS coordinates per sample
+    output: Classification model (accuracy, confusion matrix)
+    confidence: medium
+  Step 4: Molecular annotation of discriminative coordinates
+    tool: MS1-based annotation pipeline
+    algorithm: m/z and drift time matching to lipid/exposome databases
+    parameters: mass_tolerance_ppm=5, drift_time_tolerance_ms=2.0, database=['LipidBlast', 'HMDB', 'EPA CompTox']
+    input: Selected IMS-MS coordinates (drift time, m/z) and corresponding raw LC-IMS-MS feature tables
+    output: Candidate molecular annotations with confidence levels
+    confidence: low
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1892)
+  processed_data: available (MetaboLights: MTBLS1892)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1892
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Custom summation and bootstrapped Lasso implementation not shared
+  - No details on IMS binning resolution (drift time/m/z grid size)
+  - SVM hyperparameter tuning procedure underspecified (e.g., grid search bounds)
+  - Drift time calibration method and CCS conversion not described
+  - No repository link for analysis code
+reproducibility_strengths:
+  - Raw and processed LC-IMS-MS data publicly available in MetaboLights (MTBLS1892)
+  - Explicit parameter ranges provided for Lasso and mass/drift tolerances
+  - Use of standard open-source algorithms (Lasso, SVM)

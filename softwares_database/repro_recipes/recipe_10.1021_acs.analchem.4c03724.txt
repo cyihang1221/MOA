@@ -1,0 +1,44 @@
+========== reproducibility_recipe entry ==========
+paper_title: CMSSP: A Contrastive Mass Spectra-Structure Pretraining Model for Metabolite Identification.
+source_paper: Chen L et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.4c03724, PMID: 39397774
+overall_reproducibility_score: 30/100
+
+workflow_steps: 3
+  Step 1: MS/MS spectrum preprocessing
+    tool: CMSSP
+    algorithm: contrastive pretraining
+    parameters: embedding_dim=256, spectrum_max_length=100, smiles_max_length=128, temperature=0.07, batch_size=64, learning_rate=0.001, num_epochs=100
+    input: raw MS/MS spectra (mz-intensity pairs) and corresponding SMILES strings
+    output: joint spectral-structural embeddings in shared latent space
+    confidence: medium
+  Step 2: Metabolite annotation via nearest neighbor retrieval
+    tool: CMSSP
+    algorithm: cosine similarity search in embedding space
+    parameters: top_k=10, similarity_threshold=None
+    input: query MS/MS spectrum
+    output: ranked list of candidate metabolites (SMILES, names, scores)
+    confidence: high
+  Step 3: Performance evaluation on benchmark datasets
+    tool: custom Python evaluation script
+    algorithm: top-k accuracy calculation
+    parameters: top_k_values=[1, 10], datasets=['CASMI 2017', 'independent test set', 'Glycyrrhiza glabra subset']
+    input: predicted rankings and ground-truth annotations
+    output: accuracy metrics (top-1, top-10, per-class accuracy)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No repository link or DOI provided for CMSSP source code
+  - Training and test datasets not publicly deposited or accessioned
+  - No details on MS/MS preprocessing (e.g., peak filtering, noise removal, normalization)
+  - No information on molecular structure preprocessing (e.g., SMILES canonicalization, atom masking)
+  - Architecture details (e.g., GNN vs. Transformer backbone, layer count, attention heads) not specified
+  - No hyperparameter ablation or sensitivity analysis reported

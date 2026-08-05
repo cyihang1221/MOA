@@ -1,0 +1,39 @@
+========== reproducibility_recipe entry ==========
+paper_title: Deep Learning Driven GC-MS Library Search and Its Application for Metabolomics.
+source_paper: Matyushin DD et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.0c02082, PMID: 32867500
+overall_reproducibility_score: 30/100
+
+workflow_steps: 2
+  Step 1: Spectral library search using deep learning ranking
+    tool: Custom deep convolutional neural network (DL ranking model)
+    algorithm: Learning-to-rank with CNN
+    parameters: input_representation=raw mass spectrum (m/z-intensity pairs), spectral_resolution=low-resolution electron ionization, ranking_metric=top-1 accuracy (rank-1 hit rate), training_objective=pairwise ranking loss
+    input: query mass spectrum (GC-MS EI)
+    output: ranked list of candidate compounds from spectral library
+    confidence: medium
+  Step 2: Library search benchmarking and performance evaluation
+    tool: Custom evaluation script
+    algorithm: Rank-1 accuracy calculation
+    parameters: evaluation_metrics=['rank-1 accuracy', 'fraction of wrong answers at rank-1'], datasets_used=['Golm Metabolome Database', 'Human Metabolome Database', 'FiehnLib']
+    input: ground-truth annotated spectra + ranked results
+    output: performance metrics (9–23% improvement in rank-1 accuracy)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No source code or model architecture details provided
+  - No training/test spectral datasets publicly referenced or deposited
+  - No hyperparameters (e.g., network depth, optimizer, batch size, learning rate) specified
+  - No preprocessing steps for spectra (e.g., smoothing, normalization, m/z binning) described
+  - Library versions and spectral formatting conventions (e.g., peak list vs. binned vectors) not defined
+reproducibility_strengths:
+  - Three public spectral libraries named (Golm, HMDB, FiehnLib)
+  - Clear performance metric (rank-1 accuracy) and comparative improvement reported

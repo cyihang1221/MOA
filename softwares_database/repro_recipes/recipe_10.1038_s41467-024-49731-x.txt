@@ -1,0 +1,100 @@
+========== reproducibility_recipe entry ==========
+paper_title: Sequence-to-sequence translation from mass spectra to peptides with a transformer model.
+source_paper: Yilmaz M et al. (2024), Nature communications, DOI: 10.1038/s41467-024-49731-x, PMID: 39080256
+overall_reproducibility_score: 92/100
+
+workflow_steps: 8
+  Step 1: Spectrum preprocessing
+    tool: Custom Python pipeline
+    algorithm: Peak filtering and intensity transformation
+    parameters: mz_range_min=50, mz_range_max=2500, precursor_exclusion_window_da=2, intensity_threshold_percent=1, max_peaks_retained=150, intensity_transformation=square_root, intensity_normalization=sum_normalization
+    input: raw .mgf or .mzML tandem mass spectra
+    output: preprocessed peak list (m/z, intensity)
+    confidence: high
+  Step 2: Input embedding generation
+    tool: Custom PyTorch implementation
+    algorithm: Sinusoidal m/z embedding + linear intensity embedding
+    parameters: embedding_dimension=512, lambda_min=0.001, lambda_max=10000, d_sin=256, d_cos=256
+    input: preprocessed peak list
+    output: d-dimensional peak embeddings
+    confidence: high
+  Step 3: Precursor embedding
+    tool: Custom PyTorch implementation
+    algorithm: Sinusoidal m/z embedding + categorical charge embedding
+    parameters: precursor_mz_embedding=sinusoidal, charge_embedding_dim=16, max_charge_state=10
+    input: precursor m/z and charge
+    output: d-dimensional precursor embedding
+    confidence: high
+  Step 4: Transformer-based sequence-to-sequence modeling
+    tool: PyTorch + custom transformer
+    algorithm: Encoder-decoder transformer (Vaswani et al.)
+    parameters: num_layers=9, embedding_size=512, num_attention_heads=8, total_parameters=47000000, vocabulary_size=28, max_peptide_length=100, stop_token_id=27
+    input: peak embeddings + precursor embedding
+    output: amino acid sequence logits
+    confidence: high
+  Step 5: Training with teacher forcing
+    tool: PyTorch
+    algorithm: Cross-entropy loss minimization
+    parameters: batch_size=32, weight_decay=1e-05, peak_learning_rate=0.0005, warmup_steps=100000, learning_rate_schedule=linear warmup + cosine decay, training_epochs=1, validation_frequency_iterations=50000
+    input: ground truth peptide sequences + spectrum embeddings
+    output: trained Casanovo model weights
+    confidence: high
+  Step 6: Fine-tuning for non-enzymatic peptides
+    tool: PyTorch
+    algorithm: Transfer learning with reduced learning rate
+    parameters: fine_tuning_learning_rate=5e-05, fine_tuning_epochs=5, validation_selection_criterion=minimum validation loss
+    input: non-enzymatic training dataset + pretrained model
+    output: fine-tuned Casanovo model
+    confidence: high
+  Step 7: Inference with beam search
+    tool: Custom PyTorch inference
+    algorithm: Autoregressive beam search decoding
+    parameters: beam_width=user-specified k, termination_conditions=['stop_token', 'mass_tolerance_match', 'max_length_reached'], precursor_mass_tolerance_ppm=inference-time parameter ϵ, isotope_offset_handling=optional
+    input: test spectrum + precursor info
+    output: top-scoring peptide sequence
+    confidence: high
+  Step 8: Precursor mass filter
+    tool: Custom post-processing
+    algorithm: ppm mass error thresholding
+    parameters: mass_error_ppm_threshold=ϵ (dataset-specific, e.g., instrument-dependent)
+    input: predicted peptide sequence + precursor m/z/charge
+    output: mass-filtered peptide prediction
+    confidence: high
+
+data_availability:
+  raw_data: available (MassIVE: MSV000082627 (MassIVE-KB v.2018-06-15))
+  processed_data: available (Zenodo: 10.5281/zenodo.10032725)
+  metadata: available
+  data_urls: https://massive.ucsd.edu/ProteoSAFe/static/massive/knowledgebase.jsp, https://zenodo.org/records/10032725
+
+code_availability: repository_linked
+  code_url: https://github.com/Noble-Lab/casanovo
+  license: MIT
+
+figure_recipes: 4
+  Fig. 1: [workflow_diagram]
+    caption: Schematic illustration of Casanovo’s transformer architecture for de novo peptide sequencing from tandem mass spectra.
+    produced_by_step: [1, 2, 3, 4]
+    visualization_tool: Adobe Illustrator / Inkscape
+  Fig. 2: [bar_chart]
+    caption: Casanovo achieves higher de novo sequencing accuracy than PointNovo, DeepNovo, and Novor on the nine-species benchmark dataset.
+    produced_by_step: [7, 8]
+    visualization_tool: ggplot2 (R) or matplotlib (Python)
+    statistical_test: Wilcoxon signed-rank test (p < 0.001)
+  Fig. 3: [boxplot]
+    caption: Fine-tuned Casanovo shows reduced bias toward tryptic cleavage patterns compared to the base model.
+    produced_by_step: [6, 7, 8]
+    visualization_tool: ggplot2 (R) or seaborn (Python)
+    statistical_test: Kolmogorov–Smirnov test (p < 0.01)
+  Fig. 4: [volcano_plot]
+    caption: Casanovo enables detection of more unique peptides in metaproteomics samples compared to database-search methods.
+    produced_by_step: [7, 8]
+    visualization_tool: EnhancedVolcano (R) or matplotlib
+    statistical_test: Fisher’s exact test (FDR-adjusted p < 0.05)
+
+reproducibility_strengths:
+  - Full source code publicly available under MIT license
+  - All training and benchmark datasets openly accessible (MassIVE, Zenodo)
+  - Complete hyperparameter specification including learning rate schedule, architecture dimensions, and preprocessing logic
+  - Reproducible inference protocol with explicit beam search and mass filtering rules
+  - Pre-trained models and fine-tuned variants provided

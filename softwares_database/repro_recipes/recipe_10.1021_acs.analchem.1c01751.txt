@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: Isomer Selective Comprehensive Lipidomics Analysis of Phosphoinositides in Biological Samples by Liquid Chromatography with Data Independent Acquisition Tandem Mass Spectrometry.
+source_paper: Li P et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.1c01751, PMID: 34191474
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Chiral LC separation of PIPx regioisomers
+    tool: Liquid Chromatography
+    parameters: column=chiral polysaccharide stationary phase, ionization=electrospray ionization, mass_resolution=high-resolution, acquisition_mode=data independent acquisition (DIA), technology=SWATH
+    input: lipid extract from biological samples
+    output: chromatographic MS and MS/MS data
+    confidence: medium
+  Step 2: Targeted data mining of SWATH-acquired untargeted data
+    tool: Custom data mining strategy
+    algorithm: targeted extraction from DIA data
+    parameters: extraction_strategy=targeted, scope=untargeted comprehensively acquired MS and MS/MS data
+    input: SWATH MS and MS/MS data
+    output: regioisomer-resolved PIPx feature table
+    confidence: low
+  Step 3: Comprehensive PIPx profiling including acyl chain, phosphorylation degree, and regioisomer identification
+    tool: High-resolution mass spectrometry
+    parameters: analytes=['PIP', 'PIP2', 'PIP3', 'PI', 'PI4P', 'PI3P', 'PI5P'], regioisomers=["3'-", "4'-", "5'-phosphorylated forms where applicable"]
+    input: feature table with m/z, RT, intensity, MS/MS spectra
+    output: full PIPx profile (acyl chains × phosphorylation × regioisomer)
+    confidence: medium
+  Step 4: Biological validation via pharmacological perturbation
+    tool: Wortmannin treatment
+    parameters: perturbagen=wortmannin, target=PI3K inhibitor, samples=['NIST SRM1950 plasma', 'Pichia pastoris lipid extract', 'HeLa cell extract']
+    input: biological extracts
+    output: differential PIPx profiles (treated vs. control)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw SWATH MS/MS data not deposited in public repository (e.g., Panorama, MassIVE, or MetaboLights)
+  - No description of chromatographic gradient, flow rate, temperature, or mobile phase composition
+  - No details on chiral column manufacturer, model, or lot number
+  - Custom targeted data mining strategy not implemented in open-source software nor shared as code
+  - No parameters for SWATH window setup (e.g., isolation width, collision energy ramp, cycle time)
+  - No details on MS/MS spectral library or reference standards used for regioisomer annotation
+  - No statistical methods or software specified for differential analysis or significance testing
+reproducibility_strengths:
+  - Explicit identification of seven PIPx groups and regioisomeric distinctions (3'/4'/5')
+  - Use of well-characterized biological standards (NIST SRM1950, HeLa, Pichia pastoris)
+  - Pharmacological validation with wortmannin provides functional interpretability

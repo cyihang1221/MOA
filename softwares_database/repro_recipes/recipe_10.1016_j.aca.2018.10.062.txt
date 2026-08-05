@@ -1,0 +1,44 @@
+========== reproducibility_recipe entry ==========
+paper_title: Structure/reaction directed analysis for LC-MS based untargeted analysis.
+source_paper: Yu M et al. (2019), Analytica chimica acta, DOI: 10.1016/j.aca.2018.10.062, PMID: 30661584
+overall_reproducibility_score: 72/100
+
+workflow_steps: 3
+  Step 1: Peak detection and feature extraction from raw LC-MS data
+    tool: GlobalStd
+    algorithm: Paired Mass Distance (PMD) analysis with retention time hierarchical clustering and global PMD analysis within clusters
+    input: raw LC-MS data (unspecified format, likely vendor-native or mzML)
+    output: independent peaks (277 features representing compound/reaction-level entities)
+    confidence: medium
+  Step 2: Structure/reaction directed analysis
+    tool: PMD package
+    algorithm: Cross-cluster PMD similarity evaluation to identify homologous series, redox pairs, and biochemical reaction patterns
+    input: independent peaks with PMD relationships and retention time cluster assignments
+    output: structure- or reaction-level metabolic patterns (e.g., l-Carnitine / 4-Trimethylammoniobutanoic acid biosynthetic relationship)
+    confidence: medium
+  Step 3: Annotation support and contaminant filtering
+    tool: PMD package
+    algorithm: PMD-guided annotation screening and semi-quantitative pattern validation
+    input: putative metabolite annotations (e.g., from MS1/MS2 databases)
+    output: filtered, PMD-consistent annotations; candidate unknown bio-processes
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/yufree/pmd
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS data not deposited or referenced
+  - No details on input data format, preprocessing (e.g., centroiding, noise threshold), or instrument parameters
+  - No specification of PMD tolerance thresholds (e.g., m/z delta cutoff for pairing)
+  - No description of how hierarchical clustering was performed (linkage method, distance metric, RT windowing)
+reproducibility_strengths:
+  - Algorithm implementation publicly available on GitHub
+  - GUI interactive document provided for accessibility
+  - Core methodology (PMD + RT clustering) clearly conceptualized and reproducible in principle

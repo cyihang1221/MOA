@@ -1,0 +1,127 @@
+========== reproducibility_recipe entry ==========
+paper_title: Molecular networking and computational NMR analyses uncover six polyketide-terpene hybrids from termite-associated Xylaria isolates.
+source_paper: Lee SR et al. (2024), Communications chemistry, DOI: 10.1038/s42004-024-01210-6, PMID: 38849519
+overall_reproducibility_score: 42/100
+
+workflow_steps: 10
+  Step 1: LC-MS data acquisition
+    tool: Thermo Q-Exactive Plus
+    algorithm: full-scan HRMS and data-dependent MS/MS
+    parameters: column=Luna Omega C18 (100 × 2.1 mm, 1.6 µm), oven_temperature=40, scan_range_mz=[150, 2000], resolution_full_ms=70000, agc_target_full_ms=3000000, max_it_full_ms=100, ms2_resolution=17500, agc_target_ms2=100000, max_it_ms2=50, nce_values=[20, 30, 40], polarity=['positive', 'negative'], spray_voltage_positive=4000, spray_voltage_negative=3300, capillary_temperature=340, heater_temperature=200, sheath_gas_flow=35, aux_gas_flow=5, max_spray_current_positive=100, max_spray_current_negative=100, s_lens_rf_level=50
+    input: crude fungal extracts in MeCN (0.1 mg/mL)
+    output: raw .raw files
+    confidence: high
+  Step 2: Data conversion to mzXML
+    tool: MSConvert GUI (ProteoWizard)
+    algorithm: 32-bit mzXML conversion
+    parameters: output_format=mzXML, bit_depth=32
+    input: Thermo .raw files
+    output: 32-bit mzXML files
+    confidence: high
+  Step 3: Molecular networking
+    tool: GNPS (Global Natural Products Social Molecular Networking)
+    algorithm: cosine similarity-based spectral networking
+    parameters: cosine_threshold=0.7, min_matched_fragment_ions=4, topk=10, precursor_mass_tolerance_da=0.02, fragment_mass_tolerance_da=0.02
+    input: mzXML files
+    output: mass spectral molecular network (Cytoscape-compatible)
+    confidence: high
+  Step 4: Network visualization
+    tool: Cytoscape (v35)
+    algorithm: graph layout and annotation
+    input: GNPS network file (.gml or .csv)
+    output: visualized molecular network
+    confidence: medium
+  Step 5: NMR data acquisition and processing
+    tool: Varian UNITY INOVA 800 / Bruker Ascend 700
+    algorithm: 1D/2D NMR experiments (COSY, HSQC, HMBC, ROESY)
+    parameters: 1h_frequency_mhz=[700, 800], 13c_frequency_mhz=[175, 200], solvents=['CDCl3', 'MeOH-d4'], temperature=not specified, pulse_sequences=['COSY', 'HSQC', 'HMBC', 'ROESY']
+    input: purified compounds (1–9) in deuterated solvents
+    output: NMR spectra (FID, processed spectra)
+    confidence: medium
+  Step 6: NMR data processing and analysis
+    tool: MestReNova (v12.0.1)
+    algorithm: peak picking, integration, coupling constant analysis, structure verification
+    input: NMR FIDs
+    output: assigned 1H/13C chemical shifts, structural models
+    confidence: high
+  Step 7: Computational NMR and stereochemical assignment
+    tool: DP4+ probability analysis
+    algorithm: Bayesian statistical analysis of DFT-calculated chemical shifts vs experimental
+    parameters: num_stereoisomers_evaluated=50
+    input: experimental 1H/13C shifts + DFT-calculated shifts for >50 stereoisomers
+    output: relative configuration probability distribution (DP4+ score)
+    confidence: low
+  Step 8: ECD calculation and absolute configuration assignment
+    tool: TDDFT-ECD
+    algorithm: time-dependent density functional theory electronic circular dichroism simulation
+    parameters: functional=not specified, basis_set=not specified, solvent_model=MeOH
+    input: 3D conformer ensembles (from conformational search)
+    output: simulated ECD spectra, Boltzmann-weighted comparison to experimental
+    confidence: low
+  Step 9: X-ray crystallography structure solution and refinement
+    tool: SHELXT / SHELXL2018 / Shelxle (v2018)
+    algorithm: direct methods / full-matrix least-squares refinement
+    parameters: radiation=Mo Kα (λ = 0.71073 Å), temperature_k=150, absorption_correction=multi-scan, refinement_method=F2 least-squares, restraints=['N–H = 0.88(0.01) Å', 'O–H = 0.84(0.01) Å'], h_atom_treatment=riding (CH/CH2), isotropic refinement (NH/OH)
+    input: single crystal diffraction data
+    output: refined crystal structure (CIF), Flack parameter, R-factors
+    confidence: high
+  Step 10: Comparative genomics and transcriptomics
+    tool: not specified
+    algorithm: biosynthetic gene cluster (BGC) identification and expression correlation
+    input: genomic and RNA-seq data from Xylaria sp. X802
+    output: putative xylasporin biosynthetic pathway (px cluster)
+    confidence: low
+
+data_availability:
+  raw_data: available (CCDC: 2347670)
+  processed_data: not_mentioned (not mentioned: not mentioned)
+  metadata: in_paper_only
+  data_urls: https://gnps.ucsd.edu, www.ccdc.cam.ac.uk/conts/retrieving.html
+
+code_availability: not_mentioned
+
+figure_recipes: 7
+  Figure 1: [photograph]
+    caption: Photograph showing termite fungus comb overgrown by Xylaria.
+    visualization_tool: not applicable
+  Figure 2: [workflow_diagram]
+    caption: Overview of metabolomic analysis workflow for Xylaria sp., including extraction, UPLC-HRMS, molecular networking, and dereplication.
+    produced_by_step: [1, 2, 3, 4]
+    visualization_tool: Cytoscape
+  Figure 3: [structural_analysis]
+    caption: Structural elucidation of xylasporin A (1) via NMR, HRMS2, and computational analysis.
+    produced_by_step: [5, 6, 7, 8]
+    visualization_tool: ChemDraw / MestReNova / DP4+ output plots
+    statistical_test: DP4+ probability analysis
+  Figure 4: [structural_analysis]
+    caption: Structural analysis of xylasporins B and C using comparative NMR and MS/MS.
+    produced_by_step: [5, 6, 3]
+    visualization_tool: ChemDraw / MestReNova / GNPS network
+  Figure 5: [structural_analysis]
+    caption: Structural analysis of xylasporins D–F based on spectroscopic and computational data.
+    produced_by_step: [5, 6, 7]
+    visualization_tool: ChemDraw / MestReNova / DP4+ output
+    statistical_test: DP4+ probability analysis
+  Figure 6: [structural_analysis]
+    caption: X-ray crystallographic structure of compound 9 (xylasporin I) and revised structure of xylacremolide B.
+    produced_by_step: [9]
+    visualization_tool: OLEX2 / Mercury / Shelxle
+    statistical_test: Flack parameter (-0.0(2))
+  Figure 7: [comparative_genomics]
+    caption: Comparative gene cluster analysis of the px biosynthetic gene cluster across Xylaria strains.
+    produced_by_step: [10]
+    visualization_tool: not specified (likely antiSMASH + custom alignment)
+
+reproducibility_gaps:
+  - No raw LC-MS data deposited in public repository (e.g., MetaboLights, MassIVE)
+  - No genomic/transcriptomic data accession IDs provided
+  - No code/scripts for DP4+ or TDDFT-ECD workflows shared or cited
+  - GNPS job ID or network URL not reported — network not directly reproducible
+  - UPLC gradient details incomplete: flow rate (0.3 mL/min) and injection volume (5 µL) given, but column dimensions and exact dwell times omitted
+  - No metadata table (sample IDs, culture conditions per run, batch info) provided
+  - Commercial software dependencies (MestReNova, Thermo instruments) require licenses
+reproducibility_strengths:
+  - Crystallographic data deposited at CCDC (2347670) with full CIF and refinement metrics
+  - GNPS platform used with explicitly reported parameters (cosine=0.7, min fragments=4, mass tolerance=0.02 Da)
+  - Detailed NMR acquisition parameters (field strength, experiments, solvents) provided
+  - All chemical reagents and instrumentation vendors specified

@@ -1,0 +1,113 @@
+========== reproducibility_recipe entry ==========
+paper_title: A comprehensive pipeline for translational top-down proteomics from a single blood draw.
+source_paper: Toby TK et al. (2019), Nature protocols, DOI: 10.1038/s41596-018-0085-7, PMID: 30518910
+overall_reproducibility_score: 58/100
+
+workflow_steps: 7
+  Step 1: Sample collection and PBMC preservation
+    tool: Clinical biorepository protocols
+    input: whole blood
+    output: preserved PBMCs (cryopreserved or fresh)
+    confidence: medium
+  Step 2: Cell lysis
+    tool: Standard lysis buffer
+    parameters: buffer_composition=not specified, protease_inhibitors=used
+    input: PBMCs
+    output: intact protein lysate
+    confidence: low
+  Step 3: Proteoform pre-fractionation
+    tool: GELFrEE (gel-eluted liquid fractionation entrapment electrophoresis)
+    parameters: fraction_number=12, molecular_weight_range=20–250 kDa
+    input: intact protein lysate
+    output: fractionated intact proteoforms
+    confidence: high
+  Step 4: LC-MS/MS acquisition
+    tool: High-resolution Fourier-transform mass spectrometer
+    algorithm: data-dependent top-two method
+    parameters: duty_cycle=shown in Fig. 5, lc_valve_setup=Fig. 4, ms_resolution=high-resolution FT-MS, fragmentation_mode=HCD or ETD
+    input: GELFrEE fractions
+    output: .raw files (Thermo)
+    confidence: medium
+  Step 5: Targeted data analysis
+    tool: ProSight Lite
+    algorithm: mass defect filtering, fragment ion matching
+    parameters: mass_tolerance_ppm=10, search_mode=targeted, database=UniProtKB
+    input: .raw files
+    output: targeted proteoform identifications
+    confidence: high
+  Step 6: Discovery-mode data analysis
+    tool: TDPortal
+    algorithm: deconvolution, database search, spectral alignment
+    parameters: mass_tolerance_ppm=10, search_mode=discovery, database=UniProtKB, proteoform_coverage_threshold=not specified
+    input: .raw files
+    output: high-throughput proteoform identifications
+    confidence: medium
+  Step 7: Data visualization and QC
+    tool: Top Down Viewer
+    input: search results (.xml/.csv) and .raw files
+    output: interactive spectra, chromatograms, QC metrics
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: http://nrtdp.northwestern.edu/resource-software
+  license: freely available
+
+figure_recipes: 10
+  Figure 1: [workflow_diagram]
+    caption: Schematic of PBMC proteoform characterization from whole blood using top-down proteomics.
+    produced_by_step: [1, 2, 3, 4, 5, 6]
+    visualization_tool: Custom schematic (not specified)
+  Figure 2: [workflow_diagram]
+    caption: Experimental workflow distinguishing targeted (ProSight Lite) vs. discovery (TDPortal) informatics modes.
+    produced_by_step: [5, 6]
+    visualization_tool: Custom schematic
+  Figure 3: [other]
+    caption: Use of top-down standard for quality control of TDP experiments.
+    produced_by_step: [4, 5, 6, 7]
+    visualization_tool: Top Down Viewer
+  Figure 4: [other]
+    caption: LC valve setup configuration for top-down proteomics.
+    produced_by_step: [4]
+    visualization_tool: Schematic diagram
+  Figure 5: [other]
+    caption: MS duty cycle for the data-dependent top-two experiment method.
+    produced_by_step: [4]
+    visualization_tool: Instrument software output
+  Figure 6: [workflow_diagram]
+    caption: General workflow for ProSight Lite–based targeted top-down data analysis.
+    produced_by_step: [5]
+    visualization_tool: Custom schematic
+  Figure 7: [workflow_diagram]
+    caption: General workflow for TDPortal–based high-throughput discovery top-down data analysis.
+    produced_by_step: [6]
+    visualization_tool: Custom schematic
+  Figure 8: [other]
+    caption: Display of top-down data from a representative .raw file.
+    produced_by_step: [7]
+    visualization_tool: Top Down Viewer
+  Figure 9: [bar_chart]
+    caption: Qualitative comparison of identified protein accessions and characterized proteoforms between viable and nonviable PBMC samples.
+    produced_by_step: [5, 6]
+    visualization_tool: Not specified (likely custom or Top Down Viewer)
+  Figure 10: [bar_chart]
+    caption: Histogram comparisons of key metrics for protein identification and proteoform characterization in viable vs. nonviable blood samples.
+    produced_by_step: [5, 6]
+    visualization_tool: Not specified
+
+reproducibility_gaps:
+  - Raw mass spectrometry data (.raw files) not deposited in public repository
+  - No accession ID or repository link for experimental data or metadata
+  - Lysis buffer composition and GELFrEE operational parameters (e.g., voltage, run time) not fully specified
+  - LC gradient profile and column specifications only implied, not detailed
+  - No statistical thresholds or significance criteria reported for comparative analyses (Figs. 9–10)
+  - ProSight Lite and TDPortal parameter defaults not explicitly listed beyond mass tolerance
+reproducibility_strengths:
+  - All software tools (ProSight Lite, TDPortal, Top Down Viewer) are freely available via NRTPDP website
+  - Modular workflow design enables stepwise adoption
+  - Clear distinction between targeted and discovery informatics paths
+  - QC use of top-down standard (Fig. 3) supports method robustness

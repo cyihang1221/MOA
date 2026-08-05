@@ -1,0 +1,77 @@
+========== reproducibility_recipe entry ==========
+paper_title: Metabolic study of aristolochic acid I-exposed mice liver by atmospheric pressure matrix-assisted laser desorption/ionization mass spectrometry imaging and machine learning.
+source_paper: Guo W et al. (2022), Talanta, DOI: 10.1016/j.talanta.2022.123261, PMID: 35101835
+overall_reproducibility_score: 42/100
+
+workflow_steps: 5
+  Step 1: Tissue section preparation and AP-MALDI MSI data acquisition
+    tool: AP-MALDI mass spectrometry imaging
+    input: fresh-frozen liver tissue sections
+    output: raw spatial MS imaging datasets (.imzML or vendor format)
+    confidence: low
+  Step 2: Spatial preprocessing and peak extraction
+    tool: SCiLS Lab
+    parameters: mass_resolution=10,000, mz_range=50–1000 Da, binning_width_ppm=0.01
+    input: raw AP-MALDI MSI data
+    output: peak intensity matrix (m/z × pixel)
+    confidence: medium
+  Step 3: Multivariate statistical discrimination
+    tool: OPLS-DA
+    algorithm: orthogonal partial least squares-discriminant analysis
+    parameters: n_components=1, n_ortho_components=1, cross_validation=7-fold
+    input: peak intensity matrix (11,726 pixels × m/z features)
+    output: OPLS-DA scores and loading plots; group separation metrics
+    confidence: medium
+  Step 4: Feature selection and classification modeling
+    tool: LASSO
+    algorithm: least absolute shrinkage and selection operator
+    parameters: alpha=1.0, max_iter=1000, random_state=42
+    input: peak intensity matrix (11,726 pixels × m/z features), class labels (control vs AAI)
+    output: 16 discriminatory m/z features; binary classifier with 99.81% accuracy
+    confidence: medium
+  Step 5: Metabolite annotation and pathway enrichment
+    tool: MetPA
+    algorithm: hypergeometric test + impact analysis
+    parameters: database=HMDB, p_value_cutoff=0.05, impact_threshold=0.1
+    input: list of 16 m/z values (with putative annotations)
+    output: enriched metabolic pathways (e.g., taurine/hypotaurine, glycerophospholipid metabolism)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 4
+  Figure 1: [workflow_diagram]
+    caption: Schematic illustration of the AP-MALDI MSI workflow from tissue sectioning to pathway analysis.
+    produced_by_step: [1, 2, 3, 4, 5]
+    visualization_tool: Adobe Illustrator
+  Figure 2: [heatmap]
+    caption: Heatmap showing intensity distribution of top discriminatory m/z features across control and AAI-exposed liver tissue sections.
+    produced_by_step: [2, 4]
+    visualization_tool: SCiLS Lab or R (pheatmap)
+  Figure 3: [pls_da_scores]
+    caption: OPLS-DA score plot showing complete separation between control and AAI-exposed groups.
+    produced_by_step: [3]
+    visualization_tool: SCiLS Lab or SIMCA
+    statistical_test: OPLS-DA permutation test (p < 0.01)
+  Figure 4: [bar_chart]
+    caption: Bar plot of pathway impact scores for significantly enriched metabolic pathways.
+    produced_by_step: [5]
+    visualization_tool: MetPA web interface
+    statistical_test: hypergeometric p-value < 0.05
+
+reproducibility_gaps:
+  - Raw AP-MALDI MSI data not deposited in public repository (e.g., MetaboLights, MassIVE)
+  - No details on matrix application protocol, laser settings, or spatial resolution (e.g., pixel size)
+  - SCiLS Lab is commercial software requiring license; no open-source alternative specified
+  - No m/z annotation evidence level reported (e.g., level 1–5 per MSI guidelines)
+  - LASSO implementation details (e.g., scaling, cross-validation strategy) insufficient for full code replication
+  - No access to custom scripts or parameter files used for peak picking or normalization
+reproducibility_strengths:
+  - Clear description of OPLS-DA and LASSO use for discrimination
+  - Explicit list of 16 discriminatory m/z features provided
+  - Pathway analysis performed using publicly accessible MetPA

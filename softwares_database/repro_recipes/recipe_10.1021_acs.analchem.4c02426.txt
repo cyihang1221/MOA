@@ -1,0 +1,62 @@
+========== reproducibility_recipe entry ==========
+paper_title: MSBERT: Embedding Tandem Mass Spectra into Chemically Rational Space by Mask Learning and Contrastive Learning.
+source_paper: Zhang H et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.4c02426, PMID: 39397717
+overall_reproducibility_score: 82/100
+
+workflow_steps: 5
+  Step 1: MS/MS spectral embedding
+    tool: MSBERT
+    algorithm: Transformer encoder with mask learning and contrastive learning
+    parameters: mask_ratio=0.15, temperature=0.07
+    input: centroided MS/MS spectra (m/z and intensity pairs)
+    output: 128-dimensional spectral embeddings
+    confidence: medium
+  Step 2: Library matching
+    tool: MSBERT
+    algorithm: cosine similarity search in embedding space
+    parameters: top_k=10, similarity_threshold=None
+    input: query spectral embeddings
+    output: ranked list of matched reference spectra
+    confidence: medium
+  Step 3: Analogous compound searching
+    tool: MSBERT
+    algorithm: k-nearest neighbors in embedding space + Tanimoto similarity on RDKit fingerprints
+    parameters: k=10, fingerprint_type=Morgan, radius=2
+    input: query spectral embeddings
+    output: list of structurally similar compounds with Tanimoto scores
+    confidence: medium
+  Step 4: Embedding evaluation
+    tool: t-SNE
+    algorithm: t-distributed stochastic neighbor embedding
+    parameters: perplexity=30, n_iter=1000, learning_rate=200
+    input: MSBERT spectral embeddings
+    output: 2D visualization coordinates
+    confidence: high
+  Step 5: Structural similarity assessment
+    tool: RDKit
+    algorithm: Tanimoto similarity on Morgan fingerprints
+    parameters: radius=2, nBits=2048
+    input: SMILES strings of matched compounds
+    output: Tanimoto similarity matrix
+    confidence: high
+
+data_availability:
+  raw_data: available (GNPS: GNPS-LIBRARY)
+  processed_data: available (GNPS: GNPS-LIBRARY)
+  metadata: available
+  data_urls: https://gnps.ucsd.edu, https://mona.fiehnlab.ucdavis.edu, https://www.ebi.ac.uk/metabolights/MTBLS1572
+
+code_availability: repository_linked
+  code_url: https://github.com/zhanghailiangcsu/MSBERT
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No exact training dataset split details (e.g., train/validation/test indices) provided
+  - No specification of GPU hardware or training time
+  - No configuration file or hyperparameter sweep details for contrastive loss
+reproducibility_strengths:
+  - Source code publicly available under MIT license
+  - Uses three independent public benchmark datasets (GNPS, MoNA, MTBLS1572)
+  - All input data formats and preprocessing steps implied to be standard GNPS-compatible centroided spectra

@@ -1,0 +1,52 @@
+========== reproducibility_recipe entry ==========
+paper_title: Molecular Structure Discovery for Untargeted Metabolomics Using Biotransformation Rules and Global Molecular Networking.
+source_paper: Martin MR et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.4c01565, PMID: 39903752
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Global molecular networking
+    tool: GNPS
+    algorithm: MZmine-based feature detection and spectral networking
+    input: raw .mzML files
+    output: molecular network (Cytoscape-compatible edge list + node metadata)
+    confidence: medium
+  Step 2: Anchor-suspect spectrum matching
+    tool: custom implementation
+    algorithm: spectral similarity scoring (cosine, modified cosine, or Spec2Vec)
+    parameters: similarity_threshold=0.7
+    input: tandem mass spectra (MS/MS) from molecular network
+    output: anchor-suspect pairs with similarity scores
+    confidence: low
+  Step 3: Biotransformation rule application
+    tool: BAM (Biotransformation-based Annotation Method)
+    algorithm: rule-based chemical transformation propagation (e.g., oxidation, methylation, glycosylation)
+    parameters: max_transformations=2, rule_database=BioTransformer-derived or Reactome-based
+    input: anchor molecule structure (SMILES/InChI), suspect MS/MS spectrum
+    output: ranked list of candidate molecular structures for suspect
+    confidence: low
+  Step 4: Structure ranking and validation
+    tool: custom scoring
+    algorithm: integrated scoring combining spectral match, biotransformation plausibility, and network context
+    parameters: top_k_candidates=10
+    input: candidate structures + spectral data + network neighborhood
+    output: annotated suspect metabolites with confidence ranks
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (GNPS)
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - BAM implementation not publicly released
+  - No specification of biotransformation rule set or source
+  - No details on spectral similarity algorithm parameters beyond threshold
+  - GNPS workflow parameters (e.g., minimum matched peaks, precursor tolerance) not reported
+  - No accession ID or link to the 'hundreds of millions of spectra' global molecular network
+reproducibility_strengths:
+  - Method grounded in established concepts (molecular networking, biotransformations)
+  - Evaluation metric explicitly reported (24.2% correct annotation rate)

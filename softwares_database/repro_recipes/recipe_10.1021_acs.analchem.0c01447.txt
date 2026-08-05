@@ -1,0 +1,56 @@
+========== reproducibility_recipe entry ==========
+paper_title: Fast Evaluation of Herbal Substance Class Composition by Relative Mass Defect Plots.
+source_paper: Waldner BJ et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.0c01447, PMID: 32902254
+overall_reproducibility_score: 25/100
+
+workflow_steps: 5
+  Step 1: Theoretical molecular mass calculation
+    tool: custom Python/R script
+    algorithm: exact mass calculation from molecular formula
+    input: manually annotated dataset of 1160 plant metabolites with molecular formulas and substance class labels
+    output: theoretical monoisotopic masses
+    confidence: low
+  Step 2: Relative mass defect calculation
+    tool: custom implementation
+    algorithm: novel two-function correction for hydrocarbons and polyhalogenated compounds
+    input: theoretical monoisotopic masses
+    output: relative mass defect values
+    confidence: low
+  Step 3: Substance class clustering in RMD space
+    tool: Khachyan algorithm
+    algorithm: minimum-volume enclosing ellipse (MVEE)
+    input: relative mass defect coordinates + substance class labels
+    output: elliptical cluster boundaries per substance class
+    confidence: medium
+  Step 4: 2D relative mass defect plotting
+    tool: custom visualization
+    algorithm: scatter plot with elliptical overlays
+    input: relative mass defect values + class labels
+    output: 2D RMD plot with class-specific ellipses
+    confidence: low
+  Step 5: 3D extension with retention time
+    tool: custom visualization
+    algorithm: retention time as z-axis color/size encoding
+    input: RMD coordinates + retention time (RT)
+    output: 3D-enhanced RMD visualization
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposited
+  - No code or software repository provided
+  - No details on implementation of the two correction functions
+  - No specification of molecular formula source or annotation methodology for the 1160-metabolite dataset
+  - Khachyan algorithm implementation not described (e.g., library, tolerance, initialization)
+reproducibility_strengths:
+  - Method conceptually well-described
+  - Defined use case (herbal substance class profiling)
+  - Explicit mention of validation dataset size (n=1160) and chemical diversity dimensions (polarity, glycosylation, alkylation)

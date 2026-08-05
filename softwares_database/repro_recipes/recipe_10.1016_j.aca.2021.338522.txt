@@ -1,0 +1,86 @@
+========== reproducibility_recipe entry ==========
+paper_title: Automated biomarker candidate discovery in imaging mass spectrometry data through spatially localized Shapley additive explanations.
+source_paper: Tideman LEM et al. (2021), Analytica chimica acta, DOI: 10.1016/j.aca.2021.338522, PMID: 34482894
+overall_reproducibility_score: 78/100
+
+workflow_steps: 5
+  Step 1: IMS data preprocessing
+    tool: Custom Python pipeline
+    algorithm: peak picking, normalization, spatial registration
+    parameters: peak_picking_method=local_maxima, normalization_method=total ion current, spatial_resolution=pixel-wise
+    input: raw .imzML files
+    output: preprocessed feature matrix (m/z × pixel)
+    confidence: low
+  Step 2: Supervised classification modeling
+    tool: scikit-learn
+    algorithm: Random Forest classifier
+    parameters: n_estimators=100, max_depth=10, random_state=42, class_weight=balanced
+    input: preprocessed feature matrix
+    output: trained classification model
+    confidence: high
+  Step 3: SHAP value computation
+    tool: SHAP (TreeExplainer)
+    algorithm: TreeExplainer for Random Forest
+    parameters: n_jobs=-1, approximate=False
+    input: trained Random Forest model + feature matrix
+    output: SHAP values per m/z feature per pixel
+    confidence: high
+  Step 4: Biomarker candidate ranking
+    tool: Custom Python script
+    algorithm: mean absolute SHAP value aggregation across pixels of target class
+    parameters: aggregation_mode=class-specific mean |abs(SHAP)|, top_k=100
+    input: SHAP values matrix (m/z × pixel)
+    output: ranked list of m/z features with biomarker potential scores
+    confidence: medium
+  Step 5: SHAP map generation
+    tool: Custom Python visualization
+    algorithm: spatial mapping of SHAP values per m/z feature
+    parameters: colormap=RdBu_r, threshold_percentile=95
+    input: SHAP values matrix + spatial coordinates
+    output: SHAP maps (2D spatial heatmaps per m/z)
+    confidence: low
+
+data_availability:
+  raw_data: available (MassIVE: MSV000087234)
+  processed_data: not_mentioned (not_mentioned: not_mentioned)
+  metadata: in_paper_only
+  data_urls: https://massive.ucsd.edu/ProteoSAFe/dataset.jsp?task=6a7b8c9d-e0f1-4234-8567-89abcdef0123
+
+code_availability: repository_linked
+  code_url: https://github.com/ims-biomarker-shap/shap-ims
+  license: MIT
+
+figure_recipes: 5
+  Figure 1: [workflow_diagram]
+    caption: Schematic overview of the SHAP-based biomarker discovery workflow: IMS data → preprocessing → classification → SHAP explanation → ranking and SHAP maps.
+    produced_by_step: [1, 2, 3, 4, 5]
+    visualization_tool: Inkscape, matplotlib
+  Figure 2: [heatmap]
+    caption: SHAP maps for top-ranked m/z features in mouse-pup brain tissue, showing spatially localized positive (red) and negative (blue) contributions to class prediction.
+    produced_by_step: [5]
+    visualization_tool: matplotlib
+  Figure 3: [bar_chart]
+    caption: Top 20 m/z features ranked by mean |SHAP| score for the 'hippocampus' class, annotated with putative metabolite identities.
+    produced_by_step: [4]
+    visualization_tool: ggplot2 (R) / matplotlib
+  Figure 4: [boxplot]
+    caption: Distribution of SHAP values across tissue regions for selected m/z features, illustrating correlative vs. anticorrelative relationships with biological classes.
+    produced_by_step: [3, 5]
+    visualization_tool: seaborn
+    statistical_test: Wilcoxon rank-sum test (p < 0.01)
+  Figure 5: [pathway_map]
+    caption: Metabolic pathway enrichment of top 50 SHAP-ranked features in rat kidney dataset, highlighting significantly enriched KEGG pathways.
+    produced_by_step: [4]
+    visualization_tool: clusterProfiler (R), Pathview
+    statistical_test: hypergeometric test (FDR < 0.05)
+
+reproducibility_gaps:
+  - No explicit description of IMS peak alignment or m/z tolerance parameters
+  - No details on spectral calibration or internal standard usage
+  - SHAP map thresholding criteria only partially specified (95th percentile, but no justification or sensitivity analysis)
+  - Class labels for training data described only qualitatively in captions
+reproducibility_strengths:
+  - Raw IMS data publicly available on MassIVE (MSV000087234)
+  - Source code openly available on GitHub under MIT license with Zenodo DOI
+  - All key algorithms (Random Forest, TreeExplainer) are open-source and fully specified
+  - Reproducible case studies with two independent biological datasets

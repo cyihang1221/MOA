@@ -1,0 +1,33 @@
+========== reproducibility_recipe entry ==========
+paper_title: BID-seq for transcriptome-wide quantitative sequencing of mRNA pseudouridine at base resolution.
+source_paper: Zhang LS et al. (2024), Nature protocols, DOI: 10.1038/s41596-023-00917-5, PMID: 37968414
+overall_reproducibility_score: 75/100
+
+workflow_steps: 0
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/y9c/pseudoU-BIDseq
+
+figure_recipes: 3
+  Figure 1: [workflow_diagram]
+    caption: Schematic of BID-seq library preparation steps.
+  Figure 2: [workflow_diagram]
+    caption: Schematic of the enhanced BID-pipe data analysis pipeline with realignment technology.
+  Figure 3: [bar_chart]
+    caption: BID-seq identifies thousands of pseudouridine (Ψ) sites in mammalian polyA+ RNA.
+
+reproducibility_gaps:
+  - Raw sequencing data not deposited in public repository (e.g., SRA, GEO)
+  - No details on bioinformatic parameters (e.g., alignment settings, deletion ratio thresholds, minimum coverage, FDR control)
+  - No description of statistical methods for Ψ site calling or stoichiometry quantification
+  - Supplementary Tables 1–2 and Source Data files are provided but no metadata schema or format documentation
+reproducibility_strengths:
+  - Open-source analysis pipeline (BID-pipe) available on GitHub
+  - Protocol includes quantitative output metrics (e.g., 8,407 Ψ sites from 10 ng input)
+  - Explicit timeline (5-day workflow) and skill requirements stated
+  - Reference implementation linked to prior Nature Biotechnology paper (Dai et al. 2023)

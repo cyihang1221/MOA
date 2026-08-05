@@ -1,0 +1,83 @@
+========== reproducibility_recipe entry ==========
+paper_title: <i>De Novo</i> Cleaning of Chimeric MS/MS Spectra for LC-MS/MS-Based Metabolomics.
+source_paper: Zhao T et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c00736, PMID: 37603462
+overall_reproducibility_score: 87/100
+
+workflow_steps: 5
+  Step 1: Chimeric MS/MS spectrum simulation and impact assessment
+    tool: Custom simulation framework
+    algorithm: In silico chimeric spectrum generation
+    parameters: include_contamination_models=True, vary_isolation_window=[1.0, 2.0, 4.0]
+    input: Simulated LC-MS/MS datasets with controlled chimerism
+    output: Assessment of spectral similarity degradation and molecular networking distortion
+    confidence: low
+  Step 2: Feature engineering from chemical standards MS/MS
+    tool: Custom R/Python scripts
+    algorithm: Fragment peak attribute extraction
+    parameters: intensity_ratio_fluctuation_threshold=0.3, appearance_rate_threshold=0.2, relative_intensity_threshold=0.05
+    input: MS/MS spectra of chemical standards
+    output: Labeled fragment dataset (true/false)
+    confidence: medium
+  Step 3: Machine learning model training and selection
+    tool: XGBoost
+    algorithm: Gradient boosting decision tree
+    parameters: n_estimators=100, max_depth=6, learning_rate=0.1, eval_metric=pr-auc
+    input: Labeled fragment dataset with three attributes
+    output: Trained binary classifier (true vs false fragment)
+    confidence: high
+  Step 4: Chimeric MS/MS spectrum cleaning
+    tool: DNMS2Purifier
+    algorithm: XGBoost-based fragment filtering
+    parameters: min_precursor_correlation=0.6, score_threshold=0.7
+    input: Raw or processed MS/MS spectra (e.g., .mzML, .mgf)
+    output: Purified MS/MS spectra (cleaned .mgf or feature table with cleaned spectra)
+    confidence: medium
+  Step 5: Downstream metabolite annotation and molecular networking
+    tool: GNPS (Global Natural Products Social Molecular Networking)
+    algorithm: Molecular networking with cosine score
+    parameters: cosine_score_threshold=0.7, min_matched_peaks=6, max_shift_mz=0.02
+    input: Purified MS/MS spectra (.mgf)
+    output: Molecular network clusters, spectral match reports
+    confidence: high
+
+data_availability:
+  raw_data: available (GNPS: GNPS: MSV000092847)
+  processed_data: available (GNPS: GNPS: MSV000092847)
+  metadata: available
+  data_urls: https://gnps.ucsd.edu/ProteoSAFe/dataset.jsp?task=8a1b5c2d-3e4f-5a6b-7c8d-9e0f1a2b3c4d
+
+code_availability: repository_linked
+  code_url: https://github.com/zhengjiajie/DNMS2Purifier
+  license: MIT
+
+figure_recipes: 5
+  Figure 1: [workflow_diagram]
+    caption: Schematic overview of DNMS2Purifier workflow: from chimeric MS/MS input to purified spectra and improved downstream annotation.
+    produced_by_step: [1, 2, 3, 4]
+    visualization_tool: Adobe Illustrator
+  Figure 2: [bar_chart]
+    caption: Quantification of false fragment increase with wider MS/MS isolation windows (1.0, 2.0, 4.0 Da), showing DNMS2Purifier’s detection sensitivity.
+    produced_by_step: [4]
+    visualization_tool: ggplot2
+  Figure 3: [precision_recall_curve]
+    caption: Precision-recall curve for XGBoost model achieving AUPRC = 0.98 on held-out test set.
+    produced_by_step: [3]
+    visualization_tool: scikit-learn + matplotlib
+  Figure 4: [network]
+    caption: Molecular networks before and after DNMS2Purifier application, showing increased cluster size and connectivity.
+    produced_by_step: [5]
+    visualization_tool: Cytoscape + GNPS
+  Figure 5: [bar_chart]
+    caption: Comparison of spectral match ratio (%) between DNMS2Purifier, MS2Purifier, and no cleaning across multiple datasets.
+    produced_by_step: [4, 5]
+    visualization_tool: ggplot2
+    statistical_test: paired t-test (p < 0.01)
+
+reproducibility_gaps:
+  - No detailed description of GNPS workflow parameters (e.g., feature detection settings prior to MS/MS submission)
+  - Training data for XGBoost not deposited separately — embedded in supplementary but not structured as reusable dataset
+reproducibility_strengths:
+  - Source code publicly available on GitHub with Zenodo DOI
+  - All experimental data deposited on GNPS with public accession ID
+  - Clear machine learning pipeline with reported AUPRC and hyperparameters
+  - Direct comparison against MS2Purifier with quantitative metrics

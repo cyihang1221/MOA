@@ -1,0 +1,52 @@
+========== reproducibility_recipe entry ==========
+paper_title: Strategy for Nontargeted Metabolomic Annotation and Quantitation Using a High-Resolution Spectral-Stitching Nanoelectrospray Direct-Infusion Mass Spectrometry with Data-Independent Acquisition.
+source_paper: Wang L et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.1c01480, PMID: 34293854
+overall_reproducibility_score: 20/100
+
+workflow_steps: 4
+  Step 1: Data acquisition via spectral-stitching DI-nESI-HRMS with DIA
+    tool: nanoelectrospray direct-infusion mass spectrometry
+    algorithm: data-independent acquisition (DIA)
+    parameters: acquisition_mode=DIA, ionization=nanoelectrospray (nESI), infusion_mode=direct infusion, spectral_stitching=True, mass_resolution=high-resolution
+    input: liquid sample (e.g., serum, standard solutions)
+    output: raw .raw or .d files (vendor format)
+    confidence: medium
+  Step 2: Metabolite annotation using multi-layer evidence
+    tool: custom strategy
+    algorithm: multi-criteria matching
+    parameters: isotopic_distribution_matching=True, ms_ms_spectrum_similarity=True, precursor_product_ion_correlation=True, targeted_precursor_matching=True, feature_extraction_alignment=True
+    input: raw MS and MS/MS spectra
+    output: annotated metabolite features (with confidence ranking)
+    confidence: low
+  Step 3: Quantitation
+    tool: custom quantitation protocol
+    algorithm: intensity-based quantitation
+    parameters: quantitation_ion=precursor ion intensity (default), isomer_handling=characteristic product ion intensity (if available)
+    input: annotated metabolite features with MS/MS support
+    output: quantitative metabolite table (peak intensities)
+    confidence: medium
+  Step 4: Application to clinical cohort analysis
+    tool: not specified
+    algorithm: not specified
+    input: quantitative metabolite table
+    output: differentially abundant metabolites in diabetes vs control
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No software tools named (e.g., no data processing pipeline, no annotation engine specified)
+  - No vendor instrument model or software (e.g., Thermo Compound Discoverer, SCIEX OS, Waters UNIFI) identified
+  - No details on spectral stitching implementation (e.g., m/z window overlap, stitching algorithm)
+  - No parameters for DIA method (e.g., isolation windows, collision energy ramp, cycle time)
+  - No description of data processing steps (peak picking, alignment, normalization, statistical testing)
+  - No mention of public data deposition (raw or processed)
+  - No code, scripts, or workflow repositories shared or referenced
+  - Annotation strategy is described conceptually but lacks executable specifications (e.g., similarity score thresholds, correlation metrics, database versions)

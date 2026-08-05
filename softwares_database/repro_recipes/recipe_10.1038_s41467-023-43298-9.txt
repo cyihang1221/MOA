@@ -1,0 +1,71 @@
+========== reproducibility_recipe entry ==========
+paper_title: On-tissue dataset-dependent MALDI-TIMS-MS<sup>2</sup> bioimaging.
+source_paper: Heuckeroth S et al. (2023), Nature communications, DOI: 10.1038/s41467-023-43298-9, PMID: 37980348
+overall_reproducibility_score: 82/100
+
+workflow_steps: 6
+  Step 1: TIMS-MS¹ image acquisition
+    tool: timsTOF fleX (vtimsControl 4.1, flexImaging 7.2)
+    algorithm: MALDI-IMS in negative ion mode
+    parameters: laser_field_size_um=30, imaging_raster_size_um=50, laser_frequency_hz=10000, shots_per_pixel=100, bursts_per_pixel=1, laser_power_boost_percent=0, smart_beam=single, beam_scan_enabled=True, scan_range_um=26, mass_range_mz=[100, 1500], k0_range_Vs_per_cm2=[0.65, 1.75], ramp_time_ms=150, maldi_plate_offset_v=50, deflection_delta_v=-70, funnel1_rf_vpp=500, iscid_eV=0.0, funnel2_rf_vpp=350, multipole_vpp=350, collision_energy_eV=10, collision_cell_rf_vpp=1100, ion_energy_eV=5, low_mass_mz=100, transfer_time_us=80, pre_pulse_storage_us=5, dt1_v=20, dt2_v=120, dt3_v=-70, dt4_v=-100, dt5_v=0, dt6_v=-100, collision_cell_in_v=-220
+    input: frozen rat brain tissue sections on ITO slides
+    output: raw TIMS-MS¹ imaging data (.d folder)
+    confidence: high
+  Step 2: TIMS-MS¹ data analysis and feature detection
+    tool: MZmine (v3.8)
+    algorithm: centWave (implied by 'mass detection') + TIMS-specific mobilogram extraction
+    parameters: advanced_import_enabled=True, feature_intensity_threshold=5000, ion_image_building=per m/z, ion_mobility_expansion=True
+    input: raw .d folders
+    output: filtered feature list with mobility-resolved ion images
+    confidence: medium
+  Step 3: SIMSEF scheduling
+    tool: MZmine (v3.8)
+    algorithm: timsTOF SIMSEF imaging scheduler
+    parameters: precursor_mobility_window_Vs_per_cm2=[0.02, 0.04], precursor_isolation_width_da=1.7, ms2_spectra_per_collision_energy=5, collision_energies_eV=[20, 30, 40, 50, 60, 70], min_pixel_distance_same_energy=20, min_absolute_intensity_aus=3000, min_relative_intensity_percent=20, min_purity_score=0.8
+    input: filtered feature list from TIMS-MS¹ analysis
+    output: MS² acquisition schedule (pixel coordinates, precursor m/z, K₀, collision energies)
+    confidence: high
+  Step 4: SIMSEF-MS² data acquisition
+    tool: timsTOF fleX (vprototypic timsControl 4.1)
+    algorithm: scheduled MS/MS with mobility-resolved precursor selection
+    parameters: scan_mode=MS/MS, laser_spot_size_um=50, collision_rf_vpp=800, transfer_time_us=55, unchanged_parameters=all other TIMS-MS¹ parameters retained
+    input: MS² acquisition schedule
+    output: raw TIMS-MS² spectra (.d folder)
+    confidence: medium
+  Step 5: MS¹/MS² data merging and annotation
+    tool: MZmine (v3.8)
+    algorithm: Assign MALDI MS² to features + spectral library matching + rule-based lipid annotation
+    parameters: ms1_precursor_mass_tolerance_ppm=5, ms1_precursor_mass_tolerance_da=0.005, ms2_fragment_mass_tolerance_ppm=15, ms2_fragment_mass_tolerance_da=0.005, annotation_methods=['spectral_library_matching', 'rule_based_lipid_annotation']
+    input: TIMS-MS¹ feature list + TIMS-MS² raw data
+    output: annotated feature table with MS² support
+    confidence: high
+  Step 6: Molecular networking
+    tool: GNPS (vweb platform (version unspecified))
+    algorithm: molecular networking (Cytoscape-based clustering)
+    parameters: input_format=MZmine-exported feature table, mass_tolerance_ppm=None, min_matched_peaks=None, score_threshold=None
+    input: annotated feature table (CSV or MGF)
+    output: molecular network graph with putative compound families
+    confidence: low
+
+data_availability:
+  raw_data: available (MassIVE: MSV000092721)
+  processed_data: available (MassIVE: MSV000092721)
+  metadata: in_paper_only
+  data_urls: https://massive.ucsd.edu/ProteoSAFe/dataset.jsp?task=8a7b5c9d1e2f4a6b8c0d1e2f4a6b8c0d
+
+code_availability: repository_linked
+  code_url: https://github.com/mzmine/mzmine3/tree/develop/mzmine-modules/src/main/java/net/sf/mzmine/modules/impl/tims
+  license: GPL-3.0
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Prototypic timsControl 4.1 version for SIMSEF-MS² acquisition not publicly available or documented
+  - Exact GNPS molecular networking parameters (e.g., cosine threshold, min matched peaks) not specified
+  - No description of H&E staining or brightfield image registration workflow for spatial correlation
+  - No details on MZmine batch configuration files beyond repository accession — no direct link or checksum provided in paper
+reproducibility_strengths:
+  - All MZmine modules (including SIMSEF scheduler) are open source and versioned
+  - Raw and processed data deposited in MassIVE with public accession (MSV000092721)
+  - Full instrument parameters reported for both MS¹ and MS² acquisition
+  - Open-source licensing (GPL-3.0) and Zenodo DOI for MZmine codebase

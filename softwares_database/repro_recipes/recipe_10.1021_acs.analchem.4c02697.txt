@@ -1,0 +1,68 @@
+========== reproducibility_recipe entry ==========
+paper_title: Mapping Lipid C═C Isomer Profiles of Human Gut Bacteria through a Novel Structural Lipidomics Workflow Assisted by Chemical Epoxidation.
+source_paper: Chen KL et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.4c02697, PMID: 39437332
+overall_reproducibility_score: 35/100
+
+workflow_steps: 6
+  Step 1: Chemical epoxidation of C═C bonds
+    tool: mCPBA
+    algorithm: meta-chloroperoxybenzoic acid (mCPBA) epoxidation
+    parameters: reaction_time_min=30, temperature_celsius=0, solvent=dichloromethane, mCPBA_equivalents=1.2
+    input: lipid extracts from gut bacterial cultures
+    output: epoxidized lipid derivatives
+    confidence: high
+  Step 2: Liquid chromatography-tandem mass spectrometry analysis
+    tool: LC-MS/MS
+    algorithm: collision-induced dissociation (CID)
+    parameters: chromatography_column=C18 reversed-phase, gradient_profile=not fully specified, mobile_phase_A=0.1% formic acid in water, mobile_phase_B=0.1% formic acid in acetonitrile, scan_mode=data-dependent acquisition (DDA), precursor_ion_selection=topN = 10, isolation_window_da=1.2, collision_energy_ev=ramped
+    input: epoxidized lipid derivatives
+    output: MS1 and MS2 spectra
+    confidence: medium
+  Step 3: C═C positional and cis/trans isomer identification
+    tool: custom_interpretation_of_MS2_fragment_patterns
+    algorithm: epoxide-directed fragmentation mapping
+    parameters: diagnostic_ions_monitored=['epoxide-ring cleavage ions', 'allylic fragments'], fragment_mass_shifts={'cis_vs_trans': 'distinct relative intensities', 'positional_isomers': 'characteristic fragment m/z differences'}
+    input: MS2 spectra of epoxidized lipids
+    output: C═C positional and stereochemical assignments
+    confidence: low
+  Step 4: Quantitative profiling of C═C isomers
+    tool: peak_integration_and_normalization
+    algorithm: area-under-curve quantification with internal standards
+    parameters: internal_standards=['deuterated fatty acid analogues'], normalization_method=per-sample total lipid ion current (TIC) or protein content
+    input: MS1 chromatographic peak areas
+    output: quantitative isomer abundance table
+    confidence: medium
+  Step 5: Strain-specific isomer profile comparison
+    tool: statistical_analysis
+    algorithm: t-test or ANOVA
+    parameters: significance_threshold=0.05, correction_method=Benjamini-Hochberg FDR
+    input: quantitative isomer abundance table
+    output: differentially abundant C═C isomers across strains
+    confidence: low
+  Step 6: Isotope-tracking data interpretation
+    tool: isotopic_enrichment_analysis
+    algorithm: mass isotopomer distribution analysis (MIDA)
+    parameters: labeling_substrate=¹³C-oleic acid, incorporation_timepoints=['0h', '6h', '24h'], enrichment_calculation=fractional ¹³C enrichment in product vs precursor
+    input: MS1 isotopic patterns of labeled lipids
+    output: biotransformation pathway inference
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: not_mentioned (not mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS/MS data not deposited in public repository
+  - No code or scripts shared for MS2 interpretation or quantification
+  - Exact LC gradient program and instrument method parameters incompletely specified
+  - Custom epoxide-fragmentation interpretation rules not algorithmically formalized or validated
+  - Internal standard normalization strategy ambiguously described
+reproducibility_strengths:
+  - Explicit description of mCPBA epoxidation protocol with reaction conditions
+  - Clear biological rationale and validation via isotope tracing
+  - Identification logic tied to chemically interpretable MS2 fragmentation patterns

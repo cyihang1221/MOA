@@ -1,0 +1,84 @@
+========== reproducibility_recipe entry ==========
+paper_title: Altered milk tryptophan and tryptophan metabolites in women living with HIV.
+source_paper: Tobin NH et al. (2025), Nature communications, DOI: 10.1038/s41467-025-64566-w, PMID: 41152239
+overall_reproducibility_score: 42/100
+
+workflow_steps: 8
+  Step 1: Sample preparation and extraction
+    tool: MicroLab STAR® system (Hamilton Company)
+    algorithm: Protein precipitation with methanol
+    parameters: shaking_duration_sec=120, shaking_device=Glen Mills GenoGrinder 2000, centrifugation_g=18000, centrifugation_time_min=15, centrifugation_temp_c=4, drying_method=TurboVap® (Zymark), storage_condition=overnight under nitrogen
+    input: whole breast milk and plasma samples stored at −80°C
+    output: fractionated extracts for four LC-MS/MS methods
+    confidence: high
+  Step 2: Chromatographic separation and MS acquisition
+    tool: Waters ACQUITY UPLC + Thermo Scientific Q-Exactive Orbitrap
+    algorithm: UPLC-MS/MS with data-dependent MS² scanning and dynamic exclusion
+    parameters: mass_resolution=35000, scan_range_mz=[70, 1000], ionization_mode=['positive', 'negative'], chromatography_methods=['PosEarly (acidic RP, C18, PFPA/formic acid)', 'PosLate (acidic RP, C18, higher organic)', 'Neg (basic RP, C18, ammonium bicarbonate pH 8)', 'HILIC (negative mode, amide column, ammonium formate pH 10.8)'], gradient_details=not fully specified; includes water/methanol/acetonitrile with additives, column_dimensions=['2.1 × 100 mm, 1.7 µm (BEH C18)', '2.1 × 150 mm, 1.7 µm (BEH Amide)']
+    input: reconstituted sample extracts
+    output: raw .raw files (Thermo) or vendor format
+    confidence: medium
+  Step 3: Compound identification
+    tool: Metabolon proprietary identification pipeline
+    algorithm: Library matching using retention index, accurate mass (±10 ppm), and MS/MS spectral similarity
+    parameters: mass_tolerance_ppm=10, retention_index_window=narrow, ms_ms_scoring=forward and reverse scores against authentic standards
+    input: raw MS and MS/MS spectra
+    output: biochemically identified metabolite features with confidence levels
+    confidence: high
+  Step 4: Peak quantification and normalization
+    tool: Metabolon internal software
+    algorithm: Area-under-curve quantification; run-day block median normalization
+    parameters: normalization_strategy=median alignment per run-day block, reference_value=1.0, normalization_target=each compound independently
+    input: feature-intensity matrix (raw peak areas)
+    output: normalized metabolite abundance matrix
+    confidence: high
+  Step 5: Quality control assessment
+    tool: Metabolon internal QC pipeline
+    algorithm: Median RSD calculation for internal standards and client matrix (CMTRX) replicates
+    parameters: qc_sample_frequency=4 technical replicates per 36 study samples, cmtrx_composition=pooled aliquot of all study samples, process_blank_type=extracted water, instrument_qc_standards=spiked cocktail non-interfering with endogenous compounds
+    input: QC samples (CMTRX, blanks, spiked standards)
+    output: RSD metrics for instrument and process variability
+    confidence: high
+  Step 6: Statistical analysis and multivariate modeling
+    tool: R (vegan package for PERMANOVA, lme4 for linear mixed effects)
+    algorithm: Principal coordinates analysis (PCoA); permutational MANOVA (PERMANOVA); linear mixed-effects models
+    parameters: distance_metric=Euclidean, model_formula=metabolite ~ HIVExposure * Visit + (1 | PID), random_effect=PID (participant ID), permutations=not specified, significance_threshold=0.05
+    input: normalized metabolite abundance matrix + metadata (HIV status, visit time, PID)
+    output: statistical associations, PCoA plots, model coefficients
+    confidence: medium
+  Step 7: Targeted quantification of tryptophan and kynurenine
+    tool: Agilent 1290 / SCIEX QTrap 5500 LC-MS/MS
+    algorithm: Isotope dilution LC-MS/MS with internal standards and weighted linear regression calibration
+    parameters: internal_standards=['Tryptophan-d5', 'Kynurenine-d6'], calibration_range_trp_ug_ml=[0.2, 80.0], calibration_range_kyn_ug_ml=[0.025, 10.0], regression_weighting=weighted linear least squares, qc_frequency=6 QC samples per batch (2 low/2 med/2 high), column_type=BEH Amide UHPLC, ionization_mode=positive ESI
+    input: plasma and whole breast milk extracts
+    output: absolute concentrations (µg/mL) of tryptophan and kynurenine
+    confidence: high
+  Step 8: Independent ddhC identification
+    tool: Agilent 6546 LC/Q-TOF MS
+    algorithm: Accurate mass + MS/MS spectral matching to reference standard
+    parameters: ion_mode=HILIC negative mode, mass_accuracy_requirement=molecular formula C9H11N3O4 confirmed via [M+H]+, collision_energy_ramp_v=[5, 40], confirmation_method=co-elution and identical MS/MS spectrum vs. ddhC standard
+    input: breast milk extracts (protein-precipitated, dried, reconstituted)
+    output: confirmed identity of ddhC
+    confidence: high
+
+data_availability:
+  raw_data: available (Metabolon public database)
+  processed_data: available (Metabolon public database)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Metabolon's proprietary data processing, peak detection, and identification software is closed-source and not described in sufficient detail for independent implementation
+  - No access details provided for the 'publicly available database' hosting raw/processed data
+  - Gradient profiles, exact mobile phase compositions, and instrument method files not reported
+  - R code for statistical modeling (PCoA, PERMANOVA, LMMs) not shared or archived
+  - No deposition of raw .raw files in public repositories (e.g., MetaboLights, GNPS, MassIVE)
+  - Haiti cohort data integration relied on ZEBS-derived CMTRX — no description of batch correction or harmonization algorithm
+reproducibility_strengths:
+  - Large-scale, deeply phenotyped longitudinal cohort (N=326 women, 1599 milk samples)
+  - Comprehensive QC design including CMTRX, process blanks, and spiked standards
+  - Use of isotopically labeled internal standards and rigorous calibration for targeted KT panel
+  - Independent orthogonal validation of ddhC using reference standard and co-elution

@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: Ultrahigh-Mass Resolution Mass Spectrometry Imaging with an Orbitrap Externally Coupled to a High-Performance Data Acquisition System.
+source_paper: Grgic A et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.3c04146, PMID: 38127459
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: UHR MALDI-MSI data acquisition
+    tool: Orbitrap Q Exactive HF coupled with FTMS Booster X2
+    algorithm: absorption-mode FT mass spectrometry
+    parameters: mass_resolution=>1000000, mass_range_da=[600, 950], transient_length_s=10, baseline_transient_length_s=0.5, ionization=MALDI
+    input: tissue sections with MALDI matrix
+    output: full-profile absorption-mode FT mass spectra
+    confidence: high
+  Step 2: Spectral processing and peak detection
+    tool: not explicitly named
+    algorithm: not specified
+    input: absorption-mode FT mass spectra
+    output: peak lists / ion images
+    confidence: low
+  Step 3: Lipid annotation and identification
+    tool: not explicitly named
+    algorithm: mass accuracy-based matching
+    parameters: mass_accuracy_ppm=None
+    input: peak lists with m/z and spatial coordinates
+    output: annotated lipid species images
+    confidence: medium
+  Step 4: Image generation and visualization
+    tool: not explicitly named
+    algorithm: ion intensity mapping
+    parameters: spatial_resolution=None, normalization_method=None
+    input: annotated peak lists with spatial coordinates
+    output: MALDI MSI ion images
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectral imaging data not deposited in any public repository
+  - No software or pipeline details provided for spectral processing, peak detection, or image reconstruction
+  - No parameters reported for mass tolerance, peak picking, baseline correction, or spatial normalization
+  - No information on lipid database(s) or annotation criteria (e.g., ppm threshold, adduct handling, fragmentation validation)
+  - FTMS Booster X2 is proprietary hardware with no publicly documented interface or data format specification
+reproducibility_strengths:
+  - Clear description of instrument configuration (Orbitrap Q Exactive HF + FTMS Booster X2)
+  - Explicit reporting of achieved mass resolution (>1,000,000) and transient length (10 s)
+  - Defined mass range of interest (600–950 Da) and application context (spatial lipidomics)

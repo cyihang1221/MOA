@@ -1,0 +1,69 @@
+========== reproducibility_recipe entry ==========
+paper_title: iDIA-QC: AI-empowered data-independent acquisition mass spectrometry-based quality control.
+source_paper: Gao H et al. (2025), Nature communications, DOI: 10.1038/s41467-024-54871-1, PMID: 39837863
+overall_reproducibility_score: 72/100
+
+workflow_steps: 5
+  Step 1: Raw file conversion to mzXML
+    tool: msConvert
+    algorithm: ProteoWizard conversion
+    input: vendor-specific raw files (.d, .raw, .wiff)
+    output: mzXML files
+    confidence: high
+  Step 2: DIA data analysis and quantification
+    tool: DIA-NN (v1.7.15)
+    algorithm: Library-based DIA quantification
+    parameters: fdr_threshold=0.01, quantification_strategy=robust LC (high accuracy) mode, library_matching=spectral library matching
+    input: mzXML files + spectral libraries
+    output: peptide/protein quantification tables (mainoutput.* files)
+    confidence: high
+  Step 3: QC metric extraction
+    tool: Custom Python/R scripts
+    algorithm: Feature extraction from mzXML and DIA-NN outputs
+    parameters: missing_value_imputation=minimum per feature, feature_filtering_threshold=0.7, ms1_interpolation_points=1000, linear_interpolation=True
+    input: mzXML files, DIA-NN mainoutput.* files, MGF files (for timsTOF Pro)
+    output: 15-dimensional QC metric table per raw file
+    confidence: medium
+  Step 4: Machine learning model training
+    tool: XGBoost
+    algorithm: Gradient boosting decision tree
+    parameters: evaluation_metric=AUC, missing_value_handling=imputed with minimum per feature, feature_filtering=remove features with >70% NA
+    input: 15-dimensional QC metric table
+    output: binary LC/MS quality classifier (qualified/unqualified)
+    confidence: high
+  Step 5: Statistical analysis and visualization
+    tool: R (v4.1.2)
+    algorithm: Hierarchical clustering (centroid method), t-SNE, CV calculation, heatmap generation
+    parameters: clustering_method=centroid, cv_calculation=std / mean
+    input: QC metric table, peptide/protein quantification tables
+    output: heatmaps, t-SNE plots, agreement statistics, ROC curves
+    confidence: high
+
+data_availability:
+  raw_data: available (PRIDE: Not explicitly stated (but 'all 2754 DIA files... uploaded to Proteomics IDEntifications database (PRIDE)'))
+  processed_data: not_mentioned (Not mentioned)
+  metadata: in_paper_only
+  data_urls: https://www.ebi.ac.uk/pride/archive/
+
+code_availability: mentioned_no_link
+  code_url: https://github.com/iDIA-QC/iDIA-QC
+
+figure_recipes: 1
+  Fig. 4B: [table]
+    caption: Names and categories of the 15 QC metrics used in iDIA-QC.
+    produced_by_step: [3]
+    visualization_tool: Not specified
+
+reproducibility_gaps:
+  - Spectral libraries not publicly deposited (only described; no accession IDs provided)
+  - Custom metric extraction scripts not shared (no repository link or code availability statement beyond software name)
+  - No details on XGBoost hyperparameters (e.g., n_estimators, max_depth, learning_rate)
+  - DDA files (n=2638) not confirmed as publicly available — only DIA files stated as uploaded to PRIDE
+  - FAIMS-DIA, diaPASEF, and SWATH-specific preprocessing parameters (e.g., isolation windows, collision energies) not reported
+  - No description of how 'expert manual assessment' labels were generated or aggregated (inter-rater reliability, consensus rules)
+reproducibility_strengths:
+  - All 2754 DIA raw files deposited in PRIDE
+  - Use of open-source tools: msConvert, R, XGBoost
+  - Explicit versioning for key tools (DIA-NN v1.7.15, FragPipe v13/v14, MSFragger v2.4/v3.1.1, Philosopher v3.2.5, R v4.1.2)
+  - Detailed description of 15 QC metrics including biological rationale and computational derivation
+  - Clear separation of LC vs MS evaluation and binary classification output

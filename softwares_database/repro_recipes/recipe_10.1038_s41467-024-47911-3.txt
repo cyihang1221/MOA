@@ -1,0 +1,76 @@
+========== reproducibility_recipe entry ==========
+paper_title: Metabolomics facilitates differential diagnosis in common inherited retinal degenerations by exploring their profiles of serum metabolites.
+source_paper: Wang WC et al. (2024), Nature communications, DOI: 10.1038/s41467-024-47911-3, PMID: 38670966
+overall_reproducibility_score: 42/100
+
+workflow_steps: 5
+  Step 1: Serum metabolite extraction
+    tool: MTBE extraction protocol (laboratory-modified)
+    parameters: sample_volume=50, unit=μL, solvents=['MTBE', 'methanol', 'double-distilled water'], fractionation=upper (hydrophobic) and lower (hydrophilic) phases, storage_temperature=-80, unit_temperature=°C
+    input: raw serum samples
+    output: dried hydrophobic and hydrophilic extracts
+    confidence: medium
+  Step 2: LC-MS data acquisition
+    tool: Thermo Fisher Q Exactive Plus hybrid quadrupole-Orbitrap
+    parameters: instrument=Dionex UltiMate 3000 UHPLC + Q Exactive Plus, injection_volume=5, unit_injection=μL, ion_modes=['positive', 'negative'], mass_ranges={'hydrophobic_fraction': [150, 1500], 'hydrophilic_fraction': [70, 1000]}, columns=[{'type': 'C18', 'brand': 'Waters UPLC CSH C18', 'dimensions': '2.1 × 100 mm', 'particle_size': '1.7 μm'}, {'type': 'BEH amide', 'brand': 'Waters UPLC BEH Amide', 'dimensions': '2.1 × 150 mm', 'particle_size': '1.7 μm'}], QC_frequency=every 10 injections, sample_order=random
+    input: dried hydrophobic and hydrophilic extracts
+    output: raw .raw files (Thermo format)
+    confidence: medium
+  Step 3: Data preprocessing and feature detection
+    tool: Thermo Scientific Compound Discoverer (v3.2)
+    parameters: steps=['peak alignment', 'background filtering', 'signal normalization', 'peak picking', 'compound identification']
+    input: raw .raw files
+    output: feature table (peak matrix) with putative compound IDs
+    confidence: low
+  Step 4: Unsupervised and supervised multivariate analysis
+    tool: MetaboAnalyst (v5.0)
+    algorithm: PLS-DA
+    input: preprocessed feature table
+    output: PLS-DA scores/plots, heatmap, volcano plot
+    confidence: high
+  Step 5: Machine learning classification modeling
+    tool: RapidMiner Studio (v9.10.001)
+    algorithm: LASSO (Least Absolute Shrinkage and Selection Operator)
+    parameters: train_validation_split_ratio=0.7, cross_validation_method=leave-one-out, model_targets=['CD/CRD vs STGD vs control', 'EYS- vs USH2A- vs other RP']
+    input: preprocessed feature table
+    output: diagnostic classification models with accuracy metrics
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 4
+  Figure 1: [heatmap]
+    caption: Metabolite heatmaps differentiate common IRD subtypes (RP, CRD, STGD, BCD) from controls.
+    produced_by_step: [4]
+    visualization_tool: MetaboAnalyst 5.0
+  Figure 2: [volcano_plot]
+    caption: Volcano plots show hundreds of significantly altered metabolites in each IRD group versus controls (except BCD).
+    produced_by_step: [4]
+    visualization_tool: MetaboAnalyst 5.0
+    statistical_test: t-test or similar univariate test (implied by volcano plot convention)
+  Figure 3: [pls_da_scores]
+    caption: PLS-DA score plots demonstrate separation between IRD subtypes and controls.
+    produced_by_step: [4]
+    visualization_tool: MetaboAnalyst 5.0
+  Figure 4: [bar_chart]
+    caption: Model performance bar chart showing 100% accuracy for CRD/STGD/control classification and 85.7% for RP genotype prediction.
+    produced_by_step: [5]
+    visualization_tool: RapidMiner Studio or custom plotting (not specified)
+
+reproducibility_gaps:
+  - Raw LC-MS data (.raw files) not deposited in public repository
+  - Compound Discoverer v3.2 settings not detailed (only 'described in Supporting Information' — no access provided in text)
+  - LC gradient profiles and MS acquisition parameters only referenced in 'Supporting Information' (not included or linked)
+  - RapidMiner Studio is commercial software requiring license and proprietary workflow files not shared
+  - No code, scripts, or model artifacts (e.g., LASSO coefficients, feature lists) made available
+  - No accession number or link to Supporting Information containing critical method details
+  - MetaboAnalyst analyses lack parameter specification (e.g., scaling method, PLS-DA component count, fold-change thresholds)
+reproducibility_strengths:
+  - Use of standardized platforms (MetaboAnalyst 5.0, RapidMiner Studio) with version numbers
+  - Explicit description of sample collection time (1–3 p.m.), non-fasting status, and QC injection frequency
+  - Clear separation of hydrophobic/hydrophilic fractions and dual-column LC strategy

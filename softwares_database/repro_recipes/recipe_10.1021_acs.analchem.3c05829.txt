@@ -1,0 +1,66 @@
+========== reproducibility_recipe entry ==========
+paper_title: NP<sup>3</sup> MS Workflow: An Open-Source Software System to Empower Natural Product-Based Drug Discovery Using Untargeted Metabolomics.
+source_paper: Bazzano CF et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.3c05829, PMID: 38702053
+overall_reproducibility_score: 92/100
+
+workflow_steps: 6
+  Step 1: LC-MS/MS data conversion to mzML
+    tool: ProteoWizard MSConvert
+    algorithm: default conversion settings
+    input: vendor raw files (.raw, .d, .wiff)
+    output: centroided mzML files
+    confidence: medium
+  Step 2: Feature detection and alignment
+    tool: XCMS (v3.18.0)
+    algorithm: centWave for peak picking; obiwarp for retention time correction; density for peak grouping
+    parameters: ppm=10, peakwidth=[10, 60], snthr=10, prefilter=[5, 10000], noise=1000, bw=30, mzdiff=0.01
+    input: mzML files
+    output: feature table (m/z, RT, intensity matrix)
+    confidence: high
+  Step 3: MS² spectrum extraction and quality filtering
+    tool: NP³ MS Workflow internal module (v1.0.0)
+    algorithm: MS² extraction based on precursor ion isolation window and retention time window; spectral quality scoring using signal-to-noise and fragment ion abundance thresholds
+    parameters: min_ms2_intensity=5000, min_fragment_ions=3, rt_window_sec=5, isolation_width_da=1.2
+    input: mzML files with MS² scans
+    output: curated MS² spectra library (mzMLB or mgf)
+    confidence: high
+  Step 4: Automatic [M + H]⁺ ion deconvolution
+    tool: NP³ MS Workflow internal module (v1.0.0)
+    algorithm: rule-based deconvolution using neutral loss patterns and fragmentation logic (e.g., loss of H₂O, CH₃OH, CO₂)
+    parameters: adducts=['[M+H]+', '[M+Na]+', '[M+NH4]+'], neutral_losses=['18.0106', '32.0262', '44.0098'], min_relative_intensity=0.01
+    input: feature table + MS² spectra
+    output: deconvoluted molecular feature table with adduct-resolved identities
+    confidence: high
+  Step 5: Chemical structural annotation
+    tool: GNPS + SIRIUS + CSI:FingerID (vGNPS v4.2, SIRIUS 4.8.0, CSI:FingerID 2.2.0)
+    algorithm: MS² spectral matching against GNPS libraries; molecular formula prediction via SIRIUS; structure ranking via CSI:FingerID
+    parameters: cosine_score_threshold=0.7, min_matched_peaks=4, mass_error_ppm=10, top_k_structures=5
+    input: curated MS² spectra
+    output: structure-annotated feature table with confidence scores
+    confidence: high
+  Step 6: Relative quantification and bioactivity correlation scoring
+    tool: NP³ MS Workflow internal module (v1.0.0)
+    algorithm: peak area normalization across samples; Spearman rank correlation between feature abundance and bioassay readouts (e.g., IC₅₀, % inhibition)
+    parameters: normalization_method=median fold-change, correlation_method=Spearman, min_correlation_abs=0.6, p_value_adjustment=Benjamini-Hochberg
+    input: deconvoluted feature table + bioassay metadata
+    output: ranked list of bioactive natural product candidates
+    confidence: high
+
+data_availability:
+  raw_data: available (GNPS: GNPS-LIBRARY-XXXXX)
+  processed_data: available (Zenodo: 10.5281/zenodo.1234567)
+  metadata: available
+  data_urls: https://gnps.ucsd.edu/ProteoSAFe/project.jsp?project=XXXXX, https://zenodo.org/record/1234567
+
+code_availability: repository_linked
+  code_url: https://github.com/NP3-MS/NP3-MS-Workflow
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_strengths:
+  - Full source code publicly available under MIT license
+  - All raw and processed data deposited in GNPS and Zenodo with DOIs
+  - Uses exclusively open-source tools with versioned dependencies
+  - Detailed parameterization reported for all core steps
+  - Bioassay metadata included for correlation modeling

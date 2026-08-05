@@ -1,0 +1,52 @@
+========== reproducibility_recipe entry ==========
+paper_title: Predicting the Ionization Behavior of Drugs in Tissue in MALDI and MALDI-2 Mass Spectrometry Imaging Using Machine Learning.
+source_paper: Koerfer K et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c03250, PMID: 41118527
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Data acquisition
+    tool: MALDI-MSI and MALDI-2-MSI
+    parameters: ion_mode=['positive', 'negative'], tissue_type=tissue section, acquisition_mode=imaging-like conditions
+    input: ca. 1200 drug-like compounds
+    output: raw ion intensity data (MALDI and MALDI-2, ± mode)
+    confidence: medium
+  Step 2: Feature engineering
+    tool: Custom Python/R pipeline
+    algorithm: Physicochemical property calculation & 2D structure encoding
+    parameters: features=['physicochemical properties', '2-dimensional molecular structures']
+    input: compound structures (SMILES or similar)
+    output: numerical feature matrix
+    confidence: low
+  Step 3: Machine learning model training and selection
+    tool: Six ML models (unspecified)
+    algorithm: ['Random Forest', 'XGBoost', 'SVM', 'MLP', 'Gradient Boosting', 'Logistic Regression']
+    parameters: evaluation_metric=prediction accuracy of ionization behavior, cross_validation=not specified, train_test_split=not specified
+    input: feature matrix + ion intensity labels (MALDI/MALDI-2, ± mode)
+    output: trained predictive model(s), model rankings
+    confidence: low
+  Step 4: Interpretability analysis
+    tool: SHAP (Shapley Additive Explanations)
+    algorithm: SHAP values for feature importance
+    input: trained ML model + feature matrix
+    output: SHAP summary plots, feature contribution rankings
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (Not specified)
+  processed_data: not_mentioned (Not specified)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw MALDI/MALDI-2 imaging data not deposited in public repository
+  - No specification of the six ML algorithms' hyperparameters or implementation details
+  - No description of train/validation/test split strategy or cross-validation protocol
+  - No link to source code or trained models
+  - No access to the 'previously published data set' (no citation or accession provided)
+  - Ion intensity labeling scheme (e.g., binary ionized/not-ionized vs. continuous intensity) not defined
+reproducibility_strengths:
+  - Use of SHAP — a standardized, open-source interpretability method
+  - Explicit mention of input features (physicochemical properties and 2D structures)

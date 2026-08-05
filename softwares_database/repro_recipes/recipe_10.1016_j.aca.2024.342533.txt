@@ -1,0 +1,70 @@
+========== reproducibility_recipe entry ==========
+paper_title: Concomitant investigation of crustacean amphipods lipidome and metabolome during the molting cycle by Zeno SWATH data-independent acquisition coupled with electron activated dissociation and machine learning.
+source_paper: Brunet TA et al. (2024), Analytica chimica acta, DOI: 10.1016/j.aca.2024.342533, PMID: 38637034
+overall_reproducibility_score: 35/100
+
+workflow_steps: 6
+  Step 1: Data acquisition using Zeno-SWATH DIA
+    tool: SCIEX TripleTOF 6600+ with Zeno trap
+    algorithm: SWATH DIA
+    parameters: collision_energy=EAD (Electron-Activated Dissociation) in positive polarity, acquisition_mode=Data-Independent Acquisition, instrument_configuration=Zeno trap pulsing
+    input: LC-MS/MS raw data (.wiff or .sciex files)
+    output: DIA fragment ion maps and precursor ion chromatograms
+    confidence: medium
+  Step 2: Feature detection and alignment
+    tool: SCIEX OS software (or PeakView / MarkerView)
+    algorithm: SWATH processing workflow
+    parameters: extraction_window=m/z window not specified, retention_time_alignment=enabled, peak_integration=default settings
+    input: raw .wiff/.sciex files
+    output: feature table (precursor m/z, RT, intensity)
+    confidence: low
+  Step 3: Multivariate statistical analysis
+    tool: SIMCA-P+ or MetaboAnalyst
+    algorithm: PCA and PLS-DA
+    parameters: scaling=Pareto scaling or unit variance scaling (not specified), cross-validation=7-fold CV for PLS-DA (implied by standard practice), permutation_test=not explicitly mentioned
+    input: normalized feature table
+    output: score plots, loading plots, VIP scores
+    confidence: medium
+  Step 4: Metabolite and lipid annotation via fragmentation spectra
+    tool: SIRIUS
+    algorithm: CSI:FingerID + CANOPUS
+    parameters: mass_accuracy=high-resolution MS1 and MS2, fragmentation_type=EAD-derived spectra
+    input: MS1 and EAD-MS2 spectra
+    output: putative molecular formulas, compound classes, structural candidates
+    confidence: high
+  Step 5: Database-dependent annotation of glycerophospholipids
+    tool: LipidBlast or in-house EAD spectral library
+    algorithm: spectral matching with retention time and MS/MS similarity
+    parameters: double_bond_position_annotation=enabled via EAD diagnostic ions, library_match_threshold=not specified
+    input: EAD-MS2 spectra + RT
+    output: lipid species with sn-position and double bond location
+    confidence: low
+  Step 6: Machine learning-assisted identification
+    tool: not named (custom or commercial ML model)
+    algorithm: machine learning for spectral interpretation
+    parameters: training_data=EAD-MS2 spectra of known lipids/metabolites, model_type=not specified
+    input: EAD-MS2 spectra
+    output: confident annotations for unknown features
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: not_mentioned (not mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS/MS data not deposited in public repository (e.g., MetaboLights, MassIVE)
+  - No details on SWATH window setup (m/z width, number of windows, duty cycle)
+  - No specification of chromatographic gradient, column, or injection volume
+  - Commercial software (SCIEX OS, SIMCA-P+) used without version numbers or parameter settings
+  - Machine learning model is unnamed and unshared — no architecture, training data, or code provided
+  - EAD spectral library not described or made available
+  - No metadata schema or sample annotation table provided beyond 'molting stages'
+reproducibility_strengths:
+  - Use of open-source SIRIUS for structure prediction
+  - Explicit mention of EAD advantages for double-bond localization in lipids
+  - Clear biological context (Gammarus fossarum molting cycle) enabling experimental replication

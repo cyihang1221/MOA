@@ -1,0 +1,47 @@
+========== reproducibility_recipe entry ==========
+paper_title: MultiplexMS: A Mass Spectrometry-Based Multiplexing Strategy for Ultra-High-Throughput Analysis of Complex Mixtures.
+source_paper: Recchia MJJ et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c00939, PMID: 37530514
+overall_reproducibility_score: 82/100
+
+workflow_steps: 3
+  Step 1: Sample multiplexing and pooled MS acquisition
+    tool: MultiplexMS (custom strategy)
+    algorithm: orthogonal multiplexing encoding
+    parameters: pool_size_r=30, multiplexing_factor=30
+    input: individual biological samples (e.g., natural product extracts)
+    output: pooled raw MS data (.mzML or vendor format)
+    confidence: high
+  Step 2: Computational deconvolution of pooled spectra
+    tool: MultiplexMS
+    algorithm: linear unmixing with orthogonal barcode decoding
+    parameters: assignment_precision_threshold=0.97, mass_tolerance_ppm=5, rt_tolerance_sec=5
+    input: pooled raw MS data
+    output: deconvolved per-sample peak lists (feature tables)
+    confidence: high
+  Step 3: Metabolite assignment and validation
+    tool: MultiplexMS
+    algorithm: in silico reference matching + precision evaluation
+    parameters: infrequent_metabolite_sensitivity_emphasis=True
+    input: deconvolved feature tables
+    output: annotated metabolite lists with assignment confidence scores
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/liningtonlab/MultiplexMS
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw MS data from the 925-extract biological study not deposited in public repository
+  - No details on instrument method parameters (e.g., gradient, ionization settings, scan ranges) for pooled acquisition
+  - No description of barcode design or orthogonality constraints used in multiplexing
+reproducibility_strengths:
+  - Open-source software publicly available on GitHub with MIT license
+  - Quantitative performance metrics reported (e.g., >97% assignment precision, r=30 pooling)
+  - Method explicitly stated as vendor-agnostic and validated via in silico experiments

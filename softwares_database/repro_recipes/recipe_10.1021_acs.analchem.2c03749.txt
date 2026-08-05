@@ -1,0 +1,62 @@
+========== reproducibility_recipe entry ==========
+paper_title: Unknown Metabolite Identification Using Machine Learning Collision Cross-Section Prediction and Tandem Mass Spectrometry.
+source_paper: Asef CK et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.2c03749, PMID: 36595469
+overall_reproducibility_score: 52/100
+
+workflow_steps: 5
+  Step 1: De novo molecular formula annotation
+    tool: SIRIUS 4 (v4)
+    algorithm: CSI:FingerID + CANOPUS
+    parameters: mass_tolerance_ppm=5, ms2_tolerance_da=0.02
+    input: centroided .mzML files with MS1 and MS/MS spectra
+    output: molecular formula candidates with confidence scores
+    confidence: high
+  Step 2: Collision cross-section (CCS) measurement
+    tool: Ion mobility spectrometry (IM-MS)
+    algorithm: Drift tube IM calibration using polyalanine standards
+    parameters: calibration_standards=polyalanine, drift_gas=nitrogen, temperature_c=25
+    input: raw IM-MS data (.raw or vendor format)
+    output: experimental CCS values (Å²)
+    confidence: medium
+  Step 3: Machine learning CCS prediction
+    tool: CCS prediction model (not named, likely in-house or adapted from DeepCCS/MobCal-MPI)
+    algorithm: machine learning (neural network or RF, unspecified)
+    parameters: ccs_error_cutoff_percent=3.0
+    input: molecular structures (SMILES or InChI) from SIRIUS candidates
+    output: predicted CCS values (Å²)
+    confidence: low
+  Step 4: CCS-based candidate filtering
+    tool: Custom post-processing (SIRIUS + CCS integration)
+    algorithm: filtering candidates where |(predicted_CCS − experimental_CCS)/experimental_CCS| ≤ 0.03
+    parameters: ccs_error_cutoff_percent=3.0
+    input: SIRIUS candidate structures + experimental CCS + predicted CCS
+    output: reduced candidate structure list
+    confidence: high
+  Step 5: Differential feature detection
+    tool: Not explicitly named; implied use of standard untargeted workflow
+    algorithm: statistical testing (t-test or ANOVA, unspecified)
+    parameters: p_value_threshold=0.05, fold_change_threshold=2.0
+    input: feature table (peak intensities across mutant vs wild-type C. elegans samples)
+    output: list of differential ion features
+    confidence: low
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1872)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1872
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No explicit description of feature detection, alignment, or normalization tools (e.g., XCMS, OpenMS)
+  - CCS prediction tool not named or versioned — likely custom or unpublished ML model
+  - Instrumental parameters for IM-MS (e.g., drift voltage, wave velocity, pressure) not reported
+  - No code repository or scripts shared for CCS integration or candidate filtering
+  - Statistical analysis methods for differential features under-specified (no software, correction method, or multivariate modeling mentioned)
+reproducibility_strengths:
+  - Raw IM-MS data publicly available via MetaboLights (MTBLS1872)
+  - Use of open-source SIRIUS 4 for molecular formula and structure annotation
+  - Explicit CCS error threshold (±3%) and quantitative performance metrics (37% MS/MS+CCS coverage; 28% average candidate reduction)

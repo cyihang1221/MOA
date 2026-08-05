@@ -1,0 +1,58 @@
+========== reproducibility_recipe entry ==========
+paper_title: Comprehensive assessment of the diminished statistical power caused by nonlinear electrospray ionization responses in mass spectrometry-based metabolomics.
+source_paper: Yu H et al. (2022), Analytica chimica acta, DOI: 10.1016/j.aca.2022.339614, PMID: 35256134
+overall_reproducibility_score: 87/100
+
+workflow_steps: 2
+  Step 1: Conversion of MS signal intensities to QC-injection-amount equivalents
+    tool: PowerU
+    algorithm: QC-based signal calibration using serial dilution reference
+    parameters: dilution_series_used=True, QC_sample_injection_amount_reference=used as proxy for true concentration
+    input: feature intensity table (from LC-MS/MS)
+    output: QC-injection-amount-equivalent feature table
+    confidence: medium
+  Step 2: Normality assessment and adaptive statistical testing
+    tool: PowerU
+    algorithm: Shapiro-Wilk normality test followed by choice of t-test (if normal) or Mann-Whitney U test (if non-normal)
+    parameters: alpha_normality=0.05, test_selection_rule=Shapiro-Wilk p > 0.05 → t-test; else → Mann-Whitney U
+    input: QC-injection-amount-equivalent feature table
+    output: list of significantly altered metabolites with test-specific p-values
+    confidence: high
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1789)
+  processed_data: available (MetaboLights: MTBLS1789)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1789
+
+code_availability: repository_linked
+  code_url: https://github.com/comp-bio-metabolomics/PowerU
+  license: MIT
+
+figure_recipes: 4
+  Figure 1: [boxplot]
+    caption: Distribution skewness of ESI response across metabolic features in serially diluted urine dataset, showing left- and right-skewed patterns.
+    produced_by_step: [1]
+    visualization_tool: ggplot2 (R)
+  Figure 2: [volcano_plot]
+    caption: Comparison of t-test statistical power using raw MS signal vs. QC-calibrated values across varying effect sizes and sample sizes.
+    produced_by_step: [2]
+    visualization_tool: ggplot2 (R)
+    statistical_test: t-test power comparison (Monte Carlo simulation)
+  Figure 3: [bar_chart]
+    caption: Proportion of features passing significance threshold (p < 0.05) before and after PowerU application in mouse cecum study.
+    produced_by_step: [2]
+    visualization_tool: ggplot2 (R)
+    statistical_test: Mann-Whitney U / t-test (adaptive)
+  Figure 4: [workflow_diagram]
+    caption: Schematic overview of the PowerU workflow: (1) MS signal → QC-injection-amount conversion; (2) Shapiro-Wilk-guided test selection.
+    produced_by_step: [1, 2]
+    visualization_tool: Inkscape or draw.io
+
+reproducibility_gaps:
+  - No explicit description of QC-injection-amount conversion algorithm (e.g., interpolation method, handling of missing dilution points)
+  - Vendor-specific LC-MS acquisition parameters (e.g., gradient, column, flow rate) only partially specified
+reproducibility_strengths:
+  - Raw and processed data publicly available on MetaboLights (MTBLS1789)
+  - PowerU source code openly licensed (MIT) with Zenodo DOI
+  - Full statistical decision logic (Shapiro-Wilk + adaptive test) explicitly defined

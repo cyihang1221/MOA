@@ -1,0 +1,40 @@
+========== reproducibility_recipe entry ==========
+paper_title: A multimodal pipeline for image correction and registration of mass spectrometry imaging with microscopy.
+source_paper: Tang W et al. (2023), Analytica chimica acta, DOI: 10.1016/j.aca.2023.341969, PMID: 37977791
+overall_reproducibility_score: 20/100
+
+workflow_steps: 3
+  Step 1: Deep learning-based spatial interpolation of MALDI MSI data
+    tool: Custom deep learning model
+    algorithm: Deep learning interpolation (architecture not specified)
+    input: Raw MALDI MSI ion images (matrix format per m/z)
+    output: High-resolution interpolated MALDI MSI ion images
+    confidence: low
+  Step 2: Affine transformation for coarse registration
+    tool: Custom implementation
+    algorithm: Affine transformation (AT)
+    input: Interpolated MALDI MSI image and H&E microscopy image
+    output: Coarsely aligned image pair
+    confidence: medium
+  Step 3: Non-rigid refinement using moving least squares
+    tool: Custom implementation
+    algorithm: Moving least squares (MLS) algorithm
+    input: Coarsely aligned image pair
+    output: Precisely registered multimodal image pair
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of deep learning architecture or training procedure
+  - No public code or model weights shared
+  - No raw or processed imaging data deposited
+  - No details on H&E preprocessing (e.g., color deconvolution, stain normalization)
+  - No quantitative evaluation metrics (e.g., TRE, DICE) reported or thresholds defined

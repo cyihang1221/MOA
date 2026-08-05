@@ -1,0 +1,108 @@
+========== reproducibility_recipe entry ==========
+paper_title: Multimodal mass spectrometry imaging for plaque- and region-specific neurolipidomics in Alzheimer's disease mouse models.
+source_paper: Trinklein TJ et al. (2025), Nature communications, DOI: 10.1038/s41467-025-65956-w, PMID: 41365882
+overall_reproducibility_score: 52/100
+
+workflow_steps: 12
+  Step 1: Tissue sectioning and matrix application
+    tool: Leica cryostat-microtome, HTX-M5 Sprayer, custom sublimation apparatus, HTX SubliMATE
+    parameters: section_thickness_um=12, matrix_solution=10 mg/mL DHAP in 8:1:1 MeOH:ACN:H2O, spray_flow_rate_uL_min=125, nozzle_temperature_C=60, spray_distance_mm=60, spray_pressure_psi=10, spray_velocity_mm_min=1200, spray_passes=10, drying_time_s_between_passes=15, sublimation_matrix_density_ug_cm2=50, sublimation_temp_C=170, sublimation_duration_s=120, TIMS_sublimation_matrix_density_ug_cm2=120, TIMS_sublimation_temp_C=200, TIMS_sublimation_duration_s=300, TIMS_N2_pressure_mbar=2.55, TIMS_accumulation_time_ms=25, TIMS_ramp_time_ms=1400, TIMS_delta_t6_V=-175
+    input: frozen brain tissue sections
+    output: matrix-coated tissue slides for MSI
+    confidence: high
+  Step 2: Multimodal mass spectrometry imaging
+    tool: timsTOF fleX MALDI-2 (Bruker) (vtimsControl 5.1.2, flexImaging 7.4)
+    parameters: laser_wavelength_nm=[355, 266], spot_size_um2=['5x5', '10x10', '20x20', '50x50'], spectra_acquisition_rate_Hz=1000, laser_shots_per_spectrum=100, post_ionization_delay_us=10, mass_calibration_standard=red phosphorus, lock_mass_ions_count=3, ion_mobility_resolution=high (via TIMS)
+    input: matrix-coated tissue slides
+    output: raw Bruker .d binary files
+    confidence: high
+  Step 3: Post-MALDI histological staining
+    tool: manual staining protocol
+    parameters: matrix_removal_solvent=50% EtOH, fixation_solution=4% PFA in 1× PBS, fixation_duration_min=20, Thioflavin_S_concentration=1% w/w, Thioflavin_S_incubation_min=8, Hoechst_concentration_ug_mL=0.5, Hoechst_incubation_min=10, ethanol_washes=['80% (2×3 min)', '95% (3 min)']
+    input: MSI-analyzed tissue sections
+    output: fluorescence-stained slides (Thioflavin S + Hoechst)
+    confidence: high
+  Step 4: Fluorescence microscopy imaging
+    tool: Zeiss Axio M2 with AxioCam ICc5 (vZen 3.1)
+    parameters: objective_magnification=10× air, tile_overlap_percent=20, excitation_emission_filters=['GFP: ex 450–490 nm / em 500–550 nm', 'DAPI: ex 335–383 nm / em 420–470 nm'], export_format=JPEG
+    input: stained tissue slides
+    output: tiled fluorescence images (.jpeg)
+    confidence: high
+  Step 5: Data parsing and format conversion
+    tool: pyTDF-SDK, MATLAB (vMATLAB 2022b)
+    parameters: input_format=.d, intermediate_format=.mat, parsing_library=pyTDF-SDK
+    input: raw Bruker .d files
+    output: MATLAB .mat files
+    confidence: high
+  Step 6: Quantile normalization and batch correction
+    tool: MATLAB (vMATLAB 2022b)
+    algorithm: ComBat
+    parameters: normalization_method=quantile, batch_correction_method=ComBat, batch_variable=acquisition_batch
+    input: intensity matrices (.mat)
+    output: normalized and batch-corrected intensity matrices
+    confidence: high
+  Step 7: Multimodal image coregistration
+    tool: MATLAB (vMATLAB 2022b)
+    algorithm: affine transformation
+    parameters: registration_method=affine, minimum_support_points=8, reference_atlas=Allen Brain Atlas
+    input: MSI ion images + fluorescence images (.jpeg)
+    output: coregistered spatial lipid maps aligned to Thioflavin S+ plaque regions
+    confidence: high
+  Step 8: Plaque-region segmentation and extraction
+    tool: MATLAB (vMATLAB 2022b)
+    parameters: plaque_definition=Thioflavin S+ pixels, segmentation_granularity=anatomical region (e.g., hippocampus, cortex)
+    input: coregistered images
+    output: plaque-associated vs. non-plaque pixel subsets per region
+    confidence: high
+  Step 9: Statistical analysis and differential lipid detection
+    tool: MATLAB (vMATLAB 2022b)
+    algorithm: Shapiro–Wilk test, two-tailed t-test
+    parameters: normality_test=Shapiro–Wilk, significance_threshold=0.05, statistical_test=two-tailed t-test, sample_size_per_group=6
+    input: region- and plaque-stratified intensity matrices
+    output: list of differentially abundant lipids (p < 0.05)
+    confidence: high
+  Step 10: Machine learning classification and feature importance
+    tool: MATLAB (vMATLAB 2022b)
+    algorithm: Random Forest (RF), Linear Discriminant Analysis (LDA), SVM, linear regression
+    parameters: cross_validation=5-fold, partition_method=cvpartition, feature_importance_method=predictorImportance, normalization_for_tSNE=z-score (region-wise mean/std from WT), tSNE_distance_metric=Euclidean, tSNE_parameters=default
+    input: plaque pixel intensities per region
+    output: classification accuracy, feature attribution maps, t-SNE embeddings
+    confidence: high
+  Step 11: Unsupervised clustering
+    tool: MATLAB (vMATLAB 2022b)
+    algorithm: DBSCAN
+    parameters: epsilon=4.4, min_samples=100
+    input: t-SNE embeddings or normalized lipid intensities
+    output: clusters of spatially coherent lipid patterns
+    confidence: high
+  Step 12: Spatial transcriptomics data integration
+    tool: custom MATLAB scripts (vMATLAB 2022b)
+    parameters: 5xFAD_ST_dataset_url=https://zenodo.org/records/10404412, 5xFAD_ST_n_animals=10, APP_NL_GF_ST_n_animals=5, ST_platform=['10× Visium', 'Spatial Transcriptomics'], spots_per_section=[5000, '500–1000']
+    input: public spatial transcriptomics datasets (Space Ranger output)
+    output: integrated lipid–gene co-expression or correlation maps
+    confidence: medium
+
+data_availability:
+  raw_data: available (Zenodo: 10404412)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+  data_urls: https://zenodo.org/records/10404412
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw MSI .d files not deposited in public repository
+  - Custom MATLAB scripts for coregistration, integration, and RF attribution maps not shared
+  - timsTOF fleX instrument parameters only partially specified (Table S2/S3 referenced but not provided in text)
+  - No details on lipid annotation pipeline (e.g., m/z tolerance, database search, isomer resolution validation)
+  - No information on spectral preprocessing (baseline correction, smoothing, peak picking)
+  - MATLAB 2022b is commercial software requiring license
+  - HTX sprayer/SubliMATE and Zeiss Zen are commercial tools without open alternatives specified
+reproducibility_strengths:
+  - Public spatial transcriptomics data linked via DOI (Zenodo record)
+  - Detailed experimental parameters for matrix application, TIMS, and staining provided
+  - Explicit statistical methods and sample sizes reported
+  - Use of standard reference atlases (Allen Brain Atlas)
+  - Batch correction (ComBat) and normalization (quantile) explicitly named

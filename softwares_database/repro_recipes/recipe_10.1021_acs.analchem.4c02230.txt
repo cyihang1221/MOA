@@ -1,0 +1,75 @@
+========== reproducibility_recipe entry ==========
+paper_title: In-Depth Analysis of Molecular Network Based on Liquid Chromatography Coupled with Tandem Mass Spectrometry in Natural Products: Importance of Redundant Nodes Discovery.
+source_paper: Zhang Y et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.4c02230, PMID: 39311834
+overall_reproducibility_score: 42/100
+
+workflow_steps: 7
+  Step 1: LC-MS/MS data acquisition
+    tool: Liquid chromatography-tandem mass spectrometry
+    parameters: instrument_platform=not specified, ionization_mode=not specified, gradient_profile=not fully specified, collision_energy=not specified, mass_range=not specified, scan_mode=data-dependent acquisition (DDA)
+    input: sample extracts of natural products
+    output: raw .raw or .d files
+    confidence: low
+  Step 2: Molecular networking construction
+    tool: GNPS (Global Natural Products Social Molecular Networking)
+    algorithm: cosine similarity
+    parameters: minimum_cosine_score=0.7, minimum_matched_peaks=6, maximum_shift_mz=1.0, precursor_mass_tolerance=not specified numerically, fragment_mass_tolerance=not specified numerically
+    input: processed MS/MS spectra (.mgf)
+    output: molecular network graph (nodes = spectra, edges = cosine scores)
+    confidence: medium
+  Step 3: Redundant node identification and classification
+    tool: Ion Identity Molecular Networking (IIMN)
+    algorithm: adduct/isotope/in-source fragment annotation based on mass differences and retention time behavior
+    parameters: mass_difference_thresholds=['22 Da (Na+ adduct)', '38 Da (K+ adduct)', '1.0034 Da (13C isotope)', '18 Da (H2O loss)', '14 Da (CH2 loss)'], retention_time_window=not quantified, intensity_ratio_threshold=not specified
+    input: molecular network + feature table + RT information
+    output: annotated redundant node list (adducts, isotopes, in-source fragments)
+    confidence: medium
+  Step 4: Feature-Based Molecular Networking (FBMN)
+    tool: GNPS FBMN workflow
+    algorithm: feature detection → spectral matching → network generation
+    parameters: feature_detection_tool=MSConvert + OpenMS or GNPS internal pipeline, min_peak_intensity=not specified, rt_tolerance=not specified, mz_tolerance=not specified, grouping_method=nearest neighbor
+    input: raw .mzML files
+    output: feature-aligned molecular network with improved connectivity
+    confidence: low
+  Step 5: Experimental validation of redundant node origins
+    tool: targeted LC-MS/MS experiments
+    algorithm: manual interpretation + literature-based spectral matching
+    parameters: validation_strategy=spiking experiments, solvent blank analysis, pH/flow rate variation
+    input: candidate redundant nodes + reference standards (where available)
+    output: experimentally verified origin assignment (e.g., 'in-source fragment of X')
+    confidence: low
+  Step 6: Network simplification and filtering
+    tool: GNPS platform tools + custom filtering
+    algorithm: redundant node removal based on IIMN annotation
+    parameters: filtering_criteria=remove nodes annotated as [M+Na]+, [M+K]+, [M+H-H2O]+, [M+H-NH3]+, isotopic peaks unless primary ion
+    input: annotated molecular network
+    output: pruned molecular network with reduced false positives
+    confidence: medium
+  Step 7: Structural speculation and compound classification
+    tool: GNPS ClassyFire integration + manual curation
+    algorithm: ClassyFire taxonomy mapping + spectral library matching (GNPS Library, MassBank, ReSpect)
+    parameters: library_match_threshold=not specified, taxonomy_level=class, subclass, direct_parent
+    input: pruned molecular network + MS/MS spectra
+    output: structurally classified metabolite annotations
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (GNPS: not specified in text)
+  processed_data: not_mentioned (GNPS: not specified in text)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No accession ID or GNPS job link provided for raw or processed data
+  - Instrument parameters (e.g., collision energy ramp, gradient, column type) not reported
+  - No details on software versions (GNPS web interface version, IIMN implementation version)
+  - Custom filtering rules and thresholds for redundant node removal not quantitatively defined
+  - No code or scripts shared for IIMN application or FBMN parameter tuning
+  - Reference standards used for validation not listed or sourced
+reproducibility_strengths:
+  - Relies entirely on publicly accessible web platforms (GNPS, ClassyFire)
+  - Describes conceptual workflow for redundant node mitigation applicable across labs
+  - Highlights experimentally testable hypotheses (e.g., pH effect on in-source fragmentation)

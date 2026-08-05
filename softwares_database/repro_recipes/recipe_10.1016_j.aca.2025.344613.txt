@@ -1,0 +1,65 @@
+========== reproducibility_recipe entry ==========
+paper_title: JuliaMSI: A high-performance graphical platform for mass spectrometry imaging data analysis.
+source_paper: Sierra-Álvarez JJ et al. (2025), Analytica chimica acta, DOI: 10.1016/j.aca.2025.344613, PMID: 41093504
+overall_reproducibility_score: 72/100
+
+workflow_steps: 6
+  Step 1: Data loading and format parsing
+    tool: JuliaMSI
+    algorithm: Native .imzML/.ibd/.mzML parser
+    input: raw MSI data files (.imzML, .ibd, .mzML)
+    output: in-memory ion image stack and spectral data structure
+    confidence: high
+  Step 2: Preprocessing (contrast enhancement)
+    tool: JuliaMSI
+    algorithm: TrIQ filter, median filter
+    input: ion image stack
+    output: enhanced ion image stack
+    confidence: medium
+  Step 3: 3D topographic visualization
+    tool: JuliaMSI
+    algorithm: surface rendering of ion intensity landscapes
+    input: ion image stack
+    output: 3D surface plot
+    confidence: medium
+  Step 4: Optical image overlay
+    tool: JuliaMSI
+    algorithm: RGB/alpha-blended registration
+    input: ion image stack + optical reference image
+    output: fused overlay image
+    confidence: medium
+  Step 5: Spectral inspection and ROI selection
+    tool: JuliaMSI
+    algorithm: interactive pixel/region selection linked to spectra
+    input: ion image stack + spectral data
+    output: selected ROI masks and corresponding average mass spectra
+    confidence: high
+  Step 6: Export of results
+    tool: JuliaMSI
+    algorithm: raster image export
+    parameters: formats=['.png', '.jpg', '.bmp']
+    input: ion images, 3D plots, overlays, spectra
+    output: publication-ready raster images
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://codeberg.org/LabABI/JuliaMSI
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No example dataset or benchmark data provided in paper or repository link
+  - No description of preprocessing parameter defaults (e.g., TrIQ window size, median kernel size)
+  - No specification of spatial registration method for optical overlay
+  - No details on spectral extraction (e.g., m/z tolerance, peak picking algorithm)
+reproducibility_strengths:
+  - Open-source implementation under MIT license
+  - Cross-platform availability (Linux/macOS/Windows)
+  - Support for open MSI standards (.imzML, .ibd, .mzML)
+  - Publicly accessible source code repository

@@ -1,0 +1,65 @@
+========== reproducibility_recipe entry ==========
+paper_title: Chemometric Strategies for Fully Automated Interpretive Method Development in Liquid Chromatography.
+source_paper: Bos TS et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.2c03160, PMID: 36318471
+overall_reproducibility_score: 30/100
+
+workflow_steps: 6
+  Step 1: Peak tracking
+    tool: AutoLC
+    algorithm: custom peak tracking module
+    input: raw chromatographic data (e.g., UV or MS detector signals)
+    output: tracked peak table with retention times and intensities
+    confidence: low
+  Step 2: Retention modeling
+    tool: AutoLC
+    algorithm: retention time modeling (e.g., linear solvent strength model)
+    input: tracked peak table + gradient profiles
+    output: retention time prediction model
+    confidence: low
+  Step 3: Automated gradient design
+    tool: AutoLC
+    algorithm: rule-based or optimization-driven gradient generation
+    input: retention model or objective function constraints
+    output: candidate gradient profile(s)
+    confidence: low
+  Step 4: Chromatogram simulation
+    tool: AutoLC
+    algorithm: in-silico chromatogram simulation
+    input: retention model + candidate gradient
+    output: simulated chromatogram(s)
+    confidence: low
+  Step 5: Objective function evaluation
+    tool: AutoLC
+    algorithm: multi-objective optimization (resolution + analysis time)
+    parameters: resolution_weight=None, time_weight=None
+    input: simulated or experimental chromatograms
+    output: scalar objective score
+    confidence: low
+  Step 6: Bayesian optimization loop
+    tool: AutoLC
+    algorithm: Bayesian optimization
+    parameters: acquisition_function=expected_improvement, iterations=4
+    input: objective scores + parameter history
+    output: optimized gradient profile
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No repository link or DOI for AutoLC source code
+  - No raw or processed chromatographic data deposited or referenced
+  - No details on peak tracking algorithm (e.g., signal-to-noise thresholds, alignment tolerances)
+  - No specification of gradient parameters (e.g., flow rate, column dimensions, temperature, solvent composition)
+  - No description of objective function mathematical formulation or weighting scheme
+  - No validation dataset or benchmarking against manual method development
+reproducibility_strengths:
+  - Explicitly states algorithm is open-source
+  - Describes two distinct method development strategies (retention modeling vs. Bayesian optimization)
+  - Reports convergence metrics (4–10 iterations) and performance criteria (resolution, analysis time)

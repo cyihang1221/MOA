@@ -1,0 +1,28 @@
+========== reproducibility_recipe entry ==========
+paper_title: Understanding proteome quantification in an interactive learning module on Google Cloud Platform.
+source_paper: O'Connell KA et al. (2024), Briefings in bioinformatics, DOI: 10.1093/bib/bbae235, PMID: 39041914
+overall_reproducibility_score: 40/100
+
+workflow_steps: 0
+
+data_availability:
+  raw_data: available (Google Cloud Platform)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+  data_urls: https://github.com/NIGMS/NIGMS-Sandbox
+
+code_availability: repository_linked
+  code_url: https://github.com/NIGMS/NIGMS-Sandbox
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Paper describes proteomics module but abstract erroneously references ATAC-seq; content inconsistency undermines methodological clarity
+  - No specific proteomics data accession (e.g., PRIDE, MassIVE) provided — only 'provided TMT10plex data set' with no identifier
+  - No details on R packages, versions, or limma model parameters (e.g., contrasts, voom transformation, empirical Bayes settings)
+  - No description of cloud infrastructure setup (e.g., GCP instance type, storage bucket structure, authentication)
+  - No mention of raw file formats (.raw, .mzML), conversion tools, or preprocessing steps prior to normalization
+reproducibility_strengths:
+  - Source code repository publicly available on GitHub
+  - Uses open-source tools (limma, R kernel in Jupyter)
+  - Cloud-based execution eliminates local installation barriers

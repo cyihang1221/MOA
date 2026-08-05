@@ -1,0 +1,48 @@
+========== reproducibility_recipe entry ==========
+paper_title: Optimization of Parameters for ROI Data Compression for Nontargeted Analyses Using LC-HRMS.
+source_paper: Schöneich S et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.2c04538, PMID: 36563309
+overall_reproducibility_score: 45/100
+
+workflow_steps: 3
+  Step 1: ROI data compression
+    tool: Thermo Scientific Compound Discoverer
+    algorithm: Region of Interest (ROI) detection
+    parameters: signal_threshold=optimized per experiment, admissible_mass_deviation_ppm=optimized per experiment
+    input: raw .raw files (Thermo Orbitrap)
+    output: ROI-compressed feature table
+    confidence: medium
+  Step 2: Parameter optimization for ROI compression
+    tool: Custom workflow in Compound Discoverer + manual evaluation
+    algorithm: Grid search over signal threshold and admissible mass deviation
+    parameters: optimization_criterion=['maximize_number_of_detected_spikes', 'minimize_average_Delta_ppm'], spike_concentrations_ppb=[0.1, 1, 5, 10, 25, 50], number_of_spiked_analytes=18, sample_matrix=soil
+    input: spiked soil sample LC-HRMS data (.raw)
+    output: optimal signal_threshold and admissible_mass_deviation_ppm values
+    confidence: high
+  Step 3: Tile-based F-ratio analysis
+    tool: Thermo Scientific Compound Discoverer
+    algorithm: Supervised tile-based Fisher ratio (F-ratio) analysis
+    parameters: tile_size_retention_time_min=None, tile_size_mz_da=None, fold_change_threshold=None, p_value_threshold=None
+    input: ROI-compressed feature table
+    output: list of discriminant features (putative pesticides)
+    confidence: low
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1872)
+  processed_data: available (MetaboLights: MTBLS1872)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1872
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Compound Discoverer is commercial software requiring license and specific version not reported
+  - Exact tile dimensions (retention time and m/z binning) for F-ratio analysis not specified
+  - No code or script provided for parameter optimization grid search or Δppm calculation
+  - No details on preprocessing steps (e.g., noise filtering, baseline correction) prior to ROI compression
+  - Signal threshold units (e.g., intensity counts, S/N) not defined
+reproducibility_strengths:
+  - Raw and processed data publicly available via MetaboLights (MTBLS1872)
+  - Explicit description of optimization objective (max detectable spikes + min avg Δppm)
+  - Well-defined experimental design with 18 spiked pesticides across 6 classes and concentration range

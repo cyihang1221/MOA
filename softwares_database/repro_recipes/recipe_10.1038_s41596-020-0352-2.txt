@@ -1,0 +1,82 @@
+========== reproducibility_recipe entry ==========
+paper_title: A quantitative thiol reactivity profiling platform to analyze redox and electrophile reactive cysteine proteomes.
+source_paper: Fu L et al. (2020), Nature protocols, DOI: 10.1038/s41596-020-0352-2, PMID: 32690958
+overall_reproducibility_score: 52/100
+
+workflow_steps: 6
+  Step 1: Thiol labeling with IPM probe
+    tool: IPM (2-iodo-N-(prop-2-yn-1-yl)acetamide)
+    parameters: ipm_concentration_control_vs_treatment=100 mM, h2o2_concentration=1 mM, h2o2_incubation_time=900, h2o2_incubation_temperature_celsius=37, ipm_labeling_time=not specified, ipm_labeling_temperature_celsius=not specified
+    input: cell or tissue lysates (e.g., HEK293T)
+    output: IPM-labeled cysteinome (probe-modified proteins)
+    confidence: medium
+  Step 2: Proteolytic digestion and click chemistry tagging
+    tool: Trypsin + CuAAC (copper-catalyzed azide–alkyne cycloaddition)
+    parameters: azido_biotin_reagents=L and H isotopically labeled azido-UV-cleavable-biotin (Az-UV-biotin), labeling_ratio_l_to_h=1:1, scx_cleaning_option=with or without SCX
+    input: IPM-labeled proteins
+    output: biotinylated, isotope-coded tryptic peptides
+    confidence: high
+  Step 3: Streptavidin-based enrichment
+    tool: Streptavidin beads
+    input: biotinylated peptides
+    output: enriched biotin-conjugated peptides bound to streptavidin resin
+    confidence: high
+  Step 4: Photo-cleavage and LC-MS/MS analysis
+    tool: UV photolysis + LC-MS/MS
+    parameters: uv_cleavage=photo-cleavable linker activated by UV, ms_measurement_time_per_sample_minutes=75
+    input: streptavidin-bound biotinylated peptides
+    output: LC-MS/MS raw files (.raw)
+    confidence: medium
+  Step 5: Peptide identification and quantification
+    tool: pFind 3 (v3.x)
+    algorithm: database search (human proteome)
+    parameters: search_database=human proteome, enzyme=trypsin, missed_cleavages=2, fixed_modifications=['Carbamidomethyl (C)'], variable_modifications=['Oxidation (M)', 'IPM-modified C (Cysteine)'], mass_tolerance_ppm=not specified, fragment_tolerance_da=not specified
+    input: LC-MS/MS .raw files
+    output: peptide-spectrum matches (PSMs), quantified peptide ratios (H/L, R_10:1)
+    confidence: low
+  Step 6: Post-processing and reactivity classification
+    tool: custom automatic post-processing algorithm
+    algorithm: ratio-based thresholding
+    parameters: redox_sensitivity_threshold_rh_l=high R_H/L indicates reduced free thiol after H₂O₂ → redox-sensitive, hyperreactivity_threshold_r10_1=2.0, r10_1_definition=ratio of 100 µM IPM vs 10 µM IPM labeling
+    input: pFind 3 output (quantified peptides)
+    output: list of redox-sensitive or hyperreactive cysteines
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: available (Supplementary Data 1 & 2)
+  metadata: in_paper_only
+  data_urls: https://doi.org/10.1038/s41596-020-0352-2, Supplementary Data 1 (XLSX): Proteome-wide mapping of oxidation-sensitive cysteines, Supplementary Data 2 (XLSX): Quantitative profiling of intrinsic cysteine reactivity
+
+code_availability: mentioned_no_link
+
+figure_recipes: 4
+  Figure 1: [workflow_diagram]
+    caption: Overview of methodologies for indirect profiling of redox- and electrophile-reactive cysteines.
+    produced_by_step: [1, 2, 3, 4, 5, 6]
+    visualization_tool: not specified
+  Figure 2: [workflow_diagram]
+    caption: Overview of QTRP workflow, including schematic representations for H₂O₂-sensitive cysteine mapping (2a) and intrinsic reactivity profiling (2b).
+    produced_by_step: [1, 2, 3, 4, 5, 6]
+    visualization_tool: not specified
+  Figure 3: [chromatogram]
+    caption: Display of LC-MS/MS data from a representative .raw file.
+    produced_by_step: [4]
+    visualization_tool: not specified
+  Figure 4: [volcano_plot]
+    caption: Representative MS1-based quantification results of typical QTRP experiments.
+    produced_by_step: [5, 6]
+    visualization_tool: not specified
+
+reproducibility_gaps:
+  - Raw mass spectrometry data (.raw files) not deposited in public repository (e.g., PRIDE, MassIVE)
+  - Custom post-processing algorithm not shared or described in sufficient detail
+  - pFind 3 search parameters (mass tolerances, FDR method, database version) incompletely specified
+  - No protocol for LC gradient, column type, or MS instrument settings provided
+  - IPM labeling duration and temperature not reported
+  - No statistical validation (e.g., significance thresholds, replicates n) stated for cysteine reactivity calls
+reproducibility_strengths:
+  - Detailed experimental workflow published in Nature Protocols
+  - Supplementary Data 1 and 2 provide processed, quantified cysteine-level results (XLSX)
+  - Use of pFind 3 — open-source, reproducible proteomics search engine
+  - Explicit ratio thresholds defined for biological interpretation (R_H/L, R_10:1 < 2.0)

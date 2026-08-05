@@ -1,0 +1,44 @@
+========== reproducibility_recipe entry ==========
+paper_title: Scalable Analysis of Untargeted LC-HRMS Data by Means of SQL Database Archiving.
+source_paper: Mardal M et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.2c03769, PMID: 36802528
+overall_reproducibility_score: 20/100
+
+workflow_steps: 3
+  Step 1: Peak deconvolution
+    tool: Unknown proprietary or in-house software
+    algorithm: Unknown
+    input: raw LC-HRMS data files (vendor format)
+    output: parsed peak table / feature list
+    confidence: low
+  Step 2: Database ingestion and archiving
+    tool: ScreenDB
+    algorithm: SQL-based data structuring
+    input: parsed peak table / feature list
+    output: structured SQL database with metadata layers
+    confidence: medium
+  Step 3: Retrospective querying and slicing across data layers
+    tool: SQL queries
+    algorithm: Ad-hoc relational querying
+    input: ScreenDB (SQL database)
+    output: filtered/summarized datasets (e.g., time-series trends, QC metrics, candidate analytes)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of peak deconvolution algorithm or parameters
+  - ScreenDB implementation details not disclosed (schema, ingestion scripts, SQL dialect)
+  - Raw data not deposited or accessioned
+  - No code, scripts, or database schema shared
+  - Vendor instrument data format unspecified
+  - No information on chromatographic or MS acquisition parameters
+reproducibility_strengths:
+  - Conceptual framework for scalable HRMS data management clearly articulated
+  - Demonstrated utility across 8 years and ~40,000 samples suggests robust design

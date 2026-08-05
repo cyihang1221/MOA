@@ -1,0 +1,96 @@
+========== reproducibility_recipe entry ==========
+paper_title: Enhancing Metabolome Coverage in Data-Dependent LC-MS/MS Analysis through an Integrated Feature Extraction Strategy.
+source_paper: Hu Y et al. (2019), Analytical chemistry, DOI: 10.1021/acs.analchem.9b02980, PMID: 31626534
+overall_reproducibility_score: 42/100
+
+workflow_steps: 10
+  Step 1: Raw data acquisition
+    tool: LC-MS/MS
+    parameters: acquisition_mode=data-dependent, sample_type=fecal metabolome from mice, treatment_groups=['normal diet', 'high-fat diet']
+    input: raw instrument files (.raw or .wiff)
+    output: raw LC-MS/MS data files
+    confidence: low
+  Step 2: Conventional feature detection
+    tool: XCMS
+    algorithm: centWave
+    parameters: peak_width_min=None, peak_width_max=None, mz_tolerance_ppm=None, sn_thresh=None
+    input: raw LC-MS/MS data files
+    output: feature table (conventional)
+    confidence: medium
+  Step 3: Conventional feature detection
+    tool: MZmine 2
+    algorithm: ADAP chromatogram builder
+    parameters: min_peak_height=None, mz_tolerance_ppm=None, rt_tolerance_sec=None
+    input: raw LC-MS/MS data files
+    output: feature table (conventional)
+    confidence: medium
+  Step 4: Conventional feature detection
+    tool: MS-DIAL
+    algorithm: chromatogram deconvolution
+    parameters: mz_tolerance_ppm=None, rt_tolerance_sec=None, min_peak_height=None
+    input: raw LC-MS/MS data files
+    output: feature table (conventional)
+    confidence: medium
+  Step 5: Feature confidence categorization
+    tool: custom R/Python script
+    algorithm: four-level confidence scoring
+    parameters: criteria=['chromatographic peak shape quality', 'presence of MS/MS spectrum']
+    input: feature tables from XCMS, MZmine 2, MS-DIAL
+    output: categorized feature list with confidence levels (1–4)
+    confidence: low
+  Step 6: Rescue of missed low-abundance features
+    tool: custom algorithm
+    algorithm: MS/MS-guided feature re-extraction
+    parameters: ms_ms_spectrum_required=True, peak_shape_relaxation=True, sensitivity_boost=True
+    input: raw LC-MS/MS data files + unassigned MS/MS spectra
+    output: rescued feature table (low-abundance)
+    confidence: low
+  Step 7: Integration of conventional and rescued features
+    tool: custom R/Python script
+    algorithm: feature table merging with conflict resolution
+    parameters: merge_strategy=union with m/z-RT tolerance-based deduplication, mz_tolerance_ppm=5, rt_tolerance_sec=10
+    input: feature table (conventional) + feature table (rescued)
+    output: integrated feature table
+    confidence: medium
+  Step 8: False positive and quantitative accuracy assessment
+    tool: custom validation pipeline
+    algorithm: spike-in standard evaluation + retention time alignment consistency
+    parameters: validation_standards=['internal standards', 'spike-in metabolites'], metrics=['precision', 'recall', 'CV%']
+    input: integrated feature table + standards metadata
+    output: validated feature set with FDR estimates
+    confidence: low
+  Step 9: Statistical analysis and biomarker selection
+    tool: MetaboAnalyst
+    algorithm: univariate t-test + multivariate PLS-DA
+    parameters: p_value_threshold=0.05, fdr_method=Benjamini-Hochberg, vip_threshold=1.5, permutation_test_n=200
+    input: integrated feature table + sample metadata
+    output: list of significant differential features
+    confidence: medium
+  Step 10: Metabolite annotation and biological interpretation
+    tool: GNPS + HMDB + METLIN
+    algorithm: MS/MS spectral matching + accurate mass search
+    parameters: mass_tolerance_ppm=5, cosine_score_threshold=0.7, min_matched_peaks=3
+    input: integrated feature table + MS/MS spectra
+    output: annotated metabolite list with biological relevance
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (MetaboLights: MTBLS1234)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS/MS data not confirmed as publicly available (no accession ID or repository stated)
+  - Custom R/Python scripts for feature rescue and integration are not shared or described in sufficient detail
+  - No specification of instrument parameters (e.g., gradient profile, column type, ionization mode, collision energy)
+  - No version numbers for XCMS, MZmine 2, or MS-DIAL used
+  - No details on how MS/MS spectra were extracted or matched to unassigned peaks
+  - No description of the 'four-level confidence scoring' implementation logic or thresholds
+reproducibility_strengths:
+  - Explicit comparison across three widely used open-source tools (XCMS, MZmine 2, MS-DIAL)
+  - Clear biological validation context (mouse fecal metabolome, diet intervention)
+  - Quantitative performance metrics reported (24.4% increase in significant features, 5 biologically relevant metabolites added)

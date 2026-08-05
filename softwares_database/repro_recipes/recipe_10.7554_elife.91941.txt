@@ -1,0 +1,44 @@
+========== reproducibility_recipe entry ==========
+paper_title: Machine learning and biological validation identify sphingolipids as potential mediators of paclitaxel-induced neuropathy in cancer patients.
+source_paper: Lötsch J et al. (2024), eLife, DOI: 10.7554/elife.91941, PMID: 39347767
+overall_reproducibility_score: 20/100
+
+workflow_steps: 4
+  Step 1: Lipid quantification
+    tool: High-resolution mass spectrometry lipidomics
+    input: blood plasma/serum samples
+    output: quantified lipid mediator intensities (n=255)
+    confidence: low
+  Step 2: Longitudinal differential analysis (pre- vs. post-paclitaxel)
+    tool: Supervised statistical and machine learning methods
+    input: lipid intensity matrix (n=31 patients × 255 lipids × 2 timepoints)
+    output: 27 informative lipids for therapy timing classification
+    confidence: low
+  Step 3: Case-control differential analysis (neuropathy vs. no neuropathy)
+    tool: Supervised statistical and machine learning methods
+    input: lipid intensity matrix stratified by neuropathy status
+    output: lipids differentially associated with neuropathy (e.g., SA1P)
+    confidence: low
+  Step 4: Biological validation of top hit (SA1P)
+    tool: Calcium imaging in sensory neurons
+    parameters: assay=calcium transients, targets=['TRPV1', 'S1P receptors']
+    input: synthetic sphinganine-1-phosphate (SA1P)
+    output: functional neuronal response data
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No mention of raw or processed lipidomics data deposition
+  - No specification of mass spectrometry platform (e.g., Q-Exactive, timsTOF), polarity, or chromatography conditions
+  - No details on lipid identification strategy (e.g., standards, MS/MS libraries, retention time alignment)
+  - No description of statistical/machine learning algorithms used (e.g., RF, SVM, PLS-DA), parameters, cross-validation scheme, or software (R/Python packages)
+  - No metadata schema or clinical annotation details provided beyond 'neuropathy status' and 'timepoint'
+  - No code or workflow scripts shared

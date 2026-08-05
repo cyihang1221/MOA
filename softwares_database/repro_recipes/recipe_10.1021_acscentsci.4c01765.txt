@@ -1,0 +1,58 @@
+========== reproducibility_recipe entry ==========
+paper_title: Direct (LC-)MS Identification of Regioisomers from C-H Functionalization by Partial Isotopic Labeling.
+source_paper: Sojdak CA et al. (2025), ACS central science, DOI: 10.1021/acscentsci.4c01765, PMID: 40028360
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Partial isotopic labeling
+    tool: chemical synthesis
+    parameters: labeling_agent=deuterium source, labeling_extent=partial, position=C-H bonds
+    input: complex organic substrate
+    output: partially deuterated reaction mixture
+    confidence: medium
+  Step 2: LC-MS data acquisition
+    tool: liquid chromatography-mass spectrometry
+    parameters: ionization_mode=not specified, mass_resolution=high resolution, chromatographic_separation=used but circumvented for regioisomer ID
+    input: partially deuterated reaction mixture
+    output: raw LC-MS files (.raw or vendor format)
+    confidence: low
+  Step 3: Spectral deconvolution
+    tool: custom or commercial MS deconvolution software
+    algorithm: isotopic pattern deconvolution
+    parameters: deuterium-induced mass shift=1 Da per D, regioisomer discrimination=via distinct fragment ion ratios
+    input: raw LC-MS data
+    output: deconvoluted spectra with regioisomer-specific fragment patterns
+    confidence: low
+  Step 4: Direct regioisomer identification
+    tool: interpretation of MS/MS fragmentation patterns
+    algorithm: fragment ion ratio analysis leveraging partial D-labeling
+    parameters: mass_shift_consistency=per deuterium incorporation site, fragment_retention=site-specific cleavage patterns
+    input: deconvoluted MS/MS spectra
+    output: regioisomeric product assignments and ratios
+    confidence: medium
+  Step 5: Competitive kinetic isotope effect (KIE) determination
+    tool: quantitative MS ratio analysis
+    algorithm: relative peak intensity comparison of protiated vs. deuterated analogues
+    parameters: KIE_calculation_method=ln(k_H/k_D) = ln[(I_H/I_D)_product / (I_H/I_D)_starting_material]
+    input: quantitative LC-MS peak intensities
+    output: KIE values per regioisomeric pathway
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed mass spectrometry data deposited in public repository
+  - No details on LC gradient, column, or MS instrument parameters
+  - No specification of software used for spectral deconvolution or data processing
+  - No code, scripts, or computational workflows shared
+  - No metadata schema or sample annotation provided
+reproducibility_strengths:
+  - Conceptual framework for regioisomer identification via partial D-labeling is clearly described
+  - Mechanistic rationale for fragment ion ratio interpretation is explained

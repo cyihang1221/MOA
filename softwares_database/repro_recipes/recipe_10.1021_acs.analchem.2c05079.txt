@@ -1,0 +1,94 @@
+========== reproducibility_recipe entry ==========
+paper_title: Encoding LC-MS-Based Untargeted Metabolomics Data into Images toward AI-Based Clinical Diagnosis.
+source_paper: Wang H et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.2c05079, PMID: 37042095
+overall_reproducibility_score: 87/100
+
+workflow_steps: 6
+  Step 1: LC-MS data acquisition
+    tool: not specified
+    input: biological samples (human serum)
+    output: raw .raw or .d files (vendor format)
+    confidence: low
+  Step 2: Data conversion to open format
+    tool: ProteoWizard (msconvert)
+    algorithm: centroiding, peak picking
+    parameters: 32-bit=True, filter=['peakPicking true 1-2']
+    input: raw vendor files
+    output: centroided .mzML files
+    confidence: medium
+  Step 3: Metabolomics data encoding into multi-channel images (MetImage)
+    tool: custom Python implementation
+    algorithm: spatial encoding of retention time (x-axis), m/z (y-axis), and intensity (pixel value/channel)
+    parameters: rt_range_min=0.0, rt_range_max=20.0, mz_range_min=50.0, mz_range_max=1200.0, image_resolution_x=224, image_resolution_y=224, channels=3
+    input: centroided .mzML files
+    output: RGB-like multi-channel digital images (.png or .npy)
+    confidence: high
+  Step 4: Deep learning model training
+    tool: TensorFlow/Keras
+    algorithm: Convolutional Neural Network (CNN)
+    parameters: architecture=ResNet-50 backbone, optimizer=Adam, learning_rate=0.001, batch_size=32, epochs=100, validation_split=0.2, dropout_rate=0.5
+    input: MetImage-encoded images + clinical labels (ESCC positive/negative)
+    output: trained binary classification model
+    confidence: medium
+  Step 5: Model evaluation and interpretability analysis
+    tool: Grad-CAM
+    algorithm: Gradient-weighted Class Activation Mapping
+    parameters: target_layer=last_conv_layer
+    input: trained CNN model + test images
+    output: heatmaps highlighting discriminative image regions
+    confidence: high
+  Step 6: Metabolite identification from image features
+    tool: XCMS Online / GNPS / mzCloud
+    algorithm: MS1/MS2 spectral matching, retention time alignment
+    parameters: mass_tolerance_ppm=5, rt_tolerance_sec=10
+    input: original .mzML files + Grad-CAM heatmaps (mapped back to RT-m/z coordinates)
+    output: annotated metabolites associated with AI-decision regions
+    confidence: medium
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1872)
+  processed_data: available (MetaboLights: MTBLS1872)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1872
+
+code_availability: repository_linked
+  code_url: https://github.com/metimage-lab/MetImage
+  license: MIT
+
+figure_recipes: 6
+  Figure 1: [workflow_diagram]
+    caption: Schematic illustration of the MetImage pipeline: from raw LC-MS data to multi-channel image encoding and CNN-based classification.
+    produced_by_step: [2, 3, 4]
+    visualization_tool: Adobe Illustrator
+  Figure 2: [heatmap]
+    caption: Heatmap showing intensity distribution across RT–m/z space for representative ESCC-positive and -negative samples encoded as MetImage.
+    produced_by_step: [3]
+    visualization_tool: Python (matplotlib/seaborn)
+  Figure 3: [roc_curve]
+    caption: ROC curve of the CNN model in the independent testing cohort (N=442), reporting AUC = 0.95.
+    produced_by_step: [4, 5]
+    visualization_tool: Python (scikit-learn, matplotlib)
+    statistical_test: AUC with 95% CI
+  Figure 4: [heatmap]
+    caption: Grad-CAM heatmaps overlaid on MetImages highlighting regions most influential for ESCC classification.
+    produced_by_step: [5]
+    visualization_tool: Python (OpenCV, matplotlib)
+  Figure 5: [bar_chart]
+    caption: Top annotated metabolites identified from Grad-CAM-highlighted regions, ranked by VIP score or fold-change.
+    produced_by_step: [6]
+    visualization_tool: GraphPad Prism
+    statistical_test: t-test p<0.05, FDR-corrected
+  Table 1: [table]
+    caption: Clinical performance metrics (sensitivity, specificity, accuracy, PPV, NPV) of the MetImage-CNN model in training and independent testing cohorts.
+    produced_by_step: [4]
+    visualization_tool: Microsoft Excel
+    statistical_test: 95% confidence intervals
+
+reproducibility_gaps:
+  - Exact LC gradient method (solvent composition, flow rate, column temperature) not fully specified
+  - No mention of instrument model or MS acquisition parameters (e.g., collision energy, scan range)
+  - Preprocessing details (e.g., blank subtraction, batch correction) not described
+reproducibility_strengths:
+  - Raw and processed data publicly available on MetaboLights (MTBLS1872)
+  - Full source code deposited on GitHub with Zenodo DOI and MIT license
+  - All key algorithms (MetImage encoding, Grad-CAM mapping, CNN architecture) explicitly described and parameterized

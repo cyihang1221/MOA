@@ -1,0 +1,37 @@
+========== reproducibility_recipe entry ==========
+paper_title: DaDIA: Hybridizing Data-Dependent and Data-Independent Acquisition Modes for Generating High-Quality Metabolomic Data.
+source_paper: Guo J et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.0c05022, PMID: 33465307
+overall_reproducibility_score: 30/100
+
+workflow_steps: 2
+  Step 1: Hybrid data acquisition
+    tool: DaDIA workflow
+    parameters: DIA_mode_samples=individual biological samples, DDA_mode_samples=pooled quality control (QC) samples, advantage_DIA=high feature number and MS2 spectral coverage, advantage_DDA=high MS2 spectral quality
+    input: LC-MS raw data (vendor format)
+    output: hybrid DDA + DIA raw datasets
+    confidence: medium
+  Step 2: Feature extraction and metabolite annotation
+    tool: DaDIA.R
+    parameters: method=automated extraction and streamlined annotation of heterogeneous DDA/DIA data
+    input: hybrid DDA + DIA raw datasets
+    output: feature table with MS2 annotations
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS data not deposited in any public repository
+  - DaDIA.R source code not shared or linked (no GitHub/DOI/repository mentioned)
+  - No details on LC gradient, instrument parameters, or vendor platform (e.g., Q-TOF, Orbitrap)
+  - No description of feature detection, alignment, normalization, or statistical methods
+  - No information on databases used for metabolite annotation (e.g., HMDB, METLIN, GNPS) or matching criteria (mass tolerance, score thresholds)
+reproducibility_strengths:
+  - Conceptual workflow clearly described (DIA on samples + DDA on pooled QC)
+  - Demonstrated biological utility in human urine and leukemia study

@@ -1,0 +1,107 @@
+========== reproducibility_recipe entry ==========
+paper_title: Universal, untargeted detection of bacteria in tissues using metabolomics workflows.
+source_paper: Chen W et al. (2025), Nature communications, DOI: 10.1038/s41467-024-55457-7, PMID: 39747039
+overall_reproducibility_score: 58/100
+
+workflow_steps: 10
+  Step 1: Data conversion (vendor to mz5)
+    tool: ProteoWizard msconvert (v3.0.4043)
+    algorithm: default Thermo.raw conversion
+    input: raw .raw files
+    output: .mz5 files
+    confidence: high
+  Step 2: Spectral preprocessing and scan selection
+    tool: MATLAB (vv2023a (v9.14.0))
+    algorithm: intensity-based scan filtering
+    parameters: intensity_threshold_multiplier=3, intensity_reference=mean total intensity per file, mz_range_min=200, mz_range_max=1000
+    input: .mz5 files
+    output: interpolated mean spectra (per isolate)
+    confidence: high
+  Step 3: Peak detection
+    tool: MATLAB findpeaks (vSignal Processing Toolbox v9.2)
+    algorithm: local maxima detection with noise thresholding
+    parameters: noise_threshold_percentile=85, noise_threshold_multiplier=2, mz_tolerance_ppm=15
+    input: mean spectra (m/z 200–1000)
+    output: peak list (5866 m/z features)
+    confidence: high
+  Step 4: Frequency-based peak filtering and smoothing
+    tool: MATLAB (custom) (vv2023a)
+    algorithm: two-stage smoothing (moving sum → Gaussian window) + local maxima selection
+    parameters: minimum_frequency_threshold=10, mz_tolerance_ppm=15, smoothing_window_type=['moving_sum', 'Gaussian']
+    input: peak frequency matrix (597 × 5866)
+    output: filtered feature table (5866 variables)
+    confidence: medium
+  Step 5: Univariate statistical analysis (ANOVA + post-hoc)
+    tool: MATLAB Statistics and Machine Learning Toolbox (vv12.5)
+    algorithm: One-way ANOVA followed by Tukey’s HSD
+    parameters: alpha=0.05, test_type=two-tailed, post_hoc_method=Tukey's HSD, phylogenetic_levels_analyzed=7, minimum_observations_per_group=3, consistency_rule=phylogenetic hierarchy check from species upward
+    input: total-intensity-normalised feature matrix (597 × 5866)
+    output: p-values and group-wise significance assignments per taxon level
+    confidence: high
+  Step 6: Taxon-specific marker (TSM) selection via ROC criteria
+    tool: MATLAB (custom) (vv2023a)
+    algorithm: ROC-based specificity filtering
+    parameters: tpr_threshold=0.8, fpr_threshold=0.1, mz_tolerance_ppm_internal=15, mz_tolerance_ppm_external=50, minimum_observations=3, exclusion_criteria=['Genus sp.', 'inconsistent phylogeny', 'no similar group'], all_others_but_two=True, taxonomic_levels_considered=['Gram', 'phylum', 'class', 'order', 'family', 'genus', 'species']
+    input: ANOVA/HSD results + ROC curves per variable and taxon
+    output: 359 taxon-specific markers (TSMs)
+    confidence: high
+  Step 7: Internal validation on remaining isolates
+    tool: MATLAB (custom) (vv2023a)
+    algorithm: TSM matching and AUC-ROC calculation
+    parameters: mz_tolerance_ppm=15, normalisation_range_mz_min=200, normalisation_range_mz_max=1000, minimum_observations_for_auc=3
+    input: REIMS .raw files (2677 isolates, not in training set)
+    output: AUC-ROC scores for 263 TSMs
+    confidence: high
+  Step 8: External validation on independent REIMS platform
+    tool: MATLAB (custom) (vv2023a)
+    algorithm: TSM matching and AUC-ROC calculation
+    parameters: mz_tolerance_ppm=50, normalisation_range_mz_min=200, normalisation_range_mz_max=1000, minimum_observations_for_auc=3
+    input: REIMS .raw files (564 isolates, Waters Xevo G2-XS Q-ToF)
+    output: AUC-ROC scores for 134 TSMs
+    confidence: high
+  Step 9: Application to complex biological samples
+    tool: MATLAB (custom) (vv2023a)
+    algorithm: TSM detection and presence/absence scoring
+    parameters: mz_tolerance_ppm=15, ion_mode=negative, sample_types=['DESI-MS imaging', 'LC-MS fecal', 'tissue sections'], platform_agnostic=True
+    input: preprocessed MS datasets (human/murine GI tissues, fecal LC-MS, DESI-MSI)
+    output: binary or semi-quantitative TSM detection matrix across samples
+    confidence: medium
+  Step 10: Multivariate validation (PCA)
+    tool: MATLAB (vv2023a)
+    algorithm: Principal Components Analysis
+    parameters: normalisation=total intensity, transformation=log10 with offset 1
+    input: TSM-subset feature matrix (or full feature matrix)
+    output: PCA scores and loadings
+    confidence: high
+
+data_availability:
+  raw_data: available (MetaboLights: MTLBS10328)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS10328
+
+code_availability: not_mentioned
+
+figure_recipes: 2
+  Fig. 1: [taxonomy_tree]
+    caption: Representation of the bacterial spectral database composition at phylum-, class-, and order-level.
+    produced_by_step: [4]
+    visualization_tool: MATLAB (custom plotting)
+  Supplementary Fig. 9: [roc_curve]
+    caption: Examples of ROC curves used to evaluate taxon-specificity of candidate markers.
+    produced_by_step: [6]
+    visualization_tool: MATLAB (custom)
+    statistical_test: ROC analysis (TPR ≥ 0.8, FPR ≤ 0.10)
+
+reproducibility_gaps:
+  - MATLAB code for peak picking, smoothing, ROC filtering, and validation is not shared (no repository or DOI provided)
+  - No details on custom MATLAB scripts (e.g., smoothing kernel width, Gaussian sigma, moving sum window size)
+  - Instrument parameters only partially specified (e.g., no chromatographic gradient for LC-MS data, no DESI spray voltage/gas flow)
+  - No public access to Supplementary Data 1, 2, and 7 (only referenced; no accession or URL given)
+  - Commercial software dependency (MATLAB) without open-source alternatives disclosed
+  - Ambiguity in 'scan detection' method for external validation datasets — same as step 2 but no confirmation of identical interpolation or scaling
+reproducibility_strengths:
+  - Full raw spectral database deposited in MetaboLights (MTBLS10328)
+  - Explicit mz tolerance (15 ppm internal / 50 ppm external), TPR/FPR thresholds, and ANOVA alpha defined
+  - Detailed experimental metadata: ethics approvals, culturing conditions, instrument models, ion modes, m/z ranges
+  - Validation strategy clearly stratified into internal/external/complex-sample tiers

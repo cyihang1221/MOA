@@ -1,0 +1,66 @@
+========== reproducibility_recipe entry ==========
+paper_title: Creation of an Open-Access High-Resolution Tandem Mass Spectral Library of 1000 Food Toxicants.
+source_paper: Padilla-González F et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c03020, PMID: 41070935
+overall_reproducibility_score: 78/100
+
+workflow_steps: 6
+  Step 1: Compound selection and preparation
+    tool: manual curation
+    parameters: n_compounds=1001, compound_categories=['food contaminants', 'residues', 'hazardous compounds']
+    input: chemical compound list with identifiers (CAS, SMILES, InChIKey)
+    output: prepared standards for MS analysis
+    confidence: high
+  Step 2: LC-MS/MS data acquisition
+    tool: Orbitrap IQ-X Tribrid mass spectrometer
+    parameters: ionization_mode=positive, chromatography=ultrahigh-performance liquid chromatography, collision_energies=7, spectral_resolution=high-resolution MS2, instrument_vendor=Thermo Fisher Scientific
+    input: pure compound standards
+    output: raw .raw files (Thermo format)
+    confidence: high
+  Step 3: Spectral curation and quality control
+    tool: manual curation
+    parameters: curation_criteria=['signal-to-noise ratio', 'peak shape', 'fragment ion plausibility', 'retention time consistency']
+    input: raw .raw files
+    output: curated MS/MS spectra in mzML or MGF format
+    confidence: high
+  Step 4: Metadata annotation
+    tool: custom curation pipeline
+    parameters: metadata_fields=['common_name', 'CAS', 'SMILES', 'InChIKey', 'retention_time', 'compound_class']
+    input: curated spectra + compound identifiers
+    output: fully annotated spectral library (JSON/SQLite/MGF with metadata)
+    confidence: high
+  Step 5: Library deposition and dissemination
+    tool: GNPS platform + custom website
+    parameters: repositories=['GNPS', 'WUR Food Safety Library website'], standards_compliance=['FAIR principles']
+    input: annotated spectral library
+    output: publicly accessible online spectral library
+    confidence: high
+  Step 6: Comparative library analysis
+    tool: Molecular networking + MS2Query
+    algorithm: molecular networking (GNPS), MS2Query scoring
+    parameters: comparison_repositories=['GNPS', 'MassBank', 'MoNA', 'MSnLib'], uniqueness_threshold=0.222, match_reliability_threshold=0.38
+    input: WFSR library + public spectral libraries
+    output: uniqueness statistics and match coverage report
+    confidence: medium
+
+data_availability:
+  raw_data: available (GNPS)
+  processed_data: available (GNPS and WUR website)
+  metadata: available
+  data_urls: https://www.wur.nl/en/show/food-safety-mass-spectral-library.htm
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw .raw instrument files not explicitly stated as publicly deposited (only curated spectra confirmed available)
+  - No details on LC gradient, column, or mobile phase composition — limits chromatographic reproducibility
+  - No versioning or timestamping of the GNPS library submission (e.g., GNPS job ID or library version number)
+  - MS2Query and molecular networking parameters (e.g., cosine threshold, network clustering settings) not specified
+  - No code or scripts provided for curation, metadata integration, or comparative analysis
+reproducibility_strengths:
+  - Library fully FAIR-compliant and publicly accessible via two channels (GNPS + dedicated website)
+  - Comprehensive chemical metadata included (CAS, SMILES, InChIKey, RT, class)
+  - Spectra acquired under standardized conditions (7 collision energies, positive mode, Orbitrap IQ-X Tribrid)
+  - Quantitative uniqueness and coverage metrics reported against major public repositories
+  - Explicit commitment to future expansion (negative mode, more compounds)

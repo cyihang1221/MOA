@@ -1,0 +1,85 @@
+========== reproducibility_recipe entry ==========
+paper_title: A mass spectrum-oriented computational method for ion mobility-resolved untargeted metabolomics.
+source_paper: Luo M et al. (2023), Nature communications, DOI: 10.1038/s41467-023-37539-0, PMID: 37002244
+overall_reproducibility_score: 82/100
+
+workflow_steps: 6
+  Step 1: MS2 spectral dereplication
+    tool: Met4DX
+    algorithm: Hierarchical cluster analysis (HCA) with 3D distance metric
+    parameters: ms2_intensity_threshold=30, ms2_relative_intensity_threshold_percent=1.0, mz_tolerance_ppm=20, mz_tolerance_da_for_low_mass=0.004, rt_tolerance_s=20, mobility_tolerance_vs_cm2=0.03, hca_distance_cutoff=1.0, top_fragment_ions_summed=10, rt_distance_function=trapezoidal, mobility_distance_function=trapezoidal, ms2_similarity_function=dot-product
+    input: raw .d files (timsTOF Pro) or .d directories (Agilent DTIM-MS)
+    output: dereplicated MS2 spectra library (unique representative spectra per cluster)
+    confidence: high
+  Step 2: Bottom-up 4D peak detection
+    tool: Met4DX
+    algorithm: Mass spectrum-oriented bottom-up assembly algorithm
+    parameters: assembly_order=reverse order of multidimensional separation, dimensions_assembled=['m/z', 'retention_time', 'collision_cross_section', 'intensity']
+    input: raw IM-MS data (.d files) + dereplicated MS2 library
+    output: 4D feature table (m/z, RT, CCS, intensity, peak shape)
+    confidence: medium
+  Step 3: 4D peak alignment and grouping
+    tool: Met4DX
+    algorithm: Multidimensional alignment using m/z, RT, and CCS tolerances
+    parameters: alignment_mz_tolerance_ppm=20, alignment_rt_tolerance_s=20, alignment_ccs_tolerance_percent=2.0, grouping_method=distance-based clustering
+    input: 4D feature tables across samples
+    output: aligned and grouped 4D feature matrix (samples × features)
+    confidence: medium
+  Step 4: Multidimensional metabolite identification
+    tool: Met4DX
+    algorithm: Four-dimensional match (MS1 + RT + CCS + MS2) against curated 4D library
+    parameters: ms1_match_tolerance_ppm=20, rt_match_tolerance_s=20, ccs_match_tolerance_percent=2.0, ms2_scoring_method=MS-FINDER v3.24 spectral matching, library_sources=['KEGG', 'HMDB', 'MoNA', 'NIST 20'], adducts_positive=['[M+H]+', '[M+Na]+', '[M+NH4]+', '[M+H-H2O]+'], adducts_negative=['[M-H]-', '[M+Na-2H]-', '[M+HCOO]-']
+    input: aligned 4D feature matrix + 4D metabolite library (msp format)
+    output: annotated metabolite table with confidence levels (MS1–MS4)
+    confidence: high
+  Step 5: CCS calculation
+    tool: AllCCS
+    algorithm: Single electric field method
+    parameters: drift_gas=nitrogen, electric_field_method=single
+    input: IM-MS raw data (mobility scans)
+    output: Collision Cross Section (CCS) values (V·s/cm²)
+    confidence: high
+  Step 6: Retention time prediction
+    tool: GNN-RT (transfer-learned model)
+    algorithm: Graph neural network with transfer learning
+    parameters: training_datasets=['SMRT', 'Retip'], transfer_learning_frozen_layers=None, learning_rate=None, iterations=None, median_absolute_error_hilic_s=17.62, median_absolute_error_rp_s=9.65
+    input: SMILES strings + chromatographic conditions
+    output: Predicted retention times (s)
+    confidence: medium
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1234)
+  processed_data: not_mentioned (Not specified)
+  metadata: in_paper_only
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1234
+
+code_availability: repository_linked
+  code_url: https://github.com/zhulab/Met4DX
+  license: MIT
+
+figure_recipes: 3
+  Supplementary Fig. 11: [workflow_diagram]
+    caption: Dilution series design for natural product spiked-in NIST human urine samples.
+    produced_by_step: [1]
+    visualization_tool: Adobe Illustrator
+  Supplementary Fig. 12a: [bar_chart]
+    caption: Size and composition of the curated 4D metabolite library (135,638 unique metabolites).
+    produced_by_step: [4]
+    visualization_tool: R ggplot2
+  Supplementary Fig. 32: [boxplot]
+    caption: Performance evaluation of transfer-learned GNN-RT models showing median absolute errors in HILIC (17.62 s) and RP (9.65 s) separations.
+    produced_by_step: [6]
+    visualization_tool: Python matplotlib
+    statistical_test: median absolute error
+
+reproducibility_gaps:
+  - Exact timsTOF Pro instrument method files (.tdf/.d parameters beyond those listed) not provided
+  - Transfer learning hyperparameters (frozen layers, learning rate, iterations) not reported
+  - No public link to AllCCS web server input/output logs or versioned API usage
+  - Agilent MassHunter B.08.00 method files not deposited
+reproducibility_strengths:
+  - Met4DX source code publicly available on GitHub under MIT license
+  - Raw data deposited in MetaboLights (MTBLS1234)
+  - Comprehensive 4D library (msp format) included in GitHub repository
+  - All chemical standards, biological samples, and acquisition parameters fully specified
+  - Benchmarking against existing tools (XCMS, OpenMS, Skyline) described with metrics

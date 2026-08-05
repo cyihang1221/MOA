@@ -1,0 +1,74 @@
+========== reproducibility_recipe entry ==========
+paper_title: DecoID improves identification rates in metabolomics through database-assisted MS/MS deconvolution.
+source_paper: Stancliffe E et al. (2021), Nature methods, DOI: 10.1038/s41592-021-01195-3, PMID: 34239103
+overall_reproducibility_score: 82/100
+
+workflow_steps: 3
+  Step 1: MS/MS spectral deconvolution of chimeric spectra
+    tool: DecoID
+    algorithm: LASSO regression
+    parameters: database_matching=user-defined MS/MS database, spectral_mixing=computational mixing of database spectra
+    input: experimental chimeric MS/MS spectra
+    output: deconvolved metabolite identifications
+    confidence: medium
+  Step 2: Metabolite identification via spectral matching
+    tool: DecoID
+    algorithm: direct spectral matching (baseline comparison)
+    parameters: comparison_method=DecoID vs. direct spectral matching, FDR_control=false discovery rate controlled (no increase observed)
+    input: deconvolved spectra and raw MS/MS spectra
+    output: identified metabolites with confidence scores
+    confidence: medium
+  Step 3: Validation on public and in-house datasets
+    tool: DecoID
+    algorithm: cross-dataset benchmarking
+    parameters: datasets_used=['MetaboLights', 'human plasma DDA/DIA', 'NIST SRM 1950', 'mouse xenograft RPLC/MS/MS'], performance_metric=identification rate increase (>30% for DDA)
+    input: publicly available and in-house MS/MS datasets
+    output: quantified improvement in metabolite identifications
+    confidence: high
+
+data_availability:
+  raw_data: available (MetaboLights)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: https://github.com/pattilab/DecoID
+  license: MIT
+
+figure_recipes: 6
+  Figure 1: [workflow_diagram]
+    caption: Illustrates DecoID's deconvolution approach to resolve chimeric MS/MS spectra using database-assisted LASSO regression.
+    produced_by_step: [1]
+    visualization_tool: Adobe Illustrator or similar
+  Figure 2: [other]
+    caption: Demonstrates orphan isotopologue contamination and MS/MS spectrum prediction accuracy.
+    produced_by_step: [1]
+    visualization_tool: Adobe Illustrator or similar
+  Figure 3: [bar_chart]
+    caption: Shows improved metabolite identification rates in DDA and DIA IROA datasets using DecoID versus direct matching.
+    produced_by_step: [2, 3]
+    visualization_tool: ggplot2 or GraphPad Prism
+    statistical_test: paired comparison of identification counts (no explicit test named; significance implied by >30% increase)
+  Figure 4: [bar_chart]
+    caption: Quantifies DecoID's performance gain on NIST SRM 1950 reference material dataset.
+    produced_by_step: [3]
+    visualization_tool: ggplot2 or GraphPad Prism
+  Figure 5: [bar_chart]
+    caption: Reports increased identification rate in human plasma DIA dataset using DecoID.
+    produced_by_step: [3]
+    visualization_tool: ggplot2 or GraphPad Prism
+  Figure 6: [bar_chart]
+    caption: Shows enhanced metabolite identification in a publicly available mouse xenograft RPLC/MS/MS dataset.
+    produced_by_step: [3]
+    visualization_tool: ggplot2 or GraphPad Prism
+
+reproducibility_gaps:
+  - Exact MS/MS acquisition parameters (e.g., isolation window, collision energy) not specified for all datasets
+  - No detailed description of preprocessing steps (e.g., peak picking, retention time alignment) prior to DecoID input
+  - MetaboLights accession IDs for used datasets not provided in paper or captions
+  - No specification of spectral similarity scoring method or FDR estimation procedure within DecoID
+reproducibility_strengths:
+  - DecoID source code publicly available on GitHub under MIT license
+  - Zenodo DOI provided for archived software version
+  - Validation across multiple independent datasets (public and in-house)
+  - Explicit performance metric reported (>30% identification increase in DDA)

@@ -1,0 +1,116 @@
+========== reproducibility_recipe entry ==========
+paper_title: 5-Formylcytosine is not a prevalent RNA modification in mammalian cells.
+source_paper: Dehnen JA et al. (2025), Nature communications, DOI: 10.1038/s41467-025-66090-3, PMID: 41219180
+overall_reproducibility_score: 52/100
+
+workflow_steps: 9
+  Step 1: RNA isolation and rRNA depletion
+    tool: QIAzol Lysis Reagent + TURBO DNase + NEBNext rRNA Depletion Kit v2 (vv2)
+    parameters: rRNA_depletion_kit_species=Human/Mouse/Rat, DNase_treatment=TURBO DNase, polyA_selection_rounds=3
+    input: cultured cell lysate
+    output: rRNA-depleted total RNA
+    confidence: high
+  Step 2: Chemical treatment (PyBo or Mal)
+    tool: pyridine borane (PyBo) / malononitrile (Mal)
+    parameters: PyBo_concentration=900, PyBo_buffer=600 mM sodium acetate, pH 5.2, PyBo_incubation_time_h=24, PyBo_temperature_C=37, Mal_concentration=150, Mal_buffer=1x TE buffer, pH 7.4, Mal_incubation_time_h=24, Mal_temperature_C=37
+    input: rRNA-depleted total RNA
+    output: chemically modified RNA
+    confidence: high
+  Step 3: Library preparation for NGS
+    tool: TruSeq Stranded mRNA Library Prep kit (Illumina) / NEXTFLEX Small RNA-Seq Kit V3 (vIllumina 20020594; Bioo Scientific V19.01)
+    parameters: TruSeq_starting_RNA_ng=10, TruSeq_fragmentation_step_used=True, TruSeq_polyA_enrichment_excluded=True, NEXTFLEX_starting_RNA_ng=1.4, NEXTFLEX_PCR_cycles=21, NEXTFLEX_size_selection_range_nt=[18, 362], NEXTFLEX_adapter_ligation_overnight=True, NEXTFLEX_adapter_ligation_temperature_C=20
+    input: chemically modified RNA
+    output: sequencing library
+    confidence: high
+  Step 4: Sequencing
+    tool: Illumina NovaSeq 6000 S4 / NextSeq 500
+    parameters: NovaSeq_read_length_bp=100, NovaSeq_mode=paired-end, NextSeq_read_length_bp=80, NextSeq_mode=paired-end, NextSeq_index_cycles=6
+    input: sequencing library
+    output: FASTQ files
+    confidence: high
+  Step 5: Quality control and alignment
+    tool: FastQC + STAR (vFastQC v0.11.9, STAR v2.7.10a)
+    algorithm: STAR aligner with soft-clipping
+    parameters: STAR_outFilterScoreMinOverLread=0.33, STAR_outFilterMatchNminOverLread=0.33, STAR_outFilterMismatchNoverReadLmax=0.02, STAR_sjdbOverhang=99, STAR_genome_reference=GRCm39.dna_sm.primary_assembly.fa (Ensembl 107), STAR_annotation_gtf=M.mus.GRCm39.107.gtf
+    input: FASTQ files
+    output: BAM files + alignment metrics
+    confidence: high
+  Step 6: rRNA contamination estimation
+    tool: BWA-mem (vv0.7.17)
+    algorithm: BWA-mem alignment
+    parameters: BWA_reference=45S pre-rRNA (NR_046233.2), BWA_parameters=default
+    input: FASTQ files
+    output: rRNA mapping percentage
+    confidence: high
+  Step 7: Feature-level read counting
+    tool: Rsubread (vv2.12.3)
+    algorithm: fragment counting with strand specificity
+    parameters: Rsubread_isPairedEnd=True, Rsubread_strand_specificity=2, Rsubread_minFragLength=25
+    input: BAM files
+    output: gene/feature count matrix
+    confidence: high
+  Step 8: C-to-T conversion quantification (Sanger)
+    tool: Sanger sequencing + custom signal extraction
+    algorithm: peak height ratio from.ab1 chromatograms
+    parameters: C_to_T_formula=T/(C + T)*100, sequencing_service=StarSEQ GmbH
+    input: PCR-amplified cDNA
+    output: percent C-to-T conversion per site
+    confidence: high
+  Step 9: f5C site calling and validation
+    tool: custom analysis (not named)
+    algorithm: site-specific C-to-T conversion enrichment over mock + chemical specificity controls (PyBo vs Mal)
+    parameters: validation_criteria=['ALKBH1-dependence', 'absence in TET DKO/TKO', 'absence in Nat10 KD', 'mt-tRNAMet context']
+    input: Sanger %C-to-T + NGS alignment + knockout/KD metadata
+    output: validated f5C sites (e.g., mt-tRNAMet position 34)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (NCBI SRA)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 6
+  Table 1: [table]
+    caption: Compares chemical-assisted sequencing methods (PyBo-seq, Mal-seq, FIBo-seq) for f5C detection, including reaction conditions and specificity profiles.
+    produced_by_step: [2, 3, 9]
+    visualization_tool: LaTeX / manuscript typesetting
+  Fig. 1: [volcano_plot]
+    caption: PyBo-seq identifies C-to-T sites in mESCs; highlights ALKBH1-dependent and -independent sites, with TET KO showing no reduction.
+    produced_by_step: [5, 7, 9]
+    visualization_tool: R/ggplot2 or similar (not specified)
+    statistical_test: fold-change and significance thresholds applied (not quantified)
+  Fig. 2: [bar_chart]
+    caption: PyBo- and Mal-seq show no significant C-to-T conversion at candidate mRNA sites, indicating absence of f5C outside mt-tRNAMet.
+    produced_by_step: [8, 9]
+    visualization_tool: GraphPad Prism or similar (not specified)
+    statistical_test: comparison of %C-to-T between WT/KO/mock (implied t-test or ANOVA)
+  Fig. 3: [bar_chart]
+    caption: FIBo-seq demonstrates superior sensitivity and specificity for f5C versus PyBo-seq, validated on synthetic oligos and mt-tRNAMet.
+    produced_by_step: [2, 8, 9]
+    visualization_tool: GraphPad Prism or similar (not specified)
+    statistical_test: two-way ANOVA or paired t-test (implied by error bars and significance stars)
+  Fig. 4: [boxplot]
+    caption: Quantification of f5C34 in mt-tRNAMet across genotypes shows ALKBH1 dependence and mitochondrial enrichment.
+    produced_by_step: [8, 9]
+    visualization_tool: GraphPad Prism or similar (not specified)
+    statistical_test: unpaired t-test or one-way ANOVA with post-hoc test
+  Fig. 5: [sequence_logo]
+    caption: Motif analysis reveals PyBo reactivity at hyper-reactive cytidines in exposed CUMC contexts, explaining false positives in prior studies.
+    produced_by_step: [5, 7, 9]
+    visualization_tool: WebLogo or similar (not specified)
+    statistical_test: motif enrichment (p-value not reported)
+
+reproducibility_gaps:
+  - Raw sequencing data not deposited in public repository (SRA/GEO accession missing)
+  - Custom FIBo-seq chemistry protocol not fully detailed (reagent concentrations, timing, purification steps omitted)
+  - No code or scripts provided for NGS data processing (STAR/Rsubread pipelines, C-to-T site calling logic)
+  - Sanger chromatogram analysis script not shared (ab1 parsing, peak integration method unspecified)
+  - No reference to processed count matrices or bedGraph/bigWig files for browser visualization
+reproducibility_strengths:
+  - Detailed wet-lab protocols (reagents, concentrations, incubation times, kits)
+  - Explicit software versions reported (FastQC v0.11.9, STAR v2.7.10a, Rsubread v2.12.3)
+  - Full parameterization of alignment and counting tools
+  - Use of standard open-source bioinformatics tools (STAR, Rsubread, BWA-mem, FastQC)
+  - Comprehensive controls (mock, KO, KD, chemical specificity via Mal-seq)

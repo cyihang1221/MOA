@@ -1,0 +1,37 @@
+========== reproducibility_recipe entry ==========
+paper_title: FLASHQuant: A Fast Algorithm for Proteoform Quantification in Top-Down Proteomics.
+source_paper: Kim J et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.4c03117, PMID: 39424290
+overall_reproducibility_score: 70/100
+
+workflow_steps: 2
+  Step 1: Proteoform feature detection and deconvolution
+    tool: FLASHQuant
+    algorithm: MS1-based label-free quantification with coelution resolution
+    input: raw LC-MS data (e.g., .mzML)
+    output: quantified proteoform features (intensity, retention time, m/z, charge)
+    confidence: medium
+  Step 2: Cross-run feature alignment
+    tool: ConsensusFeatureGroupDetector
+    algorithm: consensus feature grouping
+    input: per-run proteoform feature tables
+    output: aligned consensus feature table
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://openms.org/flashquant/
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposition reported
+  - No specific algorithmic parameters (e.g., mass tolerance, RT window, scoring thresholds) provided for FLASHQuant or ConsensusFeatureGroupDetector
+  - No benchmark dataset identifiers or access details provided
+reproducibility_strengths:
+  - Open-source implementation publicly available at openms.org
+  - Platform-independent software
+  - Accompanied by a documented alignment component (ConsensusFeatureGroupDetector)

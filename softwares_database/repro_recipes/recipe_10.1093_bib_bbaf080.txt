@@ -1,0 +1,64 @@
+========== reproducibility_recipe entry ==========
+paper_title: GcDUO: an open-source software for GC × GC-MS data analysis.
+source_paper: Llambrich M et al. (2025), Briefings in bioinformatics, DOI: 10.1093/bib/bbaf080, PMID: 40037642
+overall_reproducibility_score: 72/100
+
+workflow_steps: 6
+  Step 1: Data import
+    tool: GcDUO
+    input: raw GC×GC-MS data files (e.g., .cdf, .u32, or vendor-specific formats)
+    output: imported multiway array (retention time 1 × retention time 2 × mass spectrum)
+    confidence: medium
+  Step 2: Region of interest (ROI) selection
+    tool: GcDUO
+    input: imported multiway array
+    output: selected ROIs (sub-arrays representing chromatographic peaks or features)
+    confidence: low
+  Step 3: Deconvolution using PARAFAC
+    tool: GcDUO
+    algorithm: PARAFAC
+    parameters: max_iterations=500, convergence_threshold=1e-06
+    input: ROIs
+    output: deconvoluted pure component profiles (elution profiles × mass spectra)
+    confidence: medium
+  Step 4: Deconvolution and cross-sample alignment using PARAFAC2
+    tool: GcDUO
+    algorithm: PARAFAC2
+    parameters: max_iterations=500, convergence_threshold=1e-06
+    input: multi-sample ROI arrays
+    output: sample-aligned component profiles with flexible retention time modeling
+    confidence: medium
+  Step 5: Peak annotation
+    tool: GcDUO
+    algorithm: mass spectral library matching
+    parameters: library=NIST, match_threshold=0.7
+    input: deconvoluted mass spectra
+    output: annotated peak table (compound name, CAS, confidence score)
+    confidence: medium
+  Step 6: Data integration and visualization
+    tool: GcDUO
+    input: annotated peak table and component profiles
+    output: integrated results (e.g., heatmaps, score plots, chromatogram overlays)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/GcDUO/GcDUO
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed GC×GC-MS data provided or referenced
+  - No specific parameter values for ROI selection or visualization modules
+  - NIST library version not specified
+  - Validation dataset not publicly accessible
+reproducibility_strengths:
+  - Fully open-source R package with MIT license
+  - Explicit implementation of both PARAFAC and PARAFAC2 with convergence parameters
+  - Modular architecture clearly described
+  - High correlation (R² = 0.9) validated against gold-standard software

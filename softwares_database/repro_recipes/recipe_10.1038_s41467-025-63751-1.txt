@@ -1,0 +1,90 @@
+========== reproducibility_recipe entry ==========
+paper_title: Best practices and tools in R and Python for statistical processing and visualization of lipidomics and metabolomics data.
+source_paper: Idkowiak J et al. (2025), Nature communications, DOI: 10.1038/s41467-025-63751-1, PMID: 41027880
+overall_reproducibility_score: 78/100
+
+workflow_steps: 7
+  Step 1: Descriptive statistics computation
+    tool: R/Python base libraries
+    algorithm: mean, median, mode, SD, IQR, skewness, kurtosis, Pearson/Spearman correlation
+    parameters: correlation_method=Spearman for skewed/non-normal data, Pearson for normal, outlier_definition_tukey=Q1 - 1.5*IQR, Q3 + 1.5*IQR, outlier_definition_adjusted_boxplot=medcouple-based fences: Q3 + 1.5*exp(3*MC)*IQR (upper), Q1 - 1.5*exp(-4*MC)*IQR (lower) for MC ≥ 0
+    input: quantified lipid/metabolite abundance matrix (e.g., peak area/intensity table)
+    output: summary statistics table (location, dispersion, shape, correlation matrix)
+    confidence: high
+  Step 2: Box plot construction (Tukey and adjusted)
+    tool: robustbase (R), litteR (R), seaborn/matplotlib (Python)
+    algorithm: Tukey boxplot; medcouple-adjusted boxplot
+    parameters: whisker_method=Tukey (1.5×IQR) or medcouple-adjusted, jitter=enabled for dot overlay, transparency=alpha < 1 to handle overplotting, paired_lines=enabled for within-subject designs
+    input: abundance matrix with group labels
+    output: annotated box plots (with dots, violin overlays, paired lines)
+    confidence: high
+  Step 3: Fold change calculation
+    tool: R/Python base libraries
+    algorithm: log2(ratio of group means or medians)
+    parameters: log_base=2, central_tendency=mean for symmetric, median for skewed distributions
+    input: group-wise summary statistics (means/medians per lipid/metabolite)
+    output: fold change vector (log2FC)
+    confidence: high
+  Step 4: Two-group statistical testing
+    tool: R (stats), Python (scipy)
+    algorithm: t-test (unpaired/paired/Welch), Mann–Whitney U test (Wilcoxon rank-sum)
+    parameters: test_selection_criteria=normality (Shapiro-Wilk) and homoscedasticity (F-test or Levene’s) assessed first, t_test_type=two-sided by default; Welch’s correction if variances unequal, mann_whitney_handling_ties=average rank assignment, alpha=0.05
+    input: abundance matrix with two-group labels
+    output: p-value vector, test statistic (t/U/Z), effect size (Cohen’s d, rank-biserial)
+    confidence: high
+  Step 5: Multi-group statistical testing
+    tool: R (stats), Python (scipy)
+    algorithm: one-way ANOVA (parametric), Kruskal–Wallis test (non-parametric)
+    parameters: anova_assumptions=normality, homoscedasticity, independence, post_hoc=Tukey HSD or Dunn’s test (if ANOVA/KW significant), alpha=0.05
+    input: abundance matrix with ≥3-group labels
+    output: p-value vector, F-statistic or H-statistic, post-hoc pairwise results
+    confidence: medium
+  Step 6: Missing value classification and imputation
+    tool: R (impute, missForest, VIM), Python (scikit-learn, fancyimpute, sklearn.impute)
+    algorithm: kNN imputation, random forest imputation, half-minimum (hm), quantile regression imputation for left-censored (QRILC)
+    parameters: imputation_strategy_by_missingness={'MCAR/MAR': ['kNN', 'random forest'], 'MNAR': ['half-minimum', 'QRILC']}, filter_threshold=remove features with >35% missing values, knn_k=default or optimized (not specified)
+    input: raw abundance matrix with NA/NaN entries
+    output: imputed abundance matrix (no missing values)
+    confidence: medium
+  Step 7: Data normalization and preprocessing
+    tool: R (norm, metid), Python (scikit-learn, pandas)
+    algorithm: batch correction, internal standard-based concentration recalibration, sample amount normalization
+    parameters: normalization_target=analytical variation (batch effects, signal intensity drift), preferred_pre-acquisition_normalization=yes (e.g., spike-in standards, total sum, PQN)
+    input: imputed abundance matrix
+    output: normalized abundance matrix (biological variation emphasized)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: https://gitbook.com/omitted-for-anonymity
+  license: not_mentioned
+
+figure_recipes: 2
+  Fig. 2: [boxplot]
+    caption: Illustrates components and construction of classic Tukey box plots (A), adjusted box plots for skewed distributions (B), relationship between distribution shape and box plot appearance (C), comparison
+    produced_by_step: [2]
+    visualization_tool: ['robustbase', 'littler', 'ggplot2', 'seaborn']
+    statistical_test: none (descriptive only)
+  Fig. 3: [workflow_diagram]
+    caption: Roadmap for selecting common statistical tests (A), null/alternative hypotheses (B), and definitions of test statistics and rejection criteria for t-test and Mann–Whitney U test (C, D).
+    produced_by_step: [4, 5]
+    visualization_tool: ['R base graphics', 'matplotlib']
+    statistical_test: t-test, Mann–Whitney U test, one-way ANOVA (implied)
+
+reproducibility_gaps:
+  - No raw or processed dataset referenced — no accession IDs or repositories named
+  - GitBook URL anonymized/omitted in text (‘associated GitBook code repository’ without link)
+  - Normalization methods lack technical detail (e.g., no specification of PQN parameters, internal standard names, or batch correction algorithm)
+  - ANOVA post-hoc method not explicitly named (Tukey HSD implied but not confirmed)
+  - kNN k-parameter and random forest hyperparameters unspecified
+  - No mention of data filtering thresholds beyond missingness (e.g., CV cutoff, intensity threshold)
+reproducibility_strengths:
+  - Comprehensive open-source tool mapping (R/Python packages named for each step)
+  - Explicit statistical assumptions and decision logic (e.g., normality/homoscedasticity testing before t-test)
+  - Clear distinction between MCAR/MAR/MNAR and recommended imputation strategies
+  - Detailed mathematical definitions provided (e.g., medcouple-based fence formulas)
+  - Public GitBook repository explicitly stated as containing step-by-step scripts

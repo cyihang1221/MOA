@@ -1,0 +1,66 @@
+========== reproducibility_recipe entry ==========
+paper_title: Multi-MSIProcessor: Data Visualizing and Analysis Software for Spatial Metabolomics Research.
+source_paper: Bi S et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.3c04192, PMID: 38102989
+overall_reproducibility_score: 30/100
+
+workflow_steps: 6
+  Step 1: Data import and format conversion
+    tool: Multi-MSIProcessor
+    algorithm: native parser
+    input: AFADESI-MSI raw data; mzXML; imzML
+    output: internal processed data structure
+    confidence: medium
+  Step 2: MSI visualization
+    tool: Multi-MSIProcessor
+    algorithm: intensity-based spatial mapping
+    parameters: normalization_method=TIC, ion_image_resolution=user-defined
+    input: processed data structure
+    output: ion images (2D spatial maps)
+    confidence: medium
+  Step 3: Batch quality assessment
+    tool: Multi-MSIProcessor
+    algorithm: signal intensity distribution + spectral similarity metrics
+    parameters: qc_metrics=['total ion current stability', 'peak count consistency', 'spectral correlation']
+    input: batch of processed MSI datasets
+    output: QC report (sample-wise metrics, outlier detection)
+    confidence: low
+  Step 4: Differential peak screening
+    tool: Multi-MSIProcessor
+    algorithm: statistical testing (unspecified test, likely t-test or ANOVA)
+    parameters: p_value_threshold=0.05, fold_change_threshold=2.0, FDR_correction=yes
+    input: aligned peak matrix across samples
+    output: list of differential m/z features with spatial localization
+    confidence: low
+  Step 5: Metabolite annotation
+    tool: Multi-MSIProcessor
+    algorithm: m/z matching against metabolite databases
+    parameters: mass_tolerance_ppm=None, database_sources=['HMDB', 'METLIN', 'LipidMaps'], adducts=['[M+H]+', '[M-H]-']
+    input: differential m/z features
+    output: putatively annotated metabolites with confidence levels
+    confidence: low
+  Step 6: Abnormal metabolic pathway analysis
+    tool: Multi-MSIProcessor
+    algorithm: pathway enrichment analysis
+    parameters: enrichment_method=hypergeometric test, database=KEGG, p_adjust_method=BH
+    input: annotated differential metabolites
+    output: enriched metabolic pathways with significance scores
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposition reported
+  - No code repository URL provided despite 'source code opened' claim
+  - No specification of statistical tests, mass tolerance, RT alignment method, or database versions
+  - No description of peak alignment, denoising, or normalization parameters
+  - No figure/table descriptions provided in input text to map analyses
+reproducibility_strengths:
+  - Explicit support for open standards (imzML, mzXML)
+  - Claimed open-source nature enabling customization

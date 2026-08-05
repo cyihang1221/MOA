@@ -1,0 +1,59 @@
+========== reproducibility_recipe entry ==========
+paper_title: GCMS-ID: a webserver for identifying compounds from gas chromatography mass spectrometry experiments.
+source_paper: Wakoli J et al. (2024), Nucleic acids research, DOI: 10.1093/nar/gkae425, PMID: 38783107
+overall_reproducibility_score: 70/100
+
+workflow_steps: 5
+  Step 1: Compound structure input
+    tool: GCMS-ID webserver
+    algorithm: user-submitted SMILES or InChI
+    input: chemical structure (SMILES/InChI)
+    output: predicted EI-MS spectrum and/or retention index
+    confidence: high
+  Step 2: EI-MS spectral prediction
+    tool: CFM-EI
+    algorithm: competitive fragmentation modeling for electron impact
+    parameters: energy_eV=70
+    input: chemical structure
+    output: predicted EI-MS spectrum (m/z, intensity)
+    confidence: high
+  Step 3: Retention index prediction
+    tool: RIpred
+    algorithm: machine learning model trained on experimental Kovats RI data
+    parameters: column_type=non-polar, temperature_program=standard
+    input: chemical structure
+    output: predicted Kovats retention index
+    confidence: medium
+  Step 4: Experimental spectrum/RI matching
+    tool: GCMS-ID webserver
+    algorithm: weighted cosine similarity (EI-MS) + RI deviation penalty
+    parameters: ri_tolerance=100, ms_similarity_threshold=0.7
+    input: experimental EI-MS spectrum and/or measured RI
+    output: ranked list of candidate compounds with scores
+    confidence: high
+  Step 5: Compound annotation
+    tool: GCMS-ID webserver
+    algorithm: top-N candidate ranking with confidence scoring
+    parameters: max_candidates=10, score_weight_ri=0.3, score_weight_ms=0.7
+    input: matched candidates from step 4
+    output: annotated compound list with confidence scores
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed GC-MS data provided or referenced
+  - No access to underlying training datasets for CFM-EI or RIpred models
+  - No source code or API documentation for GCMS-ID backend
+  - RI prediction parameters (e.g., column chemistry, temperature program details) only vaguely specified
+reproducibility_strengths:
+  - Webserver is freely accessible and functional at https://gcms-id.ca/
+  - Integrates two well-documented, previously published tools (CFM-EI and RIpred)
+  - Uses standardized inputs (SMILES/InChI) and outputs (EI-MS, RI, annotations)

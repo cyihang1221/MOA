@@ -1,0 +1,64 @@
+========== reproducibility_recipe entry ==========
+paper_title: Visualizing and comparing results of different peptide identification methods.
+source_paper: Mohammed Y et al. (2018), Briefings in bioinformatics, DOI: 10.1093/bib/bbw115, PMID: 28011752
+overall_reproducibility_score: 30/100
+
+workflow_steps: 6
+  Step 1: Peptide identification using three complementary search strategies
+    tool: X! Tandem
+    algorithm: sequence database search
+    input: tandem mass spectra (.mgf or .mzXML)
+    output: peptide-spectrum matches (PSMs) with scores and FDR estimates
+    confidence: low
+  Step 2: Peptide identification using spectral library matching
+    tool: SpectraST
+    algorithm: spectral library search
+    input: tandem mass spectra (.mgf or .mzXML) and spectral library (.sptxt or .msp)
+    output: PSMs with dot-product scores and confidence metrics
+    confidence: low
+  Step 3: De novo peptide sequencing
+    tool: PepNovo
+    algorithm: de novo sequencing
+    input: tandem mass spectra (.mgf or .mzXML)
+    output: de novo sequence tags and candidate peptides
+    confidence: low
+  Step 4: Integration and classification of PSMs across methods
+    tool: Custom workflow (not named)
+    algorithm: Venn-based agreement class assignment
+    parameters: agreement_classes=['unique_to_XTandem', 'unique_to_SpectraST', 'unique_to_PepNovo', 'shared_by_two', 'shared_by_all_three']
+    input: PSM lists from X! Tandem, SpectraST, and PepNovo
+    output: classified PSM consensus table with agreement labels
+    confidence: medium
+  Step 5: False discovery rate evaluation with decoy sequences
+    tool: Custom decoy integration
+    algorithm: target-decoy approach
+    parameters: decoy_type=reversed_or_shuffled, FDR_calculation=100 * (decoy_hits / (target_hits + decoy_hits))
+    input: PSM lists with target/decoy annotation
+    output: FDR-calibrated PSM sets per method and intersection class
+    confidence: medium
+  Step 6: Visualization of method complementarity
+    tool: Custom R/Python plotting (not specified)
+    algorithm: Venn diagram + bar plots + heatmaps of agreement classes
+    parameters: visualization_dimensions=['search_strategy', 'agreement_class', 'FDR_threshold']
+    input: classified and FDR-filtered PSM table
+    output: complementarity plots (Venn, overlap matrices, performance curves)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposited or referenced
+  - No code repository or implementation details provided
+  - No version numbers or parameter settings for X! Tandem, SpectraST, or PepNovo
+  - Custom integration and visualization workflow not described or shared
+  - Decoy generation method (e.g., reversed vs. shuffled) not specified
+reproducibility_strengths:
+  - Conceptual framework for cross-method comparison is clearly articulated
+  - Use of three canonical, open-source tools (X! Tandem, SpectraST, PepNovo) enhances methodological transparency

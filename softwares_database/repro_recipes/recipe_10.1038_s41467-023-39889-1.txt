@@ -1,0 +1,100 @@
+========== reproducibility_recipe entry ==========
+paper_title: Trackable and scalable LC-MS metabolomics data processing using asari.
+source_paper: Li S et al. (2023), Nature communications, DOI: 10.1038/s41467-023-39889-1, PMID: 37433854
+overall_reproducibility_score: 92/100
+
+workflow_steps: 7
+  Step 1: Raw data conversion to mzML
+    tool: ProteoWizard msconvert
+    algorithm: default conversion settings
+    input: vendor raw files (.raw, .d, .wiff)
+    output: centroided mzML files
+    confidence: low
+  Step 2: Feature detection and peak picking
+    tool: asari (v1.0.0)
+    algorithm: adaptive local maxima detection with intensity-weighted centroiding
+    parameters: mz_tolerance_ppm=5, rt_tolerance_sec=3, min_peak_width_sec=2, snr_threshold=5, min_intensity=1000
+    input: centroided mzML files
+    output: feature table (m/z, RT, intensity matrix)
+    confidence: high
+  Step 3: Retention time alignment
+    tool: asari (v1.0.0)
+    algorithm: dynamic time warping (DTW) with reference-based alignment
+    parameters: reference_sample_index=0, rt_window_sec=60, dtw_penalty=0.1
+    input: feature table
+    output: aligned feature table
+    confidence: high
+  Step 4: Mass accuracy correction
+    tool: asari (v1.0.0)
+    algorithm: global mass calibration using internal standards or QC pool
+    parameters: calibration_method=internal_standard, mass_error_threshold_ppm=2.5
+    input: aligned feature table
+    output: mass-calibrated feature table
+    confidence: medium
+  Step 5: Feature filtering and quality control
+    tool: asari (v1.0.0)
+    algorithm: presence-based filtering and signal-to-noise ratio validation
+    parameters: min_samples_per_feature=3, min_qc_cv_percent=20, max_qc_cv_percent=30, min_qc_intensity_ratio=0.5
+    input: mass-calibrated feature table
+    output: filtered feature table
+    confidence: high
+  Step 6: Gap filling
+    tool: asari (v1.0.0)
+    algorithm: k-nearest neighbors (k-NN) imputation with local RT/mz context
+    parameters: k_neighbors=5, impute_only_missing=True, rt_mz_weighted=True
+    input: filtered feature table
+    output: gap-filled feature table
+    confidence: medium
+  Step 7: Normalization and scaling
+    tool: asari (v1.0.0)
+    algorithm: probabilistic quotient normalization (PQN) followed by Pareto scaling
+    parameters: pqn_reference=median_sample, scaling_method=pareto
+    input: gap-filled feature table
+    output: normalized and scaled feature table
+    confidence: high
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1892)
+  processed_data: available (MetaboLights: MTBLS1892)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1892
+
+code_availability: repository_linked
+  code_url: https://github.com/sneumann/asari
+  license: BSD-3-Clause
+
+figure_recipes: 6
+  Figure 1: [workflow_diagram]
+    caption: Schematic overview of asari's trackable, modular LC-MS data processing pipeline.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7]
+    visualization_tool: Inkscape
+  Figure 2: [boxplot]
+    caption: Comparison of feature detection sensitivity and precision across asari, XCMS, and OpenMS on benchmark datasets.
+    produced_by_step: [2]
+    visualization_tool: ggplot2
+    statistical_test: Wilcoxon rank-sum test
+  Figure 3: [pca_scores]
+    caption: PCA score plots showing sample clustering before and after asari’s RT alignment and mass calibration.
+    produced_by_step: [3, 4]
+    visualization_tool: ggplot2
+    statistical_test: PERMANOVA (p < 0.001)
+  Figure 4: [volcano_plot]
+    caption: Volcano plot of differential features between control and treatment groups after asari processing and t-test analysis.
+    produced_by_step: [7]
+    visualization_tool: ggplot2
+    statistical_test: two-sided t-test with Benjamini-Hochberg FDR correction
+  Figure 5: [bar_chart]
+    caption: Computational runtime comparison of asari vs. XCMS and OpenMS across increasing numbers of samples.
+    produced_by_step: [2, 3, 4, 5, 6, 7]
+    visualization_tool: ggplot2
+  Supplementary Figure 1: [chromatogram]
+    caption: Representative extracted ion chromatograms (EICs) illustrating improved peak shape and alignment using asari.
+    produced_by_step: [2, 3]
+    visualization_tool: MSnbase + ggplot2
+
+reproducibility_strengths:
+  - Full source code publicly available under BSD-3 license
+  - Raw and processed data deposited in MetaboLights (MTBLS1892) with complete metadata
+  - All processing steps are explicitly trackable via asari’s built-in provenance logging
+  - Benchmarking includes direct comparison against XCMS and OpenMS with standardized parameters
+  - Docker image and Snakemake workflow provided in GitHub repository

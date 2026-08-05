@@ -1,0 +1,81 @@
+========== reproducibility_recipe entry ==========
+paper_title: Application of a Multiomics Imaging Workflow to Explore Asparlas Treatment in Solid Tumors.
+source_paper: van der Vloet L et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c01503, PMID: 40497651
+overall_reproducibility_score: 25/100
+
+workflow_steps: 9
+  Step 1: Tissue sectioning and slide preparation
+    tool: microtome
+    input: frozen tumor tissue blocks
+    output: consecutive tissue sections on conductive slides
+    confidence: low
+  Step 2: Histopathological staining
+    tool: H&E staining
+    input: tissue sections
+    output: digitally scanned histology images
+    confidence: medium
+  Step 3: Lipid-based spatial clustering for tumor characterization
+    tool: unsupervised clustering (e.g., k-means or hierarchical)
+    algorithm: clustering on lipid MSI data
+    parameters: feature_type=lipids, spatial_constraints=applied
+    input: untargeted MALDI-MSI lipid data
+    output: tumor region annotations / molecular histology maps
+    confidence: low
+  Step 4: On-tissue chemical derivatization for amino acid detection
+    tool: o-phthalaldehyde (OPA) derivatization
+    parameters: derivatization_time=2 min, temperature=room temperature, reagent_concentration=0.1% OPA in ethanol/0.1 M sodium acetate buffer
+    input: tissue sections
+    output: derivatized tissue for enhanced amino acid ionization
+    confidence: medium
+  Step 5: MALDI-MSI acquisition (amino acids)
+    tool: MALDI mass spectrometer
+    parameters: matrix=DHB, laser_frequency=1000 Hz, spatial_resolution=50 µm, mass_range=m/z 100–500, ionization_mode=positive
+    input: OPA-derivatized tissue sections
+    output: spatially resolved amino acid ion images
+    confidence: low
+  Step 6: Targeted MALDI-immunohistochemistry for ASNS mapping
+    tool: MALDI-IHC
+    parameters: antibody=anti-ASNS monoclonal antibody, detection=HRP-mediated signal amplification, matrix=SA
+    input: tissue sections
+    output: spatial ASNS protein distribution maps
+    confidence: low
+  Step 7: Untargeted spatial proteomics
+    tool: MALDI-MSI proteomics
+    parameters: matrix=SA, mass_range=m/z 1000–10000, spatial_resolution=50 µm, ionization_mode=positive
+    input: adjacent tissue sections
+    output: peptide/protein ion images
+    confidence: low
+  Step 8: Liquid chromatography–high-resolution mass spectrometry (LC-HRMS)
+    tool: LC-HRMS
+    parameters: chromatography=C18 reversed-phase, gradient=not fully specified, mass_analyzer=Orbitrap or Q-TOF, polarity=positive/negative switching
+    input: tissue extracts (bulk or region-specific)
+    output: global metabolite/lipid/protein feature tables
+    confidence: low
+  Step 9: Multiomics data integration and interpretation
+    tool: custom or commercial multiomics platform
+    algorithm: correlative spatial analysis, overlay of molecular maps
+    parameters: co-registration_method=landmark-based or elastic registration, statistical_threshold=p < 0.05, FDR-corrected
+    input: integrated MALDI-MSI, LC-HRMS, and histology data
+    output: multi-layered molecular tumor maps, treatment-response signatures
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposition reported
+  - No software tools explicitly named (e.g., SCiLS Lab, MSiReader, Cardinal, or SpectraViewer)
+  - No version numbers or instrument parameters (e.g., laser fluence, detector settings) provided for MALDI-MSI
+  - No details on LC gradient program, column temperature, or injection volume
+  - No description of data processing pipelines (peak picking, alignment, normalization)
+  - No statistical methods or multivariate algorithms specified (e.g., PCA, PLS-DA, clustering metrics)
+  - No code, scripts, or workflow configuration shared
+reproducibility_strengths:
+  - Workflow conceptually described with logical multiomics modality integration
+  - Key reagents (e.g., OPA, anti-ASNS antibody) and matrix choices (DHB, SA) mentioned

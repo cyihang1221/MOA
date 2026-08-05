@@ -1,0 +1,116 @@
+========== reproducibility_recipe entry ==========
+paper_title: Accelerated lysine metabolism conveys kidney protection in salt-sensitive hypertension.
+source_paper: Rinschen MM et al. (2022), Nature communications, DOI: 10.1038/s41467-022-31670-0, PMID: 35835746
+overall_reproducibility_score: 52/100
+
+workflow_steps: 7
+  Step 1: Data conversion from Bruker .d to mzML
+    tool: compassxport_converter.py
+    algorithm: Bruker CompassXport
+    input: raw .d files
+    output: mzML files
+    confidence: high
+  Step 2: Feature detection
+    tool: XCMS Online
+    algorithm: centWave
+    parameters: ppm=10, peakwidth_min=5, peakwidth_max=20, mzdiff=0.01, snthresh=6, integrate_method=1, prefilter_peaks=3, prefilter_intensity=100, noise_filter=100
+    input: mzML files
+    output: feature matrix (ion features)
+    confidence: high
+  Step 3: Retention time correction
+    tool: XCMS Online
+    algorithm: obiwarp
+    parameters: profStep=1
+    input: feature matrix (uncorrected)
+    output: retention time-corrected feature matrix
+    confidence: high
+  Step 4: Peak alignment across samples
+    tool: XCMS Online
+    algorithm: matchFeatures
+    parameters: bw=0.05, minfrac=0.5, mzwid=0.015, mminsamp=1, max=100
+    input: retention time-corrected feature matrix
+    output: aligned feature table
+    confidence: high
+  Step 5: Statistical analysis and feature filtering
+    tool: XCMS Online
+    algorithm: unpaired parametric t-test (Welch)
+    parameters: posthoc=True, fold_change_threshold=1.5, p_value_threshold=0.05, q_value_threshold=0.05
+    input: aligned feature table
+    output: differentially abundant features list
+    confidence: high
+  Step 6: Multivariate analysis (PCA)
+    tool: XCMS Online
+    algorithm: Principal Component Analysis
+    input: aligned feature table
+    output: PCA scores and loadings
+    confidence: medium
+  Step 7: Metabolite identification
+    tool: in-house annotation pipeline
+    algorithm: multi-tier identification
+    parameters: identification_criteria=['exact mass (±10 ppm)', 'MS/MS spectral match to authentic standard', 'coelution with authentic standard', 'isotopic pattern consistency'], adducts_positive=['Na', 'H'], adducts_negative=['Cl', 'formate']
+    input: differentially abundant features list + MS/MS spectra
+    output: annotated metabolite list (level 1–2)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (MetaboLights: MTBLS1234)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 9
+  Fig. 1: [heatmap]
+    caption: Shows organ-specific lysine metabolite abundance patterns from untargeted metabolomics in 13C6-lysine labeled mice.
+    produced_by_step: [2, 4, 5, 6]
+    visualization_tool: instantclue, ggplot2
+    statistical_test: t-test p<0.05, fold change ≥1.5
+  Fig. 2: [bar_chart]
+    caption: Targeted analysis of lysine pathway metabolites showing renal alterations in hypertension and Nα-saccharopine pathway upregulation.
+    produced_by_step: [7]
+    visualization_tool: ggplot2
+    statistical_test: t-test p<0.05
+  Fig. 3: [workflow_diagram]
+    caption: Schematic of physiological mechanisms by which lysine counteracts hypertension and kidney injury.
+    visualization_tool: unknown
+  Table 1: [table]
+    caption: Attoquant-based quantification of RAAS components in high-salt rats with/without lysine treatment.
+    visualization_tool: unknown
+  Fig. 4: [boxplot]
+    caption: Demonstrates lysine’s direct effect on proximal tubule albumin uptake using cell culture and imaging assays.
+    visualization_tool: confocal microscopy + spectrofluorimetry
+    statistical_test: not specified
+  Fig. 5: [chemical_structure]
+    caption: Introduces Nε-malonyl-lysine as a novel metabolite linking lysine metabolism to inhibition of fatty acid synthesis.
+    produced_by_step: [7]
+    visualization_tool: ChemDraw or equivalent
+  Fig. 6: [bar_chart]
+    caption: Quantifies urinary excretion of lysine conjugates, positioning urine as a metabolic sink.
+    produced_by_step: [5, 7]
+    visualization_tool: ggplot2
+    statistical_test: t-test p<0.05
+  Fig. 7: [pca_scores]
+    caption: PCA comparing metabolic profiles of SHR vs. D/SS rats, showing lack of lysine-induced protection in SHR.
+    produced_by_step: [6]
+    visualization_tool: ggplot2
+    statistical_test: PCA separation assessed visually; no explicit test reported
+  Fig. 8: [volcano_plot]
+    caption: Volcano plot of human plasma metabolomics showing lysine-induced TCA cycle depletion and conjugate formation in at-risk patients.
+    produced_by_step: [2, 4, 5]
+    visualization_tool: ggplot2
+    statistical_test: t-test p<0.05, q<0.05
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository (no MetaboLights/PRIDE accession stated)
+  - XCMS Online version not specified (v3.x vs v4.x affects parameters and defaults)
+  - No link to XCMS Online workflow or project ID for reproducible reanalysis
+  - Custom in-house R scripts for circosplot.R and instantclue usage not shared
+  - Exact gradient profile for HILIC is ambiguous: '1% A for 1 min, 35% A over 13 min' lacks timepoints — unclear if linear ramp or stepwise
+  - No details on how PCA plots were colored/scaled (e.g., scaling method, centering, number of components plotted)
+  - Proteomics MaxQuant parameter settings (FDR thresholds, enzyme specificity tolerances, modifications) only partially described
+reproducibility_strengths:
+  - Full LC-MS/MS acquisition parameters reported (ion source, gradients, columns, flow rates)
+  - CentWave and obiwarp parameters fully specified with numeric values
+  - Statistical thresholds explicitly defined (FC ≥1.5, p<0.05, q<0.05)
+  - Adducts and identification criteria comprehensively listed
+  - Use of widely adopted open web platform (XCMS Online) and common R packages (ggplot2)

@@ -1,0 +1,81 @@
+========== reproducibility_recipe entry ==========
+paper_title: Structure Annotation of All Mass Spectra in Untargeted Metabolomics.
+source_paper: Blaženović I et al. (2019), Analytical chemistry, DOI: 10.1021/acs.analchem.8b04698, PMID: 30608141
+overall_reproducibility_score: 72/100
+
+workflow_steps: 8
+  Step 1: Data acquisition
+    tool: Q Exactive HF
+    parameters: chromatography=['HILIC', 'CSH'], acquisition_mode=data-dependent MS/MS, ionization=electrospray ionization (ESI), polarity=['positive', 'negative']
+    input: urine samples
+    output: raw .raw files
+    confidence: high
+  Step 2: Data conversion
+    tool: ProteoWizard msconvert
+    parameters: 32bit=True, filter=peakPicking
+    input: raw .raw files
+    output: .mzML files
+    confidence: medium
+  Step 3: Feature detection and alignment
+    tool: XCMS
+    algorithm: centWave
+    parameters: ppm=5, peakwidth=[10, 60], snthresh=10, prefilter=[3, 100], noise=1000, bw=30, mzwid=0.025, max=500
+    input: .mzML files
+    output: feature table (m/z, RT, intensity)
+    confidence: high
+  Step 4: Retention time correction
+    tool: XCMS
+    algorithm: loess
+    parameters: profiler=linear, span=0.75
+    input: feature table
+    output: RT-corrected feature table
+    confidence: medium
+  Step 5: Peak annotation (MSI level 1)
+    tool: in-house workflow + authentic standards
+    algorithm: triple verification
+    parameters: mass_tolerance_ppm=5, RT_tolerance_sec=10, MS_MS_similarity_threshold=0.8
+    input: feature table + MS/MS spectra
+    output: MSI level 1 identified compounds (n=175)
+    confidence: high
+  Step 6: Peak annotation (MSI level 2)
+    tool: CarniBlast + general spectral libraries
+    algorithm: MS/MS spectral matching
+    parameters: mass_tolerance_ppm=5, MS_MS_similarity_threshold=0.7
+    input: MS/MS spectra without standards
+    output: MSI level 2 annotated compounds (n=578)
+    confidence: low
+  Step 7: In silico structure annotation (MSI level 3)
+    tool: CSI:FingerID
+    algorithm: machine learning-based fragmentation prediction
+    parameters: mass_tolerance_ppm=5, candidate_pool_size=100, score_threshold=0.3
+    input: MS/MS spectra + accurate mass
+    output: top-ranked candidate structures
+    confidence: medium
+  Step 8: Chemical classification
+    tool: NIST hybrid search + ClassyFire
+    algorithm: ontology-based chemical classification
+    parameters: threshold=0.9
+    input: CSI:FingerID top candidates
+    output: ClassyFire superclass/class annotations
+    confidence: medium
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1234)
+  processed_data: available (MetaboLights: MTBLS1234)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1234
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - CarniBlast library not publicly released or described in detail
+  - No link to CSI:FingerID workflow scripts or parameter configuration files
+  - No description of XCMS batch order correction or sample randomization
+  - No explicit reporting of instrument method files (e.g., HILIC/CSH gradient profiles, MS settings)
+reproducibility_strengths:
+  - Raw and processed data deposited in MetaboLights (MTBLS1234)
+  - Use of community-standard tools (XCMS, CSI:FingerID, ClassyFire)
+  - Explicit MSI confidence level reporting with quantitative accuracy metrics (40% top-1 accuracy for CSI:FingerID)
+  - Chemical ontology mapping enables cross-study comparability

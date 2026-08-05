@@ -1,0 +1,147 @@
+========== reproducibility_recipe entry ==========
+paper_title: Multi-omics data reveal the origin of cardiac myxoma.
+source_paper: Liu S et al. (2025), Communications biology, DOI: 10.1038/s42003-025-08752-y, PMID: 41006804
+overall_reproducibility_score: 58/100
+
+workflow_steps: 17
+  Step 1: Raw data demultiplexing and alignment
+    tool: Cell Ranger (v7.1)
+    algorithm: STAR aligner
+    parameters: reference_genome=GRCh38, default_parameters_used=True
+    input: raw BCL files from Illumina sequencing
+    output: gene-barcode matrix, QC metrics
+    confidence: high
+  Step 2: Quality control and filtering
+    tool: Scanpy (v1.10.0)
+    algorithm: mitochondrial/ribosomal/hemoglobin gene thresholding, MAD-based outlier removal
+    parameters: mitochondrial_gene_threshold_pct=20, ribosomal_gene_threshold_pct=20, hemoglobin_gene_threshold_pct=20, mad_outlier_threshold=5, min_cells_per_gene=20
+    input: gene-barcode matrix from Cell Ranger
+    output: filtered expression matrix
+    confidence: high
+  Step 3: Ambient RNA correction
+    tool: SoupX
+    algorithm: environmental mRNA profile estimation from empty droplets
+    input: unfiltered Cell Ranger matrix
+    output: ambient-corrected expression matrix
+    confidence: medium
+  Step 4: Doublet detection and removal
+    tool: scDblFinder
+    algorithm: artificial doublet generation + k-NN scoring in PC space
+    parameters: k_nearest_neighbors=authors' guidelines (not specified numerically)
+    input: filtered & ambient-corrected expression matrix
+    output: doublet-filtered expression matrix
+    confidence: low
+  Step 5: Normalization and log-transformation
+    tool: Scanpy (v1.10.0)
+    algorithm: library size normalization + log1p
+    parameters: target_sum=10000, log_transformation=log1p
+    input: doublet-filtered expression matrix
+    output: log-normalized expression matrix (adata.layers['logcounts'])
+    confidence: high
+  Step 6: Highly variable gene selection
+    tool: Scanpy (v1.10.0)
+    algorithm: Seurat v3 method with batch correction
+    parameters: n_top_genes=2000, flavor=seurat_v3, batch_key=batch
+    input: log-normalized expression matrix
+    output: subsetted expression matrix (2000 HVGs)
+    confidence: high
+  Step 7: Scaling and PCA
+    tool: Scanpy (v1.10.0)
+    algorithm: centering, unit variance scaling, ARPACK PCA
+    parameters: max_value=10, n_comps=30, svd_solver=arpack
+    input: HVG-subsetted expression matrix
+    output: PCA embedding (30 components)
+    confidence: high
+  Step 8: Batch correction via Harmony integration
+    tool: Harmony
+    algorithm: harmonic optimization on PCA space
+    parameters: key=batch
+    input: PCA embedding
+    output: Harmony-corrected embedding
+    confidence: high
+  Step 9: Nearest neighbor graph construction
+    tool: Scanpy (v1.10.0)
+    algorithm: k-NN graph on Harmony embedding
+    parameters: use_rep=X_pca_harmony, n_pcs=30, n_neighbors=30, metric=euclidean
+    input: Harmony-corrected embedding
+    output: k-NN graph
+    confidence: high
+  Step 10: Nonlinear dimensionality reduction (t-SNE)
+    tool: Scanpy (v1.10.0)
+    algorithm: t-distributed stochastic neighbor embedding
+    parameters: use_rep=X_pca_harmony
+    input: Harmony-corrected embedding
+    output: t-SNE embedding (2D)
+    confidence: high
+  Step 11: Clustering and differential expression analysis
+    tool: Scanpy (v1.10.0)
+    algorithm: Leiden clustering + Wilcoxon rank-sum test
+    parameters: statistical_test=Wilcoxon
+    input: k-NN graph
+    output: cluster labels, differentially expressed genes per cluster
+    confidence: high
+  Step 12: Cell type annotation
+    tool: SCSA algorithm + CellMarker database
+    algorithm: marker-based annotation using reference database
+    input: cluster-specific DEGs
+    output: annotated cell types
+    confidence: medium
+  Step 13: Functional enrichment analysis
+    tool: clusterProfiler
+    algorithm: GO/KEGG enrichment with BH correction
+    parameters: p_value_cutoff=0.05, enrichment_method=hypergeometric
+    input: gene lists (e.g., DEGs, pathway genes)
+    output: enriched GO terms and KEGG pathways
+    confidence: high
+  Step 14: CNV inference from scRNA/snRNA-seq
+    tool: SCEVAN
+    algorithm: segmentation-based CNV scoring
+    parameters: CNVscore_calculation=mean across segments, then squared
+    input: normalized expression matrix
+    output: cell-level CNV scores, clonal CNV profiles
+    confidence: medium
+  Step 15: Pseudotime trajectory inference
+    tool: Monocle2
+    algorithm: DDRTree dimensionality reduction + orderCells
+    parameters: q_value_cutoff=0.01, default_parameters_used=True
+    input: normalized gene expression matrix
+    output: pseudotime ordering, dynamic gene expression profiles
+    confidence: medium
+  Step 16: RNA velocity estimation
+    tool: velocyto + scVelo (vscVelo 0.2.4)
+    algorithm: stochastic velocity model
+    parameters: mode=stochastic, min_shared_counts=20, n_top_genes=2000, n_pcs=30, n_neighbors=30
+    input: spliced/unspliced count matrices (from BAM + GTF)
+    output: velocity vectors, velocity graph, streamlines on UMAP
+    confidence: high
+  Step 17: Cell-cell interaction inference
+    tool: CellPhoneDB (v5.0)
+    algorithm: permutation-based statistical testing of ligand-receptor co-expression
+    input: cell-type annotated expression matrix
+    output: significant ligand-receptor interactions per cell-type pair
+    confidence: high
+
+data_availability:
+  raw_data: available (GEO: GSE265921)
+  processed_data: not_mentioned (not_mentioned: not_mentioned)
+  metadata: in_paper_only
+  data_urls: https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE265921
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No repository accession or DOI provided for the authors' own multi-omics datasets (sc/snRNA-seq, third-gen RNA-seq, metabolomics)
+  - Metabolomics methods section is entirely missing from the provided text — no instrumentation, data processing, or statistical analysis details given
+  - Third-generation transcriptomics methods are described only at a high level (no platform, library prep, basecalling, alignment, or quantification details)
+  - No code repository, scripts, or computational workflows shared
+  - scDblFinder and Monocle2 parameter values not fully specified (e.g., k, resolution, DDRTree settings)
+  - Immunohistochemistry antibody catalog numbers and vendors not reported — limits antibody reproducibility
+  - No mention of metabolite identification strategy (MS/MS, databases, standards) despite metabolomics being a core pillar
+reproducibility_strengths:
+  - Public validation dataset (GSE265921) explicitly cited and accessible
+  - All major bioinformatics tools named with versions where available (Cell Ranger 7.1, Scanpy 1.10.0, scVelo 0.2.4, CellPhoneDB 5.0)
+  - Detailed QC thresholds reported (e.g., 20% mitochondrial, 5 MAD outliers)
+  - Use of standard, open-source tools throughout (Scanpy, Harmony, clusterProfiler, SCEVAN, velocyto, scVelo, Monocle2, CellPhoneDB)
+  - Explicit reference to GRCh38 genome and Seurat v3 HVG method ensures alignment reproducibility

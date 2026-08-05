@@ -1,0 +1,58 @@
+========== reproducibility_recipe entry ==========
+paper_title: Machine learning-empowered &lt;i&gt;cis&lt;/i&gt;-diol metabolic fingerprinting enables precise diagnosis of primary liver cancer.
+source_paper: Li P et al. (2023), Chemical science, DOI: 10.1039/d2sc05541d, PMID: 36908957
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Boronate affinity extraction of cis-diol metabolites
+    tool: pH-controlled boronate affinity chromatography
+    parameters: pH=controlled, binding_condition=cis-diol-specific reversible complexation with boronic acid
+    input: biological samples (e.g., serum/plasma)
+    output: enriched cis-diol fraction
+    confidence: medium
+  Step 2: Solvent evaporation-assisted enrichment
+    tool: solvent evaporation
+    parameters: evaporation_method=assisted enrichment, goal=concentration and removal of non-target matrix interferences
+    input: boronate-enriched eluate
+    output: concentrated cis-diol extract
+    confidence: low
+  Step 3: Nanoelectrospray ionization mass spectrometry analysis
+    tool: nanoelectrospray ionization (nanoESI)-MS
+    parameters: ionization_mode=not specified, mass_analyzer=not specified, resolution/sensitivity=not quantified
+    input: enriched cis-diol extract
+    output: raw MS spectra (m/z-intensity)
+    confidence: low
+  Step 4: Multivariate statistical feature selection
+    tool: machine learning pipeline
+    algorithm: ['PCA', 'OPLS-DA', 'Random Forest']
+    parameters: PCA=used for dimensionality reduction, OPLS-DA=orthogonal partial least-squares discrimination analysis, Random Forest=feature importance ranking
+    input: processed peak table (m/z, RT, intensity)
+    output: diagnostic cis-diol biomarker panel
+    confidence: medium
+  Step 5: Diagnostic model evaluation
+    tool: machine learning classification
+    algorithm: Random Forest classifier
+    parameters: performance_metrics=['sensitivity', 'specificity'], values={'sensitivity': 0.875, 'specificity': 0.857}
+    input: selected cis-diol features
+    output: PLC vs. hepatitis classification model
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposition reported
+  - No details on MS instrumentation (vendor, model, acquisition parameters)
+  - No description of chromatographic conditions (column, gradient, flow rate)
+  - No software versions or implementation details for PCA/OPLS-DA/Random Forest
+  - No code or workflow scripts shared
+  - No public access to trained models or feature lists
+reproducibility_strengths:
+  - Explicit reporting of performance metrics (sensitivity/specificity)
+  - Clear conceptual workflow (MLE-BESE-MS) described

@@ -1,0 +1,85 @@
+========== reproducibility_recipe entry ==========
+paper_title: Metabolome-driven microbiome assembly in ginger (Zingiber officinale) enhances nutrient cycling and crop yield through keystone taxa.
+source_paper: Wang W et al. (2025), Communications biology, DOI: 10.1038/s42003-025-08910-2, PMID: 41214302
+overall_reproducibility_score: 42/100
+
+workflow_steps: 8
+  Step 1: Metabolite extraction
+    tool: Manual protocol
+    algorithm: Internal standard–based solvent extraction
+    parameters: sample_weight_mg=50, solvent_composition=methanol:water (4:1, v/v), internal_standard=L-2-chlorophenylalanine, internal_standard_concentration_mg_ml=0.02, grinding_temperature_c=-10, grinding_frequency_hz=50, grinding_duration_min=6, ultrasonic_temperature_c=5, ultrasonic_duration_min=30, ultrasonic_frequency_khz=40, incubation_temperature_c=-20, incubation_duration_min=30, centrifugation_g=13000, centrifugation_duration_min=15, centrifugation_temperature_c=4
+    input: fresh plant tissue (leaf, stem, root, rhizome)
+    output: metabolite extract supernatant
+    confidence: high
+  Step 2: LC-MS/MS acquisition
+    tool: Sciex UPLC-Triple TOF™ 5600+
+    algorithm: Information Dependent Acquisition (IDA)
+    parameters: column=Acquity HSS T3 (100 mm × 2.1 mm, 1.8 μm), column_temperature_c=40, flow_rate_ml_min=0.4, solvent_a_composition=0.1% formic acid in water:acetonitrile (95:5, v/v), solvent_b_composition=0.1% formic acid in acetonitrile:isopropanol:water (47.5:47.5:5, v/v/v), source_temperature_c=550, curtain_gas_psi=30, ion_source_gas1_psi=50, ion_source_gas2_psi=50, ion_spray_voltage_v_positive=5000, ion_spray_voltage_v_negative=-4000, declustering_potential_v=80, collision_energy_ev_range=[20, 60], mass_range_mz=[50, 1000], ionisation_mode=['positive', 'negative']
+    input: metabolite extract supernatant
+    output: raw .wiff files (Sciex format)
+    confidence: high
+  Step 3: Raw data processing and feature detection
+    tool: Progenesis QI
+    algorithm: Automated peak picking and alignment
+    parameters: retention_time_alignment=True, noise_filtering=True, artefact_removal=['internal_standard_peaks', 'column_bleed', 'reagent_peaks', 'noise'], minimum_detection_in_group_fraction=0.8, quality_control_rsd_threshold=0.3, peak_detection_rate_threshold=0.7
+    input: raw .wiff files
+    output: three-dimensional feature table (features × samples × intensities)
+    confidence: high
+  Step 4: Metabolite annotation
+    tool: ['HMDB', 'METLIN', 'KEGG', 'Majorbio in-house library']
+    algorithm: MS1 + MS/MS spectral matching
+    parameters: annotation_level=Level 1 (identified compound), confidence_criteria=['exact_mass_match', 'retention_time_consistency', 'MS2_fragment_match']
+    input: feature table with MS/MS spectra
+    output: annotated metabolite table (with putative IDs and confidence levels)
+    confidence: medium
+  Step 5: Data filtering and normalisation
+    tool: Majorbio Cloud Platform
+    algorithm: Sum normalisation
+    parameters: filtering_threshold=detected in ≥80% of at least one group, normalisation_method=sum normalisation, quality_control_metrics=['RSD < 0.3 for QC samples', 'peak detection rate > 70%']
+    input: feature table
+    output: normalised and filtered metabolite abundance matrix
+    confidence: high
+  Step 6: Multivariate statistical analysis (PLS-DA)
+    tool: ropls (v1.6.2)
+    algorithm: Orthogonal Projections to Latent Structures Discriminant Analysis
+    parameters: vip_threshold=1.0, p_value_threshold=0.001, cross_validation=7-fold, scaling=UV (unit variance)
+    input: normalised metabolite abundance matrix
+    output: VIP-ranked differentially abundant metabolites
+    confidence: high
+  Step 7: Univariate statistical testing and correlation
+    tool: R (v4.2.1) (v4.2.1)
+    algorithm: Pearson correlation + FDR correction
+    parameters: correlation_method=Pearson, distance_metric=Bray-Curtis, fdr_method=Benjamini-Hochberg, significance_threshold=0.01, correlation_threshold_r=0.75
+    input: normalised metabolite matrix + microbial genus abundance matrix
+    output: significant metabolite-microbe correlations
+    confidence: high
+  Step 8: Procrustes analysis
+    tool: R (vegan package) (v2.4.3)
+    algorithm: Procrustes superimposition
+    parameters: ordination_method=PCA, number_of_dimensions=2
+    input: microbiome PCA scores + metabolome PCA scores
+    output: congruence statistic (m²) and visual superimposition
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS/MS data (.wiff files) not deposited in public repository (e.g., MetaboLights, GNPS)
+  - Progenesis QI is commercial software requiring license; no open-source alternative or parameter export specified
+  - No access provided to Majorbio Cloud Platform workflows or underlying code (ropls wrapper, db-RDA, SparCC, LEfSe pipelines)
+  - No deposition of amplicon sequencing raw reads (FASTQ) or processed OTU tables
+  - In-house Majorbio metabolite library not publicly accessible
+  - Gradient elution profile (time-programmed %B) not reported — critical for chromatographic reproducibility
+  - No description of QC sample injection order or frequency during batch acquisition
+reproducibility_strengths:
+  - Detailed instrument parameters (voltages, temperatures, flow rates, solvents) reported
+  - Clear biological replication design (n=3 per variety × compartment, field-sampled synchronously)
+  - Explicit statistical thresholds (VIP ≥1, p<0.001, r>0.75, FDR-corrected)
+  - Use of established open-source R packages (ropls, vegan, QIIME 1.9.1) for key analyses

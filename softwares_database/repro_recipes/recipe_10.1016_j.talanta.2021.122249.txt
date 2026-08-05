@@ -1,0 +1,102 @@
+========== reproducibility_recipe entry ==========
+paper_title: In-depth cannabis fatty acid profiling by ultra-high performance liquid chromatography coupled to high resolution mass spectrometry.
+source_paper: Piovesana S et al. (2021), Talanta, DOI: 10.1016/j.talanta.2021.122249, PMID: 33773747
+overall_reproducibility_score: 42/100
+
+workflow_steps: 11
+  Step 1: Sample extraction
+    tool: manual_protocol
+    parameters: extraction_solvent=methanol:chloroform (2:1 v/v), extraction_method=ultrasonication, centrifugation_speed_rpm=10000, centrifugation_time_min=10, drying_method=nitrogen stream
+    input: hemp inflorescence tissue
+    output: crude lipid extract
+    confidence: medium
+  Step 2: Chromatographic separation
+    tool: UHPLC
+    parameters: column=Acquity UPLC BEH C18 (2.1 × 100 mm, 1.7 μm), oven_temperature_C=40, flow_rate_mL_per_min=0.3, injection_volume_μL=2, gradient_profile=not fully specified — only 'linear gradient from 30% to 95% B over 15 min' mentioned; solvent A = 0.1% formic acid in water, solvent B = 0.1% formic acid in acetonitrile, mobile_phase_additive=0.1% formic acid
+    input: crude lipid extract
+    output: chromatographic eluate
+    confidence: low
+  Step 3: Mass spectrometric detection
+    tool: Q-Exactive Orbitrap MS
+    parameters: ionization_mode=electrospray ionization (ESI) in negative mode, resolution=70000, mass_range_mz=[150, 1200], automatic_gain_control_target=1000000.0, maximum_injection_time_ms=100, capillary_temperature_C=320, sheath_gas_flow_L_per_min=40, auxiliary_gas_flow_L_per_min=10, spray_voltage_V=-3.5
+    input: chromatographic eluate
+    output: raw .raw files
+    confidence: high
+  Step 4: Raw data conversion
+    tool: ProteoWizard msconvert
+    algorithm: Centroiding
+    parameters: 32-bit=True, filter=peakPicking true 1-2
+    input: Thermo .raw files
+    output: .mzML files
+    confidence: medium
+  Step 5: Untargeted feature detection and alignment
+    tool: XCMS
+    algorithm: centWave
+    parameters: ppm=5, peakwidth=[10, 30], snthresh=10, prefilter=[3, 100], noise=1000, bw=15, mzdiff=-0.001, minfrac=0.5, max=3
+    input: .mzML files
+    output: feature table (m/z, RT, intensity matrix)
+    confidence: high
+  Step 6: Retention time correction
+    tool: XCMS
+    algorithm: loess
+    parameters: span=0.75
+    input: feature table with uncorrected RT
+    output: RT-corrected feature table
+    confidence: medium
+  Step 7: Gap filling and missing value imputation
+    tool: XCMS
+    algorithm: fillPeaks
+    parameters: method=nearest, maxgap=10
+    input: RT-corrected feature table
+    output: filled feature table
+    confidence: medium
+  Step 8: Feature filtering
+    tool: custom R script
+    algorithm: intensity-based and prevalence-based filtering
+    parameters: min_samples=3, min_intensity=10000
+    input: filled feature table
+    output: filtered feature table
+    confidence: low
+  Step 9: Tentative identification of fatty acids
+    tool: in-house structure-based workflow
+    algorithm: mass defect filtering + homologous series search + retention time behavior + MS/MS spectral matching
+    parameters: mass_tolerance_ppm=5, allowed_elemental_compositions=['C', 'H', 'O'], DBE_filter=≥0, homologous_difference=CH2 (14.01565 Da), MS2_similarity_threshold=not specified
+    input: filtered feature table + MS/MS spectra
+    output: tentatively identified fatty acid list (n=39)
+    confidence: low
+  Step 10: Relative quantitation
+    tool: XCMS or custom R
+    algorithm: peak area integration
+    parameters: integration_method=centWave-derived peak areas
+    input: filtered feature table
+    output: relative abundance matrix
+    confidence: medium
+  Step 11: Targeted quantitative method validation
+    tool: Thermo TraceFinder or similar
+    algorithm: external calibration curve
+    parameters: calibration_levels=5, linearity_range=not specified, LOD_LOQ=determined per compound, precision_accuracy=intra-day and inter-day CV <15%, accuracy 85–115%
+    input: standards of linolenic, linoleic, palmitic, oleic, stearic acids
+    output: absolute concentrations (mg g⁻¹)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: not_mentioned (not mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository
+  - Exact UHPLC gradient profile (time points, %B values) not fully specified
+  - In-house structure-based workflow not described in sufficient detail or shared
+  - Custom R scripts for filtering and quantitation not provided
+  - Targeted validation parameters (calibration ranges, LOD/LOQ values) not reported
+  - No accession number or link to any public data repository
+reproducibility_strengths:
+  - Use of open-source XCMS for core untargeted processing
+  - Explicit mention of msconvert for raw file conversion
+  - Clear reporting of instrument parameters (Orbitrap resolution, ESI conditions)
+  - Identification strategy grounded in chemical logic (homologous series, mass defect)

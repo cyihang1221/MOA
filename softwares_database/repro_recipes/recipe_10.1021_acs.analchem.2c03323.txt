@@ -1,0 +1,61 @@
+========== reproducibility_recipe entry ==========
+paper_title: GIPMA: Global Intensity-Guided Peak Matching and Alignment for 2D <sup>1</sup>H-<sup>13</sup>C HSQC-Based Metabolomics.
+source_paper: Du H et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.2c03323, PMID: 36728684
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Peak detection in individual 2D ¹H-¹³C HSQC spectra
+    tool: Custom MATLAB implementation
+    algorithm: Not specified beyond 'peaks identified in all spectra are pooled'
+    input: Raw 2D ¹H-¹³C HSQC NMR spectra (FID or processed data)
+    output: List of detected peaks (δ₁H, δ₁³C, intensity) per spectrum
+    confidence: low
+  Step 2: Global peak pooling and intensity-based sorting
+    tool: GIPMA algorithm
+    algorithm: Intensity-guided clustering
+    parameters: intensity_weighting=True
+    input: Peak lists from all spectra
+    output: Sorted global peak list by intensity
+    confidence: high
+  Step 3: Dynamic peak clustering with intensity-weighted chemical shift alignment
+    tool: GIPMA algorithm
+    algorithm: Iterative cluster formation with intensity-weighted centroid update
+    parameters: chemical_shift_tolerance_delta_delta_o=dynamically optimized to maximize valid peak clusters (vPC)
+    input: Sorted global peak list
+    output: Aligned peak table (δ₁H_aligned, δ₁³C_aligned, intensity, cluster ID)
+    confidence: medium
+  Step 4: Validation and performance evaluation on model mixtures
+    tool: Manual verification / ground truth comparison
+    algorithm: Exact match against known spectral features of seven metabolites
+    parameters: n_model_mixtures=6, n_metabolites=7
+    input: Aligned peak table + reference assignments
+    output: Matching accuracy (e.g., % correct matches)
+    confidence: high
+  Step 5: Multivariate statistical analysis of aligned data
+    tool: Hierarchical cluster analysis (HCA) and principal component analysis (PCA)
+    algorithm: Euclidean distance + average linkage (HCA); covariance-based PCA
+    parameters: n_samples=29, n_spectra=87, n_species=5
+    input: Intensity matrix (samples × vPCs)
+    output: Dendrogram, PCA scores plot, sample classification
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed NMR data deposited
+  - No source code or software repository provided
+  - No details on peak detection parameters (e.g., SNR threshold, minimum volume)
+  - No specification of MATLAB version or dependencies
+  - No description of how dynamic Δδ₀ optimization is implemented (e.g., search range, objective function, convergence criteria)
+  - No validation of robustness to noise or artifacts
+reproducibility_strengths:
+  - Algorithm described with clear conceptual workflow (intensity-guided clustering, weighted centroid update)
+  - Performance demonstrated on both synthetic and real biological samples
+  - Explicit reporting of evaluation metrics (correct matching of all known features, correct 5-group classification)

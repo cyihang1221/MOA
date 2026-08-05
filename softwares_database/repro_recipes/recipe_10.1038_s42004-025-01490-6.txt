@@ -1,0 +1,122 @@
+========== reproducibility_recipe entry ==========
+paper_title: A software tool and strategy for peptidoglycomics, the high-resolution analysis of bacterial peptidoglycans via LC-MS/MS.
+source_paper: Alamán-Zárate MG et al. (2025), Communications chemistry, DOI: 10.1038/s42004-025-01490-6, PMID: 40133660
+overall_reproducibility_score: 58/100
+
+workflow_steps: 7
+  Step 1: Peptidoglycan extraction and muropeptide preparation
+    tool: Manual biochemical protocol
+    parameters: boiling_time_min=30, centrifugation_g=125000, centrifugation_duration_h=2, trypsin_concentration_ug_ml=100, trypsin_incubation_h=4, trypsin_temperature_c=37, trypsin_inactivation_temp_c=65, trypsin_inactivation_duration_min=10, freeze_drying=True, resuspension_concentration_mg_ml=10
+    input: bacterial cell pellet
+    output: purified peptidoglycan material
+    confidence: high
+  Step 2: Mutanolysin digestion and chemical reduction
+    tool: Manual enzymatic/chemical protocol
+    parameters: mutanolysin_units=250, digestion_duration_h=16, buffer=20 mM phosphate, pH 5.5, borate_buffer_concentration_mM=250, borate_buffer_pH=9.25, NaBH4_concentration_mg_ml=25, reduction_duration_min=20, pH_adjustment_to=5.0, heat_inactivation_temp_c=100, heat_inactivation_duration_min=5
+    input: purified peptidoglycan material
+    output: reduced soluble muropeptides
+    confidence: high
+  Step 3: LC-MS/MS acquisition
+    tool: Thermo Q Exactive Focus
+    algorithm: data-dependent acquisition (DDA)
+    parameters: instrument=Q Exactive Focus, ionisation_mode=positive H-ESI II, scan_range_mz=[150, 2250], full_scan_resolution=70000, full_scan_agc_target=1000000, msms_acquisition_mode=Top 3, msms_resolution=17500, msms_agc_target=100000, msms_max_it_ms=50, nce_percent=25, dynamic_exclusion_s=5, column=Hypersil Gold aQ C18, 1.9 µm, 150 × 2.1 mm, column_temperature_c=50, injection_volume_ul=10, gradient_duration_min=40, gradient_profile=[{'time_min': 0, 'B_percent': 0}, {'time_min': 25, 'B_percent': 12.5}, {'time_min': 30, 'B_percent': 20}, {'time_min': 35, 'B_percent': 20}, {'time_min': 45, 'B_percent': 0}], solvent_A=water + 0.1% formic acid, solvent_B=acetonitrile + 0.1% formic acid
+    input: reduced soluble muropeptides
+    output: raw .raw files
+    confidence: high
+  Step 4: Database construction and search setup
+    tool: PGFinder web interface + PGLang
+    algorithm: custom grammar-based database generation
+    parameters: database_type=peptidoglycan-specific, glycan_modification_mass_da=480.1955, gm_AEJ_mass_da=852.36, cleavage_rule=non-specific, modification_per_peptide=1
+    input: FASTA of peptide stems or R. leguminosarum proteome
+    output: custom PG database (.fasta or .xml)
+    confidence: medium
+  Step 5: MS/MS spectral searching
+    tool: Byonic (v5.2.5)
+    algorithm: probabilistic sequence scoring
+    parameters: precursor_mass_tolerance_ppm=8, fragment_mass_tolerance_ppm=20, search_type=unbiased, modification_location=N-terminal for glycan moieties, allowed_modifications=['gm', 'gm-AEJ']
+    input: raw .raw files + custom PG database
+    output: peptide-spectrum matches (PSMs), annotated muropeptides
+    confidence: high
+  Step 6: Manual validation and structural interpretation
+    tool: Manual curation + Byos®
+    algorithm: expert-driven spectral interpretation
+    parameters: validation_focus=['N-terminal disaccharide-tripeptide spectra', 'anhydroMurNAc fragments', 'mass coincidence of gm-AEJ/gm-AEJA'], excluded_species=di-anhydro muropeptides
+    input: Byonic search results + MS/MS spectra
+    output: validated muropeptide identifications, structural assignments
+    confidence: medium
+  Step 7: Quantitative PG composition analysis
+    tool: Custom calculation (formula-based)
+    algorithm: cross-linking index & glycan chain length formulae
+    parameters: crosslinking_formula=0.5 * %dimers + (2/3) * %trimers, chain_length_formula=100 / (%anhydro_monimers + 0.5 * %anhydro_dimers + (1/3) * %anhydro_trimers), assumption=no di-anhydro species included
+    input: relative abundances of muropeptide classes (monomers/dimers/trimers/anhydro forms)
+    output: cross-linking index, average glycan chain length
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: mentioned_no_link
+  code_url: https://github.com/peptidoglycomics/pgfinder
+  license: MIT
+
+figure_recipes: 11
+  Figure 1: [workflow_diagram]
+    caption: PGFinder’s web interface simplifies MS analysis and enables new functionality.
+    produced_by_step: [4, 5]
+    visualization_tool: Web interface (HTML/CSS/JS)
+  Figure 2: [network]
+    caption: Muropeptides are represented as chemically linked, optionally modified residues.
+    produced_by_step: [4]
+    visualization_tool: Chemical diagram rendering (likely RDKit or custom SVG)
+  Figure 3: [workflow_diagram]
+    caption: PGLang is a domain-specific language for describing branched, cross-linked, or modified muropeptides.
+    produced_by_step: [4]
+    visualization_tool: Syntax diagram / BNF-style notation
+  Figure 4: [heatmap]
+    caption: R. leguminosarum’s peptidoglycan composition is complex and varies between growth conditions.
+    produced_by_step: [5, 6, 7]
+    visualization_tool: Unknown (likely Python/Matplotlib or R/ggplot2)
+  Figure 5: [workflow_diagram]
+    caption: End-to-end strategy for peptidoglycan structural analysis via LC-MS/MS.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7]
+    visualization_tool: Schematic flowchart
+  Table 1: [table]
+    caption: List of peptidoglycan modifications searched for and validation strategy.
+    produced_by_step: [4, 5, 6]
+    visualization_tool: LaTeX / Word table
+  Figure 6: [other]
+    caption: Confirmation of AnhydroMurNAc-modified monomers via MS/MS.
+    produced_by_step: [6]
+    visualization_tool: MS/MS spectrum annotation (Byos® or similar)
+  Table 2: [table]
+    caption: PGFinder identification of N-terminal peptides from PG-anchored proteins bound to gm-AEJ.
+    produced_by_step: [5, 6]
+    visualization_tool: Tabular output from Byonic/PGFinder
+  Figure 7: [bar_chart]
+    caption: Validation of mass coincidence between gm-AEJ and gm-AEJA.
+    produced_by_step: [6]
+    visualization_tool: Bar plot of observed vs theoretical m/z
+  Table 3: [table]
+    caption: Comparative muropeptide analysis of PG from TY vs minimal medium (MM).
+    produced_by_step: [5, 6, 7]
+    visualization_tool: Tabular quantitative comparison
+  Figure 8: [bar_chart]
+    caption: Differential PG composition in R. leguminosarum grown in minimal media (MM) vs rich media (TY).
+    produced_by_step: [7]
+    visualization_tool: Bar chart of relative abundances per muropeptide class
+
+reproducibility_gaps:
+  - Raw LC-MS/MS data (.raw files) not deposited in public repository (e.g., ProteomeXchange, MetaboLights)
+  - Byonic v5.2.5 is commercial software requiring license; no open-source alternative provided for core search step
+  - Exact UHPLC gradient profile lacks precise timepoints beyond broad segments (e.g., '0–12.5% B for 25 min' implies linear but not confirmed)
+  - No details on how relative abundances were extracted from Byonic output for Table 3/Fig. 8 quantification
+  - PGFinder web interface deployment details (server config, dependencies) not provided
+  - No script or workflow (e.g., Snakemake, Nextflow) shared to automate steps 4–7
+reproducibility_strengths:
+  - Open-source PGFinder tool available (MIT license)
+  - Domain-specific language (PGLang) and grammar explicitly defined
+  - All experimental parameters (digestion, reduction, LC, MS) reported in high detail
+  - Structural interpretation rules and quantitative formulae fully disclosed
+  - Use of standard instrument (Q Exactive Focus) with vendor-agnostic parameter reporting

@@ -1,0 +1,73 @@
+========== reproducibility_recipe entry ==========
+paper_title: Screening of imidazoles in atmospheric aerosol particles using a hybrid targeted and untargeted method based on ultra-performance liquid chromatography-quadrupole time-of-flight mass spectrometry.
+source_paper: Gao K et al. (2021), Analytica chimica acta, DOI: 10.1016/j.aca.2021.338516, PMID: 34024422
+overall_reproducibility_score: 30/100
+
+workflow_steps: 7
+  Step 1: Sample extraction and preparation
+    tool: manual_protocol
+    parameters: extraction_solvent=methanol, sonication_time_min=30, centrifugation_speed_rpm=13000, centrifugation_time_min=10, filtration_pore_size_um=0.22
+    input: PM2.5 filter samples
+    output: extracted sample solutions
+    confidence: low
+  Step 2: Chromatographic separation
+    tool: UPLC
+    parameters: column=Acquity UPLC BEH C18 (2.1 × 100 mm, 1.7 μm), flow_rate_mL/min=0.3, injection_volume_uL=5, column_temperature_C=40, gradient_profile=not fully specified — only 'relatively shorter analytical time' mentioned, mobile_phase_A=0.1% formic acid in water, mobile_phase_B=0.1% formic acid in acetonitrile
+    input: extracted sample solutions
+    output: chromatographic eluent
+    confidence: medium
+  Step 3: Mass spectrometric acquisition
+    tool: QTOF-MS
+    algorithm: data-dependent acquisition (DDA) with preferred targeted list
+    parameters: acquisition_mode=positive electrospray ionization (+ESI), mass_range_mz=[50, 1200], resolution=high resolution (QTOF), collision_energy_eV=ramped, auto_MS/MS_trigger=on, targeted_list_size=421, precursor_selection_window_da=1.5, top_N_msms_per_cycle=10
+    input: chromatographic eluent
+    output: raw .raw or .d files (vendor format)
+    confidence: medium
+  Step 4: Data processing and feature detection
+    tool: UNIFI (Waters)
+    algorithm: targeted + untargeted hybrid workflow
+    parameters: peak_detection_algorithm=UNIFI's proprietary algorithm, retention_time_tolerance_min=0.2, mass_tolerance_ppm=5, intensity_threshold=automated, min_peak_width_seconds=2.0
+    input: raw .raw/.d files
+    output: feature table (m/z, RT, intensity) with MS/MS spectra
+    confidence: low
+  Step 5: Targeted identification and quantification
+    tool: UNIFI (Waters)
+    algorithm: library matching with 421 imidazole list
+    parameters: library_match_score_threshold=UNIFI default, RT_window_min=0.2, mass_tolerance_ppm=5, MSMS_similarity_threshold=not specified, calibration_curve_fitting=linear weighted (1/x)
+    input: feature table + MS/MS spectra
+    output: quantified targeted imidazoles (ng/mL → ng/m³)
+    confidence: low
+  Step 6: Untargeted suspect screening
+    tool: UNIFI (Waters) + in-house knowledge
+    algorithm: structure-based annotation using diagnostic fragments and retention behavior
+    parameters: diagnostic_ions=['m/z 69.070', 'm/z 97.060'], imidazole_ring_fragmentation_patterns=used, logP_retention_consistency_check=applied
+    input: feature table + MS/MS spectra + chemical knowledge
+    output: suspected imidazoles (with/without standards)
+    confidence: low
+  Step 7: Method validation
+    tool: custom calculations
+    algorithm: standard validation metrics
+    parameters: LOD_definition=S/N ≥ 3, LOQ_definition=S/N ≥ 10, linearity_range=5-point calibration, accuracy_spiked_recovery_percent=[64.7, 98.7], precision_RSD_percent=<16.0%, matrix_effect_calculation=post-extraction spike vs neat standard
+    input: spiked standard solutions + real PM2.5 extracts
+    output: validation report (LOD, LOQ, recovery, RSD, matrix effect %)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in any public repository
+  - UNIFI is commercial software requiring license and proprietary algorithms
+  - No details on gradient program (time/percentage), making chromatographic reproducibility uncertain
+  - No sharing of the 421-compound targeted list (structure SMILES/inchikeys not provided)
+  - No open-source code or scripts for suspect identification logic or data processing
+  - No spectral libraries or MS/MS reference data shared
+reproducibility_strengths:
+  - Explicit validation metrics reported (LOD, LOQ, recovery, precision)
+  - Clear description of sample preparation and instrument parameters where available

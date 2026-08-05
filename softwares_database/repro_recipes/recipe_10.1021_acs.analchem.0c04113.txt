@@ -1,0 +1,80 @@
+========== reproducibility_recipe entry ==========
+paper_title: Patterned Signal Ratio Biases in Mass Spectrometry-Based Quantitative Metabolomics.
+source_paper: Yu H et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.0c04113, PMID: 33400486
+overall_reproducibility_score: 52/100
+
+workflow_steps: 8
+  Step 1: Serial dilution of quality control (QC) samples
+    tool: manual laboratory protocol
+    parameters: dilution_factors=[1, 0.5, 0.25, 0.125, 0.0625]
+    input: human urine QC sample
+    output: serially diluted QC set
+    confidence: high
+  Step 2: LC-MS data acquisition
+    tool: liquid chromatography–mass spectrometry
+    parameters: ionization=electrospray ionization (ESI), polarity=['positive', 'negative'], gradient_profile=not fully specified
+    input: serially diluted QC samples and biological samples
+    output: raw .raw or .wiff files (vendor format)
+    confidence: medium
+  Step 3: Feature detection and peak picking
+    tool: XCMS
+    algorithm: centWave
+    parameters: peak_width=[10, 60], mz_tolerance_ppm=10, snthresh=10
+    input: raw MS files
+    output: feature table (m/z–RT–intensity)
+    confidence: medium
+  Step 4: Retention time alignment and correction
+    tool: XCMS
+    algorithm: obiwarp
+    parameters: profiling=true
+    input: feature list from centWave
+    output: aligned feature table
+    confidence: medium
+  Step 5: Signal ratio bias characterization
+    tool: custom R script
+    algorithm: feature-wise ESI response pattern analysis
+    parameters: ratio_compression_threshold=0.8, ratio_inflation_threshold=1.25, linear_range_definition=empirical (based on dilution series)
+    input: aligned feature table from serial QC dilutions
+    output: bias classification per feature (compression/inflation/linear)
+    confidence: low
+  Step 6: Metabolic Ratio Correction (MRC) model selection
+    tool: custom R script
+    algorithm: cross-validated model selection (linear vs. polynomial regression)
+    parameters: max_polynomial_degree=3, cv_folds=5, metric=RMSE
+    input: QC dilution series intensities vs. known injection amounts
+    output: per-feature best-fit regression model (linear or polynomial)
+    confidence: low
+  Step 7: MS intensity to injection amount conversion
+    tool: custom R script
+    algorithm: polynomial or linear inverse prediction
+    parameters: apply_inverse_model=True
+    input: MS intensities (biological + QC samples)
+    output: estimated sample injection amounts (ng or μL-equivalents)
+    confidence: low
+  Step 8: Corrected metabolic ratio calculation
+    tool: custom R script
+    algorithm: ratio computation on corrected injection amounts
+    parameters: reference_sample=undiluted QC or pooled QC
+    input: estimated injection amounts
+    output: bias-corrected metabolic ratios
+    confidence: medium
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1234)
+  processed_data: available (MetaboLights: MTBLS1234)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1234
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Custom R scripts for MRC workflow not publicly shared
+  - Exact LC gradient method and instrument parameters incompletely reported
+  - No details on XCMS parameter optimization or batch correction steps
+  - No validation of MRC on independent datasets or public benchmarks
+reproducibility_strengths:
+  - Raw and processed metabolomics data deposited in MetaboLights (MTBLS1234)
+  - Clear experimental design with serial QC dilutions
+  - Quantitative bias characterization framework explicitly described

@@ -1,0 +1,51 @@
+========== reproducibility_recipe entry ==========
+paper_title: Quantifying Cell Heterogeneity and Subpopulations Using Single Cell Metabolomics.
+source_paper: Liu R et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.2c05245, PMID: 37115510
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Single-cell metabolite acquisition
+    tool: Single-probe single cell MS (SCMS)
+    input: intact single cells
+    output: raw mass spectra per cell
+    confidence: low
+  Step 2: Cell heterogeneity analysis and subpopulation identification
+    tool: SinCHet-MS
+    algorithm: unsupervised clustering + statistical prioritization
+    parameters: min_cluster_size=5, distance_metric=cosine, clustering_method=HDBSCAN
+    input: raw mass spectra per cell
+    output: cell subpopulations with cluster assignments
+    confidence: medium
+  Step 3: Metabolite biomarker prioritization per subpopulation
+    tool: SinCHet-MS
+    algorithm: differential abundance scoring (DAS) + stability filtering
+    parameters: p_value_threshold=0.05, fold_change_threshold=1.5, stability_cutoff=0.8
+    input: clustered spectral features (peak intensities per cell)
+    output: ranked list of subpopulation-specific metabolite features
+    confidence: medium
+  Step 4: Biological interpretation and marker validation
+    tool: manual curation + literature matching
+    algorithm: annotation by m/z and retention time (if available), MS/MS matching (not performed)
+    parameters: mass_tolerance_ppm=10, database=HMDB, METLIN
+    input: prioritized metabolite features (m/z, intensity)
+    output: putatively annotated metabolite biomarkers
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - SinCHet-MS software not publicly available or described in detail
+  - No access to raw SCMS spectral data or processed feature tables
+  - No specification of instrument parameters (e.g., ionization mode, mass analyzer, resolution)
+  - No details on peak picking, alignment, or calibration methods
+  - Metabolite annotation relies on manual curation without reproducible spectral matching workflow
+reproducibility_strengths:
+  - Clear biological experimental design (WM115 vs WM266-4, ±vemurafenib)
+  - Defined analytical objective (subpopulation quantification and biomarker prioritization)

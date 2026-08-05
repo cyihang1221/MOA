@@ -1,0 +1,67 @@
+========== reproducibility_recipe entry ==========
+paper_title: Labile Metabolite Profiling in Human Blood Using Phosphorus NMR Spectroscopy.
+source_paper: Nagana Gowda GA et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c03040, PMID: 37756488
+overall_reproducibility_score: 42/100
+
+workflow_steps: 6
+  Step 1: Blood sample collection and stabilization
+    tool: custom_protocol
+    parameters: stabilization_method=immediate chilling on ice, anticoagulant=EDTA, processing_delay=<30 min
+    input: fresh whole blood
+    output: stabilized plasma/serum
+    confidence: medium
+  Step 2: Sample preparation for 31P NMR
+    tool: custom_protocol
+    parameters: buffer=phosphate-buffered saline (PBS), pH_control=yes, temperature_control=25°C, reference_standard=0.1% v/v 85% phosphoric acid
+    input: stabilized plasma/serum
+    output: NMR-ready sample in 5 mm NMR tube
+    confidence: medium
+  Step 3: Acquisition of 1D 31P NMR spectra
+    tool: Bruker AVANCE spectrometer
+    algorithm: pulse-acquire
+    parameters: field_strength=600 MHz, spectral_width=20 ppm, acquisition_time=1.36 s, relaxation_delay=2 s, scans=256, pulse_angle=30°, broadband proton decoupling=yes
+    input: NMR-ready sample
+    output: 1D 31P NMR FID
+    confidence: high
+  Step 4: NMR data processing and peak integration
+    tool: TopSpin
+    algorithm: Fourier transform, phasing, baseline correction, integration
+    parameters: line_broadening=1 Hz, zero_filling=64k, phase_correction=manual, integration_region=user-defined peaks
+    input: 1D 31P NMR FID
+    output: quantified peak areas
+    confidence: high
+  Step 5: Metabolite identification
+    tool: combinatorial_NMR_analysis
+    algorithm: multi-dimensional NMR + database matching + spiking validation
+    parameters: 2D_experiments=['1H-31P HMBC', '1H-31P HSQC', '31P-31P COSY'], databases_used=['BMRB', 'HMDB', 'in-house 1H/31P chemical shift database'], spiking_compounds=authentic standards
+    input: 1D and 2D NMR spectra of blood + reference compounds
+    output: annotated metabolite list (n≈25)
+    confidence: medium
+  Step 6: Quantification of phosphorus metabolites
+    tool: internal_reference_quantification
+    algorithm: external standard curve + internal reference (phosphoric acid)
+    parameters: quantification_method=peak area ratio to reference, calibration_standards=serial dilutions of authentic metabolites, linearity_range=tested per metabolite
+    input: integrated peak areas + calibration data
+    output: absolute concentrations (μM)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw NMR FID data not deposited in public repository
+  - No access to in-house 1H/31P chemical shift database
+  - No protocol details for blood stabilization (e.g., exact timepoints, centrifugation parameters)
+  - No spectral processing scripts or automation details
+  - Commercial NMR hardware (Bruker) and software (TopSpin) require proprietary licenses
+  - 2D NMR acquisition parameters not fully specified (e.g., mixing times, evolution periods)
+reproducibility_strengths:
+  - Explicit description of 1D 31P NMR acquisition parameters
+  - Clear reporting of identification strategy (2D NMR + spiking)
+  - Use of internal reference (phosphoric acid) for quantification

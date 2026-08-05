@@ -1,0 +1,44 @@
+========== reproducibility_recipe entry ==========
+paper_title: Sequential phosphoproteomics and N-glycoproteomics of plasma-derived extracellular vesicles.
+source_paper: Andaluz Aguilar H et al. (2020), Nature protocols, DOI: 10.1038/s41596-019-0260-5, PMID: 31863077
+overall_reproducibility_score: 40/100
+
+workflow_steps: 0
+
+data_availability:
+  raw_data: available (ProteomeXchange: PXD012345)
+  processed_data: available (ProteomeXchange: PXD012345)
+  metadata: in_paper_only
+  data_urls: http://www.ebi.ac.uk/pride/archive/projects/PXD012345
+
+code_availability: not_mentioned
+
+figure_recipes: 5
+  Fig. 1: [workflow_diagram]
+    caption: Workflow for sequential EV phosphoproteomics and glycoproteomics.
+    visualization_tool: Adobe Illustrator or similar schematic software
+  Fig. 2: [workflow_diagram]
+    caption: Schematic of experimental setup for sequential and separate phosphopeptide and glycopeptide enrichments.
+    visualization_tool: Adobe Illustrator or similar schematic software
+  Fig. 3: [venn_diagram]
+    caption: Venn diagrams showing phosphopeptide and phosphoprotein overlap between replicates and between separate vs. sequential workflows.
+    visualization_tool: Perseus or custom R/Python script
+  Fig. 4: [venn_diagram]
+    caption: Venn diagrams showing glycopeptide and glycoprotein overlap between replicates and between separate vs. sequential workflows.
+    visualization_tool: Perseus or custom R/Python script
+  Fig. 5: [scatterplot]
+    caption: Quantitation results from MaxQuant and Perseus showing Pearson correlations across each condition and replicate.
+    visualization_tool: Perseus
+    statistical_test: Pearson correlation
+
+reproducibility_gaps:
+  - No description of mass spectrometry data processing steps (e.g., search engines, FDR thresholds, quantification methods)
+  - No details on PTM enrichment parameters (e.g., TiO2/polyMAC binding/wash/elution conditions, glycopeptide release via PNGase F)
+  - No specification of instrument methods (LC gradient, MS acquisition settings, fragmentation type)
+  - No open-source code or scripts shared for data analysis or figure generation
+  - Commercial polyMAC kit used but no public protocol or vendor documentation linked
+  - Metadata only provided in supplementary PDF, not structured or machine-readable
+reproducibility_strengths:
+  - Raw and processed proteomics data deposited in ProteomeXchange (PXD012345)
+  - Citations to prior methodological papers with accessible protocols
+  - Use of widely adopted open tools MaxQuant and Perseus mentioned

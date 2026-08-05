@@ -1,0 +1,67 @@
+========== reproducibility_recipe entry ==========
+paper_title: Quantum Chemical Prediction of Electron Ionization Mass Spectra of Trimethylsilylated Metabolites.
+source_paper: Wang S et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.1c02838, PMID: 35006668
+overall_reproducibility_score: 72/100
+
+workflow_steps: 6
+  Step 1: Compound selection and TMS derivatization
+    tool: manual curation
+    parameters: compound_classes=['organic acids', 'alcohols', 'amides', 'amines', 'thiols'], derivatization_agent=trimethylsilyl (TMS), n_compounds=816
+    input: chemical structures (SMILES or IUPAC names)
+    output: list of 816 TMS-derivatized compound structures
+    confidence: high
+  Step 2: Quantum chemical EI mass spectrum prediction
+    tool: QCEIMS
+    algorithm: quantum chemistry-based fragmentation simulation
+    parameters: ionization_mode=electron ionization (EI), energy=70, level_of_theory=DFT/B3LYP/6-31G(d), conformer_generation=systematic search, fragmentation_pathway_sampling=trajectory-based
+    input: TMS-derivatized compound structures
+    output: in silico EI mass spectra (m/z, intensity)
+    confidence: medium
+  Step 3: Experimental spectrum retrieval
+    tool: NIST17 Mass Spectral Library (vNIST17)
+    parameters: instrument_type=GC-EI-MS, ionization_energy=70, spectral_resolution=unit mass resolution
+    input: compound names or CAS numbers of TMS derivatives
+    output: experimental EI mass spectra (m/z, intensity)
+    confidence: high
+  Step 4: Spectral similarity assessment
+    tool: weighted dot product scoring
+    algorithm: weighted dot product (WDP)
+    parameters: max_score=1000, mass_tolerance=0.1, intensity_normalization=to base peak, weighting=intensity-weighted
+    input: paired in silico and experimental spectra
+    output: similarity scores (0–1000)
+    confidence: high
+  Step 5: Class-wise performance analysis
+    tool: custom Python/R script
+    algorithm: group-wise mean similarity calculation
+    parameters: grouping_variable=compound class (aromatic vs. oxygen-containing), statistic=mean weighted dot score
+    input: similarity scores + compound annotations
+    output: class-averaged similarity scores
+    confidence: low
+  Step 6: Fragmentation trajectory analysis
+    tool: QCEIMS internal trajectory inspection
+    algorithm: reaction pathway analysis
+    parameters: rearrangement_reactions_included=['McLafferty', 'ortho-quinoid', 'TMS-specific eliminations']
+    input: QCEIMS-generated fragmentation trajectories
+    output: missed fragmentation patterns (e.g., specific rearrangements)
+    confidence: medium
+
+data_availability:
+  raw_data: available (NIST17: NIST17 GC-MS library)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: https://github.com/qceims/qceims
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No public deposition of the curated set of 816 TMS-derivatized structures (SMILES/CAS list not provided as supplementary data)
+  - NIST17 library access requires commercial license
+  - QCEIMS parameters for conformer sampling and trajectory length not fully specified (e.g., number of conformers, simulation time steps)
+  - No benchmark dataset or spectral pairs shared for independent validation
+reproducibility_strengths:
+  - QCEIMS source code publicly available under MIT license
+  - Explicit reporting of quantum chemical method (DFT/B3LYP/6-31G(d))
+  - Clear similarity metric (weighted dot score) with defined max value (1000) and tolerance (0.1 Da)

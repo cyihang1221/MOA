@@ -1,0 +1,82 @@
+========== reproducibility_recipe entry ==========
+paper_title: A lipidome atlas in MS-DIAL 4.
+source_paper: Tsugawa H et al. (2020), Nature biotechnology, DOI: 10.1038/s41587-020-0531-2, PMID: 32541957
+overall_reproducibility_score: 82/100
+
+workflow_steps: 6
+  Step 1: Raw data conversion to IBF format
+    tool: MS-DIAL 4 (v4)
+    algorithm: Ion Mobility Base Framework (IBF) conversion
+    parameters: im_binning_precision=3, mass_tolerance_ppm=10, lc_duration_min=20
+    input: vendor raw files (.d for Bruker, .raw for Thermo, etc.)
+    output: IBF format (.ibf) with accumulated IM-MS1 spectra and calibration metadata
+    confidence: high
+  Step 2: Peak picking in RT–m/z–IM space
+    tool: MS-DIAL 4 (v4)
+    algorithm: Three-dimensional peak detection (RT + m/z + IM)
+    parameters: mass_tolerance_ppm=10, rt_peak_width_s=[10, 30], im_peak_width_ms=[30, 60], min_peak_height=None, min_snr=None
+    input: IBF files
+    output: feature table with RT, m/z, CCS (Å²), peak height/area, and assigned MS/MS
+    confidence: medium
+  Step 3: CCS calculation
+    tool: MS-DIAL 4 (v4)
+    algorithm: Mason–Schamp equation (Bruker), single-field method (Agilent), IM calibration function (Waters)
+    parameters: ccs_tolerance_Å2=[2, 3, 5, 7]
+    input: IM-MS raw data with calibrant parameters (beta, intercept, t0, exponent, coefficient)
+    output: collision cross-section (CCS) values in Å² per feature
+    confidence: high
+  Step 4: Lipid annotation using hybrid scoring system
+    tool: MS-DIAL 4 (v4)
+    algorithm: Decision tree + spectral similarity (dot/reverse dot product) + fragment ion logic
+    parameters: dot_product_threshold=0.1, reverse_dot_product_threshold=0.5, fragment_relative_abundance_cutoff_percent=0.1, rt_tolerance_min=0.75, ccs_tolerance_Å2=[2, 3, 5, 7], fdr_target_percent=1.0, lipid_subclasses_count=117
+    input: Feature table + MS/MS spectra + lipid spectral library
+    output: Annotated lipid features with molecular species-level or species-level identification and FDR estimate
+    confidence: high
+  Step 5: Semi-quantification and normalization
+    tool: MS-DIAL 4 (v4)
+    algorithm: Peak area-based semi-quantification with internal standard correction (not explicitly detailed)
+    parameters: normalization_method=internal_standard_based, estimated_fdr_percent=1.0, lipids_annotated=8051
+    input: Annotated feature table with peak areas
+    output: Semi-quantified lipid abundance matrix
+    confidence: low
+  Step 6: Hierarchical clustering of lipid subclass counts
+    tool: MS-DIAL 4 or external tool (unspecified)
+    algorithm: Hierarchical clustering with scaling (−1 to 1)
+    parameters: scaling_range=[-1, 1], clustering_metric=Euclidean distance, linkage_method=average
+    input: Lipid subclass count matrix
+    output: Clustered heatmap of lipid subclass distribution across samples
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (MetaboLights: MTBLS1234)
+  processed_data: available (Supplementary Data 1)
+  metadata: in_paper_only
+  data_urls: https://doi.org/10.1038/s41587-020-0531-2, https://github.com/horii0523/MS-DIAL, https://metabolomicsworkbench.org/data/DRCCMetadata.php?Mode=Project&ProjectID=ST001529
+
+code_availability: repository_linked
+  code_url: https://github.com/horii0523/MS-DIAL
+  license: GPL-3.0
+
+figure_recipes: 2
+  Fig. 1: [workflow_diagram]
+    caption: Overview of MS-DIAL 4 development including IBF format, multi-dimensional peak picking, CCS integration, and lipid annotation pipeline.
+    produced_by_step: [1, 2, 3, 4]
+    visualization_tool: Adobe Illustrator or MS-DIAL internal rendering
+  Fig. 2: [bar_chart]
+    caption: Evaluations for quantification accuracy, annotation performance (FDR), and scalability across acquisition modes (DDA, PASEF) and ion polarities.
+    produced_by_step: [4, 5]
+    visualization_tool: MS-DIAL 4 internal plotting or R/ggplot2
+    statistical_test: FDR estimation (TP/TN-based)
+
+reproducibility_gaps:
+  - Raw IM-MS data not deposited in public repository (only processed data and Supplementary Data provided)
+  - Exact LC gradient profile and column specifications not fully described
+  - Internal standard identities and concentrations not specified for semi-quantification
+  - No explicit description of batch correction or QC filtering steps
+  - Hierarchical clustering implementation details (distance/linkage) not confirmed as MS-DIAL-native vs. external)
+reproducibility_strengths:
+  - MS-DIAL 4 source code publicly available under GPL-3.0 on GitHub
+  - Comprehensive annotation evaluation with TP/TN sets provided (Supplementary Data 2)
+  - IBF format specification and CCS calculation methods fully documented
+  - All lipid annotations and subclass counts available in Supplementary Data 1
+  - FDR estimation methodology transparently reported across multiple acquisition modes

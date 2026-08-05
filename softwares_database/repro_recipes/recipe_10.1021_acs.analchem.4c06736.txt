@@ -1,0 +1,60 @@
+========== reproducibility_recipe entry ==========
+paper_title: Data-Independent Acquisition Coupled with Electron-Activated Dissociation for In-Depth Structure Elucidation of the Fatty Acid Ester of Hydroxy Fatty Acids.
+source_paper: Kurizaki Y et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.4c06736, PMID: 40183471
+overall_reproducibility_score: 42/100
+
+workflow_steps: 5
+  Step 1: FAHFA enrichment
+    tool: TiO2/ZrO2 solid-phase extraction (SPE)
+    parameters: column_type=titanium and zirconium dioxide-coated, elution_solvent=not specified, washing_steps=not specified
+    input: crude lipid extract from mouse fecal samples
+    output: FAHFA-enriched fraction
+    confidence: medium
+  Step 2: Chemical derivatization
+    tool: N,N-dimethylethylenediamine (DMED) derivatization
+    parameters: derivatization_reagent=DMED, ion_mode=positive
+    input: FAHFA-enriched fraction
+    output: DMED-derivatized FAHFAs
+    confidence: high
+  Step 3: LC-SWATH-MS/MS data acquisition
+    tool: Liquid chromatography coupled to SWATH-DIA
+    algorithm: sequential window acquisition of all theoretical mass spectra
+    parameters: acquisition_mode=data-independent acquisition (DIA), fragmentation_method=electron-activated dissociation (EAD)
+    input: DMED-derivatized FAHFAs
+    output: SWATH-MS/MS raw files (.wiff or .d, vendor-specific)
+    confidence: medium
+  Step 4: FAHFA annotation and structural elucidation
+    tool: MS-DIAL (vnewly updated version (v4.90 or later implied))
+    algorithm: library matching + EAD fragment interpretation
+    parameters: ion_mode=positive, derivative_tag=DMED, database=custom/updated FAHFA spectral library
+    input: SWATH-MS/MS raw files
+    output: annotated FAHFA features (molecular species, OH-position-resolved, DB+OH-resolved)
+    confidence: medium
+  Step 5: Isomeric quantification
+    tool: MRMPROBS
+    algorithm: SWATH-MS/MS chromatogram integration using targeted transition lists
+    parameters: quantification_mode=chromatogram-based, transition_selection=FAHFA isomer-specific fragment ions
+    input: SWATH-MS/MS raw files
+    output: isomer-level quantitative matrix (e.g., FAHFA 4:0/2O(FA 26:0), FAHFA 16:0/10O(FA 16:0))
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-SWATH-EAD-MS/MS data not deposited in public repository (e.g., MetaboLights, MassIVE)
+  - No accession ID or repository link provided for any data
+  - Exact LC gradient, column specifications, and EAD instrument parameters (e.g., electron energy, activation time) not reported
+  - Custom FAHFA spectral library used in MS-DIAL not shared or described
+  - MRMPROBS transition lists and isomer-specific quantification parameters not disclosed
+  - No code or workflow scripts (R/Python) shared for data processing or statistical analysis
+reproducibility_strengths:
+  - Uses open-source tools MS-DIAL and MRMPROBS
+  - Clear description of derivatization (DMED) and enrichment (TiO2/ZrO2 SPE)
+  - Explicit reporting of biological sample type (mouse fecal) and experimental observation (age-related changes)

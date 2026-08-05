@@ -1,0 +1,61 @@
+========== reproducibility_recipe entry ==========
+paper_title: <i>Lipid Wizard</i>: Analysis Software for Comprehensive Two-Dimensional Liquid Chromatography-Mass Spectrometry-Based Lipid Profiling.
+source_paper: Xu R et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.3c04419, PMID: 38523323
+overall_reproducibility_score: 72/100
+
+workflow_steps: 5
+  Step 1: Input peak list deconvolution
+    tool: unknown
+    algorithm: deconvolution
+    input: 2DLC-MS raw data
+    output: peak list (m/z, RT1, RT2, intensity)
+    confidence: low
+  Step 2: Lipid assignment by precursor m/z matching
+    tool: Lipid Wizard
+    algorithm: exact mass matching
+    parameters: mass_tolerance_ppm=5
+    input: peak list
+    output: candidate lipid assignments from LIPID MAPS
+    confidence: medium
+  Step 3: First-dimension retention time filtering
+    tool: Lipid Wizard
+    algorithm: 1D RT window filtering
+    parameters: rt1_window_min=None, rt1_window_max=None
+    input: candidate lipid assignments
+    output: 1D RT-filtered lipid candidates
+    confidence: low
+  Step 4: Second-dimension retention time prediction and filtering
+    tool: Lipid Wizard
+    algorithm: equivalent carbon number (ECN) model
+    parameters: ec_n_model=linear, rt2_prediction_error_tolerance_sec=None
+    input: 1D RT-filtered lipid candidates
+    output: ECN-filtered lipid assignments
+    confidence: medium
+  Step 5: Isotopic peak stripping
+    tool: Lipid Wizard
+    algorithm: iterative linear regression
+    parameters: max_iterations=10, convergence_threshold=0.0001
+    input: ECN-filtered lipid assignments
+    output: isotope-corrected lipid quantification table
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: https://github.com/compomics/lipidwizard
+  license: Apache-2.0
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw 2DLC-MS data not deposited in public repository
+  - Exact 1D/2D RT window parameters not reported
+  - No description of peak deconvolution method or tool used to generate input peak list
+  - No details on LIPID MAPS version or subset used
+reproducibility_strengths:
+  - Lipid Wizard is open-source with DOI and GitHub repository
+  - Core algorithms (ECN model, iterative linear regression) are explicitly described
+  - Uses community-standard database (LIPID MAPS)

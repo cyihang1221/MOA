@@ -1,0 +1,55 @@
+========== reproducibility_recipe entry ==========
+paper_title: Reducing Quantitative Uncertainty Caused by Data Processing in Untargeted Metabolomics.
+source_paper: Zhang Z et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.3c04046, PMID: 38395621
+overall_reproducibility_score: 72/100
+
+workflow_steps: 4
+  Step 1: Feature detection and quantification
+    tool: XCMS
+    algorithm: centWave
+    parameters: peakwidth=[10, 60], ppm=5, snthr=10
+    input: raw .mzML files
+    output: feature table with peak area and peak height values
+    confidence: medium
+  Step 2: Retention time alignment
+    tool: XCMS
+    algorithm: obiwarp
+    parameters: method=obiwarp, profiling=True
+    input: feature list from centWave
+    output: aligned feature table
+    confidence: medium
+  Step 3: Computational variation detection
+    tool: AVIR
+    algorithm: support vector machine
+    parameters: training_features=696, cross_validation_folds=10, correlation_metric=Pearson
+    input: feature table with paired peak area and peak height quantifications across samples
+    output: binary classification (computational variation: yes/no) per metabolic feature
+    confidence: high
+  Step 4: Manual correction of flagged features
+    tool: XCMS GUI or custom inspection
+    algorithm: manual reintegration
+    parameters: intensity_threshold=relative difference >20%
+    input: AVIR-flagged features + raw chromatograms
+    output: corrected feature table
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (MetaboLights: MTBLSXXXX)
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/HuanLab/AVIR
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw data accession ID not specified
+  - No description of XCMS parameter tuning or preprocessing steps (e.g., blank subtraction, noise filtering)
+  - External test datasets not named or linked
+  - No details on manual correction protocol (e.g., software version, integration settings)
+reproducibility_strengths:
+  - AVIR source code publicly available on GitHub under MIT license
+  - Clear training set size (n=696) and cross-validation scheme (10-fold)
+  - Quantitative impact reported (75.3% of corrected samples showed >20% relative intensity change)

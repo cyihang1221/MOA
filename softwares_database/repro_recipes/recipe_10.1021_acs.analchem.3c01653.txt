@@ -1,0 +1,56 @@
+========== reproducibility_recipe entry ==========
+paper_title: <i>mzapy</i>: An Open-Source Python Library Enabling Efficient Extraction and Processing of Ion Mobility Spectrometry-Mass Spectrometry Data in the MZA File Format.
+source_paper: Ross D et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c01653, PMID: 37307589
+overall_reproducibility_score: 85/100
+
+workflow_steps: 5
+  Step 1: Raw data extraction from MZA files
+    tool: mzapy
+    algorithm: HDF5-based data access
+    input: raw .mza files
+    output: extracted ion mobility-mass spectrometry data arrays (e.g., drift time, m/z, intensity)
+    confidence: high
+  Step 2: IMS calibration
+    tool: mzapy
+    algorithm: drift time calibration using reference compounds
+    input: raw .mza files with calibration standards
+    output: calibrated drift time axis
+    confidence: medium
+  Step 3: Signal processing
+    tool: mzapy
+    algorithm: noise reduction and baseline correction
+    input: calibrated IMS-MS data
+    output: denoised and baseline-corrected data
+    confidence: medium
+  Step 4: Peak finding
+    tool: mzapy
+    algorithm: feature detection in 3D (drift time, m/z, intensity)
+    input: processed IMS-MS data
+    output: peak list (features) with coordinates in drift time, m/z, and intensity
+    confidence: medium
+  Step 5: Plot generation
+    tool: mzapy
+    algorithm: 2D/3D visualization utilities
+    input: extracted or processed IMS-MS data
+    output: plots (e.g., heatmaps, contour plots, extracted ion chromatograms)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/PNNL-m-q/mzapy
+  license: BSD-3-Clause
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No example dataset or benchmark data provided in paper or repository link
+  - No detailed parameterization (e.g., SNR thresholds, peak width tolerances) for peak finding or calibration algorithms
+  - No workflow demonstration (e.g., Jupyter notebook or script) included in the paper
+reproducibility_strengths:
+  - Fully open-source Python package with minimal dependencies
+  - Source code publicly available on GitHub with documentation
+  - Built on HDF5-based MZA format — standardized, self-describing, and language-agnostic

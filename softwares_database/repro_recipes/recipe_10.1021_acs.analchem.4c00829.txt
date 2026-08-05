@@ -1,0 +1,50 @@
+========== reproducibility_recipe entry ==========
+paper_title: A Workflow for Improved Analysis of Cross-Linking Mass Spectrometry Data Integrating Parallel Accumulation-Serial Fragmentation with MeroX and Skyline.
+source_paper: Rojas Echeverri JC et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.4c00829, PMID: 38696819
+overall_reproducibility_score: 40/100
+
+workflow_steps: 4
+  Step 1: Data acquisition using PASEF on timsTOF
+    tool: Bruker timsTOF
+    algorithm: Parallel Accumulation-Serial Fragmentation (PASEF)
+    input: raw .d files from timsTOF instrument
+    output: vendor-specific raw data
+    confidence: medium
+  Step 2: Raw data conversion to open format
+    tool: Bruker Daltonics software
+    algorithm: format conversion
+    input: Bruker .d directory
+    output: format compatible with MeroX and Skyline (e.g., mzML or vendor-neutral peak list)
+    confidence: low
+  Step 3: Cross-linked peptide identification
+    tool: MeroX
+    algorithm: peptide-centric cross-link search
+    input: converted mass spectrometry data (e.g., mzML)
+    output: cross-linked peptide identifications (PSMs, cross-link candidates)
+    confidence: medium
+  Step 4: Targeted validation and quantification of cross-links
+    tool: Skyline
+    algorithm: targeted DIA/DDA transition analysis
+    input: MeroX output (candidate cross-links), spectral libraries or assay libraries
+    output: quantified cross-link intensities, confidence scores, chromatographic traces
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw data not deposited in public repository
+  - No details on Bruker software version or conversion parameters
+  - No specification of MeroX or Skyline versions, settings, or search parameters (e.g., cross-linker, enzyme, modifications, FDR thresholds)
+  - No description of spectral library generation or Skyline assay configuration
+  - Workflow lacks statistical or reproducibility assessment (e.g., replicate analysis, false discovery control)
+reproducibility_strengths:
+  - Uses open-source tools MeroX and Skyline
+  - Describes integration of PASEF for improved XL-MS sensitivity
+  - Highlights vendor-neutral data handling goal

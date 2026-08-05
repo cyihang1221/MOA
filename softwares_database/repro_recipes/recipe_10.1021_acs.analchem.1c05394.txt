@@ -1,0 +1,41 @@
+========== reproducibility_recipe entry ==========
+paper_title: Lipid A Structural Determination from a Single Colony.
+source_paper: Yang H et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.1c05394, PMID: 35576511
+overall_reproducibility_score: 30/100
+
+workflow_steps: 3
+  Step 1: Sample preparation from single bacterial colony
+    tool: FLAT^n
+    input: single Gram-negative bacterial colony
+    output: MALDI-MS/MS spectra of lipid A
+    confidence: low
+  Step 2: Sample preparation from clinical urine sample
+    tool: FLAT^n
+    input: untreated clinical urine sample containing E. coli
+    output: MALDI-MS/MS spectra of lipid A
+    confidence: low
+  Step 3: Lipid A structural interpretation from MS/MS spectra
+    tool: manual spectral interpretation
+    algorithm: fragment ion analysis
+    parameters: fragment_types_analyzed=['ester-bonded acyl chain dissociations', 'cross-ring cleavages', 'glycosidic bond dissociations']
+    input: MALDI-MS/MS spectra
+    output: lipid A structural assignments (e.g., phosphoethanolamine modification site, isomeric phosphate positions)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - FLAT^n technique not described in sufficient technical detail (e.g., MALDI matrix, laser settings, instrument parameters, acquisition method)
+  - No public data deposition (raw or processed spectra)
+  - No software, scripts, or computational tools disclosed for spectral interpretation or structure assignment
+  - No validation of FLAT^n reproducibility across replicates or operators
+reproducibility_strengths:
+  - Conceptual innovation clearly articulated (single-colony and direct clinical sample analysis)
+  - Biological relevance demonstrated (mcr-1 detection, isomer differentiation)

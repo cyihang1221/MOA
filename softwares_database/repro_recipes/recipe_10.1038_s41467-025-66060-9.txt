@@ -1,0 +1,112 @@
+========== reproducibility_recipe entry ==========
+paper_title: FIDDLE: a deep learning method for chemical formulas prediction from tandem mass spectra.
+source_paper: Hong Y et al. (2025), Nature communications, DOI: 10.1038/s41467-025-66060-9, PMID: 41387416
+overall_reproducibility_score: 72/100
+
+workflow_steps: 11
+  Step 1: MS/MS data collection and compilation
+    tool: Waters Synapt G2, Q-TOF, Orbitrap instruments
+    algorithm: instrument-specific acquisition
+    parameters: collision_energy=40, ion_mode=['positive', 'negative'], precursor_types=['[M + H]+', '[M + Na]+', '[2M + H]+', '[M + 2H]2+', '[M−H]−', '[M + H−H2O]+', '[M + H−2H2O]+', '[M + H−NH3]+', '[M + H + NH3]+', '[M + H−CH2O2]+', '[M + H−CH4O2]+', '[M−H−CO2]−', '[M−H−H2O]'], mz_range_min=50, mz_range_max=1500, atom_composition_allowed=['C', 'H', 'O', 'N', 'F', 'S', 'Cl', 'P', 'B', 'I', 'Br', 'Na', 'K'], max_atom_count=300, mass_tolerance_ppm_qtof=10, mass_tolerance_ppm_orbitrap=5
+    input: raw .raw or .d files (vendor format)
+    output: curated MS/MS spectra (mz/intensity lists)
+    confidence: high
+  Step 2: MS/MS spectral filtering and quality control
+    tool: custom Python pipeline
+    algorithm: rule-based filtering
+    parameters: min_peaks_per_spectrum=5, mz_upper_bound=1500, exclude_low_mz_below=50, precursor_mass_tolerance_ppm_qtof=10, precursor_mass_tolerance_ppm_orbitrap=5
+    input: raw MS/MS spectra
+    output: filtered MS/MS spectra dataset
+    confidence: high
+  Step 3: Precursor m/z simulation
+    tool: custom Python (NumPy)
+    algorithm: Gaussian mass shift sampling
+    parameters: gaussian_std_factor=0.333, mass_tolerance_ppm_qtof=10, mass_tolerance_ppm_orbitrap=5
+    input: theoretical precursor m/z (e.g., from NIST/CASMI)
+    output: simulated experimental precursor m/z
+    confidence: high
+  Step 4: Precursor type simplification
+    tool: custom Python script
+    algorithm: precursor neutral loss absorption into molecular formula
+    parameters: neutral_losses_absorbed=['H2O', 'NH3', 'CO2', 'CH2O2', 'CH4O2']
+    input: MS/MS spectra with precursor annotation
+    output: simplified spectra with [M+H]+/[M−H]−-centric precursor types and adjusted formulas
+    confidence: high
+  Step 5: Train/test split by canonical SMILES
+    tool: RDKit
+    algorithm: SMILES-based compound-level split (no stereoisomer leakage)
+    parameters: split_strategy=['random', 'NIST23-holdout'], smiles_canonicalization=True
+    input: compound metadata with SMILES
+    output: non-overlapping training and test sets (compound-level)
+    confidence: high
+  Step 6: Contrastive learning pair construction
+    tool: custom Python
+    algorithm: positive/negative MS/MS pair sampling per compound group
+    parameters: positive_pair_source=same SMILES group, negative_pair_source=different SMILES group
+    input: training MS/MS spectra grouped by canonical SMILES
+    output: contrastive MS/MS pairs (i,j) with labels y ∈ {0,1}
+    confidence: medium
+  Step 7: Data augmentation (Q-TOF only)
+    tool: custom Python (NumPy)
+    algorithm: Gaussian intensity noise injection
+    parameters: noise_distribution=normal, noise_mean=0, noise_std=0.1, augmented_spectra_per_original=2, cosine_similarity_target=0.936
+    input: Q-TOF MS/MS spectra
+    output: augmented Q-TOF MS/MS spectra (×3 total)
+    confidence: high
+  Step 8: MS/MS representation learning
+    tool: PyTorch
+    algorithm: dilated convolutional neural network with residual blocks and global pooling
+    parameters: dilation_factors=[1, 2, 4, 8, 8, 8], kernel_sizes=[45, 43, 41, 39, 37, 35], effective_receptive_field=1153, channel_sizes=[32, 32, 64, 128, 256, 512], embedding_dim=1024, condition_embedding_dim=16, dropout_rate=not specified, activation=ReLU, weight_normalization=True
+    input: binned MS/MS spectra (235 bins), precursor m/z, precursor type, normalized CE
+    output: 1024-dimensional condition-independent MS/MS embedding
+    confidence: high
+  Step 9: Contrastive loss optimization
+    tool: PyTorch
+    algorithm: triplet-style contrastive loss (hard negative mining implied)
+    parameters: margin=1.0, loss_form=hinge-based contrastive, label_definition=y=1 if same SMILES, else 0
+    input: paired embeddings (z_i, z_j) and labels y
+    output: trained encoder weights
+    confidence: high
+  Step 10: Auxiliary task regularization
+    tool: PyTorch
+    algorithm: multi-task regression loss
+    parameters: auxiliary_tasks=['atom_count', 'molecular_mass', 'H_C_ratio'], loss_weights=[0.01, 1.0, 10.0], loss_type=MSE
+    input: MS/MS embedding and ground-truth auxiliary labels
+    output: regularized encoder
+    confidence: high
+  Step 11: Formula refinement via SENIOR rules and mass window search
+    tool: SENIOR (custom implementation)
+    algorithm: depth-limited candidate enumeration and rule-based filtering
+    parameters: mass_tolerance_delta_m=not numerically specified (ΔM), max_search_depth=D_max (unspecified), top_k_returned=K (unspecified), rules_applied=['SENIOR chemical plausibility rules']
+    input: initial formula candidates F_init and target mass M
+    output: refined top-K candidate formulas
+    confidence: low
+
+data_availability:
+  raw_data: available (GNPS: NA)
+  processed_data: not_mentioned (Zenodo or supplementary)
+  metadata: in_paper_only
+  data_urls: https://gnps.ucsd.edu, https://mona.fiehnlab.ucdavis.edu, https://chem.nlm.nih.gov/chemidplus/, https://casmi-contest.org
+
+code_availability: mentioned_no_link
+  code_url: https://github.com/xxx/fiddle (not explicitly stated in text)
+
+figure_recipes: 1
+  Figure 2g: [bar_chart]
+    caption: Distribution of precursor types before and after simplification, showing reduction in imbalance.
+    produced_by_step: [4]
+    visualization_tool: Matplotlib or Seaborn
+
+reproducibility_gaps:
+  - GitHub repository URL not provided — code availability is 'mentioned_no_link'
+  - Exact values for ΔM, D_max, and K in Algorithm 1 are unspecified
+  - No public link to internal APExBIO dataset or Waters Synapt G2 spectra
+  - Training hyperparameters (learning rate, batch size, optimizer, epochs) not reported
+  - SENIOR rule implementation details and version not cited or linked
+  - No Docker/Singularity environment specification or conda YAML
+reproducibility_strengths:
+  - Comprehensive description of data sources (NIST, MoNA, GNPS, CASMI, EMBL-MCF)
+  - Explicit mass tolerance, m/z range, atom constraints, and precursor type curation rules
+  - Detailed neural architecture (dilation, kernel sizes, ERF calculation, channel progression)
+  - Clear contrastive loss formulation and auxiliary task weighting
+  - SMILES-based train/test split strategy prevents data leakage

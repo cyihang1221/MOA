@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: A Quasi Real-Time Evaluation of High-Resolution Mass Spectra of Complex Chlorinated Paraffin Mixtures and Their Transformation Products.
+source_paper: Mendo Diaz O et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.4c01723, PMID: 39012265
+overall_reproducibility_score: 50/100
+
+workflow_steps: 4
+  Step 1: High-resolution mass spectral data processing
+    tool: CP-Hunter
+    algorithm: Signal deconvolution for interference resolution
+    input: High-resolution mass spectra (e.g., from Orbitrap or TOF-MS)
+    output: C- and Cl-homologue distributions, fingerprints of CPs and transformation products
+    confidence: medium
+  Step 2: Quasi real-time homologue profiling
+    tool: CP-Hunter
+    algorithm: Automated pattern recognition for C<sub>n</sub>Cl<sub>m</sub> series
+    input: Processed mass spectra (peak lists or centroided spectra)
+    output: Homologue distribution plots and fingerprint matrices
+    confidence: medium
+  Step 3: False positive signal detection and elimination
+    tool: CP-Hunter
+    algorithm: Untargeted interference filtering based on isotopic pattern consistency and retention behavior (implied)
+    input: Mass spectral features with retention time (if LC-MS) or direct infusion spectra
+    output: Curated list of putative CP homologues and transformation products
+    confidence: low
+  Step 4: Matrix effect robustness assessment
+    tool: CP-Hunter
+    algorithm: Empirical signal stability evaluation under severe matrix interference
+    input: Spectra from complex extracts (plastic, sewage sludge)
+    output: Robustness metrics (not quantified in text)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://cphunter.cheminfo.org/
+  license: open source (implied by 'open-access', but license not specified)
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectral data not deposited or referenced
+  - No details on input file format (e.g., .mzML, .raw, .mzXML) accepted by CP-Hunter
+  - No specification of instrument parameters (resolution, AGC target, max IT), acquisition mode (full scan/dd-MS2), or chromatographic conditions
+  - Algorithmic details of signal deconvolution and homologue assignment not disclosed (black-box web tool)
+  - No benchmark dataset or ground-truth validation provided in paper
+  - License type for CP-Hunter not stated, limiting legal reuse
+reproducibility_strengths:
+  - CP-Hunter is publicly accessible and open-access
+  - Data processed locally — no external server transfer ensures privacy and enables offline use (in principle)
+  - Tool specifically designed for CPs and their transformation products, addressing a known analytical gap

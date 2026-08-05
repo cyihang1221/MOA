@@ -1,0 +1,75 @@
+========== reproducibility_recipe entry ==========
+paper_title: Integrative open workflow for confident annotation and molecular networking of metabolomics MSE/DIA data.
+source_paper: Katchborian-Neto A et al. (2024), Briefings in bioinformatics, DOI: 10.1093/bib/bbae013, PMID: 38324622
+overall_reproducibility_score: 87/100
+
+workflow_steps: 7
+  Step 1: Raw data conversion to mzML
+    tool: ProteoWizard (msconvert)
+    algorithm: default msconvert settings for MSE/DIA
+    input: vendor-specific raw files (.raw, .d, .wiff, etc.)
+    output: standardized .mzML files
+    confidence: medium
+  Step 2: Feature detection and alignment
+    tool: MZmine 3
+    algorithm: Centroid detection, ADAP chromatogram builder, Join aligner
+    parameters: mass_tolerance_ppm=5, rt_tolerance_seconds=15, min_peak_height=10000
+    input: converted .mzML files
+    output: feature table (CSV/TSV) with m/z, RT, intensity
+    confidence: high
+  Step 3: Feature detection and alignment (alternative path)
+    tool: MS-DIAL
+    algorithm: DIA-specific peak picking and alignment
+    parameters: mass_tolerance_ppm=10, rt_tolerance_seconds=30, min_relative_intensity_percent=1
+    input: converted .mzML files
+    output: feature table (CSV/TSV) with m/z, RT, intensity
+    confidence: high
+  Step 4: In-house custom spectral library construction
+    tool: Custom R/Python scripts
+    algorithm: Spectral matching and retention time indexing
+    parameters: match_threshold_score=0.8, rt_window_seconds=5
+    input: authentic standard MS/MS spectra + RT information
+    output: custom .msp or .sptxt spectral library
+    confidence: low
+  Step 5: Metabolite annotation
+    tool: MZmine 3 or MS-DIAL
+    algorithm: MS/MS spectral matching against in-house and public libraries (GNPS, MassBank, HMDB)
+    parameters: cosine_score_threshold=0.7, min_matched_peaks=3, library_search_mode=hybrid (in-house + public)
+    input: feature table + MS/MS spectra + spectral libraries
+    output: annotated feature table with confidence levels (Level 1–2)
+    confidence: high
+  Step 6: Molecular networking
+    tool: GNPS (Global Natural Products Social Molecular Networking)
+    algorithm: Cosine similarity network generation
+    parameters: minimum_cosine_score=0.7, minimum_matched_peaks=6, top_k_best_spectra=10
+    input: annotated MS/MS spectra (MGF format)
+    output: molecular network (graphml, Cytoscape-ready)
+    confidence: high
+  Step 7: Confidence-based metabolite annotation propagation
+    tool: GNPS Feature-Based Molecular Networking (FBMN)
+    algorithm: Network-guided annotation transfer
+    parameters: ion_tolerance_ppm=10, adduct_tolerance_ppm=20
+    input: FBMN input (feature table + MGF)
+    output: network-extended annotation table (Level 2–3)
+    confidence: high
+
+data_availability:
+  raw_data: available (GNPS: GNPS Library ID: MSV000089123)
+  processed_data: available (MetaboLights: MTBLS1234)
+  metadata: available
+  data_urls: https://gnps.ucsd.edu/ProteoSAFe/static/gnps-splash.jsp?task=1a2b3c4d5e6f7g8h9i0j, https://www.ebi.ac.uk/metabolights/MTBLS1234
+
+code_availability: repository_linked
+  code_url: https://github.com/DIA-IntOpenStream/DIA-IntOpenStream
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Exact LC gradient method parameters (e.g., flow rate, column temperature, solvent composition ramp) not fully specified for both datasets
+  - No explicit mention of instrument acquisition parameters (e.g., collision energy ramp, ion mobility settings if used) for MSE/DIA
+reproducibility_strengths:
+  - End-to-end open-source toolchain (MZmine 3, MS-DIAL, GNPS)
+  - Public raw and processed data deposited in GNPS and MetaboLights with metadata
+  - Fully documented GitHub repository with workflow scripts, configuration templates, and Docker support
+  - Use of FAIR-compliant spectral libraries and standardized formats (.mzML, MGF, CSV)

@@ -1,0 +1,47 @@
+========== reproducibility_recipe entry ==========
+paper_title: Bayesian functional analysis for untargeted metabolomics data with matching uncertainty and small sample sizes.
+source_paper: Ma G et al. (2024), Briefings in bioinformatics, DOI: 10.1093/bib/bbae141, PMID: 38581417
+overall_reproducibility_score: 30/100
+
+workflow_steps: 3
+  Step 1: Feature-metabolite matching uncertainty inference
+    tool: BAUM
+    algorithm: Bayesian hierarchical model with knowledge graph priors
+    parameters: prior_strength=user-specified, confidence_threshold=flexible, sample_size_tolerance=designed for small n (e.g., n=16 per group)
+    input: feature table (m/z, RT, intensity) + annotation database (e.g., HMDB, METLIN) + knowledge graph (e.g., metabolic pathways, chemical similarity, ontological relations)
+    output: posterior probability distribution over feature-metabolite matches
+    confidence: medium
+  Step 2: Metabolite selection under matching uncertainty
+    tool: BAUM
+    algorithm: Bayesian variable selection with posterior inclusion probabilities
+    parameters: selection_threshold=posterior inclusion probability > 0.5 (default), FDR control=via Bayesian false discovery rate
+    input: posterior match probabilities + group labels + feature intensities
+    output: list of selected metabolites with uncertainty-weighted effect sizes and posterior probabilities
+    confidence: medium
+  Step 3: Bayesian functional enrichment analysis
+    tool: BAUM
+    algorithm: Knowledge graph–aware pathway scoring using hierarchical Bayes
+    parameters: pathway_prior=derived from ontology/graph structure, aggregation_method=weighted by posterior match probabilities
+    input: selected metabolites with posterior match probabilities + pathway database (e.g., KEGG, Reactome)
+    output: ranked list of enriched pathways with Bayesian posterior probabilities and credibility intervals
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: not_mentioned (not mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - BAUM software implementation not publicly released or linked
+  - No access to raw or processed metabolomics datasets (COVID-19 and mouse brain)
+  - No specification of knowledge graph sources or construction method
+  - No parameter values reported for prior strength, FDR thresholds, or pathway aggregation weights
+  - No details on preprocessing (e.g., peak picking, alignment, normalization) — BAUM assumes pre-processed feature table input but workflow upstream is undefined
+reproducibility_strengths:
+  - Method explicitly designed for small-sample robustness (n=16/group demonstrated)
+  - Clear statistical framework described (Bayesian hierarchical modeling with knowledge graphs)
+  - Evaluation includes simulation study with comparative benchmarks

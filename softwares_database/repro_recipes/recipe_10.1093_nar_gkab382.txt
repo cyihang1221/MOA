@@ -1,0 +1,49 @@
+========== reproducibility_recipe entry ==========
+paper_title: MetaboAnalyst 5.0: narrowing the gap between raw spectra and functional insights.
+source_paper: Pang Z et al. (2021), Nucleic acids research, DOI: 10.1093/nar/gkab382, PMID: 34019663
+overall_reproducibility_score: 70/100
+
+workflow_steps: 3
+  Step 1: LC-MS spectra processing
+    tool: MetaboAnalyst (v5.0)
+    algorithm: automated parameter optimization
+    parameters: resumable_analysis=True
+    input: raw LC-MS1 spectra (e.g., .mzML, .cdf, .raw)
+    output: processed feature table (peak intensity matrix)
+    confidence: medium
+  Step 2: Functional enrichment analysis
+    tool: MetaboAnalyst (v5.0)
+    algorithm: pathway enrichment using metabolite set libraries
+    parameters: weighted_joint_pathway_analysis=True, data_driven_network_analysis=True
+    input: feature table with compound annotations
+    output: enriched pathways and metabolite sets
+    confidence: medium
+  Step 3: Functional meta-analysis
+    tool: MetaboAnalyst (v5.0)
+    algorithm: cross-dataset integration of complementary metabolomics studies
+    parameters: batch_effect_correction=True, merge_technical_replicates=True
+    input: multiple processed feature tables from related studies
+    output: consensus functional insights (integrated pathways/networks)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://www.metaboanalyst.ca
+  license: CC BY-NC-SA 4.0
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No specific example dataset or analysis parameters provided
+  - No figure/table descriptions included in the abstract/methods excerpt
+  - Backend algorithms (e.g., peak picking, alignment) not detailed
+  - Commercial instrument raw file support (.raw) implies dependency on vendor converters not specified
+reproducibility_strengths:
+  - Freely accessible web platform with documented modules
+  - Refactored codebase improves maintainability
+  - Support for standard open formats (.mzML)
+  - Explicit mention of batch correction and replicate merging enhances experimental rigor

@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: Toward a More Comprehensive Approach for Dissolved Organic Matter Chemical Characterization Using an Orbitrap Fusion Tribrid Mass Spectrometer Coupled with Ion and Liquid Chromatography Techniques.
+source_paper: Bergmann D et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.3c02599, PMID: 38373907
+overall_reproducibility_score: 35/100
+
+workflow_steps: 4
+  Step 1: On-the-fly mass calibration using lock mass
+    tool: Orbitrap Fusion Tribrid Mass Spectrometer (OT-FTMS)
+    algorithm: lock mass calibration
+    parameters: mass_error_target_ppm=1.0, calibration_mode=postcolumn_internal_standard
+    input: raw .raw files
+    output: mass-calibrated spectra with <1.0 ppm error
+    confidence: high
+  Step 2: Data acquisition in dual chromatographic modes
+    tool: Orbitrap Fusion Tribrid MS coupled to IC and UPLC
+    algorithm: dual-mode acquisition (IC− in negative mode, LC+ in positive mode)
+    parameters: ionization_mode_ic=negative, ionization_mode_lc=positive, chromatography_types=['ion_chromatography', 'ultra_performance_liquid_chromatography']
+    input: estuarine DOM extracts
+    output: dual-mode raw .raw files
+    confidence: medium
+  Step 3: Quality control and systematic error removal
+    tool: SERRF (Systematic Error Removal Using Random Forest)
+    algorithm: random forest-based batch effect correction
+    parameters: qc_pooling_strategy=pooled_QC_sample, error_removal_method=SERRF
+    input: feature intensity matrix (QC + samples)
+    output: batch-corrected feature table
+    confidence: medium
+  Step 4: Untargeted feature detection and annotation
+    tool: not explicitly named — inferred from context as Thermo Compound Discoverer or similar proprietary software
+    algorithm: putative structural elucidation based on exact mass, retention time, and fragmentation patterns
+    parameters: mass_accuracy_threshold_ppm=1.0, annotation_strategy=putative_elucidation, compound_classes_targeted=['small_peptides', 'deaminated_peptides', 'organic_acids']
+    input: mass-calibrated, SERRF-corrected .raw files
+    output: putatively annotated compound list with class assignment
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw .raw data not deposited in public repository (e.g., MetaboLights, MassIVE)
+  - No mention of software used for feature detection/annotation (e.g., Compound Discoverer version or open-source alternative)
+  - No details on SERRF implementation (e.g., GitHub repo, parameters, R package version)
+  - Chromatographic gradient profiles, column specifications, and instrument method files not provided
+  - No accession IDs or links for standards, QC samples, or DOM extracts
+reproducibility_strengths:
+  - Explicit mass accuracy target (<1.0 ppm) and calibration strategy described
+  - Clear rationale for dual-mode (IC + LC) acquisition to cover ionizable compound space
+  - Use of pooled QC and SERRF acknowledged as reproducibility-enhancing step

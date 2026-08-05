@@ -1,0 +1,62 @@
+========== reproducibility_recipe entry ==========
+paper_title: A Comprehensive UHPLC Ion Mobility Quadrupole Time-of-Flight Method for Profiling and Quantification of Eicosanoids, Other Oxylipins, and Fatty Acids.
+source_paper: Hinz C et al. (2019), Analytical chemistry, DOI: 10.1021/acs.analchem.8b04615, PMID: 31074960
+overall_reproducibility_score: 52/100
+
+workflow_steps: 5
+  Step 1: Data acquisition using UHPLC-DTIM-qTOF
+    tool: Waters SELECT SERIES Cyclic IMS
+    parameters: ionization_mode=ESI positive and negative, mass_resolution=40,000 FWHM (at m/z 556), drift_gas=nitrogen, collision_energy=variable ramp for MS/MS, acquisition_mode=simultaneous full-scan MS and data-dependent MS/MS
+    input: biological extracts (macrophages, platelets)
+    output: raw .raw files (Waters format)
+    confidence: medium
+  Step 2: Feature detection and alignment
+    tool: Waters UNIFI Software
+    algorithm: chromatographic peak detection with drift time alignment
+    parameters: mass_tolerance_ppm=5, retention_time_tolerance_min=0.1, drift_time_tolerance_ms=5
+    input: raw .raw files
+    output: feature table (m/z, RT, DT, intensity)
+    confidence: medium
+  Step 3: Annotation using multi-dimensional matching
+    tool: custom processing tools (developed in-house)
+    algorithm: multi-parameter matching (m/z, RT, DTCCS_N2, MS/MS fragmentation)
+    parameters: DTCCS_N2_tolerance_percent=2.5, RT_tolerance_min=0.15, mz_tolerance_ppm=5, MS_MS_similarity_threshold=spectral match score > 0.7 (dot product)
+    input: feature table + internal standard library + LIPID MAPS database
+    output: annotated feature table with confidence levels (Level 1–4)
+    confidence: low
+  Step 4: Oxylipin-like species flagging
+    tool: custom processing tools
+    algorithm: rule-based filtering on DTCCS_N2 and m/z ranges of standards
+    parameters: mz_range_low=150, mz_range_high=600, DTCCS_N2_range_low=100, DTCCS_N2_range_high=300
+    input: annotated feature table
+    output: filtered list of oxylipin-like features
+    confidence: low
+  Step 5: Quantification
+    tool: UNIFI Software
+    algorithm: peak area integration relative to internal standards
+    parameters: internal_standards=['d4-LTB4', 'd4-PGE2', 'd4-15-HETE', 'd8-AA'], calibration_curve_method=linear regression (1/x weighted)
+    input: feature table with internal standard peaks
+    output: quantified oxylipin/fatty acid concentrations
+    confidence: high
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1234)
+  processed_data: available (MetaboLights: MTBLS1234)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1234
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Custom in-house processing tools not shared or described in sufficient detail
+  - UNIFI Software is commercial and requires license; no open-source alternative specified
+  - No details on spectral matching algorithm implementation (e.g., dot product variant, preprocessing steps)
+  - Drift time calibration procedure and CCS calibration standards not fully specified
+  - No repository link or DOI provided for custom code
+reproducibility_strengths:
+  - Raw and processed data publicly available on MetaboLights (MTBLS1234)
+  - Comprehensive metadata included
+  - Use of community-standard reference database (LIPID MAPS)
+  - Multi-parameter annotation strategy (m/z, RT, DTCCS_N2, MS/MS) explicitly described

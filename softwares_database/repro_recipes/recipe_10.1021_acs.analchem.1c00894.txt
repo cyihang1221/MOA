@@ -1,0 +1,49 @@
+========== reproducibility_recipe entry ==========
+paper_title: Characterization and Management of Noise in HDX-MS Data Modeling.
+source_paper: Salmas RE et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.1c00894, PMID: 33961396
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: HDX-MS data preprocessing and noise characterization
+    tool: HDXmodeller
+    algorithm: autovalidation based on covariance matrix
+    input: low-resolution HDX-MS peptide-level deuterium uptake time courses
+    output: noise-assessed dataset with reference intervals
+    confidence: medium
+  Step 2: Amino acid–level exchange rate modeling
+    tool: HDXmodeller
+    algorithm: optimization of low-resolution HDX-MS data
+    input: preprocessed HDX-MS time-course data (peptide-level)
+    output: modeled per-residue exchange rates
+    confidence: medium
+  Step 3: Optimizer selection and loss function evaluation
+    tool: HDXmodeller
+    algorithm: embedded autovalidation criteria for optimizer selection
+    input: HDX time-course data with varying noise profiles
+    output: selected optimizer and optimized loss function
+    confidence: low
+  Step 4: Reference interval derivation for experimental HDX-MS data
+    tool: HDXmodeller
+    algorithm: statistical derivation from self-inconsistent datasets
+    input: self-inconsistent HDX-MS datasets
+    output: reference intervals for data consistency assessment
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - HDXmodeller is not publicly available or described as open-source
+  - No repository link or version control reference provided
+  - No details on optimization algorithms, loss functions, or covariance-based autovalidation implementation
+  - Raw or processed HDX-MS data not deposited or referenced
+  - No parameter values (e.g., convergence thresholds, regularization terms, mass tolerance) specified
+reproducibility_strengths:
+  - Explicit mention of autovalidation methodology using covariance matrix
+  - Description of reference interval derivation for data consistency

@@ -1,0 +1,146 @@
+========== reproducibility_recipe entry ==========
+paper_title: Benchmarking informatics workflows for data-independent acquisition single-cell proteomics.
+source_paper: Wang J et al. (2025), Nature communications, DOI: 10.1038/s41467-025-65174-4, PMID: 41271703
+overall_reproducibility_score: 52/100
+
+workflow_steps: 13
+  Step 1: Spectral library generation
+    tool: FragPipe (v22.0)
+    algorithm: MSFragger + IonQuant + Philosopher
+    parameters: msfragger_version=4.1, ionquant_version=1.10.27, philosopher_version=5.1.1, database=Swiss-Prot/UniProtKB, organism_ids=['9606', '559292', '83333'], ddda_replicates=30, peptide_input_amount_ng=2
+    input: raw DDA .d files
+    output: sample-specific spectral library (.splib)
+    confidence: high
+  Step 2: Spectral library generation (public)
+    tool: MSFragger/IonQuant/Philosopher (v22.0)
+    algorithm: Database search of public DDA data
+    parameters: source_dataset=Sinitcyn et al. 2023, peptide_input_amount_ng=200
+    input: public DDA .d files
+    output: public spectral library (.splib)
+    confidence: medium
+  Step 3: Spectral library generation (predicted)
+    tool: AlphaPeptDeep (v1.0.2)
+    algorithm: Deep learning-based spectrum prediction
+    parameters: top_peaks_per_spectrum=12, min_relative_intensity=0.01
+    input: FASTA protein sequence databases
+    output: predicted spectral library (.splib)
+    confidence: high
+  Step 4: DIA data quantification
+    tool: DIA-NN
+    algorithm: Library-based DIA quantification
+    parameters: sparsity_reduction=SR75, quantification_level=protein, library_type=sample-specific
+    input: raw DIA .d files + spectral library
+    output: protein-level quantification matrix
+    confidence: high
+  Step 5: DIA data quantification
+    tool: Spectronaut
+    algorithm: Library-based DIA quantification
+    parameters: sparsity_reduction=SR75, quantification_level=protein
+    input: raw DIA .d files + spectral library
+    output: protein-level quantification matrix
+    confidence: medium
+  Step 6: DIA data quantification
+    tool: PEAKS
+    algorithm: Library-based DIA quantification
+    parameters: sparsity_reduction=SR75, quantification_level=protein
+    input: raw DIA .d files + spectral library
+    output: protein-level quantification matrix
+    confidence: medium
+  Step 7: Sparsity reduction
+    tool: DIA-NN built-in
+    algorithm: SR75 (75% feature completeness threshold)
+    parameters: completeness_threshold=0.75
+    input: peptide/protein quantification matrix
+    output: filtered quantification matrix
+    confidence: high
+  Step 8: Missing value imputation
+    tool: Custom/Not specified
+    algorithm: Zero imputation (evaluated negatively)
+    parameters: method=zero
+    input: quantification matrix with missing values
+    output: imputed quantification matrix
+    confidence: low
+  Step 9: Normalization
+    tool: Custom/Not specified
+    algorithm: Quantile normalization (QN), Sum, Median, No normalization
+    parameters: methods_evaluated=['QN', 'Sum', 'Median', 'none']
+    input: imputed or raw quantification matrix
+    output: normalized quantification matrix
+    confidence: medium
+  Step 10: Batch effect correction
+    tool: Combat-NP, Combat-P, limma, Scanorama
+    algorithm: Empirical Bayes (Combat), linear modeling (limma), manifold alignment (Scanorama)
+    parameters: combat_method=['NP', 'P'], scanorama_stability=less stable
+    input: normalized quantification matrix
+    output: batch-corrected quantification matrix
+    confidence: medium
+  Step 11: Statistical differential expression analysis
+    tool: DESeq2, limma-voom, limma-trend, edgeR-LRT
+    algorithm: Negative binomial GLM (DESeq2), linear modeling on log-transformed counts (limma-voom), trended dispersion (limma-trend), likelihood ratio test (edgeR-LRT)
+    parameters: p_value_threshold=0.05, log2_fold_change_threshold=0.263, fc_threshold_log2=0.263
+    input: batch-corrected quantification matrix
+    output: differential protein list (p < 0.05, |log2FC| > log2(1.2) or log2(1.5))
+    confidence: high
+  Step 12: Functional enrichment analysis
+    tool: GO and Reactome enrichment tools
+    algorithm: Hypergeometric test with multiple testing correction
+    parameters: adjusted_p_value_threshold=0.05, enrichment_databases=['Gene Ontology', 'Reactome']
+    input: differential protein list
+    output: enriched biological terms table
+    confidence: medium
+  Step 13: Workflow performance ranking & interpretation
+    tool: XGBoost + SHAP
+    algorithm: Learning-to-rank with extreme gradient boosting; Shapley additive explanations
+    parameters: top_percentile=25, feature_importance_metric=mean_absolute_shap, interaction_metric=shap_interaction_value, minimum_frequency_per_method=3
+    input: matrix of method combination performances (metrics)
+    output: feature importance and interaction rankings
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (PRIDE)
+  processed_data: in_paper_only (Supplementary Data: Supplementary Data 5, 7)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 6
+  Figure 3: [workflow_diagram]
+    caption: Illustration of benchmarking dataset construction and SHAP-based interpretation of high-performing method combinations across workflow steps.
+    produced_by_step: [13]
+    visualization_tool: Custom plotting (not specified)
+  Supplementary Fig. 17: [bar_chart]
+    caption: SHAP analysis showing feature importance and interactions for peptide standard dataset, highlighting statistical test step dominance and DESeq2/limma-trend top performance.
+    produced_by_step: [13]
+    visualization_tool: Custom plotting (not specified)
+  Supplementary Fig. 18: [bar_chart]
+    caption: SHAP analysis for Spectronaut results showing normalization as most important step and strong normalization–statistical test interactions.
+    produced_by_step: [13]
+    visualization_tool: Custom plotting (not specified)
+  Supplementary Fig. 19: [bar_chart]
+    caption: SHAP analysis for PEAKS results confirming normalization dominance and normalization–batch correction interactions.
+    produced_by_step: [13]
+    visualization_tool: Custom plotting (not specified)
+  Figure 5: [heatmap]
+    caption: GO and Reactome pathway enrichment results clustered by Jaccard distance, comparing biological insights across high-performing workflows.
+    produced_by_step: [12]
+    visualization_tool: Custom heatmap (Z-score coloring, dot size = protein count)
+    statistical_test: Hypergeometric test (adjusted p < 0.05)
+  Supplementary Fig. 21: [heatmap]
+    caption: Enrichment results for workflows starting with different sparsity reduction conditions (e.g., NoSR vs SR75).
+    produced_by_step: [12]
+    visualization_tool: Custom heatmap
+    statistical_test: Hypergeometric test (adjusted p < 0.05)
+
+reproducibility_gaps:
+  - Raw DIA and DDA mass spectrometry data not deposited in public repository (e.g., PRIDE or MassIVE)
+  - No code repository or scripts provided for SHAP/XGBoost analysis, batch correction, or enrichment clustering
+  - Spectronaut and PEAKS are commercial tools requiring licenses and proprietary algorithms
+  - LC gradient profiles only partially specified (Supplementary Table 3 referenced but not provided in text)
+  - No details on how 'SR75' sparsity reduction is implemented outside DIA-NN (e.g., custom R/Python logic)
+  - No version numbers for DIA-NN, Spectronaut, or PEAKS used in benchmarking
+reproducibility_strengths:
+  - Comprehensive description of spectral library construction (organisms, databases, versions, replicates)
+  - Explicit statistical thresholds (p < 0.05, |log2FC| > log2(1.2) or log2(1.5))
+  - Clear reporting of evaluated methods per workflow step (normalization, batch correction, statistics)
+  - Use of open-source tools for core ML (XGBoost, SHAP) and statistical analysis (DESeq2, limma, edgeR)
+  - Detailed sample preparation and LC-MS parameters (instrument models, column specs, temperatures, flow rates)

@@ -1,0 +1,90 @@
+========== reproducibility_recipe entry ==========
+paper_title: Detecting diagnostic features in MS/MS spectra of post-translationally modified peptides.
+source_paper: Geiszler DJ et al. (2023), Nature communications, DOI: 10.1038/s41467-023-39828-0, PMID: 37438360
+overall_reproducibility_score: 87/100
+
+workflow_steps: 4
+  Step 1: Mass shift binning and PSM grouping
+    tool: PTM-Shepherd
+    algorithm: peakpicking with histogram smoothing and prominence-based peak detection
+    parameters: bin_width_da=0.0002, smoothing_window=normal distribution over ±2 adjacent bins, prominence_threshold=0.3, signal_to_noise_window_da=0.004, background_window_da=0.01, top_peaks_reported=500, psm_redundancy_handling=retain highest E-value PSM per peptide ion within bin
+    input: open-search PSM results (e.g., from MSFragger or Comet)
+    output: mass shift bins with representative PSMs
+    confidence: high
+  Step 2: Spectral feature extraction
+    tool: PTM-Shepherd
+    algorithm: ion filtering + remainder mass calculation
+    parameters: ion_exclusion=['a-ions', 'b-ions', 'y-ions', 'shifted a/b/y-ions'], diagnostic_ion_mass_x_da=150, peptide_remainder_truncation_da=-250, fragment_remainder_calculation=['b-ions', 'y-ions'], msms_tolerance_ppm=None
+    input: MS/MS spectra of representative PSMs
+    output: three feature vectors/matrices: U (diagnostic ions), V (peptide remainder masses), W (fragment remainder mass matrix)
+    confidence: medium
+  Step 3: Recurring feature identification via histogramming
+    tool: PTM-Shepherd
+    algorithm: rolling mean smoothing with mass-dependent tolerance, local peak detection, integrated area thresholding
+    parameters: histogram_bin_width_mda=0.2, smoothing_method=mass-dependent rolling mean, mass_tolerance_formula=tol_ppm * (mass_i + mass_x) / 1000000, integrated_area_threshold_percent=0.1, redundancy_resolution=remove less intense peak if peaks unresolved within MS/MS tolerance
+    input: U, V, W feature vectors/matrices
+    output: candidate diagnostic features (ions, peptide remainders, fragment remainders)
+    confidence: high
+  Step 4: Statistical significance testing against unmodified background
+    tool: Hipparchus statistics library (Java) (vv1.8)
+    algorithm: two-sided Mann-Whitney U test with tie and continuity correction
+    parameters: background_group=zero-mass-shift (unmodified) PSMs, test_group=mass-shift-bin PSMs, max_psms_per_group=1000, seed_for_reproducibility=internally provided, evalue_threshold=0.05, fold_change_threshold=3.0, auc_inclusion=True, multiple_testing_correction=E-value = p-value × number_of_tests_in_feature_class
+    input: candidate features + intensity vectors per PSM (for both groups)
+    output: statistically significant, enriched diagnostic features
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (ProteomeXchange)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: https://github.com/smith-chem-wisc/PTM-Shepherd
+  license: MIT
+
+figure_recipes: 7
+  Fig. 1: [workflow_diagram]
+    caption: Schematic illustration of the diagnostic feature mining algorithm pipeline.
+    produced_by_step: [1, 2, 3, 4]
+    visualization_tool: Inkscape or similar vector graphics tool (not specified)
+  Table 1: [table]
+    caption: Summary of most prevalent mass shifts and their characteristics from an open search of a pRBS-ID experiment.
+    produced_by_step: [1]
+    visualization_tool: LaTeX or spreadsheet software (not specified)
+  Table 2: [table]
+    caption: Diagnostic features (e.g., m/z, AUC, fold change) for the most abundant mass shifts detected in the pRBS-ID open search.
+    produced_by_step: [4]
+    visualization_tool: LaTeX or spreadsheet software (not specified)
+    statistical_test: Mann-Whitney U test (E-value < 0.05, fold change ≥ 3.0)
+  Fig. 2: [bar_chart]
+    caption: Characterization of 4SU fragmentation patterns showing diagnostic ions and remainder masses.
+    produced_by_step: [2, 3, 4]
+    visualization_tool: GraphPad Prism or ggplot2 (not specified)
+    statistical_test: Mann-Whitney U test (AUC and fold change reported)
+  Fig. 3: [bar_chart]
+    caption: Diagnostic features of IMAC-enriched glycopeptides under high-energy collision conditions.
+    produced_by_step: [2, 3, 4]
+    visualization_tool: GraphPad Prism or ggplot2 (not specified)
+    statistical_test: Mann-Whitney U test (AUC and fold change reported)
+  Fig. 4: [bar_chart]
+    caption: Analysis of ADP-ribosylation fragmentation patterns including diagnostic ions and fragment remainders.
+    produced_by_step: [2, 3, 4]
+    visualization_tool: GraphPad Prism or ggplot2 (not specified)
+    statistical_test: Mann-Whitney U test (AUC and fold change reported)
+  Fig. 5: [scatter_plot]
+    caption: Trends in diagnostic remainder ions across different PTMs, showing correlation between intensity and statistical significance.
+    produced_by_step: [4]
+    visualization_tool: GraphPad Prism or ggplot2 (not specified)
+    statistical_test: Mann-Whitney U test (AUC values plotted)
+
+reproducibility_gaps:
+  - MS/MS tolerance (ppm) value not explicitly stated in Methods (required for Eq. 6)
+  - No explicit description of how 'tol' is set or defaulted in PTM-Shepherd
+  - Raw spectral data repositories (e.g., ProteomeXchange accession) not cited in text or Methods
+  - Details of internal seed for PSM subsampling (step 4) not disclosed beyond 'provided internally'
+reproducibility_strengths:
+  - Full algorithm described with mathematical formalism and parameter thresholds
+  - Open-source implementation publicly available on GitHub with DOI
+  - All statistical criteria (E-value, fold change, AUC) explicitly defined and justified
+  - Background control strategy (zero-bin unmodified peptides) clearly articulated
+  - Integration into widely used platforms (FragPipe, PTM-Shepherd) ensures community accessibility

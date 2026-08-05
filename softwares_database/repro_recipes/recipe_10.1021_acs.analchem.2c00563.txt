@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: IDSL.UFA Assigns High-Confidence Molecular Formula Annotations for Untargeted LC/HRMS Data Sets in Metabolomics and Exposomics.
+source_paper: Baygi SF et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.2c00563, PMID: 36137231
+overall_reproducibility_score: 72/100
+
+workflow_steps: 4
+  Step 1: Molecular formula generation and theoretical isotopic profile calculation
+    tool: IDSL.UFA
+    algorithm: Isotopic pattern matching (MS1)
+    input: LC/HRMS peak list (m/z, RT, intensity)
+    output: candidate molecular formulas with theoretical isotopic profiles
+    confidence: medium
+  Step 2: Formula hit ranking optimization
+    tool: IDSL.UFA
+    algorithm: Ranking algorithm for individual and aligned peak lists
+    input: Candidate molecular formulas + observed isotopic profiles
+    output: Ranked molecular formula annotations (top-1, top-5)
+    confidence: medium
+  Step 3: Integration of tandem mass spectrometry (MS/MS) support
+    tool: IDSL.UFA
+    algorithm: MS/MS spectral consistency filtering
+    input: Molecular formula candidates + MS/MS spectra
+    output: High-confidence molecular formula annotations supported by MS/MS
+    confidence: medium
+  Step 4: Scaling for large-sample-size studies
+    tool: IDSL.UFA
+    algorithm: Parallelized formula annotation workflow
+    input: Batch of aligned peak lists across many samples
+    output: Consistent, scalable molecular formula annotations across cohort
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://cran.r-project.org/package=IDSL.UFA
+  license: GPL-3
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw LC/HRMS data or peak lists provided for validation tests
+  - No details on HRMS instrument parameters (e.g., mass accuracy, resolution, calibration method) used in validation
+  - No specification of formula search space constraints (e.g., elemental limits, valence rules, isotope abundance thresholds)
+  - No description of peak alignment or preprocessing steps feeding into IDSL.UFA (e.g., XCMS/MZmine parameters)
+  - No access to the 'publicly available pregnancy metabolome study' data or its processed peak table
+reproducibility_strengths:
+  - IDSL.UFA is open-source and publicly available on CRAN
+  - Documentation and tutorials hosted at www.ufa.idsl.me
+  - Validation performance metrics reported (top-1: 54.31–85.51%, top-5: 90.58–100%)
+  - Explicit integration of MS/MS support for annotation confidence

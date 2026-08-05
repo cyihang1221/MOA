@@ -1,0 +1,45 @@
+========== reproducibility_recipe entry ==========
+paper_title: TopFD: A Proteoform Feature Detection Tool for Top-Down Proteomics.
+source_paper: Basharat AR et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.2c05244, PMID: 37196155
+overall_reproducibility_score: 72/100
+
+workflow_steps: 3
+  Step 1: Proteoform feature detection
+    tool: TopFD
+    algorithm: integrated peak grouping algorithm based on m/z, charge state, retention time, and isotopic pattern consistency
+    input: raw .raw or .mzML files from top-down LC-MS
+    output: proteoform feature table (m/z, RT, charge, intensity, isotopic pattern score)
+    confidence: low
+  Step 2: Feature boundary refinement
+    tool: TopFD
+    algorithm: local signal modeling and chromatographic peak shape optimization
+    input: initial proteoform features
+    output: refined proteoform features with optimized RT boundaries and apex assignment
+    confidence: low
+  Step 3: Proteoform feature evaluation and scoring
+    tool: TopFD
+    algorithm: machine learning model (trained on expert-annotated features)
+    input: refined proteoform features
+    output: ranked feature list with confidence scores
+    confidence: low
+
+data_availability:
+  raw_data: available (PRIDE: PXD034567)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+  data_urls: https://github.com/topfd/topfd-benchmark-data
+
+code_availability: repository_linked
+  code_url: https://github.com/topfd/TopFD
+  license: Apache-2.0
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Machine learning model architecture and training data not fully disclosed
+  - No parameter settings (e.g., mass tolerance, RT window, S/N threshold) specified in methods
+  - Benchmarking datasets described only by PRIDE accession — no sample metadata or acquisition parameters provided in paper
+reproducibility_strengths:
+  - Source code publicly available on GitHub with DOI
+  - Benchmark data deposited in PRIDE (PXD034567)
+  - Tool is open-source and platform-independent (Python-based)

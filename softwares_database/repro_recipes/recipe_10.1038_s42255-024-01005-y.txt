@@ -1,0 +1,84 @@
+========== reproducibility_recipe entry ==========
+paper_title: Regulation of urea cycle by reversible high-stoichiometry lysine succinylation.
+source_paper: Zhang R et al. (2024), Nature metabolism, DOI: 10.1038/s42255-024-01005-y, PMID: 38448615
+overall_reproducibility_score: 35/100
+
+workflow_steps: 4
+  Step 1: Lysine succinylation enrichment and identification
+    tool: Immunoenrichment + LC-MS/MS
+    algorithm: Data-independent acquisition (DIA)
+    parameters: acquisition_mode=DIA, stable_isotope_labeling=yes
+    input: Mouse liver tissue lysates
+    output: Identified succinylated peptides and proteins
+    confidence: medium
+  Step 2: Stoichiometry quantification of lysine succinylation
+    tool: Stable isotope labeling + DIA-MS
+    algorithm: Heavy standard-based quantification
+    parameters: heavy_labels=['13C5,15N1-valine'], precursor_mz_tolerance=not specified, charge_state=4
+    input: Immunoenriched succinylated peptides with heavy/light standards
+    output: Site-specific succinylation stoichiometry estimates
+    confidence: medium
+  Step 3: Metabolomics profiling of urea cycle intermediates
+    tool: Mass spectrometry (LC-MS/MS)
+    algorithm: MS1 filtering
+    parameters: metabolites_quantified=['argininosuccinate', 'arginine', 'ornithine', 'citrulline'], statistical_threshold={'fold_change': [0.67, 1.5], 'p_value': 0.05}
+    input: Mouse liver tissue extracts
+    output: Quantified metabolite levels (absolute or relative)
+    confidence: low
+  Step 4: Statistical analysis of differential metabolites and proteins
+    tool: Two-sided unpaired Student's t-test
+    algorithm: t-test
+    parameters: alpha=0.05, fold_change_threshold={'up': 1.5, 'down': 0.67}, sample_sizes={'WT': 4, 'S5KO': 4}
+    input: Metabolite/protein abundance tables
+    output: Differentially abundant features (p < 0.05, |FC| > 1.5)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: not_mentioned (not mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 6
+  Fig. 1: [workflow_diagram]
+    caption: Overview of enrichment and identification of liver lysine succinylome.
+    produced_by_step: [1]
+    visualization_tool: not mentioned
+  Fig. 2: [bar_chart]
+    caption: Quantification of lysine succinylation stoichiometry in mouse liver, highlighting high-stoichiometry sites in ASS1.
+    produced_by_step: [2]
+    visualization_tool: not mentioned
+  Fig. 3: [bar_chart]
+    caption: Thermal stability and enzymatic activity of recombinant ASS1 proteins with wild-type or succinyl-mimetic mutations.
+    produced_by_step: [2, 4]
+    visualization_tool: not mentioned
+    statistical_test: two-sided unpaired Student’s t test
+  Fig. 4: [bar_chart]
+    caption: Urea cycle intermediate metabolite levels (argininosuccinate, arginine, ornithine, citrulline) in WT vs SIRT5 KO mouse livers.
+    produced_by_step: [3, 4]
+    visualization_tool: not mentioned
+    statistical_test: two-sided unpaired Student’s t test
+  Fig. 5: [bar_chart]
+    caption: Ammonia tolerance and locomotor activity phenotypes in male mice under high-ammonium diet.
+    produced_by_step: [4]
+    visualization_tool: not mentioned
+    statistical_test: two-sided unpaired Student’s t test
+  Fig. 6: [line_plot]
+    caption: Plasma ammonia time-course after ammonium acetate challenge in mice treated with luciferase, WT ASS1, or K121E mutant mRNA.
+    produced_by_step: [4]
+    visualization_tool: not mentioned
+    statistical_test: Dunnett’s multiple comparisons test
+
+reproducibility_gaps:
+  - Raw mass spectrometry data (DIA files, raw .raw/.d files) not deposited in public repository
+  - No software tools explicitly named for DIA data processing (e.g., Spectronaut, DIA-NN, OpenSWATH)
+  - No details on LC-MS method parameters (gradient, column, flow rate, instrument settings)
+  - No description of metabolomics platform (instrument type, chromatography, internal standards, calibration)
+  - No access to custom scripts or pipelines for stoichiometry calculation or PTM-site differentiation
+  - No repository link or accession ID for any dataset
+reproducibility_strengths:
+  - Explicit statistical thresholds reported (p < 0.05, fold-change > 1.5 or < 0.67)
+  - Sample sizes clearly stated for all key experiments (n = 4–13 per group)
+  - Use of stable isotope-labeled heavy standards for site-specific quantification described
+  - Biological replicates and independent experimental repeats noted (e.g., 'repeated two times independently')

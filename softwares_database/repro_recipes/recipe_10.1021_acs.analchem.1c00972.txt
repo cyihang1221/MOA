@@ -1,0 +1,65 @@
+========== reproducibility_recipe entry ==========
+paper_title: Improving the Screening Analysis of Pesticide Metabolites in Human Biomonitoring by Combining High-Throughput <i>In Vitro</i> Incubation and Automated LC-HRMS Data Processing.
+source_paper: Huber C et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.1c00972, PMID: 34161736
+overall_reproducibility_score: 35/100
+
+workflow_steps: 6
+  Step 1: In vitro metabolic incubation
+    tool: human liver S9 fraction
+    parameters: incubation_time_min=60, temperature_celsius=37, NADPH_regenerating_system=True, control_incubations=['no NADPH', 'no S9', 'heat-inactivated S9']
+    input: parent pesticide compounds (n=22)
+    output: incubation extracts containing metabolites
+    confidence: high
+  Step 2: Sample cleanup
+    tool: solid-phase extraction (SPE)
+    parameters: SPE_cartridge_type=Oasis HLB, elution_solvent=methanol, drying_method=nitrogen stream
+    input: S9 incubation extracts
+    output: purified extracts ready for LC-HRMS
+    confidence: medium
+  Step 3: LC-HRMS analysis
+    tool: liquid chromatography-high-resolution mass spectrometry
+    parameters: instrument_platform=Q-Exactive Orbitrap, ionization_mode=['positive', 'negative'], mass_resolution=70000, scan_range_mz=[100, 1000], MS2_acquisition=data-dependent acquisition (DDA), top_N_MS2=5, isolation_window_da=2.0, normalized_collision_energy=30
+    input: SPE-purified extracts
+    output: raw .raw files
+    confidence: high
+  Step 4: Automated data processing and metabolite prioritization
+    tool: in-house Python/R pipeline
+    algorithm: ['mass defect filtering', 'm/z range filtering', 'statistical comparison (t-test or similar)']
+    parameters: mass_tolerance_ppm=5, retention_time_window_min=0.2, min_fold_change=2.0, p_value_threshold=0.05, mass_defect_threshold_da=0.005
+    input: raw .raw files
+    output: prioritized metabolite list with RT, m/z, MS2 spectra, molecular formulas, and biotransformation annotations
+    confidence: low
+  Step 5: Molecular formula assignment
+    tool: XCalibur (Thermo) or Compound Discoverer
+    algorithm: elemental composition determination
+    parameters: mass_accuracy_ppm=5, isotope_pattern_match=True, elemental_constraints=['C', 'H', 'N', 'O', 'S', 'P', 'Cl', 'F', 'Br', 'I'], max_elements={'C': 50, 'H': 100, 'O': 20}
+    input: feature table + MS2 spectra
+    output: candidate molecular formulas per feature
+    confidence: medium
+  Step 6: Metabolic transformation annotation
+    tool: in silico prediction tools (e.g., Meteor, BioTransformer) + literature curation
+    algorithm: biotransformation rule matching
+    parameters: transformation_rules=['oxidation', 'dealkylation', 'hydrolysis', 'glucuronidation', 'sulfation'], confidence_scoring=manual curation supported by MS2 spectral similarity
+    input: molecular formulas + MS2 spectra + parent structure
+    output: annotated metabolites with likely biotransformation
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-HRMS data not deposited in public repository (e.g., MetaboLights, MassIVE)
+  - In-house automated data processing pipeline not shared (no code, no Docker, no workflow description)
+  - No details on statistical comparison method (e.g., paired/unpaired, correction for multiple testing)
+  - LC gradient profile and column details only partially specified (no flow rate, temperature, or exact mobile phase composition)
+  - No access to generated metabolite database (RT, m/z, MS2 library) — described as 'used for annotation' but not shared
+reproducibility_strengths:
+  - Explicit description of biological system (human liver S9) and controls
+  - Clear parameters for HRMS acquisition (resolution, scan range, DDA settings)
+  - Defined metabolite prioritization logic (mass defect, m/z filtering, fold-change, p-value)

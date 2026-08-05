@@ -1,0 +1,55 @@
+========== reproducibility_recipe entry ==========
+paper_title: PiTMaP: A New Analytical Platform for High-Throughput Direct Metabolome Analysis by Probe Electrospray Ionization/Tandem Mass Spectrometry Using an R Software-Based Data Pipeline.
+source_paper: Zaitsu K et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.0c01271, PMID: 32375466
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Data acquisition via PESI/MS/MS
+    tool: PESI/MS/MS
+    algorithm: scheduled-selected reaction monitoring (sSRM)
+    parameters: acquisition_time_min=2.4, metabolite_count=72, metabolite_class=central energy metabolism
+    input: biological tissue samples (mouse liver/brain, human meningioma)
+    output: raw .raw or .wiff files (vendor format, unspecified)
+    confidence: medium
+  Step 2: R-based data pipeline execution
+    tool: R
+    algorithm: custom R pipeline (PiTMaP)
+    parameters: fdr_method=false discovery rate correction, vip_threshold=None, multivariate_methods=['PCA', 'PLS-DA']
+    input: instrument output files (unspecified vendor format)
+    output: processed metabolite quantification table, VIP scores, statistical significance results
+    confidence: low
+  Step 3: Automated visualization and reporting
+    tool: R
+    algorithm: custom plotting functions
+    parameters: plot_types=['box-and-whisker', 'PCA score plot', 'PCA loading plot', 'PLS-DA score plot', 'PLS-DA loading plot']
+    input: quantified metabolite table with group labels
+    output: publication-ready figures (boxplots, PCA/PLS-DA plots)
+    confidence: medium
+  Step 4: Statistical analysis and metabolite selection
+    tool: R
+    algorithm: FDR-corrected significance testing + VIP-based filtering
+    parameters: fdr_alpha=0.05, vip_criterion=statistical family determination by VIP value
+    input: PLS-DA model outputs + quantification table
+    output: list of significantly changed metabolites (FDR < 0.05) with VIP > threshold
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw MS data not deposited in public repository
+  - No description of R package structure or dependencies
+  - No specification of VIP threshold used for metabolite selection
+  - No details on PESI/MS/MS instrument parameters (e.g., collision energy, dwell time, transitions)
+  - No information on R version or required packages (e.g., ggplot2, ropls, stats)
+  - PiTMaP pipeline code not shared or archived
+reproducibility_strengths:
+  - Explicit mention of FDR correction and VIP-based filtering
+  - Clear description of analytical use cases (acetaminophen model, meningioma grading)
+  - Reported runtime (~1 min) indicates computational feasibility

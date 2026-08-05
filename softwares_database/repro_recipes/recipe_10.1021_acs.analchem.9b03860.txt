@@ -1,0 +1,87 @@
+========== reproducibility_recipe entry ==========
+paper_title: Metabolomics with <sup>15</sup>N Labeling for Characterizing Missing Monoterpene Indole Alkaloids in Plants.
+source_paper: Nakabayashi R et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.9b03860, PMID: 32083463
+overall_reproducibility_score: 30/100
+
+workflow_steps: 9
+  Step 1: 15N metabolic labeling
+    tool: isotope labeling
+    parameters: labeling_time=not specified, 15N_source=K15NO3 or Na15NO3 (inferred), concentration=not specified, plant_tissue=['flowers', 'leaves', 'petioles', 'stems', 'roots']
+    input: live Catharanthus roseus plants
+    output: 15N-labeled and non-labeled tissue extracts
+    confidence: low
+  Step 2: Sample extraction and LC-MS/MS analysis
+    tool: LC-MS/MS
+    parameters: chromatography=not specified, ionization=ESI, polarity=positive mode, mass_analyzer=tandem quadrupole or Q-TOF (inferred), fragmentation=CID, product_ion_mz=144.08
+    input: tissue extracts
+    output: raw .raw or .d files (vendor format)
+    confidence: low
+  Step 3: 15N/non-15N precursor ion pairing
+    tool: custom data processing
+    algorithm: pairwise matching
+    parameters: rt_tolerance=not specified, mz_difference=1.00335, product_ion_filter=144.08, mz_tolerance_ppm=not specified
+    input: LC-MS/MS peak lists (precursor + MS2 spectra)
+    output: paired 14N/15N ion features
+    confidence: medium
+  Step 4: Nitrogen atom counting from mass shift
+    tool: mass shift interpretation
+    algorithm: Δm/z = n × 1.00335 Da
+    parameters: mass_shift_unit=Da, n_nitrogen_atoms=inferred from precursor and product ion shifts
+    input: paired 14N/15N precursor and fragment ions
+    output: N-count per ion feature
+    confidence: high
+  Step 5: Molecular formula assignment
+    tool: elemental composition calculation
+    algorithm: mass accuracy–based formula generation
+    parameters: mass_accuracy_ppm=not specified, elemental_constraints={'N': 'fixed from step 4', 'C,H,O': 'permitted', 'Cl,Br,S': 'not mentioned'}
+    input: monoisotopic m/z + N-count
+    output: unambiguous molecular formulas (45 MIAs)
+    confidence: medium
+  Step 6: Alkaloid network analysis via MS/MS similarity
+    tool: MS2 spectral similarity
+    algorithm: cosine similarity or spectral alignment
+    parameters: similarity_threshold=not specified, peak_filtering=intensity-based (e.g., top N peaks), min_matched_peaks=not specified
+    input: MS/MS spectra
+    output: structural similarity network of MIAs
+    confidence: low
+  Step 7: Authentic standard confirmation
+    tool: reference standard comparison
+    algorithm: retention time and MS/MS match
+    parameters: rt_match_tolerance=not specified, msms_similarity_score=not specified
+    input: candidate feature (antirhine) + authentic antirhine standard
+    output: confirmed identity of antirhine
+    confidence: high
+  Step 8: Multimetabolomics integration (LC-MS/MS + IMS)
+    tool: imaging mass spectrometry
+    algorithm: spatial ion mapping
+    parameters: ims_platform=not specified (e.g., MALDI or DESI), spatial_resolution=not specified, ion_target=antirhine m/z
+    input: root tissue sections + LC-MS/MS quantification data
+    output: spatial distribution map of antirhine
+    confidence: low
+  Step 9: Principal component analysis (PCA)
+    tool: PCA
+    algorithm: unsupervised multivariate statistics
+    parameters: data_matrix=15N-labeled vs non-labeled N-metabolite intensities, scaling=not specified, centering=assumed
+    input: feature intensity table (N-metabolites only)
+    output: PCA scores and loadings plots
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS/MS and IMS data not deposited in public repository
+  - No details on LC gradient, column, or MS parameters (e.g., collision energy, resolution)
+  - Custom 15N-pairing algorithm not described or shared
+  - No software names or versions for data processing, PCA, or MS/MS networking
+  - No accession IDs or links to metabolite identifiers (e.g., HMDB, GNPS) for the 45 MIAs
+reproducibility_strengths:
+  - Clear conceptual workflow using 15N labeling to constrain nitrogen count
+  - Use of diagnostic fragment ion (m/z 144.08) for indole skeleton filtering
+  - Validation with authentic standard (antirhine)

@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: Autonomous METLIN-Guided In-source Fragment Annotation for Untargeted Metabolomics.
+source_paper: Domingo-Almenara X et al. (2019), Analytical chemistry, DOI: 10.1021/acs.analchem.8b03126, PMID: 30681830
+overall_reproducibility_score: 50/100
+
+workflow_steps: 4
+  Step 1: Feature detection and alignment
+    tool: XCMS
+    algorithm: centWave
+    input: raw .mzML files
+    output: feature table (m/z, RT, intensity)
+    confidence: medium
+  Step 2: Adduct-based neutral mass determination
+    tool: XCMS Online
+    algorithm: adduct annotation module
+    input: feature table
+    output: neutral mass candidates (adduct-derived)
+    confidence: low
+  Step 3: In-source fragment annotation using METLIN low-energy MS/MS spectra
+    tool: MISA (METLIN-guided in-source annotation)
+    algorithm: low-energy spectral matching
+    parameters: score_1_definition=number of matched in-source fragments, score_2_definition=relative intensity similarity between experimental and reference spectra
+    input: feature table + METLIN low-energy MS/MS library
+    output: putatively annotated features with neutral mass and identity confidence scores
+    confidence: high
+  Step 4: Combined annotation (adduct + in-source fragment)
+    tool: XCMS Online
+    algorithm: complementary layer integration
+    input: adduct-annotated features + MISA-annotated features
+    output: enhanced feature annotation table with increased confidence
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: http://xcmsonline.scripps.edu
+  license: free to use (no license specified)
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited or referenced
+  - No details on LC-MS acquisition parameters (e.g., collision energy, source settings enabling in-source fragmentation)
+  - No specification of METLIN library version or subset used for low-energy fragments
+  - MISA algorithm implementation details (e.g., spectral preprocessing, matching thresholds, scoring weights) not provided
+  - XCMS Online backend versions and parameter settings for centWave and alignment not reported
+reproducibility_strengths:
+  - MISA is integrated into XCMS Online — publicly accessible web platform
+  - Strategy validated across 140 metabolites in three biological sample sets (methodological robustness implied)
+  - Two interpretable annotation scores defined (transparency in confidence estimation)

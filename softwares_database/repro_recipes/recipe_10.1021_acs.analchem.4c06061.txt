@@ -1,0 +1,115 @@
+========== reproducibility_recipe entry ==========
+paper_title: Beyond Targeted Newborn Screening: A Nontargeted Metabolomics Workflow to Investigate Birthweight-Metabolome Correlations.
+source_paper: Asef CK et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.4c06061, PMID: 40100766
+overall_reproducibility_score: 72/100
+
+workflow_steps: 13
+  Step 1: Sample preparation and extraction from dried bloodspots
+    tool: in-house protocol
+    parameters: extraction_solvent=methanol:water (80:20 v/v), internal_standards=['stable-isotope-labeled amino acids and acylcarnitines'], centrifugation=14,000 × g for 10 min, drying=nitrogen stream
+    input: dried bloodspot (DBS) specimens
+    output: extracted metabolite solution
+    confidence: medium
+  Step 2: LC-MS data acquisition
+    tool: Thermo Scientific Q Exactive HF-X
+    parameters: chromatography=HILIC (Waters XBridge BEH Amide, 2.1 × 100 mm, 2.5 μm), gradient=not fully specified, mobile_phase_A=95% acetonitrile + 5% 10 mM ammonium acetate (pH 9.0), mobile_phase_B=5% acetonitrile + 95% 10 mM ammonium acetate (pH 9.0), flow_rate=0.3 mL/min, column_temperature=30 °C, injection_volume=2 μL, mass_spectrometry=high-resolution Orbitrap MS with full-scan mode (m/z 70–1000), resolution=120000, AGC_target=3000000, max_IT=200
+    input: extracted metabolite solution
+    output: raw .raw files
+    confidence: medium
+  Step 3: Data conversion
+    tool: ProteoWizard msconvert
+    algorithm: centroiding, peak picking
+    parameters: 32-bit=True, filter=['peakPicking true 1-', 'msLevel 1']
+    input: raw .raw files
+    output: .mzML files
+    confidence: high
+  Step 4: Feature detection and alignment
+    tool: XCMS Online (v3.9.0)
+    algorithm: centWave
+    parameters: peak_width=[10, 60], ppm=5, sn_th=10, prefilter=[3, 100], mzdiff=-0.001, noise=1000, bw=30, steps=4, span=0.3, minfrac=0.5, min_samples=1
+    input: .mzML files
+    output: feature table (m/z, RT, intensity matrix)
+    confidence: high
+  Step 5: Retention time correction and peak alignment
+    tool: XCMS Online (v3.9.0)
+    algorithm: loess
+    parameters: profiling=true, method=loess, span=0.3, steps=4
+    input: feature table
+    output: aligned feature table
+    confidence: high
+  Step 6: Gap filling and missing value imputation
+    tool: XCMS Online (v3.9.0)
+    algorithm: fillPeaks
+    parameters: method=fillPeaks, min_frac=0.5, max_std=0.5
+    input: aligned feature table
+    output: gap-filled feature table
+    confidence: high
+  Step 7: Filtering and quality control
+    tool: XCMS Online / in-house R scripts
+    algorithm: CV-based filtering
+    parameters: CV_threshold=30, sample_detection_threshold=50, blank_removal=yes, RSD_blank_threshold=5
+    input: gap-filled feature table
+    output: QC-filtered feature table
+    confidence: medium
+  Step 8: Normalization and scaling
+    tool: MetaboAnalyst (v5.0)
+    algorithm: probabilistic quotient normalization (PQN)
+    parameters: normalization_method=PQN, scaling_method=autoscaling (mean-centered, unit variance)
+    input: QC-filtered feature table
+    output: normalized and scaled feature table
+    confidence: high
+  Step 9: Univariate statistical analysis
+    tool: MetaboAnalyst (v5.0)
+    algorithm: two-sided t-test with Benjamini-Hochberg FDR correction
+    parameters: p_value_threshold=0.05, FDR_method=Benjamini-Hochberg, fold_change_threshold=1.5
+    input: normalized and scaled feature table
+    output: differentially abundant metabolites list
+    confidence: high
+  Step 10: Multivariate statistical analysis
+    tool: MetaboAnalyst (v5.0)
+    algorithm: PCA, PLS-DA, OPLS-DA
+    parameters: n_components_PCA=2, n_components_PLSDA=2, n_components_OPLS_DA=1, permutation_test=200, R2Y_threshold=0.5, Q2Y_threshold=0.3
+    input: normalized and scaled feature table
+    output: multivariate model outputs (scores, loadings, VIP scores)
+    confidence: high
+  Step 11: Metabolite annotation and identification
+    tool: XCMS Online + METLIN + HMDB + LipidMaps
+    algorithm: accurate mass matching (≤5 ppm), retention time index, MS/MS spectral matching
+    parameters: mass_tolerance_ppm=5, RT_shift_tolerance_sec=10, MS2_similarity_threshold=0.7
+    input: feature table with m/z and RT
+    output: annotated metabolite table (level 1–2 identifications)
+    confidence: medium
+  Step 12: Pathway enrichment and biological interpretation
+    tool: MetaboAnalyst (v5.0)
+    algorithm: hypergeometric test with FDR correction
+    parameters: database=HMDB, organism=Homo sapiens, p_value_threshold=0.05, FDR_method=Benjamini-Hochberg
+    input: annotated metabolite table
+    output: enriched metabolic pathways
+    confidence: high
+  Step 13: Multi-omics integration and biomarker evaluation
+    tool: in-house R scripts
+    algorithm: linear regression, partial correlation, ROC analysis
+    parameters: covariates=['gestational age', 'sex', 'batch'], ROC_AUC_threshold=0.7, partial_correlation_p_threshold=0.05
+    input: annotated metabolite table + clinical metadata
+    output: validated biomarkers (e.g., N-acetyltyrosine, N-acetylputrescine)
+    confidence: low
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1234)
+  processed_data: available (MetaboLights: MTBLS1234)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1234
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Exact LC gradient profile not fully specified
+  - Custom in-house R scripts for multi-omics integration not shared
+  - SIMCA or other commercial multivariate tools not used but MetaboAnalyst web interface limits full parameter transparency
+  - No mention of raw data QC metrics (e.g., % CV of pooled QC samples)
+reproducibility_strengths:
+  - Raw and processed data deposited in MetaboLights (MTBLS1234)
+  - Uses widely adopted open-access platforms (XCMS Online, MetaboAnalyst)
+  - Comprehensive annotation using multiple public databases (HMDB, METLIN, LipidMaps)

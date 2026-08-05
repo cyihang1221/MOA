@@ -1,0 +1,126 @@
+========== reproducibility_recipe entry ==========
+paper_title: Preterm birth is associated with xenobiotics and predicted by the vaginal metabolome.
+source_paper: Kindschuh WF et al. (2023), Nature microbiology, DOI: 10.1038/s41564-022-01293-8, PMID: 36635575
+overall_reproducibility_score: 58/100
+
+workflow_steps: 10
+  Step 1: Metabolomics data acquisition
+    tool: Metabolon proprietary platform
+    algorithm: LC-MS/MS untargeted profiling
+    parameters: chromatography_methods=4, ionization=electrospray ionization, mass_analyzer=Q-Exactive Hybrid Quadrupole-Orbitrap, acquisition_mode=data-dependent acquisition, extraction_solvent=methanol-based, sample_volume_aliquot=5 µl, retention_time_markers=isotopically labelled or halogenated standards, detection_threshold=3× process blank signal
+    input: vaginal swab samples
+    output: raw peak area matrix (m/z features)
+    confidence: medium
+  Step 2: Metabolite identification and annotation
+    tool: Metabolon proprietary software
+    algorithm: retention index + MS/MS spectral matching
+    parameters: tier_1_identifications=556, tier_2_identifications=all remaining named metabolites, library_reference=Metabolon's in-house spectral library
+    input: raw LC-MS/MS data (.raw or vendor format)
+    output: annotated metabolite table (635 named metabolites)
+    confidence: low
+  Step 3: Data preprocessing and normalization
+    tool: custom Metabolon pipeline
+    algorithm: robust standardization after log10 transformation
+    parameters: transformation=log10, normalization_method=robust standardization, outlier_clipping_percentile=[5, 95], centering=subtract median, scaling=divide by standard deviation, volume_normalization=buffer volume used
+    input: annotated metabolite table
+    output: normalized metabolite abundance matrix
+    confidence: high
+  Step 4: Differential abundance testing
+    tool: SciPy (v1.5.2)
+    algorithm: two-sided Mann–Whitney U test
+    parameters: minimum_detection_frequency=0.5, test_type=non-parametric, multiple_testing_correction=Benjamini–Hochberg FDR
+    input: normalized metabolite abundance matrix
+    output: differentially abundant metabolites (sPTB vs term)
+    confidence: high
+  Step 5: Metabolite set enrichment analysis
+    tool: custom implementation
+    algorithm: permutation-based Mann–Whitney comparison of pathway-level p-values
+    parameters: pathway_sources=['Metabolon super/subpathways', 'KEGG'], permutations=10000, fdr_correction_level=per pathway type, statistic=Mann–Whitney U p-value distribution comparison
+    input: differential abundance p-values per metabolite
+    output: enriched metabolic pathways
+    confidence: medium
+  Step 6: Microbe–metabolite correlation analysis
+    tool: SciPy + pandas (v1.5.2, 1.1.5)
+    algorithm: Spearman rank correlation
+    parameters: minimum_pairwise_samples=50, correlation_threshold_inclusion=0.22, multiple_testing_correction=Benjamini–Hochberg FDR, absolute_abundance_conversion=relative abundance × total 16S copy number (TaqMan qPCR)
+    input: normalized metabolite matrix + microbiome absolute abundance matrix
+    output: correlation network (microbe–metabolite edges)
+    confidence: high
+  Step 7: Metabolite origin prediction (xenobiotic classification)
+    tool: AMON + PICRUSt2 (vAMON v37, PICRUSt2 unspecified)
+    algorithm: KEGG-based origin inference (human/microbial/xenobiotic)
+    parameters: kegg_matching_metabolites=334, origin_classes=['human', 'microbial', 'xenobiotic'], microbiome_functional_prediction=PICRUSt2
+    input: KEGG-mapped metabolites + PICRUSt2-predicted functional profiles
+    output: metabolite origin assignments
+    confidence: medium
+  Step 8: Unsupervised clustering of metabolome
+    tool: scikit-learn-extra (v0.2.0)
+    algorithm: k-medoids with Canberra distance
+    parameters: distance_metric=Canberra, k_range=[1, 15], clustering_validation=['within-cluster SSE', 'gap statistic'], robustness_assessment=100× subsampling (90% n=209)
+    input: normalized metabolite abundance matrix
+    output: metabolome clusters (k optimal selected)
+    confidence: high
+  Step 9: Dimensionality reduction (UMAP)
+    tool: umap-learn (v102)
+    algorithm: Uniform Manifold Approximation and Projection
+    parameters: n_neighbors_microbiome=15, min_dist_microbiome=0.05, n_neighbors_metabolome=15, min_dist_metabolome=0.25
+    input: normalized metabolite abundance matrix
+    output: 2D UMAP embedding
+    confidence: high
+  Step 10: Machine learning prediction modeling
+    tool: scikit-learn (v0.24.2)
+    algorithm: nested cross-validation with unspecified classifier(s)
+    parameters: validation_strategy=nested cross-validation, performance_metric=AUC-ROC, external_validation=two independent cohorts, comparison_baselines=['microbiome-based model', 'maternal covariates model']
+    input: normalized metabolite abundance matrix + sPTB labels
+    output: sPTB risk prediction model + AUC scores
+    confidence: medium
+
+data_availability:
+  raw_data: available (dbGaP: phs001739.v1.p1)
+  processed_data: available (Supplementary Data: Supplementary Data 2 of ref. 14)
+  metadata: in_paper_only
+  data_urls: https://www.ncbi.nlm.nih.gov/projects/gap/cgi-bin/study.cgi?study_id=phs001739.v1.p1
+
+code_availability: not_mentioned
+
+figure_recipes: 5
+  Table 1: [table]
+    caption: Cohort characteristics including maternal demographics, clinical variables, and delivery outcomes.
+    produced_by_step: [1, 3]
+    visualization_tool: Not specified (likely custom Python/pandas or R)
+    statistical_test: Not applicable (descriptive summary)
+  Fig. 1: [cluster_heatmap_or_umap]
+    caption: Vaginal metabolome clusters are associated with preterm birth (PTB).
+    produced_by_step: [8, 9]
+    visualization_tool: umap-learn + likely seaborn/matplotlib or ggplot2
+    statistical_test: Fisher’s exact test for pathway enrichment per cluster (P < 0.05)
+  Fig. 2: [volcano_plot_or_bar_chart]
+    caption: Vaginal metabolites significantly associated with subsequent preterm delivery.
+    produced_by_step: [4, 5]
+    visualization_tool: Not specified (likely matplotlib/seaborn or GraphPad)
+    statistical_test: Two-sided Mann–Whitney U test with FDR correction
+  Fig. 3: [network]
+    caption: Microbe–metabolite correlations and metabolic models suggest microbial or host origins for sPTB-associated metabolites.
+    produced_by_step: [6, 7]
+    visualization_tool: Not specified (likely Cytoscape or custom Python networkx + matplotlib)
+    statistical_test: Spearman correlation + Fisher R-to-z transform for subgroup comparisons
+  Fig. 4: [roc_curve]
+    caption: Metabolomics-based prediction of subsequent spontaneous preterm birth (sPTB), showing ROC curves and AUC values.
+    produced_by_step: [10]
+    visualization_tool: scikit-learn + matplotlib/seaborn
+    statistical_test: AUC-ROC with nested CV; significance vs baselines not statistically tested in caption
+
+reproducibility_gaps:
+  - Raw mass spectrometry files (.raw) not deposited in public repository (only dbGaP for microbiome sequences)
+  - Metabolon's proprietary identification software and spectral library inaccessible to independent validation
+  - No access to raw LC-MS/MS chromatograms or peak quality metrics (e.g., peak width, SNR)
+  - Exact machine learning classifier(s) and hyperparameters not specified (e.g., Random Forest? SVM?)
+  - No code repository or scripts shared for preprocessing, clustering, or AMON/PICRUSt2 integration
+  - Swab lot numbers, collector identity (self vs coordinator), and sterile blank metadata missing — limits batch effect assessment
+  - Chromatographic gradient profiles and MS acquisition parameters only in Supplementary Table 7 (not linked or embedded)
+reproducibility_strengths:
+  - Microbiome raw reads available via dbGaP (phs001739.v1.p1)
+  - Processed microbiome data available in Supplementary Data 2 of prior publication
+  - All statistical analyses performed with open-source tools (SciPy, scikit-learn, pandas, umap-learn)
+  - Transparent description of normalization, filtering, and multiple-testing correction
+  - Robust validation strategy: nested CV + two external cohort validations

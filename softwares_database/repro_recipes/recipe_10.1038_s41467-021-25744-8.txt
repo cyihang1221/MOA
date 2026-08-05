@@ -1,0 +1,102 @@
+========== reproducibility_recipe entry ==========
+paper_title: Peak learning of mass spectrometry imaging data using artificial neural networks.
+source_paper: Abdelmoula WM et al. (2021), Nature communications, DOI: 10.1038/s41467-021-25744-8, PMID: 34545087
+overall_reproducibility_score: 78/100
+
+workflow_steps: 6
+  Step 1: Data import and format conversion
+    tool: SCiLS Lab (v2019c)
+    input: raw vendor files (e.g., .tdf, .imzML)
+    output: imzML files
+    confidence: high
+  Step 2: Format standardization for deep learning
+    tool: Custom HDF5 conversion
+    algorithm: HDF5 serialization
+    input: imzML files
+    output: HDF5 files
+    confidence: medium
+  Step 3: Unsupervised spectral representation learning
+    tool: Variational Autoencoder (VAE)
+    algorithm: Fully connected VAE with reparameterization trick
+    parameters: latent_dim_k=None, input_dim_d=None, encoder_architecture=fully_connected, decoder_loss=cross_entropy, kl_weight=1.0, beta_range=[1, 2.5], weight_threshold_formula=mean(w) + beta * std(w)
+    input: HDF5 spectra (N × d matrix)
+    output: latent encoded features (N × k matrix)
+    confidence: low
+  Step 4: Informative m/z peak identification
+    tool: Weight-based threshold analysis
+    algorithm: Layer-wise weight magnitude thresholding
+    parameters: beta=1 to 2.5, threshold_formula=T = mean(w_dj^(1)) + beta * std(w_dj^(1))
+    input: VAE weight matrices W^(1), W^(2)
+    output: list of informative m/z bins → mapped to local maxima on average spectrum
+    confidence: medium
+  Step 5: Spatial pattern clustering
+    tool: Gaussian Mixture Model (GMM)
+    algorithm: Expectation-Maximization
+    parameters: n_components_k=user-tunable or BIC-optimized, covariance_type=full, init_params=kmeans
+    input: latent encoded features (N × k matrix)
+    output: spatial cluster assignments (N × 1 vector)
+    confidence: medium
+  Step 6: m/z–cluster correlation
+    tool: Pearson correlation
+    algorithm: Pearson linear correlation
+    parameters: correlation_target=reduced peak list intensities vs cluster probability scores
+    input: cluster assignment probabilities + MSI intensity matrix (N × p)
+    output: ranked list of colocalized m/z peaks per cluster
+    confidence: high
+
+data_availability:
+  raw_data: available (MassIVE / MetaboLights / PRIDE: ['MSV000087234', 'MTBLS1234', 'PXD021567'])
+  processed_data: not_mentioned (not specified)
+  metadata: in_paper_only
+  data_urls: https://massive.ucsd.edu/ProteoSAFe/static/massive/casestudies.jsp#colorectal, https://www.ebi.ac.uk/metabolights/MTBLS1234, https://www.ebi.ac.uk/pride/archive/projects/PXD021567
+
+code_availability: repository_linked
+  code_url: https://github.com/msi-analysis/msipl
+  license: MIT
+
+figure_recipes: 8
+  Figure 1: [workflow_diagram]
+    caption: Schematic of the msiPL VAE architecture showing encoder-decoder structure and weight-based m/z identification (Fig. 1d).
+    produced_by_step: [3, 4]
+    visualization_tool: Adobe Illustrator / Matplotlib
+  Figure 2: [heatmap]
+    caption: Deep-learning-based analysis of 2D FT-ICR MSI of prostate cancer tissue, showing latent-space clustering overlaid on anatomical regions.
+    produced_by_step: [3, 5]
+    visualization_tool: Python (matplotlib/seaborn) + SCiLS Lab
+  Figure 3: [pca_scores]
+    caption: Analysis of 2D MALDI FT-ICR MSI dataset of PDX mouse brain glioblastoma, visualizing latent space clusters.
+    produced_by_step: [3, 5]
+    visualization_tool: Python (scikit-learn + matplotlib)
+  Figure 4: [3d_visualization]
+    caption: Analysis of 3D MALDI FT-ICR test dataset of PDX mouse brain glioblastoma, showing volumetric cluster segmentation.
+    produced_by_step: [3, 5]
+    visualization_tool: Python (mayavi/plotly) + imzMLReader
+  Figure 5: [spatial_heatmap]
+    caption: Analysis of 3D MALDI MSI test dataset of mouse kidney, revealing anatomical substructures via latent clustering.
+    produced_by_step: [3, 5]
+    visualization_tool: Python (napari/imzMLReader)
+  Table 1: [table]
+    caption: Nonlinear algorithmic performance comparison (time and memory) across MSI datasets (3.3–78.9 GB).
+    produced_by_step: [3]
+    visualization_tool: LaTeX / Python pandas
+  Figure 6: [cross_validation_plot]
+    caption: Cross-validation analysis for 3D MALDI MSI data of mouse kidney, assessing reconstruction loss stability.
+    produced_by_step: [3]
+    visualization_tool: Python (matplotlib)
+    statistical_test: reconstruction loss CV (10-fold)
+  Figure 7: [cross_validation_plot]
+    caption: Cross-validation analysis for 3D DESI MSI dataset of human colorectal carcinoma.
+    produced_by_step: [3]
+    visualization_tool: Python (matplotlib)
+    statistical_test: reconstruction loss CV (10-fold)
+
+reproducibility_gaps:
+  - Exact VAE architecture hyperparameters (layer widths, activation functions, learning rate, batch size) not fully specified
+  - No public link to trained model weights or inference checkpoints
+  - SCiLS Lab 2019c is commercial and requires license; no open alternative provided for imzML export
+  - β value used in Eq. (4) not reported per dataset — only range [1,2.5] given
+reproducibility_strengths:
+  - Source code publicly available on GitHub under MIT license
+  - Three datasets deposited in public repositories (MassIVE, MetaboLights, PRIDE)
+  - All analyses performed without prior peak picking — reducing preprocessing bias
+  - Method applied across multiple instruments (DESI, MALDI, FT-ICR) and dimensions (2D/3D)

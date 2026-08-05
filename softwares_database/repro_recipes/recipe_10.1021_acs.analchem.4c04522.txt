@@ -1,0 +1,85 @@
+========== reproducibility_recipe entry ==========
+paper_title: Integrating FT-ICR MS and Machine Learning to Forecast Acid Content Across Boiling Cuts.
+source_paper: Roque JV et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.4c04522, PMID: 40008767
+overall_reproducibility_score: 42/100
+
+workflow_steps: 8
+  Step 1: FT-ICR MS data acquisition
+    tool: FT-ICR MS
+    input: crude oil samples (neat or solvent-diluted)
+    output: raw mass spectra (.fid or vendor-specific format)
+    confidence: low
+  Step 2: Spectral processing and peak detection
+    tool: DataAnalysis or Composer (Bruker)
+    algorithm: peak picking with S/N threshold, calibration, apodization
+    parameters: snr_threshold=4, calibration_points=5
+    input: raw .fid files
+    output: peak list (m/z, intensity, retention equivalent)
+    confidence: medium
+  Step 3: Molecular formula assignment
+    tool: Bruker DataAnalysis or Formularity
+    algorithm: elemental composition assignment using mass accuracy < 1 ppm and isotope pattern matching
+    parameters: mass_tolerance_ppm=1, elements_allowed=['C', 'H', 'N', 'O', 'S', 'P'], max_degree_unsaturation=20
+    input: peak list
+    output: molecular formula table (m/z, CxHyNzOw, DBE, class)
+    confidence: medium
+  Step 4: Compound class annotation and heteroatom-based grouping
+    tool: in-house scripts or DataAnalysis reports
+    algorithm: class assignment by heteroatom count (e.g., O1, O2, N1O1, etc.) and double bond equivalent (DBE) filtering
+    parameters: min_dbe=0, max_dbe=20, exclude_radicals=True
+    input: molecular formula table
+    output: compound class abundance table (sample × class)
+    confidence: low
+  Step 5: TAN measurement
+    tool: ASTM D664 potentiometric titration (vASTM D664-22)
+    parameters: titrant=KOH in isopropanol, endpoint_detection=potentiometric
+    input: TBP distillation cuts
+    output: TAN (mg KOH/g)
+    confidence: high
+  Step 6: Predictive modeling (PLS regression)
+    tool: MATLAB or Python (scikit-learn)
+    algorithm: Partial Least Squares (PLS) regression
+    parameters: n_components=8, scaling=UV, cross_validation_folds=5
+    input: compound class abundance table, TAN values
+    output: PLS model (coefficients, RMSEC, Rc)
+    confidence: medium
+  Step 7: Ordered predictor selection (OPS)
+    tool: custom implementation
+    algorithm: sequential addition of compound classes based on PLS coefficient magnitude and cross-validated RMSE reduction
+    parameters: max_predictors=20, selection_criterion=RMSECV
+    input: PLS model + feature importance
+    output: optimized feature subset and final predictive model
+    confidence: low
+  Step 8: Volcano plot generation
+    tool: R (ggplot2) or Python (matplotlib/seaborn)
+    algorithm: log2-fold-change vs −log10(p-value) from univariate correlation (Pearson/Spearman) between class abundance and TAN
+    parameters: p_value_threshold=0.05, fold_change_threshold=1.5
+    input: compound class abundance table, TAN values
+    output: volcano plot (highlighted molecular classes)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 1
+  volcano plots: [volcano_plot]
+    caption: Volcano plots identifying molecular classes significantly correlated with TAN variation across crude oil samples.
+    produced_by_step: [8]
+    visualization_tool: R (ggplot2) or Python (matplotlib/seaborn)
+    statistical_test: Pearson/Spearman correlation with p<0.05
+
+reproducibility_gaps:
+  - Raw FT-ICR MS data not deposited in public repository (e.g., MassIVE, MetaboLights)
+  - No access to custom OPS implementation or PLS modeling scripts
+  - Vendor-specific software (Bruker DataAnalysis/Composer) required for spectral processing and formula assignment — no open-source alternative specified
+  - Exact FT-ICR MS acquisition parameters (e.g., transient length, number of scans, ICR cell pressure, excitation waveform) not reported
+  - TBP cut definitions (boiling range intervals) not specified
+  - No metadata schema or sample annotation details provided beyond '36 diverse crude oils'
+reproducibility_strengths:
+  - Clear description of ASTM D664 TAN reference method
+  - Explicit modeling metrics reported (RMSEC, Rc)
+  - Use of standard chemometric algorithms (PLS, volcano analysis)

@@ -1,0 +1,56 @@
+========== reproducibility_recipe entry ==========
+paper_title: DEIMoS: An Open-Source Tool for Processing High-Dimensional Mass Spectrometry Data.
+source_paper: Colby SM et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.1c05017, PMID: 35430813
+overall_reproducibility_score: 85/100
+
+workflow_steps: 5
+  Step 1: Feature detection
+    tool: DEIMoS
+    algorithm: multidimensional peak picking
+    input: raw N-dimensional MS data (e.g., LC-IMS-MS/MS)
+    output: detected features with m/z, RT, CCS, intensity
+    confidence: medium
+  Step 2: Feature alignment
+    tool: DEIMoS
+    algorithm: multidimensional feature matching
+    input: features from multiple samples
+    output: aligned feature table with sample-wise correspondence
+    confidence: medium
+  Step 3: Collision cross section (CCS) calibration
+    tool: DEIMoS
+    algorithm: CCS calibration using calibrants
+    input: IMS drift time data + calibrant list
+    output: CCS-calibrated features
+    confidence: low
+  Step 4: Isotope detection
+    tool: DEIMoS
+    algorithm: isotopic pattern matching
+    input: feature table with MS1 spectra
+    output: isotope-grouped features
+    confidence: low
+  Step 5: MS/MS spectral deconvolution
+    tool: DEIMoS
+    algorithm: multidimensional MS/MS deconvolution
+    input: fragment ion chromatograms or raw MS/MS data
+    output: deconvolved, feature-annotated MS/MS spectra
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/pnnl/deimos
+  license: BSD-3-Clause
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of specific parameters (e.g., mass tolerance, CCS calibration standards, RT/CCS alignment window sizes)
+  - No mention of raw or processed data deposition
+  - No explicit workflow configuration or example script provided in paper
+reproducibility_strengths:
+  - Open-source tool with public GitHub repository and Zenodo DOI
+  - Explicit support for N-dimensional data (LC-IMS-MS/MS), enabling reproducible multidimensional processing
+  - All core algorithms implemented in Python with documented API

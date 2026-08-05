@@ -1,0 +1,64 @@
+========== reproducibility_recipe entry ==========
+paper_title: Ion-Pair Selection Method for Pseudotargeted Metabolomics Based on SWATH MS Acquisition and Its Application in Differential Metabolite Discovery of Type 2 Diabetes.
+source_paper: Wang L et al. (2018), Analytical chemistry, DOI: 10.1021/acs.analchem.8b02377, PMID: 30148611
+overall_reproducibility_score: 30/100
+
+workflow_steps: 6
+  Step 1: Untargeted data acquisition
+    tool: UHPLC-Q-TOF MS
+    parameters: ion_mode=positive, collision_energies=[10, 20, 40], sample=NIST SRM 1950 plasma
+    input: raw plasma samples
+    output: untargeted MS1 and MS2 spectra
+    confidence: high
+  Step 2: Ion-pair extraction from SWATH data
+    tool: software tool
+    algorithm: SWATH-based ion-pair selection with variable isolation windows
+    parameters: acquisition_mode=SWATH, isolation_window_variation=variable
+    input: SWATH MS2 spectra (from step 1)
+    output: candidate metabolite ion-pairs (precursor → fragment)
+    confidence: low
+  Step 3: Ion-pair validation and false positive filtering
+    tool: scheduled MRM coupled with UHPLC
+    parameters: validation_platform=UHPLC-MRM, criterion=signal-to-noise ratio and chromatographic peak shape
+    input: candidate ion-pairs
+    output: validated ion-pairs with optimal CE
+    confidence: medium
+  Step 4: Pseudotargeted assay construction
+    tool: MRM method development software (e.g., Skyline or vendor-specific)
+    parameters: final_ion_pairs=1373, ion_mode=positive
+    input: validated ion-pairs
+    output: pseudotargeted MRM assay
+    confidence: medium
+  Step 5: Method validation: precision assessment
+    tool: None
+    parameters: precision_type=['intraday', 'interday'], metric=relative standard deviation (RSD)
+    input: repeated pseudotargeted MRM runs
+    output: precision (RSD%) metrics
+    confidence: high
+  Step 6: Differential metabolite discovery in T2D
+    tool: statistical analysis (unspecified)
+    parameters: comparison=T2D vs control serum, statistical_threshold=p < 0.05, correction=not specified
+    input: quantified peak areas from pseudotargeted MRM
+    output: differentially abundant metabolites
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw SWATH and MRM data not deposited in public repository
+  - Critical 'software tool' for ion-pair extraction not identified or available
+  - No details on SWATH window settings (width, overlap, m/z range)
+  - No specification of MRM scheduling parameters (retention time windows, dwell time)
+  - Statistical methods and software for differential analysis not described
+  - No access to the final 1373-ion-pair MRM transition list (e.g., as CSV or Skyline document)
+reproducibility_strengths:
+  - Clear experimental design using NIST SRM 1950 as reference
+  - Explicit reporting of three collision energies and positive mode
+  - Quantitative validation via intraday/interday precision (RSD)

@@ -1,0 +1,56 @@
+========== reproducibility_recipe entry ==========
+paper_title: A graph density-based strategy for features fusion from different peak extract software to achieve more metabolites in metabolic profiling from high-resolution mass spectrometry.
+source_paper: Ju R et al. (2020), Analytica chimica acta, DOI: 10.1016/j.aca.2020.09.029, PMID: 33190713
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Raw data conversion
+    tool: vendor-specific converter
+    input: raw instrument files (.raw, .d, or equivalent)
+    output: mzML or vendor-native format compatible with XCMS/MZmine/SIEVE
+    confidence: low
+  Step 2: Feature detection (parallel processing)
+    tool: XCMS
+    algorithm: centWave or matchedFilter (not specified)
+    input: raw or converted MS data
+    output: feature table (m/z, RT, intensity)
+    confidence: low
+  Step 3: Feature detection (parallel processing)
+    tool: MZmine 2
+    algorithm: ADAP or Join Align (not specified)
+    input: raw or converted MS data
+    output: feature table (m/z, RT, intensity)
+    confidence: low
+  Step 4: Feature detection (parallel processing)
+    tool: SIEVE
+    algorithm: proprietary peak detection and alignment
+    input: vendor-native raw files
+    output: feature table (m/z, RT, intensity)
+    confidence: low
+  Step 5: Feature fusion and redundancy removal
+    tool: FRRGD (custom graph-based method)
+    algorithm: graph density-based maximal complete sub-graph search
+    parameters: mz_tolerance_ppm=5, rt_tolerance_seconds=30, intensity_correlation_threshold=0.8
+    input: three feature tables from XCMS, MZmine 2, SIEVE
+    output: consensus feature table with non-redundant ion features
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in any public repository
+  - No source code or implementation details for FRRGD algorithm provided
+  - No parameter settings (e.g., centWave m/z tolerance, RT window) reported for XCMS or MZmine 2
+  - SIEVE is commercial software requiring Thermo license; version and settings unspecified
+  - No description of chromatographic conditions (gradient, column, flow rate) affecting RT alignment
+  - Graph construction criteria (e.g., edge definition, weighting scheme) not fully specified
+reproducibility_strengths:
+  - Uses two open-source tools (XCMS, MZmine 2) with established community support
+  - Explicitly reports performance on standard mixture (41 metabolites) and biological sample (urine)

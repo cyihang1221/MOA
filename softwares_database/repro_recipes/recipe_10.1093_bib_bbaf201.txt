@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: Systematic evaluation of normalization approaches in tandem mass tag and label-free protein quantification data using PRONE.
+source_paper: Arend L et al. (2025), Briefings in bioinformatics, DOI: 10.1093/bib/bbaf201, PMID: 40336172
+overall_reproducibility_score: 72/100
+
+workflow_steps: 4
+  Step 1: Normalization method evaluation
+    tool: PRONE
+    algorithm: comparative evaluation framework
+    input: protein quantification matrices (TMT and label-free)
+    output: ranked normalization methods per dataset
+    confidence: high
+  Step 2: Batch effect correction
+    tool: PRONE
+    algorithm: ComBat, SVA
+    input: normalized protein quantification matrices
+    output: batch-corrected quantification matrices
+    confidence: medium
+  Step 3: Performance assessment using spike-in datasets
+    tool: PRONE
+    algorithm: intragroup variation reduction, false-positive rate estimation
+    parameters: spike_in_concentrations=known, ground_truth_available=True
+    input: spike-in proteomics datasets (6 datasets)
+    output: normalization efficacy metrics (e.g., CV reduction, FPR)
+    confidence: high
+  Step 4: Downstream analysis impact assessment
+    tool: PRONE
+    algorithm: differential expression analysis (t-test, limma)
+    parameters: statistical_test=limma, p_value_threshold=0.05, FDR_method=Benjamini-Hochberg
+    input: normalized/batch-corrected protein quantification matrices
+    output: differentially expressed protein lists, PCA/PLS-DA plots
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (ProteomeXchange)
+  processed_data: not_mentioned (not specified)
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://bioconductor.org/packages/release/bioc/html/PRONE.html
+  license: Artistic-2.0
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw proteomics data accession IDs not reported
+  - Specific TMT and label-free datasets used are cited but not explicitly listed with identifiers
+  - No detailed parameter settings for LoessF, RobNorm, Normics, or EigenMS provided
+  - Web application URL given but no versioning or snapshot of web interface
+reproducibility_strengths:
+  - PRONE is open-source and available on Bioconductor
+  - Framework enables reproducible comparative evaluation
+  - Explicit mention of 6 spike-in and 3 real-world proteomics datasets

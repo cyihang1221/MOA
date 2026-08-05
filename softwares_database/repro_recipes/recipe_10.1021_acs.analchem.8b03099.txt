@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: MetGem Software for the Generation of Molecular Networks Based on the t-SNE Algorithm.
+source_paper: Olivon F et al. (2018), Analytical chemistry, DOI: 10.1021/acs.analchem.8b03099, PMID: 30335965
+overall_reproducibility_score: 85/100
+
+workflow_steps: 4
+  Step 1: MS2 spectral preprocessing and similarity computation
+    tool: MetGem
+    algorithm: cosine correlation
+    parameters: min_cosine_score=0.7, min_matched_peaks=6, fragment_mz_tolerance=0.02
+    input: centroided .mgf files
+    output: pairwise spectral similarity matrix
+    confidence: medium
+  Step 2: Molecular network generation (GNPS-style)
+    tool: MetGem
+    algorithm: graph-based clustering with edge filtering
+    parameters: edge_filtering_threshold=0.7, minimum_cluster_size=2
+    input: pairwise spectral similarity matrix
+    output: molecular network graph (nodes = spectra, edges = similarities > threshold)
+    confidence: high
+  Step 3: t-SNE embedding of MS2 spectra
+    tool: MetGem
+    algorithm: t-distributed stochastic neighbor embedding
+    parameters: perplexity=30, learning_rate=200, max_iter=1000, early_exaggeration=12.0, metric=cosine
+    input: pairwise spectral similarity matrix
+    output: 2D t-SNE coordinate embedding
+    confidence: high
+  Step 4: Interactive visualization and real-time parameter tuning
+    tool: MetGem
+    algorithm: Qt-based GUI with live re-computation
+    parameters: real_time_update=True, interactive_filtering=True
+    input: spectral similarity matrix + t-SNE coordinates + metadata
+    output: interactive molecular network and t-SNE plot
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (GNPS)
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://metgem.github.io
+  license: GPL-3.0
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No specific GNPS or MetGem version cited in paper
+  - No example dataset or accession ID provided for reproduction
+  - t-SNE parameters (e.g., perplexity) are described but not justified or optimized per dataset
+reproducibility_strengths:
+  - Fully open-source software with public GitHub repository
+  - Real-time parameter tuning enables transparent exploration
+  - Unified local interface avoids cloud dependency and improves reproducibility

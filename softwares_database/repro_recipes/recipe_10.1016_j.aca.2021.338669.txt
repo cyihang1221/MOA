@@ -1,0 +1,70 @@
+========== reproducibility_recipe entry ==========
+paper_title: rMSIannotation: A peak annotation tool for mass spectrometry imaging based on the analysis of isotopic intensity ratios.
+source_paper: Sementé L et al. (2021), Analytica chimica acta, DOI: 10.1016/j.aca.2021.338669, PMID: 34112434
+overall_reproducibility_score: 72/100
+
+workflow_steps: 6
+  Step 1: Isotopic peak detection and monoisotopic peak selection
+    tool: rMSIannotation
+    algorithm: Isotopic Likelihood Score (ILS)
+    parameters: ils_components=['image_morphology_correlation', 'isotopic_intensity_ratio_validation', 'peak_centroid_mass_deviation'], carbon_isotope_ratio_modeling=based_on_HMDB_compounds
+    input: raw MSI spectra (e.g., imzML or .ibd/.imzML files)
+    output: monoisotopic peak assignments with ILS scores
+    confidence: high
+  Step 2: Adduct pair proposal
+    tool: rMSIannotation
+    algorithm: Adduct scoring based on three criteria
+    parameters: adduct_scoring_components=['isotopic_pattern_coherence', 'image_correlation', 'mass_error']
+    input: detected peaks (m/z, intensity, spatial coordinates)
+    output: candidate adduct pairs with composite scores
+    confidence: high
+  Step 3: Validation against expert manual annotation
+    tool: custom evaluation script
+    algorithm: precision/recall comparison
+    parameters: validation_metric=overlap_with_expert_annotations, threshold=90% replication rate reported
+    input: rMSIannotation output vs. manually curated annotations
+    output: validation metrics (e.g., % replicated manual annotations)
+    confidence: medium
+  Step 4: Comparison with METASPACE
+    tool: METASPACE
+    algorithm: library-based annotation (HMDB, LipidMaps)
+    input: same raw MSI datasets
+    output: library-matched compound annotations
+    confidence: low
+  Step 5: Data reduction via isotopic peak filtering
+    tool: rMSIannotation + custom processing
+    algorithm: removal of non-monoisotopic peaks
+    parameters: filtering_criterion=retention of only monoisotopic peaks selected by ILS
+    input: full peak list from MSI dataset
+    output: reduced peak table (monoisotopic-only)
+    confidence: high
+  Step 6: Downstream multivariate analysis (PCA and k-means)
+    tool: standard multivariate tools (e.g., R stats/prcomp, cluster)
+    algorithm: PCA, k-means segmentation
+    parameters: n_components_pca=None, k_means_k=None, comparison_basis=biological variance retention before/after isotopic filtering
+    input: intensity matrix (spatial × m/z) — full vs. monoisotopic-only
+    output: PCA scores, k-means segmentation maps
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: https://github.com/MSI-tools/rMSIannotation
+  license: GPL-3.0
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw MSI datasets not deposited in public repository (no accession IDs provided)
+  - No details on MALDI acquisition parameters (laser settings, matrix, instrument model, resolution mode)
+  - No specification of preprocessing steps prior to rMSIannotation (e.g., denoising, baseline correction, peak picking method or tool used)
+  - PCA/k-means parameters (e.g., number of components, k-value, distance metric, initialization) not reported
+  - HMDB modeling details (e.g., subset used, isotopic ratio tolerance, m/z binning strategy) insufficiently described
+reproducibility_strengths:
+  - rMSIannotation is open-source with publicly available GitHub repository
+  - Algorithm design explicitly defined (ILS components, adduct scoring logic)
+  - Validation performed against expert manual annotations — gold standard benchmark
+  - Direct comparison with METASPACE enables methodological transparency

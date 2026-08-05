@@ -1,0 +1,47 @@
+========== reproducibility_recipe entry ==========
+paper_title: TraceMetrix: a traceable metabolomics interactive analysis platform.
+source_paper: Chen W et al. (2025), Journal of cheminformatics, DOI: 10.1186/s13321-025-01095-0, PMID: 41024283
+overall_reproducibility_score: 40/100
+
+workflow_steps: 4
+  Step 1: Raw data preprocessing
+    tool: TraceMetrix
+    input: raw mass spectrometry files (vendor format)
+    output: preprocessed data (e.g., peak table)
+    confidence: low
+  Step 2: Data cleaning
+    tool: TraceMetrix
+    input: preprocessed data
+    output: cleaned feature table
+    confidence: low
+  Step 3: Statistical analysis
+    tool: TraceMetrix
+    input: cleaned feature table
+    output: differential metabolites list, statistical scores
+    confidence: low
+  Step 4: Functional analysis
+    tool: TraceMetrix
+    input: differential metabolites list
+    output: enriched pathways, functional annotations
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://www.biosino.org/tracemetrix
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No specific tools, algorithms, or parameters disclosed for any analysis step
+  - No description of underlying methods (e.g., peak picking algorithm, normalization method, statistical tests used)
+  - Raw and processed data deposition not reported
+  - No figure/table descriptions provided in the abstract or metadata to map analyses to outputs
+  - TraceMetrix is a black-box web platform with no documented backend implementation details
+reproducibility_strengths:
+  - Platform is freely available online
+  - Explicitly designed for traceability and reproducibility
+  - Deployed on HPC infrastructure enabling scalability

@@ -1,0 +1,73 @@
+========== reproducibility_recipe entry ==========
+paper_title: Normalization Approach by a Reference Material to Improve LC-MS-Based Metabolomic Data Comparability of Multibatch Samples.
+source_paper: Yao Y et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.2c04188, PMID: 36538611
+overall_reproducibility_score: 35/100
+
+workflow_steps: 7
+  Step 1: Reference material preparation
+    tool: in-house protocol
+    parameters: source=serum from healthy donors, mixing=equal-volume pooling
+    input: raw human serum samples
+    output: reference serum material (Ref-M)
+    confidence: medium
+  Step 2: Sample extraction and batch organization
+    tool: in-house protocol
+    parameters: extraction_method=protein precipitation, batch_size=not specified
+    input: subject serum samples + reference serum
+    output: extracted samples per batch
+    confidence: low
+  Step 3: LC-MS data acquisition with quality controls
+    tool: LC-MS platform (unspecified vendor)
+    parameters: QC_type=['pooled quality control samples', 'isotopic internal standards'], QC_frequency=per acquisition batch
+    input: extracted samples + QCs + Ref-M
+    output: raw .raw or .d files
+    confidence: medium
+  Step 4: Feature detection and alignment
+    tool: XCMS or similar (not explicitly named)
+    algorithm: not specified
+    input: raw LC-MS files
+    output: feature table (m/z, RT, intensity)
+    confidence: low
+  Step 5: Batch variation correction using reference material
+    tool: custom normalization script
+    algorithm: reference-based ratio normalization
+    parameters: normalization_target=reference serum feature intensity, method=sample_feature_intensity / ref_feature_intensity
+    input: feature table + reference serum intensities
+    output: Ref-M normalized feature table
+    confidence: medium
+  Step 6: Statistical analysis and biomarker selection
+    tool: not specified (likely R/Python or commercial software)
+    algorithm: ['t-test', 'ROC analysis', 'AUC calculation']
+    parameters: significance_threshold=0.05, FDR_correction=not mentioned, model_type=discriminant model (unspecified)
+    input: Ref-M normalized feature table + class labels
+    output: differential metabolites list, AUC values
+    confidence: low
+  Step 7: Model validation
+    tool: independent test set evaluation
+    algorithm: external validation
+    parameters: training_set=522 samples, validation_set_1=independent data set (AUC=0.853), validation_set_2=40 additional samples (AUC=0.843)
+    input: Ref-M normalized feature table + class labels
+    output: validated discriminant model performance metrics
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS data not deposited in public repository
+  - No description of LC-MS platform parameters (gradient, column, instrument settings)
+  - Reference material preparation details incomplete (e.g., number/demographics of donors, storage conditions)
+  - Feature detection and alignment parameters unspecified
+  - Discriminant modeling method (e.g., SVM, RF, PLS-DA) not disclosed
+  - Custom normalization script not shared
+  - No access to processed feature tables or metadata
+reproducibility_strengths:
+  - Clear conceptual framework for reference-based normalization (Ref-M)
+  - Use of pooled QCs and isotopic internal standards described
+  - Independent validation performed with two external test sets

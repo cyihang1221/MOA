@@ -1,0 +1,72 @@
+========== reproducibility_recipe entry ==========
+paper_title: Lipidomic Profiling of PFOA-Exposed Mouse Liver by Multi-Modal Mass Spectrometry Analysis.
+source_paper: Stoffels CBA et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.2c05470, PMID: 37027489
+overall_reproducibility_score: 30/100
+
+workflow_steps: 8
+  Step 1: LC-MS/MS data acquisition
+    tool: liquid chromatography with tandem mass spectrometry
+    input: liver tissue extracts
+    output: raw .raw or .wiff files (vendor format)
+    confidence: low
+  Step 2: MALDI-MSI data acquisition
+    tool: matrix-assisted laser desorption ionization mass spectrometry imaging
+    input: frozen liver tissue sections
+    output: spatial raw MS imaging datasets
+    confidence: low
+  Step 3: TOF-SIMS data acquisition
+    tool: time-of-flight secondary ion mass spectrometry
+    input: liver tissue sections (cellular resolution)
+    output: high-resolution spatial ion maps
+    confidence: low
+  Step 4: LC-MS/MS feature detection and quantification
+    tool: XCMS or similar platform (implied by 'multivariate data analysis' and lipid identification)
+    algorithm: centWave or matchedFilter (typical for lipidomics, but not specified)
+    input: raw LC-MS/MS files
+    output: feature table (lipid species × samples)
+    confidence: low
+  Step 5: Statistical analysis of lipid abundance
+    tool: multivariate data analysis (PCA, PLS-DA, OPLS-DA implied)
+    algorithm: not specified
+    parameters: p_value_threshold=0.05, fold_change_threshold=None
+    input: feature table
+    output: statistically impacted lipids (>350 species)
+    confidence: medium
+  Step 6: Lipid pathway enrichment and network analysis
+    tool: MetaboAnalyst or LipidMAPS tools (implied by 'glycerophospholipid metabolism' and 'lipidome network')
+    algorithm: pathway topology analysis, correlation-based network construction
+    input: differentially abundant lipids
+    output: enriched pathways, lipid-lipid interaction network
+    confidence: low
+  Step 7: MALDI-MSI data processing and spatial visualization
+    tool: SCiLS Lab, FlexImaging, or similar MSI software
+    algorithm: ion image generation, spatial segmentation
+    input: MALDI-MSI raw datasets
+    output: spatial ion distribution maps (e.g., PE, PC, TG, PFOA)
+    confidence: low
+  Step 8: TOF-SIMS data processing and cellular localization
+    tool: ION-TOF SurfaceLab or similar
+    algorithm: ion image reconstruction, co-localization analysis
+    input: TOF-SIMS raw datasets
+    output: cellular-level PFOA localization maps
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposition reported
+  - No software versions or parameters specified for LC-MS/MS processing
+  - No details on chromatographic gradients, instrument settings, or calibration methods
+  - MALDI-MSI and TOF-SIMS data processing pipelines not described
+  - No code or workflow scripts shared
+  - Commercial MSI software (SCiLS Lab, SurfaceLab) required but not accessible without license
+reproducibility_strengths:
+  - Multi-modal MS integration described conceptually
+  - Biological interpretation (e.g., glycerophospholipid metabolism) aligns with standard lipidomic databases

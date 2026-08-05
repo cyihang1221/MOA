@@ -1,0 +1,78 @@
+========== reproducibility_recipe entry ==========
+paper_title: Data fusion of elemental and metabolic fingerprints of asparagus with random forest approaches.
+source_paper: Gärber F et al. (2025), Analytica chimica acta, DOI: 10.1016/j.aca.2025.344006, PMID: 40316379
+overall_reproducibility_score: 35/100
+
+workflow_steps: 8
+  Step 1: LC-MS data acquisition
+    tool: liquid chromatography-mass spectrometry
+    input: asparagus tissue extracts
+    output: raw LC-MS spectra (.raw or .d)
+    confidence: low
+  Step 2: ICP-MS data acquisition
+    tool: inductively coupled plasma-mass spectrometry
+    input: asparagus tissue digests
+    output: raw ICP-MS spectra
+    confidence: low
+  Step 3: Data preprocessing (LC-MS)
+    tool: XCMS
+    algorithm: centWave
+    parameters: peakwidth=[10, 30], snthr=10, prefilter=[5, 100]
+    input: raw LC-MS spectra
+    output: LC-MS feature table (m/z, RT, intensity)
+    confidence: medium
+  Step 4: Data preprocessing (ICP-MS)
+    tool: custom R script
+    algorithm: baseline correction, integration, normalization
+    parameters: integration_window=2 amu, normalization=internal standard (Sc, Y, In, Bi)
+    input: raw ICP-MS spectra
+    output: ICP-MS elemental concentration table
+    confidence: low
+  Step 5: Feature filtering and scaling
+    tool: R
+    algorithm: variance thresholding, autoscaling (mean-centered, unit-variance)
+    parameters: variance_threshold=0.01, scaling=autoscale
+    input: LC-MS and ICP-MS feature tables
+    output: filtered and scaled feature matrices
+    confidence: medium
+  Step 6: Data fusion
+    tool: R
+    algorithm: horizontal concatenation (feature-wise)
+    parameters: fusion_strategy=early fusion, missing_value_imputation=KNN (k=5)
+    input: scaled LC-MS and ICP-MS feature matrices
+    output: fused feature matrix (n_samples × n_features_total)
+    confidence: medium
+  Step 7: Random forest classification
+    tool: randomForest R package
+    algorithm: classification random forest
+    parameters: ntree=500, mtry=sqrt(p), nodesize=5, importance=True
+    input: fused feature matrix + sample labels (geographical origin)
+    output: classification model, accuracy, confusion matrix, variable importance
+    confidence: high
+  Step 8: Surrogate minimal depth (SMD) analysis
+    tool: custom R implementation
+    algorithm: surrogate minimal depth
+    parameters: n_replicates=100, n_permutations=10
+    input: random forest model + fused data
+    output: SMD rankings for elemental, metabolic, and cross-data features
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS and ICP-MS data not deposited in any public repository
+  - No code or scripts shared for preprocessing, fusion, or SMD analysis
+  - No details on LC-MS chromatographic conditions (gradient, column, flow rate)
+  - No specification of ICP-MS tuning parameters or dwell times
+  - Custom SMD implementation not described or available
+  - Internal standard concentrations and calibration procedures for ICP-MS not provided
+reproducibility_strengths:
+  - Uses open-source R packages (randomForest, XCMS) with standard parameters
+  - Explicit reporting of key performance metrics (accuracy, Cohen's Kappa)

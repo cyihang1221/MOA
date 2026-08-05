@@ -1,0 +1,51 @@
+========== reproducibility_recipe entry ==========
+paper_title: Proteomics-Compatible Fourier Transform Isotopic Ratio Mass Spectrometry of Polypeptides.
+source_paper: Gharibi H et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.2c03119, PMID: 36251694
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Proteomics-compatible sample preparation
+    tool: standard proteomics protocol
+    parameters: sample_amount=sub-microgram, sample_type=['protein', 'cell lysates']
+    input: biological protein sample
+    output: digested peptide mixture (e.g., trypsin-digested)
+    confidence: medium
+  Step 2: FT-ICR or Orbitrap-based mass spectrometry acquisition
+    tool: Orbitrap mass spectrometer
+    parameters: resolution=ultrahigh, fragmentation_mode=gas-phase fragmentation, ion_type_analyzed=immonium ions, target_residues=['aliphatic residues', '(hydroxy)proline']
+    input: digested peptide mixture
+    output: raw .raw files (Thermo format)
+    confidence: high
+  Step 3: Isotopic ratio extraction from immonium ion fine structure
+    tool: PAIR-MS
+    algorithm: isotopic fine structure deconvolution
+    parameters: precision_target=per mil range, isotopes_measured=['C', 'H', 'N', 'O'], elemental_focus=amino acid-resolved
+    input: raw .raw files
+    output: amino acid-specific isotopic ratios (δ²H, δ¹³C, etc.)
+    confidence: low
+  Step 4: Concomitant protein identification and sequence verification
+    tool: proteomics-type search engine (e.g., MaxQuant, Proteome Discoverer)
+    algorithm: database search against protein sequence database
+    parameters: purpose=sample purity verification and identity confirmation
+    input: raw .raw files + MS/MS spectra
+    output: protein identification, sequence coverage, confidence metrics
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - PAIR-MS software not publicly available or linked
+  - No repository accession or data sharing statement for raw or processed data
+  - No specification of Orbitrap instrument model, acquisition method parameters (e.g., AGC target, max injection time, resolution setting), or chromatographic conditions
+  - No details on PAIR-MS algorithm implementation (e.g., peak fitting, baseline correction, isotope modeling)
+  - No validation dataset or benchmarking metrics provided in abstract
+reproducibility_strengths:
+  - Method described as proteomics-compatible with standard sample amounts
+  - Explicit linkage between isotopic measurement and protein sequence verification adds analytical rigor

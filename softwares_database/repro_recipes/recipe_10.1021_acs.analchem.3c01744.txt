@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: Bypassing the Identification: MS2Quant for Concentration Estimations of Chemicals Detected with Nontarget LC-HRMS from MS<sup>2</sup> Data.
+source_paper: Sepman H et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c01744, PMID: 37548594
+overall_reproducibility_score: 72/100
+
+workflow_steps: 4
+  Step 1: MS² spectral processing and feature annotation
+    tool: SIRIUS+CSI:FingerID
+    algorithm: CSI:FingerID
+    input: MS² spectra (mzML or mgf)
+    output: predicted molecular fingerprints (ECFP4) and candidate structures
+    confidence: medium
+  Step 2: Structural fingerprint computation
+    tool: RDKit
+    algorithm: ECFP4 fingerprint
+    parameters: radius=2, nBits=2048
+    input: SMILES strings (from identified compounds) or CSI:FingerID-predicted fingerprints (for unidentified compounds)
+    output: 2048-bit ECFP4 fingerprint vectors
+    confidence: high
+  Step 3: Ionization efficiency prediction
+    tool: MS2Quant
+    algorithm: xgbTree (XGBoost regression)
+    parameters: nrounds=100, max_depth=6, eta=0.1, subsample=0.8, colsample_bytree=0.8
+    input: ECFP4 fingerprint vectors
+    output: log₁₀ ionization efficiency (relative to internal standard)
+    confidence: medium
+  Step 4: Concentration estimation
+    tool: MS2Quant
+    algorithm: log-linear calibration inversion
+    parameters: reference_ionization_efficiency=1.0, internal_standard_concentration=None
+    input: predicted log₁₀ ionization efficiency, peak intensity (TIC-normalized or extracted ion chromatogram area), internal standard response
+    output: predicted concentration (e.g., ng/L or μg/L)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: https://github.com/MS2Quant/MS2Quant
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-HRMS data (mzML/mgf) for training/validation chemicals not deposited in public repository
+  - Internal standard identity and concentration not fully specified for concentration inversion step
+  - No details on chromatographic conditions (gradient, column, flow rate) used for the 1191-chemical training set or 39-pollutant validation set
+  - XGBoost hyperparameter tuning procedure (e.g., cross-validation strategy, grid/search space) not described
+reproducibility_strengths:
+  - MS2Quant R package publicly available on GitHub with MIT license
+  - Uses only open-source tools (SIRIUS, CSI:FingerID, RDKit)
+  - Full list of 1191 training chemicals and 39 validation pollutants provided in supplementary material (implied by 'set of 39 environmental pollutants')

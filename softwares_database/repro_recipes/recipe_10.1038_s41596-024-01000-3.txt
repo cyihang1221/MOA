@@ -1,0 +1,70 @@
+========== reproducibility_recipe entry ==========
+paper_title: An MSstats workflow for detecting differentially abundant proteins in large-scale data-independent acquisition mass spectrometry experiments with FragPipe processing.
+source_paper: Kohler D et al. (2024), Nature protocols, DOI: 10.1038/s41596-024-01000-3, PMID: 38769142
+overall_reproducibility_score: 78/100
+
+workflow_steps: 4
+  Step 1: DIA raw data processing with FragPipe
+    tool: FragPipe
+    algorithm: MSFragger + Philosopher
+    input: raw .d or .raw DIA files
+    output: peptide-level quantification table (PSMs, peptides, proteins)
+    confidence: medium
+  Step 2: Statistical analysis of protein abundance differences
+    tool: MSstats
+    algorithm: linear mixed-effects model
+    parameters: model_formula=~ condition + (1|run) + (1|sample), normalization_method=global median, imputation_method=minProb, qvalue_threshold=0.05
+    input: peptide-level quantification table from FragPipe
+    output: protein-level differential abundance results (log2FC, p-value, q-value)
+    confidence: high
+  Step 3: Scalable analysis for memory-constrained large datasets
+    tool: MSstatsBig
+    algorithm: chunked linear mixed-effects modeling
+    parameters: chunk_size=10000, n_cores=None
+    input: peptide-level quantification table from FragPipe
+    output: protein-level differential abundance results (log2FC, p-value, q-value)
+    confidence: medium
+  Step 4: Interactive exploration and visualization
+    tool: MSstatsShiny
+    algorithm: web-based R Shiny interface
+    input: MSstats output (protein-level results)
+    output: interactive plots (volcano, PCA, boxplots, etc.)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+  data_urls: https://doi.org/10.1038/s41596-024-01000-3
+
+code_availability: repository_linked
+  code_url: https://github.com/VitekLab/MSstats
+  license: GPL-3.0
+
+figure_recipes: 3
+  Figure 2: [volcano_plot]
+    caption: Volcano plot showing log2 fold change vs. −log10(q-value) for differentially abundant proteins.
+    produced_by_step: [2, 4]
+    visualization_tool: MSstatsShiny / ggplot2
+    statistical_test: linear mixed-effects model with FDR correction (q < 0.05)
+  Figure 3: [pca_scores]
+    caption: PCA scores plot illustrating sample separation by experimental condition.
+    produced_by_step: [2, 4]
+    visualization_tool: MSstatsShiny / ggplot2
+    statistical_test: none (unsupervised)
+  Figure 4: [boxplot]
+    caption: Boxplots of normalized protein intensities across conditions for top differentially abundant proteins.
+    produced_by_step: [2, 4]
+    visualization_tool: MSstatsShiny / ggplot2
+    statistical_test: linear mixed-effects model-derived significance (q < 0.05)
+
+reproducibility_gaps:
+  - Raw DIA mass spectrometry data not deposited in public repository (e.g., PRIDE, Panorama)
+  - FragPipe version and exact parameter settings (e.g., MSFragger tolerances, enzyme specificity, modifications) not specified
+  - No explicit description of spectral library generation or use (if any) in FragPipe workflow
+  - MSstatsBig chunking strategy and convergence criteria not detailed
+reproducibility_strengths:
+  - MSstats, MSstatsBig, and MSstatsShiny are open-source (GPL-3.0) and available on GitHub
+  - Source data for Figures 2–4 provided as downloadable XLSX files
+  - Workflow explicitly supports both point-and-click (Shiny) and programmatic (R) usage
+  - Key statistical modeling choices (linear mixed-effects, global median normalization, minProb imputation) clearly stated

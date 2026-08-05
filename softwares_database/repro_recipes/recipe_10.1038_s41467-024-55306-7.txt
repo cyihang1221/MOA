@@ -1,0 +1,107 @@
+========== reproducibility_recipe entry ==========
+paper_title: msiFlow: automated workflows for reproducible and scalable multimodal mass spectrometry imaging and microscopy data analysis.
+source_paper: Spangenberg P et al. (2025), Nature communications, DOI: 10.1038/s41467-024-55306-7, PMID: 39870624
+overall_reproducibility_score: 78/100
+
+workflow_steps: 11
+  Step 1: Raw data import and format conversion
+    tool: Snakemake
+    algorithm: custom Python pipeline
+    parameters: input_format=timsTOF raw files, output_format=imzML, parallel_processing=True
+    input: raw timsTOF .d files
+    output: imzML files with QC visualisations
+    confidence: high
+  Step 2: Spectral preprocessing: noise reduction and centroiding
+    tool: SciPy
+    algorithm: Savitzky–Golay smoothing; find_peaks (default parameters)
+    parameters: smoothing_window_length=11, polynomial_order=2, snr_threshold=3, noise_calculation_method=median absolute deviation
+    input: imzML spectra
+    output: centroided peak lists per pixel
+    confidence: medium
+  Step 3: Mass alignment (drift correction)
+    tool: pyBASIS-inspired kernel-based clustering
+    algorithm: kernel-based clustering + nearest-neighbor mapping
+    parameters: common_mz_presence_threshold=0.03, mass_tolerance_ppm=None
+    input: centroided peak lists
+    output: aligned m/z vector and mapped peaks
+    confidence: low
+  Step 4: Off-tissue/matrix pixel identification and removal
+    tool: UMAP + HDBSCAN
+    algorithm: UMAP dimensionality reduction followed by HDBSCAN clustering
+    parameters: border_connectivity_threshold=most pixels at border, spearman_correlation_threshold=0.7, isolated_object_max_size=5, structuring_element_dilation=5x5 square, structuring_element_erosion=2x2 square
+    input: aligned imzML data
+    output: matrix-masked imzML (tissue-only pixels)
+    confidence: high
+  Step 5: Spatial coherence filtering
+    tool: custom implementation
+    algorithm: spatial coherence metric (ref 44)
+    parameters: coherence_threshold=low spatial coherence → removed
+    input: matrix-masked imzML
+    output: spatially coherent ion images
+    confidence: low
+  Step 6: Normalization
+    tool: custom Python
+    algorithm: median-fold-change normalization
+    input: spatially coherent ion images
+    output: normalized ion intensity matrix (pixels × m/z)
+    confidence: high
+  Step 7: Outlier detection
+    tool: UMAP + HDBSCAN
+    algorithm: SSC (sample-specific cluster) detection
+    parameters: ssc_definition=cluster where most pixels originate from one sample, outlier_sample_criteria=most pixels belong to SSCs
+    input: normalized ion intensity matrix
+    output: list of outlier samples
+    confidence: high
+  Step 8: De-isotoping
+    tool: custom iterative algorithm
+    algorithm: theoretical isotope pattern matching
+    parameters: mass_tolerance=predefined tolerance range, intensity_pattern_matching=theoretical isotopic abundances
+    input: normalized ion intensity matrix
+    output: de-isotoped feature table (m/z features × pixels)
+    confidence: low
+  Step 9: Tentative lipid annotation
+    tool: LipidMaps Structure Database web interface
+    algorithm: bulk structure search
+    parameters: ion_modes=['[M+H]+', '[M−H2O+H]+', '[M+Na]+', '[M+K]+'], mass_tolerance_mz=0.01, lipid_classes=['FA', 'Cer', 'SM', 'HexCer', 'TG', 'DG', 'PC', 'PA', 'PS', 'PE', 'PG', 'ST']
+    input: de-isotoped m/z list
+    output: tentatively annotated lipid list
+    confidence: high
+  Step 10: Annotation curation and validation
+    tool: Lipostar MSI (v1.3)
+    algorithm: manual curation + on-tissue DDA-MS/MS matching
+    parameters: dda_settings={'isolation_window_da': 1, 'nce': 25, 'exclusion_time_s': 30, 'isotope_exclusion': True, 'full_scan_range': 'm/z 550–1500', 'msms_first_mass': 100}
+    input: tentatively annotated lipids + MALDI-DDA-MSI data
+    output: curated, validated lipid annotations
+    confidence: high
+  Step 11: LC-MS/MS validation
+    tool: Orbitrap Fusion Lumos Tribrid
+    algorithm: data-dependent acquisition with class-specific fragment ions
+    parameters: resolution=70000, injection_time_ms=250, ion_mode=['positive', 'negative'], mobile_phases=['A: H2O:ACN (40:60) + 10 mM ammonium formate + 0.1% formic acid', 'B: IPA:ACN (90:10) + 10 mM ammonium formate + 0.1% formic acid'], flow_rate_ul_min=250, column=ACQUITY UPLC HSS T3 (1.8 μm, 100 × 2.1 mm)
+    input: lipid extracts from bladder tissue
+    output: validated molecular-species-level lipid identifications
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: https://github.com/msiFlow/msiFlow
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw MALDI-2 MSI datasets not deposited in public repository (e.g., MetaboLights, MassIVE)
+  - Supplementary Table 1 (all pipeline parameters) referenced but not provided in manuscript or supplement
+  - Exact Savitzky–Golay window length and polynomial order not specified (only 'default' cited)
+  - Mass tolerance for alignment not quantified (e.g., ppm or Da)
+  - Spatial coherence threshold value not reported
+  - No access details for Lipostar MSI (commercial tool requiring license and purchase)
+reproducibility_strengths:
+  - Full source code publicly available on GitHub under MIT license
+  - End-to-end Snakemake workflow ensures computational reproducibility
+  - All major algorithms explicitly named and referenced (UMAP, HDBSCAN, SciPy, pyBASIS-inspired)
+  - Vendor-neutral design supports Bruker timsTOF fleX and Thermo Q Exactive Plus data
+  - Comprehensive methodological description of matrix removal, outlier detection, and de-isotoping logic

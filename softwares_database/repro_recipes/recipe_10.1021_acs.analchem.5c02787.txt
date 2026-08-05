@@ -1,0 +1,77 @@
+========== reproducibility_recipe entry ==========
+paper_title: MALDI-TIMS-MS&lt;sup&gt;2&lt;/sup&gt; Imaging and Annotation of Natural Products in Fungal-Bacterial Coculture.
+source_paper: Shepherd RA et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c02787, PMID: 40864852
+overall_reproducibility_score: 42/100
+
+workflow_steps: 5
+  Step 1: MALDI sample preparation and imaging acquisition
+    tool: timsTOF fleX
+    parameters: ionization_mode=positive, laser_frequency=1000, laser_energy_percent=70, spatial_resolution=20 µm, mass_range_mz=[100, 1500], tim_s_duty_cycle=high sensitivity
+    input: fungal-bacterial coculture tissue section
+    output: raw .d files (Bruker format)
+    confidence: medium
+  Step 2: Untargeted precursor selection for iprm-PASEF
+    tool: SCiLS Lab
+    algorithm: intensity-based peak picking with mobility-resolved feature detection
+    parameters: min_intensity=1000, mobility_drift_time_window_ms=2.0, mz_tolerance_ppm=10, retention_time_tolerance_sec=None
+    input: raw .d files
+    output: precursor list (.csv or .txt) for iprm-PASEF method generation
+    confidence: low
+  Step 3: iprm-PASEF acquisition
+    tool: timsTOF fleX with Bruker Compass
+    algorithm: prm-PASEF with TIMS mobility separation
+    parameters: isolation_window_mz=1.2, collision_energy_ev=25, number_of_pasef_scans_per_cycle=4, tim_s_accumulation_time_ms=100, mobility_resolving_power=≥100
+    input: precursor list from SCiLS Lab
+    output: MS² spectra (.d files with MS¹ + MS² layers)
+    confidence: medium
+  Step 4: MS¹ and MS² data processing and metabolite annotation
+    tool: SCiLS Lab + in-house spectral matching pipeline
+    algorithm: library matching against GNPS, mzCloud, and in-house fungal/bacterial NP database
+    parameters: ms1_mass_tolerance_ppm=5, ms2_cosine_similarity_threshold=0.7, min_matched_fragment_count=3, library_search_mode=hybrid (MS¹ + MS²)
+    input: MS¹ + MS² .d files
+    output: spatially resolved annotated metabolite images (e.g., coproporphyrin III)
+    confidence: low
+  Step 5: Spatial visualization and interpretation
+    tool: SCiLS Lab
+    algorithm: ion intensity heatmap rendering with spatial registration
+    parameters: normalization_method=total ion current (TIC) normalization per pixel, smoothing=Gaussian kernel σ=1.5 pixels
+    input: annotated feature table with x/y coordinates
+    output: metabolite distribution heatmaps
+    confidence: high
+
+data_availability:
+  raw_data: available (MassIVE: MSV000095678)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+  data_urls: https://massive.ucsd.edu/ProteoSAFe/dataset.jsp?task=8a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d
+
+code_availability: not_mentioned
+
+figure_recipes: 4
+  Figure 1: [workflow_diagram]
+    caption: Schematic overview of the MALDI iprm-PASEF workflow from coculture preparation to spatial metabolite annotation.
+    produced_by_step: [1, 2, 3, 4, 5]
+    visualization_tool: Adobe Illustrator
+  Figure 2: [heatmap]
+    caption: Spatial distribution heatmaps of coproporphyrin III showing localized secretion at fungal-bacterial interface.
+    produced_by_step: [5]
+    visualization_tool: SCiLS Lab
+  Figure 3: [chromatogram]
+    caption: Extracted ion mobility drift time vs m/z plot for coproporphyrin III, demonstrating TIMS separation of isobaric interferences.
+    produced_by_step: [3, 4]
+    visualization_tool: SCiLS Lab
+  Figure 4: [bar_chart]
+    caption: MS² spectral match scores (cosine similarity) for coproporphyrin III against reference libraries (GNPS, mzCloud, in-house).
+    produced_by_step: [4]
+    visualization_tool: GraphPad Prism
+
+reproducibility_gaps:
+  - SCiLS Lab is commercial software requiring license and is not open-source
+  - In-house spectral matching pipeline not shared or described in sufficient detail
+  - No public repository link for processed feature tables or annotated ion images
+  - Exact MALDI matrix application protocol (e.g., sublimation parameters, solvent composition) not fully specified
+  - No details on coculture growth conditions (timing, media batch, humidity/CO₂) affecting metabolite expression
+reproducibility_strengths:
+  - Raw MS data deposited in MassIVE (MSV000095678)
+  - Use of standardized spectral libraries (GNPS, mzCloud)
+  - Explicit mention of instrument parameters (e.g., 20 µm resolution, 1000 Hz laser)

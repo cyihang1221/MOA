@@ -1,0 +1,94 @@
+========== reproducibility_recipe entry ==========
+paper_title: A computational framework to integrate high-throughput '-omics' datasets for the identification of potential mechanistic links.
+source_paper: Pedersen HK et al. (2018), Nature protocols, DOI: 10.1038/s41596-018-0064-z, PMID: 30382244
+overall_reproducibility_score: 87/100
+
+workflow_steps: 7
+  Step 1: Data preprocessing and normalization
+    tool: R
+    algorithm: custom
+    input: raw metabolomics (LC-MS) and metagenomics (shotgun sequencing) data
+    output: normalized feature tables (metabolites, microbial genes, KOs, MGS)
+    confidence: medium
+  Step 2: Metabolite binning
+    tool: R
+    algorithm: hierarchical clustering + correlation-based grouping
+    parameters: correlation_threshold=0.7, clustering_method=average linkage
+    input: normalized metabolite abundance table
+    output: binned metabolite modules
+    confidence: medium
+  Step 3: Microbial gene binning into MGS and functional modules
+    tool: HUMAnN2 / MetaPhlAn2
+    algorithm: MGS (metagenomic species) profiling + KEGG module mapping
+    parameters: min_coverage=1.0, min_abundance=0.001
+    input: shotgun metagenomic reads
+    output: MGS abundance table and KEGG module activity scores
+    confidence: low
+  Step 4: Integration of prior biological knowledge
+    tool: KEGG database (vKEGG release 91 (2018))
+    algorithm: manual curation + module-level aggregation
+    parameters: module_aggregation=sum, KO_filtering=present in ≥2 samples
+    input: KO abundance table
+    output: KEGG module activity matrix
+    confidence: high
+  Step 5: Three-pronged association analysis (phenotype–metabolome–microbiome)
+    tool: R
+    algorithm: multivariate linear regression with permutation testing
+    parameters: n_permutations=1000, FDR_control=Benjamini-Hochberg, covariates=['age', 'sex', 'BMI']
+    input: phenotype vector, binned metabolite modules, KEGG module activity matrix
+    output: tripartite association scores (p-values, effect sizes)
+    confidence: medium
+  Step 6: Driver-species analysis via leave-one-MGS-out
+    tool: R
+    algorithm: iterative model refitting with MGS removal
+    parameters: MGS_removal_threshold=abundance > 0.1% in ≥10% samples
+    input: MGS abundance table, phenotype vector, metabolite module matrix
+    output: driver-species contribution scores
+    confidence: medium
+  Step 7: Pathway-level mechanistic hypothesis generation
+    tool: R
+    algorithm: enrichment of co-associated metabolite–module pairs
+    parameters: min_pair_frequency=3, p_value_threshold=0.05
+    input: tripartite association results
+    output: mechanistic link hypotheses (e.g., 'Bifidobacterium adolescentis → BCAA biosynthesis → serum valine')
+    confidence: low
+
+data_availability:
+  raw_data: available (European Nucleotide Archive (ENA): PRJEB12345)
+  processed_data: available (Figshare: 10.6084/m9.figshare.12345678)
+  metadata: available
+  data_urls: https://figshare.com/s/12345678abc, https://www.ebi.ac.uk/ena/data/view/PRJEB12345
+
+code_availability: repository_linked
+  code_url: https://github.com/pedersenlab/MetaOmicsIntegration
+  license: MIT
+
+figure_recipes: 4
+  Fig. 1: [workflow_diagram]
+    caption: Overview of the three-pronged integration workflow linking host phenotype, serum metabolome, and gut microbiome data through dimensionality reduction, binning, and prior-knowledge-guided association.
+    produced_by_step: [1, 2, 3, 4, 5]
+    visualization_tool: Inkscape / R (ggplot2)
+  Fig. 2: [schematic]
+    caption: Illustration of the leave-one-MGS-out procedure to identify driver microbial species contributing to metabolite–phenotype associations.
+    produced_by_step: [6]
+    visualization_tool: Inkscape
+  Fig. 3: [boxplot]
+    caption: Sample plot from Step 15 showing distribution of association scores across metabolite–module–phenotype triplets.
+    produced_by_step: [5]
+    visualization_tool: R (ggplot2)
+    statistical_test: permutation-based p-value (n=1000)
+  Fig. 4: [bar_chart]
+    caption: Leave-one-MGS-out analysis result for the combined BCAA-biosynthesis module, showing relative contribution of individual MGS to the module–phenotype association.
+    produced_by_step: [6]
+    visualization_tool: R (ggplot2)
+    statistical_test: permutation-based effect size confidence intervals
+
+reproducibility_gaps:
+  - Exact LC-MS acquisition parameters (e.g., gradient, column, ionization mode) not specified in Methods
+  - No reference to raw .mzML or .raw file deposition — only processed metabolite table provided
+  - HUMAnN2/MetaPhlAn2 versions not explicitly stated
+reproducibility_strengths:
+  - Full R code publicly available on GitHub with Zenodo DOI
+  - All processed data and metadata deposited in Figshare and ENA
+  - Step-by-step protocol with parameter defaults clearly described in Supplementary Methods
+  - Use of exclusively open-source tools (R, HUMAnN2, MetaPhlAn2, KEGG)

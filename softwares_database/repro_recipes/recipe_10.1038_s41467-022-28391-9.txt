@@ -1,0 +1,111 @@
+========== reproducibility_recipe entry ==========
+paper_title: Comparative metabolomics with Metaboseek reveals functions of a conserved fat metabolism pathway in C. elegans.
+source_paper: Helf MJ et al. (2022), Nature communications, DOI: 10.1038/s41467-022-28391-9, PMID: 35145075
+overall_reproducibility_score: 92/100
+
+workflow_steps: 9
+  Step 1: Data conversion to mzXML
+    tool: MSConvert (v3.0)
+    algorithm: ProteoWizard conversion
+    input: raw .raw files (Thermo Q-Exactive)
+    output: mzXML files
+    confidence: high
+  Step 2: Molecular feature detection
+    tool: XCMS (via Metaboseek)
+    algorithm: centWave
+    parameters: mass_tolerance_ppm=4, peakwidth=3_20, snthresh=3, prefilter=3_100, fitgauss=False, integrate=1, firstBaselineCheck=True, noise=0, mzCenterFun=wMean, mzdiff=-0.005
+    input: mzXML files
+    output: feature table (XCMS output)
+    confidence: high
+  Step 3: Feature grouping and alignment
+    tool: XCMS (via Metaboseek)
+    algorithm: obiwarp
+    parameters: minfrac=0.2, bw=2, mzwid=0.002, max=500, minsamp=1, usegroups=False
+    input: XCMS feature list
+    output: aligned feature table
+    confidence: high
+  Step 4: Gap filling
+    tool: Metaboseek peak filling
+    algorithm: Metaboseek gap-filling algorithm
+    parameters: mass_tolerance_ppm=3, rt_tolerance_sec=3, rtrange=True, areaMode=False
+    input: aligned feature table
+    output: gap-filled feature table
+    confidence: high
+  Step 5: Blank subtraction and quality filtering
+    tool: Metaboseek Data Explorer
+    algorithm: blank abundance thresholding + Fast Peak Shapes (Peak Quality)
+    parameters: blank_threshold_fold_change=10, quality_filter_method=Fast Peak Shapes
+    input: gap-filled feature table + blank/bacterial matrix MS data
+    output: curated feature table (C. elegans-specific, high-quality features)
+    confidence: high
+  Step 6: Grouping and statistical testing
+    tool: Metaboseek Basic Analysis
+    algorithm: unpaired two-sided t-test
+    parameters: control_group=WT, test_type=unpaired two-sided t-test, p_value_adjustment=not specified (assumed none or default)
+    input: curated feature table grouped by genotype (WT vs hacl-1)
+    output: differentially abundant features (p-values, fold-changes)
+    confidence: medium
+  Step 7: MS/MS matching and annotation
+    tool: Metaboseek Advanced Analysis (Find MS2 scans)
+    algorithm: inclusion list–driven dd-MS2 matching
+    parameters: inclusion_window_sec=20, ms2_resolution=30000, agc_target_ms2=200000, collision_energy=[10, 30], isolation_window_mz=1.0, dynamic_exclusion_sec=5, top_n_ms2_per_scan=8
+    input: curated feature table + raw MS/MS data
+    output: MS/MS-matched feature subset with spectral annotations
+    confidence: high
+  Step 8: MS/MS networking and structural inference
+    tool: Metaboseek MS/MS Networking
+    algorithm: cosine similarity–based network clustering
+    parameters: similarity_threshold=not explicitly stated (implied by 'Simplify Network' in Supplementary Fig. 1)
+    input: MS/MS-matched features
+    output: MS/MS molecular networks + fragmentation trees (e.g., SIRIUS)
+    confidence: low
+  Step 9: Normalization
+    tool: Metaboseek
+    algorithm: internal standard normalization
+    parameters: normalization_reference=ascr#3 abundance
+    input: curated feature table
+    output: normalized feature table
+    confidence: high
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1872)
+  processed_data: available (MetaboLights: MTBLS1872)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1872
+
+code_availability: repository_linked
+  code_url: https://github.com/metaboseek/metaboseek
+  license: MIT
+
+figure_recipes: 5
+  Fig. 1: [workflow_diagram]
+    caption: Overview of comparative metabolomics workflow using Metaboseek.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    visualization_tool: Metaboseek built-in export (vector graphics)
+  Fig. 2: [volcano_plot]
+    caption: Differential metabolite analysis of CA-fed hacl-1 mutants vs WT, showing α-oxidation–dependent accumulation.
+    produced_by_step: [6, 9]
+    visualization_tool: Metaboseek built-in plotting
+    statistical_test: unpaired two-sided t-test
+  Fig. 3: [heatmap]
+    caption: Heatmap of endogenous metabolites accumulating in hacl-1 mutant larvae.
+    produced_by_step: [5, 6, 9]
+    visualization_tool: Metaboseek built-in heatmap
+    statistical_test: t-test p-value thresholding
+  Fig. 4: [network]
+    caption: MS/MS molecular network comparing exo-metabolomes of hacl-1 and WT adults.
+    produced_by_step: [7, 8]
+    visualization_tool: Metaboseek MS/MS Networking + Simplify Network display
+  Fig. 5: [bar_chart]
+    caption: Quantification showing enrichment of cyclopropane-containing glycolipids in hacl-1 mutants.
+    produced_by_step: [6, 9]
+    visualization_tool: Metaboseek + manual annotation verification
+    statistical_test: t-test p < 0.05
+
+reproducibility_strengths:
+  - Full open-source pipeline (Metaboseek + ProteoWizard) with versioned releases
+  - Public deposition of raw and processed data in MetaboLights (MTBLS1872)
+  - Detailed, parameterized XCMS and Metaboseek settings provided
+  - Internal standard (ascr#3) normalization explicitly defined
+  - All MS acquisition parameters fully reported (gradient, voltages, temperatures, resolution, NCE)
+  - Code repository linked with DOI and MIT license

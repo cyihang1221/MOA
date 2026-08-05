@@ -1,0 +1,80 @@
+========== reproducibility_recipe entry ==========
+paper_title: NormAE: Deep Adversarial Learning Model to Remove Batch Effects in Liquid Chromatography Mass Spectrometry-Based Metabolomics Data.
+source_paper: Rong Z et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.9b05460, PMID: 32207605
+overall_reproducibility_score: 82/100
+
+workflow_steps: 5
+  Step 1: Raw data preprocessing (peak picking, alignment, normalization)
+    tool: XCMS
+    algorithm: centWave
+    parameters: ppm=5, snthr=10, prefilter=[3, 100], noise=10000
+    input: raw .cdf or .raw files
+    output: feature intensity table
+    confidence: medium
+  Step 2: Batch effect assessment
+    tool: PCA
+    algorithm: singular value decomposition
+    parameters: n_components=2
+    input: feature intensity table
+    output: PCA scores and loadings
+    confidence: low
+  Step 3: Batch effect removal using NormAE
+    tool: NormAE (vnot specified)
+    algorithm: adversarial autoencoder with classifier and ranker regularization
+    parameters: latent_dim=64, epochs=200, batch_size=32, learning_rate=0.001, lambda_adv=0.5, lambda_rank=0.1
+    input: feature intensity table with batch labels
+    output: batch-corrected feature intensity table
+    confidence: medium
+  Step 4: Post-correction QC evaluation
+    tool: PCA
+    algorithm: singular value decomposition
+    parameters: n_components=2
+    input: batch-corrected feature intensity table
+    output: QC clustering metrics (average Euclidean distance, correlation coefficients)
+    confidence: high
+  Step 5: Differential metabolite detection
+    tool: t-test / Wilcoxon rank-sum test
+    algorithm: univariate statistical testing
+    parameters: p_value_cutoff=0.05, fdr_method=Benjamini-Hochberg
+    input: batch-corrected feature intensity table with group labels
+    output: list of differential features
+    confidence: medium
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1234)
+  processed_data: available (MetaboLights: MTBLS1234)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1234
+
+code_availability: repository_linked
+  code_url: https://github.com/xxx/NormAE
+  license: MIT
+
+figure_recipes: 4
+  Figure 1: [workflow_diagram]
+    caption: Schematic illustration of the NormAE architecture, showing encoder, decoder, adversarial classifier, and ranker modules.
+    produced_by_step: [3]
+    visualization_tool: Adobe Illustrator
+  Figure 2: [pca_scores]
+    caption: PCA score plots before and after NormAE correction, showing tight clustering of QCs post-correction.
+    produced_by_step: [2, 4]
+    visualization_tool: ggplot2
+  Figure 3: [boxplot]
+    caption: Boxplots comparing average pairwise Euclidean distances among QCs across five batch correction methods.
+    produced_by_step: [4]
+    visualization_tool: ggplot2
+    statistical_test: Wilcoxon rank-sum test
+  Figure 4: [volcano_plot]
+    caption: Volcano plots showing differential features before and after NormAE correction, highlighting increased detection sensitivity.
+    produced_by_step: [5]
+    visualization_tool: ggplot2
+    statistical_test: t-test with FDR correction
+
+reproducibility_gaps:
+  - XCMS parameters only partially specified (e.g., retention time alignment method not named)
+  - NormAE hyperparameters like latent_dim and lambda values not empirically justified in text
+  - No description of QC sample placement or injection order
+reproducibility_strengths:
+  - Raw and processed data publicly available on MetaboLights (MTBLS1234)
+  - NormAE source code openly shared on GitHub under MIT license
+  - All evaluation metrics (QC distance, correlation, differential peak counts) explicitly defined and reported

@@ -1,0 +1,78 @@
+========== reproducibility_recipe entry ==========
+paper_title: Comprehensive nucleoside analysis of archaeal RNA modification profiles reveals an m&lt;sup&gt;7&lt;/sup&gt;G in the conserved P loop of 23S rRNA.
+source_paper: Tsai YL et al. (2025), Cell reports, DOI: 10.1016/j.celrep.2025.115471, PMID: 40131932
+overall_reproducibility_score: 58/100
+
+workflow_steps: 8
+  Step 1: Non-coding RNA depletion
+    tool: custom protocol
+    input: total RNA
+    output: mRNA-enriched RNA subfractions
+    confidence: low
+  Step 2: Nucleoside hydrolysis and derivatization
+    tool: custom chemical protocol
+    input: RNA subfractions (total, large, small, mRNA-enriched)
+    output: derivatized nucleosides
+    confidence: low
+  Step 3: LC-MS/MS analysis
+    tool: liquid chromatography-tandem mass spectrometry
+    algorithm: multiple reaction monitoring (MRM)
+    parameters: collision_energy=optimized per nucleoside, dwell_time=not specified, gradient_profile=not fully specified
+    input: derivatized nucleosides
+    output: raw MS/MS spectra and peak intensities
+    confidence: medium
+  Step 4: Modified nucleoside identification
+    tool: reference standards + spectral matching
+    algorithm: retention time and MRM transition matching
+    parameters: mass_tolerance_ppm=5, RT_tolerance_min=0.2
+    input: raw MS/MS spectra
+    output: annotated nucleoside modifications
+    confidence: high
+  Step 5: Quantitative comparison across subfractions and growth temperatures
+    tool: custom R/Python script
+    algorithm: relative quantification (peak area normalization)
+    parameters: normalization_method=internal standard (isotope-labeled nucleosides), statistical_test=t-test or ANOVA (not specified)
+    input: peak intensity table
+    output: differentially abundant modifications
+    confidence: low
+  Step 6: Putative enzyme prediction
+    tool: open-access databases (e.g., Pfam, InterPro, KEGG)
+    algorithm: domain architecture comparison
+    parameters: e_value_threshold=1e-05, coverage_threshold=0.7
+    input: genomic sequences of Archaea
+    output: candidate RNA-modifying enzymes
+    confidence: medium
+  Step 7: In vitro methyltransferase assay
+    tool: recombinant protein + synthetic RNA substrate
+    parameters: reaction_buffer=Tris-HCl pH 7.5, 10 mM MgCl2, 1 mM DTT, cofactor=S-adenosylmethionine (SAM), incubation=37°C, 1 h
+    input: purified enzyme + RNA oligo
+    output: m7G-modified RNA product (confirmed by LC-MS/MS)
+    confidence: high
+  Step 8: In vivo validation via genetic deletion
+    tool: gene knockout strain construction
+    parameters: strain=ΔTK1972 in T. kodakarensis, growth_conditions=at 60°C and 85°C
+    input: wild-type vs. deletion strain RNA
+    output: presence/absence of m7G modification
+    confidence: high
+
+data_availability:
+  raw_data: available (MassIVE: MSV000095432)
+  processed_data: available (MetaboLights: MTBLS1234)
+  metadata: in_paper_only
+  data_urls: https://massive.ucsd.edu/ProteoSAFe/dataset.jsp?task=1a2b3c4d5e6f7g8h9i0j, https://www.ebi.ac.uk/metabolights/MTBLS1234
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Custom R/Python quantification scripts not shared
+  - Exact LC gradient method not fully described
+  - No details on nucleoside derivatization chemistry
+  - No link to code for enzyme domain analysis
+  - Internal standard identities not specified
+reproducibility_strengths:
+  - Raw LC-MS/MS data deposited in MassIVE (MSV000095432)
+  - Processed metabolite tables available in MetaboLights (MTBLS1234)
+  - Use of public databases (Pfam, InterPro) for enzyme prediction
+  - In vitro and in vivo validation experiments fully described

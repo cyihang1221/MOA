@@ -1,0 +1,56 @@
+========== reproducibility_recipe entry ==========
+paper_title: OSCA-finder: Redefining the assay of kidney disease diagnostic through metabolomics and deep learning.
+source_paper: Meng X et al. (2023), Talanta, DOI: 10.1016/j.talanta.2023.124745, PMID: 37290332
+overall_reproducibility_score: 20/100
+
+workflow_steps: 5
+  Step 1: Urine sample calibration using osmotic pressure × injection volume
+    tool: custom online mixer dilution system
+    algorithm: OSCA calibration principle
+    parameters: peak_area_group_cv_threshold=30
+    input: raw urine samples
+    output: calibrated LC-MS runs with improved peak shape and TIC stability
+    confidence: medium
+  Step 2: LC-MS data acquisition and preprocessing
+    tool: LC-MS platform (unspecified vendor)
+    algorithm: not specified
+    input: calibrated urine samples
+    output: raw .raw or .d files (inferred)
+    confidence: low
+  Step 3: Feature detection and metabolite identification
+    tool: not specified
+    algorithm: not specified
+    input: raw MS data
+    output: metabolite feature table with identifications
+    confidence: low
+  Step 4: Data enhancement for deep learning
+    tool: custom data augmentation strategy
+    algorithm: data-enhanced strategy to reduce overfitting
+    parameters: classifier_type=neural network, task=binary classification, accuracy=99.9
+    input: metabolite feature table
+    output: augmented training dataset
+    confidence: medium
+  Step 5: Deep learning binary classification
+    tool: custom neural network
+    algorithm: binary classifier (architecture unspecified)
+    parameters: num_biomarkers=7, performance_metric=accuracy, value=99.9
+    input: augmented metabolite feature matrix
+    output: UPJO vs healthy classification predictions
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No specification of LC-MS instrument parameters (e.g., column, gradient, ionization mode)
+  - No details on feature detection, alignment, or annotation tools/algorithms
+  - No description of neural network architecture, hyperparameters, or training protocol
+  - Custom 'OSCA calibration' and 'online mixer dilution' not technically described
+  - No data or code deposition; raw/processed data and software unavailable
+  - No statistical validation metrics beyond accuracy (e.g., precision, recall, CV strategy)

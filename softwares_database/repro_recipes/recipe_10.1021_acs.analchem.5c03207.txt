@@ -1,0 +1,59 @@
+========== reproducibility_recipe entry ==========
+paper_title: Aerith: Visualization and Annotation of Isotopic Enrichment Patterns of Peptides and Metabolites with Stable Isotope Labeling from Proteomics and Metabolomics.
+source_paper: Xiong Y et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c03207, PMID: 41147883
+overall_reproducibility_score: 40/100
+
+workflow_steps: 5
+  Step 1: Isotopic envelope simulation
+    tool: Aerith
+    algorithm: FFT-based algorithm
+    parameters: atom_percent_enrichment=user-defined, chemical_formula=user-defined
+    input: chemical formula and atom % enrichment levels
+    output: simulated isotopic envelope
+    confidence: high
+  Step 2: Fragment ion series modeling
+    tool: Aerith
+    algorithm: sequential convolution of isotopic envelopes of monomeric units
+    input: peptide sequence or monomeric unit composition
+    output: simulated fragment ion isotopic patterns
+    confidence: medium
+  Step 3: Fine isotopic structure simulation
+    tool: Aerith
+    algorithm: Monte Carlo simulation via multinomial distribution
+    parameters: n_simulations=sufficient for convergence (implied, not specified)
+    input: chemical formula and isotopic enrichment parameters
+    output: fine-resolution isotopic distribution
+    confidence: medium
+  Step 4: Peptide-spectrum match (PSM) evaluation
+    tool: Aerith
+    algorithm: multiple robust scoring functions (unspecified)
+    parameters: scoring_functions=robust and commonly used (not enumerated)
+    input: experimental MS/MS spectrum and theoretical isotopic envelope
+    output: PSM score(s)
+    confidence: low
+  Step 5: Interactive visualization and annotation
+    tool: Aerith
+    algorithm: R-based interactive plotting (via Rcpp-accelerated C++)
+    input: simulated isotopic envelopes and experimental spectra
+    output: annotated spectral plots with labeled isotopic peaks
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No repository link or DOI provided for Aerith source code
+  - Raw or processed MS data from case studies (glucose, penicillin, microbial peptides) not deposited or referenced
+  - Specific scoring functions for PSM evaluation not named or parameterized
+  - No details on experimental MS acquisition parameters (e.g., instrument type, resolution, fragmentation method) needed to reproduce simulations in context
+  - Monte Carlo simulation parameters (e.g., number of iterations) unspecified
+reproducibility_strengths:
+  - Algorithms explicitly named (FFT-based, multinomial Monte Carlo, sequential convolution)
+  - Implementation details provided (C++ via Rcpp for performance)
+  - Clear input requirements (chemical formula, atom % enrichment)

@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: Multi-molecular hyperspectral PRM-SRS microscopy.
+source_paper: Zhang W et al. (2024), Nature communications, DOI: 10.1038/s41467-024-45576-6, PMID: 38383552
+overall_reproducibility_score: 30/100
+
+workflow_steps: 0
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 8
+  Figure 1: [workflow_diagram]
+    caption: Schematic illustration of the general Reference Matching Method for spectral unmixing in SRS microscopy.
+    visualization_tool: Not specified
+  Figure 2: [workflow_diagram]
+    caption: Schematic illustration of the Penalized Reference Matching (PRM) algorithm, highlighting penalty terms and optimization framework.
+    visualization_tool: Not specified
+  Figure 3: [other]
+    caption: Cross-correlation analysis of PRM in fingerprint and C–H stretching Raman regions, demonstrating spectral matching fidelity.
+    visualization_tool: Not specified
+  Figure 4: [overlay_image]
+    caption: Comparison of PRM-SRS lipid maps with immunofluorescence or NAO staining, validating label-free detection accuracy.
+    visualization_tool: ImageJ (Overlay function)
+  Figure 5: [heatmap]
+    caption: Label-free hyperspectral detection and spatial mapping of distinct lipid subtypes (e.g., HDL particles, cholesterol/PE ratio) across human kidney, mouse hippocampus, and human brain.
+    visualization_tool: ImageJ (color maps, ratiometric calculations)
+  Figure 6: [subcellular_distribution_map]
+    caption: Subcellular localization of lipid subtypes (e.g., sphingosine, cardiolipin) in Drosophila fat body cells using PRM-SRS.
+    visualization_tool: ImageJ
+  Figure 7: [pca_scores]
+    caption: PRM-SRS imaging reveals age-dependent lipidomic differences in mouse hippocampal granule cells, including elevated cholesterol-to-phosphatidylethanolamine ratio in aged mice.
+    visualization_tool: SPSS
+    statistical_test: t-test or ANOVA (implied by group comparison, not explicitly stated)
+  Figure 8: [subcellular_distribution_map]
+    caption: High-resolution detection and spatial mapping of cardiolipin and sphingosine in post-mortem human brain cortex tissue.
+    visualization_tool: ImageJ
+
+reproducibility_gaps:
+  - No raw SRS hyperspectral image data or spectral datasets deposited in public repository
+  - Penalized Reference Matching (PRM) algorithm implementation not shared — only described conceptually; no code, parameter files, or reference spectra provided
+  - MATLAB R2021b implementation details (e.g., cost function formulation, penalty weights, convergence criteria) omitted
+  - No access to in-house lipid identification software based on LipidXplorer or data management system used for GC-MS analysis
+  - GC-MS lipidomics data not made publicly available (no MetaboLights/EMBL-EBI accession)
+  - No metadata schema or sample annotation file provided for biological replicates or experimental groups
+reproducibility_strengths:
+  - Detailed optical and acquisition parameters for SRS microscopy (laser wavelengths, pulse widths, power, dwell time, time constant)
+  - Explicit description of sample preparation protocols across multiple species and tissue types
+  - Reference to established methods (e.g., LipidXplorer, two-step chloroform/methanol extraction, published staining protocols)
+  - Use of standard commercial platforms (Horiba Raman, Thermo QExactive, Advion NanoMate) with specified settings

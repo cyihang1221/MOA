@@ -1,0 +1,42 @@
+========== reproducibility_recipe entry ==========
+paper_title: Ultra-fast proteomics with Scanning SWATH.
+source_paper: Messner CB et al. (2021), Nature biotechnology, DOI: 10.1038/s41587-021-00860-4, PMID: 33767396
+overall_reproducibility_score: 82/100
+
+workflow_steps: 0
+
+data_availability:
+  raw_data: available (PRIDE: PXD021234)
+  processed_data: available (PRIDE: PXD021234)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/pride/archive/projects/PXD021234
+
+code_availability: repository_linked
+  code_url: https://github.com/Sciex/ScanningSWATH
+  license: Apache-2.0
+
+figure_recipes: 4
+  Figure 1: [workflow_diagram]
+    caption: Schematic comparison of conventional stepped SWATH (discrete isolation windows) versus Scanning SWATH (continuous quadrupole movement) showing how the latter adds a temporal dimension to precursor iso
+    visualization_tool: Adobe Illustrator
+  Figure 2: [bar_chart]
+    caption: Quantitative comparison of peptide identifications across gradient lengths (0.5–5 min) between Scanning SWATH and conventional SWATH, demonstrating ~70% increase in identifications for Scanning SWATH 
+    visualization_tool: R ggplot2
+  Figure 3: [heatmap]
+    caption: Hierarchical clustering heatmap of significantly regulated proteins in S. cerevisiae treated with azoles and statins, revealing drug-class-specific proteome responses captured by 5-min Scanning SWATH.
+    visualization_tool: R pheatmap
+    statistical_test: ANOVA with Benjamini–Hochberg FDR correction (q < 0.05)
+  Figure 4: [volcano_plot]
+    caption: Volcano plot of plasma proteome changes in COVID-19 patients vs. controls, highlighting 43 known and 11 novel severity-associated biomarkers identified using Scanning SWATH with 1-min gradients.
+    visualization_tool: R EnhancedVolcano
+    statistical_test: limma t-test with FDR < 0.05 and |log2FC| > 0.5
+
+reproducibility_gaps:
+  - Scanning SWATH beta acquisition software is proprietary and not fully open-source; only post-acquisition processing tools are public
+  - Exact RF/DC ramp calculation algorithm and calibration DACs are vendor-internal and not disclosed
+  - No detailed description of peak picking, alignment, or quantification algorithms (e.g., DIA-NN, Spectronaut, or OpenSWATH parameters) used for data processing
+reproducibility_strengths:
+  - Raw and processed proteomics data deposited in PRIDE (PXD021234) with full metadata
+  - Source code for Scanning SWATH data interpretation tools available on GitHub under Apache-2.0 license
+  - All LC-MS gradient parameters, column specs, and instrument settings explicitly reported
+  - Chemical reagents, cell lines, and clinical cohort details fully traceable via cited protocols and ethics approval

@@ -1,0 +1,58 @@
+========== reproducibility_recipe entry ==========
+paper_title: Learning motif features and topological structure of molecules for metabolic pathway prediction.
+source_paper: Hu J et al. (2025), Journal of cheminformatics, DOI: 10.1186/s13321-025-00994-6, PMID: 40259421
+overall_reproducibility_score: 72/100
+
+workflow_steps: 5
+  Step 1: Molecular motif extraction
+    tool: MotifMol3D
+    algorithm: motif mining from molecular graphs
+    input: molecular structures (SMILES or 3D coordinates)
+    output: local motif features
+    confidence: medium
+  Step 2: Graph neural network encoding
+    tool: MotifMol3D
+    algorithm: graph neural network with motif integration
+    input: molecular graph + motif features + 3D conformation
+    output: latent molecular representation
+    confidence: medium
+  Step 3: Metabolic pathway category prediction
+    tool: MotifMol3D
+    algorithm: softmax classification head
+    parameters: num_classes=11
+    input: latent molecular representation
+    output: predicted KEGG pathway category (11 classes)
+    confidence: high
+  Step 4: Ablation study and motif interpretability analysis
+    tool: MotifMol3D
+    algorithm: feature ablation + motif contribution analysis
+    input: trained model + motif embeddings
+    output: motif importance scores, ablation performance metrics
+    confidence: low
+  Step 5: External validation
+    tool: MotifMol3D
+    algorithm: inference on external test set
+    input: external molecular dataset
+    output: prediction accuracy metrics (precision, recall, F1)
+    confidence: low
+
+data_availability:
+  raw_data: available (KEGG: KEGG PATHWAY database (map00000+))
+  processed_data: not_mentioned (not specified)
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: https://github.com/Irena-Zhang/MotifMol3D.git
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of preprocessing steps (e.g., 3D structure generation, conformer sampling, SMILES standardization)
+  - No details on train/validation/test split ratios or stratification
+  - No specification of GNN architecture hyperparameters (layers, hidden dimensions, dropout)
+  - External validation dataset not identified or accessible
+  - Motif mining algorithm not formally defined or benchmarked
+reproducibility_strengths:
+  - Open-source code repository provided
+  - Uses publicly available KEGG pathway annotations (11 categories)
+  - Includes ablation study and motif analysis for interpretability

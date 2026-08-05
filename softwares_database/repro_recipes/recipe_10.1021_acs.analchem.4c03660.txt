@@ -1,0 +1,47 @@
+========== reproducibility_recipe entry ==========
+paper_title: Discovery-Based Analysis for Chemical Trends in Chromatographic Data Sets Using Alteration Analysis and Two-Dimensional Correlation Analysis.
+source_paper: Herman MJ et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.4c03660, PMID: 39794900
+overall_reproducibility_score: 20/100
+
+workflow_steps: 3
+  Step 1: Alteration analysis (ALA) for trend discovery
+    tool: Alteration Analysis (ALA)
+    algorithm: unsupervised chemometric technique for detecting systematic changes across sample series
+    parameters: number_of_samples=10, signal_to_noise_ratio_range=[15, 50, 65, 200], minimum_detectable_change_per_sample=[0.02, 0.01, 0.001], chromatographic_resolution_limit=0.01
+    input: chromatographic data sets (e.g., GC-MS total ion chromatograms or extracted ion chromatograms)
+    output: statistically significant chemical trends / alteration profiles
+    confidence: low
+  Step 2: Two-dimensional correlation analysis (2DCOR)
+    tool: 2D Correlation Analysis (2DCOR)
+    algorithm: nonquantitative, synchronous/asynchronous correlation mapping of intensity fluctuations across sample series
+    input: ALA output (alteration profiles of statistically significant compounds)
+    output: 2D correlation maps (synchronous and asynchronous)
+    confidence: low
+  Step 3: Application to pyrolysis GC-MS data
+    tool: Custom implementation of ALA and 2DCOR
+    algorithm: ALA followed by 2DCOR on pyGC-MS data across thermal gradient (350–700 °C)
+    parameters: temperature_range_celsius=[350, 700], number_of_temperature_points=None, compound_discovery_count=523
+    input: pyGC-MS raw or processed chromatographic data (TIC or EIC matrices)
+    output: list of 523 statistically significant compounds; 2D correlation maps for selected compounds
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - ALA and 2DCOR are described as recently introduced but no software implementation is named, linked, or cited
+  - No code, scripts, or computational workflow shared
+  - No details on how ALA computes statistical significance (e.g., permutation strategy, null distribution, p-value threshold)
+  - No description of data preprocessing (peak alignment, normalization, baseline correction) prior to ALA
+  - pyGC-MS experimental parameters (e.g., number of temperature points, instrument settings, data format) not specified
+  - In-silico data generation method not described (precluding independent replication)
+reproducibility_strengths:
+  - Quantitative performance benchmarks reported (detection limits vs. S/N and resolution)
+  - Clear application context (pyGC-MS of SEBS polymer across thermal gradient)
+  - Explicit count of discovered compounds (n = 523) enables validation target

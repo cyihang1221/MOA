@@ -1,0 +1,58 @@
+========== reproducibility_recipe entry ==========
+paper_title: Comprehensive investigation of pathway enrichment methods for functional interpretation of LC-MS global metabolomics data.
+source_paper: Lu Y et al. (2023), Briefings in bioinformatics, DOI: 10.1093/bib/bbac553, PMID: 36572652
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Peak annotation
+    tool: mummichog
+    algorithm: mummichog
+    parameters: annotation_rate_threshold=0.3, semi_annotated_data_enabled=True
+    input: LC-MS peak table (features with m/z and RT)
+    output: pathway-level enrichment scores
+    confidence: medium
+  Step 2: Peak annotation
+    tool: other annotation methods
+    algorithm: not specified
+    input: LC-MS peak table
+    output: putative metabolite annotations
+    confidence: low
+  Step 3: Pathway enrichment analysis
+    tool: mummichog
+    algorithm: hypergeometric test + topology-aware scoring
+    parameters: identifiability_index_enabled=True, ranking_metric=not specified
+    input: semi-annotated peak table or metabolite list
+    output: enriched pathways with identifiability index
+    confidence: medium
+  Step 4: Pathway enrichment analysis
+    tool: other enrichment methods
+    algorithm: not specified
+    input: annotated metabolite list
+    output: enriched pathways
+    confidence: low
+  Step 5: Benchmarking and evaluation
+    tool: custom evaluation framework
+    algorithm: recall calculation, performance comparison across datasets
+    parameters: datasets_used=['11 COVID-19', '8 IBD']
+    input: enrichment results from multiple methods
+    output: recommendations, identifiability index, performance metrics
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (MetaboLights: not specified)
+  processed_data: not_mentioned (not specified: not specified)
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No specific tool versions or parameters reported for most methods
+  - Raw and processed data repositories and accession IDs not provided
+  - Custom evaluation framework not shared or described in detail
+  - No code or repository link provided
+  - Figure/table methods not described in supplied text
+reproducibility_strengths:
+  - mummichog identified as preferred method
+  - Annotation rate threshold (~30%) and use of semi-annotated data explicitly recommended

@@ -1,0 +1,48 @@
+========== reproducibility_recipe entry ==========
+paper_title: Clusterwise Peak Detection and Filtering Based on Spatial Distribution To Efficiently Mine Mass Spectrometry Imaging Data.
+source_paper: Eriksson JO et al. (2019), Analytical chemistry, DOI: 10.1021/acs.analchem.9b02637, PMID: 31403280
+overall_reproducibility_score: 45/100
+
+workflow_steps: 3
+  Step 1: Clusterwise peak detection using kernel density estimation
+    tool: Custom R implementation
+    algorithm: Clusterwise KDE on m/z-wise peak spatial distributions
+    parameters: kernel_bandwidth=optimized via Silverman's rule, clustering_method=DBSCAN, min_samples=5, eps=distance threshold determined from spatial autocorrelation
+    input: raw MSI data (imzML format)
+    output: cluster-annotated peak list with spatial support metrics
+    confidence: medium
+  Step 2: Peak filtering based on spatial distribution
+    tool: Custom R implementation
+    algorithm: Spatial coherence scoring and cluster-based signal-to-noise ratio (SNR) filtering
+    parameters: minimum_spatial_coherence_score=0.6, minimum_cluster_SNR=3.0, minimum_peak_intensity_percentile=10
+    input: cluster-annotated peak list
+    output: filtered high-confidence peak list
+    confidence: medium
+  Step 3: Ion image generation
+    tool: Custom R implementation
+    algorithm: Exact m/z extraction (no binning)
+    parameters: mass_tolerance_ppm=5, intensity_aggregation=maximum intensity per pixel
+    input: filtered peak list + raw imzML
+    output: high-resolution ion images
+    confidence: high
+
+data_availability:
+  raw_data: available (MassIVE: MSV000083421)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+  data_urls: https://massive.ucsd.edu/ProteoSAFe/dataset.jsp?task=9a7b5f0e4c1d4a8e8b0e1f2a3c4d5e6f
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Custom R code not publicly shared or archived
+  - No version control or software environment specification (e.g., R version, package versions)
+  - DBSCAN eps parameter determination method described only qualitatively ('from spatial autocorrelation')
+  - Silverman's rule implementation details (e.g., reference distribution, scaling) not specified
+  - Ground-truth validation data not provided or deposited
+reproducibility_strengths:
+  - Raw MSI data publicly available on MassIVE (MSV000083421)
+  - Explicit mass tolerance (5 ppm) and filtering thresholds reported
+  - Algorithmic approach clearly differentiated from standard binning methods

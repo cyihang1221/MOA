@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: Semiquantitative Analysis for High-Speed Mapping Applications of Biological Samples Using LA-ICP-TOFMS.
+source_paper: Metarapi D et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c01439, PMID: 37122168
+overall_reproducibility_score: 40/100
+
+workflow_steps: 4
+  Step 1: Preparation of matrix-matched calibration standards
+    tool: gelatin micro-droplet standards
+    parameters: number_of_elements_in_calibration=10, matrix=gelatin
+    input: elemental standard solutions
+    output: multi-element gelatin micro-droplet standards
+    confidence: high
+  Step 2: LA-ICP-TOFMS data acquisition
+    tool: LA-ICP-TOFMS
+    parameters: acquisition_mode=full mass range per pixel, laser_parameters=not specified, ablation_settings=not specified
+    input: biological tissue sections (mouse spleen, tumor) and gelatin standards
+    output: raw time-resolved ICP-TOFMS signal data (pixel-wise elemental intensities)
+    confidence: low
+  Step 3: Construction of element-specific response factor library
+    tool: custom calculation
+    algorithm: response factor derivation from gelatin standards
+    parameters: number_of_elements_characterized=72, reference_element=internal standard not specified, normalization_basis=signal intensity per nuclide
+    input: LA-ICP-TOFMS signals from gelatin standards with known concentrations
+    output: response factor library (72 elements)
+    confidence: medium
+  Step 4: Semiquantitative nuclide concentration estimation
+    tool: web application (custom)
+    algorithm: response factor-based semiquantification
+    parameters: calibration_elements=10, target_nuclides=136, error_thresholds={'overall': 25, 'half_nuclides': 10}
+    input: raw LA-ICP-TOFMS sample data + response factor library
+    output: semiquantified elemental maps (concentration estimates per pixel per nuclide)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LA-ICP-TOFMS data not deposited in public repository
+  - No details on laser ablation parameters (fluence, spot size, repetition rate, scan speed)
+  - No specification of ICP-TOFMS instrument settings (RF power, nebulizer gas flow, detector settings)
+  - Custom web application not publicly accessible or linked
+  - Internal standard selection and normalization strategy not described
+  - Gelatin standard preparation protocol lacks quantitative detail (e.g., droplet volume, drying conditions, homogeneity assessment)
+reproducibility_strengths:
+  - Explicit description of matrix-matching rationale (gelatin for biological tissue)
+  - Reported performance metrics (errors <25% for 136 nuclides; <10% for 68 nuclides)
+  - Clear workflow structure with two-stage validation (standards then real tissue)

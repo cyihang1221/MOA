@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: Tailored Mass Spectral Data Exploration Using the SpecXplore Interactive Dashboard.
+source_paper: Mildau K et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.3c04444, PMID: 38564584
+overall_reproducibility_score: 82/100
+
+workflow_steps: 4
+  Step 1: Compute spectral similarity matrix
+    tool: ms2deepscore
+    algorithm: ms2deepscore
+    input: MS/MS spectra (mzML or mgf)
+    output: pairwise spectral similarity matrix
+    confidence: high
+  Step 2: Dimensionality reduction for spectral visualization
+    tool: scikit-learn
+    algorithm: t-SNE
+    parameters: perplexity=30, n_iter=1000, random_state=42
+    input: pairwise spectral similarity matrix
+    output: 2D t-SNE embedding coordinates
+    confidence: medium
+  Step 3: Interactive spectral network exploration
+    tool: specXplore
+    algorithm: threshold-based connectivity filtering
+    parameters: similarity_threshold=0.5, max_neighbors=10
+    input: t-SNE embedding + similarity matrix
+    output: interactive partial network view, similarity heatmap, fragmentation overview map
+    confidence: high
+  Step 4: Fragmentation pattern comparison and structural hypothesis generation
+    tool: specXplore
+    algorithm: interactive spectral alignment and fragment annotation overlay
+    parameters: fragment_mz_tolerance=0.01
+    input: selected MS/MS spectra + reference libraries (e.g., GNPS, MassBank)
+    output: structural hypotheses and candidate annotations
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (GNPS)
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/iomega/specXplore
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No specific dataset used in paper — no raw data accession provided
+  - Default t-SNE parameters inferred but not explicitly stated in text
+  - No description of reference spectral library version or source used for annotation
+reproducibility_strengths:
+  - specXplore is open-source with DOI and MIT license
+  - Built on well-documented open tools (ms2deepscore, scikit-learn)
+  - Interactive dashboard enables reproducible exploration via parameter adjustment

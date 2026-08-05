@@ -1,0 +1,61 @@
+========== reproducibility_recipe entry ==========
+paper_title: Untargeted pixel-by-pixel metabolite ratio imaging as a novel tool for biomedical discovery in mass spectrometry imaging.
+source_paper: Cheng H et al. (2025), eLife, DOI: 10.7554/elife.96892, PMID: 40100251
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Untargeted metabolite ratio computation
+    tool: R package (custom)
+    algorithm: pixel-by-pixel pairwise ratio calculation
+    parameters: ratio_threshold_min=None, ratio_threshold_max=None, exclusion_criteria=zero or missing intensity values
+    input: spatial metabolite intensity matrix (mz × x × y)
+    output: ratio image stack (mz_i/mz_j × x × y for all detectable pairs)
+    confidence: low
+  Step 2: Systematic variation correction
+    tool: R package (custom)
+    algorithm: ratio-based normalization to suppress technical artifacts
+    parameters: normalization_method=median ratio stabilization, reference_region=None
+    input: ratio image stack
+    output: normalized ratio image stack
+    confidence: low
+  Step 3: Spatial contrast enhancement and metabotype segmentation
+    tool: R package (custom)
+    algorithm: unsupervised clustering of ratio profiles across pixels
+    parameters: clustering_method=hierarchical clustering, distance_metric=Pearson correlation, linkage_method=average
+    input: normalized ratio image stack
+    output: metabotype-labeled spatial map
+    confidence: low
+  Step 4: Novel regional biomarker identification
+    tool: R package (custom)
+    algorithm: differential ratio analysis (region-wise)
+    parameters: statistical_test=Wilcoxon rank-sum test, p_value_cutoff=0.05, fold_change_threshold=None
+    input: normalized ratio image stack + tissue region labels
+    output: list of discriminative metabolite ratios per anatomical region
+    confidence: low
+  Step 5: Biochemical pathway inference
+    tool: R package (custom) + external databases
+    algorithm: metabolite pair co-localization enrichment with pathway mapping
+    parameters: database_sources=['HMDB', 'KEGG', 'Reactome'], enrichment_method=hypergeometric test, FDR_correction=Benjamini-Hochberg
+    input: discriminative metabolite ratios + annotation data
+    output: enriched metabolic pathways per region
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No R package name or repository link provided
+  - No version or installation instructions
+  - No parameter values specified (e.g., p-value cutoffs, clustering thresholds, ratio filtering criteria)
+  - No description of input data format (e.g., imzML structure, required metadata fields)
+  - No raw or processed MSI datasets made available or referenced
+  - Algorithm details (e.g., zero-value handling, ratio stability criteria, pixel masking) not computationally specified
+reproducibility_strengths:
+  - Explicitly states workflow is implemented in R — a reproducible, open language
+  - Describes conceptual pipeline steps applicable across MSI modalities

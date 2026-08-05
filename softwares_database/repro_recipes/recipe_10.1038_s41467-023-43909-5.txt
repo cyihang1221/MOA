@@ -1,0 +1,66 @@
+========== reproducibility_recipe entry ==========
+paper_title: DeepRTAlign: toward accurate retention time alignment for large cohort mass spectrometry data analysis.
+source_paper: Liu Y et al. (2023), Nature communications, DOI: 10.1038/s41467-023-43909-5, PMID: 38081814
+overall_reproducibility_score: 30/100
+
+workflow_steps: 6
+  Step 1: Retention time alignment
+    tool: DeepRTAlign
+    algorithm: deep learning-based (CNN + LSTM architecture, as inferred from 'DeepRTAlign' naming and context; no explicit architecture details provided)
+    input: LC-MS feature tables with retention time and m/z
+    output: RT-aligned feature table
+    confidence: low
+  Step 2: Benchmarking against state-of-the-art RT alignment tools
+    tool: ['OpenMS', 'XCMS', 'msalign', 'COW', 'LOESS']
+    algorithm: warping function and direct matching methods
+    input: same raw or feature-level LC-MS data used for DeepRTAlign
+    output: aligned feature tables for comparison
+    confidence: medium
+  Step 3: Quantitative accuracy evaluation
+    tool: custom analysis (implied)
+    algorithm: fold-change recovery assessment
+    parameters: expected_fold_changes=[1.0, 1.5, 2.0, 2.5], replicates_per_group=3
+    input: Benchmark-FC dataset (HEK293T + E. coli spike-ins with known ratios)
+    output: quantification error metrics (e.g., %CV, fold-change bias)
+    confidence: medium
+  Step 4: Quality control module evaluation
+    tool: DeepRTAlign QC module
+    algorithm: retention time stability assessment across QC samples
+    parameters: QC_samples=['Benchmark-QC-H', 'Benchmark-QC-E'], replicates=3
+    input: pure HEK293T and pure E. coli micro-flow DDA runs
+    output: QC metrics (e.g., RT shift SD, feature detection consistency)
+    confidence: low
+  Step 5: Cross-instrument and cross-gradient robustness evaluation
+    tool: DeepRTAlign
+    algorithm: RT alignment under varying LC conditions
+    parameters: gradient_durations=[60, 120], instruments=6
+    input: Benchmark-RT (two HEK293T samples, different gradients) and Benchmark-MV (multi-instrument mixture dataset)
+    output: alignment error (e.g., median absolute RT deviation)
+    confidence: medium
+  Step 6: Classifier training for HCC recurrence prediction
+    tool: machine learning (not specified; likely scikit-learn or similar)
+    algorithm: supervised classifier (type unspecified; trained on 15 MS features)
+    parameters: feature_count=15, validation_strategy=training/test split on HCC-R2
+    input: DeepRTAlign-aligned MS features from HCC-R2 dataset
+    output: binary recurrence prediction model
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - DeepRTAlign source code not shared or linked (no GitHub/DOI/repository mentioned)
+  - No public deposition of raw LC-MS data (e.g., PRIDE, MetaboLights, GNPS) — all datasets referenced only via literature citations
+  - Insufficient algorithmic detail: neural network architecture, training hyperparameters (learning rate, batch size, epochs), loss function, and input representation (e.g., how RT/mz/features are encoded) are omitted
+  - No specification of preprocessing steps before RT alignment (e.g., peak picking tool, feature table generation method, file format input to DeepRTAlign)
+  - All benchmark datasets (HCC-T, HCC-R2, Benchmark-FC, etc.) are described only by citation or supplementary table — no accession IDs or direct links provided
+reproducibility_strengths:
+  - Comprehensive multi-dataset benchmarking across proteomic and metabolomic domains
+  - Use of well-established reference datasets (e.g., UPS2, EC-H, iRT standards) enhances interpretability
+  - Detailed experimental protocols for sample prep and LC-MS acquisition (gradients, columns, instrument settings) improve analytical reproducibility

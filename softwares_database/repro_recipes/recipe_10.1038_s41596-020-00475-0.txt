@@ -1,0 +1,99 @@
+========== reproducibility_recipe entry ==========
+paper_title: The maternal serum metabolome by multisegment injection-capillary electrophoresis-mass spectrometry: a high-throughput platform and standardized data workflow for large-scale epidemiological studies.
+source_paper: Shanmuganathan M et al. (2021), Nature protocols, DOI: 10.1038/s41596-020-00475-0, PMID: 33674789
+overall_reproducibility_score: 35/100
+
+workflow_steps: 5
+  Step 1: Sample preparation and multiplexed CE-MS analysis
+    tool: Multisegment injection-capillary electrophoresis-mass spectrometry (MSI-CE-MS)
+    parameters: separation_time_per_sample=<4 min, metabolites_quantified=66, coefficient_of_variation_threshold=30, detection_frequency_threshold=75
+    input: serum filtrates
+    output: raw CE-MS data (.raw or vendor format)
+    confidence: medium
+  Step 2: Data preprocessing and peak integration
+    tool: Custom in-house software (not named)
+    algorithm: Targeted peak integration
+    parameters: quality_control_metrics=['recovery standard CV = 12%', 'QC sample median CV = 13%', 'intraclass correlation coefficient = 0.87']
+    input: raw CE-MS data
+    output: quantitative peak table (targeted metabolites)
+    confidence: low
+  Step 3: Batch correction and long-term signal drift correction
+    tool: Custom in-house algorithm
+    algorithm: Robust batch correction
+    parameters: batch_count=4, study_duration_months=7
+    input: quantitative peak table
+    output: batch-corrected metabolite concentration table
+    confidence: low
+  Step 4: Metabolite authentication and identification
+    tool: MSI-CE-MS platform + reference standards
+    algorithm: Retention time and mass matching against authentic standards
+    parameters: authentication_criteria=['unambiguous identification via co-injection', 'mass accuracy', 'electrophoretic mobility'], reference_intervals_reported=53
+    input: batch-corrected metabolite concentration table + MS spectra
+    output: annotated metabolite table (confirmed and putative)
+    confidence: high
+  Step 5: Statistical analysis and quality assessment
+    tool: Not specified (likely R or Python)
+    algorithm: Descriptive statistics, intraclass correlation coefficient (ICC), control charting, PCA
+    parameters: statistical_measures=['mean bias vs clinical analyzer = 11%', 'CV thresholds', 'ICC median = 0.87'], comparisons=['interlaboratory glucose', 'intercohort metabolite conc.', 'ethnicity/fasting/center effects']
+    input: batch-corrected metabolite concentration table + metadata
+    output: summary statistics, PCA scores, reference intervals, differential abundance estimates
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 9
+  Figure 1: [workflow_diagram]
+    caption: Schematic of the end-to-end data workflow for maternal serum metabolome characterization using MSI-CE-MS.
+    produced_by_step: [1, 2, 3, 4, 5]
+    visualization_tool: Not specified
+  Figure 2: [table]
+    caption: Targeted profiling showing unambiguous identification and quantification of known serum metabolites.
+    produced_by_step: [4]
+    visualization_tool: Not specified
+  Figure 3: [table]
+    caption: Nontargeted profiling with authentication of reliably measured ions and putative identification of unknown metabolites.
+    produced_by_step: [4]
+    visualization_tool: Not specified
+  Figure 4: [workflow_diagram]
+    caption: Schematic overview of targeted and nontargeted serum metabolomic analyses using MSI-CE-MS.
+    produced_by_step: [1, 2, 3, 4]
+    visualization_tool: Not specified
+  Figure 5: [control_chart]
+    caption: Control charts used to assess data quality and detect batch effects in longitudinal studies.
+    produced_by_step: [5]
+    visualization_tool: Not specified
+  Figure 6: [pca_scores]
+    caption: 2D PCA scores plot comparing technical precision (pooled QC) vs biological variance (pregnant women cohort).
+    produced_by_step: [5]
+    visualization_tool: Not specified
+  Figure 7: [scatter_plot]
+    caption: Interlaboratory comparison of fasting serum glucose concentrations measured by MSI-CE-MS vs clinical chemistry analyzer.
+    produced_by_step: [5]
+    visualization_tool: Not specified
+    statistical_test: mean bias = 11%
+  Figure 8: [scatter_plot]
+    caption: Intermethod comparison of mean serum metabolite concentrations between FAMILY and START cohorts (n = 600).
+    produced_by_step: [5]
+    visualization_tool: Not specified
+  Figure 9: [heatmap]
+    caption: Differences in maternal serum metabolome across birth cohort ethnicity, fasting status, and regional center.
+    produced_by_step: [5]
+    visualization_tool: Not specified
+
+reproducibility_gaps:
+  - Raw CE-MS data not deposited in public repository
+  - No software or code shared — all data processing described as 'custom in-house'
+  - No details on preprocessing algorithms (e.g., peak detection parameters, baseline correction, alignment method)
+  - No specification of CE-MS instrument settings (voltage, capillary dimensions, buffer composition, gradient profile)
+  - No access to reference standard libraries or retention time databases used for authentication
+  - Statistical analysis tools and exact R/Python packages not named
+reproducibility_strengths:
+  - Detailed experimental protocol including preventive maintenance and sample workup
+  - Rigorous QC metrics reported (CVs, ICC, bias vs clinical analyzer)
+  - Large, well-characterized multi-ethnic cohort (n = 1,004) with metadata on ethnicity, fasting, and regional center
+  - Reference intervals provided for 53 metabolites

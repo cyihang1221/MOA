@@ -1,0 +1,46 @@
+========== reproducibility_recipe entry ==========
+paper_title: Systematic Evaluation of Chromatographic Peak Quality for Targeted Mass Spectrometry via Variational Autoencoder.
+source_paper: Yang C et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.3c03686, PMID: 38336364
+overall_reproducibility_score: 40/100
+
+workflow_steps: 3
+  Step 1: Peak group extraction and representation
+    tool: TMSQE
+    algorithm: Variational Autoencoder (VAE)
+    parameters: latent_dim=32, batch_size=256, epochs=100, learning_rate=0.001
+    input: chromatographic peak group matrices (transition-level intensity traces, retention time, peak width, signal-to-noise ratio, symmetry metrics)
+    output: three-dimensional quality scores (transition-level, peak-group-level, consistency-level)
+    confidence: medium
+  Step 2: Unsupervised training on large-scale peak group dataset
+    tool: TMSQE
+    algorithm: Variational Autoencoder (VAE) with reconstruction loss + KL divergence regularization
+    parameters: training_dataset_size=1703827, train_validation_split=0.9
+    input: curated peak group features from targeted MS data (peptide and metabolite)
+    output: trained VAE model (encoder/decoder weights)
+    confidence: medium
+  Step 3: Peak quality scoring and outlier detection
+    tool: TMSQE
+    algorithm: Latent space distance-based anomaly scoring (Mahalanobis distance in 3D quality space)
+    parameters: anomaly_threshold_percentile=5
+    input: new peak group feature vectors
+    output: quality scores + binary flag for manual review
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (Not specified)
+  processed_data: not_mentioned (Not specified)
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No public repository link for raw or processed data
+  - No code repository or installation instructions provided
+  - VAE architecture details (e.g., layer sizes, activation functions, exact loss weighting) not fully specified
+  - Preprocessing pipeline for peak group feature extraction not described (e.g., how S/N, symmetry, or retention time deviation were computed)
+reproducibility_strengths:
+  - Explicit description of training scale (1.7M peak groups)
+  - Clear definition of three orthogonal quality dimensions
+  - Demonstrated application across peptide and metabolite data — suggests modularity

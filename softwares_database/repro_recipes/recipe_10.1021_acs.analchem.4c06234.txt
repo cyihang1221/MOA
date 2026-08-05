@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: Multidimensional-Constrained Suspect Screening of Hydrophobic Contaminants Using Gas Chromatography-Atmospheric Pressure Chemical Ionization-Ion Mobility-Mass Spectrometry.
+source_paper: Shi X et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.4c06234, PMID: 40047663
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Suspect library construction
+    tool: in-house workflow
+    algorithm: combination of experimental measurement and in silico prediction
+    parameters: n_compounds=1590, validation_standards_n=102
+    input: chemical structures (SMILES/InChI)
+    output: suspect screening library with exact mass, RT, CCS, and fragmentation spectra
+    confidence: low
+  Step 2: Instrumental data acquisition
+    tool: GC-APCI-IM-MS
+    algorithm: full-scan acquisition
+    parameters: ionization=atmospheric pressure chemical ionization, separation=['gas chromatography', 'ion mobility'], detected_ions=['(quasi-)molecular ions', 'isotope patterns', 'fragmentation spectra']
+    input: fortified and standard reference sediment samples
+    output: raw .d or vendor-specific files
+    confidence: medium
+  Step 3: Multidimensional-constrained suspect screening
+    tool: custom scoring algorithm
+    algorithm: continuous scoring system integrating m/z (exact mass), RT, CCS, and MS/MS fragmentation
+    parameters: constraints=['mass accuracy', 'retention time', 'collision cross section', 'fragmentation pattern'], scoring=continuous (not binary)
+    input: raw GC-APCI-IM-MS data + suspect library
+    output: ranked suspect identifications with confidence scores
+    confidence: low
+  Step 4: Performance evaluation
+    tool: manual validation with standards
+    algorithm: true positive/false positive assessment
+    parameters: true_positive_rate_fortified=0.79, true_positive_rate_SRMs=0.64, false_positive_cause=suspect isomers
+    input: ranked suspect identifications + authentic standards
+    output: performance metrics (TPR, FPR attribution)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposited or referenced
+  - No code, scripts, or scoring algorithm implementation shared
+  - No details on GC temperature program, APCI source parameters, or IM drift time calibration
+  - Suspect library not publicly released or accessible
+  - In silico RT and CCS prediction methods not specified (software, models, training data)
+reproducibility_strengths:
+  - Explicit performance metrics reported (79% and 64% TPR)
+  - Clear identification of false positive root cause (isomer ambiguity)
+  - Defined multidimensional constraints (m/z, RT, CCS, MS/MS)

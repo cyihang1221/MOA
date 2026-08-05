@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: EVA: Evaluation of Metabolic Feature Fidelity Using a Deep Learning Model Trained With Over 25000 Extracted Ion Chromatograms.
+source_paper: Guo J et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.1c01309, PMID: 34455775
+overall_reproducibility_score: 40/100
+
+workflow_steps: 4
+  Step 1: EIC plot extraction
+    tool: Vendor-specific software or data processing tools (e.g., XCMS, MS-DIAL, Compound Discoverer)
+    algorithm: Not specified
+    input: raw .mzML or vendor files
+    output: extracted ion chromatogram (EIC) plots
+    confidence: low
+  Step 2: Manual EIC quality annotation
+    tool: Custom manual curation
+    algorithm: Human expert labeling
+    parameters: labels=['good', 'poor']
+    input: EIC plots
+    output: labeled EIC dataset (n = 25095)
+    confidence: high
+  Step 3: CNN model training
+    tool: Custom CNN (implementation unspecified)
+    algorithm: Convolutional neural network
+    parameters: training_samples=25095, input=EIC plots as grayscale images, output=binary classification (good/poor fidelity)
+    input: Labeled EIC plots
+    output: Trained CNN model
+    confidence: medium
+  Step 4: Feature fidelity evaluation
+    tool: EVA Windows Application
+    algorithm: CNN-based binary classification
+    input: Metabolic features (with associated EICs) from any LC-MS data processing software
+    output: Fidelity score or binary label (good/poor)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://www.microsoft.com/store/apps/9NQ1KJZBQZ7R
+  license: Proprietary (free to download and use per Microsoft Store terms)
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Training dataset (25095 EIC plots) not publicly available
+  - No source code or model architecture details provided
+  - No specification of CNN architecture (layers, hyperparameters, training framework)
+  - No validation of EVA's output on standardized benchmark datasets
+  - EVA is a closed-source C# Windows application with no API or programmatic access
+reproducibility_strengths:
+  - EVA is freely available via Microsoft Store for immediate use
+  - High reported accuracy (>90%) based on comprehensive internal evaluation
+  - Explicit description of manual curation process ensuring high-quality training labels

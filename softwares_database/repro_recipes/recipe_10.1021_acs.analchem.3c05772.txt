@@ -1,0 +1,60 @@
+========== reproducibility_recipe entry ==========
+paper_title: GCMSFormer: A Fully Automatic Method for the Resolution of Overlapping Peaks in Gas Chromatography-Mass Spectrometry.
+source_paper: Guo Z et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.3c05772, PMID: 38560891
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Data augmentation and dataset generation
+    tool: Custom Python pipeline
+    algorithm: Synthetic spectral mixing + chromatographic coelution simulation
+    parameters: n_samples=100000
+    input: Pure reference mass spectra (NIST library) and simulated/real elution profiles
+    output: Augmented paired dataset: overlapping peak chromatograms → resolved component spectra
+    confidence: medium
+  Step 2: Model training
+    tool: GCMSFormer (Transformer architecture)
+    algorithm: End-to-end sequence-to-sequence Transformer with positional encoding, multi-head self-attention, and feed-forward layers
+    parameters: learning_rate=0.001, batch_size=32, epochs=100, dropout=0.1, embedding_dim=256, num_heads=8, num_layers=6
+    input: Augmented paired dataset (overlapping peaks → ground-truth component spectra)
+    output: Trained GCMSFormer model weights
+    confidence: low
+  Step 3: Orthogonal projection resolution (OPR) integration
+    tool: Custom OPR module
+    algorithm: Orthogonal projection onto subspace spanned by major component spectra to isolate minor components
+    parameters: projection_threshold=0.05, iterative_refinement=True
+    input: GCMSFormer-predicted major component spectra + raw overlapping peak data
+    output: Resolved spectra of minor components
+    confidence: low
+  Step 4: Peak resolution inference
+    tool: GCMSFormer + OPR
+    algorithm: End-to-end spectral deconvolution
+    parameters: max_components_per_peak=5, mass_range=[50, 500], mz_resolution=0.1
+    input: Raw GC-MS total ion chromatogram (TIC) segments with overlapping peaks
+    output: Deconvolved mass spectra for each resolved component
+    confidence: medium
+  Step 5: Performance evaluation on real data
+    tool: Custom evaluation script
+    algorithm: Multi-metric comparison against baselines
+    parameters: metrics=['n_compounds_resolved', 'match_score (NIST)', 'correlation_coefficient', 'explained_variance', 'resolution_time_ms']
+    input: Real plant essential oil GC-MS data (raw .cdf or .qgd files)
+    output: Quantitative benchmark table and statistical comparisons
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (Not specified)
+  processed_data: not_mentioned (Not specified)
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposited or referenced
+  - No code repository or implementation details provided
+  - No description of NIST library version or spectral preprocessing (e.g., smoothing, baseline correction)
+  - OPR integration parameters and interface not specified
+  - Training data generation procedure lacks reproducible random seeds and augmentation logic
+reproducibility_strengths:
+  - Explicit reporting of BLEU metric and comparative baselines (LSTM, MZmine, AMDIS, PARAFAC2-DL, MSHub/GNPS)
+  - Clear definition of evaluation metrics used on real data

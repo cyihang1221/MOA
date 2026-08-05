@@ -1,0 +1,99 @@
+========== reproducibility_recipe entry ==========
+paper_title: Mapping microhabitats of lignocellulose decomposition by a microbial consortium.
+source_paper: Veličković M et al. (2024), Nature chemical biology, DOI: 10.1038/s41589-023-01536-7, PMID: 38302607
+overall_reproducibility_score: 42/100
+
+workflow_steps: 10
+  Step 1: Spatial metabolomics data acquisition
+    tool: MALDI-FTICR-MSI
+    algorithm: None (instrumental acquisition)
+    parameters: instrument=15-T Bruker MALDI–FTICR, laser=SmartBeam II, 355 nm, 2 kHz, pixel_pitch=50, mz_range=[92, 700], transient_duration_ms=209, mass_resolution_at_400=70000, ionization_mode=negative, internal_calibration_lock_mass=256.77695, matrix=N-(1-naphthyl)-ethylenediamine dihydrochloride, matrix_concentration_mg_ml=7, matrix_solvent=70% methanol:water, spray_passes=8, spray_flow_rate_ul_min=1200, spray_temperature_c=75, spray_spacing_mm=3, spray_velocity_mm_min=1300
+    input: 12-µm cryosections on ITO slides
+    output: raw imzML/ibd MSI datasets
+    confidence: high
+  Step 2: MSI data processing and molecular annotation
+    tool: METASPACE (v2020)
+    algorithm: Spatially aware annotation with FDR control
+    parameters: database=KEGG, fdr_threshold=0.2, spatial_chaos_metric=True, isotopic_pattern_consideration=True, relative_intensity_weighting=True
+    input: imzML/ibd files
+    output: annotated spatial ion images (molecular maps)
+    confidence: high
+  Step 3: ROI identification and microdissection
+    tool: PALM MicroBeam
+    algorithm: Laser-capture microdissection guided by MSI
+    parameters: roi_types=['LM1', 'LM2', 'LM3', 'PMM'], replicates_per_roi={'LM1': 3, 'LM2': 3, 'LM3': 6, 'PMM': 3}, collection_medium=3 µl DMSO per microwell, drying_condition=75 °C for 1 h
+    input: MSI-identified morphological features on polyethylene naphthalate slides
+    output: microdissected tissue samples in microPOTS chip wells
+    confidence: high
+  Step 4: Microscale proteomic sample preparation
+    tool: microPOTS
+    algorithm: One-pot solid-phase sample preparation
+    parameters: extraction_buffer=0.2% n-dodecyl-β-D-maltoside, 0.5× PBS, 50 mM TEAB, 1 mM DTT, alkylation=10 mM iodoacetamide in 100 mM TEAB, 30 min RT, digestion=10 ng Lys-C + 40 ng trypsin in 100 mM TEAB, 10 h at 37 °C, acidification=1% formic acid final concentration, evaporation_control=ice pack + sealed humidified chamber
+    input: microdissected tissue in microPOTS wells
+    output: acidified peptide digests in autosampler vials
+    confidence: high
+  Step 5: LC-MS/MS peptide analysis
+    tool: Q Exactive Plus Orbitrap
+    algorithm: Data-dependent acquisition (DDA)
+    parameters: ionization_mode=positive, spray_voltage_v=2200, ion_transfer_tube_temp_c=300, s_lens_rf_level=60, full_ms_resolution=70000, full_ms_mz_range=[300, 1800], full_ms_max_injection_time_ms=20, full_ms_agc_target=3000000, msms_resolution=17500, msms_isolation_window_da=2, msms_max_injection_time_ms=50, msms_agc_target=100000, msms_per_full_ms=12, chromatography_column=50 µm i.d. × 60 cm PicoFrit, 3-µm Jupiter C18, 300 Å, precolumn=150 µm i.d. × 5 cm, 5-µm Jupiter C18, 300 Å, loading_flow_rate_ul_min=3, loading_time_min=30, gradient_profile_min_percent_b=[[2.6, 1], [12.6, 8], [107, 8], [107, 25], [122.6, 25], [122.6, 75], [125.9, 75], [125.9, 95]], buffer_a=water + 0.1% FA, buffer_b=acetonitrile + 0.1% FA, flow_rate_nl_min=200
+    input: acidified peptides
+    output: raw .raw MS/MS files
+    confidence: high
+  Step 6: Metaproteomic database construction
+    tool: CD-HIT (vv4.8.1)
+    algorithm: Sequence clustering and dereplication
+    parameters: identity_threshold=0.9, word_size=5, global_alignment=1, longest_representative=True, min_length=10, threads=4, memory_mb=32000
+    input: 147 FASTA files (metagenome-derived + de novo predicted proteins)
+    output: 24,809,256 non-redundant cluster proteins
+    confidence: high
+  Step 7: Peptide-spectrum matching and FDR control
+    tool: MS-GF+ (vv2021.09.06)
+    algorithm: Target-decoy search with spectrum-level probability scoring
+    parameters: enzyme=trypsin, max_missed_cleavages=2, ntt=2, fdr_threshold=0.05, mass_error_ppm=4.5, msgfdb_specprob_threshold=1e-10, psm_minimum_count=2, protein_minimum_peptides=2
+    input: raw .raw files + custom decoy database
+    output: FDR-filtered PSMs and protein identifications
+    confidence: high
+  Step 8: Functional and taxonomic annotation of cluster proteins
+    tool: Kofamscan (vv1.2.0)
+    algorithm: HMM-based functional annotation
+    parameters: evalue_threshold=1e-05, bit_score_threshold=50
+    input: cluster protein sequences
+    output: KEGG ortholog (KO) assignments
+    confidence: high
+  Step 9: Cross-validation of functional/taxonomic annotations
+    tool: BLAST (vv2.13.0+)
+    algorithm: Top-hit consensus and lowest common ancestor
+    parameters: database=NCBI clustered NR (Feb 2023), top_hits=10, evalue_threshold=1e-05, bit_score_threshold=50
+    input: cluster protein sequences
+    output: consensus functional/taxonomic labels
+    confidence: high
+  Step 10: Integration of spatial metabolome and proteome
+    tool: SCiLS Lab (vv2024a Core)
+    algorithm: Colocalization analysis and segmentation
+    parameters: colocalization_method=Pearson correlation of ion/peptide intensity maps, segmentation_algorithm=Unsupervised clustering (not specified)
+    input: Annotated MSI ion images + spatially resolved proteomic feature maps
+    output: Colocalized metabolite-protein microhabitat maps
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (MetaboLights: MTBLSXXXX)
+  processed_data: not_mentioned (Not specified)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw MSI and LC-MS/MS data not deposited in public repository (no accession IDs provided)
+  - Custom microPOTS protocol lacks full reagent lot numbers, buffer pH, and QC metrics
+  - SCiLS Lab colocalization algorithm unspecified (e.g., correlation threshold, smoothing kernel)
+  - No link to customized protein database (FASTA files or CD-HIT output)
+  - Gradient profile ambiguously described (e.g., '1–8%' lacks time anchor; '107 min' appears twice without clarification)
+  - No code/scripts shared for integration analysis (Step 10), colocalization quantification, or pathway mapping
+  - Commercial software dependencies (Bruker FlexImaging, SCiLS Lab, Thermo Xcalibur, PALM MicroBeam) require licenses
+reproducibility_strengths:
+  - Detailed instrument parameters and acquisition settings reported for both MSI and LC-MS/MS
+  - Open-source tools explicitly named and versioned (CD-HIT, MS-GF+, Kofamscan, BLAST)
+  - FDR thresholds, filtering criteria, and statistical cutoffs fully specified
+  - Comprehensive description of microdissection strategy and replicate design

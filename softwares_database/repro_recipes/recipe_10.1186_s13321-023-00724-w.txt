@@ -1,0 +1,98 @@
+========== reproducibility_recipe entry ==========
+paper_title: UmetaFlow: an untargeted metabolomics workflow for high-throughput data processing and analysis.
+source_paper: Kontou EE et al. (2023), Journal of cheminformatics, DOI: 10.1186/s13321-023-00724-w, PMID: 37173725
+overall_reproducibility_score: 87/100
+
+workflow_steps: 10
+  Step 1: Data conversion and preprocessing
+    tool: OpenMS
+    algorithm: FileConverter, PeakPickerHiRes
+    parameters: peak_width=0.1, signal_to_noise=3
+    input: raw vendor files (.raw, .d, .mzXML)
+    output: centroided .mzML files
+    confidence: medium
+  Step 2: Feature detection and alignment
+    tool: OpenMS
+    algorithm: FeatureFinderMetabo
+    parameters: mass_error_ppm=5, rt_tolerance=30, intensity_threshold=1000
+    input: centroided .mzML files
+    output: feature table (consensusXML)
+    confidence: high
+  Step 3: Retention time correction
+    tool: OpenMS
+    algorithm: MapAlignerIdentification
+    parameters: reference_file=first_sample.mzML, method=lowess
+    input: consensusXML with aligned features
+    output: RT-corrected consensusXML
+    confidence: medium
+  Step 4: Gap filling
+    tool: OpenMS
+    algorithm: FeatureFinderMultiplex
+    parameters: use_identifications=True, min_rt_intensity=100
+    input: RT-corrected consensusXML
+    output: gap-filled feature table
+    confidence: medium
+  Step 5: Molecular formula prediction
+    tool: SIRIUS
+    algorithm: CSI:FingerID + CANOPUS
+    parameters: max_adducts=5, ppm_tolerance=10, isotope_count=3
+    input: feature table with MS/MS spectra
+    output: molecular formula candidates with scores
+    confidence: high
+  Step 6: Structural annotation
+    tool: SIRIUS
+    algorithm: CSI:FingerID
+    parameters: fingerprint_similarity_threshold=0.3
+    input: molecular formula candidates + MS/MS spectra
+    output: ranked structure candidates
+    confidence: high
+  Step 7: Dereplication and spectral matching
+    tool: GNPS
+    algorithm: Feature-Based Molecular Networking (FBMN)
+    parameters: cosine_score_threshold=0.7, min_matched_peaks=6, max_mz_diff=0.02
+    input: feature table + MS/MS spectra
+    output: molecular families and annotated nodes
+    confidence: high
+  Step 8: Ion Identity Molecular Networking (IIMN)
+    tool: GNPS
+    algorithm: IIMN
+    parameters: adduct_tolerance_ppm=5, ionization_mode=positive
+    input: feature table + adduct annotations
+    output: ion identity networks
+    confidence: medium
+  Step 9: Statistical analysis and biomarker selection
+    tool: MetaboAnalyst
+    algorithm: ANOVA + FDR correction, PLS-DA, ROC analysis
+    parameters: p_value_cutoff=0.05, fdr_method=BH, n_components=2, auc_threshold=0.8
+    input: normalized feature table
+    output: differential features, biomarkers, model metrics
+    confidence: medium
+  Step 10: Pathway enrichment and biological interpretation
+    tool: MetaboAnalyst
+    algorithm: Hypergeometric test + topology analysis
+    parameters: database=HMDB, organism=Homo sapiens
+    input: annotated differential features
+    output: enriched pathways, impact scores
+    confidence: low
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS733, MTBLS736)
+  processed_data: not_mentioned
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS733, https://www.ebi.ac.uk/metabolights/MTBLS736
+
+code_availability: repository_linked
+  code_url: https://github.com/panaconda/umetaflow
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No explicit description of normalization method (e.g., PQN, CV-based) used before statistical analysis
+  - No specification of exact LC gradient profile or column type used in validation datasets
+  - MetaboAnalyst web interface usage implies dependency on external server state; no local CLI version specified for full offline reproducibility
+reproducibility_strengths:
+  - Full Snakemake workflow publicly available on GitHub with Zenodo DOI
+  - Uses only open-source or free web tools (OpenMS, SIRIUS, GNPS, MetaboAnalyst)
+  - Validated on two public MetaboLights datasets with accession IDs provided
+  - Jupyter notebooks and GUI support multiple user entry points and parameter exploration

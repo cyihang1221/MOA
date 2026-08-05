@@ -1,0 +1,71 @@
+========== reproducibility_recipe entry ==========
+paper_title: Determination of the Time since Deposition of Blood Traces Utilizing a Liquid Chromatography-Mass Spectrometry-Based Proteomics Approach.
+source_paper: Schneider TD et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.2c01009, PMID: 35856936
+overall_reproducibility_score: 30/100
+
+workflow_steps: 7
+  Step 1: Sample preparation and digestion
+    tool: bottom-up proteomics
+    algorithm: trypsin digestion
+    input: dried blood stains
+    output: peptide mixtures
+    confidence: low
+  Step 2: LC-MS data acquisition
+    tool: HR-LC-MS with DIA
+    algorithm: data-independent acquisition
+    parameters: acquisition_mode=DIA, resolution=high-resolution
+    input: peptide mixtures
+    output: raw .d or .raw files (vendor format)
+    confidence: medium
+  Step 3: Peptide identification and quantification
+    tool: DIA data analysis software
+    algorithm: spectral library matching
+    input: raw LC-MS DIA files
+    output: peptide-level quantification table
+    confidence: low
+  Step 4: Multivariate statistical analysis
+    tool: PCA and PLS-DA
+    algorithm: principal component analysis, partial least squares discriminant analysis
+    input: peptide-level quantification table
+    output: sample clustering, discrimination models
+    confidence: medium
+  Step 5: Hierarchical clustering and marker selection
+    tool: hierarchical clustering
+    algorithm: unsupervised clustering
+    input: peptide-level quantification table
+    output: TsD-driving peptides
+    confidence: low
+  Step 6: Amino acid modification analysis
+    tool: post-translational modification analysis
+    algorithm: modification detection (e.g., deamidation, oxidation)
+    input: peptide identifications with modifications
+    output: modified peptide list
+    confidence: low
+  Step 7: Prediction modeling
+    tool: Jackknife resampling
+    algorithm: leave-one-out cross-validation
+    parameters: resampling_method=Jackknife
+    input: peptide ratios
+    output: TsD prediction model, prediction performance metrics
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS DIA data not deposited in public repository
+  - No specification of DIA acquisition parameters (e.g., isolation windows, cycle time)
+  - No details on spectral library generation (source, software, version)
+  - No information on software used for DIA data processing (e.g., Spectronaut, DIA-NN, Skyline)
+  - No code or scripts for Jackknife modeling or peptide ratio calculations shared
+  - Storage conditions described only qualitatively ('two different storage conditions') without temperature/humidity specifications
+reproducibility_strengths:
+  - Explicit mention of analytical platform (HR-LC-MS/DIA)
+  - Clear description of experimental design (2-month aging, multivariate modeling)
+  - Identification of biological rationale (peptides and amino acid modifications)

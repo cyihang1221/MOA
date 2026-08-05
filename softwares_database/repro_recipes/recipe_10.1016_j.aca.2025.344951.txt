@@ -1,0 +1,56 @@
+========== reproducibility_recipe entry ==========
+paper_title: prepIMS: a robust data preprocessing workflow for ion mobility mass spectrometry imaging.
+source_paper: Wang L et al. (2026), Analytica chimica acta, DOI: 10.1016/j.aca.2025.344951, PMID: 41513366
+overall_reproducibility_score: 20/100
+
+workflow_steps: 5
+  Step 1: 4D IM-MSI data import and organization
+    tool: prepIMS
+    algorithm: custom
+    input: raw IM-MSI data (m/z, CCS, x, y coordinates)
+    output: structured 4D data cube
+    confidence: low
+  Step 2: Density cluster-based peak detection
+    tool: prepIMS
+    algorithm: density clustering (e.g., DBSCAN or similar)
+    parameters: min_samples=None, eps=None, distance_metric=None
+    input: 4D data cube (m/z, CCS, x, y)
+    output: detected molecular features (m/z, CCS, intensity, spatial coordinates)
+    confidence: low
+  Step 3: Noise-robust signal filtering
+    tool: prepIMS
+    algorithm: custom noise suppression
+    parameters: snr_threshold=None, intensity_cutoff=None
+    input: raw ion mobility signals per pixel
+    output: denoised feature table
+    confidence: low
+  Step 4: Isomeric/isobaric ion separation
+    tool: prepIMS
+    algorithm: CCS-resolved feature discrimination
+    parameters: ccs_tolerance=None, mz_tolerance_ppm=None
+    input: detected features with m/z and CCS
+    output: resolved isomer/isobar annotations
+    confidence: low
+  Step 5: Spatial segmentation of 4D IM-MSI data
+    tool: prepIMS
+    algorithm: unsupervised spatial clustering
+    parameters: n_clusters=None, spatial_weight=None
+    input: preprocessed feature images (m/z-CCS resolved)
+    output: segmented tissue regions / molecular distribution maps
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of prepIMS implementation details (algorithm parameters, preprocessing thresholds, or software dependencies)
+  - No public code repository or installation instructions provided
+  - No raw or processed data deposition mentioned
+  - No benchmarking against standard tools (e.g., SCiLS Lab, Cardinal, or OpenIMSCloud) with reproducible settings
+  - Figure/table content not described in provided text — no method-to-visualization mapping possible

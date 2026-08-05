@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: AutoTuner: High Fidelity and Robust Parameter Selection for Metabolomics Data Processing.
+source_paper: McLean C et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.9b04804, PMID: 32212641
+overall_reproducibility_score: 72/100
+
+workflow_steps: 4
+  Step 1: Parameter selection for metabolomics data processing
+    tool: AutoTuner
+    algorithm: single-step analytical parameter estimation (non-iterative)
+    input: raw .mzML files
+    output: optimized parameters for feature detection and alignment
+    confidence: medium
+  Step 2: Feature detection and peak alignment
+    tool: XCMS
+    algorithm: centWave
+    parameters: peakwidth=None, ppm=None, snthr=None, prefilter=None
+    input: raw .mzML files + AutoTuner-optimized parameters
+    output: feature table (peak matrix)
+    confidence: low
+  Step 3: Robustness evaluation via Monte Carlo sampling
+    tool: custom R script
+    algorithm: random subset resampling
+    parameters: n_subsets=100, subset_size_fraction=0.5
+    input: raw .mzML files
+    output: distribution of parameter estimates across subsets
+    confidence: high
+  Step 4: Performance benchmarking against IPO
+    tool: IPO
+    algorithm: gradient descent optimization
+    input: raw .mzML files
+    output: IPO-optimized parameters
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://bioconductor.org/packages/AutoTuner
+  license: Artistic-2.0
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw metabolomics data not deposited or referenced
+  - XCMS parameters (e.g., ppm tolerance, snthr) not specified numerically
+  - No description of chromatographic or instrument conditions affecting parameter choice
+  - IPO version and configuration not reported
+reproducibility_strengths:
+  - AutoTuner is open-source and available via BioConductor
+  - Algorithm design explicitly described as non-iterative and analytically derived
+  - Monte Carlo robustness protocol clearly outlined

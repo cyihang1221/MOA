@@ -1,0 +1,61 @@
+========== reproducibility_recipe entry ==========
+paper_title: A comparison of three liquid chromatography (LC) retention time prediction models.
+source_paper: McEachran AD et al. (2018), Talanta, DOI: 10.1016/j.talanta.2018.01.022, PMID: 29501166
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Retention time prediction model development
+    tool: OPERA-RT
+    algorithm: Quantitative Structure Retention Relationship (QSRR)
+    parameters: training_set_size=78, test_set_size=19
+    input: chemical structures (SMILES/InChI), experimental retention times
+    output: predicted retention times
+    confidence: medium
+  Step 2: Retention time prediction using EPI Suite™ logP
+    tool: EPI Suite
+    algorithm: logP-based RT prediction
+    parameters: logP_source=EPI Suite™
+    input: chemical structures, predicted logP
+    output: predicted retention times
+    confidence: low
+  Step 3: Retention time prediction using ACD/ChromGenius
+    tool: ACD/ChromGenius
+    algorithm: commercial QSRR model
+    input: chemical structures
+    output: predicted retention times
+    confidence: high
+  Step 4: Candidate structure generation for test compounds
+    tool: U.S. EPA CompTox Chemistry Dashboard
+    algorithm: molecular formula expansion + structure enumeration
+    parameters: source=CompTox Chemistry Dashboard, scope=formulae of known test set chemicals
+    input: molecular formulae
+    output: candidate chemical structures (SMILES/InChI)
+    confidence: high
+  Step 5: RT-based candidate filtering in NTA simulation
+    tool: custom workflow (not named)
+    algorithm: RT window screening
+    parameters: rt_window=±15% chromatographic time, alternative_window=3-min RT window
+    input: predicted RTs, experimental RTs, candidate structures
+    output: filtered candidate lists (true positives, false negatives, false positives)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed RT data deposited in public repository
+  - OPERA-RT source code not shared
+  - Training/test compound identifiers not fully listed (only count given)
+  - Chromatographic conditions (column, gradient, flow rate) not specified — critical for RT prediction applicability
+  - EPI Suite™ and ACD/ChromGenius versions unspecified
+  - Custom NTA simulation workflow not described algorithmically or made available
+reproducibility_strengths:
+  - Use of publicly accessible CompTox Chemistry Dashboard
+  - Explicit reporting of training/test set sizes
+  - Quantitative performance metrics (R², ±15% window success rate) reported for all models

@@ -1,0 +1,51 @@
+========== reproducibility_recipe entry ==========
+paper_title: A New Comprehensive Platform for Profile-Mode-Based Untargeted Metabolomics for Efficient Data Mining to Improve Compound Extraction and Identification.
+source_paper: Wang XC et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.4c05768, PMID: 40523076
+overall_reproducibility_score: 40/100
+
+workflow_steps: 4
+  Step 1: Centroiding transformation
+    tool: AntDAS-Profiler
+    algorithm: novel centroiding algorithm for profile-mode data
+    input: raw .raw files (Thermo) or .d files (Agilent)
+    output: centroided mass spectra
+    confidence: low
+  Step 2: Extracted ion chromatogram (EIC) construction
+    tool: AntDAS-Profiler
+    algorithm: novel EIC construction algorithm optimized for profile-mode HRMS
+    input: centroided mass spectra
+    output: EICs
+    confidence: low
+  Step 3: Feature extraction
+    tool: AntDAS-Profiler
+    algorithm: novel feature detection algorithm for profile-mode data
+    input: EICs
+    output: feature table (m/z, RT, intensity)
+    confidence: low
+  Step 4: Comparative evaluation against existing tools
+    tool: ['MS-DIAL', 'XCMS', 'MZmine']
+    algorithm: benchmarking using chrysanthemum origin discrimination task
+    parameters: performance_metrics=['feature recall', 'compound identification rate', 'RT alignment accuracy']
+    input: same raw UHPLC-HRMS profile-mode datasets
+    output: comparative performance report
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: http://www.pmdb.org.cn/antdasprofiler
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw metabolomics data not deposited in public repository
+  - No details on centroiding/EIC/feature extraction algorithm parameters (e.g., m/z tolerance, RT window, SNR threshold)
+  - AntDAS-Profiler is web-based but no offline version or source code provided
+  - No description of statistical analysis or multivariate modeling steps used for origin discrimination
+  - No information on database search settings for compound identification (e.g., libraries, mass tolerance, score thresholds)
+reproducibility_strengths:
+  - Web platform publicly accessible at http://www.pmdb.org.cn/antdasprofiler
+  - Explicit benchmarking against established open-source tools (MS-DIAL, XCMS, MZmine)

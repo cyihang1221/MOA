@@ -1,0 +1,34 @@
+========== reproducibility_recipe entry ==========
+paper_title: VirMolAnalyte: An AI-Driven &lt;i&gt;In Silico&lt;/i&gt; Metabolite Annotation Tool.
+source_paper: Hu G et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c03906, PMID: 41406032
+overall_reproducibility_score: 20/100
+
+workflow_steps: 2
+  Step 1: Molecular fingerprint extraction from 13C DEPT NMR spectra
+    tool: VirMolAnalyte
+    algorithm: deep neural network
+    input: 13C DEPT NMR spectra (digitized or simulated)
+    output: molecular fingerprints
+    confidence: low
+  Step 2: Multidimensional in silico database searching
+    tool: VirMolAnalyte
+    algorithm: filter-evaluator strategy
+    input: molecular fingerprints
+    output: ranked candidate metabolite structures (Top 1, Top 5)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of data preprocessing (e.g., spectral formatting, baseline correction, referencing)
+  - No details on deep neural network architecture (layers, activation functions, training regimen)
+  - No information on DB6123 or Metabolites Multidimensional in silico Database access or versioning
+  - No code, model weights, or inference pipeline shared
+  - Tool implementation not publicly available (no GitHub, Docker, or download link mentioned)

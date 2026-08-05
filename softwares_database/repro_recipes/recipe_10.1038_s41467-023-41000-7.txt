@@ -1,0 +1,108 @@
+========== reproducibility_recipe entry ==========
+paper_title: Deep and fast label-free Dynamic Organellar Mapping.
+source_paper: Schessner JP et al. (2023), Nature communications, DOI: 10.1038/s41467-023-41000-7, PMID: 37644046
+overall_reproducibility_score: 82/100
+
+workflow_steps: 7
+  Step 1: Cell lysis and subcellular fractionation
+    tool: Dounce homogenizer, centrifuges (Multifuge 1 L, Optima™ MAX Ultracentrifuge)
+    algorithm: Differential centrifugation
+    parameters: centrifugation_temperatures_celsius=4, centrifugation_speeds_rcf=[1000, 3000, 5400, 12200, 24000, 78400], centrifugation_durations_minutes=[10, 10, 15, 20, 20, 30], buffers=['hypotonic buffer (25 mM Tris HCl pH 7.5, 50 mM sucrose, 0.5 mM MgCl2, 0.2 mM EGTA)', 'hypertonic sucrose buffer (25 mM Tris HCl pH 7.5, 2.5 M sucrose, 0.5 mM MgCl2, 0.2 mM EGTA)'], resuspension_buffer=1×SDS buffer (2.5% SDS, 50 mM Tris HCl pH 8.1)
+    input: cultured HeLa cells
+    output: subcellular fractions (1K, 3K, 6K, 12K, 24K, 80K, cytosol)
+    confidence: high
+  Step 2: Protein digestion and peptide cleanup
+    tool: LysC, trypsin, iodoacetamide, acetone precipitation, SDB-RPS StageTips, EvoTips
+    algorithm: in-solution digestion with LysC predigestion + trypsin
+    parameters: urea_concentration_m=8, DTT_concentration_mM=1, iodoacetamide_concentration_mM=5, LysC_ratio=1 µg per 50 µg protein, trypsin_ratio=1 µg per 50 µg protein, LysC_incubation=overnight, trypsin_incubation_hours=3, TFA_final_concentration_percent=1, fractionation_method=['SDB-RPS triple-fractionation', 'EvoTip LC trapping'], EvoTip_loading_amount_ng=200, EvoTip_buffers=['0.1% formic acid in acetonitrile', '0.1% formic acid', '0.2% formic acid']
+    input: subcellular fractions (SDS-solubilized)
+    output: purified peptide samples
+    confidence: high
+  Step 3: Mass spectrometry acquisition
+    tool: Data-independent acquisition (DIA) mass spectrometry
+    algorithm: DIA (library-based and discovery DIA)
+    parameters: acquisition_mode=DIA, comparison_modes=['DDA', 'discovery DIA', 'library DIA'], gradient_duration_minutes=[100], instrument_platform=not specified (implied high-resolution Q-TOF or Orbitrap), library_generation_method=DDA library for DIA
+    input: purified peptide samples
+    output: raw DIA MS files
+    confidence: medium
+  Step 4: Dynamic Organellar Map generation
+    tool: DOM-ABC
+    algorithm: label-free quantification + organelle localization profiling
+    parameters: normalization_method=not specified, localization_scoring_algorithm=not detailed, replicates=3, reference_map=HeLa control map
+    input: DIA raw files + fractionation metadata
+    output: Dynamic Organellar Maps (protein-wise subcellular localization profiles)
+    confidence: low
+  Step 5: Translocation analysis
+    tool: DOM-ABC
+    algorithm: differential localization scoring (likely based on variance or fold-change across fractions)
+    parameters: conditions_compared=['control', 'starvation', 'BafA', 'starvation+BafA'], statistical_test=not specified (but implies significance testing per protein)
+    input: Dynamic Organellar Maps (control vs treated)
+    output: translocating proteins (e.g., Golgi proteins relocalizing to endosomes)
+    confidence: low
+  Step 6: Imaging-based validation and quantification
+    tool: CellProfiler 4.2.5 + Cellpose plugin (v2.2) (vCellProfiler 4.2.5, Cellpose 2.2)
+    algorithm: Cellpose segmentation + custom pipeline for Golgi/cytoplasm intensity ratio
+    parameters: segmentation_channels=['Phalloidin (cytoplasm)', 'DAPI (nucleus)'], Golgi_marker_channel=GALNT2, background_subtraction=yes, thresholding_method=minimum cross-entropy, illumination_correction=yes, exclusion_criteria=['cells not fully in FOV', 'failed nucleus/Golgi detection']
+    input: widefield immunofluorescence images (16-bit, 2048×2048)
+    output: per-cell Golgi:cytoplasm fluorescence intensity ratios
+    confidence: high
+  Step 7: Statistical analysis of translocation and imaging data
+    tool: not specified (implied R/Python or built-in DOM-ABC stats)
+    algorithm: not specified
+    parameters: test_type=not specified, multiple_testing_correction=not specified, replicates=triplicate maps; ≥10 images per condition per replicate
+    input: DOM-ABC translocation scores, CellProfiler intensity ratios
+    output: statistically significant relocalizing proteins, p-values, effect sizes
+    confidence: low
+
+data_availability:
+  raw_data: available (PRIDE: PXD039212)
+  processed_data: available (Zenodo: 10.5281/zenodo.8203066)
+  metadata: in_paper_only
+  data_urls: https://doi.org/10.5281/zenodo.8203066, https://www.ebi.ac.uk/pride/archive/projects/PXD039212
+
+code_availability: repository_linked
+  code_url: https://github.com/brunopavani/DOM-ABC
+  license: MIT
+
+figure_recipes: 7
+  Fig. 1: [workflow_diagram]
+    caption: Overview of the Dynamic Organellar Maps workflow, DIA optimization strategy, and evaluation with DOM-ABC.
+    produced_by_step: [1, 2, 3, 4]
+    visualization_tool: not specified
+  Fig. 2: [bar_chart]
+    caption: Comparison of DDA, discovery DIA and library DIA-based maps.
+    produced_by_step: [3, 4]
+    visualization_tool: not specified
+  Fig. 3: [line_plot]
+    caption: Comparison of DIA-DOMs performance with different LC gradients and sample fractionation.
+    produced_by_step: [3, 4]
+    visualization_tool: not specified
+  Fig. 4: [heatmap]
+    caption: DIA-DOMs reveal the cellular effects of starvation and Bafilomycin A1 treatment.
+    produced_by_step: [4, 5]
+    visualization_tool: not specified
+  Fig. 5: [bar_chart]
+    caption: In-depth analysis of Golgi protein behaviour caused by starvation and Bafilomycin A1 treatment.
+    produced_by_step: [4, 5, 6, 7]
+    visualization_tool: not specified
+  Fig. 6: [boxplot]
+    caption: Bafilomycin A1 (BafA) treatment causes a relocalization of GLG1 and TGOLN2 away from the Golgi.
+    produced_by_step: [5, 6, 7]
+    visualization_tool: not specified
+  Fig. 7: [line_plot]
+    caption: Quantitative microscopy of an 8-hour time-course of Bafilomycin A1 (BafA) treatment demonstrates differing cycling behaviour of Golgi proteins.
+    produced_by_step: [6, 7]
+    visualization_tool: not specified
+
+reproducibility_gaps:
+  - Exact DIA acquisition parameters (isolation windows, cycle time, instrument model) not specified
+  - DOM-ABC statistical testing methodology not described (e.g., test type, FDR method, effect size threshold)
+  - No details on DIA library construction (DDA settings, dynamic exclusion, normalization for library building)
+  - Gradient profile (e.g., %B over time) for 100-min LC not provided
+  - No description of how DOM-ABC computes localization scores or translocation metrics
+reproducibility_strengths:
+  - DOM-ABC is open-source (MIT license) and publicly available on GitHub
+  - Raw proteomics data deposited in PRIDE (PXD039212)
+  - CellProfiler pipeline and Cellpose model publicly archived (Zenodo 10.5281/zenodo.8203066)
+  - Full experimental protocols including buffers, centrifugation schemes, and digestion conditions provided
+  - All antibodies, reagents, and cell culture conditions explicitly listed with RRIDs and catalog numbers

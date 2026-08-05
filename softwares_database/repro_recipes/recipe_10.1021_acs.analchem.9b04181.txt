@@ -1,0 +1,46 @@
+========== reproducibility_recipe entry ==========
+paper_title: In-Source CID Ramping and Covariant Ion Analysis of Hydrophilic Interaction Chromatography Metabolomics.
+source_paper: Su X et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.9b04181, PMID: 32125145
+overall_reproducibility_score: 30/100
+
+workflow_steps: 3
+  Step 1: Adduct and fragment ion annotation using covariant ion analysis
+    tool: COVINA
+    algorithm: covariance-based ion grouping
+    parameters: min_correlation_coefficient=0.95, ion_intensity_threshold=top 1000 ions, metabolite_list=['10 reference metabolites']
+    input: LC-MS raw data (HILIC separation, high-salt mobile phase)
+    output: annotated adduct/fragment ion table with covariance scores
+    confidence: low
+  Step 2: In-source CID ramping (InCIDR) acquisition
+    tool: LC-MS instrument (Q-TOF or similar)
+    algorithm: ramped in-source collision energy
+    parameters: collision_energy_range=10–100 eV, step_increment=5 eV, dwell_time_per_step=100 ms
+    input: HILIC-LC-MS raw data
+    output: energy-resolved intensity profiles for adduct/fragment ions
+    confidence: medium
+  Step 3: Ion form discrimination (protonated vs. deprotonated vs. adduct)
+    tool: custom analysis
+    algorithm: intensity profile shape comparison across InCIDR ramp
+    parameters: profile_similarity_threshold=Pearson r > 0.9, reference_ion_types=['[M+H]+', '[M-H]-', '[M+Na]+', '[M+K]+', '[M+NH4]+', 'cluster_adducts']
+    input: InCIDR intensity profiles
+    output: classified ion forms per metabolite
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - COVINA tool not publicly released or described in sufficient detail for implementation
+  - No access to raw or processed LC-MS data
+  - No specification of instrument model, HILIC column, or mobile phase composition (e.g., ammonium acetate concentration)
+  - InCIDR ramp parameters lack calibration context (e.g., energy scale linearity, instrument-specific conversion)
+  - No code, scripts, or workflow documentation provided
+reproducibility_strengths:
+  - Conceptual framework for covariant ion analysis clearly articulated
+  - Biological rationale for HILIC-specific adduct characterization well justified

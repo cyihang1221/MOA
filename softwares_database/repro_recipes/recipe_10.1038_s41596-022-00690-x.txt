@@ -1,0 +1,67 @@
+========== reproducibility_recipe entry ==========
+paper_title: Simple, efficient and thorough shotgun proteomic analysis with PatternLab V.
+source_paper: Santos MDM et al. (2022), Nature protocols, DOI: 10.1038/s41596-022-00690-x, PMID: 35411045
+overall_reproducibility_score: 40/100
+
+workflow_steps: 0
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: http://www.patternlabforproteomics.org
+  license: free (no explicit license stated, but described as 'freely available')
+
+figure_recipes: 13
+  Figure 1: [workflow_diagram]
+    caption: Overview of the PatternLab V (PLV) workflow.
+    visualization_tool: PatternLab V internal visualization
+  Figure 2: [table]
+    caption: Peptide-spectrum match (PSM) view in PLV.
+    visualization_tool: PatternLab V internal browser
+  Figure 3: [table]
+    caption: PTM (post-translational modification) library interface in PLV.
+    visualization_tool: PatternLab V internal interface
+  Figure 4: [table]
+    caption: View of filtered proteomic results in PLV.
+    visualization_tool: PatternLab V internal filtering module
+  Figure 5: [table]
+    caption: SEPro’s result browser showing protein/peptide identifications and quantitation.
+    visualization_tool: PatternLab V SEPro module
+  Figure 6: [screenshot]
+    caption: Detail view after double-clicking a protein result in PLV.
+    visualization_tool: PatternLab V internal browser
+  Figure 7: [chromatogram]
+    caption: Annotated mass spectrum display in PLV.
+    visualization_tool: PatternLab V MS Browser
+  Figure 8: [screenshot]
+    caption: Project Organization panel in PLV.
+    visualization_tool: PatternLab V project management interface
+  Figure 9: [screenshot]
+    caption: Isobaric Analyzer module for TMT/iTRAQ quantitation in PLV.
+    visualization_tool: PatternLab V Isobaric Analyzer
+  Figure 10: [chromatogram]
+    caption: XIC (extracted ion chromatogram) Browser in PLV.
+    visualization_tool: PatternLab V XIC Browser
+  Figure 11: [screenshot]
+    caption: Center panel (Buzios) — PLV’s central interactive workspace.
+    visualization_tool: PatternLab V Buzios interface
+  Figure 12: [chromatogram]
+    caption: MS Browser displaying raw or processed MS1/MS2 spectra in PLV.
+    visualization_tool: PatternLab V MS Browser
+  Figure 13: [chromatogram]
+    caption: XIC Browser’s Mixture Analysis module for deconvoluting co-eluting peptides.
+    visualization_tool: PatternLab V XIC Browser
+
+reproducibility_gaps:
+  - No description of computational workflow steps (e.g., search engine parameters, FDR thresholds, quantification algorithms, statistical methods)
+  - No mention of raw data availability (repositories, accession IDs, or file formats)
+  - No specification of input data types (e.g., .raw, .mgf, .mzML), instrument platforms, or acquisition settings
+  - No details on database construction (taxonomy, version, decoy strategy), PTM settings, or quantification method (label-free vs. labeled)
+  - No statistical or bioinformatic analysis beyond software interface screenshots — no tests, models, or reproducible parameters reported
+reproducibility_strengths:
+  - Software is freely available at http://www.patternlabforproteomics.org
+  - Explicit integration with community tools (Comet, Skyline, PEAKS, PRIDE)
+  - Described as open for unsequenced organisms and time-course experiments — implies design for reproducibility across use cases

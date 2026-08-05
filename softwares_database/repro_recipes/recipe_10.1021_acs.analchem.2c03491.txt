@@ -1,0 +1,44 @@
+========== reproducibility_recipe entry ==========
+paper_title: CCS Predictor 2.0: An Open-Source Jupyter Notebook Tool for Filtering Out False Positives in Metabolomics.
+source_paper: Rainey MA et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.2c03491, PMID: 36473057
+overall_reproducibility_score: 92/100
+
+workflow_steps: 3
+  Step 1: CCS value prediction
+    tool: CCS Predictor 2.0 (v2.0)
+    algorithm: linear support vector regression
+    parameters: mass_error_ppm=10, delta_ccs_threshold_percent=2.8, adducts_tested=['[M - H]-', '[M + H]+', '[M + Na]+'], training_set_customizable=True
+    input: molecular structure (SMILES or InChI) and adduct type
+    output: predicted collision cross-section (CCS) value
+    confidence: high
+  Step 2: False positive filtering in metabolite annotation
+    tool: CCS Predictor 2.0 (v2.0)
+    algorithm: CCS-based structural filtering
+    parameters: delta_ccs_threshold_percent=2.8, mass_error_ppm=10, retention_of_correct_annotations_percent=100, false_positive_reduction_percent=36.1
+    input: experimental CCS values, candidate structures (with adducts), MS1 mass accuracy
+    output: filtered list of plausible metabolite annotations
+    confidence: high
+  Step 3: Molecular descriptor calculation
+    tool: Mordred
+    algorithm: 1613 molecular descriptors
+    input: molecular structure (SMILES or InChI)
+    output: numerical descriptor vector
+    confidence: high
+
+data_availability:
+  raw_data: available (McLean CCS Compendium)
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/CCS-Predictor/CCSP2
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_strengths:
+  - Fully open-source Jupyter Notebook implementation
+  - Public GitHub repository with MIT license
+  - Uses only open-source dependencies (Mordred, scikit-learn)
+  - Validation performed on publicly available McLean CCS Compendium
+  - Explicit reporting of performance metrics (median relative error, % FP reduction, % correct retention)

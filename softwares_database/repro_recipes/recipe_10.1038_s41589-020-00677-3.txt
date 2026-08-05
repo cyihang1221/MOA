@@ -1,0 +1,124 @@
+========== reproducibility_recipe entry ==========
+paper_title: Chemically informed analyses of metabolomics mass spectrometry data with Qemistree.
+source_paper: Tripathi A et al. (2021), Nature chemical biology, DOI: 10.1038/s41589-020-00677-3, PMID: 33199911
+overall_reproducibility_score: 87/100
+
+workflow_steps: 7
+  Step 1: Feature detection and abundance table generation
+    tool: MZmine
+    algorithm: peak picking
+    input: raw .mzXML files
+    output: feature abundance table + MGF file with MS1/MS2
+    confidence: medium
+  Step 2: Molecular fingerprint prediction and in silico structural annotation
+    tool: SIRIUS + CSI:FingerID
+    algorithm: CSI:FingerID molecular fingerprint prediction from MS2 spectra
+    input: MGF file with MS1/MS2 ion information
+    output: predicted SMILES + molecular fingerprints (e.g., CSI:FingerID fingerprints)
+    confidence: high
+  Step 3: Phenetic tree construction from molecular fingerprints
+    tool: Qemistree (QIIME2 plugin)
+    algorithm: pairwise Tanimoto similarity + UPGMA clustering
+    parameters: distance_metric=tanimoto, clustering_method=upgma
+    input: molecular fingerprints (per MS feature)
+    output: phenetic tree (Newick format)
+    confidence: high
+  Step 4: Chemical taxonomy annotation via ClassyFire
+    tool: ClassyFire API
+    algorithm: chemical ontology classification
+    parameters: taxonomic_levels=['kingdom', 'superclass', 'class', 'subclass', 'direct_parent']
+    input: SMILES strings (from SIRIUS/CSI:FingerID or spectral library matches)
+    output: chemical taxonomy annotations per feature
+    confidence: high
+  Step 5: Tree-based diversity analysis and sample comparison
+    tool: QIIME2
+    algorithm: Weighted UniFrac distance calculation
+    parameters: weighted_unifrac=True, pseudocount=1
+    input: feature abundance table + phenetic tree
+    output: sample-by-sample distance matrix (Weighted UniFrac)
+    confidence: high
+  Step 6: Statistical comparison of sample groupings
+    tool: QIIME2 + custom statistical scripts
+    algorithm: PERMANOVA (Adonis)
+    parameters: permutations=999
+    input: distance matrix + sample metadata
+    output: statistical significance (pseudo-F, p-value) for groupings
+    confidence: medium
+  Step 7: Tree visualization and annotation
+    tool: iTOL
+    algorithm: interactive tree rendering with metadata overlays
+    parameters: tree_layout=rectangular, annotation_type=['pie_chart', 'ring_chart', 'color_strip']
+    input: Newick tree + feature abundances + ClassyFire taxonomy + metadata
+    output: annotated interactive tree visualization
+    confidence: high
+
+data_availability:
+  raw_data: in_paper_only (GNPS)
+  processed_data: available (Supplementary Datasets)
+  metadata: in_paper_only
+  data_urls: https://itol.embl.de/tree/7095134164128581587333337, https://github.com/biocore/mmvec, https://github.com/biocore/songbird
+
+code_availability: repository_linked
+  code_url: https://github.com/biocore/qemistree
+  license: BSD-3-Clause
+
+figure_recipes: 11
+  Fig. 1: [workflow_diagram]
+    caption: Qemistree mitigates technical artifacts by coclustering structurally similar molecules across MS runs.
+    produced_by_step: [3, 5]
+    visualization_tool: iTOL + QIIME2
+  Fig. 2: [other]
+    caption: Illustrates pitfalls of assuming equal relatedness of molecules and advantages of chemical tree for sample comparison.
+    produced_by_step: [3, 5]
+    visualization_tool: QIIME2 PCoA + custom plotting
+    statistical_test: PERMANOVA (Adonis)
+  Fig. 3: [pathway_map]
+    caption: Chemical hierarchy of food-derived compounds based on predicted molecular fingerprints.
+    produced_by_step: [3, 4, 7]
+    visualization_tool: iTOL
+  Fig. 4: [pathway_map]
+    caption: Hierarchy of compounds in simple foods and seven complex samples, highlighting shared/unique chemistry.
+    produced_by_step: [3, 4, 7]
+    visualization_tool: iTOL
+  Extended Data Fig. 1: [workflow_diagram]
+    caption: End-to-end Qemistree analysis using GNPS and QIIME2.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7]
+    visualization_tool: diagrammatic illustration (not specified)
+  Extended Data Fig. 4: [heatmap]
+    caption: Sample-by-molecule heatmap of fecal, tomato, and serum samples grouped by chromatography conditions.
+    produced_by_step: [1, 3]
+    visualization_tool: custom Python/R
+  Extended Data Fig. 5: [bar_chart]
+    caption: Comparison of distances between replicates using Bray-Curtis vs Weighted UniFrac.
+    produced_by_step: [5, 6]
+    visualization_tool: QIIME2 + custom plotting
+    statistical_test: PERMANOVA (Adonis)
+  Extended Data Fig. 6: [pca_scores]
+    caption: PCoA of Bray-Curtis and Weighted UniFrac distances colored by plate number and cheetah location.
+    produced_by_step: [5, 6]
+    visualization_tool: QIIME2 + Emperor
+    statistical_test: PERMANOVA (Adonis)
+  Extended Data Fig. 7: [pathway_map]
+    caption: Chemical taxonomy at superclass level for 119 simple food compounds.
+    produced_by_step: [3, 4, 7]
+    visualization_tool: iTOL
+  Extended Data Fig. 8: [pathway_map]
+    caption: Chemical taxonomy at class level for 119 simple food compounds.
+    produced_by_step: [3, 4, 7]
+    visualization_tool: iTOL
+  Extended Data Fig. 9: [pathway_map]
+    caption: Chemical hierarchy overlaying compound abundances in complex foods including classifier subtree for benzodioxoles.
+    produced_by_step: [3, 4, 7]
+    visualization_tool: iTOL
+
+reproducibility_gaps:
+  - Raw .mzXML files not deposited in public repository (only processed data and supplementary tables provided)
+  - GNPS project accession ID not explicitly stated in text or methods
+  - Exact MZmine version and parameters (e.g., mass tolerance, RT window) not specified
+  - No explicit link to the specific QIIME2 version used (though Qemistree plugin version is implied via Zenodo DOI)
+reproducibility_strengths:
+  - Qemistree code openly available on GitHub under BSD-3 license
+  - All supplementary datasets (statistical source data, molecular properties) provided as downloadable files
+  - Use of fully open-source tools (MZmine, SIRIUS, CSI:FingerID, QIIME2, iTOL)
+  - Detailed workflow diagram (Extended Data Fig. 1) and parameterized algorithms described
+  - iTOL tree visualizations publicly accessible via persistent links

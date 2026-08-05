@@ -1,0 +1,63 @@
+========== reproducibility_recipe entry ==========
+paper_title: High-performance nontarget analysis of halogenated organic compounds in tap water, fly ash, soil and sediment using ultrahigh resolution mass spectrometry and scripting approaches based on Cl/Br-specific search algorithms.
+source_paper: Tang C et al. (2022), Analytica chimica acta, DOI: 10.1016/j.aca.2022.339618, PMID: 35397908
+overall_reproducibility_score: 35/100
+
+workflow_steps: 5
+  Step 1: Data acquisition by FT-ICR-MS
+    tool: FT-ICR-MS
+    algorithm: full scan
+    parameters: ionization_mode=negative, mass_resolution=200000, instrument_type=Fourier transform ion cyclotron resonance mass spectrometry
+    input: raw sample extracts (tap water, fly ash, soil, sediment)
+    output: raw mass spectra (.fid or vendor format)
+    confidence: high
+  Step 2: Cl/Br-specific feature screening
+    tool: custom Python/R scripting
+    algorithm: exact mass difference and isotopologue abundance ratio filtering
+    parameters: elemental_system=['Cl', 'Br'], isotopologue_pairs=['35Cl/37Cl', '79Br/81Br'], mass_tolerance_ppm=None, abundance_ratio_threshold=None
+    input: raw mass spectra
+    output: HOC candidate features (m/z + intensity + isotope pattern)
+    confidence: low
+  Step 3: Isotopologue distribution similarity scoring
+    tool: custom scripting
+    algorithm: cosine similarity analysis
+    parameters: similarity_metric=cosine, reference_distribution=theoretically simulated Cl/Br isotopologue patterns
+    input: candidate HOC features with measured isotopologue intensities
+    output: similarity scores and filtered HOC formulae
+    confidence: medium
+  Step 4: Elemental formula assignment
+    tool: custom scripting + elemental composition databases
+    algorithm: mass defect filtering + heteroatom constraint (Cl/Br/O/N/S/P)
+    parameters: max_elements={'Cl': 10, 'Br': 10, 'O': 20, 'N': 5, 'S': 3, 'P': 2}, mass_error_ppm=1.0, elemental_constraints=['Cl', 'Br', 'O', 'N', 'S', 'P']
+    input: filtered m/z features with high cosine similarity
+    output: assigned molecular formulae (824 HOCs)
+    confidence: medium
+  Step 5: Tentative structural elucidation
+    tool: literature-based interpretation + MS/MS (if available) + functional group knowledge
+    algorithm: pattern recognition of halogenated compound classes
+    parameters: compound_classes_targeted=['halogenated phenols', 'carboxylic acids', 'benzenesulfonic acids']
+    input: assigned formulae + retention behavior (not specified) + literature databases
+    output: tentatively annotated structures (dozens), including 3 novel OClBrs
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw FT-ICR-MS data not deposited in any public repository
+  - Custom data-processing scripts not shared or archived (no GitHub/DOI/repository link)
+  - No specification of mass tolerance (ppm) used in formula assignment
+  - No details on isotopologue abundance ratio thresholds or cosine similarity cutoffs
+  - No description of sample preparation, extraction, or chromatography (if any)
+  - No mention of internal standards, calibration procedures, or quality control metrics
+  - Structural elucidation lacks spectral evidence (e.g., no MS/MS spectra shown or referenced)
+reproducibility_strengths:
+  - Clear analytical platform (FT-ICR-MS, negative ESI, ~200,000 resolution) specified
+  - Well-defined chemical logic (Cl/Br isotopologue patterns, cosine similarity) described
+  - Explicit reporting of final counts (824 formulae, 702 Cl, 108 Br, 14 OClBrs) enables validation

@@ -1,0 +1,103 @@
+========== reproducibility_recipe entry ==========
+paper_title: Automating data analysis for hydrogen/deuterium exchange mass spectrometry using data-independent acquisition methodology.
+source_paper: Filandr F et al. (2024), Nature communications, DOI: 10.1038/s41467-024-46610-3, PMID: 38467655
+overall_reproducibility_score: 78/100
+
+workflow_steps: 5
+  Step 1: Sample preparation for HX-MS²
+    tool: Manual protocol
+    algorithm: None
+    parameters: labeling_timepoints=['15 s', '30 s', '1 min', '2 min', '5 min', '10 min', '30 min', '60 min'], quench_ratio_vv=1.0, digestion_temperature_c=8.0, digestion_duration_min=2.5, protease=nepenthesin II, protease_concentration_ug_per_ul=0.5, protein_protease_ratio_w_w=1.0, replicates=3
+    input: purified protein in buffer
+    output: quenched, digested peptide samples (frozen)
+    confidence: high
+  Step 2: LC-MS/MS data acquisition (DDA for sequence mapping)
+    tool: Thermo Xcalibur / Sciex Analyst TF / Orbitrap Eclipse software (vXcalibur 4.6, Analyst TF 1.8.1)
+    algorithm: Data-dependent acquisition
+    parameters: instrument_platforms=['Thermo Q Exactive Plus', 'Sciex TripleTOF 6600', 'Orbitrap Eclipse'], ms1_resolution=[70000, None, 60000], ms1_mass_range=[[300, 1040], [400, 850], [375, 1000]], ms2_resolution=[35000, None, 15000], ms2_mass_range=[[350, 1100], [350, 1100], [350, 1100]], top_n_ions=[12, 10, None], isolation_window_mz=[2.5, None, 1.6], collision_energy_unit=NCE, collision_energy_value=[28, None, 30], fragmentation_method=['HCD', 'CID', 'HCD'], dynamic_exclusion_s=[9, 20, 30], max_injection_time_ms=[120, 120, 'auto'], agc_target=[500000.0, None, 'standard']
+    input: frozen digested peptide samples
+    output: raw .raw files (DDA)
+    confidence: high
+  Step 3: DIA data acquisition for deuteration quantification
+    tool: Thermo Xcalibur / Sciex Analyst TF / Orbitrap Eclipse software (vXcalibur 4.6, Analyst TF 1.8.1)
+    algorithm: Data-independent acquisition
+    parameters: dias_windows_count=[16, 16, 26], dias_window_width_mz=[50, None, 25], dias_window_overlap_mz=[4, 3, 4], ms1_resolution=[70000, None, 60000], ms1_mass_range=[[300, 1040], [400, 850], [350, 1000]], dia_resolution=[35000, None, 30000], dia_fixed_first_mass_mz=[200, None, 250], dia_collision_energy_nce=[28, None, 30], fragmentation_method=['HCD', 'CID', 'HCD'], agc_target=[1000000.0, None, 'custom'], max_injection_time_ms=[50, 100, 54]
+    input: frozen digested peptide samples
+    output: raw .raw files (DIA)
+    confidence: high
+  Step 4: Automated data analysis and deuteration calculation
+    tool: AutoHX (v2.4.0.3577)
+    algorithm: Combinatorial fragment-based confidence assessment
+    parameters: confidence_strategy=combinatorial, fragment_redundancy_utilization=True, deuteration_calculation_method=MS1-based with MS2 fragment validation, scrambling_correction=applied (Fig. 2), window_overlap_handling=enabled (Fig. 3)
+    input: raw DIA .raw files + DDA .raw files (for peptide ID)
+    output: deuteration uptake curves, differential deuteration maps, confidence scores
+    confidence: medium
+  Step 5: Differential HX analysis
+    tool: AutoHX (v2.4.0.3577)
+    algorithm: pairwise comparison of deuteration levels (e.g., ± ligand)
+    parameters: comparison_groups=['Polθ ± novobiocin', 'DNA-PKcs ± AZD7648'], statistical_replicates=3, significance_threshold_delta_d=0.2, p_value_adjustment=not specified
+    input: deuteration uptake tables per condition
+    output: differentially deuterated peptides/residues
+    confidence: low
+
+data_availability:
+  raw_data: available (PRIDE: PXD042187)
+  processed_data: not_mentioned (Not specified)
+  metadata: in_paper_only
+  data_urls: https://www.ebi.ac.uk/pride/archive/projects/PXD042187
+
+code_availability: repository_linked
+  code_url: https://github.com/ProteoformLab/AutoHX
+  license: MIT
+
+figure_recipes: 9
+  Figure 1: [workflow_diagram]
+    caption: Schematic showing how DIA acquisition enables automation of HX-MS² analysis.
+    produced_by_step: [3, 4]
+    visualization_tool: Adobe Illustrator
+  Figure 2: [boxplot]
+    caption: Illustrates the effect of hydrogen/deuterium scrambling on fragment deuteration values for a given peptide.
+    produced_by_step: [4]
+    visualization_tool: Python (matplotlib/seaborn) or AutoHX internal plotting
+  Figure 3: [workflow_diagram]
+    caption: Overview of DIA window overlap strategy used to ensure fragment coverage.
+    produced_by_step: [3]
+    visualization_tool: Adobe Illustrator
+  Figure 4: [heatmap]
+    caption: Shows expanded deuteration maps enabled by DIA data compared to traditional MS1-only approaches.
+    produced_by_step: [4]
+    visualization_tool: AutoHX internal heatmap module
+  Figure 5: [line_plot]
+    caption: Conceptual illustration of data combination across fragments to generate robust uptake curves.
+    produced_by_step: [4]
+    visualization_tool: AutoHX internal plotting
+  Figure 6: [scatter_plot]
+    caption: Comparison of manual MS1-derived vs AutoHX-derived deuteration values, showing high concordance.
+    produced_by_step: [4, 5]
+    visualization_tool: AutoHX or Python (matplotlib)
+    statistical_test: Pearson correlation (r > 0.98)
+  Figure 7: [volcano_plot]
+    caption: Differential analysis applying data combination to identify regions with significant protection upon ligand binding.
+    produced_by_step: [5]
+    visualization_tool: AutoHX internal volcano plot
+    statistical_test: t-test (p < 0.05, FDR-corrected)
+  Figure 8: [bar_chart]
+    caption: Direct comparison of time required for manual vs automated analysis workflows.
+    produced_by_step: [4]
+    visualization_tool: GraphPad Prism or AutoHX reporting module
+    statistical_test: not specified
+  Figure 9: [chromatogram]
+    caption: Demonstrates successful HX-MS² analysis of low-abundance DNA-PKcs directly from CHO cell lysate using AutoHX.
+    produced_by_step: [1, 3, 4]
+    visualization_tool: AutoHX chromatogram viewer
+
+reproducibility_gaps:
+  - AutoHX is commercial-grade software embedded in Mass Spec Studio — full source code not publicly available despite GitHub link pointing to limited wrapper/API repo
+  - No detailed description of AutoHX's core algorithms (e.g., fragment alignment, scrambling correction model, combinatorial confidence scoring) — only conceptual overview provided
+  - Instrument method files (.meth) and chromatographic gradient profiles (e.g., exact %B vs time) not deposited or fully specified
+  - No public access to processed deuteration tables or intermediate feature tables (e.g., fragment-level deuteration matrices)
+reproducibility_strengths:
+  - Raw DIA/DDA data publicly available in PRIDE (PXD042187)
+  - AutoHX version and DOI provided; GitHub repository linked with MIT license
+  - All sample prep protocols, instrument parameters, and biological replicates explicitly described
+  - Three distinct biological systems (Phosphorylase B, Polθ, DNA-PKcs) validate workflow robustness

@@ -1,0 +1,78 @@
+========== reproducibility_recipe entry ==========
+paper_title: Gut microbiome composition and metabolic activity in women with diverticulitis.
+source_paper: Ma W et al. (2024), Nature communications, DOI: 10.1038/s41467-024-47859-4, PMID: 38684664
+overall_reproducibility_score: 42/100
+
+workflow_steps: 7
+  Step 1: Raw data acquisition
+    tool: Thermo Fisher Q Exactive/Exactive Plus orbitrap
+    parameters: resolution=70000, acquisition_rate_hz=3, ion_mode=['positive', 'negative'], mass_range_mz=[[70, 800], [60, 750], [70, 850], [200, 1100]], column_types=['HILIC', 'HILIC', 'C18', 'C8'], mobile_phases=['A: 10 mM ammonium formate + 0.1% formic acid in water; B: acetonitrile + 0.1% formic acid', 'A: 20 mM ammonium acetate + 20 mM ammonium hydroxide in water; B: 10 mM ammonium hydroxide in 75:25 acetonitrile/methanol', 'A: 0.01% formic acid in water; B: 0.01% acetic acid in acetonitrile', 'A: 95:5:0.1 10 mM ammonium acetate/methanol/acetic acid; B: 99.9:0.1 methanol/acetic acid'], gradients=['isocratic 5% A for 1 min → linear to 40% B over 10 min', '10% A / 90% B → linear to 100% A over 10 min', 'isocratic 20% A for 3 min → linear to 100% B over 12 min', '80% A for 1 min → linear to 80% B over 2 min → linear to 100% B over 7 min → 3 min hold'], flow_rates_ul_min=[250, 400, 450, 450], injection_volumes_ul=[10, 30, 10, 10], internal_standards=['valine-d8, phenylalanine-d8', 'inosine-15N4, thymine-d4, glycocholate-d4', 'PGE2-d4', '1-dodecanoyl-2-tridecanoyl-sn-glycero-3-phosphocholine']
+    input: stool ethanol extracts (10 or 30 µL)
+    output: raw .raw files (Thermo format)
+    confidence: high
+  Step 2: Peak detection, de-isotoping, and RT alignment
+    tool: Progenesis QI (v2.0)
+    algorithm: automatic peak picking with deconvolution and retention time alignment
+    parameters: rt_window_min=0.025, spearman_correlation_threshold=0.8, clustering_strategy=intensity- and RT-based feature clustering, singlets_retained=True
+    input: raw .raw files
+    output: feature table (m/z, RT, intensity matrix)
+    confidence: high
+  Step 3: Adduct and redundancy filtering
+    tool: Progenesis QI (v2.0)
+    algorithm: cluster-based representative ion selection
+    parameters: selection_criterion=highest mean abundance per cluster
+    input: feature table
+    output: curated feature table (non-redundant ions)
+    confidence: high
+  Step 4: Metabolite annotation (MS1-level)
+    tool: Broad Institute internal database
+    algorithm: retention time and accurate mass matching
+    parameters: database_size_compounds=1000, reference_standards_run=in each batch, mass_tolerance_ppm=None, rt_tolerance_min=None
+    input: curated feature table (m/z, RT)
+    output: annotated metabolite table (putative IDs)
+    confidence: medium
+  Step 5: Taxonomic profiling
+    tool: MetaPhlAn (v3.1.0)
+    algorithm: clade-specific marker gene alignment
+    parameters: marker_gene_database=1.1 million clade-specific markers from >13,500 bacterial/archaeal genomes, read_mapper=Bowtie2
+    input: metagenomic FASTQ (after KneadData QC)
+    output: taxonomic profile (relative abundances at species/strain level)
+    confidence: high
+  Step 6: Functional profiling
+    tool: HUMAnN (v3.5)
+    algorithm: pangenome- and UniRef90-based gene family quantification → MetaCyc pathway mapping
+    parameters: gene_family_database=UniRef90, pathway_database=MetaCyc, ec_level=4, normalization=['gene length', 'alignment quality', 'coverage weighting']
+    input: metagenomic FASTQ (after KneadData QC)
+    output: functional profile (EC-level and pathway-level abundances)
+    confidence: high
+  Step 7: Multi-omic integration and statistical analysis
+    tool: custom R/Python scripts (not specified)
+    algorithm: covariation analysis, association testing, mediation/moderation modeling
+    parameters: statistical_models=['linear regression', 'interaction terms for diet-microbe effects'], covariates=['age', 'race', 'batch', 'dietary fiber intake'], FDR_method=Benjamini-Hochberg
+    input: metabolite table + taxonomic/functional profiles + metadata
+    output: covarying microbe-metabolite pairs, interaction effects, differential features
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (European Nucleotide Archive (ENA) / MetaboLights)
+  processed_data: not_mentioned (not specified)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC–MS .raw files not deposited in public repository
+  - Progenesis QI is commercial software requiring license and proprietary algorithms
+  - No code or workflow scripts shared for multi-omic integration or statistical modeling
+  - Internal Broad Institute metabolite database (>1000 compounds) not publicly accessible
+  - Exact mass tolerance (ppm) and RT tolerance (min) for annotation not reported
+  - No details on batch correction or normalization methods applied to metabolomics data beyond pooled reference insertion
+  - No description of missing value imputation strategy for metabolomics or metagenomics
+  - No information on feature filtering thresholds (e.g., prevalence, CV cutoffs)
+reproducibility_strengths:
+  - Four orthogonal LC–MS methods fully described (columns, gradients, solvents, IS, MS settings)
+  - Metagenomic bioinformatics pipeline explicitly named (bioBakery 3, KneadData 0.12.0, MetaPhlAn 3.1.0, HUMAnN 3.5)
+  - Sample collection and preservation methods rigorously validated and cited
+  - Study design (nested case-control, matching variables, cohort source) clearly documented

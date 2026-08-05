@@ -1,0 +1,36 @@
+========== reproducibility_recipe entry ==========
+paper_title: A Metabolite Array Technology for Precision Medicine.
+source_paper: Xie G et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.0c04686, PMID: 33797874
+overall_reproducibility_score: 20/100
+
+workflow_steps: 2
+  Step 1: Targeted metabolite profiling
+    tool: Metabolite Array Technology
+    input: biological samples (serum, urine, feces, cell lysates, liver tissue)
+    output: raw MS data for 324 predefined metabolites
+    confidence: low
+  Step 2: Metabolite identification and quantification
+    tool: TMBQ (Targeted Metabolome Batch Quantification)
+    algorithm: cross-vendor data processing pipeline
+    input: raw MS data
+    output: quantified metabolite concentrations
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No details on instrument parameters (e.g., LC gradient, MS settings), calibration standards, or internal standards
+  - TMBQ software not publicly available or described in sufficient technical detail
+  - No information on data processing parameters (e.g., integration windows, peak detection thresholds, retention time alignment)
+  - Raw or processed data not deposited in any public repository
+  - No validation of metabolite identities (e.g., reference standards, MS/MS spectra, retention time matching) described
+reproducibility_strengths:
+  - Explicitly names 324 metabolite classes covered (fatty acids, amino acids, organic acids, carbohydrates, bile acids)
+  - States applicability across sample types and MS platforms

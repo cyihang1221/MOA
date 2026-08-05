@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: FAMetA: a mass isotopologue-based tool for the comprehensive analysis of fatty acid metabolism.
+source_paper: Alcoriza-Balaguer MI et al. (2023), Briefings in bioinformatics, DOI: 10.1093/bib/bbad064, PMID: 36857618
+overall_reproducibility_score: 72/100
+
+workflow_steps: 4
+  Step 1: Input of mass isotopologue data
+    tool: FAMetA
+    algorithm: isotopologue pattern decomposition
+    input: FA-specific mass isotopologue profiles (e.g., M+0 to M+n for palmitate, stearate, oleate, etc.)
+    output: quantified fractional contributions of metabolic pathways
+    confidence: medium
+  Step 2: Metabolic pathway modeling
+    tool: FAMetA
+    algorithm: linear constraint-based isotopologue balancing
+    parameters: isotope_labeling=13C-glucose or 13C-acetate, FA_chain_lengths_considered=['C16', 'C18', 'C20'], desaturation_positions=['Δ9', 'Δ6', 'Δ5'], elongation_steps=['C16→C18', 'C18→C20']
+    input: isotopologue abundances per fatty acid species
+    output: pathway flux estimates (import, DNL, elongation, desaturation)
+    confidence: high
+  Step 3: Metabolic reconstruction and novel FA identification
+    tool: FAMetA
+    algorithm: biosynthetic route inference via isotopologue signature matching
+    parameters: reference_pathways=['FASN-dependent DNL', 'SCD1-mediated Δ9-desaturation', 'FADS2-mediated Δ6-desaturation'], novel_FA_detection_threshold=≥2 standard deviations from control isotopologue pattern deviation
+    input: pathway flux estimates + inhibitor treatment metadata (e.g., FASN/SCD1/FADS2 inhibition)
+    output: inferred novel fatty acids and their putative synthesis routes
+    confidence: medium
+  Step 4: Visualization and interpretation
+    tool: FAMetA
+    algorithm: interactive pathway mapping and isotopologue profile plotting
+    input: pathway flux estimates and isotopologue data
+    output: interactive plots: stacked bar charts (pathway contributions), isotopologue distribution heatmaps, biosynthetic route diagrams
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://www.fameta.es
+  license: GPL-3.0
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw MS data (e.g., .mzML or .raw files) not deposited or referenced
+  - No accession ID or repository link for experimental datasets used in validation (in vitro/in vivo examples)
+  - No specification of instrument parameters (e.g., resolution, scan mode, ionization) affecting isotopologue measurement accuracy
+  - No details on preprocessing steps prior to isotopologue input (e.g., peak integration, background subtraction, correction for natural abundance)
+reproducibility_strengths:
+  - FAMetA is open-source (R package + web app with GPL-3.0 license)
+  - Web interface available at www.fameta.es enables immediate use without local installation
+  - Comprehensive pathway modeling logic explicitly described for import, DNL, elongation, desaturation
+  - Integration with pharmacological inhibitors (FASN, SCD1, FADS2) provides biologically grounded validation strategy

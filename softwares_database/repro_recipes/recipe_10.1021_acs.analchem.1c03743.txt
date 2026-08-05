@@ -1,0 +1,68 @@
+========== reproducibility_recipe entry ==========
+paper_title: Achieving Absolute Molar Lipid Concentrations: A Phospholipidomics Cross-Validation Study.
+source_paper: Schoeny H et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.1c03743, PMID: 35025205
+overall_reproducibility_score: 30/100
+
+workflow_steps: 6
+  Step 1: Lipid class separation
+    tool: liquid chromatography (LC)
+    input: lipid extract
+    output: class-separated fractions
+    confidence: low
+  Step 2: All ion fragmentation (AIF) mass spectrometry
+    tool: mass spectrometry
+    algorithm: AIF
+    parameters: mass_range=typical for phospholipid classes
+    input: class-separated fractions
+    output: class-specific fragment ion chromatograms
+    confidence: medium
+  Step 3: Class-specific fragment integration
+    tool: peak integration software
+    algorithm: integration of class-specific fragments
+    parameters: fragments=class-specific, detection_limit=fmol range
+    input: AIF spectra
+    output: lipid class concentrations (absolute molar)
+    confidence: low
+  Step 4: Cross-validation using <sup>31</sup>P NMR
+    tool: <sup>31</sup>P NMR
+    algorithm: quantitative NMR
+    parameters: standard=certified species-unspecific
+    input: lipid extract
+    output: phospholipid class concentrations (absolute molar)
+    confidence: medium
+  Step 5: Cross-validation using ICP-MS
+    tool: ICP-MS
+    algorithm: elemental quantification
+    parameters: standard=certified species-unspecific, element_measured=phosphorus
+    input: lipid extract
+    output: total phospholipid concentration (absolute molar)
+    confidence: medium
+  Step 6: Mass balance assessment and lipid sub-ome quantification
+    tool: custom calculation
+    algorithm: mass balance summation
+    parameters: organism=Komagataella phaffii
+    input: lipid class concentrations from AIF, NMR, ICP-MS
+    output: phospholipid sub-ome quantification, mass balance report
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposition reported
+  - No software or code shared
+  - No LC gradient or MS acquisition parameters specified
+  - No details on AIF implementation (e.g., collision energy, resolution, dwell time)
+  - No description of peak integration method or software
+  - NMR and ICP-MS methods lack instrument settings and calibration details
+reproducibility_strengths:
+  - Proposes traceable, standard-based cross-validation framework
+  - Explicitly uses certified species-unspecific standards
+  - Reports absolute quantification in fmol range
+  - Applies multi-platform validation (AIF-LC-MS, <sup>31</sup>P NMR, ICP-MS)

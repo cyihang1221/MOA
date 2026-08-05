@@ -1,0 +1,65 @@
+========== reproducibility_recipe entry ==========
+paper_title: MetaboAnalyst 6.0: towards a unified platform for metabolomics data processing, analysis and interpretation.
+source_paper: Pang Z et al. (2024), Nucleic acids research, DOI: 10.1093/nar/gkae253, PMID: 38587201
+overall_reproducibility_score: 45/100
+
+workflow_steps: 6
+  Step 1: Spectra processing with MS2 support
+    tool: MetaboAnalyst (v6.0)
+    algorithm: asari
+    input: raw .mzML or vendor files (e.g., .raw, .wiff)
+    output: processed feature table with MS2 spectra
+    confidence: medium
+  Step 2: MS2 peak annotation
+    tool: MetaboAnalyst (v6.0)
+    algorithm: fragment-level annotation against MS2 reference databases
+    input: feature table with MS2 spectra
+    output: annotated metabolite list with confidence levels (e.g., Level 1–3)
+    confidence: medium
+  Step 3: Statistical analysis for complex study designs
+    tool: MetaboAnalyst (v6.0)
+    algorithm: ANOVA, multivariate ANOVA (MANOVA), mixed-effects models
+    input: normalized feature table + metadata with multiple factors
+    output: differentially abundant metabolites, p-values, FDR-corrected q-values
+    confidence: low
+  Step 4: Causal analysis via two-sample Mendelian randomization
+    tool: MetaboAnalyst (v6.0)
+    algorithm: two-sample Mendelian randomization (MR)
+    input: GWAS summary statistics + metabolite association data
+    output: causal effect estimates (e.g., IVW, MR-Egger)
+    confidence: low
+  Step 5: Dose-response analysis and benchmark dose calculation
+    tool: MetaboAnalyst (v6.0)
+    algorithm: benchmark dose (BMD) modeling
+    input: dose-response metabolomics data
+    output: BMD estimates (e.g., BMD10, BMDL10)
+    confidence: low
+  Step 6: Pathway analysis across ~130 species
+    tool: MetaboAnalyst (v6.0)
+    algorithm: over-representation analysis (ORA), pathway topology analysis
+    input: annotated differential metabolite list
+    output: enriched pathways, impact scores, p-values
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://www.metaboanalyst.ca
+  license: CC BY-NC 4.0
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No example dataset or workflow parameters provided
+  - No specification of preprocessing settings (e.g., mass tolerance, RT window, min peak width)
+  - No details on MS2 database versions or annotation confidence thresholds
+  - Causal and dose-response modules lack algorithmic implementation details
+  - No access to underlying R/Python source code — web interface only
+reproducibility_strengths:
+  - Freely accessible web platform
+  - Integrated end-to-end workflow from raw data to pathway analysis
+  - Support for community-standard formats (mzML, CSV, GMT)
+  - Regularly updated compound and pathway databases

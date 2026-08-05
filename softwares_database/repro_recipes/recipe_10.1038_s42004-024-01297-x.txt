@@ -1,0 +1,119 @@
+========== reproducibility_recipe entry ==========
+paper_title: Direct glycosylation analysis of intact monoclonal antibodies combining ESI MS of glycoforms and MALDI-in source decay MS of glycan fragments.
+source_paper: Senini I et al. (2024), Communications chemistry, DOI: 10.1038/s42004-024-01297-x, PMID: 39261598
+overall_reproducibility_score: 42/100
+
+workflow_steps: 10
+  Step 1: Sample preparation for ESI-MS
+    tool: Amicon® Ultra centrifugal filters
+    algorithm: buffer exchange
+    parameters: molecular_weight_cutoff=30000, diluent=5:94.9:0.1 v/v ACN/H2O/TFA, centrifugation_speed_rpm=8000, centrifugation_time_min=12, number_of_washes=3, final_diluent=50:49.9:0.1 ACN/H2O/TFA
+    input: purified mAb in PBS or storage buffer
+    output: buffer-exchanged mAb solution ready for direct infusion ESI-MS
+    confidence: high
+  Step 2: Sample purification for MALDI-ISD
+    tool: Capture Select™ FcXL affinity matrix
+    algorithm: affinity capture and elution
+    parameters: bead_volume=10 µL, binding_buffer=50 mM ammonium bicarbonate, incubation_time_min=30, incubation_speed_rpm=900, wash_buffer_volume_per_wash=100 µL, number_of_washes=3, elution_buffer=100 mM formic acid, elution_time_min=5, elution_speed_rpm=900, final_concentration=1 µg/µL
+    input: buffer-exchanged mAb solution
+    output: purified, salt-free mAb solution in 100 mM FA
+    confidence: high
+  Step 3: MALDI matrix spotting and sample preparation
+    tool: AnchorChip MALDI target plate
+    algorithm: co-crystallization with sodium-doped matrix
+    parameters: matrix_composition=1,5-DAN/DHB/NaHCO3 at 2:10:5 mM, matrix_preparation_solvent=1:1 ACN/H2O, spot_volume_mAb=1 µL, spot_volume_matrix=1 µL, washing_step=cold water wash to remove excess salt
+    input: purified mAb solution (1 µg/µL)
+    output: dried MALDI target spot with co-crystallized mAb and sodium-doped matrix
+    confidence: high
+  Step 4: Direct infusion ESI-FT-ICR MS of intact glycoforms
+    tool: Bruker solariX 2xR FT-ICR MS
+    algorithm: intact mass deconvolution
+    parameters: instrument_field_strength_T=15, infusion_rate_μL_h=120, mz_range=[398.18, 5000], data_points=131072, skimmer_voltage_V=130, scans_per_sample=1000–1500, deconvolution_tool=Maximum Entropy, instrument_resolving_power=5000, resolution_setting=high
+    input: buffer-exchanged mAb solution
+    output: deconvoluted intact mass spectrum (glycoform distribution)
+    confidence: high
+  Step 5: MALDI-ISD FT-ICR MS for glycan fragment profiling
+    tool: Bruker solariX 2xR FT-ICR MS
+    algorithm: in-source decay (ISD) fragmentation
+    parameters: laser_system=Smartbeam-II, laser_frequency_Hz=500, laser_shots_per_scan=200, mz_range=[918, 5000], data_points=1048576, scans_summed=40, fragment_ion_selection=<sup>0,2</sup>A ions, intensity_calculation=sum of first three isotopic peaks
+    input: MALDI-spotted mAb
+    output: glycan profile (relative abundance of <sup>0,2</sup>A fragment ions)
+    confidence: high
+  Step 6: MALDI-ISD-CID tandem MS for structural confirmation
+    tool: Bruker solariX 2xR FT-ICR MS
+    algorithm: collision-induced dissociation
+    parameters: mz_ranges=[[300, 8000], [90, 8000]], data_points=[1048576, 2097152], collision_energy_V=55–90 (optimized per precursor)
+    input: selected <sup>0,2</sup>A fragment ions from ISD spectra
+    output: tandem MS spectra for glycan structural assignment
+    confidence: medium
+  Step 7: Bottom-up LC-MS/MS glycopeptide analysis
+    tool: Thermo Exploris480 + Ultimate3000nano
+    algorithm: in-gel tryptic digestion + nanoLC-MS/MS
+    parameters: gel_electrophoresis=4–12% Bis-Tris PAGE, reduction_agent=10 mM DTT, alkylation_agent=50 mM iodoacetamide, digestion_enzyme=trypsin (12.5 ng/µL), digestion_time_h=16, digestion_temperature_C=37, extraction_solvent=50/50/0.1 v/v/v water/acetonitrile/formic acid, LC_gradient=2–40% solvent B over 30 min, solvent_B_composition=20/80/0.1 v/v/v water/acetonitrile/formic acid, MS1_resolution=120000, MS1_scan_range_mz=[400, 3500], AGC_target=standard, max_fill_time_ms=50, lock_mass_mz=445.12
+    input: intact mAb
+    output: glycopeptide identifications and site-specific glycoform abundances
+    confidence: high
+  Step 8: LC-fluorescence detection (LC-FD) of released glycans
+    tool: Acquity UPLC Glycan BEH Amide Column
+    algorithm: PNGase F release + 2-AB labeling + HILIC separation
+    parameters: enzyme=PNGase F (500,000 U/mL), deglycosylation_time_h=1, deglycosylation_temperature_C=45, labeling_reagent=2-AB, labeling_time_h=2, labeling_temperature_C=65, column=Waters Acquity UPLC Glycan BEH Amide, 1.7 μm, 2.1 × 150 mm, gradient_duration_min=47.5, eluent_A=100 mM ammonium formate, pH 4.5, eluent_B=acetonitrile, detection_mode=fluorescence, excitation_wavelength_nm=330, emission_wavelength_nm=420
+    input: standard and glycoengineered trastuzumab
+    output: quantitative glycan profile (HILIC-FD chromatogram)
+    confidence: high
+  Step 9: Data processing and annotation
+    tool: DataAnalysis 5.0 SR1 (v5.0 SR1)
+    algorithm: manual curation + mass list generation
+    parameters: background_evaluation=visual, fragment_annotation_source=GlycoWorkbench 2.1 (theoretical N-glycan fragments), protein_fragment_annotation_source=ProteinProspector online tool
+    input: raw MALDI-ISD FT-ICR spectra
+    output: annotated glycan fragment table
+    confidence: high
+  Step 10: Glycopeptide quantification
+    tool: Skyline (v23.1.0.268)
+    algorithm: peak area integration
+    parameters: software=Skyline (64 bit), quantification_method=signal intensity of glycopeptides
+    input: LC-MS/MS raw files
+    output: relative glycopeptide abundances
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: not_mentioned (not mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 5
+  Fig. 1: [workflow_diagram]
+    caption: Schematic overview of the integrated workflow combining ESI-MS of intact glycoforms and MALDI-ISD MS of glycan fragments from intact mAbs.
+    produced_by_step: [1, 2, 3, 4, 5, 6]
+    visualization_tool: not specified
+  Fig. 2: [other]
+    caption: Direct glycosylation analysis of SiLu™Lite MSQC4 mAb expressed in CHO cells, showing intact mass and MALDI-ISD glycan profiles.
+    produced_by_step: [4, 5]
+    visualization_tool: DataAnalysis 5.0 SR1
+  Fig. 3: [other]
+    caption: Comparison of standard vs. glycoengineered trastuzumab (Man5) using intact ESI-MS and MALDI-ISD glycan profiling.
+    produced_by_step: [4, 5]
+    visualization_tool: DataAnalysis 5.0 SR1
+  Fig. 4: [other]
+    caption: Direct glycosylation analysis of standard and glycoengineered rituximab forms (oligomannose and G0) via ESI-MS and MALDI-ISD.
+    produced_by_step: [4, 5]
+    visualization_tool: DataAnalysis 5.0 SR1
+  Fig. 5: [other]
+    caption: MALDI-ISD CID FT-ICR mass spectra of selected glycan fragment ions, demonstrating structural confirmation via tandem MS.
+    produced_by_step: [6]
+    visualization_tool: DataAnalysis 5.0 SR1
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository (e.g., MetaboLights, PRIDE, or MassIVE)
+  - No code or scripts shared for data processing (e.g., Excel-based workflows, custom curation logic)
+  - Exact gradient profiles for LC-MS/MS and LC-FD are incompletely specified (e.g., flow rate, column temperature, injection volume)
+  - Collision energy optimization procedure for CID is described only as 'optimized for each precursor' — no calibration or criteria provided
+  - No information on statistical repeatability metrics (e.g., CV%, %RSD) beyond '12–14 replicates'
+  - Commercial software dependencies (DataAnalysis, Xcalibur, Skyline, Bruker ftmsControl) require licenses; Skyline is open but version-specific workflows not shared
+reproducibility_strengths:
+  - Detailed reagent sources and concentrations provided
+  - Full experimental parameters for MALDI-ISD (laser settings, m/z ranges, data points, scans)
+  - Explicit description of sodium-doped matrix composition (1,5-DAN/DHB/NaHCO₃ 2:10:5 mM)
+  - Clear stepwise sample prep protocols including centrifugation, washing, and elution volumes/times
+  - Use of community-standard tools for theoretical annotation (GlycoWorkbench, ProteinProspector)

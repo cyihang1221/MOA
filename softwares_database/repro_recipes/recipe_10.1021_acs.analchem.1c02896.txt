@@ -1,0 +1,51 @@
+========== reproducibility_recipe entry ==========
+paper_title: Metabolite Identification Using Infrared Ion Spectroscopy─Novel Biomarkers for Pyridoxine-Dependent Epilepsy.
+source_paper: van Outersterp RE et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.1c02896, PMID: 34756024
+overall_reproducibility_score: 20/100
+
+workflow_steps: 5
+  Step 1: Untargeted LC-MS data acquisition
+    tool: LC-MS platform (not specified)
+    input: patient body fluids (urine, plasma, CSF, dried blood spots)
+    output: raw .raw or vendor-specific files
+    confidence: low
+  Step 2: Molecular feature detection and annotation
+    tool: untargeted metabolomics workflow
+    input: raw MS data
+    output: list of molecular features of interest (m/z, RT)
+    confidence: low
+  Step 3: Targeted isolation and IR ion spectroscopy (IRIS)
+    tool: IRIS instrumentation
+    input: mass-isolated ions (selected m/z features)
+    output: experimental infrared ion spectra
+    confidence: low
+  Step 4: In silico IR spectral prediction and matching
+    tool: computational quantum chemistry (e.g., DFT)
+    algorithm: spectral similarity matching (e.g., correlation, RMSD)
+    parameters: spectral_range_cm1=[1000, 1800], matching_threshold=None
+    input: experimental IRIS spectra + candidate structure SMILES
+    output: confident metabolite identifications (structure assignments)
+    confidence: medium
+  Step 5: Biomarker validation across biofluids
+    tool: comparative analysis (not software-specified)
+    input: identified metabolites + concentration trends across urine/plasma/CSF/DBS
+    output: novel stable PDE-ALDH7A1 biomarkers
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No instrument parameters (LC gradient, column, MS settings) specified
+  - No software tools named for feature detection or alignment
+  - No IRIS instrument details (laser type, wavelength, ion trap configuration)
+  - No computational methods or software for DFT calculations or spectral matching disclosed
+  - No raw or processed data deposited in public repository
+  - No code or scripts shared
+  - No metadata format or sample annotation details provided

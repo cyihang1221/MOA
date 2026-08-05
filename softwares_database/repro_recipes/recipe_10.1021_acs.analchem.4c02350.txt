@@ -1,0 +1,51 @@
+========== reproducibility_recipe entry ==========
+paper_title: Development of a Desorption Electrospray Ionization-Multiple-Reaction-Monitoring Mass Spectrometry (DESI-MRM) Workflow for Spatially Mapping Oxylipins in Pulmonary Tissue.
+source_paper: Smith MJ et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.4c02350, PMID: 39460704
+overall_reproducibility_score: 35/100
+
+workflow_steps: 4
+  Step 1: Oxylipin target selection via LC-MS/MS screening
+    tool: LC-MS/MS
+    algorithm: targeted MRM screening
+    input: guinea pig lung tissue extracts
+    output: list of detectable oxylipins for DESI-MRM
+    confidence: medium
+  Step 2: DESI-MRM mass spectrometry imaging acquisition
+    tool: DESI coupled to triple quadrupole mass spectrometer
+    algorithm: multiple-reaction-monitoring (MRM)
+    parameters: targets=['TXB2', '11-HETE', '12-HETE', '12,13-DiHOME', '16-HOTrE']
+    input: fresh-frozen guinea pig pulmonary tissue sections
+    output: spatially resolved MRM ion images
+    confidence: high
+  Step 3: Image quantification and region-of-interest analysis
+    tool: quantMSImageR
+    algorithm: custom R-based image quantification and ROI labeling
+    input: DESI-MRM ion images
+    output: quantified lipid distributions per anatomical region (airways, parenchyma)
+    confidence: low
+  Step 4: Validation and cross-platform correlation
+    tool: LC-MS/MS
+    algorithm: targeted quantification in homogenates
+    input: bulk tissue homogenates from same lung regions
+    output: quantitative oxylipin concentrations for validation
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw DESI-MRM and LC-MS/MS data not deposited in any public repository
+  - quantMSImageR source code not shared or linked (only mentioned as 'custom-built')
+  - No details on DESI instrumental parameters (e.g., spray voltage, solvent composition, raster speed, pixel size, dwell time)
+  - No description of tissue sectioning, matrix application (if any), or sample preparation protocol for DESI
+  - No statistical methods or significance thresholds reported for spatial distribution comparisons
+reproducibility_strengths:
+  - Clear list of 5 targeted oxylipins with precursor/product transitions implied by MRM context
+  - Anatomical correlation (airways vs. parenchyma) explicitly stated and cross-validated with LC-MS/MS
+  - Workflow logic clearly articulated: LC-MS/MS screening → DESI-MRM imaging → custom R analysis

@@ -1,0 +1,62 @@
+========== reproducibility_recipe entry ==========
+paper_title: Mass-Suite: a novel open-source python package for high-resolution mass spectrometry data analysis.
+source_paper: Hu X et al. (2023), Journal of cheminformatics, DOI: 10.1186/s13321-023-00741-9, PMID: 37741995
+overall_reproducibility_score: 30/100
+
+workflow_steps: 6
+  Step 1: Feature extraction
+    tool: Mass-Suite
+    algorithm: machine learning-based peak detection
+    input: raw HRMS data (e.g., .mzML, .raw)
+    output: feature table (m/z, RT, intensity)
+    confidence: low
+  Step 2: Data reduction
+    tool: Mass-Suite
+    algorithm: user-defined filtering and normalization
+    input: feature table
+    output: reduced feature table
+    confidence: low
+  Step 3: Feature annotation
+    tool: Mass-Suite
+    algorithm: MS1-based annotation with in-silico fragmentation and database matching
+    input: feature table with MS/MS spectra (optional)
+    output: annotated feature table (putative compound IDs)
+    confidence: low
+  Step 4: Data visualization
+    tool: Mass-Suite
+    algorithm: interactive plotting
+    input: feature table or annotated table
+    output: plots (e.g., PCA scores, heatmaps, chromatograms)
+    confidence: low
+  Step 5: Statistical analysis and unsupervised clustering
+    tool: Mass-Suite
+    algorithm: machine learning-based clustering (e.g., k-means, hierarchical)
+    input: normalized feature table
+    output: cluster assignments, distance matrices
+    confidence: low
+  Step 6: Predictive modeling and source tracking/apportionment
+    tool: Mass-Suite
+    algorithm: machine learning-based regression/classification (e.g., RF, SVM)
+    input: feature table + sample metadata
+    output: source contribution estimates, model predictions
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No repository link or DOI provided for Mass-Suite source code
+  - No raw or processed data deposited or referenced
+  - No parameters, algorithms, or preprocessing details specified (e.g., mass tolerance, RT window, ML model hyperparameters)
+  - No validation dataset or benchmarking protocol shared
+  - Figure/table generation methods not described
+reproducibility_strengths:
+  - Explicitly declared open-source Python package
+  - Claims machine learning integration for core functions
+  - Validation reported with mixed chemical standards (though no data or code shared)

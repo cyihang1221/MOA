@@ -1,0 +1,59 @@
+========== reproducibility_recipe entry ==========
+paper_title: MRMkit: Automated Data Processing for Large-Scale Targeted Metabolomics Analysis.
+source_paper: Teo G et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.0c03060, PMID: 32930575
+overall_reproducibility_score: 78/100
+
+workflow_steps: 5
+  Step 1: Raw data import and preprocessing
+    tool: MRMkit
+    algorithm: automated peak integration using large-sample pattern learning
+    input: raw .mzML or vendor format files (e.g., .raw, .wiff)
+    output: integrated peak areas for MRM transitions
+    confidence: medium
+  Step 2: Retention time alignment and offset correction
+    tool: MRMkit
+    algorithm: compound-class-specific retention time offset learning
+    parameters: compound_class_grouping=user-specified
+    input: chromatographic ion traces (MRM transitions)
+    output: retention time-aligned peak tables
+    confidence: medium
+  Step 3: Peak picking in multimodal ion chromatograms
+    tool: MRMkit
+    algorithm: pattern-aware peak detection with interference modeling
+    input: retention time-aligned ion chromatograms
+    output: curated peak table with integration quality metrics
+    confidence: low
+  Step 4: Data normalization
+    tool: MRMkit
+    algorithm: internal standard-based and/or sample-median normalization
+    parameters: normalization_strategy=user-selectable
+    input: peak area table
+    output: normalized metabolite concentration estimates
+    confidence: medium
+  Step 5: Quality control and visualization
+    tool: MRMkit
+    algorithm: automated QC metric computation and plotting
+    parameters: qc_metrics=['peak shape score', 'interference index', 'CV across replicates']
+    input: normalized peak table + metadata
+    output: QC report with interactive plots
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/samuelmcmurray/MRMkit
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposition reported
+  - No description of benchmark dataset(s) used for validation in paper
+  - Compound-class grouping parameters not exemplified (e.g., no list of classes or rules)
+reproducibility_strengths:
+  - Open-source tool with versioned GitHub repository and Zenodo DOI
+  - Explicit description of automation logic (pattern learning across samples)
+  - Integrated QC metrics and visualizations reduce manual intervention

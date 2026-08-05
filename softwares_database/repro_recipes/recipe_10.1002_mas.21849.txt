@@ -1,0 +1,82 @@
+========== reproducibility_recipe entry ==========
+paper_title: Statistical approaches applicable in managing OMICS data: Urinary proteomics as exemplary case.
+source_paper: An DW et al. (2024), Mass spectrometry reviews, DOI: 10.1002/mas.21849, PMID: 37143314
+overall_reproducibility_score: 20/100
+
+workflow_steps: 10
+  Step 1: Study planning and sample size considerations
+    tool: statistical power calculation
+    algorithm: power analysis for high-dimensional data
+    input: expected effect size, variance estimates, significance level, desired power
+    output: recommended sample size per group
+    confidence: low
+  Step 2: Data preparation and database structuring
+    tool: custom database design
+    algorithm: relational data modeling
+    input: raw omics measurements, clinical metadata, covariates
+    output: curated relational database
+    confidence: low
+  Step 3: Preprocessing of urinary proteomics profiling (UPP) data
+    tool: proteomics preprocessing pipeline
+    algorithm: peptide identification, quantification, missing value imputation
+    input: raw MS/MS spectra (.raw or .mzML)
+    output: peptide-level abundance matrix
+    confidence: low
+  Step 4: Basic statistical data curation
+    tool: statistical software
+    algorithm: quality control, outlier detection, batch effect correction
+    input: peptide-level abundance matrix
+    output: curated, QC-passed feature table
+    confidence: low
+  Step 5: Covariable selection
+    tool: multivariable modeling
+    algorithm: stepwise regression, LASSO, or domain-knowledge-driven selection
+    input: curated feature table + clinical metadata
+    output: reduced set of confounder-adjusted covariates
+    confidence: low
+  Step 6: Association testing: single-marker analysis
+    tool: statistical hypothesis testing
+    algorithm: linear/logistic regression, t-test, ANOVA
+    input: peptide features vs. outcome (continuous/categorical)
+    output: p-values, effect sizes, confidence intervals
+    confidence: medium
+  Step 7: Incremental predictive value assessment
+    tool: model comparison
+    algorithm: net reclassification improvement (NRI), integrated discrimination improvement (IDI), likelihood ratio test
+    input: baseline model (clinical risk factors) vs. extended model (+UPP markers)
+    output: improvement metrics (NRI, IDI, AUC delta)
+    confidence: medium
+  Step 8: Pathway analysis
+    tool: functional enrichment analysis
+    algorithm: over-representation analysis, GSEA
+    input: significant peptides/proteins
+    output: enriched biological pathways
+    confidence: low
+  Step 9: Multi-omics integration
+    tool: multi-omics methods
+    algorithm: data fusion, MOFA, integrative clustering
+    input: multiple omics layers (e.g., proteomics, metabolomics, genomics)
+    output: integrated features or modules
+    confidence: low
+  Step 10: Machine learning modeling
+    tool: ML algorithms
+    algorithm: random forest, SVM, neural networks
+    input: feature matrix + outcomes
+    output: prediction models, feature importance
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No specific tools, versions, or parameters reported for any step
+  - No raw or processed data deposition mentioned
+  - No code or workflow scripts shared
+  - No figure/table descriptions provided to map analyses to visual outputs
+  - All analytical steps described only at conceptual level without implementation details

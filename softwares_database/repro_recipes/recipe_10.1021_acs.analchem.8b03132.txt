@@ -1,0 +1,66 @@
+========== reproducibility_recipe entry ==========
+paper_title: Peak Annotation and Verification Engine for Untargeted LC-MS Metabolomics.
+source_paper: Wang L et al. (2019), Analytical chemistry, DOI: 10.1021/acs.analchem.8b03132, PMID: 30586294
+overall_reproducibility_score: 30/100
+
+workflow_steps: 6
+  Step 1: Isotope labeling culture
+    tool: custom experimental protocol
+    parameters: isotopes=['^13C', '^15N'], media_type=labeled growth media
+    input: microbial cultures (S. cerevisiae, E. coli)
+    output: labeled biological samples
+    confidence: high
+  Step 2: LC-MS data acquisition in positive and negative ionization modes
+    tool: LC-MS platform (unspecified vendor)
+    parameters: ionization_mode=['positive', 'negative'], in_source_cid=weak
+    input: labeled biological samples
+    output: raw .raw or .d files
+    confidence: medium
+  Step 3: Deisotoping and deadducting with isotope-labeling constraints
+    tool: PAVE (custom software)
+    algorithm: integrated positive/negative mode + ^13C/^15N labeling-aware deisotoping/deadducting
+    parameters: use_labeling_constraints=True, ion_modes_combined=True
+    input: raw LC-MS files
+    output: deisotoped/deadducted feature table with C/N counts
+    confidence: high
+  Step 4: In-source CID response profiling
+    tool: custom experimental protocol + PAVE
+    algorithm: peak intensity change classification (increase = fragment; decrease = parent)
+    parameters: in_source_cid_intensity_threshold=weak, response_direction_threshold=qualitative
+    input: raw LC-MS files under varying in-source CID
+    output: fragment vs. parent assignment per peak
+    confidence: medium
+  Step 5: Molecular formula assignment
+    tool: PAVE + database search
+    algorithm: database search constrained by m/z AND experimentally derived C/N atom counts
+    parameters: mass_tolerance_ppm=None, elemental_composition_constraints=['C', 'N']
+    input: deisotoped/deadducted features with C/N counts
+    output: putative molecular formulas
+    confidence: medium
+  Step 6: Metabolite identification via orthogonal verification
+    tool: PAVE + reference standards
+    algorithm: MS/MS spectral matching + retention time alignment to authenticated standards
+    parameters: rt_tolerance_sec=None, msms_similarity_metric=spectral dot product (unspecified)
+    input: putative molecular formulas + MS/MS spectra + RT
+    output: confidently annotated metabolites (structure-level IDs)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - PAVE software not publicly available or described in sufficient detail for reimplementation
+  - No raw or processed data deposited in public repository
+  - LC-MS instrument parameters (e.g., gradient, column, flow rate, mass tolerance) not specified
+  - No version or source code link for PAVE
+  - In-source CID implementation details (voltage, energy) omitted
+  - Database search parameters (mass tolerance, element ranges, databases used) not reported
+reproducibility_strengths:
+  - Clear conceptual workflow integrating isotopic labeling, ion mode complementarity, and in-source CID response
+  - Quantitative reporting of annotation rates (e.g., 80% contaminants, ~4% final annotations) enables benchmarking

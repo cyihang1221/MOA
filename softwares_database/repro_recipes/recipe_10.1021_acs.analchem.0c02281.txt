@@ -1,0 +1,39 @@
+========== reproducibility_recipe entry ==========
+paper_title: MetIDfyR: An Open-Source R Package to Decipher Small-Molecule Drug Metabolism through High-Resolution Mass Spectrometry.
+source_paper: Delcourt V et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.0c02281, PMID: 32924440
+overall_reproducibility_score: 75/100
+
+workflow_steps: 2
+  Step 1: In silico biotransformation prediction
+    tool: MetIDfyR
+    algorithm: rule-based biotransformation engine (Phase I/II)
+    input: parent drug structure (SMILES or molfile)
+    output: predicted metabolite structures and theoretical m/z values
+    confidence: medium
+  Step 2: LC-HRMS/MS data mining and metabolite annotation
+    tool: MetIDfyR
+    algorithm: mass accuracy filtering + retention time alignment + MS/MS spectral matching
+    parameters: mass_tolerance_ppm=None, rt_tolerance_sec=None, min_cosine_score=None
+    input: LC-HRMS/MS data (e.g., .mzML, .mzXML, or peak table)
+    output: annotated metabolite list with confidence levels
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/agnesblch/MetIDfyR
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No specific LC-HRMS/MS dataset used for validation is described or deposited
+  - Mass tolerance, RT window, and spectral matching thresholds not quantified in abstract/methods summary
+  - No benchmarking against ground-truth metabolite standards provided
+reproducibility_strengths:
+  - Open-source R package publicly available on GitHub
+  - Cross-platform and rule-based — no proprietary dependencies
+  - Explicit support for both Phase I and II biotransformations

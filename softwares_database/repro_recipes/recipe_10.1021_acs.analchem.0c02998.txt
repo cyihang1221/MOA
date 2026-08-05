@@ -1,0 +1,44 @@
+========== reproducibility_recipe entry ==========
+paper_title: Exploring the Use of Gas Chromatography Coupled to Chemical Ionization Mass Spectrometry (GC-CI-MS) for Stable Isotope Labeling in Metabolomics.
+source_paper: Capellades J et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.0c02998, PMID: 33369389
+overall_reproducibility_score: 45/100
+
+workflow_steps: 3
+  Step 1: GC-CI-MS data acquisition
+    tool: GC-CI-MS
+    parameters: reagent_gas=['methane', 'isobutane'], ms_mode=['SIM', 'scan', 'full_scan'], scan_window_width_da=10, mass_resolution=['low_resolution', 'high_resolution']
+    input: biological samples (e.g., cell extracts)
+    output: raw .d or .raw files (vendor-specific)
+    confidence: medium
+  Step 2: Isotopologue quantification
+    tool: isoSCAN
+    algorithm: automated isotopologue peak integration
+    parameters: metabolite_classes=['glycolysis', 'TCA cycle', 'amino acids', 'pentose phosphate pathway', 'urea cycle'], ms_data_types_supported=['LRMS', 'HRMS']
+    input: raw GC-CI-MS data files
+    output: isotopologue abundance table (M0–Mn)
+    confidence: high
+  Step 3: Data processing and flux-relevant analysis
+    tool: R
+    input: isotopologue abundance table
+    output: isotopic enrichment metrics, fractional contribution estimates
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw GC-CI-MS data not deposited in public repository
+  - isoSCAN tool mentioned but no repository link, DOI, or license provided
+  - No details on GC temperature program, column type, or CI source parameters (e.g., electron energy, reagent gas flow rates)
+  - No description of sample preparation (extraction, derivatization) critical for GC-MS reproducibility
+  - No validation dataset or benchmarking metrics for isoSCAN performance
+reproducibility_strengths:
+  - Explicit identification of metabolite classes covered by isoSCAN
+  - Clear comparison of CI reagent gases and MS modes supporting method selection
+  - Recognition of CI’s advantage for molecular ion detection in isotopic labeling

@@ -1,0 +1,49 @@
+========== reproducibility_recipe entry ==========
+paper_title: SAND: Automated Time-Domain Modeling of NMR Spectra Applied to Metabolite Quantification.
+source_paper: Wu Y et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.3c03078, PMID: 38273718
+overall_reproducibility_score: 55/100
+
+workflow_steps: 3
+  Step 1: Time-domain NMR spectral decomposition
+    tool: SAND
+    algorithm: hybrid optimization with Markov chain Monte Carlo
+    parameters: subsample_time_domain=True, subsample_frequency_domain=True, training_validation_split=random
+    input: raw time-domain NMR data (FID)
+    output: quantified spectral features (peak amplitudes, frequencies, linewidths, phases)
+    confidence: medium
+  Step 2: Metabolite quantification
+    tool: SAND
+    algorithm: time-domain modeling-based fitting
+    input: decomposed spectral features
+    output: absolute or relative metabolite concentrations
+    confidence: low
+  Step 3: Automated metabolite annotation via correlation networks
+    tool: SAND
+    algorithm: correlation network clustering
+    parameters: clustering_threshold=None, correlation_metric=Pearson
+    input: SAND-decomposed peak intensities across samples
+    output: metabolite clusters (putative annotations)
+    confidence: low
+
+data_availability:
+  raw_data: available (NMRbox)
+  processed_data: not_mentioned
+  metadata: not_mentioned
+  data_urls: https://nmrbox.org
+
+code_availability: repository_linked
+  code_url: https://nmrbox.org
+  license: unknown
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No specific parameter values reported for MCMC (e.g., chain length, burn-in, thinning rate)
+  - No details on preprocessing steps (e.g., apodization, zero-filling, phasing) applied before SAND
+  - No description of how ground truth was generated for validation (e.g., simulation parameters, reference standards)
+  - Correlation network clustering parameters (e.g., minimum r-value, linkage method) not specified
+  - SAND implementation details (e.g., basis set, lineshape model, initial parameter bounds) not provided
+reproducibility_strengths:
+  - Software publicly accessible via NMRbox cloud platform
+  - Method grounded in time-domain modeling — avoids frequency-domain peak-picking pitfalls
+  - Demonstrated on simulated and experimental benchmarks (urine spike-in)

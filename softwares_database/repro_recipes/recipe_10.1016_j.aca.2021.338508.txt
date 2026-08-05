@@ -1,0 +1,70 @@
+========== reproducibility_recipe entry ==========
+paper_title: Novel acquisition strategies for metabolomics using drift tube ion mobility-quadrupole resolved all ions time-of-flight mass spectrometry (IM-QRAI-TOFMS).
+source_paper: Feuerstein ML et al. (2021), Analytica chimica acta, DOI: 10.1016/j.aca.2021.338508, PMID: 34024419
+overall_reproducibility_score: 42/100
+
+workflow_steps: 6
+  Step 1: Data acquisition using IM-AI and IM-QRAI modes
+    tool: drift tube IM-QTOFMS with prototype quadrupole driver
+    algorithm: data independent acquisition (DIA) with drift time-directed precursor isolation
+    parameters: mass_window_width_da=100, isolation_ramp_time_ms=<100, ion_mobility_transient_duration_ms=<100, carrier_gas=N2, dt_ccs_tolerance_percent=0.3
+    input: LC-IM-MS raw data (.d or vendor format)
+    output: raw IM-DIA datasets (IM-AI and IM-QRAI)
+    confidence: medium
+  Step 2: Peak picking and feature detection
+    tool: MS-DIAL
+    algorithm: centroid-based peak detection
+    parameters: min_peak_height=None, rt_tolerance_sec=None, mz_tolerance_ppm=None, min_time_span_sec=None
+    input: raw IM-DIA datasets
+    output: feature table (m/z, RT, DT, intensity)
+    confidence: low
+  Step 3: Feature alignment and isotopologue pair reconciliation
+    tool: MS-DIAL
+    algorithm: retention time and drift time alignment; natural vs U¹³C isotopologue matching
+    parameters: rt_alignment_window_sec=None, dt_alignment_window_percent=0.3, isotopologue_mass_shift_da=1.00335, carbon_count_validation=True
+    input: feature table
+    output: aligned feature table with natC/U¹³C pairs
+    confidence: medium
+  Step 4: Fragment spectrum deconvolution from DIA data
+    tool: MS-Finder
+    algorithm: in-silico MS/MS prediction + spectral deconvolution
+    parameters: precursor_ion_selection_method=quadrupole-resolved, fragmentation_energy_profile=None, library_search_mode=DIA-deconvoluted
+    input: aligned feature table + raw DIA spectra
+    output: deconvoluted MS/MS spectra per feature
+    confidence: low
+  Step 5: Metabolite identification and confidence-level annotation
+    tool: MS-Finder + MS-DIAL + Skyline
+    algorithm: multi-tiered identification (Level 1–3.2): standard matching, accurate mass, in-silico MS/MS, DT-CCS<sub>N2</sub> validation, carbon count confirmation
+    parameters: level_1_criteria=reference standard match (RT, DT, MS/MS), level_3_2_criteria=accurate mass spectrum + confirmed carbon number via U¹³C labeling, dt_ccs_n2_tolerance_percent=0.3, carbon_count_validation_method=U¹³C isotopologue spacing
+    input: deconvoluted MS/MS spectra + aligned features + U¹³C spike metadata
+    output: annotated metabolite list (87 metabolites, Levels 1–3.2)
+    confidence: high
+  Step 6: Targeted re-extraction and quantitative validation
+    tool: Skyline
+    algorithm: targeted extraction of natC/U¹³C transitions with IM/RT/DT constraints
+    parameters: extraction_window_rt_sec=None, extraction_window_dt_percent=0.3, extraction_window_mz_ppm=None, transition_type=precursor → fragment (DIA)
+    input: raw IM-DIA datasets + annotated metabolite list
+    output: quantitative peak areas (natC/U¹³C ratios)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw IM-DIA data not deposited in public repository (e.g., MetaboLights, GNPS)
+  - No details on LC gradient, column, temperature, or IM calibration standards
+  - MS-DIAL/MS-Finder/Skyline parameters (e.g., m/z/RT/DT tolerances, peak width, noise thresholds) not specified
+  - Quadrupole ramping profile and IM transient synchronization logic not described
+  - No access to prototype quadrupole driver firmware or instrument method files
+  - U¹³C spiking concentration and sample preparation protocol insufficiently detailed for replication
+reproducibility_strengths:
+  - Clear description of IM-QRAI acquisition concept and its advantage over IM-AI
+  - Explicit use of three complementary open-access tools (MS-DIAL, MS-Finder, Skyline)
+  - Quantitative validation via natC/U¹³C pair alignment with DT-CCS<sub>N2</sub> tolerance (≤0.3%)
+  - Defined metabolite identification levels (1–3.2) with carbon-count confirmation criterion

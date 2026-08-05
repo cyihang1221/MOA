@@ -1,0 +1,98 @@
+========== reproducibility_recipe entry ==========
+paper_title: Identification of Xenobiotic Biotransformation Products Using Mass Spectrometry-Based Metabolomics Integrated with a Structural Elucidation Strategy by Assembling Fragment Signatures.
+source_paper: Chen YC et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c02419, PMID: 37713273
+overall_reproducibility_score: 87/100
+
+workflow_steps: 7
+  Step 1: UHPLC-HRMS data acquisition
+    tool: UHPLC-HRMS
+    parameters: instrumentation=Q-Exactive Orbitrap, ionization_mode=positive and negative ESI, mass_resolution=70000, mass_accuracy=5 ppm, scan_range_mz=[100, 1200], collision_energy=stepped NCE: 10, 20, 40 eV
+    input: biological samples (urine, liver microsomes)
+    output: raw .raw files
+    confidence: medium
+  Step 2: Data conversion and preprocessing
+    tool: ProteoWizard
+    algorithm: msconvert
+    parameters: output_format=mzML, 32bit_precision=True
+    input: raw .raw files
+    output: converted .mzML files
+    confidence: high
+  Step 3: Feature detection and alignment
+    tool: XCMS (v3.18.0)
+    algorithm: centWave
+    parameters: peakwidth=[10, 60], ppm=5, snthresh=10, prefilter=[3, 100], noise=1000, bw=30, mzdiff=0.001, minfrac=0.5, maxfrac=1, intensity=5000
+    input: .mzML files
+    output: feature table (m/z, RT, intensity)
+    confidence: high
+  Step 4: Mass defect filtering (MDF)
+    tool: Custom R script
+    algorithm: mass defect-based biotransformation filtering
+    parameters: mass_defect_tolerance_da=0.005, elemental_composition_constraints=['C', 'H', 'O', 'N', 'S', 'P', 'Cl', 'F', 'Br', 'I']
+    input: feature table with m/z and adduct annotation
+    output: MDF-filtered candidate features
+    confidence: low
+  Step 5: Multiple-group comparison for differential feature selection
+    tool: MetaboAnalyst (v5.0)
+    algorithm: t-test + FDR correction
+    parameters: p_value_threshold=0.05, fdr_method=Benjamini-Hochberg, fold_change_threshold=2.0, group_comparison=control vs. treated
+    input: normalized feature table
+    output: differentially abundant features
+    confidence: high
+  Step 6: MS/MS spectral processing and fragment signature assembly
+    tool: FragAssembler (v1.0)
+    algorithm: fragment signature assembly from MS/MS
+    parameters: min_fragment_intensity_ratio=0.01, max_fragment_count_per_signature=10, moiety_mass_tolerance_ppm=5, allowed_biotransformation_reactions=['hydroxylation', 'dehydrogenation', 'glucuronidation', 'sulfation', 'N-acetylation', 'oxidation', 'demethylation']
+    input: MS/MS spectra of candidate features
+    output: assembled fragment signatures + modified moiety assignments
+    confidence: high
+  Step 7: Candidate structure filtering and ranking
+    tool: FragAssembler (v1.0)
+    algorithm: reaction-aware structural filtering
+    parameters: exclude_nonbiological_transformations=True, isomer_discrimination_enabled=True, ranking_metric=signature_match_score
+    input: BioTransformer 3.0 candidate structures + FragAssembler signatures
+    output: ranked, high-confidence biotransformation product structures
+    confidence: high
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1927)
+  processed_data: available (MetaboLights: MTBLS1927)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1927
+
+code_availability: repository_linked
+  code_url: https://github.com/YuanChihChen/FragAssembler
+  license: MIT
+
+figure_recipes: 5
+  Figure 1: [workflow_diagram]
+    caption: Schematic overview of the integrated metabolomics and FragAssembler workflow for xenobiotic biotransformation product identification.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7]
+    visualization_tool: Adobe Illustrator
+  Figure 2: [chromatogram]
+    caption: UHPLC-HRMS extracted ion chromatograms (XICs) of three DEHP biotransformation products showing retention time alignment and peak quality.
+    produced_by_step: [3]
+    visualization_tool: Xcalibur or ProteoWizard Viewer
+  Figure 3: [volcano_plot]
+    caption: Volcano plot displaying differential features between control and DEHP-treated groups, highlighting annotated biotransformation products.
+    produced_by_step: [5]
+    visualization_tool: MetaboAnalyst
+    statistical_test: t-test p<0.05, FDR-corrected
+  Figure 4: [bar_chart]
+    caption: Relative abundance of top-ranked biotransformation products of 4-MeO-α-PVP across treatment groups.
+    produced_by_step: [7]
+    visualization_tool: ggplot2 (R)
+    statistical_test: ANOVA with Tukey’s HSD
+  Figure 5: [pathway_map]
+    caption: Proposed biotransformation pathways of DEHP and 4-MeO-α-PVP, illustrating enzymatic reactions and modified moieties identified by FragAssembler.
+    produced_by_step: [6, 7]
+    visualization_tool: ChemDraw + Adobe Illustrator
+
+reproducibility_gaps:
+  - Exact UHPLC gradient method not fully specified (only 'standard reversed-phase gradient' mentioned)
+  - No detailed description of sample preparation protocols (e.g., protein precipitation conditions, internal standards used)
+  - XCMS parameter 'bw' value (30) lacks unit clarification (seconds or scans)
+reproducibility_strengths:
+  - Raw and processed data deposited in MetaboLights (MTBLS1927) with full metadata
+  - FragAssembler source code publicly available on GitHub under MIT license
+  - All computational tools are open-source or freely accessible web platforms
+  - Step-by-step tutorial provided for FragAssembler usage

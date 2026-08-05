@@ -1,0 +1,87 @@
+========== reproducibility_recipe entry ==========
+paper_title: An end-to-end deep learning method for mass spectrometry data analysis to reveal disease-specific metabolic profiles.
+source_paper: Deng Y et al. (2024), Nature communications, DOI: 10.1038/s41467-024-51433-3, PMID: 39164279
+overall_reproducibility_score: 42/100
+
+workflow_steps: 8
+  Step 1: Raw data acquisition and LC-MS instrumentation
+    tool: Thermo Fisher Q-Exactive Orbitrap
+    algorithm: full scan + ddMS2 monitoring
+    parameters: spray_voltage_positive_kV=3.8, spray_voltage_negative_kV=-3.2, capillary_temperature_C=320, sheath_gas_arb=40, auxiliary_gas_arb=10, probe_heater_temperature_C=350, scan_range_mz=[70, 1050], resolution=70000, column_temperature_C=40, autosampler_temperature_C=10, flow_rate_mL_per_min=0.3, injection_volume_uL=3, gradient_profile=[{'time_min': 0, 'B_percent': 2}, {'time_min': 0.5, 'B_percent': 2}, {'time_min': 12, 'B_percent': 50}, {'time_min': 14, 'B_percent': 98}, {'time_min': 16, 'B_percent': 98}, {'time_min': 16.1, 'B_percent': 2}, {'time_min': 20, 'B_percent': 2}], mobile_phase_A_positive=95% acetonitrile + 10 mmol/L ammonium acetate + 0.1% formic acid, mobile_phase_B_positive=50% acetonitrile + 10 mmol/L ammonium acetate + 0.1% formic acid, mobile_phase_A_negative=95% acetonitrile + 10 mmol/L ammonium acetate (pH 9), mobile_phase_B_negative=50% acetonitrile + 10 mmol/L ammonium acetate (pH 9), column=ACQUITY BEH Amide, 2.1 × 100 mm, 1.7 μm
+    input: raw serum samples
+    output: raw .raw files (Thermo)
+    confidence: high
+  Step 2: Data format conversion
+    tool: MSConvert
+    algorithm: centroiding + mzML conversion
+    parameters: centroiding=True, 32bit_output=True
+    input: Thermo .raw files
+    output: .mzML files
+    confidence: high
+  Step 3: End-to-end deep learning input preparation
+    tool: Custom Python pipeline (Pyteomics + NumPy)
+    algorithm: 3D point cloud sampling → 2D max-pooling matrix
+    parameters: rt_start_min=0.5, mz_start=50, rt_step_min=0.016, mz_step=1, rt_range_min=None, mz_range=None, output_matrix_shape=[1024, 1024], convolution_kernel_rt_span_min=0.1, convolution_kernel_mz_span=0.001, pooling_method=max
+    input: mzML files
+    output: 2D intensity matrix (1024×1024)
+    confidence: medium
+  Step 4: Conventional peak detection and alignment
+    tool: Compound Discovery v3.1, TraceFinder v4.0 (vv3.1, v4.0)
+    algorithm: retention time alignment + peak picking
+    parameters: peak_detection_algorithm=not specified, alignment_method=not specified, min_peak_height=None, mz_tolerance_ppm=None, rt_tolerance_sec=None
+    input: mzML files
+    output: feature table (RT, m/z, peak area)
+    confidence: low
+  Step 5: Batch effect correction
+    tool: Ref-M method (custom)
+    algorithm: reference-based ratio normalization
+    parameters: reference_sample=pooled serum from 100 healthy donors, normalization_method=peak_area_sample / peak_area_reference_batch
+    input: feature table
+    output: relative abundance matrix
+    confidence: medium
+  Step 6: Metabolite annotation
+    tool: MetID, MetDNA, NetID (within MZmine), Compound Discovery v3.1, mzCloud, ChemSpider
+    algorithm: MS1 + MS2 spectral matching + database search
+    parameters: database_sources=['HMDB', 'MassBank', 'MoNA'], mzCloud_score_threshold=85, annotation_level=Level 1 (confirmed standards) or Level 2 (inferred via mzCloud/ChemSpider)
+    input: feature table + MS2 spectra
+    output: annotated metabolite feature table
+    confidence: medium
+  Step 7: Deep learning model training
+    tool: Custom PyTorch implementation
+    algorithm: Ensemble CNN classifier (DenseNet121 variants, VGG, ResNet, Inception, EfficientNet)
+    parameters: architecture_variants=['DenseNet121', 'DenseNet121-optimised-direct', 'DenseNet121-optimised-onehop', 'VGG16', 'VGG19', 'InceptionV3', 'ResNet50', 'DenseNet121', 'EfficientNetB0-B5'], input_shape=[1024, 1024], optimizer=not specified, learning_rate=not specified, batch_size=not specified, epochs=not specified, validation_split=0.2, train_test_split_ratio=0.8, stratification_constraints=['sample_type', 'sex', 'age', 'lesion_size']
+    input: 2D intensity matrix (1024×1024)
+    output: class probabilities (healthy / nodule / adenocarcinoma)
+    confidence: low
+  Step 8: Model interpretability and biological network inference
+    tool: Custom explainable AI module (not named)
+    algorithm: Gradient-weighted class activation mapping (Grad-CAM) + metabolite-protein network mapping
+    parameters: interpretability_method=Grad-CAM, network_integration=metabolite-protein correlation using public databases
+    input: trained CNN model + feature attribution maps
+    output: disease-related metabolite-protein networks
+    confidence: low
+
+data_availability:
+  raw_data: available (Metabolomics Workbench, MetaboLights: ['ST001142', 'MTBLS1129'])
+  processed_data: not_mentioned (not mentioned)
+  metadata: in_paper_only
+  data_urls: https://www.metabolomicsworkbench.org/data/DRCCMetadata.php?Mode=Study&StudyID=ST001142, https://www.ebi.ac.uk/metabolights/editor/MTBLS1129/descriptors
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No repository link or DOI for DeepMSProfiler source code
+  - Critical deep learning hyperparameters (learning rate, batch size, epochs, optimizer) not reported
+  - No details on Grad-CAM implementation or metabolite-protein network construction logic
+  - Ref-M method is custom but algorithm not described or shared
+  - Thermo Compound Discovery v3.1 and TraceFinder v4.0 are commercial tools requiring licenses
+  - No raw .raw or mzML files from the private lung adenocarcinoma cohort deposited in public repositories
+  - Incomplete gradient profile specification (e.g., exact %B at each timepoint only partially listed)
+  - No description of how 'ensemble strategy' removes background-category phenomena
+reproducibility_strengths:
+  - Public datasets (ST001142, MTBLS1129) are openly available with accession IDs
+  - Open-source tools used for core I/O (MSConvert, Pyteomics, Matplotlib, MZmine plugins)
+  - Detailed LC-MS instrument parameters and column chemistry provided
+  - Reference sample preparation and QC protocol fully described

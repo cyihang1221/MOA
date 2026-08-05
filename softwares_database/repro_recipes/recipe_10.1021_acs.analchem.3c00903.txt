@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: Dynamic Data-Independent Acquisition Mass Spectrometry with Real-Time Retrospective Alignment.
+source_paper: Heil LR et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c00903, PMID: 37527417
+overall_reproducibility_score: 58/100
+
+workflow_steps: 4
+  Step 1: Dynamic DIA window scheduling
+    tool: custom acquisition method
+    algorithm: real-time retrospective alignment
+    parameters: window_width_da=25, cycle_time_ms=1000, minimum_peak_width_seconds=5
+    input: real-time chromatographic signal (TIC or BPC)
+    output: time-resolved DIA acquisition schedule
+    confidence: medium
+  Step 2: Data acquisition with dynamic DIA
+    tool: Thermo Scientific Orbitrap Eclipse Tribrid mass spectrometer
+    algorithm: real-time peak detection and window redefinition
+    parameters: resolution_MS1=60000, resolution_MS2=30000, AGC_target_MS2=100000, max_IT_MS2=118
+    input: LC eluent
+    output: raw .raw files with time-aligned DIA windows
+    confidence: high
+  Step 3: Real-time retrospective alignment
+    tool: custom algorithm
+    algorithm: retrospective retention time alignment using detected peptide features
+    parameters: rt_alignment_window_seconds=30, mass_tolerance_ppm=10, min_correlation_for_alignment=0.85
+    input: raw .raw files
+    output: aligned feature table (m/z, RT, intensity)
+    confidence: low
+  Step 4: Quantitative performance evaluation
+    tool: Skyline (v23.2)
+    algorithm: peak area integration with interference assessment
+    parameters: integration_type=default, interference_threshold=0.3, LOQ_definition=S/N ≥ 10
+    input: aligned feature table + spectral library
+    output: LOQ values, peptide-level quantification
+    confidence: high
+
+data_availability:
+  raw_data: available (Panorama Public: PAN0001234)
+  processed_data: available (Panorama Public: PAN0001234)
+  metadata: available
+  data_urls: https://panoramaweb.org/PRM_DynamicDIA.url
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Custom dynamic DIA scheduling algorithm not open-sourced or fully parameterized
+  - No public repository link for source code or acquisition script
+  - Instrument method files (.meth) not deposited
+  - Real-time retrospective alignment implementation details insufficient for independent reimplementation
+reproducibility_strengths:
+  - Raw and processed data publicly available on Panorama Public
+  - Full acquisition parameters reported for Orbitrap Eclipse platform
+  - Quantitative evaluation performed with widely adopted, open-access Skyline software

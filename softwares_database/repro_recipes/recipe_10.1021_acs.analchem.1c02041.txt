@@ -1,0 +1,84 @@
+========== reproducibility_recipe entry ==========
+paper_title: Expanding Urinary Metabolite Annotation through Integrated Mass Spectral Similarity Networking.
+source_paper: Neto FC et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.1c02041, PMID: 34436864
+overall_reproducibility_score: 35/100
+
+workflow_steps: 9
+  Step 1: LC-MS data acquisition
+    tool: hydrophilic interaction chromatography-quadrupole time-of-flight mass spectrometry
+    parameters: ionization_mode=['positive', 'negative'], sample_size_n=10
+    input: urine extracts
+    output: raw .d or .raw files (vendor format)
+    confidence: medium
+  Step 2: Data preprocessing and feature detection
+    tool: Progenesis QI
+    algorithm: default Progenesis QI workflow
+    parameters: fragmentation_score_threshold_cosine_similarity=0.7
+    input: raw vendor files
+    output: feature table with MS2 spectra
+    confidence: medium
+  Step 3: MS2 library-based annotation
+    tool: Progenesis QI spectral library search
+    algorithm: cosine similarity scoring
+    parameters: min_cosine_similarity=0.7
+    input: MS2 spectra from feature table
+    output: annotated metabolites (MSI level 1/2)
+    confidence: high
+  Step 4: Molecular networking
+    tool: MolNetEnhancer
+    algorithm: tandem MS-based enhanced molecular networks
+    input: MS2 spectra
+    output: molecular network graph with cluster annotations
+    confidence: low
+  Step 5: Unsupervised substructure discovery
+    tool: MS2LDA
+    algorithm: mass spectral molecular substructure annotation
+    input: MS2 spectra
+    output: LDAs (mass spectral motifs)
+    confidence: low
+  Step 6: In silico annotation propagation
+    tool: NAP (Network Annotation Propagation)
+    algorithm: network-based annotation transfer
+    input: molecular network + MS2LDA motifs
+    output: propagated annotations
+    confidence: low
+  Step 7: Chemical ontology classification
+    tool: ClassyFire
+    algorithm: chemical taxonomy assignment
+    input: putatively annotated compounds
+    output: ClassyFire superclass/subclass annotations
+    confidence: medium
+  Step 8: Multilayered molecular network integration
+    tool: MolNetEnhancer
+    algorithm: integration of MS2LDA, NAP, and ClassyFire layers
+    input: MS2 spectra, LDAs, propagated annotations, ClassyFire classifications
+    output: enhanced multilayer molecular network with expanded annotations
+    confidence: low
+  Step 9: Metabolite confidence level assignment
+    tool: Metabolomics Standards Initiative (MSI) guidelines
+    algorithm: MSI level 2 and level 3 annotation criteria
+    parameters: msi_level_2=putative annotation based on spectral matching and/or retention time, msi_level_3=putative annotation based on spectral matching only
+    input: annotated features from integrated workflow
+    output: final annotated metabolite list with MSI confidence levels
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository
+  - No access to Progenesis QI project files or parameters beyond cosine threshold
+  - MolNetEnhancer, MS2LDA, and NAP versions and exact configuration not specified
+  - No code or workflow scripts shared for integration steps (steps 4–8)
+  - No details on chromatographic conditions (gradient, column, flow rate, temperature)
+  - No description of sample preparation protocol (e.g., dilution, filtration, internal standards)
+reproducibility_strengths:
+  - Explicit use of open-source tools: MS2LDA, NAP, ClassyFire, MolNetEnhancer
+  - Clear reporting of MSI confidence levels and annotation counts per ionization mode
+  - Use of standardized annotation frameworks (MSI, ClassyFire)

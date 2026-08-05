@@ -1,0 +1,60 @@
+========== reproducibility_recipe entry ==========
+paper_title: Untargeted Chemical Profiling of Two-Dimensional Gas Chromatography Coupled with High-Resolution Mass Spectrometry Data for Botrytized Wines via Topological Data Analysis.
+source_paper: Koljančić N et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c05342, PMID: 41233964
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Data acquisition and preprocessing
+    tool: GC × GC-HR-TOF-MS
+    input: raw wine samples
+    output: raw .d or vendor-specific data files
+    confidence: low
+  Step 2: Spectral discretization and normalization
+    tool: custom implementation
+    algorithm: discretization + normalization
+    parameters: number_of_mass_spectral_functions_per_sample=470000
+    input: raw mass spectral data
+    output: discretized and normalized mass spectral vectors
+    confidence: medium
+  Step 3: Clustering in high-dimensional space
+    tool: Ball Mapper
+    algorithm: topological clustering via Ball Mapper
+    parameters: number_of_interpretative_parameters=2
+    input: discretized and normalized mass spectral vectors
+    output: clustered topological representation (ball graph)
+    confidence: high
+  Step 4: Feature extraction and discrimination
+    tool: custom implementation
+    algorithm: feature selection from Ball Mapper clusters
+    parameters: extracted_mass_spectral_distributions=2792, discriminative_features=1191, assigned_compounds=334
+    input: Ball Mapper output (clusters and ball assignments)
+    output: discriminative feature table with compound class assignments
+    confidence: medium
+  Step 5: Chemical annotation and interpretation
+    tool: library matching (VOC classes)
+    algorithm: mass spectral library matching
+    parameters: compound_classes=['volatile organic compounds']
+    input: discriminative features (m/z, retention time, spectra)
+    output: annotated chemical signature table
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw GC × GC-HR-TOF-MS data not deposited
+  - No code repository or scripts shared
+  - No details on discretization method (bin size, normalization strategy)
+  - No parameters for Ball Mapper (e.g., radius, metric, coverage)
+  - No description of VOC library used for annotation
+  - No information on sample metadata structure or experimental design matrix
+reproducibility_strengths:
+  - Explicit count of spectral functions per sample (470,000)
+  - Clear reporting of key outputs (2792 distributions, 1191 features, 334 assigned compounds)
+  - Use of open-source Ball Mapper framework (in principle reproducible if parameters disclosed)

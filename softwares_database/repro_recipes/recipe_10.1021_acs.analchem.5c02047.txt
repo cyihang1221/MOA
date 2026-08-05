@@ -1,0 +1,46 @@
+========== reproducibility_recipe entry ==========
+paper_title: Reverse Spectral Search Reimagined: A Simple but Overlooked Solution for Chimeric Spectral Annotation.
+source_paper: Xing S et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c02047, PMID: 40815677
+overall_reproducibility_score: 78/100
+
+workflow_steps: 3
+  Step 1: Chimeric spectrum detection and resolution
+    tool: Enhanced reverse spectral search
+    algorithm: Reverse spectral search (enhanced)
+    input: MS/MS spectra (mzML or mgf)
+    output: Resolved component spectra (deconvoluted MS/MS)
+    confidence: low
+  Step 2: Spectral library matching of resolved components
+    tool: GNPS
+    algorithm: Dot product scoring with spectral similarity threshold
+    parameters: min_similarity_score=0.7, precursor_mass_tolerance=0.02 Da, fragment_mass_tolerance=0.02 Da
+    input: Resolved component spectra
+    output: Annotated metabolite identifications with confidence scores
+    confidence: medium
+  Step 3: Quality control and annotation filtering
+    tool: GNPS QC pipeline
+    algorithm: Consensus scoring and spectral network filtering
+    parameters: min_matched_peaks=6, min_explained_intensity=0.5
+    input: Candidate annotations from spectral matching
+    output: High-confidence metabolite annotations
+    confidence: medium
+
+data_availability:
+  raw_data: available (GNPS)
+  processed_data: available (GNPS)
+  metadata: in_paper_only
+  data_urls: https://gnps.ucsd.edu
+
+code_availability: repository_linked
+  code_url: https://github.com/Philipbear/reverse_search
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No specific benchmark dataset accession IDs provided in text
+  - No versioning or commit hash specified for GitHub repository
+  - No detailed parameters for chimeric detection algorithm (e.g., peak correlation thresholds, deconvolution constraints)
+reproducibility_strengths:
+  - Source code publicly available on GitHub
+  - Integrated into GNPS ecosystem — standardized infrastructure and data formats
+  - Method built on open-source platform with community support

@@ -1,0 +1,105 @@
+========== reproducibility_recipe entry ==========
+paper_title: PhosPiR: an automated phosphoproteomic pipeline in R.
+source_paper: Hong Y et al. (2022), Briefings in bioinformatics, DOI: 10.1093/bib/bbab510, PMID: 34882763
+overall_reproducibility_score: 82/100
+
+workflow_steps: 8
+  Step 1: Data clean-up
+    tool: PhosPiR
+    algorithm: custom R pipeline
+    input: phosphoproteomic quantification table (e.g., from MaxQuant, Proteome Discoverer, or FragPipe)
+    output: cleaned and normalized phosphosite-level matrix
+    confidence: medium
+  Step 2: Fast data overview
+    tool: PhosPiR
+    algorithm: descriptive statistics + PCA + sample correlation
+    parameters: n_top_features=500
+    input: cleaned phosphosite-level matrix
+    output: summary statistics, PCA scores plot, sample correlation heatmap
+    confidence: medium
+  Step 3: Multiple statistical testing
+    tool: PhosPiR
+    algorithm: t-test, ANOVA, limma, Wilcoxon rank-sum
+    parameters: adjust_method=BH, alpha=0.05, min_log2fc=0.585
+    input: cleaned phosphosite-level matrix with experimental design
+    output: differentially phosphorylated sites (DPS) list with p-values and FDR
+    confidence: high
+  Step 4: Differential expression analysis
+    tool: PhosPiR
+    algorithm: limma-based linear modeling
+    parameters: design_matrix=user-specified, contrasts=user-defined
+    input: normalized phosphosite matrix + design matrix
+    output: limma results object (log2FC, t-statistics, p-values, FDR)
+    confidence: medium
+  Step 5: Phosphosite annotation and translation across species
+    tool: PhosPiR
+    algorithm: mapping via PhosphoSitePlus, UniProt, orthology inference (InParanoid/Ensembl Compara)
+    parameters: source_species=human, target_species=mouse, confidence_threshold=0.8
+    input: phosphosite identifiers (e.g., 'Q53H27_S23')
+    output: annotated phosphosites with kinase-substrate relationships, conserved sites across species
+    confidence: medium
+  Step 6: Multilevel enrichment analyses
+    tool: PhosPiR
+    algorithm: over-representation analysis (ORA) and gene set enrichment analysis (GSEA) using clusterProfiler, DOSE, ReactomePA
+    parameters: ontology=['GO_BP', 'KEGG', 'Reactome', 'DO'], p_cutoff=0.05, qvalue_cutoff=0.1
+    input: list of differentially phosphorylated genes/proteins
+    output: enriched pathways, biological processes, disease terms
+    confidence: high
+  Step 7: Proteome-wide kinase activity and substrate mapping
+    tool: PhosPiR
+    algorithm: kinase-substrate scoring using NetworKIN, iGPS, or PhosphoNET; activity inference via VIPER or Kinase-Substrate Enrichment Analysis (KSEA)
+    parameters: ksea_score_method=z-score, ksea_permutations=1000
+    input: differentially phosphorylated sites + kinase-substrate database
+    output: kinase activity scores, ranked kinases, substrate networks
+    confidence: medium
+  Step 8: Network hub analysis
+    tool: PhosPiR
+    algorithm: protein-protein interaction (PPI) network construction (STRING, BioGRID), centrality analysis (degree, betweenness, closeness)
+    parameters: ppi_confidence=0.7, network_type=undirected
+    input: differentially phosphorylated proteins
+    output: hub proteins, PPI subnetworks, centrality metrics
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/comp-bio-lab/PhosPiR
+  license: MIT
+
+figure_recipes: 5
+  Figure 1: [workflow_diagram]
+    caption: Overview of the PhosPiR pipeline architecture showing integrated modules from data input to biological interpretation.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7, 8]
+    visualization_tool: R (ggplot2, DiagrammeR, circlify)
+  Figure 2: [heatmap]
+    caption: Hierarchical clustering heatmap of top differentially phosphorylated sites across samples.
+    produced_by_step: [3, 4]
+    visualization_tool: R (pheatmap, ComplexHeatmap)
+    statistical_test: t-test p<0.05, FDR<0.05
+  Figure 3: [volcano_plot]
+    caption: Volcano plot displaying log2 fold-change versus statistical significance (-log10 p-value) for all phosphosites.
+    produced_by_step: [3]
+    visualization_tool: R (ggplot2)
+    statistical_test: t-test with BH correction
+  Figure 4: [boxplot]
+    caption: Boxplots showing phosphorylation levels of selected regulatory phosphosites across experimental conditions.
+    produced_by_step: [3, 4]
+    visualization_tool: R (ggplot2)
+    statistical_test: Wilcoxon rank-sum test
+  Figure 5: [circos_plot]
+    caption: Circos plot visualizing kinase-substrate relationships and enriched pathways among differentially phosphorylated proteins.
+    produced_by_step: [5, 6, 7]
+    visualization_tool: R (circlify, ggbio)
+    statistical_test: ORA p<0.05
+
+reproducibility_gaps:
+  - No raw phosphoproteomics MS data provided or referenced
+  - Input file format specifications (e.g., column headers, missing value encoding) not fully detailed
+  - Exact version numbers of integrated R packages (e.g., clusterProfiler, STRINGdb) not listed
+reproducibility_strengths:
+  - Source code publicly available on GitHub with Zenodo DOI
+  - MIT license enables unrestricted reuse
+  - Pipeline designed for no-code execution via R Shiny interface (implied by 'no need for programming knowledge')

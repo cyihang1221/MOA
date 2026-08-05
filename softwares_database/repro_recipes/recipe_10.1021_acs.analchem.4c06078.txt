@@ -1,0 +1,75 @@
+========== reproducibility_recipe entry ==========
+paper_title: Improved Accuracy and Reliability in Untargeted Analysis with LC-ESI-QTOF/MS&lt;sup&gt;1&lt;/sup&gt; by Ensemble Averaging.
+source_paper: Erny GL et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.4c06078, PMID: 40183948
+overall_reproducibility_score: 30/100
+
+workflow_steps: 7
+  Step 1: Data acquisition
+    tool: LC-ESI-QTOF/MS
+    parameters: instrument_model=qTOF/MS, ionization=ESI, chromatography=LC, sample_source=Morning Glory seeds, replicates=256
+    input: biological samples
+    output: raw .d or .raw files (vendor format)
+    confidence: medium
+  Step 2: Ensemble averaging of raw LC-MS data
+    tool: Custom script (not specified)
+    algorithm: Ensemble averaging
+    parameters: number_of_datasets_averaged=[1, 2, 4, 8, 16, 32, 64, 128, 256], averaging_domain=intensity in chromatographic space (TIC or extracted ion chromatograms?), alignment_required_before_averaging=True, retention_time_tolerance=0.05
+    input: raw vendor files (.d or .raw)
+    output: merged averaged .mzML or vendor-format files
+    confidence: low
+  Step 3: Feature detection on merged and original datasets
+    tool: Unknown (likely XCMS, MS-DIAL, or vendor software)
+    algorithm: Unknown peak picking algorithm
+    parameters: feature_detection_on=['original single runs', 'merged averaged runs'], min_features_per_dataset=1192, max_features_per_dataset=4408, mass_tolerance_ppm=None, rt_tolerance_min=0.05
+    input: raw or merged .mzML/.raw files
+    output: feature table (m/z, RT, intensity)
+    confidence: low
+  Step 4: Accuracy and precision assessment of m/z and RT
+    tool: Custom analysis
+    algorithm: Statistical comparison (RSD, absolute error)
+    parameters: mass_accuracy_metric=relative standard deviation of accurate masses, rt_precision_metric=relative standard deviation of retention time, improvement_factor=10, isotope_pattern_validation_threshold=absolute error < 3%
+    input: feature table with m/z and RT annotations
+    output: accuracy/precision metrics per feature set
+    confidence: medium
+  Step 5: Isotopic pattern validation using known alkaloids
+    tool: Custom analysis
+    algorithm: Theoretical vs experimental isotopic ratio fitting ([M+1]+H⁺, [M+2]+H⁺, [M+3]+H⁺ relative to [M]+H⁺)
+    parameters: target_compounds=['alkaloids'], ion_forms_analyzed=['[M]+H⁺', '[M+1]+H⁺', '[M+2]+H⁺', '[M+3]+H⁺'], error_threshold_percent=3.0
+    input: feature table + reference compound metadata
+    output: molecular formula confidence scores
+    confidence: high
+  Step 6: Targeted quantitative recovery from original runs using merged data
+    tool: Custom approach
+    algorithm: Merged-data-guided extraction on original runs
+    parameters: extraction_window_mz_ppm=None, extraction_window_rt_min=0.05, reference_source=merged feature list
+    input: merged feature table + original raw files
+    output: quantitative matrix (original sample intensities)
+    confidence: low
+  Step 7: Feature clustering (adducts, isotopes, fragments)
+    tool: Custom clustering
+    algorithm: Retention time and response pattern similarity clustering
+    parameters: rt_difference_threshold_min=0.05, similarity_metric=response pattern correlation or Euclidean distance, minimum_features_per_cluster=2, total_clusters=204
+    input: quantitative matrix + feature metadata
+    output: clustered feature groups (putative molecular entities)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository
+  - No description of software tools used for feature detection, alignment, or clustering
+  - No specification of vendor instrument control software or data conversion workflow (e.g., msConvert parameters)
+  - Ensemble averaging implementation details missing (e.g., whether spectra or chromatograms were averaged, interpolation method, RT alignment strategy)
+  - Custom scripts for averaging, quantitation recovery, and clustering are neither shared nor described algorithmically
+  - No information on LC gradient profile, column type, or MS acquisition parameters (e.g., collision energy, scan range, accumulation time)
+reproducibility_strengths:
+  - Explicit reporting of key performance metrics (S/N gain factor = 10, RSD reduction factor = 10, feature count increase from 1192 to 4408)
+  - Use of known alkaloid standards for isotopic pattern validation with quantitative error threshold (<3%)
+  - Clear definition of clustering criteria (RT difference < 0.05 min, ≥2 features per cluster)

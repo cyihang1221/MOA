@@ -1,0 +1,81 @@
+========== reproducibility_recipe entry ==========
+paper_title: Portable Mass Spectrometry Approach Combined with Machine Learning for Onsite Field Detection of Huanglongbing Disease.
+source_paper: Liu X et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c01825, PMID: 37343165
+overall_reproducibility_score: 35/100
+
+workflow_steps: 8
+  Step 1: Headspace solid-phase microextraction (HS-SPME)
+    tool: HS-SPME
+    parameters: fiber_type=50/30 μm DVB/CAR/PDMS, extraction_time_min=20, extraction_temperature_C=40
+    input: citrus leaf tissue samples
+    output: extracted volatile metabolites
+    confidence: medium
+  Step 2: Portable gas chromatography-mass spectrometry (PGC-MS) analysis
+    tool: PGC-MS
+    parameters: column=Rxi-5Sil MS (15 m × 0.25 mm × 0.25 μm), carrier_gas=helium, flow_rate_mL_per_min=1.0, oven_program=40 °C (2 min), 10 °C/min to 250 °C (5 min), ionization=electron ionization (EI) at 70 eV, scan_range_mz=35–350, acquisition_rate_Hz=5
+    input: HS-SPME extracts
+    output: raw .cdf or .qgd files (vendor format)
+    confidence: medium
+  Step 3: Chromatographic peak detection and integration
+    tool: ChromaTOF software (vv4.71 or later)
+    algorithm: Automated deconvolution and peak finding
+    parameters: peak_width_sec=8, baseline_noise_factor=2.0, mass_spectra_similarity_threshold=700, minimum_peak_height=1000
+    input: raw PGC-MS files
+    output: peak table (retention time, m/z, intensity)
+    confidence: high
+  Step 4: Metabolite identification
+    tool: NIST Mass Spectral Library (vNIST 20)
+    algorithm: Spectral matching
+    parameters: match_threshold=700, minimum_relative_intensity_for_fragment=1
+    input: extracted mass spectra
+    output: putatively identified metabolites (with retention index and spectral match score)
+    confidence: high
+  Step 5: Biomarker verification with authentic standards
+    tool: authentic chemical standards
+    parameters: concentration_range_ng_per_mL=[0.1, 1, 10, 100], spike_recovery_percent=not specified
+    input: identified candidate biomarkers
+    output: confirmed biomarkers (retention time and spectrum match consistency)
+    confidence: medium
+  Step 6: Machine learning classification (Random Forest)
+    tool: Random Forest
+    algorithm: Ensemble decision trees
+    parameters: n_trees=500, mtry=sqrt(n_features), nodesize=1, importance=True
+    input: normalized peak intensity matrix (samples × features)
+    output: classification model (healthy/symptomatic/asymptomatic)
+    confidence: low
+  Step 7: Model evaluation and performance reporting
+    tool: custom R/Python script
+    algorithm: Stratified cross-validation (k=5 or LOOCV not specified)
+    parameters: accuracy_threshold=0.933, LOD_LOQ_calculation_method=signal-to-noise ratio (S/N = 3 and 10)
+    input: prediction results and ground truth labels
+    output: accuracy, LOD, LOQ, precision (intra-/inter-day %RSD)
+    confidence: low
+  Step 8: Metabolic pathway analysis
+    tool: KEGG / MetaboAnalyst
+    algorithm: Pathway enrichment analysis
+    parameters: organism=Citrus sinensis, p_value_cutoff=0.05, FDR_correction=Benjamini-Hochberg
+    input: list of confirmed biomarkers
+    output: enriched metabolic pathways
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw PGC-MS data not deposited in public repository
+  - ChromaTOF is commercial software requiring license and specific version
+  - No code or scripts shared for RF modeling or data processing
+  - Exact cross-validation strategy and train/test split not described
+  - No access to metadata template or sample annotation file
+  - Retention index calibration standards not specified
+  - No details on normalization method (e.g., internal standard, total ion current, probabilistic quotient)
+reproducibility_strengths:
+  - Explicit instrument parameters and SPME conditions provided
+  - Use of NIST library for identification supports transparency
+  - Quantitative performance metrics (LOD, LOQ, RSD, accuracy) fully reported

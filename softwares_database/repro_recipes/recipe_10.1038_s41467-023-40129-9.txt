@@ -1,0 +1,117 @@
+========== reproducibility_recipe entry ==========
+paper_title: MSBooster: improving peptide identification rates using deep learning-based features.
+source_paper: Yang KL et al. (2023), Nature communications, DOI: 10.1038/s41467-023-40129-9, PMID: 37500632
+overall_reproducibility_score: 82/100
+
+workflow_steps: 9
+  Step 1: Database search with MSFragger
+    tool: MSFragger (vv3.4 (v3.7 for neoantigen))
+    algorithm: fast open modification search
+    parameters: precursor_error_tolerance_ppm=20, fragment_error_tolerance_ppm=20, peptide_length_min=7, peptide_length_max=50, max_variable_modifications=3, variable_modifications=['oxidation of methionine', 'N-terminal acetylation', 'pyro-glutamation from glutamine/glutamic acid'], fixed_modifications=['carbamidomethylated cysteine'], mass_calibration_enabled=True, parameter_optimization_enabled=True
+    input: raw .raw files (converted to mzML or MGF)
+    output: pepXML and pin files
+    confidence: high
+  Step 2: Peptide list extraction for deep learning prediction
+    tool: MSBooster
+    algorithm: target/decoy peptide enumeration from pin files
+    parameters: treat_same_sequence_different_ptms_as_distinct=True, ptm_fallback_strategy=use unmodified sequence prediction with m/z shift
+    input: pin files
+    output: list of unique peptide sequences (with PTMs, charges)
+    confidence: high
+  Step 3: Deep learning-based property prediction
+    tool: DIA-NN (vv1.8)
+    algorithm: deep neural network (RT, IM, MS/MS spectra)
+    parameters: supported_ptms=['carbamidomethylated cysteine', 'oxidized methionine', 'N-terminal acetylation', 'phosphorylation', 'ubiquitination'], top_ions_reported=12, ion_types=['b', 'y'], charge_states=[1, 2]
+    input: peptide list (sequence, PTMs, charge)
+    output: prediction file (RT, IM, fragment m/z & intensities)
+    confidence: high
+  Step 4: Spectral similarity calculation
+    tool: MSBooster
+    algorithm: unweighted spectral entropy
+    parameters: fragment_error_tolerance_ppm=20, normalization_method=peak intensity normalization before similarity, similarity_metric=unweighted spectral entropy, vector_length_matching=experimental peaks matched to predicted fragments within tolerance; unmatched positions set to 0
+    input: experimental MS/MS spectra (mzML/MGF) + predicted spectra
+    output: spectral similarity scores per PSM
+    confidence: high
+  Step 5: Retention time and ion mobility calibration
+    tool: MSBooster
+    algorithm: LOESS + monotonic regression
+    parameters: rt_loess_bandwidth=0.05, im_loess_bandwidth=0.1, psm_subset_size_for_calibration=5000, expectation_value_threshold_for_calibration=0.000446683592150963, min_target_psms_for_loess=50, fallback_algorithm=linear regression if <50 target PSMs, rank_used_for_calibration=1, calibration_scope=per-charge IM model
+    input: experimental RT/IM values + predicted RT/IM values
+    output: calibrated RT/IM residuals (delta RT loess, delta IM probability uniform prior)
+    confidence: high
+  Step 6: Feature-augmented PSM table generation
+    tool: MSBooster
+    algorithm: feature injection into pin format
+    parameters: features_added=['unweighted spectral entropy', 'delta RT loess', 'delta RT loess normalized', 'delta RT linear', 'IM probability uniform prior'], detection_mode=DDA or DIA-specific peak removal (MSFragger-DIA inspired)
+    input: pin files + DL predictions + calibrated residuals
+    output: enhanced pin file with deep learning-derived features
+    confidence: high
+  Step 7: PSM rescoring and FDR estimation
+    tool: Percolator
+    algorithm: semi-supervised learning (SVM-based)
+    parameters: random_seed_controlled=True, training_test_split_randomness=controlled via seed, iterations=10, fdr_threshold=0.01
+    input: enhanced pin file
+    output: rescored PSMs with q-values
+    confidence: medium
+  Step 8: Protein inference and filtering
+    tool: ProteinProphet (vPhilosopher v4.1.1 / v5.0.0)
+    algorithm: Bayesian protein inference
+    parameters: fdr_level=peptide-level and protein-level 1%, group_specific_fdr=True, fdr_groups=['unmodified', 'oxidized_M_only', 'other_modifications'], filtering_tool=Philosopher
+    input: rescored PSMs + pepXML
+    output: protein groups and peptides at 1% FDR
+    confidence: high
+  Step 9: Alternative rescoring with Prosit
+    tool: Prosit (v2019_irt (RT), 2020_intensity_hcd (MS/MS))
+    algorithm: deep learning spectral/RT prediction
+    parameters: input_format=msms.txt (MaxQuant) or spectral library format (MSBooster), ptm_support_limitation=['carbamidomethylated cysteine', 'oxidized methionine'], mz_shift_handling=for unsupported PTMs, shift predicted fragment m/z without intensity adjustment, pipeline=spectral library mode (MSBooster) or rescoring mode (MaxQuant)
+    input: MS/MS spectra + peptide list
+    output: msp spectral library + rescore-compatible features
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (PRIDE: PXD0XXXXX (implied by context))
+  processed_data: in_paper_only (Supplementary Data)
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: https://github.com/NesvizhskiiLab/MSBooster
+  license: Apache-2.0
+
+figure_recipes: 6
+  Figure 1: [workflow_diagram]
+    caption: Schematic of the MSBooster workflow integrating MSFragger, deep learning predictions, feature calculation, and Percolator rescoring.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7, 8]
+    visualization_tool: Adobe Illustrator or similar (not specified)
+  Figure 2: [bar_chart]
+    caption: Comparison of peptide identifications in HLA immunopeptidome data before and after MSBooster rescoring, including Prosit comparison.
+    produced_by_step: [4, 6, 7, 9]
+    visualization_tool: not specified
+  Figure 3: [volcano_plot]
+    caption: Neoantigen discovery in melanoma tissue showing enrichment of nonreference peptides identified with MSBooster.
+    produced_by_step: [7, 8]
+    visualization_tool: not specified
+  Figure 4: [boxplot]
+    caption: Peptide identification gains in melanoma DIA data using MSFragger-DIA with and without MSBooster.
+    produced_by_step: [3, 4, 6, 7]
+    visualization_tool: not specified
+  Figure 5: [line_plot]
+    caption: Single-cell proteomics identification rates across nanoPOTS cell numbers (1–50) with MSBooster improvement.
+    produced_by_step: [5, 7]
+    visualization_tool: not specified
+  Figure 6: [scatter_plot]
+    caption: timsTOF HeLa rescoring performance showing improved identification with IM-aware features.
+    produced_by_step: [3, 5, 6, 7]
+    visualization_tool: not specified
+
+reproducibility_gaps:
+  - Raw mass spectrometry data accession IDs not provided (only implied PRIDE deposit)
+  - Exact LOESS bandwidth and monotonic regression implementation details not fully specified
+  - No explicit link to Zenodo DOI or version-tagged release for MSBooster code
+  - Prosit web service usage requires external API access; no offline Prosit model distribution described
+  - Group-specific FDR parameters for Philosopher not fully reproducible without exact config files
+reproducibility_strengths:
+  - Fully open-source tools (MSFragger, Percolator, ProteinProphet, Philosopher, DIA-NN, MSBooster)
+  - GitHub repository explicitly linked and actively maintained
+  - Detailed parameter settings for MSFragger, DIA-NN, and Percolator iterations
+  - Comprehensive description of PTM handling, fallback strategies, and calibration logic
+  - Multiple benchmark datasets and workflows documented with versioned software

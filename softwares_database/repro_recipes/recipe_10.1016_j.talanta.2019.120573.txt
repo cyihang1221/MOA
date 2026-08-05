@@ -1,0 +1,61 @@
+========== reproducibility_recipe entry ==========
+paper_title: A new software-assisted analytical workflow based on high-resolution mass spectrometry for the systematic study of phenolic compounds in complex matrices.
+source_paper: Cerrato A et al. (2020), Talanta, DOI: 10.1016/j.talanta.2019.120573, PMID: 31892002
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Mass spectrometric parameter optimization
+    tool: Thermo Scientific Q Exactive HF mass spectrometer
+    algorithm: collision-induced dissociation (CID) optimization
+    parameters: collision_energy_range=10–60 eV, normalized_collision_energy=35 eV for MS/MS, mass_resolution=120000, scan_range_mz=100–1500
+    input: reference standards of polyphenol building blocks
+    output: optimized MS/MS spectral libraries for diagnostic ions
+    confidence: medium
+  Step 2: Database curation and integration
+    tool: Compound Discoverer 3.0 (v3.0)
+    algorithm: in-house database expansion with structural rules
+    parameters: database_size_compounds=45567, compound_classes_included=['flavonoids', 'anthocyanins', 'ellagitannins', 'proanthocyanidins', 'phenolic acids'], building_block_sources=['gallic acid', 'catechin', 'quercetin', 'cyanidin', 'ellagic acid', 'caffeic acid', 'p-coumaric acid']
+    input: chemical structures, fragmentation rules, MS/MS reference data
+    output: customized Compound Discoverer workspace with polyphenol-specific identification engine
+    confidence: high
+  Step 3: Feature detection and alignment
+    tool: Compound Discoverer 3.0 (v3.0)
+    algorithm: peak detection (adaptive peak finder), retention time alignment (RT alignment algorithm)
+    parameters: min_peak_intensity=5000, mass_tolerance_ppm=5, rt_tolerance_min=0.2, signal_to_noise_threshold=3
+    input: raw .raw files (Thermo)
+    output: aligned feature table (m/z, RT, intensity)
+    confidence: medium
+  Step 4: Semi-automatic compound identification
+    tool: Compound Discoverer 3.0 (v3.0)
+    algorithm: MS1 + MS2-based matching against custom polyphenol database with diagnostic ion filtering
+    parameters: ms1_mass_tolerance_ppm=5, ms2_mass_tolerance_ppm=10, min_matching_fragment_ions=2, diagnostic_ion_filters_enabled=True, confidence_score_threshold=70
+    input: feature table + MS/MS spectra
+    output: annotated compound list with class-level and structure-level confidence
+    confidence: high
+  Step 5: Biological matrix application and validation
+    tool: Compound Discoverer 3.0 + manual curation (v3.0)
+    algorithm: library match + retention time consistency + diagnostic ion verification
+    parameters: validation_criteria=['MS1 accuracy ≤5 ppm', '≥2 diagnostic fragments matched', 'RT consistent with chemical class trend']
+    input: UHPLC-HRMS data from industrial hemp extract
+    output: final identified polyphenol list (n=147)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw .raw files not deposited in public repository (e.g., MetaboLights, GNPS)
+  - Custom polyphenol database (45,567 compounds) not publicly shared or accessible
+  - Compound Discoverer 3.0 is commercial software requiring license and proprietary algorithms
+  - No details on UHPLC gradient program, column lot numbers, or instrument calibration protocols
+  - No code/scripts for database generation, diagnostic ion rule implementation, or post-processing curation
+reproducibility_strengths:
+  - Explicit enumeration of compound classes and building blocks used in database curation
+  - Reported mass accuracy (5 ppm MS1, 10 ppm MS2) and fragment matching criteria
+  - Clear description of validation criteria (RT consistency, diagnostic ions)

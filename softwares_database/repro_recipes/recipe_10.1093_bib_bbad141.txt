@@ -1,0 +1,48 @@
+========== reproducibility_recipe entry ==========
+paper_title: SmartGate is a spatial metabolomics tool for resolving tissue structures.
+source_paper: Xiao K et al. (2023), Briefings in bioinformatics, DOI: 10.1093/bib/bbad141, PMID: 37068309
+overall_reproducibility_score: 20/100
+
+workflow_steps: 4
+  Step 1: IMS data preprocessing
+    tool: SmartGate
+    algorithm: custom graph attention autoencoder
+    input: raw IMS data (m/z intensity images)
+    output: preprocessed feature matrix per pixel/voxel
+    confidence: low
+  Step 2: Iterative discriminative m/z feature selection
+    tool: SmartGate
+    algorithm: differential analysis (unspecified test, likely t-test or ANOVA per spatial cluster)
+    parameters: iteration_count=not specified, feature_selection_criterion=discriminative power
+    input: spatially resolved m/z intensity images
+    output: subset of discriminative m/z features
+    confidence: low
+  Step 3: Spatial clustering and tissue segmentation
+    tool: SmartGate
+    algorithm: graph attention autoencoder (GATE) with spatial neighborhood encoding
+    parameters: neighborhood_dimensionality=2D or 3D depending on data, spatial_graph_construction=three-dimensional spatial neighbor information for consecutive IMS data
+    input: selected m/z features + spatial coordinates
+    output: spatial segmentation map (tissue structure labels per pixel/voxel)
+    confidence: medium
+  Step 4: Tissue structure-guided differential metabolite analysis
+    tool: SmartGate
+    algorithm: differential analysis conditioned on SmartGate-derived spatial clusters
+    input: IMS intensity data + segmentation labels
+    output: biomarker metabolites (m/z) associated with tissue structures
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No mention of raw IMS data deposition in public repository
+  - SmartGate implementation not publicly available (no code URL, DOI, or license)
+  - No specification of differential analysis method (e.g., statistical test, FDR correction, fold-change threshold)
+  - No details on GATE architecture (layer sizes, attention heads, loss function, training epochs, hyperparameters)
+  - No description of IMS data preprocessing (peak picking, denoising, normalization, calibration)

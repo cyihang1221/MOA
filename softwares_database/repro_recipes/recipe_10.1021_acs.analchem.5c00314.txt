@@ -1,0 +1,44 @@
+========== reproducibility_recipe entry ==========
+paper_title: Enhanced Structure-guided Molecular Networking Annotation Method for Untargeted Metabolomics Data from Orbitrap Astral Mass Spectrometer.
+source_paper: Wang X et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c00314, PMID: 40439598
+overall_reproducibility_score: 20/100
+
+workflow_steps: 3
+  Step 1: Data acquisition on Orbitrap Astral MS
+    tool: Orbitrap Astral mass spectrometer
+    parameters: ms_ms_scanning_speed=fast, sensitivity=high
+    input: biological samples (e.g., plasma, six typical biological sample types)
+    output: raw .raw files
+    confidence: low
+  Step 2: Molecular networking construction with structure-guided filtering
+    tool: E-SGMN (Enhanced Structure-guided Molecular Networking)
+    algorithm: structural similarity-based network expansion
+    parameters: metabolome_database_source=metabolome database (unspecified), inclusion_criteria=both previously detected metabolites and those potentially detectable by Astral MS
+    input: MS/MS spectra from Orbitrap Astral
+    output: enhanced molecular network
+    confidence: low
+  Step 3: Metabolite annotation via molecular networking
+    tool: E-SGMN
+    algorithm: structure-guided annotation leveraging Astral-specific detection potential
+    parameters: annotation_balance_goal=maximize coverage while minimizing irrelevant compounds, coverage_accuracy_tradeoff=optimized
+    input: enhanced molecular network
+    output: annotated metabolite features (e.g., 5440 in NIST SRM 1950)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of data conversion (e.g., .raw → mzML)
+  - No software implementation details for E-SGMN (no code, algorithm pseudocode, or parameters such as cosine threshold, minimum matched peaks, or structural similarity metric)
+  - Metabolome database not specified (e.g., GNPS, HMDB, MassBank, or custom)
+  - No details on MS acquisition parameters (e.g., resolution, AGC target, max IT, HCD energy, isolation window)
+  - Raw data not deposited in public repository
+  - E-SGMN is described as a novel method but no repository, version, or installation instructions provided
+  - No validation dataset or ground truth annotation strategy disclosed (e.g., how 'accuracy' and 'coverage' were computed)

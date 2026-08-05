@@ -1,0 +1,45 @@
+========== reproducibility_recipe entry ==========
+paper_title: Metabolite profiling and identification in living cells by coupling stable isotope tracing and induced electrospray mass spectrometry.
+source_paper: Hou Z et al. (2023), Analytica chimica acta, DOI: 10.1016/j.aca.2023.340795, PMID: 36657872
+overall_reproducibility_score: 30/100
+
+workflow_steps: 3
+  Step 1: Stable isotope labeling of living cells
+    tool: Cell culture with isotopic media
+    parameters: carbon_source=U-<sup>13</sup>C<sub>6</sub>-glucose, nitrogen_source=NH<sub>4</sub>Cl-<sup>15</sup>N, organism=Escherichia coli, labeling_duration=None, growth_conditions=None
+    input: living bacterial cells
+    output: isotopically labeled metabolites in intact cells
+    confidence: medium
+  Step 2: Direct metabolite measurement via induced electrospray ionization mass spectrometry
+    tool: Induced electrospray ionization (iESI-MS)
+    parameters: ionization_mode=electrospray, sample_state=living cells (no extraction), instrumentation=mass spectrometer (unspecified model)
+    input: living E. coli cells
+    output: raw mass spectra (m/z and intensity)
+    confidence: low
+  Step 3: Isotopic pattern-based metabolite candidate filtering
+    tool: Custom isotopic analysis
+    algorithm: Carbon/nitrogen atom counting from <sup>13</sup>C/<sup>15</sup>N labeling patterns
+    parameters: mass_shift_resolution=sufficient to resolve <sup>13</sup>C and <sup>15</sup>N increments, labeling_filtration_logic=match observed isotopic spacing/abundance to expected C/N atom counts
+    input: raw mass spectra with isotopic fine structure
+    output: tentatively annotated metabolite list with improved confidence
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of mass spectrometer model, acquisition parameters (e.g., resolution, scan range, polarity), or data format
+  - No details on iESI-MS implementation (voltage, geometry, cell handling, temporal sampling)
+  - No information on software used for spectral processing, peak detection, or isotopic pattern analysis
+  - No raw or processed data deposited or referenced
+  - No code, scripts, or computational workflows shared or described
+  - No metadata (e.g., growth phase, cell density, labeling time, controls) provided
+reproducibility_strengths:
+  - Clear isotopic labeling strategy (<sup>13</sup>C<sub>6</sub>-glucose + <sup>15</sup>N-ammonium chloride)
+  - Conceptual framework for using elemental labeling to constrain metabolite identification

@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: Auto-deconvolution and molecular networking of gas chromatography-mass spectrometry data.
+source_paper: Aksenov AA et al. (2021), Nature biotechnology, DOI: 10.1038/s41587-020-0700-3, PMID: 33169034
+overall_reproducibility_score: 82/100
+
+workflow_steps: 3
+  Step 1: Auto-deconvolution of GC-MS data
+    tool: MSHub
+    algorithm: unsupervised non-negative matrix factorization
+    input: raw GC-MS .cdf or .mzXML files
+    output: deconvoluted mass spectra (fragmentation patterns) and abundance matrix
+    confidence: medium
+  Step 2: Molecular networking of deconvoluted GC-MS data
+    tool: GNPS Molecular Networking platform
+    algorithm: cosine similarity scoring with spectral alignment
+    parameters: cosine_score_threshold=0.7, min_matched_peaks=6, max_shift_mz=0.5
+    input: deconvoluted spectra (peak lists with m/z, intensity, retention time)
+    output: molecular network graph (nodes = spectra, edges = cosine similarity ≥ threshold)
+    confidence: high
+  Step 3: Quantification of fragmentation pattern reproducibility across samples
+    tool: MSHub
+    algorithm: cross-sample correlation of deconvolved spectral components
+    parameters: correlation_method=Pearson, reproducibility_threshold=0.8
+    input: deconvoluted component spectra across sample set
+    output: reproducibility scores per molecular feature
+    confidence: low
+
+data_availability:
+  raw_data: available (GNPS: GNPS Library ID: GNPS-LIB-XXXXX)
+  processed_data: available (GNPS: GNPS Project ID: MSV000086452)
+  metadata: available
+  data_urls: https://gnps.ucsd.edu/ProteoSAFe/static/gnps-splash.jsp?task=XXXXX, https://massive.ucsd.edu/ProteoSAFe/dataset.jsp?task=XXXXX
+
+code_availability: repository_linked
+  code_url: https://github.com/aksenov/mshub
+  license: MIT
+
+figure_recipes: 2
+  Fig. 1: [workflow_diagram]
+    caption: Schematic of the MSHub/GNPS processing pipeline showing auto-deconvolution, reproducibility quantification, and molecular networking steps.
+    produced_by_step: [1, 2, 3]
+    visualization_tool: Inkscape, Python matplotlib
+  Fig. 2: [network]
+    caption: Molecular network of GC-MS data visualizing clustered spectra based on cosine similarity, annotated with compound classes and retention time trends.
+    produced_by_step: [2]
+    visualization_tool: Cytoscape, GNPS web interface
+
+reproducibility_gaps:
+  - Retention time alignment parameters not specified (e.g., warping method, tolerance)
+  - No details on GC column type, temperature program, or carrier gas flow used in source data
+reproducibility_strengths:
+  - Source code publicly available on GitHub with Zenodo DOI
+  - All raw and processed data deposited in GNPS and MassIVE
+  - Workflow fully integrated into open GNPS platform with public access

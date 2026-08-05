@@ -1,0 +1,144 @@
+========== reproducibility_recipe entry ==========
+paper_title: Achieving quantitative reproducibility in label-free multisite DIA experiments through multirun alignment.
+source_paper: Gupta S et al. (2023), Communications biology, DOI: 10.1038/s42003-023-05437-2, PMID: 37903988
+overall_reproducibility_score: 87/100
+
+workflow_steps: 12
+  Step 1: Raw data conversion to mzML
+    tool: MSConvert
+    algorithm: no peak-picking
+    parameters: docker_image=chambm/pwiz-skyline-i-agree-to-the-vendor-licenses:c30f8e5beb5f, compression=['linear m/z', 'positive integer intensity']
+    input: vendor-specific spectra files (.raw, .d, etc.)
+    output: mzML files
+    confidence: high
+  Step 2: DIA library preparation
+    tool: custom curation pipeline
+    algorithm: library harmonization
+    parameters: rt_normalization=average NormalizedRetentionTime across charge states, rt_filter=remove peptides with |ΔNormalizedRetentionTime| > 4 across charge states, sequence_validation=Uniprot (Dec 2021) matching + manual correction, iRT_AQUA_addition=['11 iRTs', '30 AQUA peptides']
+    input: peptide spectral libraries (e.g., .tsv, .splib)
+    output: curated DIA library (.splib or .tsv)
+    confidence: medium
+  Step 3: Peak picking and XIC extraction
+    tool: OpenSWATH
+    algorithm: targeted extraction using DIA library
+    parameters: RT_extraction_window_s=600, extra_RT_window_s=50, min_upper_edge_dist=1, MS2_extraction_window_ppm=75, MS1_extraction_window_ppm=35, DIA_extraction_window_ppm=75, mass_correction=ppm quadratic regression, background_subtraction=vertical_division_min, scoring=['mutual_information', 'MS1_scoring']
+    input: mzML files + DIA library
+    output: feature files (.osw) and chromatogram files (.chrom.mzML)
+    confidence: high
+  Step 4: Chromatogram compression to sqMass
+    tool: OpenSwathMzMLFileCacher
+    algorithm: lossless chromatogram serialization
+    parameters: lossy_compression=False
+    input: .chrom.mzML
+    output: .chrom.sqMass
+    confidence: high
+  Step 5: Feature scoring and FDR control
+    tool: PyProphet (v2.1.10)
+    algorithm: XGBoost classifier
+    parameters: level=ms1ms2, initial_FDR=0.01, integration_FDR=0.05, mscore_threshold=0.025, q_value_threshold=0.025
+    input: .osw files
+    output: FDR-calibrated feature table with mscore and q-value
+    confidence: high
+  Step 6: Multirun chromatogram alignment
+    tool: DIAlignR (v>2.3)
+    algorithm: ['Star (reference-based)', 'MST (minimum spanning tree)', 'Progressive (reference-free)']
+    parameters: transitionIntensity=True, hardConstrain=True, maxFdrQuery=0.05, alignedFDR1=0.05, alignedFDR2=0.05, fractionation=10, signal_integration_within_run=True
+    input: sqMass chromatograms + PyProphet-scored features
+    output: aligned data matrix (peptide-level intensities across runs)
+    confidence: high
+  Step 7: Alternative alignment for comparison
+    tool: TRIC (v0.11.0)
+    algorithm: MST-based RT correction with LOWESS
+    parameters: readmethod=cminimal, realign_method=lowess_cython, mst_Stdev_multiplier=4.0, mst_useRTCorrection=True
+    input: OpenSWATH .osw files
+    output: TRIC-aligned data matrix
+    confidence: high
+  Step 8: Data normalization and transformation
+    tool: R base + custom scripts
+    algorithm: median normalization + log2 transformation
+    parameters: normalization_strategy=median-normalize per run, transformation=log2
+    input: aligned peptide intensity matrix
+    output: normalized log2-intensity matrix
+    confidence: medium
+  Step 9: Protein inference and summarization
+    tool: custom R pipeline
+    algorithm: top-N selection (top-3 peptides, top-3–6 fragment ions)
+    parameters: peptide_selection=top 3 most intense peptides per protein, fragment_selection=['top 3 (S. pyogenes)', 'top 5 (plasma)', 'top 6 (multisite)'], singleton_removal=True, completeness_threshold=0.4, transition_minimum=4950, run_filtering=exclude runs < μₙ − 1.96·σₙ or low TIC
+    input: normalized peptide matrix
+    output: protein-level quantitative matrix
+    confidence: medium
+  Step 10: Differential proteomics (cross-sectional)
+    tool: nlme (R package)
+    algorithm: linear mixed-effects model (LME)
+    parameters: model_formula=intensity ~ IRIS + peptideID + (1|Batch) + (1|AcqOrder) + (1|ID), method=ML for p-value, REML for effect size, p_adjustment=Benjamini-Hochberg, significance_threshold_p=0.05, effect_size_threshold=log2(1.25)
+    input: protein-level matrix + metadata (IRIS status, Batch, AcqOrder, ID)
+    output: list of differentially abundant proteins (IR/RVI)
+    confidence: high
+  Step 11: Differential proteomics (longitudinal RVI)
+    tool: nlme (R package)
+    algorithm: linear mixed-effects model with time-event factor
+    parameters: model_formula=intensity ~ event + peptideID + (1|Batch) + (1|AcqOrder) + (1|ID), event_levels=5, p_adjustment=Benjamini-Hochberg, significance_threshold_p=0.05
+    input: protein-level matrix + longitudinal metadata (event, Batch, AcqOrder, ID)
+    output: list of longitudinally changing proteins
+    confidence: high
+  Step 12: Functional enrichment analysis
+    tool: IMPaLA
+    algorithm: pathway over-representation analysis
+    parameters: q_value_threshold=1.0, clustering_method=fuzzy c-means, clusters=4, minimum_cluster_score=0.6, standardization=z-score per peptide
+    input: clustered protein lists from longitudinal analysis
+    output: enriched biological pathways
+    confidence: medium
+
+data_availability:
+  raw_data: available (['PRIDE', 'PASS', 'iPOP']: ['PXD002952', 'PXD004886', 'PASS01508', 'PASS00788'])
+  processed_data: available (Zenodo: 6677715)
+  metadata: in_paper_only
+  data_urls: https://www.ebi.ac.uk/pride/archive/projects/PXD002952, https://www.ebi.ac.uk/pride/archive/projects/PXD004886, https://www.ebi.ac.uk/pride/archive/projects/PASS01508, https://www.ebi.ac.uk/pride/archive/projects/PASS00788, https://zenodo.org/record/6677715
+
+code_availability: repository_linked
+  code_url: https://github.com/dialignr/DIAlignR
+  license: MIT
+
+figure_recipes: 6
+  Fig. 1: [benchmark_plot]
+    caption: Benchmarking multirun alignment on a manually annotated dataset.
+    produced_by_step: [6]
+    visualization_tool: R/ggplot2 or Python/matplotlib (not specified)
+    statistical_test: quantitation error-rate calculation (true/false peak ratio)
+  Fig. 2: [error_rate_plot]
+    caption: Evaluating quantitative error rate control on multi-species dataset.
+    produced_by_step: [5, 6]
+    visualization_tool: R/ggplot2 or Python/matplotlib (not specified)
+    statistical_test: q-value–based quantitation error-rate
+  Fig. 3: [alignment_comparison]
+    caption: Comparison of signal alignment by DIAlignR on multisite data.
+    produced_by_step: [6]
+    visualization_tool: R/ggplot2 or Python/matplotlib (not specified)
+    statistical_test: CV reduction (50% for abundant proteins)
+  Table 1: [table]
+    caption: Comparison of multirun methods at 1% q value for 34,202 precursors.
+    produced_by_step: [6, 7]
+    visualization_tool: R/kable or similar
+    statistical_test: FDR-controlled precursor count comparison
+  Fig. 4: [alignment_comparison]
+    caption: Comparison of Star, MST and Progressive alignments.
+    produced_by_step: [6]
+    visualization_tool: R/ggplot2 or Python/matplotlib (not specified)
+    statistical_test: none explicitly stated; qualitative alignment accuracy
+  Fig. 5: [differential_proteomics]
+    caption: Analysis with aligning 949 plasma runs, identifying IR and RVI-associated proteins.
+    produced_by_step: [10, 11]
+    visualization_tool: R/ggplot2 or Python/matplotlib (not specified)
+    statistical_test: LME ANOVA with BH correction (p ≤ 0.05, effect > log2(1.25))
+
+reproducibility_gaps:
+  - Supplementary Notes 5–8 containing experiment-specific parameters are not linked or deposited
+  - Custom R scripts for protein summarization and LME modeling not explicitly archived in GitHub repo (only DIAlignR core is linked)
+  - No explicit container or environment specification (e.g., conda env, Dockerfile) for full pipeline reproducibility beyond listed docker images
+  - IMPaLA usage lacks version or exact parameter settings (e.g., background set, ontology source)
+reproducibility_strengths:
+  - All raw data publicly available in PRIDE, PASS, and iPOP
+  - Processed libraries and alignment outputs deposited on Zenodo (6677715)
+  - Core tools (MSConvert, OpenSWATH, PyProphet, TRIC, DIAlignR) are open-source with Docker images provided
+  - GitHub repository for DIAlignR is linked and MIT licensed
+  - Statistical models fully specified with formulas and thresholds

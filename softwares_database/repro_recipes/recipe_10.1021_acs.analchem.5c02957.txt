@@ -1,0 +1,31 @@
+========== reproducibility_recipe entry ==========
+paper_title: &lt;i&gt;hxsparse&lt;/i&gt;: A Feature Extraction Algorithm for Hydrogen Exchange-Mass Spectrometry Based on a Linear Deuteration Model and LASSO Regularization.
+source_paper: Shi Y et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c02957, PMID: 41035364
+overall_reproducibility_score: 30/100
+
+workflow_steps: 1
+  Step 1: HX-MS feature extraction
+    tool: hxsparse
+    algorithm: Linear deuteration model + LASSO regularization
+    input: LC-MS raw data (e.g., .raw, .mzML)
+    output: Deuteration time course (average mass vs. exchange time)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of input data format or preprocessing steps
+  - No parameters or hyperparameters for LASSO (e.g., lambda tuning)
+  - No software version, installation instructions, or code repository link
+  - No benchmark dataset or ground truth provided
+  - No details on LC-MS instrument method (gradient, column, ionization) needed to contextualize feature extraction
+reproducibility_strengths:
+  - Algorithm conceptually well-defined (linear deuteration model + LASSO)
+  - Explicit claim of outperforming commercial software and approaching expert curation — implies validation framework exists, though not described

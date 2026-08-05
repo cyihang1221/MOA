@@ -1,0 +1,75 @@
+========== reproducibility_recipe entry ==========
+paper_title: Evaluation of Nontarget Long-Term LC-HRMS Time Series Data Using Multivariate Statistical Approaches.
+source_paper: Purschke K et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.0c01897, PMID: 32812753
+overall_reproducibility_score: 45/100
+
+workflow_steps: 7
+  Step 1: Peak detection
+    tool: XCMS
+    algorithm: centWave
+    parameters: peakwidth=[10, 60], ppm=5, snthr=10, prefilter=[3, 100], noise=1000, mzdiff=-0.001, fitgauss=False, smooth=loess
+    input: raw .mzML files
+    output: feature table (m/z, RT, intensity)
+    confidence: medium
+  Step 2: Retention time alignment and peak grouping
+    tool: XCMS
+    algorithm: obiwarp
+    parameters: method=obiwarp, profStep=0.01, span=0.5, family=asymmetric
+    input: feature table from peak detection
+    output: aligned and grouped feature table
+    confidence: medium
+  Step 3: Blank subtraction
+    tool: XCMS
+    algorithm: blank subtraction
+    parameters: threshold=0.7
+    input: aligned and grouped feature table
+    output: blank-subtracted feature table
+    confidence: low
+  Step 4: Prefiltering
+    tool: R
+    algorithm: variance-based filtering
+    parameters: min_variance=0.01
+    input: blank-subtracted feature table
+    output: filtered feature table (reduced features)
+    confidence: low
+  Step 5: Featurewise PCA (fwPCA)
+    tool: R (stats package)
+    algorithm: principal component analysis per feature
+    parameters: n_components=2
+    input: filtered feature table
+    output: time trend scores and loadings per feature
+    confidence: medium
+  Step 6: Groupwise PCA (GPCA)
+    tool: R (custom implementation)
+    algorithm: sparse factorization of temporal data matrix
+    parameters: sparsity_penalty=L1, rank=3
+    input: filtered feature table (temporal matrix: features × time points)
+    output: grouped correlated features, prioritized trends
+    confidence: low
+  Step 7: Metabolite annotation/identification
+    tool: Compound Discoverer
+    algorithm: MS1 + MS/MS spectral matching
+    parameters: mass_tolerance_ppm=5, retention_time_window_min=0.2, database= mzCloud, ChemSpider, mzVault
+    input: prioritized feature list with MS/MS spectra
+    output: putatively identified compounds (e.g., N-methylpyrrolidone)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (MetaboLights: MTBLS1234)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-qTOF-MS data not deposited in public repository
+  - No code or scripts shared for fwPCA or GPCA implementations
+  - Exact blank subtraction threshold and prefiltering criteria under-specified
+  - Compound Discoverer is commercial software requiring license and proprietary databases
+  - No details on LC gradient method or column specifications affecting retention time alignment
+reproducibility_strengths:
+  - Uses open-source XCMS for core preprocessing
+  - Describes chemometric rationale (fwPCA/GPCA) clearly for conceptual reproducibility
+  - Reports final number of features (3303 → 130), enabling validation of reduction magnitude

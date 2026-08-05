@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: Altering Lipid A Precursor Ion Types in the Gas Phase for In-Depth Structural Elucidation via Tandem Mass Spectrometry.
+source_paper: Chao HC et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.4c05910, PMID: 39815629
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Sample preparation and lipid A extraction
+    tool: condensed-phase sample preparation
+    input: bacterial cell pellets (E. coli F583)
+    output: purified lipid A extracts (MPLA, DPLA)
+    confidence: low
+  Step 2: Electrospray ionization (ESI) MS analysis
+    tool: mass spectrometer
+    parameters: ionization_mode=['positive', 'negative']
+    input: purified lipid A extracts
+    output: full-scan mass spectra
+    confidence: medium
+  Step 3: Gas-phase ion/ion reactions for precursor ion generation
+    tool: ion/ion reaction platform (e.g., in FT-ICR or Orbitrap-based instrument)
+    parameters: reaction_types=['proton transfer', 'charge inversion', 'magnesium transfer'], reagent_ions=['protonated amines', 'deprotonated anions', 'Mg<sup>2+</sup>-containing cations']
+    input: pre-selected precursor ions from ESI-MS
+    output: modified precursor ions ([MPLA - 2H]<sup>2−</sup>, [MPLA - H]<sup>−</sup>, [MPLA - H + Mg]<sup>+</sup>, etc.)
+    confidence: medium
+  Step 4: Tandem mass spectrometry (MS/MS) fragmentation
+    tool: tandem MS platform
+    parameters: fragmentation_method=collision-induced dissociation (CID) or electron-based activation (if specified)
+    input: targeted precursor ions generated via ion/ion reactions
+    output: MS/MS spectra
+    confidence: low
+  Step 5: Structural interpretation of MS/MS spectra
+    tool: manual spectral interpretation & literature comparison
+    input: MS/MS spectra
+    output: lipid A structural assignments (e.g., acyl chain positions, phosphate locations)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed mass spectrometry data deposited in public repository (e.g., MassIVE, MetaboLights, GNPS)
+  - Instrument configuration details missing (e.g., FT-ICR vs. Orbitrap model, reaction cell parameters, reaction times, reagent ion concentrations)
+  - No software or computational tools specified for spectral processing or annotation
+  - No code, scripts, or workflows shared for data analysis or ion reaction simulation
+  - Fragmentation conditions (e.g., collision energy, activation time) not reported
+  - Synthetic MPLA reference standard source and purity not disclosed
+reproducibility_strengths:
+  - Clear description of ion types generated and their structural interpretive value
+  - Use of well-characterized standards (synthetic MPLA, E. coli F583-derived MPLA/DPLA)

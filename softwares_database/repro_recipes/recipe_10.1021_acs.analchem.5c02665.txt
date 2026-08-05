@@ -1,0 +1,46 @@
+========== reproducibility_recipe entry ==========
+paper_title: Enhanced Structural Understanding of Dissolved Organic Matter through Comparative LC/MS2 Analysis with Synthetic Carboxylate Rich Alicyclic Molecules.
+source_paper: Hawkes JA et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c02665, PMID: 40839634
+overall_reproducibility_score: 20/100
+
+workflow_steps: 4
+  Step 1: Synthesis of CRAM analogues with varied oxygen functionalities
+    tool: chemical synthesis
+    input: molecular design specifications (carboxylate-rich alicyclic scaffolds with α-hydroxy ketones, 1,2-diols, ethers, esters, alcohols, ketones, lactones)
+    output: synthetic reference standards
+    confidence: low
+  Step 2: Liquid chromatography separation
+    tool: LC
+    parameters: elution_order_analysis=by functional group composition vs. O/C ratio, polarity_prediction_basis=functional group composition
+    input: synthetic CRAM analogues and marine DOM extracts
+    output: retention time profiles (early/mid-eluting fractions)
+    confidence: medium
+  Step 3: Tandem mass spectrometry (MS2) analysis
+    tool: LC/MS2
+    parameters: fragmentation_energy=low, fragmentation_pattern_analysis=extent and lability of ether/ester groups; diagnostic cleavage for α-hydroxy ketones and 1,2-diols
+    input: LC-separated synthetic analogues and natural marine DOM
+    output: MS2 spectra, fragmentation pathway maps
+    confidence: medium
+  Step 4: Comparative spectral interpretation
+    tool: manual spectral annotation
+    algorithm: fragment diagnostic reasoning
+    parameters: key_features=['α-hydroxy ketone fragmentation', '1,2-diol dehydration', 'ether/ester lability at low CE', 'carbonyl vs. hydroxyl vs. ether contributions to polarity']
+    input: MS2 spectra of synthetics and DOM
+    output: structural hypotheses and model falsification (e.g., rejection of all-carbon alicyclic CRAM model)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed LC/MS2 data deposited or referenced
+  - No synthetic compound identifiers (e.g., SMILES, InChI, CAS) provided in text or SI
+  - No instrument parameters (column type, gradient, MS2 collision energy values, ionization mode) specified
+  - No software tools or data processing pipelines mentioned (e.g., no peak picking, alignment, or spectral matching tools named)
+  - No public repository or accession ID for synthetic standards or spectra

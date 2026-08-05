@@ -1,0 +1,52 @@
+========== reproducibility_recipe entry ==========
+paper_title: FT-ICR Mass Spectrometry Imaging at Extreme Mass Resolving Power Using a Dynamically Harmonized ICR Cell with 1ω or 2ω Detection.
+source_paper: Tiquet M et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.2c00754, PMID: 35604839
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: MALDI sample preparation and acquisition
+    tool: MALDI FT-ICR MS
+    parameters: magnetic_field_strength_T=[7.0, 9.4, 21.0], detection_mode=['1ω', '2ω'], resolving_power_fwhm=1000000, mass_range=lipid_mass_range, icr_cell_type=dynamically_harmonized_ParaCell
+    input: thin tissue sections
+    output: raw transient time-domain data per pixel
+    confidence: medium
+  Step 2: Pixel-wise m/z shift correction using total ion current (TIC) monitoring
+    tool: custom_analytical_workflow
+    algorithm: TIC-based_mz_shift_restraint
+    parameters: correction_target=pixel-to-pixel_mz_shift, reference_signal=total_ion_current
+    input: raw transient time-domain data per pixel
+    output: aligned mass spectra per pixel
+    confidence: low
+  Step 3: Laser parameter optimization for spectral fidelity
+    tool: MALDI laser control system
+    parameters: laser_energy=adjusted_per_pixel_or_region, goal=['preserve_resolving_power', 'maintain_mass_accuracy']
+    input: intermediate mass spectra with space-charge artifacts
+    output: optimized mass spectra per pixel
+    confidence: low
+  Step 4: High-resolution mass spectrum reconstruction
+    tool: FT-ICR signal processing
+    algorithm: Fourier_transform_with_apodization
+    parameters: transient_length_reduction=enabled_for_2ω_detection, resolution_preservation=True
+    input: corrected transient data
+    output: high-res mass spectra (RP > 1e6, FWHM)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposited in public repository
+  - Custom TIC-based m/z shift correction workflow not described algorithmically or shared
+  - Laser parameter adjustment strategy lacks quantitative specifications (e.g., fluence thresholds, feedback loop criteria)
+  - No software names or versions provided for data acquisition, processing, or visualization
+  - No details on FT-ICR processing parameters (e.g., zero-filling, apodization, phase correction)
+reproducibility_strengths:
+  - Explicit instrument specifications reported (7T, 9.4T, 21T magnets; ParaCell; 1ω/2ω detection)
+  - Clear performance targets stated (RP > 1,000,000 FWHM in lipid range)
+  - Identification of root cause (space-charge-induced m/z shift) and conceptual correction strategy (TIC monitoring)

@@ -1,0 +1,59 @@
+========== reproducibility_recipe entry ==========
+paper_title: Development of a multi-omics extraction method for ecotoxicology: investigation of the reproductive cycle of Gammarus fossarum.
+source_paper: Faugere J et al. (2023), Talanta, DOI: 10.1016/j.talanta.2022.123806, PMID: 36113334
+overall_reproducibility_score: 72/100
+
+workflow_steps: 5
+  Step 1: Biphasic extraction
+    tool: MTBE/Methanol biphasic extraction
+    parameters: solvent_ratio=MTBE:methanol:water = 10:3:2.5 (v/v/v), extraction_cycles=2, centrifugation=10 min at 1000 × g, 4°C
+    input: whole organism homogenate of Gammarus fossarum
+    output: polar phase (proteins + metabolites) and apolar phase (lipids)
+    confidence: medium
+  Step 2: LC-MS/MS data acquisition
+    tool: Liquid chromatography tandem mass spectrometry
+    parameters: instrument=Q-Exactive HF-X, column=Acquity UPLC BEH C18, gradient=not fully specified, ionization=ESI positive and negative mode, scan_range=m/z 70–1050, resolution=60,000 (MS1), 15,000 (MS2), targeted_method=True
+    input: extracted polar and apolar phases
+    output: raw .raw files
+    confidence: low
+  Step 3: Targeted data processing
+    tool: Compound Discoverer (Thermo Fisher Scientific)
+    algorithm: targeted workflow with library matching
+    parameters: library=in-house and public MS/MS libraries, mass_tolerance_ppm=5, retention_time_window_min=0.5, min_peak_intensity=10000
+    input: raw .raw files
+    output: quantified compound table (proteins, metabolites, lipids)
+    confidence: medium
+  Step 4: Multivariate data integration
+    tool: Multiple Factor Analysis (MFA)
+    algorithm: MFA (a variant of PCA for multiple tables)
+    parameters: scaling=center and scale per block, weighting=inverse of within-block inertia
+    input: quantified compound tables per omics layer (proteomics, metabolomics, lipidomics)
+    output: integrated coordinates, component loadings, sample scores
+    confidence: high
+  Step 5: Supervised classification
+    tool: Partial Least Squares Discriminant Analysis (PLS-DA)
+    algorithm: PLS-DA
+    parameters: n_components=3, cross_validation=7-fold, validation_metric=Q2
+    input: quantified compound tables (per omics or integrated)
+    output: discriminant models, variable importance (VIP) scores
+    confidence: high
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1892)
+  processed_data: available (MetaboLights: MTBLS1892)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1892
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - LC gradient profile not fully specified
+  - Compound Discoverer version and exact workflow settings not reported
+  - No code or script shared for MFA/PLS-DA implementation
+  - Commercial software (Compound Discoverer, Thermo instruments) requires proprietary licenses
+reproducibility_strengths:
+  - Raw and processed data publicly available in MetaboLights (MTBLS1892)
+  - Clear description of biphasic extraction protocol
+  - Use of standard multivariate methods (MFA, PLS-DA) with reasonable parameter reporting

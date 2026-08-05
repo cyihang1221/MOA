@@ -1,0 +1,42 @@
+========== reproducibility_recipe entry ==========
+paper_title: Spatiotemporal profiling of modification-specific proteome secretion uncovers an itaconation-activated tyrosine kinase.
+source_paper: Lu W et al. (2025), Nature communications, DOI: 10.1038/s41467-025-66508-y, PMID: 41345137
+overall_reproducibility_score: 20/100
+
+workflow_steps: 0
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 6
+  Fig. 1: [workflow_diagram]
+    caption: Schematic illustration of PTM-based secretome profiling (PBSP) for tracking spatiotemporal secretion of itaconated proteins in live macrophages.
+  Fig. 2: [workflow_diagram]
+    caption: Diagram of the streamlined chemoproteomic workflow integrating FISAP with DIA mass spectrometry for enhanced sensitivity and coverage in PBSP.
+  Fig. 3: [table]
+    caption: Analysis of itaconated secreted proteins identified by PBSP, including quantification and functional annotation.
+  Fig. 4: [bar_chart]
+    caption: Identification of exosome-dependent itaconated secreted proteins using GW4869-mediated exosome inhibition in PBSP.
+  Fig. 5: [boxplot]
+    caption: Demonstration that itaconation at Cys239 enhances FYN kinase activity, shown via in vitro kinase assays and immunoblotting.
+  Fig. 6: [table]
+    caption: Identification of succinated secreted proteins using PBSP with fumarate-alkyne probe.
+
+reproducibility_gaps:
+  - No mass spectrometry data acquisition parameters (e.g., DIA settings, isolation windows, cycle time) specified
+  - No bioinformatics pipeline described — no tools, versions, or parameters for DIA data processing (e.g., Spectronaut, DIA-NN, OpenSWATH)
+  - No details on PTM localization scoring (e.g., Delta Score, localization probability), false discovery rate control, or spectral library usage
+  - No raw or processed proteomics data deposition reported (e.g., PRIDE, MassIVE, iProX)
+  - No code, scripts, or computational workflows shared or referenced
+  - FISAP protocol lacks critical technical details (e.g., spin-tip resin chemistry, binding/wash/elution conditions, reproducibility metrics)
+  - ITalk labeling efficiency validation is qualitative (in-gel fluorescence), not quantitative or calibrated
+  - Statistical methods for differential secretion or PTM site identification are not described
+reproducibility_strengths:
+  - Use of standardized reagents with catalog numbers
+  - Detailed wet-lab protocols for cell culture, labeling, click chemistry, and enrichment
+  - Explicit probe concentrations and treatment durations provided
+  - Clear description of controls (DMSO, KO cells, inhibitors like GW4869)

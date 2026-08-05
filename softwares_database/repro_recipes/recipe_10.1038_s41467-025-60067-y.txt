@@ -1,0 +1,69 @@
+========== reproducibility_recipe entry ==========
+paper_title: Enabling pan-repository reanalysis for big data science of public metabolomics data.
+source_paper: El Abiead Y et al. (2025), Nature communications, DOI: 10.1038/s41467-025-60067-y, PMID: 40413169
+overall_reproducibility_score: 78/100
+
+workflow_steps: 6
+  Step 1: Cross-repository raw data indexing and MRI assignment
+    tool: GNPS2 ecosystem (custom Python tools)
+    algorithm: MRI (MS Run Identifier) generation based on USI standard
+    parameters: supported_formats=['.raw', '.d', '.wiff', '.cdf', 'mzML', 'mzXML'], identifier_components=['dataset_id', 'file_path', 'scan_info']
+    input: raw mass spectrometry files from GNPS/MassIVE, NMDR, MTBLS
+    output: MRI-annotated index of raw files with repository-agnostic access handles
+    confidence: high
+  Step 2: Proprietary file conversion to mzML
+    tool: GNPS2 Dataset Cache (custom tooling)
+    algorithm: Vendor-specific parser + ProteoWizard backend (implied by mzML 21,22 reference)
+    parameters: conversion_timeout_days=30, integrity_check=valid XML validation for mzML
+    input: proprietary .raw, .d, .wiff, .cdf files
+    output: standardized mzML files
+    confidence: medium
+  Step 3: Intelligent caching and download orchestration
+    tool: Nextflow (v23.10.1.5891)
+    algorithm: Three-step retrieval logic (cache → download → report)
+    parameters: cache_validity_check=XML validation for mzML, vendor_cache_duration_days=30, retry_on_integrity_failure=True
+    input: MRI identifiers
+    output: locally available mzML files + audit reports
+    confidence: high
+  Step 4: Cross-repository metadata harmonization
+    tool: Custom Python workflow
+    algorithm: Ontology-driven mapping + substring matching + translation sheets
+    parameters: controlled_vocabulary_sources=['UBERON (body parts)', 'PO (plant organism parts)', 'CL (cell types)', 'MONDO (diseases)', 'MS (mass spectrometers)', 'mwTAB', 'ISA-Tab'], fallback_matching_strategies=['full_path', 'basename', 'basename_no_ext', 'delimiter_split', 'substring']
+    input: NMDR mwTAB, MTBLS ISA-Tab, GNPS metadata
+    output: harmonized Pan-ReDU metadata table (single-table format)
+    confidence: high
+  Step 5: Scan-level statistics extraction
+    tool: pyteomics (v4.7.2)
+    algorithm: mzML/mzXML scan header parsing
+    parameters: extracted_fields=['scan_level', 'polarity', 'total_scan_count']
+    input: mzML and mzXML files
+    output: scan type overview statistics (per file and per study)
+    confidence: high
+  Step 6: Metadata validation and submission
+    tool: Dash (Python)
+    algorithm: Form-based validation against controlled vocabulary + Google Apps Script backend
+    parameters: validation_frequency=daily, submission_authentication=GNPS/MassIVE login required, metadata_ingestion_cycle=daily GitHub pull
+    input: user-submitted metadata (via Dash app)
+    output: validated, ontology-compliant metadata in Pan-ReDU
+    confidence: medium
+
+data_availability:
+  raw_data: available (GNPS2 Dashboard, MetaboLights, NMDR, MassIVE)
+  processed_data: available (Pan-ReDU (https://redu.gnps2.org/))
+  metadata: available (Pan-ReDU Metadata Selection Dashboard & GitHub)
+  data_urls: https://dashboard.gnps2.org/, https://redu.gnps2.org/
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No explicit link to source code repositories (GitHub or Zenodo) for Nextflow workflows or Python harmonization tools
+  - No versioned release or container image (e.g., Docker/Singularity) specified for reproducible execution environment
+  - No specification of pyteomics configuration or scan parsing parameters beyond version
+  - Translation sheets and ontology mapping rules are described but not provided or linked
+reproducibility_strengths:
+  - All core tools are open-source (Nextflow, pyteomics, Dash, Python 3.8.8)
+  - Public endpoints provided: MRI resolver (https://dashboard.gnps2.org/), Pan-ReDU (https://redu.gnps2.org/)
+  - Detailed description of metadata harmonization logic and fallback matching strategies
+  - Explicit versioning for key dependencies (Nextflow 23.10.1.5891, pyteomics 4.7.2, Python 3.8.8)

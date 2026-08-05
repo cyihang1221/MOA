@@ -1,0 +1,45 @@
+========== reproducibility_recipe entry ==========
+paper_title: Exposome-Scale Investigation of Cl-/Br-Containing Chemicals Using High-Resolution Mass Spectrometry, Multistage Machine Learning, and Cloud Computing.
+source_paper: Zhao T et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c00503, PMID: 40401576
+overall_reproducibility_score: 40/100
+
+workflow_steps: 3
+  Step 1: HRMS data acquisition
+    tool: high-resolution mass spectrometry
+    input: water samples (disinfection byproduct mixtures)
+    output: raw .mzML or vendor format files
+    confidence: low
+  Step 2: Feature detection and molecular formula assignment
+    tool: HalogenFinder
+    algorithm: multistage machine learning using heavy isotopic peak patterns
+    parameters: max_Cl_atoms=8, max_Br_atoms=6, isotopic_pattern_layers=progressively different heavy isotopic peaks per layer, data_perturbation_enabled=True, synthetic_formula_generation=hypothetical molecular formulas with multiple Cl/Br atoms
+    input: HRMS feature tables (m/z, RT, intensity) with isotopic patterns
+    output: annotated Cl-/Br-compound candidates (halogen count, molecular formula)
+    confidence: medium
+  Step 3: Statistical analysis and visualization
+    tool: MetaboAnalyst
+    input: HalogenFinder output (halogenated compound features, class labels)
+    output: statistical results (e.g., differential abundance, clustering, pathway enrichment)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: http://www.halogenfinder.com/
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw HRMS data not deposited in public repository (e.g., MetaboLights, MassIVE)
+  - No description of instrument parameters (e.g., mass accuracy, resolution, scan range, polarity, chromatography conditions)
+  - Multistage ML architecture details unspecified (layer count, model types, training data, hyperparameters)
+  - Data perturbation method not described (e.g., SMOTE, GAN, rule-based synthesis)
+  - HalogenFinder is web-based but backend code, training datasets, and model weights are not open source
+  - MetaboAnalyst usage lacks configuration details (normalization method, filtering thresholds, statistical tests applied)
+reproducibility_strengths:
+  - Web platform HalogenFinder publicly accessible and documented for end users
+  - Benchmarking against two established tools provides performance context
+  - Eight compounds confirmed with chemical standards — supports annotation reliability

@@ -1,0 +1,49 @@
+========== reproducibility_recipe entry ==========
+paper_title: Matrix-assisted laser desorption ionization mass spectrometry imaging reveals the spatial distribution of compounds that may exacerbate inflammation in garden ginseng and ginseng under forest.
+source_paper: Zhao YM et al. (2024), Talanta, DOI: 10.1016/j.talanta.2024.126594, PMID: 39053359
+overall_reproducibility_score: 20/100
+
+workflow_steps: 4
+  Step 1: Untargeted metabolomics profiling
+    tool: not specified
+    input: raw tissue extracts (GG vs FG)
+    output: differential metabolite list
+    confidence: low
+  Step 2: Mass spectrometry imaging (MALDI-MSI)
+    tool: MALDI-TOF/TOF or similar platform
+    algorithm: ion image generation
+    parameters: spatial_resolution=not specified, matrix=not specified, laser settings=not specified
+    input: intact root sections (GG and FG)
+    output: spatial ion distribution maps
+    confidence: low
+  Step 3: Differential metabolite identification
+    tool: not specified
+    algorithm: m/z and retention time matching, MS/MS fragmentation
+    parameters: mass_tolerance=not specified, fragmentation_energy=not specified
+    input: LC-MS or direct infusion MS data
+    output: annotated metabolites (Ethyl caffeate, Homoorientin, Citric acid, Quinic acid)
+    confidence: low
+  Step 4: Biological validation
+    tool: HUVEC cell culture assay
+    algorithm: cell-based functional assay
+    parameters: exposure_concentration=not specified, duration=not specified, controls=not specified
+    input: purified or semi-purified compounds
+    output: inflammatory response markers (e.g., IL-6, TNF-α), junction protein expression (e.g., VE-cadherin, ZO-1)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No instrument parameters (e.g., LC gradient, MALDI matrix, laser fluence) reported
+  - No software tools or versions for data processing (peak picking, alignment, annotation) specified
+  - No raw or processed data deposited in public repository
+  - No code, scripts, or workflow documentation shared
+  - No statistical methods or significance thresholds stated
+  - No biological replicate numbers or experimental design details provided

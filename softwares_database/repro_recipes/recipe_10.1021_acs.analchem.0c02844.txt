@@ -1,0 +1,46 @@
+========== reproducibility_recipe entry ==========
+paper_title: Automating and Extending Comprehensive Two-Dimensional Gas Chromatography Data Processing by Interfacing Open-Source and Commercial Software.
+source_paper: Wilde MJ et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.0c02844, PMID: 32985172
+overall_reproducibility_score: 30/100
+
+workflow_steps: 3
+  Step 1: Retention time correction (1st and 2nd dimension)
+    tool: Commercial GC×GC software (unspecified, likely ChromaTOF or similar)
+    algorithm: Custom alignment using routine reference standard
+    parameters: cv_threshold_pre={'1tR_percent_cv': 8, '2tR_percent_cv': 16}, cv_threshold_post={'1tR_percent_cv': 1, '2tR_percent_cv': 2}
+    input: Raw GC×GC chromatographic data (e.g., .D or .cdf files)
+    output: Aligned chromatograms with corrected 1tR and 2tR
+    confidence: medium
+  Step 2: First-pass feature alignment across samples
+    tool: Bespoke and published external algorithms (interfaced via software API)
+    algorithm: Reference-standard-driven alignment
+    parameters: alignment_strategy=reference standard-based, dimensionality=2D
+    input: Raw GC×GC data + reference standard runs
+    output: Aligned peak table (m/z or retention coordinates, intensity)
+    confidence: low
+  Step 3: Automation and integration of chemometric tools
+    tool: Commercial software API interface
+    algorithm: Scripted workflow orchestration
+    parameters: interface_type=underutilized native API, integration_target=informatics-based data management platforms
+    input: Processed peak table and metadata
+    output: Interoperable processed dataset ready for downstream analysis
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Commercial software not named (prevents tool identification)
+  - Bespoke algorithms not described or shared
+  - No data deposition reported
+  - API interface details omitted (no documentation or code examples)
+  - Reference standard identity and injection protocol unspecified
+reproducibility_strengths:
+  - Conceptual framework for integrating open-source and commercial tools is clearly articulated
+  - Quantitative performance metrics provided (CV reduction)

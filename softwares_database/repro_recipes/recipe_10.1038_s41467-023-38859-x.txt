@@ -1,0 +1,100 @@
+========== reproducibility_recipe entry ==========
+paper_title: Empowering drug off-target discovery with metabolic and structural analysis.
+source_paper: Chowdhury S et al. (2023), Nature communications, DOI: 10.1038/s41467-023-38859-x, PMID: 37296102
+overall_reproducibility_score: 42/100
+
+workflow_steps: 10
+  Step 1: Sample preparation and quenching
+    tool: manual protocol
+    parameters: quenching_method=dry_ice_precentrifugation, extraction_solvent=80%_prechilled_methanol, extraction_time_on_dry_ice=600, centrifugation_temperature_c=4, centrifugation_duration_s=600, centrifugation_speed_rpm=maximum
+    input: cell_pellets
+    output: metabolite_extract_supernatants
+    confidence: high
+  Step 2: LC-MS data acquisition
+    tool: Thermo q-Exactive Plus + Ultimate 3000 HPLC
+    algorithm: HILIC chromatography
+    parameters: ion_mode=['positive', 'negative'], scan_range_mz=[66.7, 1000], resolution=70000, sheath_gas_flow_rate=35, auxiliary_gas_flow_rate_l_per_min=5, capillary_temperature_c=250, auxiliary_gas_temperature_c=300, column=SeQuant ZIC-pHILIC, 5 µm, 150 mm × 2.1 mm, flow_rate_ml_per_min=0.1, mobile_phase_a=20 mM ammonium bicarbonate + 0.1% ammonium hydroxide, mobile_phase_b=acetonitrile, gradient_profile=[{'time_min': 0, 'b_percent': 100}, {'time_min': 20, 'b_percent': 40}, {'time_min': 25, 'b_percent': 0}, {'time_min': 40, 'b_percent': 100}], mass_accuracy_window_ppm=5
+    input: metabolite_extract_supernatants
+    output: raw .raw files
+    confidence: high
+  Step 3: Data conversion and peak detection
+    tool: MzMatch (v38)
+    algorithm: untargeted peak picking
+    input: raw .raw files
+    output: peak list (mz, rt, intensity)
+    confidence: medium
+  Step 4: Retention time calibration and metabolite annotation
+    tool: IDEOM (v39)
+    algorithm: chemical descriptor-based RT prediction + database matching
+    parameters: retention_time_calibration_standards_count=48, rt_correlation_r2_vs_ideom=0.7, rt_correlation_r2_vs_pluskal2010=0.88, rt_correlation_r2_vs_other_study=0.61, databases_used=['KEGG', 'EcoCyc', 'IDEOM internal library']
+    input: peak list (mz, rt, intensity)
+    output: putatively annotated feature table
+    confidence: high
+  Step 5: Data filtering and integration
+    tool: custom R/Python workflow
+    algorithm: annotation score > 50 + KEGG ID overlap
+    parameters: annotation_score_threshold=50, kegg_id_overlap_required=True
+    input: putatively annotated feature table
+    output: filtered, high-confidence metabolite table
+    confidence: medium
+  Step 6: Dimensionality reduction and clustering visualization
+    tool: scikit-learn (UMAP)
+    algorithm: Uniform Manifold Approximation and Projection
+    parameters: n_components=2, n_neighbors=14, random_state=42
+    input: filtered, high-confidence metabolite table
+    output: 2D UMAP embedding
+    confidence: high
+  Step 7: Supervised classification of drug mechanism of action
+    tool: scikit-learn (LogisticRegression)
+    algorithm: multi-class logistic regression
+    parameters: classes=['antifolates', 'cell_wall_synthesis', 'polymerase_inhibition', 'translation_inhibition', 'oxidative_stress'], cross_validation=leave_one_out, hyperparameters=default
+    input: filtered, high-confidence metabolite table
+    output: mechanism-of-action predictions + classification metrics
+    confidence: high
+  Step 8: In silico growth rescue via flux balance analysis
+    tool: COBRA Toolbox (MATLAB) (v3.0)
+    algorithm: flux balance analysis (FBA)
+    parameters: model=iML1515, glucose_uptake_rate_mmol_per_gdw_per_hr=10, folate_reaction_flux_limit_fraction=0.9, supplement_rate_mmol_per_gdw_per_hr=0.1, proteomics_constraint_strategy=targeted_flux_closure_around_supplemented_metabolites
+    input: metabolite supplementation conditions + gene expression data
+    output: growth benefit scores per metabolite supplement
+    confidence: high
+  Step 9: Protein structural similarity analysis
+    tool: Isomif + FATCAT (v43, 13)
+    algorithm: binding cleft Tanimoto similarity + global structural alignment
+    parameters: reference_pdb=1DRA, clefts_per_protein=5, similarity_metric=Tanimoto coefficient, structural_alignment_tool=FATCAT, visualization_tool=nglview
+    input: protein structures (PDB)
+    output: binding cleft similarity matrix + structural clustermap
+    confidence: medium
+  Step 10: Molecular docking
+    tool: AutoDock Vina (v1.5.6)
+    algorithm: rigid-receptor flexible-ligand docking
+    parameters: exhaustiveness=28, num_modes=10, energy_range=4, ligand_preparation=OpenBabel + AutoDock Tools, receptor_preparation=polar_hydrogen_addition + Kollman_charges
+    input: CD15-3 (SDF/PDB) + protein structure (PDB)
+    output: docked poses + binding affinity estimates
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: mentioned_no_link
+  code_url: Supplementary Data 1
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS data (.raw files) not deposited in public repository (e.g., MetaboLights, MassIVE)
+  - No accession ID or repository link provided for Supplementary Data 1 containing code
+  - IDEOM and MzMatch versions not specified beyond citation numbers (38, 39)
+  - Exact gradient profile timing details incomplete (e.g., hold times, re-equilibration duration ambiguous)
+  - No description of peak integration or alignment parameters (e.g., retention time tolerance, m/z tolerance across runs)
+  - Custom R/Python preprocessing scripts referenced but not shared or described
+  - COBRA Toolbox usage lacks full script or parameterization details (e.g., which reactions were constrained, how proteomics data was mapped to reactions)
+  - Isomif/FATCAT input PDB file sources and processing steps not specified
+reproducibility_strengths:
+  - Detailed LC-MS instrument settings and chromatographic method provided
+  - Retention time calibration strategy explicitly described (48 standards, R² values reported)
+  - Publicly available resources named (KEGG, EcoCyc, iML1515, scikit-learn, COBRA Toolbox)
+  - All major computational tools are open-source (scikit-learn, COBRA, AutoDock Vina, Isomif, FATCAT)
+  - Statistical validation and visualization tools clearly named (Origin Pro, matplotlib, seaborn)

@@ -1,0 +1,62 @@
+========== reproducibility_recipe entry ==========
+paper_title: <i>In silico</i> MS/MS prediction for peptidoglycan profiling uncovers novel anti-inflammatory peptidoglycan fragments of the gut microbiota.
+source_paper: Kwan JMC et al. (2024), Chemical science, DOI: 10.1039/d3sc05819k, PMID: 38303944
+overall_reproducibility_score: 20/100
+
+workflow_steps: 6
+  Step 1: In silico MS/MS spectrum prediction for peptidoglycan fragments
+    tool: PGN_MS2
+    algorithm: custom computational simulation of MS/MS fragmentation patterns for peptidoglycan structures
+    input: chemical structure of peptidoglycan fragments (e.g., muropeptides, anhydro-MurNAc-containing variants)
+    output: predicted MS/MS spectra
+    confidence: low
+  Step 2: Integration of predicted spectra into user-defined in silico spectral library
+    tool: in silico PGN search space
+    algorithm: library-based spectral matching (likely dot-product or spectral similarity scoring)
+    input: predicted MS/MS spectra from PGN_MS2
+    output: custom searchable spectral library
+    confidence: low
+  Step 3: Automated identification of peptidoglycan fragments from experimental MS/MS data
+    tool: in silico PGN search space + experimental LC-MS/MS data
+    algorithm: spectral matching against custom in silico library
+    input: experimental LC-MS/MS data (likely .mzML or .raw)
+    output: annotated peptidoglycan fragment identifications (e.g., 1,6-anhydro-MurNAc-peptides)
+    confidence: low
+  Step 4: Comparative peptidoglycan profiling across bacterial strains
+    tool: custom analysis (not specified)
+    algorithm: qualitative/quantitative comparison of identified PGN features
+    input: annotated PGN identifications
+    output: comparative PGN composition profiles (e.g., abundance of 1,6-anhydro-MurNAc moiety in Bifidobacterium vs. Gram-positive bacteria)
+    confidence: low
+  Step 5: Biochemical characterization of lytic transglycosylases (LTs)
+    tool: enzymatic assays, protein purification, structural analysis (not specified)
+    algorithm: not computational — experimental validation
+    input: recombinant LT proteins, synthetic PGN substrates
+    output: enzyme activity data, substrate specificity, product identification (e.g., anhydro-PGN generation)
+    confidence: low
+  Step 6: In vitro anti-inflammatory activity assessment
+    tool: cell-based assays (e.g., cytokine ELISA, NF-κB reporter assay)
+    algorithm: not computational
+    input: purified 1,6-anhydro-PGN compounds
+    output: anti-inflammatory readouts (e.g., IL-6/TNF-α suppression, IC50)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - PGN_MS2 tool not publicly released or linked
+  - No repository accession for raw or processed MS data
+  - No details on MS instrumentation parameters (e.g., collision energy, instrument type, chromatography method)
+  - No description of spectral matching scoring thresholds or FDR control
+  - No code, parameter files, or library format specifications for the 'user-defined in silico PGN search space'
+  - Biochemical and bioactivity protocols lack sufficient detail for replication
+reproducibility_strengths:
+  - Conceptual workflow clearly described (in silico MS/MS → library integration → automated ID)
+  - Biological findings (anhydro-PGNs in Bifidobacterium, anti-inflammatory activity) are hypothesis-generating and biologically contextualized

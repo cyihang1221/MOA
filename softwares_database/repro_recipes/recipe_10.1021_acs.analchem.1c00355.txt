@@ -1,0 +1,55 @@
+========== reproducibility_recipe entry ==========
+paper_title: ADAP-KDB: A Spectral Knowledgebase for Tracking and Prioritizing Unknown GC-MS Spectra in the NIH's Metabolomics Data Repository.
+source_paper: Smirnov A et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.1c00355, PMID: 34455770
+overall_reproducibility_score: 78/100
+
+workflow_steps: 4
+  Step 1: Raw GC-MS data preprocessing
+    tool: ADAP
+    algorithm: ADAP (Automated Data Analysis Pipeline)
+    input: raw .cdf or .qgd files (GC-MS)
+    output: preprocessed chromatograms and peak lists
+    confidence: low
+  Step 2: Consensus spectrum generation
+    tool: ADAP-KDB workflow
+    algorithm: Spectral alignment and consensus building across multiple samples/studies
+    input: preprocessed peak lists and spectra
+    output: consensus mass spectra
+    confidence: medium
+  Step 3: Statistical significance scoring of consensus spectra
+    tool: Custom R/Python implementation
+    algorithm: Gini-Simpson diversity index; χ² goodness-of-fit test
+    parameters: test=chi_squared, diversity_index=Gini-Simpson
+    input: consensus spectra with sample origin metadata
+    output: scored consensus spectra (with p-values and diversity indices)
+    confidence: high
+  Step 4: Spectral matching and querying
+    tool: ADAP-KDB web portal
+    algorithm: Spectral similarity search (likely dot-product or cosine-based)
+    parameters: similarity_metric=cosine, min_match_score=None
+    input: query MS spectra (single or batch)
+    output: ranked matches against consensus spectra database
+    confidence: low
+
+data_availability:
+  raw_data: available (NIH Metabolomics Data Repository (Metabolomics Workbench))
+  processed_data: available (ADAP-KDB web portal)
+  metadata: available
+  data_urls: https://metabolomicsworkbench.org/, https://adap-kdb.nist.gov/
+
+code_availability: repository_linked
+  code_url: https://github.com/NIH-Center-for-Metabolomics/ADAP-KDB
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Exact parameters for spectral alignment and consensus building not specified
+  - No details on chromatographic peak alignment (e.g., retention time correction method or tolerance)
+  - χ² test implementation details (expected distribution assumptions, binning strategy) not provided
+  - Web portal matching algorithm not fully disclosed
+reproducibility_strengths:
+  - Source code publicly available on GitHub under MIT license
+  - Data hosted in NIH Metabolomics Workbench — FAIR-compliant repository
+  - Web interface and database publicly accessible at adap-kdb.nist.gov
+  - Core statistical metrics (Gini-Simpson, χ² p-value) are well-defined and reproducible

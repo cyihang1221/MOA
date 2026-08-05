@@ -1,0 +1,62 @@
+========== reproducibility_recipe entry ==========
+paper_title: A Practical Approach for Validation of Compound Identification in Comprehensive Two-Dimensional Gas Chromatography-Mass Spectrometry.
+source_paper: Hermatasia F et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c04590, PMID: 41117644
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Retention index calculation without reference standards
+    tool: Custom curve-fitting approach
+    algorithm: Exponential equation with eight coefficients
+    parameters: mass_spectrometry_data_type=GC×GC-MS, input_variables=['compound_name', 'elution_temperature_Te', 'experimental_retention_time_tR_Exp'], wraparound_correction_applied=True, first_dimension_I_calculation=True, second_dimension_I_calculation=True, validation_threshold_delta_I=60, r_squared_threshold_1D=0.9982, r_squared_threshold_2D=0.9957, mae_1D=8.29, mae_2D=12.89, rmse_1D=11.63, rmse_2D=16.48
+    input: GC×GC-MS peak table with compound names, Te, tR_Exp
+    output: Calculated retention indices (¹ICal, ²ICal)
+    confidence: high
+  Step 2: Compound identity validation via ICal vs ILit regression
+    tool: Least-squares curve fitting
+    algorithm: Linear regression with outlier detection
+    parameters: validation_criterion=Δ¹I = ¹ILit − ¹ICal and Δ²I = ²ILit − ²ICal, acceptance_range=[-60, 60], outlier_definition=points deviating from linear trendline in ICal vs ILit plot
+    input: Calculated retention indices (¹ICal, ²ICal) and literature retention indices (¹ILit, ²ILit)
+    output: Validated/suspected compound identities
+    confidence: high
+  Step 3: Tentative identification filtering
+    tool: Custom logic
+    algorithm: Two-tier identification criteria
+    parameters: identification_criteria=['MS-only', 'MS-and-¹I'], peak_count_MS_only=995, suspected_MS_only=536, peak_count_MS_and_1I=746, suspected_MS_and_1I=534
+    input: Tentatively identified compounds (MS-only or MS+¹I)
+    output: List of suspected misidentifications
+    confidence: medium
+  Step 4: Reannotation of suspect peaks
+    tool: Manual curation + literature matching
+    algorithm: Expert-driven reassignment using expanded RI/MS evidence
+    parameters: reannotated_peaks_count=61
+    input: Suspected compound identifications
+    output: Reannotated compound list
+    confidence: low
+  Step 5: Literature compound screening
+    tool: Custom application of validation framework
+    algorithm: ICal–ILit deviation analysis on published GC×GC-MS data
+    parameters: literature_datasets_analyzed=85, total_compounds_screened=7445, suspected_compounds_identified=1285
+    input: Published GC×GC-MS compound identifications (with reported I values)
+    output: Cross-study validation report
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw GC×GC-MS data deposited or referenced
+  - No processed peak tables or retention index datasets shared
+  - Custom exponential model implementation not provided (no code, no parameter initialization details)
+  - No specification of literature I databases used (e.g., NIST, Adams, or custom sources)
+  - No details on how wraparound correction was algorithmically applied
+  - No software environment (e.g., Python/R version, libraries) described
+reproducibility_strengths:
+  - Explicit quantitative performance metrics reported (R², MAE, RMSE) for model validation
+  - Clear, reproducible decision thresholds defined (|Δ¹I| ≤ 60, |Δ²I| ≤ 60)
+  - Transparent reporting of validation outcomes (e.g., 536/995 MS-only suspects)

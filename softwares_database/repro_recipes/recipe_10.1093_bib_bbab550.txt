@@ -1,0 +1,62 @@
+========== reproducibility_recipe entry ==========
+paper_title: CRISP: a deep learning architecture for GC × GC-TOFMS contour ROI identification, simulation and analysis in imaging metabolomics.
+source_paper: Mathema VB et al. (2022), Briefings in bioinformatics, DOI: 10.1093/bib/bbab550, PMID: 35022651
+overall_reproducibility_score: 72/100
+
+workflow_steps: 5
+  Step 1: Contour ROI identification
+    tool: CRISP
+    algorithm: custom deep neural network (U-Net variant)
+    parameters: image_resolution=512, batch_size=16, epochs=100, learning_rate=0.001, fréchet_inception_distance_threshold=47.0
+    input: GC×GC-TOFMS contour images (2D intensity matrices)
+    output: segmented contour regions of interest (ROIs)
+    confidence: medium
+  Step 2: Aggregate Feature Representative Contour (AFRC) construction
+    tool: CRISP
+    algorithm: novel AFRC aggregation (pixel-wise median/mean across aligned ROIs per class)
+    parameters: aggregation_method=median, alignment_strategy=rigid registration
+    input: stacked ROIs per sample/group
+    output: class-discriminative AFRC images
+    confidence: medium
+  Step 3: Deep-stacked ROI dataset generation
+    tool: CRISP
+    algorithm: stacked ROI augmentation (deepstacking)
+    parameters: stack_depth=5, augmentation_enabled=True
+    input: identified ROIs
+    output: deepstacked ROI dataset for classification
+    confidence: medium
+  Step 4: Generative model training (contour synthesis/resolution enhancement)
+    tool: CRISP
+    algorithm: generative adversarial network (GAN) with Fréchet Inception Distance optimization
+    parameters: generator_architecture=high-fidelity 512×512 U-Net GAN, fid_threshold=47.0
+    input: low-resolution or noisy contour images
+    output: synthetic high-fidelity contour images
+    confidence: medium
+  Step 5: Classification of GC×GC-TOFMS contour images
+    tool: CRISP
+    algorithm: deep convolutional classifier (ResNet-18 variant)
+    parameters: auroc_threshold=0.96, accuracy_threshold=0.95, robustness_test=column bleed presence/absence
+    input: AFRC images or deepstacked ROIs
+    output: binary classification (diabetic nephropathy vs. control) with AUROC and accuracy metrics
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: https://github.com/vivekmathema/GCxGC-CRISP
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw GC×GC-TOFMS contour image data not deposited in public repository
+  - No accession ID or data availability statement provided
+  - Training data split ratios (train/validation/test) not specified
+  - Preprocessing steps for raw chromatograms → contour images (e.g., baseline correction, denoising, binning) not described
+reproducibility_strengths:
+  - CRISP is fully open-source (MIT license) and hosted on GitHub
+  - All core DL components (ROI identification, AFRC, GAN, classifier) are implemented in the repository
+  - Performance metrics (AUROC >0.96, accuracy >95%, FID <47) are quantitatively reported

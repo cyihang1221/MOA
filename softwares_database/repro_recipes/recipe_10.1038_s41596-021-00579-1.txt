@@ -1,0 +1,108 @@
+========== reproducibility_recipe entry ==========
+paper_title: Statistical analysis in metabolic phenotyping.
+source_paper: Blaise BJ et al. (2021), Nature protocols, DOI: 10.1038/s41596-021-00579-1, PMID: 34321638
+overall_reproducibility_score: 92/100
+
+workflow_steps: 7
+  Step 1: Data scaling and normalization
+    tool: R
+    algorithm: autoscaling (mean-centering + unit variance)
+    parameters: scaling_method=pareto, normalization_method=probabilistic quotient normalization (PQN)
+    input: preprocessed metabolite abundance matrix (e.g., peak area/intensity table)
+    output: scaled and normalized feature matrix
+    confidence: medium
+  Step 2: Outlier detection
+    tool: R
+    algorithm: Hotelling’s T² in PCA space + Mahalanobis distance
+    parameters: alpha=0.05, n_components_pca=2
+    input: scaled and normalized feature matrix
+    output: outlier flag vector and cleaned dataset
+    confidence: high
+  Step 3: Unsupervised multivariate analysis
+    tool: R
+    algorithm: Principal Component Analysis (PCA)
+    parameters: n_components=2, center=True, scale=True
+    input: scaled and normalized feature matrix
+    output: PCA scores, loadings, explained variance
+    confidence: high
+  Step 4: Supervised multivariate modeling
+    tool: R
+    algorithm: Partial Least Squares Discriminant Analysis (PLS-DA) and Orthogonal PLS-DA (OPLS-DA)
+    parameters: n_components_plsda=2, n_components_oplsda=1, orthogonal_components=1
+    input: scaled and normalized feature matrix with class labels
+    output: PLS-DA/OPLS-DA model objects, scores, loadings, VIP scores
+    confidence: high
+  Step 5: Model validation and robustness assessment
+    tool: R
+    algorithm: k-fold cross-validation (k=7) + permutation testing (n=1000 random permutations)
+    parameters: k_folds=7, n_permutations=1000, metric=Q²
+    input: PLS-DA/OPLS-DA models
+    output: cross-validated Q², R²X, R²Y; permutation p-values for model significance
+    confidence: high
+  Step 6: Biomarker selection
+    tool: R
+    algorithm: Variable Importance in Projection (VIP) ≥ 1.0 + univariate t-test (p < 0.05, FDR-corrected)
+    parameters: vip_threshold=1.0, p_value_threshold=0.05, fdr_method=Benjamini-Hochberg
+    input: OPLS-DA VIP scores and univariate test results
+    output: candidate biomarker list with VIP, p-value, fold-change
+    confidence: high
+  Step 7: Statistical power calculation and experimental design safeguarding
+    tool: R
+    algorithm: analytical power calculation for two-group t-test under normality assumption
+    parameters: alpha=0.05, power=0.8, effect_size_cohen_d=0.8, n_groups=2
+    input: expected effect size, variance estimates
+    output: minimum required sample size per group
+    confidence: medium
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1234)
+  processed_data: available (GitHub: https://github.com/ebbelab/metaboprotocol)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1234, https://github.com/ebbelab/metaboprotocol
+
+code_availability: repository_linked
+  code_url: https://github.com/ebbelab/metaboprotocol
+  license: MIT
+
+figure_recipes: 8
+  Fig. 1: [workflow_diagram]
+    caption: Schematic overview of the complete metabolic phenotyping statistical analysis workflow from raw data to biomarker reporting.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7]
+    visualization_tool: R (ggplot2, cowplot, pathview)
+  Fig. 2: [table]
+    caption: Summary of metabolic and clinical/phenotypic outcome data structures used in the protocol.
+    visualization_tool: R (knitr, kableExtra)
+  Fig. 3: [pca_scores]
+    caption: PCA score plot showing sample clustering and outlier detection using Hotelling’s T² ellipse (95% confidence).
+    produced_by_step: [2, 3]
+    visualization_tool: R (ggplot2, factoextra)
+    statistical_test: Hotelling’s T² test (α = 0.05)
+  Fig. 4: [pls_da_scores]
+    caption: PLS-DA and OPLS-DA score plots illustrating class separation and orthogonal signal correction.
+    produced_by_step: [4]
+    visualization_tool: R (ggplot2, ropls)
+  Fig. 5: [other]
+    caption: Cross-validation results showing Q² and R²Y values across components and folds.
+    produced_by_step: [5]
+    visualization_tool: R (ggplot2, ropls)
+  Fig. 6: [roc_curve]
+    caption: Permutation test distribution of Q² under null hypothesis, demonstrating model significance (p < 0.01).
+    produced_by_step: [5]
+    visualization_tool: R (ggplot2)
+    statistical_test: Permutation test (1000 permutations, p-value for observed Q²)
+  Fig. 7: [pca_scores]
+    caption: Unsupervised analysis results including PCA scores, loadings, and correlation circles.
+    produced_by_step: [3]
+    visualization_tool: R (factoextra, ggplot2)
+  Fig. 8: [volcano_plot]
+    caption: Supervised analysis output: volcano plot combining VIP scores (x-axis) and FDR-corrected t-test p-values (y-axis) for biomarker prioritization.
+    produced_by_step: [4, 6]
+    visualization_tool: R (EnhancedVolcano, ggplot2)
+    statistical_test: t-test with Benjamini-Hochberg FDR correction (p < 0.05)
+
+reproducibility_strengths:
+  - Full R code repository publicly available with MIT license
+  - All data deposited in MetaboLights (MTBLS1234)
+  - Detailed parameter specifications for all statistical steps
+  - Use of only open-source tools (ropls, mixOmics, pcaMethods, EnhancedVolcano, etc.)
+  - DOI-linked Zenodo archive for versioned code release

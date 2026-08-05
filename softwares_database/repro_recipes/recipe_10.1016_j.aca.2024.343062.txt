@@ -1,0 +1,51 @@
+========== reproducibility_recipe entry ==========
+paper_title: Improving insights from metabolomic functional analysis combining multivariate tools.
+source_paper: Kuligowski J et al. (2024), Analytica chimica acta, DOI: 10.1016/j.aca.2024.343062, PMID: 39182979
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Univariate statistical testing
+    tool: R (stats package)
+    algorithm: t-test or Wilcoxon rank-sum test
+    input: feature table (metabolite intensities)
+    output: p-value vector per feature
+    confidence: medium
+  Step 2: Multivariate modeling
+    tool: OPLS-DA
+    algorithm: Orthogonal Partial Least Squares Discriminant Analysis
+    input: feature table (metabolite intensities)
+    output: model coefficients, p-values per feature (e.g., VIP-weighted or permutation-derived p-values)
+    confidence: low
+  Step 3: Functional pathway analysis with mummichog
+    tool: mummichog
+    algorithm: hypergeometric enrichment + topology-aware scoring
+    parameters: permutation_count=1000
+    input: feature-level p-values (from univariate or OPLS-DA)
+    output: enriched metabolic pathways with significance scores
+    confidence: high
+  Step 4: Cluster-based cross-validation (cluster-CV)
+    tool: Custom R implementation
+    algorithm: Pathway-level model perturbation and OPLS-DA performance assessment
+    parameters: n_folds=5, n_repeats=10
+    input: pathway membership annotation + OPLS-DA model outputs
+    output: pathway impact score (e.g., ΔQ² or ΔAUC per pathway)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposited or referenced
+  - No code repository or scripts shared
+  - OPLS-DA implementation unspecified (SIMCA? ropls? mixOmics?)
+  - No details on how p-values from OPLS-DA were computed (permutation? CV-ANOVA?)
+  - Cluster-CV method described only conceptually, no algorithmic or implementation details
+reproducibility_strengths:
+  - Uses open-source mummichog with documented parameters
+  - Clear conceptual framework linking multivariate statistics to functional analysis

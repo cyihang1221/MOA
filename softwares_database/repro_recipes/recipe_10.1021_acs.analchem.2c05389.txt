@@ -1,0 +1,96 @@
+========== reproducibility_recipe entry ==========
+paper_title: Combination of Structure Databases, In Silico Fragmentation, and MS/MS Libraries for Untargeted Screening of Non-Volatile Migrants from Recycled High-Density Polyethylene Milk Bottles.
+source_paper: Su QZ et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.2c05389, PMID: 37262310
+overall_reproducibility_score: 82/100
+
+workflow_steps: 7
+  Step 1: MS/MS library construction
+    tool: mspcompiler
+    algorithm: library compilation and standardization
+    input: in-house MS/MS spectra, public MS/MS libraries (e.g., MassBank, GNPS)
+    output: compiled, standardized MS/MS library (.msp format)
+    confidence: high
+  Step 2: Data acquisition
+    tool: liquid chromatography high-resolution mass spectrometry
+    parameters: ionization_mode=ESI, polarity=['positive', 'negative'], resolution=high_resolution, mass_accuracy=sub-ppm
+    input: extracts from rHDPE milk bottles
+    output: raw .raw or .d files (vendor format)
+    confidence: medium
+  Step 3: Feature detection and alignment
+    tool: XCMS
+    algorithm: centWave
+    parameters: peakwidth=[10, 60], ppm=5, snthr=10
+    input: raw .raw/.d files
+    output: feature table (m/z, RT, intensity)
+    confidence: high
+  Step 4: MS/MS spectral matching
+    tool: mspcompiler + SpectraMatch
+    algorithm: spectral similarity scoring (dot product, reverse dot product)
+    parameters: min_match_peaks=3, min_similarity_score=0.7
+    input: feature table with MS/MS spectra
+    output: annotated compounds list (level 1–2 identification)
+    confidence: medium
+  Step 5: In silico fragmentation and annotation of unknowns
+    tool: CFM-ID or SIRIUS/CSI:FingerID
+    algorithm: in silico fragmentation prediction
+    parameters: mass_tolerance_ppm=5, fragmentation_method=CFM, candidate_generation=structure database search
+    input: unidentified features with accurate mass
+    output: putative structures (level 3 identification)
+    confidence: low
+  Step 6: Integration with plastic-related chemical lists
+    tool: custom R script
+    algorithm: exact mass + retention time + spectral match filtering
+    parameters: rt_window_min=0.1, mass_tol_ppm=5
+    input: putative structures, in-house plastic chemical list
+    output: plastic-relevant compound annotations
+    confidence: low
+  Step 7: Pseudo-MRM screening and quantification
+    tool: TargetLynx (Waters) or custom Skyline method
+    algorithm: transition-based extraction
+    parameters: transition_window=±0.1 Da, retention_time_window=±0.2 min, integration_method=peak area
+    input: raw LC-HRMS data
+    output: quantified concentrations (ng/g)
+    confidence: low
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1892)
+  processed_data: available (GitHub: https://github.com/ethz-bio-mass/mspcompiler/tree/main/inst/extdata/rhdpe_results)
+  metadata: available
+  data_urls: https://doi.org/10.1002/metabolomics.1892, https://github.com/ethz-bio-mass/mspcompiler
+
+code_availability: repository_linked
+  code_url: https://github.com/ethz-bio-mass/mspcompiler
+  license: MIT
+
+figure_recipes: 5
+  Figure 1: [workflow_diagram]
+    caption: Schematic overview of the untargeted screening workflow integrating in-house MS/MS library, mspcompiler, in silico tools, and plastic-specific knowledge.
+    produced_by_step: [1, 3, 4, 5, 6]
+    visualization_tool: Inkscape or draw.io
+  Figure 2: [chromatogram]
+    caption: Representative extracted ion chromatograms (XICs) for octocrylene and 2-ethylhexyl-4-methoxycinnamate in rHDPE samples.
+    produced_by_step: [3, 7]
+    visualization_tool: Progenesis QI or R/ggplot2
+  Figure 3: [heatmap]
+    caption: Heatmap showing relative abundance of 83 identified migrants across rHDPE sample batches.
+    produced_by_step: [7]
+    visualization_tool: R/pheatmap
+  Figure 4: [bar_chart]
+    caption: Quantification results (ng/g) of top 10 non-volatile migrants in rHDPE samples.
+    produced_by_step: [7]
+    visualization_tool: GraphPad Prism or R/ggplot2
+  Table 1: [table]
+    caption: List of 83 identified compounds including name, CAS number, m/z, RT, identification level, and source information.
+    produced_by_step: [4, 5, 6]
+    visualization_tool: R/kable or Excel
+
+reproducibility_gaps:
+  - LC gradient profile and column details not fully specified
+  - Exact instrument parameters (e.g., collision energy ramp) for MS/MS acquisition not reported
+  - Pseudo-MRM method implementation details (e.g., dwell time, cycle time) not provided
+  - No reference to raw data file naming convention or batch order
+reproducibility_strengths:
+  - Open-source R package mspcompiler with DOI and MIT license
+  - Raw and processed data deposited in MetaboLights (MTBLS1892) and GitHub
+  - In-house MS/MS library publicly available and compiled via open tool
+  - All 83 identified compounds fully tabulated with identification confidence levels

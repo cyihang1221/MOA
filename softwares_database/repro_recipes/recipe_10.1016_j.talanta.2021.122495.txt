@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: Development of variance rank initiated-unsupervised sample indexing for gas chromatography-mass spectrometry analysis.
+source_paper: Cain CN et al. (2021), Talanta, DOI: 10.1016/j.talanta.2021.122495, PMID: 34215113
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: High-variance analyte peak discovery
+    tool: Custom R implementation
+    algorithm: Variance ranking
+    parameters: variance_metric=relative_variance, top_n_peaks=None
+    input: GC-MS peak table (intensity matrix)
+    output: Ranked list of high-variance peaks
+    confidence: medium
+  Step 2: Unsupervised sample indexing via k-means clustering per peak
+    tool: k-means clustering
+    algorithm: k-means
+    parameters: k=2, n_start=100, max_iter=100
+    input: Single-peak intensity vector per sample
+    output: Binary sample index assignment per peak
+    confidence: high
+  Step 3: Consensus sample index assignment
+    tool: Custom R implementation
+    algorithm: Majority voting across peaks
+    parameters: min_consensus_peaks=None, threshold_frequency=None
+    input: Set of binary sample index assignments (one per high-variance peak)
+    output: Consensus sample index vector (e.g., 0/1 labels)
+    confidence: low
+  Step 4: Statistical validation of discovered indices
+    tool: R base stats
+    algorithm: Two-sample t-test
+    parameters: alpha=0.05, test_type=two-sided, assumption=unequal variance (Welch's)
+    input: Peak intensity matrix + consensus sample index vector
+    output: List of statistically significant peaks (p < 0.05)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposited or referenced
+  - No code repository or supplementary software provided
+  - No details on GC-MS preprocessing (e.g., peak picking, deconvolution, alignment) prior to VRI-USI
+  - Variance metric definition (e.g., CV, IQR-based relative variance) not mathematically specified
+  - Thresholds for consensus indexing (e.g., how many peaks required for majority vote) not reported
+reproducibility_strengths:
+  - Explicit statistical testing protocol (Welch’s t-test, α=0.05) described
+  - Clear stepwise conceptual workflow with reproducible algorithmic logic (variance ranking → per-peak k-means → consensus indexing)

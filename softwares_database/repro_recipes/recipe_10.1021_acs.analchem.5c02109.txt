@@ -1,0 +1,60 @@
+========== reproducibility_recipe entry ==========
+paper_title: Improving Spectral Similarity and Molecular Network Reliability through Noise Signal Filtering in MS/MS Spectra.
+source_paper: Dalla Valle N et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c02109, PMID: 40673560
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: MS/MS spectral noise filtering
+    tool: custom denoising workflow
+    algorithm: intensity-based thresholding
+    parameters: intensity_threshold_method=data-specific, statistical_basis=['MST_distance_distribution', 'fragment_ion_count_distribution']
+    input: centroided MS/MS spectra
+    output: denoised MS/MS spectra
+    confidence: medium
+  Step 2: Spectral similarity scoring
+    tool: cosine similarity
+    algorithm: weighted cosine correlation
+    parameters: min_match_peaks=3, mass_tolerance_da=0.02, weighting=intensity-based
+    input: denoised MS/MS spectra pairs
+    output: similarity score matrix
+    confidence: high
+  Step 3: Molecular network construction
+    tool: GNPS
+    algorithm: network clustering based on spectral similarity
+    parameters: similarity_cutoff=None, top_k_matches=10, cluster_algorithm=community detection (e.g., Markov Clustering)
+    input: similarity score matrix
+    output: molecular network graph (nodes = spectra, edges = similarity > cutoff)
+    confidence: low
+  Step 4: Minimum spanning tree (MST) analysis
+    tool: custom R/Python implementation
+    algorithm: MST computation on spectral distance matrix
+    parameters: distance_metric=1 - cosine_similarity
+    input: similarity score matrix
+    output: MST edge list and node distances
+    confidence: medium
+  Step 5: Optimal noise threshold selection
+    tool: custom workflow
+    algorithm: threshold optimization using MST distance distribution and fragment ion count statistics
+    parameters: optimization_criterion=balance between spectra quality and network integrity, explanation_basis=in-silico fragmentation algorithm
+    input: MST distances, fragment ion counts, denoised spectra
+    output: optimal intensity threshold per dataset
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposited or referenced
+  - No code repository or implementation details provided
+  - GNPS parameters (e.g., similarity cutoff, clustering settings) not specified
+  - Custom denoising and MST workflows lack algorithmic or parameter detail
+  - In-silico fragmentation algorithm not named or cited
+reproducibility_strengths:
+  - Explicit description of core analytical goals (noise impact on similarity and MNs)
+  - Clear conceptual framework linking noise filtering → similarity → network topology → MST validation

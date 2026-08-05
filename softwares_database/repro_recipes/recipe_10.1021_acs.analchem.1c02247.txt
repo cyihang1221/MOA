@@ -1,0 +1,51 @@
+========== reproducibility_recipe entry ==========
+paper_title: Drug-to-Antibody Ratio Estimation via Proteoform Peak Integration in the Analysis of Antibody-Oligonucleotide Conjugates with Orbitrap Fourier Transform Mass Spectrometry.
+source_paper: Nagornov KO et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.1c02247, PMID: 34519496
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Native size-exclusion chromatography (SEC)
+    tool: SEC system
+    input: intact antibody-oligonucleotide conjugate (AOC) samples
+    output: chromatographically separated proteoforms
+    confidence: low
+  Step 2: Orbitrap FTMS data acquisition with transient recording
+    tool: Q Exactive HF Orbitrap FTMS
+    input: SEC-eluted fractions
+    output: raw time-domain ion signals (transients)
+    confidence: medium
+  Step 3: Transient truncation and FT processing
+    tool: FTMS Booster X2
+    algorithm: Fourier transform
+    parameters: truncation_method=time-domain transient truncation
+    input: raw transients from Q Exactive HF
+    output: high-resolution mass spectra
+    confidence: high
+  Step 4: Proteoform-level peak integration
+    tool: custom processing (implied)
+    algorithm: peak integration on deconvoluted proteoform peaks
+    parameters: error_tolerance=0.1
+    input: FT-processed mass spectra
+    output: DAR distribution and average DAR estimate
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw transient data not publicly available
+  - FTMS Booster X2 is proprietary hardware/software with no public API or documentation
+  - No details on peak integration algorithm or software implementation
+  - No shared scripts or parameters for proteoform deconvolution or DAR calculation
+  - SEC gradient and column details insufficiently specified
+  - No validation of DAR estimation error (<10%) against orthogonal method
+reproducibility_strengths:
+  - Clear description of instrumentation (Q Exactive HF + FTMS Booster X2)
+  - Explicit mention of native SEC as sample introduction method
+  - Quantitative performance claim (<10% error) provided

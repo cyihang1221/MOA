@@ -1,0 +1,66 @@
+========== reproducibility_recipe entry ==========
+paper_title: Control-Normalized Fisher Ratio Analysis of Comprehensive Two-Dimensional Gas Chromatography Time-of-Flight Mass Spectrometry Data for Enhanced Biomarker Discovery in a Metabolomic Study of Orthopedic Knee-Ligament Injury.
+source_paper: Prebihalo SE et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.0c03456, PMID: 33171046
+overall_reproducibility_score: 30/100
+
+workflow_steps: 6
+  Step 1: GC × GC-TOFMS data acquisition
+    tool: comprehensive two-dimensional gas chromatography/time-of-flight mass spectrometry
+    parameters: instrument_platform=GC × GC-TOFMS, sample_type=human plasma, n_samples=30, design=case-control (ACL patients vs. matched healthy controls)
+    input: biological samples (plasma)
+    output: raw instrument files (.CDF or vendor-specific binary)
+    confidence: low
+  Step 2: Peak detection and feature table generation
+    tool: unknown proprietary software
+    input: raw GC × GC-TOFMS files
+    output: feature table (m/z–retention time–intensity)
+    confidence: low
+  Step 3: Standard Fisher ratio analysis (FRA)
+    tool: custom implementation
+    algorithm: Fisher ratio = between-class variance / pooled within-class variance
+    parameters: classes=['ACL patients', 'healthy controls'], variance_normalization=pooled within-class
+    input: feature table
+    output: ranked list of features by F-ratio
+    confidence: medium
+  Step 4: Control-normalized Fisher ratio analysis
+    tool: custom implementation
+    algorithm: Control-normalized F-ratio = between-class variance / control-class variance only
+    parameters: classes=['ACL patients', 'healthy controls'], variance_normalization=control-class only
+    input: feature table
+    output: ranked list of features by control-normalized F-ratio
+    confidence: medium
+  Step 5: Top-feature extraction and concentration ratio calculation
+    tool: custom script
+    algorithm: mean intensity ratio (patients/controls)
+    parameters: n_top_features=30
+    input: top-ranked features from each FRA
+    output: concentration ratios (fold-change)
+    confidence: medium
+  Step 6: Statistical validation via t-test
+    tool: standard statistical software (unspecified)
+    algorithm: two-sample t-test
+    parameters: test_type=two-sided, alpha=0.05, assumption=unequal variances (Welch's t-test implied by context of variance normalization)
+    input: intensity values per feature per sample group
+    output: list of statistically significant metabolites (p < 0.05)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw GC × GC-TOFMS data not deposited in any public repository
+  - No description of peak picking, alignment, or deconvolution parameters or tools
+  - Custom F-ratio implementations not shared or algorithmically specified (e.g., handling of zero-variance features, log-transformation prior to FRA)
+  - No information on chromatographic conditions (column types, temperature program, modulation period), limiting method transfer
+  - No metadata schema or sample annotation details beyond 'matched controls' provided
+  - t-test assumptions (normality, equal variance) not verified or reported
+reproducibility_strengths:
+  - Clear experimental design (n=30, case-control, plasma matrix)
+  - Explicit definition of two complementary F-ratio formulations
+  - Transparent reporting of overlap/non-overlap of top hits between methods (24/30 and 21/30 passing t-test)

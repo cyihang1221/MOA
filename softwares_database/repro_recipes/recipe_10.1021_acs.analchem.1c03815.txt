@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: High-Resolution Mass Spectrometry and Nontraditional Mass Defect Analysis of Brominated Historical Pigments.
+source_paper: Alvarez-Martin A et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.1c03815, PMID: 34714624
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Data acquisition via direct infusion electrospray ionization
+    tool: Orbitrap mass spectrometer
+    parameters: ionization_mode=electrospray ionization (ESI), infusion_method=direct infusion, resolution=high-resolution, mass_analyzer=Orbitrap
+    input: oil paint sample extracts
+    output: raw .raw files (Thermo format)
+    confidence: medium
+  Step 2: Nontraditional mass defect calculation and Kendrick mass defect (KMD) transformation
+    tool: custom Python or MATLAB scripts
+    algorithm: Kendrick mass defect analysis with nontraditional base unit
+    parameters: base_unit=bromine-containing reference mass (e.g., 79Br or 81Br based), mass_defect_definition=nontraditional (deviating from standard CH2-based Kendrick)
+    input: centroided m/z lists with intensity and isotopic pattern
+    output: Kendrick mass defect (KMD) plot coordinates
+    confidence: low
+  Step 3: Visualization and interpretation of brominated species via KMD plots
+    tool: custom plotting (likely MATLAB or Python matplotlib)
+    algorithm: 2D scatter plot of Kendrick mass defect vs. Kendrick mass
+    parameters: x_axis=Kendrick mass defect (KMD), y_axis=Kendrick mass, color_encoding=isotope pattern similarity / bromine count
+    input: KMD-transformed peak list
+    output: KMD scatter plot highlighting brominated clusters
+    confidence: medium
+  Step 4: Brominated compound annotation using mass accuracy and isotope pattern matching
+    tool: manual interpretation supported by theoretical calculations
+    algorithm: exact mass matching + Br-isotope ratio validation (79Br:81Br ≈ 1:1)
+    parameters: mass_accuracy_threshold=5 ppm, isotope_similarity_threshold=visual or correlation-based assessment
+    input: high-res m/z peaks with intensity and isotopic distribution
+    output: annotated list of brominated molecular formulas and putative structures
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in any public repository
+  - No code or scripts provided for nontraditional Kendrick mass defect calculation
+  - Exact definition of 'nontraditional' base unit not mathematically specified
+  - No details on centroiding parameters (e.g., signal-to-noise threshold, peak width)
+  - No description of sample preparation protocol (extraction solvent, dilution, filtration)
+reproducibility_strengths:
+  - High-resolution Orbitrap instrumentation specified
+  - Key analytical strategy (nontraditional KMD for Br-species) clearly conceptualized
+  - Mass accuracy requirement (5 ppm) explicitly stated

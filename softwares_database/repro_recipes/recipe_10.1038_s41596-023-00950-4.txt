@@ -1,0 +1,49 @@
+========== reproducibility_recipe entry ==========
+paper_title: Web-based multi-omics integration using the Analyst software suite.
+source_paper: Ewald JD et al. (2024), Nature protocols, DOI: 10.1038/s41596-023-00950-4, PMID: 38355833
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Single-omics data analysis
+    tool: ExpressAnalyst
+    algorithm: not specified
+    input: transcriptomics/proteomics data
+    output: significant features (e.g., differentially expressed genes/proteins)
+    confidence: low
+  Step 2: Lipidomics data analysis
+    tool: MetaboAnalyst
+    algorithm: not specified
+    input: lipidomics data
+    output: significant features (e.g., differential lipids)
+    confidence: low
+  Step 3: Knowledge-driven multi-omics integration
+    tool: OmicsNet
+    algorithm: biological network-based integration
+    input: significant features from transcriptomics, proteomics, and lipidomics
+    output: integrated network visualization and functional modules
+    confidence: medium
+  Step 4: Data-driven multi-omics integration
+    tool: OmicsAnalyst
+    algorithm: joint dimensionality reduction (e.g., PCA, CCA, or similar)
+    input: normalized omics data and metadata
+    output: integrated low-dimensional representation (e.g., scores/plots)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: not_mentioned (not mentioned)
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of input data formats or preprocessing steps
+  - No specification of parameters or settings used in any web tool
+  - Raw or processed datasets not deposited or referenced
+  - No access to underlying algorithms or source code
+  - Commercial affiliation disclosed but no clarity on software licensing or access restrictions
+reproducibility_strengths:
+  - All tools are web-based and publicly accessible at time of publication
+  - Protocol references prior peer-reviewed publications for each tool (Zhou et al. 2021, 2022)

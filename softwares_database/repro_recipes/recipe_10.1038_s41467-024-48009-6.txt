@@ -1,0 +1,104 @@
+========== reproducibility_recipe entry ==========
+paper_title: MetaboAnalystR 4.0: a unified LC-MS workflow for global metabolomics.
+source_paper: Pang Z et al. (2024), Nature communications, DOI: 10.1038/s41467-024-48009-6, PMID: 38693118
+overall_reproducibility_score: 87/100
+
+workflow_steps: 9
+  Step 1: Raw data acquisition and LC-MS1/MS2 profiling
+    tool: Thermo Scientific UltiMate 3000 UHPLC + Q-Exactive Orbitrap
+    algorithm: untargeted DDA, DIA (SWATH), iterative targeted DDA
+    parameters: flow_rate_mL_min=0.4, ion_mode=['ESI+', 'ESI-'], spray_voltage_keV_pos={'C18': 4.0, 'HILIC': 4.0}, spray_voltage_keV_neg={'C18': 3.5, 'HILIC': 3.8}, mobile_phase_A_C18=0.1% FA in water, mobile_phase_B_C18=0.1% FA in ACN, mobile_phase_A_HILIC=50% ACN in water + 5 mmol/L NH4AC, mobile_phase_B_HILIC=95% ACN in water + 5 mmol/L NH4AC, SWATH_windows_count=10, SWATH_window_overlap_mz=1.0, SWATH_cycle_time_s=0.9, DDA_top_n=10, MS1_resolution=Orbitrap (not specified value), MS2_acquisition_strategy=['DDA', 'DIA/SWATH', 'iterative_targeted_DDA']
+    input: raw .raw files (Thermo)
+    output: raw spectra (.raw) for MS1 and MS2
+    confidence: medium
+  Step 2: Raw file conversion to mzML
+    tool: msconvert (ProteoWizard)
+    algorithm: centroiding, peak picking
+    parameters: centroiding=True, filter_string=peakPicking true 1-
+    input: Thermo .raw files
+    output: .mzML files
+    confidence: high
+  Step 3: Feature detection and quantification (LC-MS1)
+    tool: MetaboAnalystR 4.0 (v4.0)
+    algorithm: auto-optimized feature detection
+    parameters: mz_tolerance_ppm=None, rt_tolerance_sec=None, min_peak_width_sec=None, sn_thresh=None, noise_threshold=None, integrate_method=centWave
+    input: mzML files
+    output: feature table (m/z, RT, intensity matrix)
+    confidence: low
+  Step 4: Retention time alignment and correction
+    tool: MetaboAnalystR 4.0 (v4.0)
+    algorithm: loess-based RT correction
+    parameters: alignment_method=loess, ref_sample=QC sample, max_rt_shift_sec=None
+    input: feature table + QC samples
+    output: aligned feature table
+    confidence: medium
+  Step 5: Gap filling and missing value imputation
+    tool: MetaboAnalystR 4.0 (v4.0)
+    algorithm: k-nearest neighbors (k-NN) or minimum intensity replacement
+    parameters: imputation_method=knn, k=5, min_fraction_samples=0.5
+    input: aligned feature table
+    output: gap-filled feature table
+    confidence: medium
+  Step 6: Normalization and scaling
+    tool: MetaboAnalystR 4.0 (v4.0)
+    algorithm: QC-based normalization + Pareto scaling
+    parameters: normalization_method=QC-RLM, scaling_method=pareto, qc_correction=True
+    input: gap-filled feature table
+    output: normalized & scaled feature table
+    confidence: high
+  Step 7: Statistical analysis (univariate/multivariate)
+    tool: MetaboAnalystR 4.0 (v4.0)
+    algorithm: ['t-test', 'ANOVA', 'PCA', 'PLS-DA', 'OPLS-DA', 'random forest']
+    parameters: p_value_cutoff=0.05, fdr_method=BH, n_components_PLS_DA=2, n_components_OPLS_DA=1, cv_method=leave-one-out
+    input: normalized & scaled feature table + metadata
+    output: differential features, model metrics, VIP scores
+    confidence: high
+  Step 8: MS2 spectral deconvolution and compound identification
+    tool: MetaboAnalystR 4.0 (v4.0)
+    algorithm: precursor-matched MS2 assignment + spectral library matching
+    parameters: mz_tolerance_ppm_MS2=10, rt_tolerance_sec_MS2=5, score_threshold=0.7, library_matching_algorithm=dot product, neutral_loss_enabled=True, neutral_loss_databases=['Pathway', 'Biology', 'Lipid', 'Exposomics']
+    input: MS2 .mzML files + feature table + curated MS2 libraries
+    output: annotated feature table with MS2 IDs (Level 1–2)
+    confidence: medium
+  Step 9: Functional interpretation and pathway enrichment
+    tool: MetaboAnalystR 4.0 (v4.0)
+    algorithm: hypergeometric test + KEGG/RefMet mapping
+    parameters: pathway_database=KEGG, organism=Homo sapiens, enrichment_method=hypergeometric, p_value_cutoff=0.05, fdr_method=BH
+    input: annotated feature table + compound IDs
+    output: enriched pathways, impact scores, pathway maps
+    confidence: high
+
+data_availability:
+  raw_data: available (Metabolomics Workbench: ['ST002796', 'ST002798'])
+  processed_data: not_mentioned
+  metadata: in_paper_only
+  data_urls: https://www.metabolomicsworkbench.org/data/DRCCMetadata.php?Mode=Project&ProjectID=ST002796, https://www.metabolomicsworkbench.org/data/DRCCMetadata.php?Mode=Project&ProjectID=ST002798
+
+code_availability: repository_linked
+  code_url: https://github.com/xia-lab/MetaboAnalystR
+  license: GPL-3.0
+
+figure_recipes: 3
+  Supplementary Fig. 27: [workflow_diagram]
+    caption: Schematic of serial dilution preparation workflow for urine and standard serum.
+    produced_by_step: [2]
+    visualization_tool: Adobe Illustrator or R (ggplot2)
+  Supplementary Fig. 28: [bar_chart]
+    caption: Compound count distribution across KEGG pathways used to build the Pathway library (n = 3456 compounds).
+    produced_by_step: [8]
+    visualization_tool: R (ggplot2)
+  Supplementary Fig. 29: [network]
+    caption: Schematic overview of MS2 reference library curation pipeline showing five specialized libraries and neutral loss databases.
+    produced_by_step: [8]
+    visualization_tool: Cytoscape or R (igraph)
+
+reproducibility_gaps:
+  - Exact m/z and RT tolerance parameters for MetaboAnalystR's auto-optimized feature detection not specified
+  - No public link to Supplementary Tables 8–12 (demographics, gradient profiles, MS parameters, database versions)
+  - HERMES software version and configuration for iterative DDA inclusion list optimization not disclosed
+  - No explicit description of QC sample injection order or frequency in run sequence
+reproducibility_strengths:
+  - Raw data publicly available on Metabolomics Workbench with two accession IDs
+  - MetaboAnalystR 4.0 is fully open-source (GitHub + Zenodo DOI + GPL-3.0 license)
+  - Comprehensive curation of nine MS2 databases into unified SQLite schema documented
+  - All chromatographic and MS instrument parameters referenced in supplementary tables (though not embedded in main text)

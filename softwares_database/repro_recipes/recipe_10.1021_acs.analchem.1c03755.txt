@@ -1,0 +1,46 @@
+========== reproducibility_recipe entry ==========
+paper_title: From Centroided to Profile Mode: Machine Learning for Prediction of Peak Width in HRMS Data.
+source_paper: Samanipour S et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.1c03755, PMID: 34843646
+overall_reproducibility_score: 30/100
+
+workflow_steps: 3
+  Step 1: Centroided-to-profile conversion
+    tool: Cent2Prof
+    algorithm: random-forest
+    parameters: error_threshold_percent=56
+    input: centroided .mzML or vendor format
+    output: simulated profile-mode data
+    confidence: medium
+  Step 2: Profile-to-centroid conversion
+    tool: Cent2Prof
+    algorithm: resolution-based adaptive centroiding
+    parameters: initial_width_guess_strategy=resolution-based, self_adjustment_enabled=True
+    input: profile-mode .mzML or vendor format
+    output: centroided feature table with peak width at half-height
+    confidence: medium
+  Step 3: Feature detection evaluation
+    tool: MZmine
+    algorithm: MZmine centroiding algorithm
+    parameters: false_positive_rate_threshold=0.3, false_negative_rate_threshold=0.03
+    input: centroided data
+    output: feature table with detection metrics
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposited or referenced
+  - Cent2Prof software not linked or archived (no GitHub/DOI)
+  - No parameters for MZmine configuration provided (e.g., min peak height, SNR threshold, m/z tolerance)
+  - No details on random-forest training data (features, sample size, cross-validation)
+  - No instrument/platform metadata (e.g., Orbitrap vs TOF, resolution settings, acquisition method)
+reproducibility_strengths:
+  - Explicit performance metrics reported (false positive/negative rates, error bounds)
+  - Algorithmic principles clearly described (self-adjusting centroiding, RF-based width prediction)

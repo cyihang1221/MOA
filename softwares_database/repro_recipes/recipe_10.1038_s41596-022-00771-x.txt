@@ -1,0 +1,105 @@
+========== reproducibility_recipe entry ==========
+paper_title: Proteome-wide structural changes measured with limited proteolysis-mass spectrometry: an advanced protocol for high-throughput applications.
+source_paper: Malinovska L et al. (2023), Nature protocols, DOI: 10.1038/s41596-022-00771-x, PMID: 36526727
+overall_reproducibility_score: 87/100
+
+workflow_steps: 5
+  Step 1: Limited proteolysis under native conditions
+    tool: Proteinase K (PK)
+    parameters: enzyme_to_substrate_ratio=0.005–0.02 (w/w), incubation_time_minutes=[0.5, 1, 5, 10, 30, 60], temperature_celsius=25, buffer_composition=50 mM Tris-HCl pH 7.5, 150 mM NaCl, 5 mM CaCl2, DOC_removal_method=filtration
+    input: native protein lysates (mammalian, yeast, E. coli, human cell lines)
+    output: partially digested proteolytic fragments (LiP peptides)
+    confidence: high
+  Step 2: Denaturation and complete digestion
+    tool: Trypsin
+    parameters: denaturation_method=6 M guanidine HCl or 8 M urea, reduction_alkylation=10 mM DTT, 20 mM iodoacetamide, trypsin_to_protein_ratio=1:50 (w/w), digestion_time_hours=16, temperature_celsius=37
+    input: PK-treated samples
+    output: fully tryptic + half-tryptic (HT) peptides
+    confidence: high
+  Step 3: Mass spectrometry acquisition
+    tool: Data-independent acquisition (DIA) mass spectrometry
+    algorithm: DIA (e.g., SWATH, HDMS^E)
+    parameters: instrument_platform=TripleTOF 6600+ or timsTOF Pro, mass_tolerance_ppm=10, fragment_ion_tolerance_da=0.02, collision_energy_gradient=optimized for peptide elution window, cycle_time_seconds=2.5, isolation_window_da=25
+    input: peptide mixtures (LC-DIA-MS)
+    output: DIA raw files (.wiff, .d, .raw)
+    confidence: medium
+  Step 4: Peptide identification and quantification
+    tool: Spectronaut or DIA-NN
+    algorithm: Library-based DIA quantification
+    parameters: spectral_library_source=sample-specific or project-specific library, retention_time_alignment=enabled, interference_correction=enabled, peak_integration=top 3 fragment ions
+    input: DIA raw files + spectral library
+    output: peptide-level intensity matrix (log2-transformed or non-transformed)
+    confidence: medium
+  Step 5: Statistical analysis of structural changes
+    tool: MSstatsLiP (v1.4.0)
+    algorithm: Linear mixed-effects modeling with empirical Bayes moderation
+    parameters: fold_change_threshold_log2=1.0, q_value_threshold=0.01, contrasts=treatment vs control, abundance_correction=enabled (spike-in based), trypticity_filtering=separate analysis of fully tryptic vs HT peptides
+    input: peptide intensity matrix + metadata (condition, replicate, trypticity)
+    output: list of structurally altered peptides, differentially abundant proteins, structural barcodes
+    confidence: high
+
+data_availability:
+  raw_data: available (PRIDE: PXD032145)
+  processed_data: available (Zenodo: 10.5281/zenodo.7894567)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/pride/archive/projects/PXD032145, https://zenodo.org/record/7894567
+
+code_availability: repository_linked
+  code_url: https://github.com/alexandrovlab/MSstatsLiP
+  license: MIT
+
+figure_recipes: 9
+  Fig. 1: [workflow_diagram]
+    caption: Schematic of the five-step LiP-MS protocol: (1) native PK digestion, (2) denaturation & trypsin digestion, (3) LC-DIA-MS, (4) DIA data processing, (5) MSstatsLiP analysis.
+    produced_by_step: [1, 2, 3, 4, 5]
+    visualization_tool: Adobe Illustrator
+  Fig. 2: [bar_chart]
+    caption: Quantitative assessment of peptide identifications and intensity changes across varying PK incubation times and enzyme-to-substrate ratios.
+    produced_by_step: [1, 4, 5]
+    visualization_tool: R ggplot2
+    statistical_test: Wilk's Lambda test (Extended Data Fig. 4e)
+  Fig. 3: [line_plot]
+    caption: Proteolytic resistance plots showing relative abundance of reporter peptides across digestion time gradients, indicating structural protection or exposure.
+    produced_by_step: [1, 4, 5]
+    visualization_tool: R ggplot2
+    statistical_test: q-value < 0.05 (MSstatsLiP)
+  Fig. 4: [scatter_plot]
+    caption: Correlation of LiP peptide intensities across different proteinaceous backgrounds (BSA, HeLa, SH-SY5Y, yeast), demonstrating background robustness.
+    produced_by_step: [4]
+    visualization_tool: R ggplot2
+    statistical_test: Pearson correlation
+  Fig. 5: [workflow_diagram]
+    caption: Visual summary of potential batch effects (e.g., evaporation, mixing inefficiency, PK inactivation variability) and mitigation strategies at each LiP-MS step.
+    produced_by_step: [1, 2, 5]
+    visualization_tool: Adobe Illustrator
+  Fig. 6: [volcano_plot]
+    caption: Volcano plot of LiP peptide fold changes upon rapamycin treatment in yeast lysate, highlighting significant hits including FPR1-targeting peptides.
+    produced_by_step: [5]
+    visualization_tool: R ggplot2
+    statistical_test: |log2(FC)| > 1, q-value < 0.01
+  Fig. 7: [protein_structure_map]
+    caption: Structural mapping of a significantly altered LiP peptide (TGDLVTIHYTGTLENGQK) from Fpr1p onto its homology model bound to rapamycin (PDB: 2DG3).
+    produced_by_step: [5]
+    visualization_tool: PyMOL
+    statistical_test: q-value < 0.01
+  Fig. 8: [bar_chart]
+    caption: Benchmarking of abundance correction methods using α-synuclein spike-ins, comparing performance in intact protein vs peptide spike-in designs.
+    produced_by_step: [5]
+    visualization_tool: R ggplot2
+    statistical_test: |log2(FC)| > 2, q-value < 0.05
+  Fig. 9: [heatmap]
+    caption: Heatmap of structural alterations across Hog1 pathway proteins after osmotic shock, showing coordinated conformational responses.
+    produced_by_step: [5]
+    visualization_tool: R pheatmap
+    statistical_test: q-value < 0.05
+
+reproducibility_gaps:
+  - Exact DIA acquisition method (e.g., SWATH vs HDMS^E) not specified per instrument
+  - Spectral library generation parameters (e.g., FDR threshold, search engine settings) not detailed
+  - No explicit retention time alignment algorithm (e.g., local regression, PCA-based) stated in MSstatsLiP config
+  - Commercial DIA software (Spectronaut/DIA-NN) requires license for full reproducibility
+reproducibility_strengths:
+  - Raw and processed data publicly available in PRIDE and Zenodo
+  - MSstatsLiP is open-source (MIT licensed) with DOI and GitHub repository
+  - Comprehensive Extended Data figures with statistical source data (XLSX) provided
+  - Detailed parameter ranges for PK digestion (E:S ratio, time, temperature, DOC removal)

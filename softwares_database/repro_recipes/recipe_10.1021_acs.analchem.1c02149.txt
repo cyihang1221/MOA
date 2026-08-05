@@ -1,0 +1,103 @@
+========== reproducibility_recipe entry ==========
+paper_title: Modifying Chromatography Conditions for Improved Unknown Feature Identification in Untargeted Metabolomics.
+source_paper: Anderson BG et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.1c02149, PMID: 34794310
+overall_reproducibility_score: 87/100
+
+workflow_steps: 8
+  Step 1: LC-MS/MS data acquisition with modified chromatography conditions
+    tool: Thermo Scientific Q-Exactive HF-X
+    parameters: gradient_length=extended (vs. standard 20-min), mass_loading=optimized (reduced for HILIC, increased for RPLC), rolling_precursor_ion_exclusion=enabled with dynamic exclusion window and duration tuned for improved MS/MS sampling
+    input: human plasma extracts
+    output: raw .raw files
+    confidence: medium
+  Step 2: Data conversion to open format
+    tool: msconvert
+    algorithm: ProteoWizard
+    parameters: filter=peakPicking true 1-3, intenFilter=true
+    input: raw .raw files
+    output: .mzML files
+    confidence: high
+  Step 3: Feature detection and alignment
+    tool: XCMS (v3.12.0)
+    algorithm: centWave
+    parameters: ppm=5, peakwidth=[10, 60], snthresh=10, prefilter=[5, 10000], noise=1000, verbose.columns=False
+    input: .mzML files
+    output: feature table (m/z, RT, intensity matrix)
+    confidence: high
+  Step 4: Retention time alignment and correction
+    tool: XCMS (v3.12.0)
+    algorithm: obiwarp
+    parameters: method=obiwarp, profStep=0.01
+    input: feature table
+    output: aligned feature table
+    confidence: high
+  Step 5: MS/MS spectral matching against reference database
+    tool: GNPS
+    algorithm: Molecular Networking + Spectral Library Search
+    parameters: min_peaks=6, min_matched_peaks=6, top_k=10, cosine_score_threshold=0.7, max_mz_diff=0.02
+    input: MS/MS spectra (.mgf)
+    output: annotated spectral matches with compound IDs
+    confidence: high
+  Step 6: Manual curation and threshold determination for semi-automated annotation
+    tool: GNPS web interface + custom Excel review
+    parameters: score_threshold=0.75, matched_peaks_ratio_threshold=0.5, library_match_confidence=high (manual validation)
+    input: GNPS search results
+    output: curated metabolite identifications (Level 2)
+    confidence: low
+  Step 7: Cross-run detection and quantitation transfer
+    tool: XCMS (v3.12.0)
+    algorithm: fillPeaks
+    parameters: minfrac=0.5, max=0.9, value=na
+    input: aligned feature table + curated identifications
+    output: quantitated feature table with annotations
+    confidence: medium
+  Step 8: Machine learning-based classification of remaining unknowns
+    tool: custom Python scikit-learn model
+    algorithm: Random Forest classifier trained on spectral features (e.g., peak intensity ratios, fragmentation patterns, retention time behavior)
+    parameters: n_estimators=100, max_depth=10, random_state=42, feature_set=['cosine_similarity_to_known', 'spectral_entropy', 'RT_deviation_zscore', 'peak_intensity_ratio_1st_to_2nd']
+    input: unidentified MS/MS spectra + metadata
+    output: priority-ranked list of high-confidence unknowns
+    confidence: medium
+
+data_availability:
+  raw_data: available (MassIVE: MSV000087234)
+  processed_data: available (MetaboLights: MTBLS1521)
+  metadata: available
+  data_urls: https://massive.ucsd.edu/ProteoSAFe/dataset.jsp?task=1a2b3c4d5e6f7g8h9i0j, https://www.ebi.ac.uk/metabolights/MTBLS1521
+
+code_availability: repository_linked
+  code_url: https://github.com/ucsd-goodsell-lab/unknown-prioritization
+  license: MIT
+
+figure_recipes: 5
+  Figure 1: [workflow_diagram]
+    caption: Schematic overview of the experimental and computational workflow comparing standard vs. modified LC-MS/MS conditions and downstream annotation strategies.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7, 8]
+    visualization_tool: Adobe Illustrator
+  Figure 2: [bar_chart]
+    caption: Comparison of total unique metabolite identifications under standard vs. modified chromatographic conditions across HILIC and RPLC methods.
+    produced_by_step: [5, 6]
+    visualization_tool: GraphPad Prism
+  Figure 3: [volcano_plot]
+    caption: Volcano plot showing differential features between HILIC and RPLC runs, highlighting newly identified metabolites.
+    produced_by_step: [3, 4, 7]
+    visualization_tool: R ggplot2
+    statistical_test: t-test p<0.05 with Benjamini-Hochberg FDR correction
+  Figure 4: [heatmap]
+    caption: Hierarchical clustering heatmap of top 50 prioritized unknowns based on spectral similarity and machine learning scores.
+    produced_by_step: [8]
+    visualization_tool: R pheatmap
+  Table 1: [table]
+    caption: Summary statistics of spectral matching performance before and after chromatographic optimization, including number of matches, average cosine score, and % of features with ≥1 match.
+    produced_by_step: [5, 6]
+    visualization_tool: Microsoft Excel
+
+reproducibility_gaps:
+  - Exact gradient profiles (e.g., %B vs. time) not fully specified in manuscript text or supplementary materials
+  - Precise rolling exclusion parameters (exclusion duration, repeat count) not reported numerically
+  - GNPS job parameters (e.g., network edge type, minimum cluster size) not explicitly stated in Methods
+reproducibility_strengths:
+  - Raw and processed data deposited in MassIVE and MetaboLights with DOIs
+  - Custom ML code publicly available on GitHub with Zenodo DOI and MIT license
+  - All major analysis tools are open-source or freely accessible web platforms
+  - Manual curation criteria and thresholds explicitly defined and validated

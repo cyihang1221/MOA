@@ -1,0 +1,45 @@
+========== reproducibility_recipe entry ==========
+paper_title: Database of free solution mobilities for 276 metabolites.
+source_paper: Petrov AP et al. (2020), Talanta, DOI: 10.1016/j.talanta.2019.120545, PMID: 31892063
+overall_reproducibility_score: 40/100
+
+workflow_steps: 3
+  Step 1: Capillary zone electrophoresis (CZE) separation
+    tool: Capillary electrophoresis system
+    parameters: capillary_type=uncoated fused silica, temperature=20, temperature_unit=°C, background_electrolyte=['0.5% (v/v) formic acid', '5% (v/v) methanol'], injection_method=sequential injection (6 compounds per run)
+    input: commercial metabolite library solutions
+    output: electropherograms with migration time data
+    confidence: high
+  Step 2: Mass spectrometric detection and ionization
+    tool: Ion trap mass spectrometer with electrokinetically-pumped nanospray interface
+    parameters: ionization_mode=electrospray ionization (ESI), interface_type=electrokinetically-pumped nanospray
+    input: CE-separated analytes
+    output: mass spectra and retention/migration time alignment
+    confidence: medium
+  Step 3: Electrophoretic mobility calculation
+    tool: Custom calculation (not specified)
+    algorithm: Free solution mobility calculation from migration time, electro-osmotic flow marker, field strength, and capillary dimensions
+    parameters: standard_deviation_target=0.01, standard_deviation_unit=×10^-8 m^2 V^-1 s^-1
+    input: migration times, EOF marker time, voltage, capillary length/inner diameter
+    output: free solution mobility values (×10^-8 m^2 V^-1 s^-1)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: available (MetaboLights: MTBLS1427)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw electropherogram or MS data not deposited or described for public access
+  - No description of mobility calculation implementation (e.g., EOF marker used, capillary dimensions, voltage applied, formula used)
+  - Instrument control software and data acquisition parameters (e.g., CE voltage, detection window, MS scan settings) not specified
+  - No information on data processing software (peak integration, migration time determination, calibration standards)
+  - Commercial autosampler (Prince) and ion trap MS are proprietary; no open alternatives or configuration details provided
+reproducibility_strengths:
+  - Mobility values for 276 metabolites published in tabular form in supplementary material
+  - Explicit experimental conditions reported: temperature, BGE composition, capillary type, injection strategy
+  - Success rate (60%) and precision (mean SD = 0.01 × 10⁻⁸ m²V⁻¹s⁻¹) quantified

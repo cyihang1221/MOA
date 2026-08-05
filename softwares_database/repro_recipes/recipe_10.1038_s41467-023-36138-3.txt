@@ -1,0 +1,82 @@
+========== reproducibility_recipe entry ==========
+paper_title: Host-microbe co-metabolism via MCAD generates circulating metabolites including hippuric acid.
+source_paper: Pruss KM et al. (2023), Nature communications, DOI: 10.1038/s41467-023-36138-3, PMID: 36720857
+overall_reproducibility_score: 42/100
+
+workflow_steps: 5
+  Step 1: Metabolite extraction and derivatization for GC-TOF-MS
+    tool: West Coast Metabolomics Center standard protocols
+    algorithm: standard derivatization (methoximation + silylation)
+    parameters: sample_volume_mass={'serum': '30 µL', 'feces_cecal': '~20 mg', 'urine': '20 µL'}, extraction_temperature=4 °C thaw, derivatization_protocol=as described previously (ref 38)
+    input: biological samples (serum, urine, feces, cecal contents)
+    output: GC-TOF-MS raw data (.cdf or .qgd)
+    confidence: medium
+  Step 2: GC-TOF-MS data acquisition
+    tool: Gas chromatography time-of-flight mass spectrometry
+    algorithm: electron ionization (70 eV), full-scan mode
+    parameters: instrument=not specified (West Coast Metabolomics Center platform), ionization_mode=electron ionization, acquisition_mode=full-scan
+    input: derivatized metabolite extracts
+    output: raw spectral files
+    confidence: low
+  Step 3: GC-TOF metabolomics data processing and statistical testing
+    tool: GraphPad Prism (vv.8.4.1)
+    algorithm: two-stage linear step-up procedure of Benjamini, Krieger and Yekutieli
+    parameters: false_discovery_rate_q=0.05, normalization=log10 normalization of peak heights, statistical_test=unpaired t-test (225 total tests per compartment), assumption=no consistent SD assumed
+    input: peak height matrix (metabolite × sample)
+    output: statistically significant metabolite list (Q < 0.05)
+    confidence: high
+  Step 4: Targeted LC-MS/MS quantification (hippuric acid, PPG, creatinine)
+    tool: Agilent 6470 triple quadrupole LC-MS/MS
+    algorithm: stable isotope dilution mass spectrometry (SIDA)
+    parameters: column=Agilent RRHD C18, 2.1 × 50 mm, 1.8 µm, oven_temperature=40, flow_rate_mL_min=0.5, injection_volume_uL=5, gradient=['0–1.5 min: 10–12% B', '1.5–1.75 min: 12–90% B', '1.75–2.75 min: 90% B', '2.75–3 min: 90–10% B', '3–4.75 min: 10% B'], eluent_A=0.1% formic acid in water, eluent_B=0.1% formic acid in acetonitrile, waste_divert=first 0.5 min, ionization_mode=negative ESI, dwell_time_ms=200, fragmentor_voltage_V=100, collision_energy_V=9, SRM_transitions=['hippuric acid: 178.1→134.0', 'd5-hippuric acid: 183.1→139.1', 'd2-hippuric acid: 180.1→136.1'], ESI_parameters={'gas_temperature_C': 300, 'gas_flow_L_min': 6, 'sheath_gas_temperature_C': 350, 'sheath_gas_flow_L_min': 12, 'capillary_voltage_V': 2500}
+    input: protein-precipitated urine supernatant
+    output: quantified metabolite concentrations (µM or µg/mL)
+    confidence: high
+  Step 5: Targeted LC-MS/MS quantification on Q-TOF platform
+    tool: Agilent 6545XT Q-TOF LC-MS
+    algorithm: not specified (used for method transition; no parameters given)
+    input: same sample prep as step 4
+    output: quantified metabolite concentrations
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: in_paper_only (Supplementary Data 1)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 4
+  Figure 2a: [bar_chart]
+    caption: Hippuric acid levels in urine of germ-free, wild-type, and fldC-mutant C. sporogenes-colonized mice.
+    produced_by_step: [4]
+    visualization_tool: GraphPad Prism (implied)
+    statistical_test: t-test
+  Figure 2c: [line_plot]
+    caption: Time-course of d5-hippuric acid excretion after d5-phenylalanine gavage in germ-free and colonized mice.
+    produced_by_step: [4]
+    visualization_tool: GraphPad Prism (implied)
+    statistical_test: not specified
+  Figure 2e: [line_plot]
+    caption: Time-course of d5-hippuric acid excretion after d9-phenylpropionic acid gavage.
+    produced_by_step: [4]
+    visualization_tool: GraphPad Prism (implied)
+    statistical_test: not specified
+  Figure 3: [bar_chart]
+    caption: Hippuric acid and N-(3-phenylpropionyl)glycine (PPG) levels in urine of MCAD+/+ and MCAD−/− mice before and after C. sporogenes colonization.
+    produced_by_step: [4]
+    visualization_tool: GraphPad Prism (implied)
+    statistical_test: not specified
+
+reproducibility_gaps:
+  - Raw GC-TOF-MS and LC-MS data not deposited in public repository (e.g., MetaboLights, GNPS, or MassIVE)
+  - No access to instrument method files (.m, .seq, .csv) or vendor-specific acquisition parameters
+  - GraphPad Prism is commercial software requiring license; no script or exportable analysis workflow provided
+  - No description of peak integration, alignment, or deconvolution algorithms for GC-TOF data
+  - LC-MS method transition to Q-TOF lacks any parameters — non-reproducible without original methods
+  - Derivatization and extraction protocols referenced only as 'described previously 38' — no link or detail provided
+reproducibility_strengths:
+  - Detailed LC-MS/MS SRM transitions and gradient reported
+  - Internal standard usage and calibration curve approach explicitly described
+  - Statistical correction method (BK-Y FDR) and software version specified
+  - Biological metadata (genotype, colonization status, sex-matching) well documented

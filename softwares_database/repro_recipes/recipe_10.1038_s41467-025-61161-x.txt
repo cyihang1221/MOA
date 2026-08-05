@@ -1,0 +1,95 @@
+========== reproducibility_recipe entry ==========
+paper_title: Gut microbial bile and amino acid metabolism associate with peanut oral immunotherapy failure.
+source_paper: Özçam M et al. (2025), Nature communications, DOI: 10.1038/s41467-025-61161-x, PMID: 40634275
+overall_reproducibility_score: 78/100
+
+workflow_steps: 7
+  Step 1: Data acquisition and preprocessing
+    tool: Metabolon Inc. proprietary platform
+    algorithm: UPLC–MS/MS and GC–MS
+    parameters: sample_amount=200 mg stool, chromatography=['UPLC', 'GC'], mass_spectrometry=['tandem MS (MS/MS)']
+    input: frozen fecal samples
+    output: raw instrument files (.raw or vendor format)
+    confidence: low
+  Step 2: Raw data conversion
+    tool: Metabolon internal pipeline
+    algorithm: proprietary peak detection and alignment
+    input: raw instrument files
+    output: normalized feature table (m/z–RT pairs, intensities)
+    confidence: low
+  Step 3: Metabolite identification
+    tool: Metabolon reference library
+    algorithm: spectral matching (MS1 + MS/MS)
+    parameters: identification_confidence_levels=['Level 1: matched to authentic standard', 'Level 2: matched to in-house library', 'Level 3: putative based on MS/MS fragmentation pattern']
+    input: feature table with MS/MS spectra
+    output: annotated metabolite table (with confidence levels)
+    confidence: medium
+  Step 4: Statistical analysis and biomarker discovery
+    tool: R (custom scripts)
+    algorithm: logistic regression with LASSO regularization
+    parameters: cross_validation_folds=5, alpha=1.0, lambda_optimization=minimum CV error
+    input: normalized metabolite abundance matrix (baseline only)
+    output: predictive bile acid signature (5 metabolites), AUC estimate
+    confidence: medium
+  Step 5: Multi-omics integration
+    tool: HUMAnN 3.0 (v3.0)
+    algorithm: MetaCyc pathway abundance inference from metagenomic reads
+    parameters: normalization=copies per million (CPM), filtering_threshold=present in ≥20% of samples, output_dimensions=['517 MetaCyc reactions', '2605 level4EC enzymes']
+    input: quality-filtered metagenomic FASTQ files
+    output: functional profile (pathways/enzymes)
+    confidence: high
+  Step 6: Taxonomic profiling
+    tool: Kraken2 (vv.2021)
+    algorithm: k-mer based classification
+    parameters: confidence_threshold=0.95, database=Kraken2 standard database (bacteria, archaea, viruses, fungi, eukaryotes)
+    input: quality-filtered metagenomic FASTQ files
+    output: taxonomic abundance table
+    confidence: high
+  Step 7: 16S rRNA sequence processing
+    tool: DADA2 (vv1.16)
+    algorithm: divisive amplicon denoising
+    parameters: max_expected_error=2, min_read_length=150, min_overlap_for_merging=25, chimera_method=consensus, rarefaction_depth=35000, contaminant_removal=SVs present in >15% of negatives and <15% of samples removed; remaining negative SV counts subtracted
+    input: Illumina NextSeq V4 16S rRNA amplicon FASTQ
+    output: Sequence Variant (SV) table with taxonomy (SILVA v132)
+    confidence: high
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1872)
+  processed_data: available (Figshare: 10.6084/m9.figshare.25421234)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1872, https://doi.org/10.6084/m9.figshare.25421234
+
+code_availability: repository_linked
+  code_url: https://github.com/lynchlab/POIT-metabolomics
+  license: MIT
+
+figure_recipes: 4
+  Figure 1h–j: [scatter_plot]
+    caption: Correlation between baseline bacterial phylogenetic diversity (Faith PD) and serum IgE levels in peanut-allergic children.
+    produced_by_step: [7]
+    visualization_tool: ggplot2 (R)
+    statistical_test: Spearman rank correlation
+  Supplementary Fig. 1a: [Venn diagram]
+    caption: Overlap of participants across 16S, metagenomics, and metabolomics datasets.
+    produced_by_step: [7, 5, 2]
+    visualization_tool: ggplot2 (R) or custom R script
+  Supplementary Data 1: [table]
+    caption: Summary of sample numbers per group and time point across omics modalities.
+    produced_by_step: [7, 5, 2]
+    visualization_tool: R (knitr::kable)
+  Supplementary Data 4: [heatmap]
+    caption: Association matrix of microbial taxa/pathways with clinical outcomes across time points.
+    produced_by_step: [5, 6, 7]
+    visualization_tool: pheatmap (R)
+    statistical_test: ANOVA with FDR correction
+
+reproducibility_gaps:
+  - Untargeted metabolomics raw data (vendor .raw files) not publicly deposited — only processed feature tables and annotations are available
+  - Metabolon's proprietary peak-picking, alignment, and normalization algorithms are not disclosed or reproducible outside their platform
+  - No detailed UPLC/GC gradient profiles, column specifications, or MS acquisition parameters provided for metabolomics
+  - LASSO logistic regression implementation details (e.g., exact cv.glmnet call, seed setting, feature scaling method) not fully specified in methods
+reproducibility_strengths:
+  - All processed multi-omics data deposited in MetaboLights (MTBLS1872) and Figshare (DOI: 10.6084/m9.figshare.25421234)
+  - Analysis code publicly available on GitHub under MIT license with Zenodo DOI
+  - Open-source tools (DADA2 v1.16, HUMAnN 3.0, Kraken2 v2021) used with well-documented parameters
+  - Contaminant removal, rarefaction, and filtering thresholds explicitly reported

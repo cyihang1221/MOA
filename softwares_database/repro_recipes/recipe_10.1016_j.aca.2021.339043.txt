@@ -1,0 +1,67 @@
+========== reproducibility_recipe entry ==========
+paper_title: Low and high resolution gas chromatography-mass spectrometry for untargeted metabolomics: A tutorial.
+source_paper: Rey-Stolle F et al. (2022), Analytica chimica acta, DOI: 10.1016/j.aca.2021.339043, PMID: 35595356
+overall_reproducibility_score: 42/100
+
+workflow_steps: 6
+  Step 1: Sample preparation
+    tool: manual protocol
+    parameters: derivatization_method=silylation (e.g., MSTFA), extraction_solvents=['methanol', 'chloroform', 'water'], sample_types=['plasma/serum', 'urine', 'BAL', 'amniotic fluid', 'brain/hippocampus', 'optic nerve', 'lung', 'kidney', 'liver', 'pancreas', 'adipocytes', 'macrophages', 'Leishmania promastigotes', 'mitochondria', 'culture media']
+    input: biological samples
+    output: derivatized extracts ready for GC-MS injection
+    confidence: medium
+  Step 2: Data acquisition
+    tool: Agilent GC-MS systems
+    parameters: instrument_types=['GC-Q-MS (low resolution)', 'GC-QTOF-MS (high resolution)'], ionization_mode=electron ionization (EI), mass_range_mz=[50, 600], acquisition_mode=full-scan
+    input: derivatized extracts
+    output: raw .D files (Agilent proprietary format)
+    confidence: high
+  Step 3: Chromatogram deconvolution and peak detection
+    tool: Agilent MassHunter Qualitative Analysis
+    algorithm: deconvolution algorithm (vendor-specific)
+    parameters: peak_width_min=5 sec, signal_to_noise_threshold=10, minimum_relative_height=5
+    input: raw .D files
+    output: peak table (retention time, m/z, intensity)
+    confidence: medium
+  Step 4: Metabolite annotation
+    tool: NIST MS Search + in-house spectral libraries
+    algorithm: spectral matching (dot product, reverse fit)
+    parameters: match_threshold_dot_product=700, match_threshold_reverse_fit=700, mass_accuracy_tolerance=0.5 Da (GC-Q-MS), 0.005 Da (GC-QTOF-MS)
+    input: deconvoluted peak table + spectra
+    output: annotated metabolite list with confidence levels (Level 1–4)
+    confidence: high
+  Step 5: Manual curation and quality control
+    tool: manual review in MassHunter
+    parameters: qc_metrics=['peak shape', 'baseline stability', 'co-elution checks', 'RT alignment consistency', 'internal standard recovery']
+    input: annotated peak table
+    output: curated feature table
+    confidence: low
+  Step 6: Semi-quantitative data normalization
+    tool: manual calculation in Excel or MassHunter Quantitative Analysis
+    algorithm: internal standard-based normalization
+    parameters: normalization_reference=internal standards (e.g., ribitol, heptadecanoic acid), correction_method=area ratio (analyte / IS)
+    input: curated feature table
+    output: semi-quantitative metabolite abundance matrix
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw GC-MS data (.D files) not deposited in any public repository
+  - No access to Agilent MassHunter software without commercial license
+  - In-house spectral libraries not shared or described in detail
+  - No code or scripts provided for semi-quantitation or QC metrics
+  - Derivatization and extraction protocols lack exact reagent lot numbers, incubation times/temperatures, and centrifugation parameters
+  - No description of batch correction or retention time alignment algorithms beyond 'manual adjustment'
+reproducibility_strengths:
+  - Comprehensive coverage of diverse biological sample types
+  - Explicit distinction between low- and high-resolution GC-MS workflows
+  - Clear annotation confidence levels (Level 1–4) aligned with MSI guidelines
+  - Emphasis on manual curation and QC — best practice for untargeted metabolomics

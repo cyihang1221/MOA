@@ -1,0 +1,59 @@
+========== reproducibility_recipe entry ==========
+paper_title: Discovery and quantification of lipoamino acids in bacteria.
+source_paper: Hueber A et al. (2022), Analytica chimica acta, DOI: 10.1016/j.aca.2021.339316, PMID: 35058001
+overall_reproducibility_score: 25/100
+
+workflow_steps: 5
+  Step 1: Sample preparation and LC-HRMS method optimization
+    tool: custom_protocol
+    input: bacterial extracts
+    output: optimized LC-HRMS acquisition data
+    confidence: low
+  Step 2: Semi-targeted detection using theoretical homemade database
+    tool: manual_query_of_HRMS_data
+    algorithm: theoretical_mz_database_search
+    parameters: database_source=homemade, search_mode=manual
+    input: HRMS raw data (.raw or .d)
+    output: candidate LpAA list (25 compounds)
+    confidence: medium
+  Step 3: Structural confirmation via MS² fragmentation
+    tool: MS2_interpretation
+    algorithm: fragmentation_pattern_matching
+    parameters: collision_energy=not_specified, reference_standard_required=True
+    input: candidate LpAA features from HRMS
+    output: structurally validated LpAA annotations
+    confidence: low
+  Step 4: Validation against synthesized chemical standards
+    tool: reference_standard_comparison
+    algorithm: retention_time_and_MS2_match
+    parameters: rt_tolerance=not_specified, ms2_similarity_threshold=not_specified
+    input: candidate LpAA + synthetic standards
+    output: confirmed LpAA identifications
+    confidence: medium
+  Step 5: Quantitative method development using LC-MS/MS (triple quadrupole)
+    tool: LC-QqQ_method_development
+    algorithm: MRM_transition_optimization
+    parameters: quantification_mode=MRM, linearity_range=not_specified, loq_determination=yes
+    input: synthesized LpAA standards
+    output: validated quantitative assay (14 LpAA in L. animalis, 12 in E. coli Nissle)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw HRMS or MS/MS data deposited in public repository
+  - Homemade theoretical database not shared
+  - No details on LC gradient, column, or instrument parameters
+  - No software tools specified for data processing (e.g., XCMS, MS-DIAL, Skyline)
+  - No code or scripts provided for semi-targeted querying or quantification
+  - Synthetic standard preparation protocols not described
+reproducibility_strengths:
+  - Use of chemical standards for annotation validation
+  - Clear reporting of identified and quantified metabolites per strain

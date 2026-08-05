@@ -1,0 +1,100 @@
+========== reproducibility_recipe entry ==========
+paper_title: LipidOz enables automated elucidation of lipid carbon-carbon double bond positions from ozone-induced dissociation mass spectrometry data.
+source_paper: Ross DH et al. (2023), Communications chemistry, DOI: 10.1038/s42004-023-00867-9, PMID: 37076550
+overall_reproducibility_score: 72/100
+
+workflow_steps: 5
+  Step 1: Lipid extraction
+    tool: MTBE extraction protocol
+    algorithm: methyl-tert-butyl ether (MTBE) lipid extraction
+    parameters: sample_volume=50 µL, methanol_volume=55 µL, MTBE_volume=185 µL, vortex_duration=20 s, sonication_duration=5 min on ice, incubation_duration=10 min on ice, centrifugation_speed=15000× g, centrifugation_temperature=4 °C, centrifugation_duration=10 min, solvent_reconstitution=chloroform/methanol (1:9, v/v)
+    input: biological tissue (plasma, milk, brain, heart, liver)
+    output: total lipid extract in chloroform/methanol
+    confidence: high
+  Step 2: LC-MS/MS analysis for lipid identification and target list generation
+    tool: LIQUID
+    algorithm: manual MS/MS spectral interpretation
+    parameters: instrument=Thermo Velos Orbitrap, LC_system=Waters Aquity UPLC H class, column=Waters CSH (3.0 mm × 150 mm × 1.7 µm), injection_volume=10 µL, gradient_duration=34 min, mobile_phase_A=acetonitrile/water (40:60) + 10 mM ammonium acetate, mobile_phase_B=acetonitrile/isopropyl alcohol (10:90) + 10 mM ammonium acetate, flow_rate=250 µL/min, ionization_mode=['positive', 'negative'], fragmentation_methods=['HCD', 'CID']
+    input: lipid extracts reconstituted in methanol
+    output: target list (lipid name, ionization state, retention time)
+    confidence: medium
+  Step 3: LC-OzID-IMS-MS data acquisition
+    tool: Agilent 6560 IMS-MS (OzID-modified)
+    algorithm: ozone-induced dissociation in trapping funnel
+    parameters: ozone_concentration=100 g/m³, reaction_region=high-pressure trapping funnel (∼4 Torr), reaction_time=up to 90 ms, data_format=.mza
+    input: LC-eluting lipids from same chromatographic method
+    output: OzID-IMS-MS raw data (.mza files)
+    confidence: high
+  Step 4: Isotope distribution analysis and fragment scoring
+    tool: LipidOz
+    algorithm: chromatographic cosine distance + isotopic abundance fitting
+    parameters: mz_tolerance=±1.5 to ±2.5 Da around M, rt_window=RT ±2.5 min for LC-MS profile extraction, intensity_threshold_for_saturation=user-defined or auto-determined, isotopes_considered=['M', 'M+1', 'M+2'], heavy_isotopes=['13C', '15N', '18O', '33S', '34S'], theoretical_isotope_method=multinomial expansion
+    input: target list + .mza raw files
+    output: fragment scores (chromatographic + isotopic agreement)
+    confidence: high
+  Step 5: Deep learning-based double bond assignment
+    tool: PyTorch RESNET-18
+    algorithm: binary classification CNN (True/False OzID fragment assignment)
+    parameters: input_dimensions=2D LC-MS image (RT ±2.5 min × m/z M−1.5 to M+2.5), image_normalization=intensity range [0, 1], data_augmentation_factor=~10×, batch_size=128, epochs=8, optimizer=Adam, loss_function=weighted cross-entropy, train_validation_split_ratio=4:1, class_balance_preservation=True
+    input: 2D LC-MS profiles (precursor + two putative fragments)
+    output: probability score for correct double bond position assignment
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: https://github.com/PNNL-m-q/mzapy
+
+figure_recipes: 9
+  Fig. 1: [workflow_diagram]
+    caption: Schematic of OzID reaction chemistry illustrating ozone addition to carbon-carbon double bonds and subsequent cleavage to aldehyde and criegee fragments.
+    produced_by_step: [3]
+    visualization_tool: not specified
+  Fig. 2: [workflow_diagram]
+    caption: Overview of OzID data acquisition and analysis workflows, including LC-OzID-IMS-MS acquisition and LipidOz processing steps.
+    produced_by_step: [3, 4, 5]
+    visualization_tool: not specified
+  Fig. 3: [chromatogram]
+    caption: OzID data analysis results for a polyunsaturated lipid standard showing precursor and diagnostic fragment chromatograms and spectra.
+    produced_by_step: [4]
+    visualization_tool: LipidOz GUI (matplotlib-based)
+  Table 1: [table]
+    caption: Summary of lipid data used for training the deep learning model, including deuterated standards and porcine brain extract.
+    produced_by_step: [5]
+    visualization_tool: not specified
+  Fig. 4: [bar_chart]
+    caption: Distributions of chromatographic and mass spectral scoring components for OzID fragments, showing separation between true and false assignments.
+    produced_by_step: [4]
+    visualization_tool: not specified
+  Fig. 5: [workflow_diagram]
+    caption: Screenshot of result window in the LipidOz GUI application displaying double bond assignment output.
+    produced_by_step: [4, 5]
+    visualization_tool: LipidOz GUI (PyQt + matplotlib)
+  Fig. 6: [workflow_diagram]
+    caption: Deep learning-based assignment pipeline: data curation, 2D profile conversion, augmentation, RESNET-18 training, and inference.
+    produced_by_step: [5]
+    visualization_tool: not specified
+  Fig. 7: [bar_chart]
+    caption: Summary of lipids identified from complex lipid extracts across different tissues (brain, heart, liver, plasma, milk).
+    produced_by_step: [2, 4, 5]
+    visualization_tool: not specified
+  Fig. 8: [chromatogram]
+    caption: Examples of sphingolipid backbone fragmentation patterns observed in tissue lipid extract data using OzID.
+    produced_by_step: [3, 4]
+    visualization_tool: not specified
+
+reproducibility_gaps:
+  - Raw .mza OzID-IMS-MS data not deposited in public repository
+  - Agilent 6560 IMS-MS with custom OzID modification is not commercially available and requires hardware retrofitting
+  - LIQUID version and configuration details not specified
+  - No public link to LipidOz source code (only mzapy library linked; LipidOz itself not linked)
+  - Training dataset (Table 1) described but not shared
+reproducibility_strengths:
+  - Open-source implementation in Python using standard libraries (numpy, scipy, matplotlib, PyTorch)
+  - Use of publicly documented file format (.mza) and open parser (mzapy)
+  - Detailed parameterization of DL training (architecture, augmentation, loss, optimizer)
+  - Explicit description of chromatographic and isotopic scoring logic
+  - Clear mapping of lipid nomenclature and OzID chemistry

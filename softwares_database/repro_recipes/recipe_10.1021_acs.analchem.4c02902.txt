@@ -1,0 +1,64 @@
+========== reproducibility_recipe entry ==========
+paper_title: Quantification Approaches in Non-Target LC/ESI/HRMS Analysis: An Interlaboratory Comparison.
+source_paper: Malm L et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.4c02902, PMID: 39353203
+overall_reproducibility_score: 72/100
+
+workflow_steps: 6
+  Step 1: Sample preparation and spiking
+    tool: in-house protocol
+    parameters: spike_levels=2, number_of_compounds_spiked=45, matrix_types=['HPLC grade water', 'tap water', 'surface water'], calibrants_count=41, calibrant_concentration_levels=6
+    input: raw water samples
+    output: spiked samples + calibrant standards
+    confidence: high
+  Step 2: LC/ESI/HRMS analysis
+    tool: in-house NTS workflows
+    parameters: ionization_mode=ESI, mass_resolution=high-resolution, chromatography=liquid chromatography
+    input: spiked samples + calibrant standards
+    output: raw .raw/.d/.wiff files (vendor-specific)
+    confidence: medium
+  Step 3: Data processing for feature detection and alignment
+    tool: in-house NTS workflows
+    input: raw vendor files
+    output: feature table (m/z, RT, intensity)
+    confidence: low
+  Step 4: Quantification using surrogate standard approaches
+    tool: surrogate standard methods
+    algorithm: ['parent-transformation product', 'structurally similar compound', 'close eluting compound']
+    input: feature table + calibrant data
+    output: quantified concentrations (estimated)
+    confidence: medium
+  Step 5: Quantification using predicted ionization efficiency models
+    tool: ['RandFor-IE', 'MLR-IE']
+    algorithm: ['Random Forest', 'Multiple Linear Regression']
+    parameters: features_used_for_prediction=['molecular weight', 'logP', 'pKa', 'polar surface area', 'charge', 'H-bond donors/acceptors']
+    input: feature table + compound descriptors
+    output: predicted ionization efficiency → estimated concentrations
+    confidence: high
+  Step 6: Accuracy evaluation
+    tool: custom statistical evaluation
+    algorithm: mean prediction error (×-fold), % within 10× error
+    parameters: error_metric=fold-error (estimated/spiked), performance_threshold=10× error band, aggregation_level=['compound', 'instrument', 'laboratory', 'matrix']
+    input: estimated concentrations vs. spiked concentrations
+    output: accuracy metrics per approach/laboratory/matrix
+    confidence: high
+
+data_availability:
+  raw_data: available (NORMAN MassBank Repository: NORMAN-NTS-2024)
+  processed_data: available (NORMAN MassBank Repository: NORMAN-NTS-2024)
+  metadata: available
+  data_urls: https://www.norman-network.net/normandata/nts-interlab-2024
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No explicit description of data conversion (e.g., vendor → mzML) or peak picking parameters
+  - In-house NTS workflows not standardized nor fully documented (no software names, versions, or parameters reported)
+  - RandFor-IE and MLR-IE model training details (e.g., descriptor sources, train/test splits, hyperparameters) not provided
+  - No public code repository linked for quantification algorithms or evaluation scripts
+reproducibility_strengths:
+  - Standardized reference materials and spiking design across 37 labs
+  - Publicly available raw and processed data via NORMAN MassBank Repository
+  - Explicit performance metrics (mean fold-error, % within 10×) enable cross-study benchmarking
+  - Use of open-source modeling approaches (Random Forest, MLR) — implementation feasible with common tools (scikit-learn, R)

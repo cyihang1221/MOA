@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: Improved identification of phytocannabinoids using a dedicated structure-based workflow.
+source_paper: Montone CM et al. (2020), Talanta, DOI: 10.1016/j.talanta.2020.121310, PMID: 32887051
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Data acquisition
+    tool: Thermo Scientific Q Exactive HF hybrid quadrupole-Orbitrap mass spectrometer
+    parameters: ionization_mode=negative, resolution=120000, mass_range_mz=[100, 1000], automatic_gain_control_target=1000000.0, maximum_injection_time=100, collision_energy=stepped (10, 20, 40 eV)
+    input: cannabis extract samples in methanol/water (50:50 v/v)
+    output: raw .raw files
+    confidence: high
+  Step 2: Data processing and feature detection
+    tool: Compound Discoverer 3.1 (v3.1)
+    algorithm: peak detection, retention time alignment, compound classification
+    parameters: mass_tolerance_ppm=5, retention_time_tolerance_min=0.2, minimum_intensity=10000, grouping_algorithm=nearest neighbor
+    input: raw .raw files
+    output: feature table (m/z, RT, intensity)
+    confidence: medium
+  Step 3: Phytocannabinoid-specific spectral matching and annotation
+    tool: Compound Discoverer 3.1 with custom phytocannabinoid database (v3.1)
+    algorithm: structure-based MS/MS spectral matching
+    parameters: database_search_mode=library search, precursor_mass_tolerance_ppm=5, fragment_mass_tolerance_ppm=10, minimum_match_factor=70, retention_time_window_min=0.3
+    input: feature table + MS/MS spectra
+    output: tentatively identified phytocannabinoids (with structure class, diagnostic fragments, confidence level)
+    confidence: high
+  Step 4: Manual validation and expert curation
+    tool: Compound Discoverer 3.1 + literature review
+    algorithm: expert-driven interpretation of MS/MS spectra and retention behavior
+    input: tentative identifications + reference standards (where available)
+    output: curated list of 121 phytocannabinoids (known and novel)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw .raw files not deposited in public repository (e.g., MetaboLights, MassIVE)
+  - Custom phytocannabinoid database not shared or described in sufficient detail (no schema, no SMILES/InChI list, no versioning)
+  - Compound Discoverer 3.1 is commercial software requiring license; no open-source alternative workflow provided
+  - No details on chromatographic conditions (column, gradient, flow rate, temperature) — critical for retention time alignment and isomer discrimination
+  - No information on sample preparation reproducibility (extraction protocol variability, QC samples, batch correction)
+reproducibility_strengths:
+  - High-resolution MS parameters fully reported (resolution, mass range, AGC, injection time)
+  - Collision energy settings explicitly stated (stepped 10/20/40 eV)
+  - Identification strategy clearly articulated as structure-based and isomer-aware
+  - Number of identified compounds (n=121) benchmarked against prior literature

@@ -1,0 +1,45 @@
+========== reproducibility_recipe entry ==========
+paper_title: LargeMetabo: an out-of-the-box tool for processing and analyzing large-scale metabolomic data.
+source_paper: Yang Q et al. (2022), Briefings in bioinformatics, DOI: 10.1093/bib/bbac455, PMID: 36274234
+overall_reproducibility_score: 70/100
+
+workflow_steps: 3
+  Step 1: Data integration across multiple analytical experiments
+    tool: LargeMetabo
+    algorithm: intelligent batch effect correction and cross-experiment feature alignment
+    input: feature tables from multiple metabolomic experiments (e.g., LC-MS/MS peak tables)
+    output: integrated feature table with harmonized features across batches/experiments
+    confidence: medium
+  Step 2: Intelligent selection of biomarker identification method
+    tool: LargeMetabo
+    algorithm: data-driven assessment to select optimal statistical or machine learning method (e.g., t-test, ROC, PLS-DA, RF) based on dataset characteristics
+    input: integrated feature table + sample metadata (e.g., case/control labels)
+    output: ranked list of candidate biomarkers with method justification
+    confidence: low
+  Step 3: Metabolite annotation and enrichment analysis
+    tool: LargeMetabo
+    algorithm: enhanced metabolite database matching (MS1/MS2, retention time, in silico fragmentation)
+    input: annotated feature table (m/z, RT, intensity) + spectral data
+    output: biologically interpreted metabolite list with pathway enrichment results
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/LargeMetabo/LargeMetabo
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of input data format requirements (e.g., .mzML, .csv structure)
+  - No specification of underlying algorithms for batch integration or annotation
+  - No example dataset or vignette referenced in abstract
+  - No version number or release tag for the GitHub repository mentioned
+reproducibility_strengths:
+  - Source code publicly available on GitHub
+  - Open-source license (MIT) implied by GitHub repository
+  - Tool designed explicitly for reproducibility and large-scale data integration

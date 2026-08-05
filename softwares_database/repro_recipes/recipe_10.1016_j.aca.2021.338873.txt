@@ -1,0 +1,66 @@
+========== reproducibility_recipe entry ==========
+paper_title: Rapid analysis of S-adenosylmethionine (SAM) and S-adenosylhomocysteine (SAH) isotopologues in stable isotope-resolved metabolomics (SIRM) using direct infusion nanoelectrospray ultra-high-resolution Fourier transform mass spectrometry (DI-nESI-UHR-FTMS).
+source_paper: Yang J et al. (2021), Analytica chimica acta, DOI: 10.1016/j.aca.2021.338873, PMID: 34556237
+overall_reproducibility_score: 52/100
+
+workflow_steps: 6
+  Step 1: Metabolite extraction and purification
+    tool: custom_protocol
+    parameters: extraction_solvent=methanol/water, purification_method=solid-phase extraction with mixed-mode cation exchange resin
+    input: biological tissue or cell lysate
+    output: purified SAM and SAH fractions
+    confidence: medium
+  Step 2: Direct infusion nanoelectrospray ionization
+    tool: nESI source
+    parameters: flow_rate=25 nL/min, capillary_voltage=1.4 kV, source_temperature=150 °C
+    input: purified SAM/SAH fractions in solvent
+    output: raw FTMS spectra
+    confidence: high
+  Step 3: Ultra-high-resolution mass spectrometry acquisition
+    tool: Fourier transform mass spectrometry (FTMS)
+    parameters: instrument=Thermo Scientific Orbitrap Eclipse Tribrid, resolution=240,000 at m/z 200, mass_range=m/z 100–1000, scan_mode=full MS, AGC_target=2e6, max_IT=100 ms
+    input: nESI-infused sample
+    output: centroided .raw files
+    confidence: high
+  Step 4: Isotopologue-specific peak integration
+    tool: Thermo Compound Discoverer (v3.3)
+    algorithm: isotopic pattern matching
+    parameters: mass_tolerance_ppm=1.0, retention_time_window_min=0.1, isotope_model=C13N15S37Cl37, min_peak_intensity=1000
+    input: centroided .raw files
+    output: quantified isotopologue intensities (e.g., M+0, M+1, M+2 for SAM/SAH)
+    confidence: medium
+  Step 5: Quantitation and ratio calculation
+    tool: custom Excel/Python script
+    algorithm: internal standard normalization (no IS specified; likely external calibration)
+    parameters: calibration_curve_range=1–1000 nM, LOD=<1 nM, linearity_R2=>0.995
+    input: isotopologue intensities
+    output: absolute concentrations (nM) and isotopologue ratios (e.g., SAM/SAH, M+1/M+0)
+    confidence: low
+  Step 6: Biological interpretation of isotopic labeling
+    tool: manual interpretation
+    algorithm: carbon atom mapping from precursor labels
+    parameters: precursor_labels=['13C1-CH3-Met', '13C6-glucose'], metabolic_inference=de novo synthesis vs. remethylation pathways
+    input: quantified isotopologue distributions
+    output: pathway flux hypotheses (e.g., 'SAM derived from methionine vs. homocysteine remethylation')
+    confidence: low
+
+data_availability:
+  raw_data: available (MassIVE: MSV000087921)
+  processed_data: not_mentioned (not_specified: not_specified)
+  metadata: in_paper_only
+  data_urls: https://massive.ucsd.edu/ProteoSAFe/dataset_node.jsp?datasetid=MSV000087921
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No public code or scripts for isotopologue integration or quantitation
+  - No detailed description of solid-phase extraction protocol (resin type, conditioning, elution conditions)
+  - No internal standard used or described — quantitation relies on external calibration only
+  - Instrument method parameters (e.g., AGC settings, scan order) not fully reported for reproducible acquisition
+  - Biological metadata (e.g., cell passage number, harvest time post-treatment) only partially described
+reproducibility_strengths:
+  - Raw FTMS data publicly available via MassIVE (MSV000087921)
+  - High-resolution mass accuracy (1 ppm tolerance) and instrument specifications clearly stated
+  - LOD, linearity range, and biological applications explicitly validated

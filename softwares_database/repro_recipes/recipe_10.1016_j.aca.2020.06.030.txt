@@ -1,0 +1,48 @@
+========== reproducibility_recipe entry ==========
+paper_title: Automated parallel derivatization of metabolites with SWATH-MS data acquisition for qualitative and quantitative analysis.
+source_paper: Cifuentes Girard MF et al. (2020), Analytica chimica acta, DOI: 10.1016/j.aca.2020.06.030, PMID: 32800124
+overall_reproducibility_score: 30/100
+
+workflow_steps: 3
+  Step 1: Automated parallel derivatization
+    tool: PAL RTC autosampler
+    parameters: derivatization_time_min=15, temperature_conditions=not_specified, agitation_conditions=two_agitators_at_different_conditions, reagents=['12C-dansyl chloride', '12C-dansylhydrazine'], isotopic_standards=['13C2-dansyl chloride', '13C2-dansylhydrazine'], standards_count=40, standard_classes=['amino acids', 'sex hormones', 'highly polar metabolites']
+    input: urine samples, chemical standards
+    output: derivatized samples and isotopically labelled internal standards
+    confidence: medium
+  Step 2: Column-switching LC-HRMS with SWATH-MS acquisition
+    tool: LC-HRMS with SWATH-MS (data-independent acquisition)
+    algorithm: SWATH-MS
+    parameters: acquisition_time_min=25, column_switching_enabled=True, purpose_of_column_switching=removal_of_excess_reagents_to_prevent_ionization_interference_and_chromatographic_deterioration
+    input: derivatized samples and standards
+    output: SWATH-MS raw data (.wiff or equivalent vendor format)
+    confidence: high
+  Step 3: Post-acquisition metabolite identification and quantification
+    tool: SWATH-MS data analysis software (unspecified)
+    algorithm: precursor (MS1) and tag fragment (MS2) level quantification
+    parameters: quantification_levels=['MS1', 'MS2'], calibration_method=single_point_calibration, accuracy_precision_range_percent=15, quantification_flexibility=full
+    input: SWATH-MS raw data
+    output: identified metabolites, quantitative results (peak areas/ratios)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw SWATH-MS data not deposited in public repository
+  - No specification of SWATH-MS library generation method or spectral library used
+  - No details on data processing software (e.g., PeakView, Spectronaut, Skyline) or parameters
+  - PAL RTC autosampler method files and column-switching LC configuration not provided
+  - Derivatization temperature, pH, solvent composition, and reaction quenching steps not specified
+  - No reporting of chromatographic gradient, column type, or HRMS instrument model/parameters
+reproducibility_strengths:
+  - Fully automated workflow described with hardware integration (PAL RTC + LC-HRMS)
+  - Dual derivatization strategy with isotopic labelling clearly outlined
+  - Quantitative performance metrics reported (±15% accuracy/precision)
+  - Explicit rationale for column switching provided

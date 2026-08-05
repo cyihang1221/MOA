@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: Flash entropy search to query all mass spectral libraries in real time.
+source_paper: Li Y et al. (2023), Nature methods, DOI: 10.1038/s41592-023-02012-9, PMID: 37735567
+overall_reproducibility_score: 40/100
+
+workflow_steps: 3
+  Step 1: Spectral similarity computation using entropy-based metric
+    tool: Flash entropy search
+    algorithm: Entropy similarity
+    parameters: normalization_sum_intensity=0.5
+    input: MS/MS spectrum (query) and spectral library entries
+    output: Similarity scores per library match
+    confidence: medium
+  Step 2: Parallelized spectral library querying
+    tool: Flash entropy search
+    algorithm: Multi-threaded and GPU-accelerated search
+    parameters: threads=multiple, hardware_acceleration=GPU
+    input: Batch of MS/MS spectra (e.g., 100 positive/negative ESI)
+    output: Ranked matches across billion-scale spectral libraries
+    confidence: medium
+  Step 3: Benchmarking against alternative similarity methods
+    tool: Flash entropy search, BLINK, open search (dot product)
+    algorithm: Entropy similarity, dot product, neutral loss, hybrid search
+    parameters: library_sizes=['small', 'medium', 'large', 'billion-scale'], spectral_source=['MassBank.us', 'GNPS', 'public repositories']
+    input: Randomly sampled MS/MS spectra (N=100–200)
+    output: Computation time (ms/s), accuracy (similarity difference vs. classic method)
+    confidence: low
+
+data_availability:
+  raw_data: available (MassBank.us, GNPS, MassIVE, MetaboLights, MetabolomicsWorkbench, West Coast Metabolomics Center)
+  processed_data: not_mentioned
+  metadata: not_mentioned
+  data_urls: https://doi.org/10.1038/s41592-023-02012-9, https://massbank.us/, https://gnps.ucsd.edu/, https://massive.ucsd.edu/, https://www.ebi.ac.uk/metabolights/, https://www.metabolomicsworkbench.org/, https://westcoastmetabolomicscenter.ucdavis.edu/
+
+code_availability: not_mentioned
+
+figure_recipes: 2
+  Fig. 1: [workflow_diagram]
+    caption: Overview of Flash entropy searches, illustrating the algorithmic pipeline for real-time spectral library querying.
+    produced_by_step: [1, 2]
+  Fig. 2: [bar_chart]
+    caption: Benchmarking Flash entropy searches for speed and accuracy, comparing computation time and similarity accuracy against BLINK and classic open search methods.
+    produced_by_step: [3]
+
+reproducibility_gaps:
+  - No source code or executable implementation provided
+  - No version or build instructions for Flash entropy search
+  - No specification of GPU hardware or driver requirements
+  - No details on spectral preprocessing (e.g., peak filtering, noise thresholding, mass tolerance)
+  - No exact spectral library versions or subsets used in benchmarks
+reproducibility_strengths:
+  - Public spectral libraries explicitly named (MassBank.us, GNPS, etc.)
+  - Benchmarking methodology described with sampling strategy (N=200 spectra)
+  - Source data files provided for Extended Data Figures (XLSX)

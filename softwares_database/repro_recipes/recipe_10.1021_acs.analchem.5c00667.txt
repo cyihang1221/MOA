@@ -1,0 +1,59 @@
+========== reproducibility_recipe entry ==========
+paper_title: Application of Rapid Evaporative Ionization Mass Spectrometry (REIMS) to Identify Antimicrobial Resistance in Uropathogenic &lt;i&gt;Escherichia coli&lt;/i&gt; (UPEC) Isolates via Deuterium Isotope Probing.
+source_paper: Shams S et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c00667, PMID: 40844038
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Bacterial culture with deuterium oxide
+    tool: standard microbiological culture
+    parameters: D2O_concentration=0.1, incubation_time_hours=1
+    input: UPEC isolates
+    output: deuterium-labeled bacterial biomass
+    confidence: high
+  Step 2: REIMS data acquisition
+    tool: REIMS platform
+    parameters: ionization_source=REIMS, polarity=positive, mass_range_mz=[50, 2000]
+    input: intact bacterial colonies
+    output: raw mass spectra (.raw or vendor format)
+    confidence: medium
+  Step 3: Spectral preprocessing and binning
+    tool: custom processing (not specified)
+    algorithm: mass spectral binning
+    parameters: bin_width_ppm=5, mass_tolerance_ppm=5
+    input: raw mass spectra
+    output: binned feature table (m/z bins × samples)
+    confidence: low
+  Step 4: Multivariate statistical analysis
+    tool: multivariate statistics
+    algorithm: PCA and clustering
+    input: binned feature table
+    output: score plots, clustering results
+    confidence: low
+  Step 5: Deuterium incorporation analysis
+    tool: custom interpretation
+    algorithm: mass shift detection (+1 Da per D atom)
+    parameters: expected_mass_shift_da=1.006
+    input: binned feature table
+    output: deuterated lipid candidate list (tentative PE/PG annotations)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposited in public repository
+  - REIMS instrument vendor and software version not specified
+  - No details on spectral preprocessing (e.g., noise threshold, baseline correction, alignment)
+  - No description of multivariate analysis implementation (e.g., scaling method, number of components, validation)
+  - Tentative metabolite annotations lack MS/MS confirmation or database matching parameters
+  - Custom binning and deuterium shift analysis code not shared
+reproducibility_strengths:
+  - Clear experimental design (1 h D₂O incubation, 10% D₂O)
+  - Biological interpretation of deuterium incorporation linked to metabolic inhibition
+  - Explicit distinction between biological vs. extracellular deuterium origin

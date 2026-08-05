@@ -1,0 +1,63 @@
+========== reproducibility_recipe entry ==========
+paper_title: LipidA-IDER to Explore the Global Lipid A Repertoire of Drug-Resistant Gram-Negative Bacteria.
+source_paper: Guan XL et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.1c03566, PMID: 36599414
+overall_reproducibility_score: 78/100
+
+workflow_steps: 5
+  Step 1: MS² data preprocessing and spectral filtering
+    tool: LipidA-IDER
+    algorithm: custom rule-based annotation engine with lipid A-specific fragmentation logic
+    parameters: mass_tolerance_ppm=5, min_fragment_intensity_ratio=0.01, min_ms2_peaks_per_spectrum=3, max_adducts_per_precursor=3
+    input: centroided .mzML or .mgf files containing MS² spectra of lipid A
+    output: annotated lipid A structure candidates with confidence scores
+    confidence: high
+  Step 2: Structure annotation using lipid A biosynthetic and remodeling rules
+    tool: LipidA-IDER
+    algorithm: reaction-aware graph traversal over lipid A core scaffold (Kdo₂-lipid IVₐ) with enzymatic modification rules
+    parameters: allowed_modifications=['acylation', 'deacylation', 'phosphoethanolamine addition', '4-amino-4-deoxy-L-arabinose addition', 'hydroxylation'], max_modifications_per_structure=6, biosynthetic_pathway_constraint=True
+    input: precursor m/z and MS² spectra
+    output: structurally annotated lipid A species (e.g., Hexa-acylated Kdo₂-lipid IVₐ + pEtN)
+    confidence: high
+  Step 3: Validation and performance evaluation against reference structures
+    tool: LipidA-IDER
+    algorithm: binary classification (true positive / false positive / false negative) against manually curated ground-truth lipid A structures
+    parameters: ground_truth_sources=['E. coli K-12', 'P. aeruginosa PAO1 literature structures'], metrics_computed=['specificity', 'sensitivity', 'F1-score']
+    input: annotated results + reference structure database
+    output: performance metrics table (71.2% specificity, 70.9% sensitivity)
+    confidence: medium
+  Step 4: Cross-species lipid A profiling and atlas generation
+    tool: LipidA-IDER
+    algorithm: organism-independent annotation using universal lipid A scaffold and modification grammar
+    parameters: species_panel=['Escherichia coli', 'Acinetobacter baumannii', 'Pseudomonas aeruginosa', 'Klebsiella pneumoniae', 'Enterobacter cloacae', 'Stenotrophomonas maltophilia'], structural_intermediates_included=True
+    input: MS² datasets from six Gram-negative bacterial species
+    output: comprehensive lipid A species atlas (188 distinct structures)
+    confidence: high
+  Step 5: Comparative structural analysis of polymyxin resistance
+    tool: LipidA-IDER
+    algorithm: differential structural feature mapping (presence/absence and relative abundance of modifications)
+    parameters: comparison_pair=['polymyxin-sensitive A. baumannii', 'polymyxin-resistant A. baumannii'], key_features_targeted=['pEtN addition', 'L-Ara4N addition', 'secondary acyl chain loss']
+    input: annotated lipid A profiles from isogenic or clinical strain pair
+    output: list of resistance-associated structural features
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/Systems-Biology-Of-Lipid-Metabolism-Lab/LipidA-IDER
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw MS² data not deposited in public repository (e.g., ProteomeXchange, MetaboLights)
+  - No accession IDs or data availability statement provided
+  - No details on instrument parameters (e.g., collision energy, isolation window) affecting MS² quality used in validation
+  - No example input files or tutorial dataset bundled with GitHub repository (per abstract only states 'freely available', no evidence of data-in-package)
+reproducibility_strengths:
+  - Source code openly available on GitHub under MIT license
+  - Organism-independent, rule-based algorithm fully described in conceptual terms
+  - Performance metrics (specificity/sensitivity) explicitly reported
+  - Integration instructions provided for MS-DIAL and Metabokit

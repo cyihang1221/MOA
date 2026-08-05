@@ -1,0 +1,45 @@
+========== reproducibility_recipe entry ==========
+paper_title: Methods for Quantifying the Metabolic Boundary Fluxes of Cell Cultures in Large Cohorts by High-Resolution Hydrophilic Liquid Chromatography Mass Spectrometry.
+source_paper: Groves RA et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.2c00078, PMID: 35700271
+overall_reproducibility_score: 30/100
+
+workflow_steps: 3
+  Step 1: LC-MS data acquisition using dual ZIC-HILIC column system
+    tool: LC-MS platform (unspecified vendor)
+    parameters: column_type=zwitterionic hydrophilic interaction liquid chromatography (ZIC-HILIC), configuration=two columns plumbed for offline equilibration, run_time_per_sample=4.5, unit_run_time=minutes, metabolite_resolution=397, sample_throughput=1100, coefficient_of_variation_median=0.127
+    input: cell culture extracts (hydrophilic metabolites)
+    output: raw LC-MS data (.raw or equivalent vendor format)
+    confidence: medium
+  Step 2: Metabolite quantification and quality control
+    tool: unspecified quantification software
+    parameters: qc_metric=coefficient of variation across 1100 technical replicates, qc_threshold=median CV = 0.127
+    input: raw LC-MS data
+    output: quantified metabolite abundance table (boundary fluxes)
+    confidence: low
+  Step 3: Biological interpretation of boundary flux phenotypes
+    tool: custom analysis (no tool specified)
+    parameters: cohort_size=960, organism=Staphylococcus aureus, sample_origin=bloodstream infections
+    input: quantified metabolite abundance table
+    output: metabolic phenotype diversity profile
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No specification of LC-MS instrument model, ionization mode (ESI+/−), or mass analyzer
+  - No details on data processing software (peak picking, alignment, integration, calibration)
+  - No description of internal standards, calibration curves, or quantification method
+  - No information on raw data deposition (repository or accession ID)
+  - No code, scripts, or workflow documentation shared
+  - Dual-column plumbing configuration not schematically or technically described
+  - Gradient program, mobile phase composition, temperature, flow rate, and injection volume not reported
+reproducibility_strengths:
+  - Explicit performance metrics reported (397 metabolites, 4.5 min/run, median CV = 0.127 across 1100 replicates)
+  - Clear biological context and cohort scale (960 clinical S. aureus isolates)

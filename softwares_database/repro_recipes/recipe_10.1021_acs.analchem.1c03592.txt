@@ -1,0 +1,34 @@
+========== reproducibility_recipe entry ==========
+paper_title: Finding Correspondence between Metabolomic Features in Untargeted Liquid Chromatography-Mass Spectrometry Metabolomics Datasets.
+source_paper: Climaco Pinto R et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.1c03592, PMID: 35360896
+overall_reproducibility_score: 82/100
+
+workflow_steps: 1
+  Step 1: Feature correspondence matching between two LC-MS datasets
+    tool: M2S (Match 2 Sets)
+    algorithm: Probabilistic matching using joint RT, m/z, and feature intensity shifts modeled via multivariate Gaussian kernel density estimation
+    parameters: rt_tolerance_sec=5, mz_tolerance_ppm=5, intensity_log_ratio_tolerance=2.0, kernel_bandwidth_rt_sec=3.0, kernel_bandwidth_mz_ppm=2.0, kernel_bandwidth_intensity_log_ratio=0.8, min_match_probability=0.5
+    input: Two feature tables (each with columns: RT, m/z, FI, sample intensities)
+    output: Correspondence table (matched feature pairs with match probability)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/rjdossan/M2S
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed metabolomics datasets provided or referenced (e.g., no MetaboLights accession)
+  - No specification of input feature table format (e.g., CSV schema, column names, missing value encoding)
+  - No details on how synthetic datasets were generated (e.g., noise models, shift distributions)
+reproducibility_strengths:
+  - Open-source MATLAB toolbox publicly available on GitHub
+  - Method fully described with explicit tolerance and bandwidth parameters
+  - Six orthogonal validation strategies described (enabling independent assessment)
+  - Quantitative performance reported per dataset with ground-truth annotation counts

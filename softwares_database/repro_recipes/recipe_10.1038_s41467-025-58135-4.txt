@@ -1,0 +1,116 @@
+========== reproducibility_recipe entry ==========
+paper_title: Resolving multi-image spatial lipidomic responses to inhaled toxicants by machine learning.
+source_paper: Stevens NC et al. (2025), Nature communications, DOI: 10.1038/s41467-025-58135-4, PMID: 40140638
+overall_reproducibility_score: 87/100
+
+workflow_steps: 11
+  Step 1: MALDI-TOF MSI data acquisition
+    tool: Bruker timsTOF fleX
+    algorithm: MALDI-TOF without ion mobility
+    parameters: ionization_mode=['positive', 'negative'], matrix_positive=40 mg/mL DHB in 70:30 MeOH:H2O, matrix_negative=7 mg/mL 1,5-diaminonaphthalene in 70:30 MeOH:H2O, sprayer_nozzle_temp_positive=75, sprayer_nozzle_temp_negative=70, sprayer_passes_positive=8, sprayer_passes_negative=13, sprayer_flow_rate_mL_per_min=0.1, sprayer_track_distance_mm=2, sprayer_drying_time_sec_between_passes=10, laser_raster_width_um=10, laser_shots_per_burst=150, laser_frequency_hz=10000, laser_field_size_um=5x5, laser_energy_local_percent=50, laser_attenuator_offset_global_percent=0, mz_range_positive=[300, 1300], mz_range_negative=[300, 900], detector_calibration_mix=90% Agilent ESI-TOF tuning mix + 10% sodium formate
+    input: frozen tissue sections on ITO slides
+    output: raw .d files (Bruker format)
+    confidence: high
+  Step 2: MSI data conversion and preprocessing
+    tool: SCiLS Lab
+    algorithm: 5-ppm binning
+    parameters: bin_size_ppm=5
+    input: raw .d files
+    output: imzML files
+    confidence: high
+  Step 3: MSI peak detection, binning, and alignment
+    tool: Cardinal (v3.4.3 or 3.6.2)
+    algorithm: peak detection and alignment (default parameters implied)
+    input: imzML files
+    output: peak matrix (m/z × pixel × sample)
+    confidence: medium
+  Step 4: MSI lipid annotation
+    tool: Custom R workflow + LC-MS/MS reference
+    algorithm: m/z + RT + MS/MS matching to scraped-tissue LC-MS/MS data
+    parameters: mass_error_threshold_ppm=None, annotation_sources=['LC-MS/MS from same experiment', 'Supplementary Data 1']
+    input: MSI peak matrix + LC-MS/MS lipid identifications
+    output: annotated spatial lipid map (m/z → lipid ID with class/subclass/saturation)
+    confidence: medium
+  Step 5: MSI intensity normalization
+    tool: R (custom LOESS implementation)
+    algorithm: Locally Estimated Scatterplot Smoothing (LOESS) applied per-pixel across all non-zero intensities
+    parameters: normalization_method=LOESS, applied_to=all non-zero intensity pixels across all samples
+    input: unnormalized peak matrix
+    output: LOESS-normalized spatial intensity matrix
+    confidence: high
+  Step 6: Spatial image segmentation and clustering
+    tool: Seurat (v5.0.3 or 5.1.0)
+    algorithm: graph-based clustering (k-nearest neighbors + Louvain/Leiden)
+    parameters: clustering_resolution=0.9, default_parameters_used=True
+    input: LOESS-normalized spatial intensity matrix
+    output: spatially coherent segmented regions (clusters)
+    confidence: high
+  Step 7: Morphological region assignment
+    tool: Manual H&E registration
+    algorithm: histology-guided annotation
+    input: segmented clusters + H&E-stained serial sections
+    output: anatomically annotated regions (e.g., airway, parenchyma, vasculature)
+    confidence: high
+  Step 8: Regional lipid abundance quantification
+    tool: R (custom scripts)
+    algorithm: region-wise intensity summarization (mean/median per lipid per region)
+    input: annotated spatial intensity matrix + region masks
+    output: region-by-lipid abundance table
+    confidence: medium
+  Step 9: Lipid class enrichment analysis
+    tool: R (custom implementation)
+    algorithm: Kolmogorov-Smirnov test per lipid class
+    parameters: statistical_test=Kolmogorov-Smirnov, grouping=lipid class, subclass, saturation level
+    input: region-by-lipid abundance table
+    output: enriched lipid classes (p-values, effect sizes)
+    confidence: high
+  Step 10: LC-MS/MS untargeted lipidomics
+    tool: MS-DIAL (v4.70)
+    algorithm: deconvolution, peak picking, alignment, in silico library matching
+    parameters: identification_criteria=['m/z', 'retention_time', 'MS/MS_fragmentation_pattern'], library_source=built-in in silico libraries
+    input: LC-MS/MS raw files (.raw)
+    output: curated lipid annotation table (Supplementary Data 1)
+    confidence: high
+  Step 11: Multi-omics integration (MSI + LC-MS/MS)
+    tool: Custom R workflow (RegioMSI)
+    algorithm: m/z-driven cross-platform annotation transfer
+    parameters: validation_source=scraped tissue & microdissected airways under identical experimental conditions
+    input: MSI peak list + LC-MS/MS annotation table
+    output: integrated spatial lipid atlas with confidence metrics (mass error reported)
+    confidence: high
+
+data_availability:
+  raw_data: available (Zenodo: 10.5281/zenodo.14834145)
+  processed_data: available (Zenodo: 10.5281/zenodo.14834145)
+  metadata: in_paper_only
+  data_urls: https://zenodo.org/records/14834145
+
+code_availability: repository_linked
+  code_url: https://github.com/cschasestevens/RegioMSI
+  license: MIT
+
+figure_recipes: 3
+  Figure 1a: [workflow_diagram]
+    caption: Experimental design showing HDM sensitization, ozone exposure, tissue processing, and analytical workflows for MSI and LC-MS/MS.
+    produced_by_step: [1, 10, 11]
+    visualization_tool: Adobe Illustrator / R (ggplot2)
+  Figure 1b: [bar_chart]
+    caption: Summary of lipid annotations stratified by class, subclass, and saturation level from positive and negative mode MSI/LC-MS/MS.
+    produced_by_step: [4, 10, 11]
+    visualization_tool: R (ggplot2)
+  Supplementary Fig. 1: [other]
+    caption: Schematic of lung lobe inflation and microdissection for airway isolation and MSI preparation.
+    produced_by_step: [1]
+    visualization_tool: Adobe Illustrator
+
+reproducibility_gaps:
+  - H&E registration procedure not algorithmically detailed (manual step lacks reproducibility metrics)
+  - No explicit description of LOESS implementation (e.g., span, degree, robust fitting)
+  - Cardinal version ambiguity (v3.4.3 or v3.6.2) may affect peak detection consistency
+  - No reporting of LC-MS/MS gradient profile (only mobile phase composition given, no time program)
+reproducibility_strengths:
+  - Full codebase publicly available (GitHub + Zenodo DOI)
+  - Raw and processed MSI/LC-MS/MS data deposited in Zenodo with persistent DOI
+  - All major software tools are open-source (Cardinal, Seurat, MS-DIAL, RegioMSI)
+  - Comprehensive annotation tables provided (Supplementary Data 1 & 2)
+  - Explicit hardware and OS specifications for RegioMSI execution

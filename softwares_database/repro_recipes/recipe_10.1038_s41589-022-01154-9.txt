@@ -1,0 +1,88 @@
+========== reproducibility_recipe entry ==========
+paper_title: Hepatic glutamine synthetase controls N&lt;sup&gt;5&lt;/sup&gt;-methylglutamine in homeostasis and cancer.
+source_paper: Villar VH et al. (2023), Nature chemical biology, DOI: 10.1038/s41589-022-01154-9, PMID: 36280791
+overall_reproducibility_score: 35/100
+
+workflow_steps: 5
+  Step 1: Untargeted metabolomics data acquisition
+    tool: LC–MS
+    input: biological samples (liver tissue, blood, urine)
+    output: raw .mzML or vendor format files
+    confidence: low
+  Step 2: Metabolite annotation and feature detection
+    tool: MetaboScape 2021b (v2021b)
+    algorithm: automatic annotation
+    parameters: ion_mode=negative Q-TOF
+    input: MALDI imaging raw data
+    output: annotated ion distributions, metabolic compound maps
+    confidence: medium
+  Step 3: Data visualization and spatial mapping
+    tool: SCiLS Lab 2021c (v2021c)
+    parameters: pixel_size=10
+    input: processed MALDI imaging data
+    output: ion distribution images
+    confidence: medium
+  Step 4: Quantitative LC–MS analysis of N⁵-methylglutamine
+    tool: LC–MS/MS
+    parameters: dilution_factor=50, extraction_solution=LC–MS extraction solution
+    input: biological extracts (blood, urine, tissue)
+    output: quantified metabolite levels (N⁵-methylglutamine, glutamine, isotopologues)
+    confidence: medium
+  Step 5: Enzymatic kinetics and substrate profiling
+    tool: GraphPad Prism (v9.4)
+    algorithm: Michaelis–Menten fitting
+    parameters: temperature=37, pH=7.2, buffer=100 mM imidazole/HCl, substrates=['NH4Cl', 'CH3NH2·HCl', '15NH4Cl', '13C-methylamine']
+    input: LC–MS quantification time-course data
+    output: Km values, reaction rates
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 6
+  Fig. 1: [other]
+    caption: Shows effects of liver GS deficiency on glutamine metabolism.
+    produced_by_step: [4]
+    visualization_tool: not_mentioned
+    statistical_test: not_mentioned
+  Fig. 2: [other]
+    caption: Displays metabolic imaging and glucose tracing in GS-deficient liver.
+    produced_by_step: [2, 3, 4]
+    visualization_tool: MetaboScape 2021b, SCiLS Lab 2021c
+    statistical_test: not_mentioned
+  Fig. 3: [other]
+    caption: Presents untargeted metabolomics results identifying N⁵-methylglutamine as a GS product.
+    produced_by_step: [1, 4]
+    visualization_tool: not_mentioned
+    statistical_test: not_mentioned
+  Fig. 4: [other]
+    caption: Demonstrates GS-catalyzed synthesis of N⁵-methylglutamine from glutamate and methylamine.
+    produced_by_step: [4, 5]
+    visualization_tool: GraphPad Prism 9.4
+    statistical_test: Michaelis–Menten fitting
+  Fig. 5: [other]
+    caption: Shows microbiome- and β-catenin-dependent regulation of N⁵-methylglutamine synthesis.
+    produced_by_step: [4]
+    visualization_tool: not_mentioned
+    statistical_test: not_mentioned
+  Fig. 6: [other]
+    caption: Illustrates correlation between urinary N⁵-methylglutamine levels and GS+ liver tumor progression.
+    produced_by_step: [4]
+    visualization_tool: not_mentioned
+    statistical_test: not_mentioned
+
+reproducibility_gaps:
+  - Raw LC–MS and MALDI imaging data not deposited in public repository
+  - No description of LC–MS method parameters (column, gradient, flow rate, instrument model)
+  - No details on untargeted metabolomics data processing (peak picking, alignment, normalization)
+  - MetaboScape and SCiLS Lab are commercial tools requiring licenses
+  - GraphPad Prism is commercial software with no open alternative provided
+  - No code, scripts, or parameter files shared for data analysis or visualization
+reproducibility_strengths:
+  - Use of standard isotopic tracers (U-¹³C₆-glucose, ¹³C-methylamine, U-¹³C₅-glutamine) with clear dosing and timing
+  - Detailed enzymatic assay conditions (buffer, pH, temperature, substrates, concentrations)
+  - Explicit cell culture media formulations and genetic constructs described

@@ -1,0 +1,39 @@
+========== reproducibility_recipe entry ==========
+paper_title: Deep learning-based pseudo-mass spectrometry imaging analysis for precision medicine.
+source_paper: Shen X et al. (2022), Briefings in bioinformatics, DOI: 10.1093/bib/bbac331, PMID: 35947990
+overall_reproducibility_score: 30/100
+
+workflow_steps: 2
+  Step 1: Conversion of LC-MS raw data to pseudo-mass spectrometry images
+    tool: deepPseudoMSI
+    algorithm: deep learning-based image generation
+    input: LC-MS raw data (vendor format)
+    output: pseudo-MSI data cubes (2D spatial-like images per m/z feature)
+    confidence: low
+  Step 2: Deep learning-based classification/diagnosis
+    tool: deepPseudoMSI
+    algorithm: convolutional neural network (CNN)
+    input: pseudo-MSI data cubes
+    output: disease diagnosis prediction (e.g., class probabilities)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+  data_urls: https://www.deeppseudomsi.org/
+
+code_availability: repository_linked
+  code_url: https://www.deeppseudomsi.org/
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of LC-MS data preprocessing (e.g., peak picking, alignment, normalization)
+  - No details on CNN architecture, training parameters, or validation strategy
+  - No information on input raw data format or vendor compatibility
+  - No access to training/test datasets or ground truth labels
+  - Web platform interface only — no source code, Docker, or installation instructions provided
+reproducibility_strengths:
+  - Web platform publicly accessible for inference
+  - Project name and URL explicitly provided

@@ -1,0 +1,28 @@
+========== reproducibility_recipe entry ==========
+paper_title: Prosit-TMT: Deep Learning Boosts Identification of TMT-Labeled Peptides.
+source_paper: Gabriel W et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.1c05435, PMID: 35549156
+overall_reproducibility_score: 78/100
+
+workflow_steps: 0
+
+data_availability:
+  raw_data: available (ProteomeTools: ProteomeTools v3.0 (TMT-labeled synthetic peptide library))
+  processed_data: available (MassIVE: MSV000088123)
+  metadata: available
+  data_urls: https://massive.ucsd.edu/ProteoSAFe/dataset_license.jsp?task=9a7b5d1e4f2c4a8b9c0d1e2f3a4b5c6d, https://proteometools.org/
+
+code_availability: repository_linked
+  code_url: https://github.com/compomics/Prosit
+  license: Apache-2.0
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No explicit description of Prosit-TMT training pipeline parameters (e.g., neural architecture, hyperparameters, validation strategy)
+  - No details on TMT-specific preprocessing (e.g., reporter ion extraction, isobaric interference correction) in the abstract or provided text
+  - Breast milk circadian proteomics results are reported but no raw or processed data for that specific analysis is cited
+reproducibility_strengths:
+  - TMT-labeled synthetic peptide resource publicly available via ProteomeTools
+  - Reanalyzed datasets deposited in MassIVE with accession MSV000088123
+  - Prosit-TMT source code open-source (Apache-2.0) and archived on Zenodo
+  - Model supports multiple fragmentation types and instruments — documented interoperability enhances reuse

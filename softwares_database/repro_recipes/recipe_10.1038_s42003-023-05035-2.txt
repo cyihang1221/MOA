@@ -1,0 +1,114 @@
+========== reproducibility_recipe entry ==========
+paper_title: Blood-brain barrier disruption defines the extracellular metabolome of live human high-grade gliomas.
+source_paper: Riviere-Cazaux C et al. (2023), Communications biology, DOI: 10.1038/s42003-023-05035-2, PMID: 37340056
+overall_reproducibility_score: 42/100
+
+workflow_steps: 8
+  Step 1: Data acquisition via intraoperative microdialysis
+    tool: M Dialysis 71 High Cut-Off Brain Microdialysis Catheters
+    parameters: molecular_weight_cutoff_kda=100, flow_rate_ul_per_min=2, collection_interval_minutes=20
+    input: in vivo extracellular fluid (microdialysate)
+    output: raw microdialysate samples
+    confidence: high
+  Step 2: Targeted D/L-2-HG quantification
+    tool: Mayo Clinic Metabolomic Core LC/MS
+    algorithm: derivatisation-based LC/MS quantification
+    parameters: isomer_resolution=D and L enantiomers separately quantified
+    input: microdialysate samples
+    output: quantified D-2-HG and L-2-HG concentrations
+    confidence: medium
+  Step 3: Untargeted metabolomic profiling
+    tool: Metabolon, Inc. UPLC-MS/MS platform
+    algorithm: ultra-performance liquid chromatography tandem mass spectrometry
+    input: microdialysate samples
+    output: untargeted peak area matrix (162 named metabolites)
+    confidence: low
+  Step 4: Fold-change ranking (tumour vs brain)
+    tool: custom R/Python script (not specified)
+    algorithm: fold-change calculation (X/Z or Y/Z)
+    parameters: minimum_sample_presence=present in >90% of microdialysate samples, exclusion_rule=Oligo 2 excluded due to no brain catheter
+    input: normalised peak area matrix
+    output: ranked metabolite lists (enhancing tumour vs brain, non-enhancing vs brain, enhancing vs non-enhancing)
+    confidence: medium
+  Step 5: Bloodiness-associated metabolite ranking (CSF-based proxy)
+    tool: custom analysis
+    algorithm: fold-change ranking (bloody vs clean CSF) + quartile pooling
+    parameters: CSF_bloody_quartile_n=7, CSF_clean_quartile_n=7, metabolite_presence_threshold_CSF=present in >85% of CSF samples, metabolite_presence_threshold_microdialysate=present in >90% of microdialysate samples, paired_CSF_sample_timing=within ~1 minute
+    input: CSF metabolomics data (n=28 total, including ependymoma pair)
+    output: bloodiness-ranked metabolite list
+    confidence: medium
+  Step 6: Gene Set Enrichment Analysis (GSEA) for metabolites
+    tool: GSEA 4.1.0 (v4.1.0)
+    algorithm: rank-based enrichment scoring with custom .gmx metabolite sets
+    parameters: fdr_threshold=0.05, enrichment_score_type=normalized enrichment score (NES), multiple_testing_correction=FDR, top_bottom_set_size=35
+    input: ranked metabolite list + custom .gmx metabolite sets
+    output: enrichment results (NES, p-value, FDR)
+    confidence: high
+  Step 7: Statistical testing and visualisation
+    tool: MetaboAnalyst 5.0 (v5.0)
+    algorithm: Spearman correlation, PCA, heatmap, volcano plot generation
+    parameters: minimum_metabolite_presence=present in ≥40/44 catheters, normalisation_method=median = 1 per metabolite per batch, correlation_method=Spearman, volcano_plot_fc_threshold=2, volcano_plot_p_threshold=0.05
+    input: normalised peak area matrix
+    output: correlation maps, PCA plots, heatmaps, volcano plots
+    confidence: high
+  Step 8: Non-parametric statistical testing
+    tool: GraphPad Prism 9.1 (v9.1)
+    algorithm: Wilcoxon signed-rank test
+    parameters: distribution_test=D'Agostino-Pearson normality test, paired_comparison=enhancing tumour vs brain (paired), significance_threshold=0.05
+    input: normalised peak areas (paired samples)
+    output: p-values, significance annotations
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (MetaboLights)
+  processed_data: available (Supplementary Data (Nature Portfolio))
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 7
+  Table 1: [table]
+    caption: Patient cohort characteristics including histology, IDH status, WHO grade, and catheter placement.
+    produced_by_step: [1]
+    visualization_tool: Microsoft Excel or similar (not specified)
+  Fig. 1: [workflow_diagram]
+    caption: Intraoperative microdialysis set-up and D-2-hydroxyglutarate detection.
+    produced_by_step: [1, 2]
+    visualization_tool: GraphPad PRISM 9.1 or unspecified
+  Fig. 2: [pca_scores]
+    caption: Microdialysate samples cluster by patient identity and catheter location.
+    produced_by_step: [7]
+    visualization_tool: MetaboAnalyst 5.0
+  Fig. 3: [heatmap]
+    caption: Metabolic signatures distinguishing enhancing tumour, non-enhancing tumour, and adjacent brain.
+    produced_by_step: [7]
+    visualization_tool: MetaboAnalyst 5.0
+  Fig. 4: [volcano_plot]
+    caption: Differentially abundant extracellular metabolites in enhancing glioma, non-enhancing glioma, and adjacent brain comparisons.
+    produced_by_step: [4, 8]
+    visualization_tool: GraphPad PRISM 9.1
+    statistical_test: Wilcoxon signed-rank test, FC ≥ 2, p ≤ 0.05
+  Table 2: [table]
+    caption: List of significantly altered metabolites in enhancing and non-enhancing tumours.
+    produced_by_step: [4, 8]
+    visualization_tool: GraphPad PRISM 9.1 or Excel
+    statistical_test: Wilcoxon signed-rank test, FDR ≤ 0.05
+  Fig. 5: [bar_chart]
+    caption: Enrichment of plasma-derived metabolites (amino acids, carnitines) in enhancing glioma microdialysate.
+    produced_by_step: [5, 6]
+    visualization_tool: GraphPad PRISM 9.1
+    statistical_test: GSEA FDR ≤ 0.05
+
+reproducibility_gaps:
+  - Raw UPLC-MS/MS data not deposited in public repository (e.g., MetaboLights or MassIVE)
+  - Metabolon's proprietary platform details (chromatography gradients, MS parameters, data processing pipeline) not disclosed
+  - No access to custom GSEA .gmx files beyond Supplementary Data (format unspecified)
+  - CSF blood contamination quantification method (heme assay protocol) not described
+  - GraphPad Prism 9.1 is commercial software requiring license
+  - No code/scripts provided for fold-change ranking, CSF quartile selection, or GSEA adaptation for metabolites
+  - Microdialysis catheter placement coordinates and MRI co-registration not shared
+reproducibility_strengths:
+  - All normalised peak area data and ranked lists provided in Supplementary Data
+  - Explicit statistical thresholds reported (FC ≥ 2, p ≤ 0.05, FDR ≤ 0.05)
+  - Use of established open-source tools (GSEA 4.1.0) and free web platform (MetaboAnalyst 5.0)
+  - Clear experimental design with intraoperative microdialysis protocol details (flow rate, cutoff, timing)

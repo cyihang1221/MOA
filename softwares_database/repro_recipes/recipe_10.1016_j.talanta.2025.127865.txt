@@ -1,0 +1,72 @@
+========== reproducibility_recipe entry ==========
+paper_title: Untargeted metabolomics reveal the biochemistry of chemotherapy-induced cardiotoxicity risk in a pediatric cohort of patients.
+source_paper: Barla I et al. (2025), Talanta, DOI: 10.1016/j.talanta.2025.127865, PMID: 40081244
+overall_reproducibility_score: 35/100
+
+workflow_steps: 7
+  Step 1: Data acquisition
+    tool: UPLC-ESI-QTOF
+    parameters: instrument_platform=UPLC-ESI-QTOF, sample_matrix=plasma, cohort_size=89, timing=prior to chemotherapy initiation
+    input: plasma samples
+    output: raw .d or .raw files (vendor format)
+    confidence: medium
+  Step 2: Peak detection and feature extraction
+    tool: KODAMA
+    algorithm: unsupervised clustering-based feature alignment
+    input: raw vendor files
+    output: feature table (m/z, RT, intensity)
+    confidence: low
+  Step 3: Multivariate classification and biomarker discovery
+    tool: OPLS-DA
+    algorithm: orthogonal partial least squares discriminant analysis
+    input: feature table
+    output: discriminatory metabolite list, model metrics (R², Q²)
+    confidence: low
+  Step 4: Feature selection and stability assessment
+    tool: BORUTA
+    algorithm: shadow feature-based all-relevant variable selection
+    input: feature table + class labels (CIC-risk vs. non-CIC-risk)
+    output: confirmed relevant features (metabolites)
+    confidence: low
+  Step 5: Univariate statistical testing with multiple testing correction
+    tool: FDR t-test
+    algorithm: two-sample t-test with Benjamini-Hochberg FDR correction
+    parameters: alpha=0.05, test_type=two-sided, correction_method=Benjamini-Hochberg
+    input: feature table + class labels
+    output: differentially abundant metabolites (q-value < 0.05)
+    confidence: high
+  Step 6: Metabolite identification confidence scoring
+    tool: empirical scale of confidence for DIA identification
+    algorithm: custom DIA identification confidence framework
+    parameters: levels=['level 1: reference standard', 'level 2: MS/MS spectral match', 'level 3: MS1 + retention time match', 'level 4: MS1 only', 'level 5: putative based on pathway context']
+    input: features with MS/MS or MS1 data
+    output: annotated metabolite list with confidence level
+    confidence: low
+  Step 7: Pathway enrichment analysis
+    tool: None
+    algorithm: pathway overrepresentation analysis
+    parameters: database=HMDB, KEGG, Reactome
+    input: list of high-confidence differentially abundant metabolites
+    output: enriched biological pathways (e.g., CVDs, inflammation, folate metabolism, GSH synthesis)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository (e.g., MetaboLights, GNPS)
+  - No details on UPLC gradient, column, or ESI source parameters
+  - KODAMA, OPLS-DA, and BORUTA implementation details (preprocessing, scaling, cross-validation) omitted
+  - Empirical DIA confidence scale not defined or published
+  - Pathway analysis tools and parameters unspecified
+  - No access to patient metadata (clinical covariates, chemo regimens, CIC definition criteria)
+reproducibility_strengths:
+  - Clear cohort description (n=89 pediatric plasma samples, pre-chemotherapy)
+  - Explicit mention of complementary multivariate (OPLS-DA, BORUTA) and univariate (FDR t-test) approaches
+  - Biological interpretation anchored to established pathways (CVD, inflammation, GSH, folate)

@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: A Spectrum-to-Structure Diffusion Model for De Novo Small Molecule Generation.
+source_paper: Zong G et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c05374, PMID: 41283193
+overall_reproducibility_score: 72/100
+
+workflow_steps: 4
+  Step 1: Spectral encoding
+    tool: Custom high-resolution spectrum encoder
+    algorithm: Neural network (architecture not specified)
+    input: High-resolution mass spectra (e.g., MS/MS)
+    output: Spectral embedding vector
+    confidence: low
+  Step 2: Molecular structure encoding/decoding
+    tool: BART-based SMILES encoder-decoder
+    algorithm: Sequence-to-sequence transformer (BART)
+    input: SMILES strings
+    output: Latent molecular representation / decoded SMILES
+    confidence: medium
+  Step 3: Conditional diffusion modeling
+    tool: Custom conditional diffusion model
+    algorithm: Score-based generative diffusion (reverse denoising guided by spectral embeddings)
+    parameters: noise_schedule=Gaussian, conditioning_signal=Spectral embedding from step 1, denoising_steps=None
+    input: Spectral embedding + latent noise
+    output: Generated SMILES structures
+    confidence: low
+  Step 4: Evaluation against ground truth
+    tool: Custom evaluation pipeline
+    algorithm: SMILES exact match, Morgan fingerprint Tanimoto similarity, physicochemical property comparison
+    parameters: fingerprint_radius=2, fingerprint_bits=2048
+    input: Generated SMILES and reference SMILES
+    output: Accuracy, similarity scores, property alignment metrics
+    confidence: medium
+
+data_availability:
+  raw_data: available (NIST: NIST20)
+  processed_data: not_mentioned
+  metadata: not_mentioned
+  data_urls: https://www.nist.gov/srd/nist-standard-reference-database-20
+
+code_availability: repository_linked
+  code_url: https://github.com/GaoHoufu/DiffNovo
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No details on diffusion model architecture (UNet configuration, number of denoising steps, noise schedule parameters)
+  - No specification of spectral preprocessing (peak picking, normalization, binning, or m/z tolerance)
+  - No description of training data split, hyperparameters (learning rate, batch size, epochs), or hardware setup
+  - NIST20 access requires registration/license; full dataset usage terms not clarified
+  - BART variant and fine-tuning procedure not specified (e.g., Hugging Face checkpoint name)
+reproducibility_strengths:
+  - Source code publicly available on GitHub
+  - Evaluation performed on standard benchmark (NIST20)
+  - Use of open-source foundation models (BART) and common cheminformatics libraries implied

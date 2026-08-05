@@ -1,0 +1,52 @@
+========== reproducibility_recipe entry ==========
+paper_title: FragHub: A Mass Spectral Library Data Integration Workflow.
+source_paper: Dablanc A et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.4c02219, PMID: 39028894
+overall_reproducibility_score: 92/100
+
+workflow_steps: 4
+  Step 1: OMSL integration and format harmonization
+    tool: FragHub
+    algorithm: custom metadata mapping and spectral format normalization
+    parameters: ionization_modes=['positive', 'negative'], chromatography_types=['LC', 'GC'], spectral_filters=['intensity_threshold', 'peak_count_min', 'mass_range']
+    input: heterogeneous mass spectral library files (e.g., MSP, MGF, JSON, CSV with spectral/metadata fields)
+    output: unified FragHub-compatible spectral database (SQLite/JSON-LD)
+    confidence: high
+  Step 2: Metadata standardization and ontology alignment
+    tool: FragHub
+    algorithm: mapping to generic OMSL ontology (proposed in paper)
+    parameters: required_metadata_fields=['compound_name', 'inchi_key', 'smiles', 'precursor_mz', 'adduct', 'ion_mode', 'instrument', 'collision_energy', 'retention_time', 'source_organism', 'matrix']
+    input: raw library metadata (non-standardized)
+    output: ontology-aligned metadata records
+    confidence: medium
+  Step 3: Spectral filtering via GUI
+    tool: FragHub
+    algorithm: interactive intensity- and quality-based filtering
+    parameters: min_peak_intensity_percent=1.0, min_number_of_peaks=5, mass_tolerance_ppm=10.0
+    input: mass spectra (m/z-intensity pairs)
+    output: filtered spectral records
+    confidence: high
+  Step 4: In-house library generation workflow
+    tool: FragHub
+    algorithm: template-driven spectral submission pipeline
+    parameters: required_input_formats=['MSP', 'MGF'], validation_rules=['inchi_key_format', 'adduct_consistency', 'ion_mode_match']
+    input: user-provided experimental spectra + minimal metadata
+    output: FragHub-compatible in-house library
+    confidence: medium
+
+data_availability:
+  raw_data: available (Zenodo: 10.5281/zenodo.11057687)
+  processed_data: available (Zenodo: 10.5281/zenodo.11057687)
+  metadata: available
+  data_urls: https://doi.org/10.5281/zenodo.11057687
+
+code_availability: repository_linked
+  code_url: https://github.com/eMetaboHUB/FragHub
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_strengths:
+  - Source code publicly available under MIT license
+  - All generated data deposited on Zenodo with DOI
+  - Explicit specification of required metadata fields and spectral filters
+  - Support for multiple input formats and ionization/chromatography modes

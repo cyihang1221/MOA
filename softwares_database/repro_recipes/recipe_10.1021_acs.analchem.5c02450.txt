@@ -1,0 +1,60 @@
+========== reproducibility_recipe entry ==========
+paper_title: Soft Independent Modeling of Class Analogies for the Screening of New Psychoactive Substances through UPLC-HRMS/MS.
+source_paper: Bracaglia I et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c02450, PMID: 40644603
+overall_reproducibility_score: 35/100
+
+workflow_steps: 5
+  Step 1: MS/MS data acquisition
+    tool: UPLC-HRMS/MS
+    parameters: collision_energy=lower collision energy specified for optimal classification, instrument_platform=UPLC coupled to high-resolution mass spectrometer
+    input: 159 analytical NPS standards
+    output: raw MS/MS spectra and retention times
+    confidence: medium
+  Step 2: Data preprocessing and matrix organization
+    tool: not specified
+    parameters: training_split_ratio=0.75, test_split_ratio=0.25
+    input: raw MS/MS spectra and retention times
+    output: separate matrices for retention time and MS data; training set (75%) and test set (25%)
+    confidence: low
+  Step 3: Exploratory multivariate analysis
+    tool: Principal Component Analysis (PCA)
+    algorithm: PCA
+    input: preprocessed MS/MS and RT matrices
+    output: PCA scores and loadings; class clustering visualization
+    confidence: medium
+  Step 4: Class-wise supervised modeling
+    tool: SIMCA
+    algorithm: Soft Independent Modeling of Class Analogies (SIMCA)
+    parameters: model_validation=internal and external validation performed, class_definition=by NPS chemical class (e.g., benzodiazepines, JWH, PINACA, cathinones, fentanyl analogues)
+    input: training set matrices (RT + MS/MS features per class)
+    output: class-specific SIMCA models with classification boundaries
+    confidence: high
+  Step 5: Model validation and performance assessment
+    tool: SIMCA
+    algorithm: validation using test set and external seized samples
+    parameters: external_samples=3, validation_metrics=positive validation parameters reported (no specifics given)
+    input: test set and three real seized drug samples
+    output: classification accuracy, sensitivity, specificity per class; misclassification report
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw UPLC-HRMS/MS data not deposited in any public repository (e.g., MassIVE, MetaboLights)
+  - Preprocessing steps (peak picking, alignment, feature table generation) not described
+  - No details on how MS/MS spectra were represented (e.g., binned m/z, spectral similarity vectors, fragment intensity matrices)
+  - SIMCA is commercial software requiring license; no version or settings (e.g., number of components, significance level α) provided
+  - No information on retention time alignment method or chromatographic conditions (gradient, column, flow rate)
+  - Training/test split random seed or stratification strategy not specified
+  - External validation sample metadata (e.g., compound composition, reference identification) not provided
+reproducibility_strengths:
+  - Clear experimental design: 159 standards, defined class labels, train/test split ratio
+  - Use of orthogonal validation (internal + external with real forensic samples)
+  - Interpretation of PCA clustering by chemical class supports biological plausibility

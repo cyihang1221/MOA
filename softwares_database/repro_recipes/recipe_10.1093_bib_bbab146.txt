@@ -1,0 +1,70 @@
+========== reproducibility_recipe entry ==========
+paper_title: nhKcr: a new bioinformatics tool for predicting crotonylation sites on human nonhistone proteins based on deep learning.
+source_paper: Chen YZ et al. (2021), Briefings in bioinformatics, DOI: 10.1093/bib/bbab146, PMID: 34002774
+overall_reproducibility_score: 55/100
+
+workflow_steps: 6
+  Step 1: Dataset curation and preprocessing
+    tool: Custom Python script
+    algorithm: Sequence extraction and window-based sampling
+    parameters: window_size=15, flanking_residues=7, negative_sampling_ratio=1
+    input: Human nonhistone protein sequences with experimentally verified Kcr sites (from mass spectrometry studies)
+    output: Balanced positive/negative site-centered peptide dataset
+    confidence: medium
+  Step 2: Feature encoding
+    tool: Custom implementation
+    algorithm: RGB-inspired amino acid encoding + PSSM + physicochemical properties
+    parameters: encoding_scheme=CNNrgb, pssm_window=15, physicochemical_properties=['hydrophobicity', 'charge', 'polarity']
+    input: Peptide sequences (15-mer centered on lysine)
+    output: 3-channel numerical tensor (RGB-like input for CNN)
+    confidence: low
+  Step 3: Deep learning model training
+    tool: TensorFlow/Keras
+    algorithm: Convolutional Neural Network (CNNrgb)
+    parameters: conv_layers=2, filters=[64, 128], kernel_size=3, dropout_rate=0.5, dense_units=128, optimizer=Adam, learning_rate=0.001, batch_size=128, epochs=50
+    input: Encoded 3-channel tensors
+    output: Binary classification scores (Kcr site probability)
+    confidence: medium
+  Step 4: Model evaluation
+    tool: scikit-learn
+    algorithm: 10-fold cross-validation and independent test
+    parameters: cv_folds=10, metrics=['accuracy', 'precision', 'recall', 'F1', 'AUC']
+    input: Trained CNNrgb model and test dataset
+    output: Performance metrics table
+    confidence: high
+  Step 5: Benchmarking against alternative classifiers
+    tool: scikit-learn
+    algorithm: Random Forest, LogitBoost, Naïve Bayes, Logistic Regression
+    parameters: rf_n_estimators=500, logitboost_n_estimators=100, cv_folds=10
+    input: Same encoded features used for CNNrgb
+    output: Comparative performance metrics
+    confidence: medium
+  Step 6: Web server deployment
+    tool: Flask + JavaScript frontend
+    algorithm: RESTful API serving trained CNNrgb model
+    parameters: max_sequence_length=2000, batch_prediction_enabled=True
+    input: User-submitted FASTA or plain sequence text
+    output: Annotated Kcr site predictions with confidence scores
+    confidence: low
+
+data_availability:
+  raw_data: available (nhKcr web server)
+  processed_data: available (nhKcr web server)
+  metadata: available
+  data_urls: http://nhKcr.erc.monash.edu/
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Source code not publicly archived (no GitHub/DOI provided)
+  - Exact PSSM generation protocol not specified (e.g., PSI-BLAST parameters, database version)
+  - No details on negative site selection strategy beyond 'random sampling'
+  - Training/validation split ratios and random seeds not reported
+  - Web server backend implementation details omitted
+reproducibility_strengths:
+  - All datasets and pre-trained model accessible via public web server
+  - Comprehensive benchmarking against multiple ML baselines
+  - Explicit reporting of standard evaluation metrics (AUC, F1, etc.)
+  - Use of open-source deep learning and ML libraries (TensorFlow, scikit-learn)

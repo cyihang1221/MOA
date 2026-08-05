@@ -1,0 +1,52 @@
+========== reproducibility_recipe entry ==========
+paper_title: T-Probe: An Integrated Microscale Device for Online In Situ Single Cell Analysis and Metabolic Profiling Using Mass Spectrometry.
+source_paper: Liu R et al. (2018), Analytical chemistry, DOI: 10.1021/acs.analchem.8b02927, PMID: 30119596
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Single cell sampling and online ionization
+    tool: T-probe device
+    parameters: ambient_conditions=True, minimal_sample_preparation=True
+    input: intact single HeLa cells (control and drug-treated)
+    output: raw mass spectra (MS1)
+    confidence: low
+  Step 2: Online MS/MS analysis for identification
+    tool: mass spectrometer with MS/MS capability
+    parameters: collision_energy=not specified, precursor_selection=targeted
+    input: features of interest from MS1
+    output: fragment spectra for metabolite identification
+    confidence: low
+  Step 3: Statistical data analysis: OPLS-DA
+    tool: OPLS-DA
+    algorithm: Orthogonal Partial Least Squares-Discriminant Analysis
+    parameters: model_validation=not specified, number_of_components=not specified
+    input: processed peak intensity table (features × samples)
+    output: discriminatory metabolite features, model scores/plots
+    confidence: low
+  Step 4: Statistical data analysis: two-sample t-test
+    tool: t-test
+    algorithm: two-sample t-test
+    parameters: p_value_threshold=0.05, correction_method=not specified
+    input: normalized feature intensities (control vs. treated)
+    output: differentially abundant metabolites (p < 0.05)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository
+  - No description of data preprocessing (peak picking, alignment, normalization)
+  - T-probe device design and fabrication details not provided
+  - No specification of mass spectrometer type, settings, or acquisition parameters
+  - OPLS-DA implementation details (software, preprocessing, validation) missing
+  - No information on metabolite annotation workflow (databases, scoring, confidence levels)
+reproducibility_strengths:
+  - Explicit mention of statistical methods (OPLS-DA, t-test)
+  - Clear biological context (HeLa cells, drug treatment comparison)

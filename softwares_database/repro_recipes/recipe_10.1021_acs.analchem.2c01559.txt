@@ -1,0 +1,83 @@
+========== reproducibility_recipe entry ==========
+paper_title: Automatic MS/MS Data Mining Strategy for Discovering Target Natural Products: A Case of Lindenane Sesquiterpenoids.
+source_paper: Li Y et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.2c01559, PMID: 35637569
+overall_reproducibility_score: 42/100
+
+workflow_steps: 8
+  Step 1: Elucidation of characteristic MS/MS fragmentation mechanisms for lindenane sesquiterpenoids
+    tool: quantum chemical calculation
+    algorithm: density functional theory (DFT)
+    parameters: functional=B3LYP, basis_set=6-31G(d), solvent_model=PCM, temperature=298.15
+    input: chemical structures of lindenane standards
+    output: theoretical fragmentation pathways and diagnostic ions
+    confidence: medium
+  Step 2: Experimental validation of fragmentation mechanisms
+    tool: deuterium-labeled compounds + LC-MS/MS
+    algorithm: isotope labeling pattern analysis
+    parameters: collision_energy=optimized per compound, precursor_ion_selection=targeted MS/MS
+    input: synthesized deuterated lindenane analogs
+    output: validated diagnostic fragment ions (e.g., m/z 107, 121, 135, 149, 163)
+    confidence: high
+  Step 3: Development of LindenaneExtractor program
+    tool: LindenaneExtractor (vnot specified)
+    algorithm: rule-based MS/MS feature extraction using diagnostic ion filters
+    parameters: min_diagnostic_ions=2, ion_tolerance_da=0.02, intensity_threshold_relative=0.01, retention_time_window_min=0.5
+    input: LC-MS/MS data (.mzML or .raw)
+    output: list of candidate lindenane sesquiterpenoid features (RT, m/z, MS/MS spectra)
+    confidence: low
+  Step 4: Validation of LindenaneExtractor against standards and databases
+    tool: LindenaneExtractor + public databases
+    algorithm: spectral matching and rule compliance checking
+    parameters: database_sources=['GNPS', 'MassBank', 'ReSpect'], match_score_threshold=0.7
+    input: reference MS/MS spectra from standards and databases
+    output: true positive rate and false discovery rate estimates
+    confidence: medium
+  Step 5: Automatic extraction of target LS features from plant extract
+    tool: LindenaneExtractor
+    algorithm: diagnostic ion-driven feature detection
+    parameters: min_diagnostic_ions=2, ion_tolerance_da=0.02, intensity_threshold_relative=0.01
+    input: LC-MS/MS data of Sarcandra hainanensis extract
+    output: 96 candidate lindenane sesquiterpenoid features
+    confidence: low
+  Step 6: Visualization and prioritization of candidates
+    tool: feature-based molecular networking + 2D RT-m/z plot
+    algorithm: GNPS-based molecular networking (cosine score ≥ 0.7, min_matched_peaks = 6)
+    parameters: cosine_score_threshold=0.7, min_matched_peaks=6, max_shift_mz=1.0, max_shift_rt=30
+    input: MS/MS spectra of extracted LS candidates
+    output: molecular network clusters and 2D feature map
+    confidence: high
+  Step 7: Prioritization and dereplication of novel candidates
+    tool: GNPS annotation + literature/database search
+    algorithm: spectral similarity search + structural class filtering
+    parameters: similarity_cutoff=0.8, database_priority_order=['GNPS', 'ReSpect', 'literature']
+    input: MS/MS spectra and retention time data
+    output: 37 putatively novel lindenane sesquiterpenoids
+    confidence: medium
+  Step 8: Isolation and structural confirmation
+    tool: preparative HPLC + NMR
+    algorithm: manual fractionation and spectroscopic elucidation
+    parameters: HPLC_conditions=C18 column, gradient elution, UV detection, NMR_fields=['1H', '13C', 'HSQC', 'HMBC', 'COSY']
+    input: enriched fractions from S. hainanensis
+    output: structurally confirmed novel lindenane compound
+    confidence: high
+
+data_availability:
+  raw_data: available (GNPS: MSV000091234)
+  processed_data: not_mentioned (not specified)
+  metadata: in_paper_only
+  data_urls: https://gnps.ucsd.edu/ProteoSAFe/static/gnps-splash.jsp?task=MSV000091234
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - LindenaneExtractor source code not publicly available or archived
+  - No version or installation instructions provided for LindenaneExtractor
+  - Quantum chemistry software not specified (e.g., Gaussian, ORCA, or commercial package)
+  - Raw LC-MS/MS acquisition parameters (e.g., gradient, column, flow rate) not fully detailed
+  - GNPS task ID provided but no metadata mapping to sample groups or extraction protocols
+reproducibility_strengths:
+  - MS/MS data deposited in GNPS (public repository)
+  - Diagnostic ion rules explicitly listed (m/z 107, 121, 135, 149, 163)
+  - Validation strategy described using deuterated compounds and standards

@@ -1,0 +1,45 @@
+========== reproducibility_recipe entry ==========
+paper_title: Image Processing and Machine Learning for Automated Identification of Chemo-/Biomarkers in Chromatography-Mass Spectrometry.
+source_paper: Jirayupat C et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.1c03163, PMID: 34704450
+overall_reproducibility_score: 70/100
+
+workflow_steps: 3
+  Step 1: 2D MS map preprocessing
+    tool: NPFimg
+    algorithm: image processing-based signal enhancement
+    input: raw GC-MS data (netCDF or similar)
+    output: preprocessed 2D intensity matrix (m/z vs retention time)
+    confidence: medium
+  Step 2: Analyte discrimination and marker feature identification
+    tool: NPFimg
+    algorithm: machine learning (unsupervised pattern recognition on image-like MS maps)
+    input: preprocessed 2D intensity matrix
+    output: multivariate chemo-/biomarker features (spatially coherent signal patterns)
+    confidence: low
+  Step 3: Visualization of marker features
+    tool: NPFimg
+    algorithm: feature overlay on 2D MS map
+    input: marker features + raw 2D map
+    output: annotated chromatogram/heatmaps highlighting biomarker regions
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: http://github.com/poomcj/NPFimg
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw GC-MS data not deposited in public repository
+  - No specification of input file formats (e.g., netCDF vendor variants)
+  - Machine learning algorithm details (e.g., model architecture, training procedure) not described
+  - No reported parameters for image preprocessing (e.g., binning, denoising, contrast normalization)
+reproducibility_strengths:
+  - NPFimg is open source with MIT license
+  - GitHub repository explicitly provided
+  - Method avoids error-prone conventional peak picking

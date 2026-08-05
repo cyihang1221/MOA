@@ -1,0 +1,65 @@
+========== reproducibility_recipe entry ==========
+paper_title: Toward Comprehensive Per- and Polyfluoroalkyl Substances Annotation Using FluoroMatch Software and Intelligent High-Resolution Tandem Mass Spectrometry Acquisition.
+source_paper: Koelmel JP et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.0c01591, PMID: 32806901
+overall_reproducibility_score: 30/100
+
+workflow_steps: 6
+  Step 1: File conversion
+    tool: FluoroMatch
+    algorithm: automated vendor file conversion
+    input: raw instrument files (e.g., .raw, .d, .wiff)
+    output: converted format compatible with downstream processing (e.g., mzML or internal format)
+    confidence: low
+  Step 2: Chromatographic peak picking
+    tool: FluoroMatch
+    algorithm: chromatographic peak detection
+    input: converted chromatographic data
+    output: feature table (m/z, RT, intensity)
+    confidence: low
+  Step 3: Blank feature filtering
+    tool: FluoroMatch
+    algorithm: blank subtraction / background filtering
+    input: feature table + blank sample data
+    output: blank-filtered feature table
+    confidence: low
+  Step 4: PFAS annotation using precursor and fragment masses
+    tool: FluoroMatch
+    algorithm: rule-based matching against PFAS fragmentation library
+    parameters: library_size=7000, fragmentation_rules_source=['standards', 'literature']
+    input: blank-filtered feature table + MS/MS spectra
+    output: annotated PFAS features with confidence ranking
+    confidence: medium
+  Step 5: Annotation ranking
+    tool: FluoroMatch
+    algorithm: scoring/ranking of annotations based on spectral match quality and rule compliance
+    input: candidate PFAS annotations
+    output: ranked list of PFAS annotations
+    confidence: low
+  Step 6: Intelligent HRMS/MS acquisition (iterative exclusion)
+    tool: instrument control software (e.g., Thermo Xcalibur, SCIEX OS)
+    algorithm: iterative exclusion list generation
+    parameters: exclusion_duration=dynamic, reacquisition_strategy=intelligent
+    input: preliminary feature list from first run
+    output: enhanced MS/MS coverage for low-abundance PFAS
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No public repository link for raw or processed data
+  - FluoroMatch source code not linked or deposited
+  - No version number or commit hash for FluoroMatch
+  - No details on LC-MS/MS parameters (e.g., gradient, column, ionization mode)
+  - No specification of intelligent acquisition settings (e.g., exclusion time, dynamic range, re-trigger criteria)
+  - No description of peak picking parameters (e.g., SNR threshold, min peak width)
+reproducibility_strengths:
+  - Explicit mention of open-source status for FluoroMatch
+  - Description of library size (~7000 compounds) and curation sources (standards + literature)
+  - Clear workflow logic (conversion → peak picking → blank filtering → annotation → ranking)

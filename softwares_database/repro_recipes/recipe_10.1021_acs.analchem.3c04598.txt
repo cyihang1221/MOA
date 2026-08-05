@@ -1,0 +1,52 @@
+========== reproducibility_recipe entry ==========
+paper_title: Improving the Sensitivity of Protein Quantification by Immunoaffinity Liquid Chromatography─Triple Quadrupole Mass Spectrometry Using an Iterative Transition Summing Technique.
+source_paper: Johnson JS et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.3c04598, PMID: 39186623
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Immunoaffinity enrichment
+    tool: Immunoaffinity (IA) capture
+    input: human serum samples
+    output: enriched protein fractions (NGF, sASGPR)
+    confidence: medium
+  Step 2: Nanoflow liquid chromatography separation
+    tool: nLC
+    parameters: flow_rate=nanoflow level
+    input: IA-enriched protein digests (peptides)
+    output: chromatographically separated peptides
+    confidence: low
+  Step 3: Triple quadrupole MS/MS acquisition with echo summing
+    tool: Triple quadrupole (QqQ) mass spectrometer
+    algorithm: echo summing (iterative transition summing)
+    parameters: iterations=5, transition_type=SRM, target_analytes=['NGF peptide', 'sASGPR peptides']
+    input: nLC-eluted peptides
+    output: summed SRM chromatograms with improved S/N
+    confidence: high
+  Step 4: Quantification and performance evaluation
+    tool: Custom or instrument vendor software (e.g., Analyst, MultiQuant)
+    algorithm: peak integration, accuracy/precision calculation, functional sensitivity assessment
+    parameters: qc_levels=['low-end QC', 'serially diluted serum QC'], metrics=['bias %', 'CV %', 'fold improvement in functional sensitivity', 'minimum quantifiable QC level']
+    input: summed SRM peak areas
+    output: quantitative results (accuracy, precision, LLOQ, functional sensitivity)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS/MS data not deposited in public repository
+  - No details on IA antibody batches or digestion protocol
+  - Instrument method files (SRM transitions, dwell times, collision energies) not provided
+  - No description of chromatographic gradient or column specifications
+  - Echo summing implementation details (e.g., dwell time per iteration, inter-scan delay) not specified
+  - Commercial QqQ software (e.g., Analyst) required but version/license not stated
+reproducibility_strengths:
+  - Core analytical innovation (echo summing for proteins) clearly described
+  - Quantitative performance metrics (bias, CV, fold-improvement) reported with numerical values
+  - Two distinct protein targets (NGF, sASGPR) and multiple peptides evaluated

@@ -1,0 +1,58 @@
+========== reproducibility_recipe entry ==========
+paper_title: Integration of RNAseq transcriptomics and &lt;i&gt;N&lt;/i&gt;-glycomics reveal biosynthetic pathways and predict structure-specific &lt;i&gt;N&lt;/i&gt;-glycan expression.
+source_paper: Alvarez MRS et al. (2025), Chemical science, DOI: 10.1039/d5sc00467e, PMID: 40191131
+overall_reproducibility_score: 20/100
+
+workflow_steps: 6
+  Step 1: Data acquisition and preprocessing
+    tool: LC-MS/MS
+    input: biological samples (cells from B cell, brain, colon, lung, muscle, prostate origins)
+    output: N-glycomics raw data (peak intensities for ~400 N-glycans)
+    confidence: low
+  Step 2: Transcriptomic profiling
+    tool: 3'-TagSeq
+    input: same biological samples as glycomics
+    output: transcriptomic data (expression of >160 glycogenes filtered from 18,000-gene transcriptome)
+    confidence: low
+  Step 3: Paired dataset construction
+    tool: custom script
+    input: N-glycomics peak table and glycogene expression matrix
+    output: paired feature matrix (glycogenes as predictors, N-glycan abundances as response variables)
+    confidence: low
+  Step 4: Supervised regression modeling
+    tool: machine learning
+    algorithm: not specified
+    parameters: validation_R2_threshold=0.8
+    input: paired feature matrix
+    output: regression models per N-glycan composition
+    confidence: low
+  Step 5: Model interpretation and glycogene importance ranking
+    tool: model importance scoring
+    algorithm: not specified
+    input: trained regression models
+    output: glycogene importance scores per N-glycan
+    confidence: low
+  Step 6: Cross-cell-type prediction validation
+    tool: validation on independent cell types
+    parameters: cell_types=['GLC01', 'CCD19-Lu', 'Tib-190']
+    input: trained models + expression data from new cell types
+    output: predicted N-glycan abundances and R² metrics
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No mention of raw or processed data deposition
+  - No software/tool names specified for LC-MS/MS data processing or machine learning
+  - No algorithmic details (e.g., regression method: random forest? elastic net?)
+  - No parameter values for model training (e.g., cross-validation strategy, hyperparameters)
+  - No description of N-glycan identification workflow (database, fragmentation rules, FDR)
+  - No details on 3'-TagSeq bioinformatics pipeline (alignment, quantification, normalization)
+  - No metadata schema or sample annotation details provided

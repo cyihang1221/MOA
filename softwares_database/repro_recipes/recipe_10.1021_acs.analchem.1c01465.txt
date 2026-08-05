@@ -1,0 +1,42 @@
+========== reproducibility_recipe entry ==========
+paper_title: CFM-ID 4.0: More Accurate ESI-MS/MS Spectral Prediction and Compound Identification.
+source_paper: Wang F et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.1c01465, PMID: 34403256
+overall_reproducibility_score: 75/100
+
+workflow_steps: 2
+  Step 1: ESI-MS/MS spectral prediction
+    tool: CFM-ID 4.0 (v4.0)
+    algorithm: machine learning model trained on molecular topology features + expanded rule-based fragmentation engine
+    parameters: collision_energy=default ramped energy profile (not numerically specified), ionization_mode=ESI+ and ESI-, ring_cleavage_model=sequential bond dissociation, chemical_classes_covered=['acylcarnitines', 'acylcholines', 'flavonols', 'flavones', 'flavanones', 'flavonoid glycosides']
+    input: chemical structure (SMILES or InChI)
+    output: predicted ESI-MS/MS spectrum (m/z and intensity list)
+    confidence: medium
+  Step 2: In silico compound identification
+    tool: CFM-ID 4.0 (v4.0)
+    algorithm: spectral similarity search (Tanimoto similarity on predicted spectra) against in silico spectral library
+    parameters: similarity_score=Tanimoto coefficient, library_source=in silico predicted spectra from HMDB, LipidMaps, and other structure databases, top_k_candidates=default top 10
+    input: experimental MS/MS spectrum
+    output: ranked list of candidate compounds with similarity scores
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://hub.docker.com/r/wishartlab/cfmid
+  license: Apache License 2.0
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No experimental MS/MS data used for benchmarking is deposited or accessioned
+  - Exact collision energy ramp parameters and instrument-specific calibration details not provided
+  - Training dataset for ML component not publicly released or described in sufficient detail (e.g., size, source, preprocessing)
+  - No code or scripts for generating in silico spectral libraries shared
+reproducibility_strengths:
+  - Docker image available for local deployment
+  - Web server interface publicly accessible
+  - Explicit expansion of chemical class coverage documented
+  - Open-source license (Apache 2.0) confirmed via Docker Hub repository

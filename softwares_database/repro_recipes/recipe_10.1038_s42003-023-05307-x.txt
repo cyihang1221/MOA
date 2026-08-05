@@ -1,0 +1,56 @@
+========== reproducibility_recipe entry ==========
+paper_title: Insights from multi-omics integration into seed germination of Taxus chinensis var mairei.
+source_paper: Chen L et al. (2023), Communications biology, DOI: 10.1038/s42003-023-05307-x, PMID: 37697020
+overall_reproducibility_score: 58/100
+
+workflow_steps: 4
+  Step 1: Metabolite extraction optimization
+    tool: in-house solvent screening
+    algorithm: empirical solvent comparison
+    parameters: solvent_combinations=12, methanol_water_ratios_vv=[0.95, 0.8, 0.5], acetonitrile_water_ratios_vv=[0.95, 0.8, 0.5], ethyl_acetate_water_ratios_vv=[0.95, 0.8, 0.5], methanol_chloroform_water_ratios_vv=[[0.9, 0.05, 0.05], [0.8, 0.1, 0.1], [0.6, 0.2, 0.2]], homogenization_time_sec=60, homogenization_frequency_hz=30, centrifugation_temp_c=4, centrifugation_g=13500, centrifugation_time_min=10, filter_pore_size_um=0.22
+    input: frozen seed powder
+    output: extracted metabolite supernatants (12 sets)
+    confidence: high
+  Step 2: LC-MS/MS data acquisition
+    tool: Bruker Impact II QTOF
+    algorithm: data-dependent acquisition (DDA)
+    parameters: instrument=Bruker Impact II quadrupole time-of-flight, ion_mode=['positive', 'negative'], mass_range_mz=[50, 1300], scan_type=full-scan + MS/MS, ms_ms_trigger=top 3 most abundant ions per survey scan, collision_energy_percent=30, fragmentation_method=CID, capillary_voltage_v=4500, end_plate_offset_v=500, dry_gas_flow_l_per_min=8, dry_temperature_c=220, column=Waters ACQUITY UPLC BEH C18 (1.7 μm, 2.1 × 50 mm), flow_rate_ml_per_min=0.3, gradient_profile_min_b_percent=[[0, 5], [5, 35], [5, 35], [20, 65], [20, 65], [25, 100], [25, 100], [35, 100], [35.1, 5], [40.1, 5]], injection_volume_ul=10, biological_replicates=15
+    input: metabolite extracts
+    output: raw .d files (Bruker format)
+    confidence: high
+  Step 3: Raw data conversion
+    tool: ProteoWizard MSConvertGUI
+    algorithm: centroiding + mzXML conversion
+    parameters: output_format=mzXML, centroiding=True
+    input: Bruker .d raw files
+    output: mzXML files
+    confidence: high
+  Step 4: Feature detection and alignment
+    tool: not explicitly named — implied commercial or in-house pipeline
+    algorithm: feature detection, retention time shift correction, peak picking, peak alignment, feature annotation
+    input: mzXML files
+    output: feature table (m/z, RT, intensity matrix)
+    confidence: low
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1872)
+  processed_data: available (MetaboLights: MTBLS1872)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1872
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Feature detection, alignment, and annotation software not named — critical gap for metabolomics reproducibility
+  - No details on peak-picking parameters (e.g., signal-to-noise threshold, min peak width), RT correction method (e.g., obi-warp, loess), or annotation confidence levels (e.g., level 1–4)
+  - No description of statistical analysis methods for metabolomics (e.g., ANOVA, VIP, fold-change thresholds, FDR correction)
+  - No mention of metabolite ID confirmation strategy beyond 'feature annotation' (e.g., reference standards, MS/MS spectral matching, databases used)
+  - TMT-based proteomics quantification workflow described but no details on Proteome Discoverer search parameters (e.g., enzyme specificity, missed cleavages, modifications, FDR threshold)
+  - RNA-seq differential expression uses DESeq2 but no details on dispersion estimation, independent filtering, or contrast definition
+reproducibility_strengths:
+  - Raw and processed omics data deposited in MetaboLights (MTBLS1872) with metadata
+  - Full experimental details for sample preparation, extraction, and LC-MS acquisition (gradient, column, instrument settings)
+  - Use of widely accepted open-source tools for RNA-seq (Trinity, Bowtie2, RSEM, DESeq2) and proteomics (Mascot via Proteome Discoverer, CELLO, KEGG mapping)
+  - Explicit biological replicate numbers (15 for metabolomics, 3 for transcriptome/proteome)

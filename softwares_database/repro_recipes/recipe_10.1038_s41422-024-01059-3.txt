@@ -1,0 +1,113 @@
+========== reproducibility_recipe entry ==========
+paper_title: Comprehensive discovery and functional characterization of the noncanonical proteome.
+source_paper: Shi C et al. (2025), Cell research, DOI: 10.1038/s41422-024-01059-3, PMID: 39794466
+overall_reproducibility_score: 42/100
+
+workflow_steps: 8
+  Step 1: Putative sORF database construction
+    tool: Ribotricer
+    algorithm: prepare-orfs
+    parameters: gtf_source=Ensembl Hg38 v103, fasta_source=Ensembl Hg38 v103, start_codons=['ATG', 'CTG', 'GTG', 'TTG'], max_aa_length=250, conservation_method=PhastCons, conservation_data=UCSC hg38 phastCons20way, coding_probability_tool=CPAT
+    input: Ensembl GTF annotation and FASTA genome files
+    output: RLNPORF putative sORF database (11,668,944 ORFs)
+    confidence: high
+  Step 2: Ultrafiltration-based peptide enrichment
+    tool: Millipore ultrafiltration tubes
+    algorithm: size-exclusion fractionation
+    parameters: cutoffs_kDa=[3, 10, 30], centrifugation_g=13000, centrifugation_time_min=20
+    input: tissue/cell lysate in urea/thiourea/CHAPS lysis buffer
+    output: peptide fractions (<3 kDa and 3–10 kDa)
+    confidence: high
+  Step 3: LC-MS/MS acquisition
+    tool: Thermo Q Exactive HF-X (vXcalibur 4.1)
+    algorithm: data-dependent acquisition (DDA)
+    parameters: resolution_ms1=60000, resolution_ms2=15000, mass_range_ms1_mz=[350, 1800], agc_target=3000000, max_injection_time_ms=50, nces=30, top_n_ms2=20, gradient_duration_min=70, gradient_profile=[{'time_min': 0, 'percent_B': 2}, {'time_min': 58, 'percent_B': 28}, {'time_min': 65, 'percent_B': 35}, {'time_min': 70, 'percent_B': 98}], flow_rate_nL_min=300, column_dimensions_mm=75 μm ID × 150 mm length, 2 μm C18
+    input: ultrafiltered peptide fractions
+    output: raw .raw files
+    confidence: high
+  Step 4: Peptide identification via database search
+    tool: Mascot
+    algorithm: sequence matching against custom RLNPORF + UniProtKB_Reviewed
+    parameters: enzyme=partially tryptic, missed_cleavages=2, fixed_modifications=['carboxyamidomethylation of C'], variable_modifications=['oxidation of M', 'phosphorylation of S/T/Y/H', 'acetylation of N-term/K'], precursor_mass_tolerance_ppm=20, fragment_mass_tolerance_ppm=20, fdr_threshold=0.01, target_decoy_method=true, contaminant_database=UniprotKB_Reviewed (Swiss-Prot)
+    input: Thermo .raw files
+    output: PSM-level identifications mapped to RLNPORF ORFs
+    confidence: high
+  Step 5: Post-search filtering and noncanonical peptide curation
+    tool: manual curation + custom rules
+    algorithm: ORF-type–based filtering
+    parameters: exclude_orf_types=['annotated', 'IntORF_within_UniProtKB_reviewed'], redundancy_resolution=longer ORF with unique PSM retains; shorter overlapping discarded
+    input: Mascot search results annotated with RLNPORF metadata
+    output: final list of 8945 unannotated peptides
+    confidence: medium
+  Step 6: Functional prioritization via CRISPR screening
+    tool: CRISPR-Cas9 screening (unspecified library)
+    algorithm: pooled screen with proliferation readout
+    parameters: cell_lines_screened=['AGS', 'MKN45', 'HEK293T', 'HeLa', 'GES-1'], phenotype_readout=tumor cell proliferation, hit_threshold=1161 peptides significantly affecting proliferation
+    input: validated sORF overexpression constructs
+    output: functionally prioritized peptide list (n=1161)
+    confidence: low
+  Step 7: AI-based structural prediction and interaction network inference
+    tool: AlphaFold2 (implied) + custom PPI network analysis
+    algorithm: structure prediction + docking-informed or co-IP–guided interaction mapping
+    parameters: candidates=100, subcellular_location_prediction=included, organelle_process_annotation=performed
+    input: top 100 CRISPR-validated peptides
+    output: peptide–protein interaction networks + functional hypotheses
+    confidence: low
+  Step 8: Experimental validation of peptide function
+    tool: Flag-knockin, IHC, IF, xenograft models, metabolic assays
+    algorithm: multi-modal biological validation
+    parameters: validation_peptides=['pep1-nc-OLMALINC', 'pep5-nc-TRHDE-AS1', 'pep-nc-ZNF436-AS1', 'pep2-nc-AC027045.3'], assays=['mitochondrial complex assembly', 'energy metabolism', 'cholesterol metabolism', 'xenograft tumor growth', 'clinical correlation']
+    input: CRISPR- and AI-prioritized peptides
+    output: mechanistic and clinical validation evidence
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: https://github.com/smithlabcode/ribotricer
+
+figure_recipes: 6
+  Fig. 1: [workflow_diagram]
+    caption: Overview of the pipeline for identifying novel peptides from noncanonical ORFs using ultrafiltration LC-MS/MS and RLNPORF database.
+    produced_by_step: [1, 2, 3, 4, 5]
+    visualization_tool: not_mentioned
+  Fig. 2: [bar_chart]
+    caption: CRISPR screening results showing peptides significantly impacting gastric cancer cell proliferation.
+    produced_by_step: [6]
+    visualization_tool: not_mentioned
+    statistical_test: not_mentioned
+  Fig. 3: [boxplot]
+    caption: Functional characterization of top CRISPR hits, including expression, localization, and phenotypic effects.
+    produced_by_step: [6, 8]
+    visualization_tool: not_mentioned
+    statistical_test: not_mentioned
+  Fig. 4: [network]
+    caption: AI-predicted 3D structures and peptide–protein interaction networks for top 100 candidates.
+    produced_by_step: [7]
+    visualization_tool: not_mentioned
+  Fig. 5: [pathway_map]
+    caption: Functional impact of four validated peptides on mitochondrial complex assembly, energy metabolism, and cholesterol metabolism.
+    produced_by_step: [8]
+    visualization_tool: not_mentioned
+  Fig. 6: [survival_plot]
+    caption: Clinical correlation of dysregulated peptides with gastric cancer patient prognosis.
+    produced_by_step: [8]
+    visualization_tool: not_mentioned
+    statistical_test: not_mentioned
+
+reproducibility_gaps:
+  - Raw mass spectrometry data (.raw files) not deposited in public repository (e.g., PRIDE, MassIVE)
+  - CRISPR screening library design, gRNA sequences, and analysis code not provided
+  - Custom post-Mascot filtering logic and RLNPORF annotation rules only partially described
+  - AI structure prediction and PPI network tools not specified (AlphaFold2 usage implied but not confirmed; no parameters or version given)
+  - No access to processed peptide identification tables, PSM-level evidence, or spectral libraries
+  - Xenograft and IHC quantification methods lack statistical detail (e.g., n, test used, p-value thresholds)
+reproducibility_strengths:
+  - Ribotricer source code publicly available on GitHub
+  - Detailed LC-MS/MS acquisition parameters reported (gradient, resolution, tolerances)
+  - Explicit exclusion criteria for canonical/overlapping ORFs provided
+  - Cell line RRIDs and ethical approvals documented
+  - Full experimental protocols for ultrafiltration, digestion, and chromatography included

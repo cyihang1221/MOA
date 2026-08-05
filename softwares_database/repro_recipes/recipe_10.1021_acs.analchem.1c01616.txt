@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: Acoustic Mist Ionization Mass Spectrometry for Ultrahigh-Throughput Metabolomics Screening.
+source_paper: Smith MJ et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.1c01616, PMID: 34156839
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Pulsed scan data extraction
+    tool: custom algorithm
+    algorithm: pulsed scan extraction
+    parameters: signal_to_noise_ratio_threshold=None, replicate_filter_threshold=None, sample_filter_threshold=None, missing_value_filter_threshold=None, RSD_filter_threshold=None
+    input: raw AMI-MS .raw files
+    output: extracted feature matrix
+    confidence: low
+  Step 2: Feature filtering
+    tool: custom workflow
+    algorithm: multi-tier filtering
+    parameters: signal_to_noise_ratio=None, replicate_filter=None, sample_filter=None, missing_value_filter=None, RSD_filter=None
+    input: extracted feature matrix
+    output: filtered feature table
+    confidence: low
+  Step 3: Normalization and batch correction
+    tool: custom adaptation
+    algorithm: adapted normalization and batch correction
+    input: filtered feature table
+    output: normalized and batch-corrected feature table
+    confidence: low
+  Step 4: Cell phenotype filtering
+    tool: custom filter
+    algorithm: cytotoxicity-based exclusion
+    parameters: cytotoxicity_threshold=None
+    input: normalized and batch-corrected feature table
+    output: phenotype-filtered metabolomics dataset
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposited in public repository
+  - No code or workflow scripts shared
+  - All key parameters (SNR thresholds, RSD cutoffs, cytotoxicity filters, normalization methods) unspecified
+  - Custom algorithms described only conceptually with no implementation details
+  - Instrument-specific pulsed scan extraction logic not disclosed
+reproducibility_strengths:
+  - Workflow design rationale provided (minimize variance, maximize feature counts)
+  - Use case clearly defined (ultrahigh-throughput drug safety screening)
+  - Experimental scale documented (2772 samples, 16 drugs, 9 concentrations, <5 h acquisition)

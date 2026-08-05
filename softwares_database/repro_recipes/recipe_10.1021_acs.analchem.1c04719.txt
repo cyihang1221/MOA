@@ -1,0 +1,61 @@
+========== reproducibility_recipe entry ==========
+paper_title: MS-IDF: A Software Tool for Nontargeted Identification of Endogenous Metabolites after Chemical Isotope Labeling Based on a Narrow Mass Defect Filter.
+source_paper: Wang S et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.1c04719, PMID: 35104404
+overall_reproducibility_score: 72/100
+
+workflow_steps: 5
+  Step 1: Chemical isotope labeling LC-MS data acquisition
+    tool: LC-MS platform (unspecified vendor)
+    input: biological samples (e.g., human plasma/serum)
+    output: raw .raw or .d files (vendor format)
+    confidence: low
+  Step 2: Peak extraction using isotope pair detection (IsoFinder module)
+    tool: MS-IDF
+    algorithm: fixed mass difference + RT alignment
+    parameters: mass_difference=exact mass shift of isotope label (e.g., 3 Da for ^13C3-labeling), rt_tolerance=None, intensity_threshold=None
+    input: raw LC-MS files
+    output: isotope-paired feature table
+    confidence: medium
+  Step 3: Narrow mass defect filtering (MDFinder module)
+    tool: MS-IDF
+    algorithm: narrow mass defect filter (MDF)
+    parameters: mass_defect_filter_interval=narrow interval (e.g., ±0.001 Da or similar, exact value not specified)
+    input: raw LC-MS files
+    output: filtered endogenous metabolite candidates
+    confidence: medium
+  Step 4: Metabolite identification and annotation
+    tool: MS-IDF + external databases
+    algorithm: accurate mass matching + mass defect signature filtering
+    parameters: mass_accuracy_ppm=5, database=['HMDB', 'METLIN', 'KEGG']
+    input: MDFinder output (accurate m/z + RT)
+    output: annotated metabolite list with confidence levels
+    confidence: medium
+  Step 5: Statistical analysis and biomarker prioritization
+    tool: unspecified (likely custom MATLAB or standard stats)
+    algorithm: t-test or similar univariate test
+    parameters: p_value_cutoff=0.05, fold_change_threshold=None, FDR_correction=yes/no (not specified)
+    input: quantified isotope-labeled feature table
+    output: differential metabolites / candidate biomarkers
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/jydong2018/MS_IDF
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS data not deposited in public repository
+  - Exact mass defect filter interval not quantitatively specified
+  - No details on chromatographic conditions (gradient, column, flow rate)
+  - Statistical methods and thresholds under-specified
+  - No sample metadata (cohort size, clinical criteria, preprocessing) provided in abstract/methods summary
+reproducibility_strengths:
+  - Source code openly available on GitHub
+  - Core algorithm principles clearly described (narrow mass defect filtering)
+  - Two modular functions (IsoFinder/MDFinder) explicitly defined
+  - Validation via comparative compound ID count (259 vs 423) demonstrates functional improvement

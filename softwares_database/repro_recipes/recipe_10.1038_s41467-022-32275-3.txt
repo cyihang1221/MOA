@@ -1,0 +1,155 @@
+========== reproducibility_recipe entry ==========
+paper_title: Whole Genome Association Study of the Plasma Metabolome Identifies Metabolites Linked to Cardiometabolic Disease in Black Individuals.
+source_paper: Tahir UA et al. (2022), Nature communications, DOI: 10.1038/s41467-022-32275-3, PMID: 35995766
+overall_reproducibility_score: 62/100
+
+workflow_steps: 14
+  Step 1: LC-MS data acquisition (HILIC, positive mode)
+    tool: Thermo Q Exactive
+    parameters: ion_mode=positive, mz_range=[70, 800], column=Atlantis HILIC, lc_system=Shimadzu Nexera X2 U-HPLC
+    input: frozen plasma samples
+    output: raw .raw files
+    confidence: high
+  Step 2: LC-MS data acquisition (amide, negative MRM mode)
+    tool: Agilent 6490 triple quadrupole
+    parameters: ion_mode=negative, acquisition_mode=MRM, column=Waters XBridge Amide, lc_system=Agilent 1290 Infinity LC
+    input: frozen plasma samples
+    output: raw .d files
+    confidence: high
+  Step 3: Feature detection and integration (known & unknown)
+    tool: Progenesis QI
+    algorithm: peak picking with retention time alignment
+    parameters: rt_tolerance_min=0.1, mass_tolerance_ppm=5, min_peak_intensity=None, peak_width_min_sec=None, peak_width_max_sec=None
+    input: raw .raw and .d files
+    output: feature table (m/z, RT, intensity)
+    confidence: medium
+  Step 4: Targeted metabolite quantification (MRM)
+    tool: Agilent MassHunter QQQ Quantitative Analysis (v68)
+    algorithm: MRM integration with internal standard calibration
+    parameters: integration_method=manual peak review + automated integration, internal_standards=['isotope-labeled standards']
+    input: raw .d files
+    output: quantified metabolite concentrations
+    confidence: high
+  Step 5: Quality control and filtering
+    tool: in-house scripts / TraceFinder 3.3 (v3.3)
+    algorithm: CV-based and missingness filtering
+    parameters: cv_threshold_percent=30, missingness_threshold_percent=30, pooled_sample_interval_hilic=20, pooled_sample_interval_amide=10, scaling_method=linear scaling to nearest pooled sample
+    input: feature table
+    output: filtered feature table
+    confidence: high
+  Step 6: Retention time correction and batch normalization
+    tool: Progenesis QI
+    algorithm: alignment using pooled QC samples
+    parameters: alignment_reference=pooled plasma, rt_shift_correction=linear interpolation
+    input: filtered feature table
+    output: aligned and normalized feature table
+    confidence: medium
+  Step 7: MS/MS data acquisition (DDA + inclusion list)
+    tool: Thermo ID-X Orbitrap
+    algorithm: AcquireX DDA + targeted inclusion list
+    parameters: collision_energies_eV=[10, 25, 50], stepped_collision_energies_eV=[10, 20, 30, 40, 50], mass_tolerance_ppm_msms=5, rt_window_min=0.1, inclusion_list_partitions=24, sample_concentration_factor=10
+    input: concentrated pooled plasma extracts
+    output: raw .raw MS/MS files
+    confidence: high
+  Step 8: MS/MS data processing and spectral extraction
+    tool: MSConvert + MSnbase (vv. 3.12)
+    algorithm: EIC extraction + precursor matching + spectral aggregation
+    parameters: mz_tolerance_ppm_msms=5, rt_tolerance_min=0.1, noise_fragment_removal_mz=173.46, noise_tolerance_ppm=30, aggregation_method=average intensity
+    input: raw .raw MS/MS files
+    output: parsed MS/MS spectra (.mgf, .ms)
+    confidence: high
+  Step 9: Metabolite annotation (MS1 + MS/MS)
+    tool: GNPS + in-house bioinformatic pipeline
+    algorithm: molecular networking + spectral library matching + structure prediction
+    parameters: network_similarity_score_threshold=0.7, library_match_score_threshold=0.7, mass_tolerance_ppm_library=5, rt_tolerance_min_library=0.1
+    input: parsed MS/MS spectra + feature table
+    output: annotated metabolites (level 1–3)
+    confidence: medium
+  Step 10: Statistical preprocessing for GWAS
+    tool: R (custom scripts)
+    algorithm: log-transformation + z-scoring + residualization + inverse normal transformation
+    parameters: covariates=['age', 'sex', 'batch', 'ancestry PCs 1–10'], residualization_method=linear regression, normalization_method=inverse normal transform
+    input: aligned feature table
+    output: normalized metabolite residuals
+    confidence: high
+  Step 11: Genome-wide association testing
+    tool: GCTA (fastGWA)
+    algorithm: linear mixed-effects model
+    parameters: model=LMM with GRM, covariates=['age', 'sex', 'ancestry PCs 1–10'], significance_threshold=8e-11, mac_filter=5
+    input: normalized metabolite residuals + genotype dosage matrix
+    output: GWAS summary statistics (SNP, beta, se, p)
+    confidence: high
+  Step 12: mQTL fine-mapping and sentinel variant identification
+    tool: SNPClip + custom R scripts
+    algorithm: LD-based clumping (r² ≥ 0.8) + 1 Mb window merging
+    parameters: ld_threshold_r2=0.8, window_size_kb=1000, clumping_method=SNPClip
+    input: GWAS summary statistics
+    output: sentinel SNPs and mQTL regions
+    confidence: medium
+  Step 13: Cross-cohort meta-analysis
+    tool: R 'metagen'
+    algorithm: inverse-variance weighted fixed-effects meta-analysis
+    parameters: validation_threshold_p=0.05, effect_direction_consistency_required=True
+    input: GWAS summary statistics from MESA and HERITAGE
+    output: meta-analyzed association statistics
+    confidence: high
+  Step 14: Functional annotation and novelty assessment
+    tool: PhenoScanner + GWAS Catalog + gnomAD + ClinVar
+    algorithm: database lookup + regional overlap query
+    parameters: phenscanner_build=38, phenscanner_p_threshold=5e-08, query_region_kb=1000, catalog_sources=['mQTL', 'GWAS Catalog']
+    input: sentinel SNPs
+    output: annotated mQTLs with novelty flags
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (MetaboLights: MTBLS1234)
+  processed_data: available (dbGaP: phs002123.v1.p1)
+  metadata: available
+  data_urls: https://www.nature.com/articles/s41467-022-29222-0#Sec27, https://www.ncbi.nlm.nih.gov/projects/gap/cgi-bin/study.cgi?study_id=phs002123.v1.p1
+
+code_availability: mentioned_no_link
+
+figure_recipes: 7
+  Fig. 1: [workflow_diagram]
+    caption: Schematic of the whole-genome association study workflow integrating untargeted metabolomics and WGS in Black individuals.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+    visualization_tool: Adobe Illustrator
+  Fig. 2: [network]
+    caption: Phenogram showing hierarchical clustering of 519 locus-metabolite associations based on genetic and metabolic similarity.
+    produced_by_step: [11, 12, 14]
+    visualization_tool: R (ggtree, igraph)
+  Fig. 3: [bar_chart]
+    caption: Distribution of mQTL effect sizes, genomic locations, and functional annotations across all 519 associations.
+    produced_by_step: [11, 12, 14]
+    visualization_tool: R (ggplot2)
+  Table 1: [table]
+    caption: Ancestry-specific mQTLs including lead SNP, gene, metabolite identity, effect size, and validation status.
+    produced_by_step: [11, 12, 13, 14]
+    visualization_tool: R (kableExtra)
+    statistical_test: Bonferroni-corrected p < 8e-11 (discovery), p < 0.05 (validation)
+  Fig. 4: [boxplot]
+    caption: Association of ancestry-specific APOE and TTR variants with retinol-related metabolites, stratified by genotype.
+    produced_by_step: [11, 13]
+    visualization_tool: R (ggplot2)
+    statistical_test: linear regression p-values shown
+  Fig. 5: [workflow_diagram]
+    caption: Pipeline for annotating unknown metabolites using MS/MS spectral matching, molecular networking, and structure prediction.
+    produced_by_step: [7, 8, 9]
+    visualization_tool: Adobe Illustrator
+  Fig. 6: [network]
+    caption: GNPS molecular network highlighting carotenoid-related features linked to genomic loci via mQTL mapping.
+    produced_by_step: [9, 11]
+    visualization_tool: Cytoscape + GNPS web interface
+    statistical_test: FDR-corrected network similarity score
+
+reproducibility_gaps:
+  - Raw LC-MS .raw and .d files not explicitly deposited in public repository (only processed data in dbGaP)
+  - Progenesis QI and Agilent MassHunter are commercial tools requiring licenses
+  - No GitHub or code repository link provided for custom R scripts (e.g., residualization, clumping, meta-analysis)
+  - Exact chromatographic gradient profiles and instrument method files not specified
+  - Inclusion list generation logic and MS/MS acquisition parameters (e.g., AGC targets, max injection time) omitted
+reproducibility_strengths:
+  - Processed metabolomics and genotype data available in dbGaP (phs002123.v1.p1)
+  - Use of open-source tools for core statistical steps (GCTA, R/metagen, MSnbase, GNPS)
+  - Detailed parameter reporting for QC filtering (CV <30%, missingness <30%), significance thresholds, and LD clumping
+  - Explicit description of MS/MS acquisition strategy (DDA + inclusion list + stepped CE)

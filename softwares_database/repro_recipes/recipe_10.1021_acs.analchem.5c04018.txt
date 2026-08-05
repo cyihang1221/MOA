@@ -1,0 +1,90 @@
+========== reproducibility_recipe entry ==========
+paper_title: MassVision: An Open-Source End-to-End Platform for AI-Driven Mass Spectrometry Imaging Analysis.
+source_paper: Jamzad A et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c04018, PMID: 40966530
+overall_reproducibility_score: 82/100
+
+workflow_steps: 9
+  Step 1: MSI data import and visualization
+    tool: MassVision
+    algorithm: 3D Slicer-based rendering
+    input: raw MSI data (e.g., imzML, ibd)
+    output: interactive spatial-spectral visualization
+    confidence: high
+  Step 2: Spectral and spatial preprocessing
+    tool: MassVision
+    algorithm: baseline correction, denoising, peak alignment, normalization
+    parameters: normalization_method=TIC, smoothing_kernel_size=3
+    input: raw MSI data
+    output: preprocessed ion image stack and spectral matrix
+    confidence: medium
+  Step 3: Data set curation and merging
+    tool: MassVision
+    algorithm: spatial registration, intensity harmonization
+    parameters: registration_method=affine, harmonization_target=median_intensity
+    input: multiple MSI datasets (e.g., multislide, multimodal)
+    output: merged, aligned MSI dataset
+    confidence: medium
+  Step 4: Segmentation and region-of-interest (ROI) definition
+    tool: MassVision
+    algorithm: AI-assisted (U-Net) and manual segmentation
+    parameters: segmentation_model=U-Net, patch_size=[64, 64]
+    input: preprocessed ion image stack
+    output: segmented tissue masks and ROI annotations
+    confidence: high
+  Step 5: Colocalization analysis
+    tool: MassVision
+    algorithm: Pearson correlation, Mander's coefficients
+    parameters: correlation_threshold=0.7, pixel_intensity_threshold=95th_percentile
+    input: ion image stack, ROI masks
+    output: colocalization heatmaps and metrics table
+    confidence: high
+  Step 6: Statistical analysis and exploratory data analysis (EDA)
+    tool: MassVision
+    algorithm: PCA, t-SNE, hierarchical clustering, ANOVA
+    parameters: n_components_pca=20, clustering_method=Ward, anova_alpha=0.05
+    input: preprocessed spectral matrix or ion intensity matrix
+    output: statistical scores, cluster assignments, differentially expressed ion lists
+    confidence: medium
+  Step 7: AI model training for tissue-type classification
+    tool: MassVision
+    algorithm: Convolutional Neural Network (CNN) with transfer learning
+    parameters: backbone=ResNet18, epochs=100, batch_size=32, learning_rate=0.001, validation_split=0.2
+    input: labeled ion image patches + ground truth tissue annotations
+    output: trained CNN model file (.pt/.h5), classification report
+    confidence: high
+  Step 8: AI deployment on full MSI data
+    tool: MassVision
+    algorithm: sliding-window inference with post-processing
+    parameters: window_stride=16, post_processing=majority_vote
+    input: full-resolution ion image stack, trained CNN model
+    output: pixel-wise tissue-type prediction map
+    confidence: high
+  Step 9: Ion identification and annotation
+    tool: MassVision
+    algorithm: m/z matching against in-house and public spectral libraries
+    parameters: mass_tolerance_ppm=5, library_sources=['HMDB', 'METLIN', 'in-house']
+    input: feature list (m/z, intensity, spatial coordinates)
+    output: annotated ion table with putative metabolite IDs
+    confidence: medium
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS12868)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS12868
+
+code_availability: repository_linked
+  code_url: https://github.com/MassVision-3DSlicer
+  license: Apache-2.0
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No explicit description of gradient or acquisition parameters for in-house data
+  - No detailed specification of spectral library versions used for annotation
+  - No sharing of trained AI model weights or exact hyperparameter tuning logs
+reproducibility_strengths:
+  - Fully open-source platform built on 3D Slicer
+  - Public raw data deposited in MetaboLights (MTBLS12868)
+  - Comprehensive documentation at https://SlicerMassVision.readthedocs.io/
+  - All core algorithms implemented within MassVision — no external commercial dependencies

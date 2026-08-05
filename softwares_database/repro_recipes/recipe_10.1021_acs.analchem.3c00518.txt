@@ -1,0 +1,66 @@
+========== reproducibility_recipe entry ==========
+paper_title: Experimental Assessment of Mammalian Lipidome Complexity Using Multimodal 21 T FTICR Mass Spectrometry Imaging.
+source_paper: Vandergrift GW et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c00518, PMID: 37427698
+overall_reproducibility_score: 30/100
+
+workflow_steps: 6
+  Step 1: MSI data acquisition
+    tool: 21 T FTICR-MS
+    algorithm: absorption mode FT processing
+    parameters: mass_resolving_power=613000, mz_at_resolution=760, transient_duration_s=1.536
+    input: tissue sections (mammalian)
+    output: raw MSI datasets (.d format or vendor-specific binary)
+    confidence: high
+  Step 2: Ionization mode comparison
+    tool: MALDI and nano-DESI
+    input: same tissue sections
+    output: two parallel MSI datasets (MALDI-MSI, nano-DESI-MSI)
+    confidence: medium
+  Step 3: Mass error evaluation
+    tool: internal calibration
+    algorithm: sub-ppm mass error calculation
+    parameters: error_threshold_ppm=1.0
+    input: peak lists from MSI datasets
+    output: mass accuracy metrics per ionization mode
+    confidence: high
+  Step 4: Lipid annotation
+    tool: custom lipid database matching
+    algorithm: exact mass matching with elemental composition filtering
+    parameters: mass_tolerance_ppm=1.0, elemental_constraints=['C', 'H', 'O', 'N', 'P', 'S'], adducts_considered=['[M+H]+', '[M+Na]+', '[M+K]+', '[M-H]-']
+    input: centroided peak lists with m/z and intensity
+    output: annotated lipid features (n = 1676)
+    confidence: low
+  Step 5: Mass split analysis
+    tool: custom script
+    algorithm: pairwise m/z difference calculation within single pixels
+    parameters: min_mass_split_mda=2.4, max_mass_split_mda=8.9, mz_range_lower_bound=1000
+    input: pixel-wise peak lists
+    output: mass split distribution maps and statistics
+    confidence: low
+  Step 6: Spatial localization of mass splits
+    tool: MSI visualization software
+    algorithm: co-localization with histology or blank regions
+    input: mass split maps + tissue image
+    output: biological vs. artificial origin assignment for mass splits
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw MSI datasets not deposited in public repository (e.g., MetaboLights, MASSIVE, or Zenodo)
+  - No description of lipid database used for annotation (e.g., LIPID MAPS, HMDB, or custom build)
+  - No details on calibration standards or internal reference compounds
+  - Custom scripts for mass split analysis and spatial mapping not shared or described
+  - No information on tissue preparation, matrix application (for MALDI), or nano-DESI solvent composition
+  - Instrument method parameters (e.g., laser fluence, spray voltage, desorption geometry) not specified
+reproducibility_strengths:
+  - Ultrahigh-resolution FTICR-MS parameters explicitly reported (21 T, absorption mode, transient duration, resolving power)
+  - Quantitative mass error thresholds stated (sub-ppm for all annotations)
+  - Biologically relevant mass split interpretations provided (e.g., 2.4 mDa = Na+/K+ ambiguity, 8.9 mDa = double bond isomerism)

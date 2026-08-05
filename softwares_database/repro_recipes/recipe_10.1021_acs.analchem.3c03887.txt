@@ -1,0 +1,72 @@
+========== reproducibility_recipe entry ==========
+paper_title: Comparison of Tiling Artifact Removal Methods in Secondary Ion Mass Spectrometry Images.
+source_paper: Kandanaarachchi S et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c03887, PMID: 37963228
+overall_reproducibility_score: 20/100
+
+workflow_steps: 8
+  Step 1: Acquisition of tiled ToF-SIMS hyperspectral images
+    tool: ToF-SIMS instrument (not specified)
+    parameters: acquisition_mode=tiled raster scanning, instrument_type=['ToF-SIMS', 'OrbiTrapSIMS']
+    input: raw ion intensity images per tile
+    output: multitile hyperspectral image cubes (m/z × x × y × tile_id)
+    confidence: low
+  Step 2: Application of tiling artifact removal methods
+    tool: custom or unspecified implementation
+    algorithm: tensor decomposition
+    input: multitile hyperspectral image cubes
+    output: corrected hyperspectral image cubes
+    confidence: low
+  Step 3: Application of tiling artifact removal methods
+    tool: custom or unspecified implementation
+    algorithm: multiplicative linear correction
+    input: multitile hyperspectral image cubes
+    output: corrected hyperspectral image cubes
+    confidence: low
+  Step 4: Application of tiling artifact removal methods
+    tool: custom or unspecified implementation
+    algorithm: linear discriminant analysis
+    input: multitile hyperspectral image cubes
+    output: corrected hyperspectral image cubes
+    confidence: low
+  Step 5: Application of tiling artifact removal methods
+    tool: custom or unspecified implementation
+    algorithm: seamless stitching
+    input: multitile hyperspectral image cubes
+    output: corrected hyperspectral image cubes
+    confidence: low
+  Step 6: Application of tiling artifact removal methods
+    tool: custom or unspecified implementation
+    algorithm: simple averaging
+    input: multitile hyperspectral image cubes
+    output: corrected hyperspectral image cubes
+    confidence: low
+  Step 7: Application of tiling artifact removal methods
+    tool: custom or unspecified implementation
+    algorithm: simple interpolating
+    input: multitile hyperspectral image cubes
+    output: corrected hyperspectral image cubes
+    confidence: low
+  Step 8: Quantitative and subjective quality assessment
+    tool: custom statistical analysis
+    algorithm: subjective survey + statistical analysis
+    parameters: assessment_criteria=['intensity continuity', 'artifact suppression', 'feature preservation'], raters=multiple domain experts, statistical_test=not specified
+    input: corrected hyperspectral image cubes
+    output: quality scores per method per dataset
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No software/tool implementations named or linked (e.g., no GitHub, no package name for 'tensor decomposition' or 'seamless stitching')
+  - No parameters specified for any artifact removal method (e.g., window size, regularization, interpolation kernel, LDA dimensionality)
+  - Raw data not deposited in public repository
+  - No description of preprocessing steps (e.g., mass calibration, denoising, binning) prior to tiling correction
+  - Instrument model, acquisition settings (e.g., primary ion species, energy, dwell time), and sample preparation details omitted
+  - Statistical analysis methodology not described (e.g., test type, significance threshold, inter-rater reliability)

@@ -1,0 +1,66 @@
+========== reproducibility_recipe entry ==========
+paper_title: Deep Profiling of Aminophospholipids Reveals a Dysregulated Desaturation Pattern in Breast Cancer Cell Lines.
+source_paper: Lin Q et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.1c03494, PMID: 34931817
+overall_reproducibility_score: 30/100
+
+workflow_steps: 6
+  Step 1: Amino group derivatization
+    tool: TMAB-NHS
+    parameters: derivatization_reagent=4-trimethylammoniumbutyryl-N-hydroxysuccinimide, concentration=not specified, reaction_time=not specified, temperature=not specified
+    input: lipid extracts containing PEs, ether-PEs, PSs
+    output: TMAB-derivatized aminophospholipids
+    confidence: low
+  Step 2: Paternò-Büchi (PB) reaction for C=C bond derivatization and localization
+    tool: Paternò-Büchi reaction
+    parameters: photochemical_reagent=acetone, UV_wavelength=254 nm, irradiation_time=not specified, reaction_conditions=not fully specified
+    input: TMAB-derivatized aminophospholipids
+    output: PB-derivatized aminophospholipids with site-specific C=C localization
+    confidence: low
+  Step 3: LC-MS analysis
+    tool: Liquid chromatography-mass spectrometry
+    parameters: chromatography=reversed-phase LC, column=not specified, gradient_profile=not specified, mass_analyzer=high-resolution mass spectrometer (exact type not stated), ionization=ESI positive mode, mass_accuracy=sufficient for C=C localization (implied <5 ppm), scan_mode=data-dependent acquisition (DDA)
+    input: PB- and TMAB-derivatized lipid extracts
+    output: raw .raw or .d files (vendor format)
+    confidence: low
+  Step 4: Identification of C=C location isomers
+    tool: Custom MS/MS interpretation workflow
+    algorithm: fragmentation pattern analysis of PB-adducts
+    parameters: mass_tolerance_ppm=5, criteria_for_C=C_localization=diagnostic fragment ions (e.g., m/z 108.069 for Δ9, m/z 122.085 for Δ10, etc.)
+    input: MS/MS spectra of PB-derivatized lipids
+    output: C=C location-resolved lipid identifications (e.g., C16:1n-10, C18:1n-10)
+    confidence: medium
+  Step 5: Quantitative profiling and comparative analysis
+    tool: Not specified (likely vendor software or in-house script)
+    algorithm: relative quantification based on extracted ion chromatograms (XICs)
+    parameters: integration_method=peak area, normalization=internal standard (not specified), statistical_test=not explicitly named but implies t-test or fold-change thresholding
+    input: feature-aligned peak tables
+    output: differential isomer abundance table (e.g., n-10 vs other isomers)
+    confidence: low
+  Step 6: Integration with transcriptomics
+    tool: qRT-PCR or RNA-seq data analysis
+    algorithm: correlation analysis
+    parameters: gene=FADS2, cell_lines=['MDA-MB-231', 'HMEC'], statistical_measure=correlation between FADS2 mRNA level and n-10 isomer abundance
+    input: lipid isomer abundance + gene expression data
+    output: correlation result supporting mechanistic link
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw LC-MS data deposited in public repository (e.g., MetaboLights, PRIDE)
+  - No code or scripts for PB-fragment interpretation or isomer quantification shared
+  - Incomplete experimental details: TMAB-NHS and PB reaction conditions (time, temperature, concentrations) not reported
+  - LC gradient, column type, and instrument parameters unspecified
+  - No description of peak integration, alignment, or normalization methods
+  - FADS2 expression data source and processing method not described
+reproducibility_strengths:
+  - Clear chemical rationale for dual derivatization strategy
+  - Demonstrated analytical performance (LOD for standards reported)
+  - Biological validation using two well-characterized cell lines

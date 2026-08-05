@@ -1,0 +1,51 @@
+========== reproducibility_recipe entry ==========
+paper_title: MetaboMSDIA: A tool for implementing data-independent acquisition in metabolomic-based mass spectrometry analysis.
+source_paper: Ledesma-Escobar CA et al. (2023), Analytica chimica acta, DOI: 10.1016/j.aca.2023.341308, PMID: 37244659
+overall_reproducibility_score: 70/100
+
+workflow_steps: 4
+  Step 1: DIA data processing
+    tool: MetaboMSDIA
+    algorithm: multiplexed MS2 spectrum extraction
+    input: raw DIA .d format files (or vendor-specific DIA files)
+    output: extracted multiplexed MS2 spectra
+    confidence: medium
+  Step 2: Metabolite identification using open MS2 libraries
+    tool: MetaboMSDIA
+    algorithm: spectral matching against open MS2 repositories and homemade standard libraries
+    input: extracted multiplexed MS2 spectra
+    output: tentatively annotated metabolites
+    confidence: medium
+  Step 3: Targeted annotation of metabolite families via selective fragmentation filtering
+    tool: MetaboMSDIA
+    algorithm: neutral loss or product ion filtering
+    parameters: filtering_mode=selective neutral losses or product ions
+    input: extracted multiplexed MS2 spectra
+    output: family-targeted metabolite annotations
+    confidence: high
+  Step 4: Combined annotation workflow
+    tool: MetaboMSDIA
+    algorithm: integration of library matching and selective fragmentation filtering
+    input: extracted multiplexed MS2 spectra
+    output: final metabolite annotations (e.g., 50 in lemon, 35 in olive)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/MonicaCalSan/MetaboMSDIA
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw DIA mass spectrometry data not deposited or referenced
+  - No details on instrument parameters (e.g., DIA window setup, collision energy, chromatography)
+  - No specification of MS2 libraries used (e.g., MassBank, GNPS, or in-house library versions)
+  - No description of preprocessing steps (e.g., peak picking, alignment, retention time correction) prior to MS2 extraction
+reproducibility_strengths:
+  - Source code publicly available on GitHub
+  - Explicit compatibility with open MS2 repositories and homemade standard libraries
+  - Clear description of two complementary annotation strategies (library matching + neutral loss/product ion filtering)

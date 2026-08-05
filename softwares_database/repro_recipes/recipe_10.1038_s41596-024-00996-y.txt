@@ -1,0 +1,93 @@
+========== reproducibility_recipe entry ==========
+paper_title: Reproducible mass spectrometry data processing and compound annotation in MZmine 3.
+source_paper: Heuckeroth S et al. (2024), Nature protocols, DOI: 10.1038/s41596-024-00996-y, PMID: 38769143
+overall_reproducibility_score: 87/100
+
+workflow_steps: 7
+  Step 1: Raw data import
+    tool: MZmine 3 (v3.4.0 or later (implied by 'third version'))
+    algorithm: Native vendor file parser
+    input: raw instrument files (.raw, .d, .mzML, .cdf, etc.)
+    output: imported project with raw scans
+    confidence: medium
+  Step 2: Chromatogram building / feature detection
+    tool: MZmine 3 (v3.4.0 or later)
+    algorithm: Local minimum resolver
+    parameters: min_time_span_sec=5, min_height=10000, mz_tolerance_ppm=10, noise_level=5000, search_radius_rt_sec=5, min_peak_width_rt_sec=0.1, max_peak_width_rt_sec=30
+    input: raw scans
+    output: feature list (peak table)
+    confidence: high
+  Step 3: Retention time alignment
+    tool: MZmine 3 (v3.4.0 or later)
+    algorithm: Join aligner
+    parameters: mz_tolerance_ppm=10, rt_tolerance_sec=30, weight_for_mz=1, weight_for_rt=1
+    input: feature lists from multiple samples
+    output: aligned feature table
+    confidence: high
+  Step 4: Gap filling
+    tool: MZmine 3 (v3.4.0 or later)
+    algorithm: Fill peaks
+    parameters: mz_tolerance_ppm=10, rt_tolerance_sec=30, min_peak_height_ratio=0.01, min_peak_area_ratio=0.01
+    input: aligned feature table
+    output: gap-filled feature table
+    confidence: high
+  Step 5: Feature filtering
+    tool: MZmine 3 (v3.4.0 or later)
+    algorithm: Row filter
+    parameters: min_samples=2, min_fraction_in_any_group=0.5, min_intensity=10000
+    input: gap-filled feature table
+    output: filtered feature table
+    confidence: high
+  Step 6: MS/MS spectral processing and annotation
+    tool: MZmine 3 (v3.4.0 or later)
+    algorithm: Spectral library search (e.g., GNPS, MassBank, MoNA)
+    parameters: mass_tolerance_ppm=5, min_matched_peaks=3, min_relative_intensity_percent=1, library_score_threshold=0.3
+    input: MS2 spectra linked to features
+    output: annotated MS2 spectral list with compound IDs
+    confidence: medium
+  Step 7: Ion mobility data processing (for LC-IMS-MS and IMS-MS imaging)
+    tool: MZmine 3 (v3.4.0 or later)
+    algorithm: IMS drift time calibration and mobility-aligned feature detection
+    parameters: mobility_resolution=20, drift_time_tolerance_ms=2, mobility_trend_correction=True
+    input: IMS-enabled raw files (.imzML, .d, vendor IMS formats)
+    output: mobility-resolved feature table and 3D (RT–m/z–mobility) features
+    confidence: medium
+
+data_availability:
+  raw_data: available (Not explicitly named, but implied in Supplementary Data 1)
+  processed_data: available (Supplementary Data 1 (ZIP archive))
+  metadata: in_paper_only
+  data_urls: https://doi.org/10.1038/s41596-024-00996-y, Supplementary Data 1 (download ZIP)
+
+code_availability: repository_linked
+  code_url: https://github.com/mzmine/mzmine3
+  license: GPL-3.0
+
+figure_recipes: 4
+  Extended Data Fig. 1: [workflow_diagram]
+    caption: Screenshot of the batch mode dialogue box showing the batch queue, modules panel, save/load controls, preview option, and help access.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7]
+    visualization_tool: MZmine 3 GUI screenshot
+  Extended Data Fig. 2: [chromatogram]
+    caption: Screenshot of the 'Raw data overview' module displaying chromatogram, mass spectrum, and scan information panels.
+    produced_by_step: [1]
+    visualization_tool: MZmine 3 GUI screenshot
+  Extended Data Fig. 3: [other]
+    caption: Screenshot of the interactive visualization panel in the Local minimum resolver module, showing 'noisy' vs. 'good' EIC traces for parameter optimization.
+    produced_by_step: [2]
+    visualization_tool: MZmine 3 GUI screenshot
+  Extended Data Fig. 4: [other]
+    caption: Screenshot of the 'Ion mobility raw data overview' module showing summed frame spectrum, BPC/EIC, mobilogram, mobility vs. m/z heatmap, and ion mobility trace.
+    produced_by_step: [7]
+    visualization_tool: MZmine 3 GUI screenshot
+
+reproducibility_gaps:
+  - No explicit public repository accession ID (e.g., MetaboLights, GNPS) provided for raw data — only 'Supplementary Data 1' ZIP referenced
+  - Metadata format and structure not described (e.g., sample groups, batch info, acquisition parameters)
+  - Exact vendor instrument models and acquisition methods (e.g., gradient, column, IMS waveforms) not specified in text
+  - No mention of normalization/scaling step prior to statistical analysis (implied downstream use but not part of MZmine workflow)
+reproducibility_strengths:
+  - All batch files (configuration + parameters) provided in Supplementary Data 1
+  - Open-source tool (MZmine 3) with full transparency and version control on GitHub
+  - Detailed parameter values reported for core steps (e.g., ppm tolerances, RT windows, noise thresholds)
+  - Example datasets included for three modalities: LC-(IMS-)MS, GC-MS, and (IMS-)MS imaging

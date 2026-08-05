@@ -1,0 +1,90 @@
+========== reproducibility_recipe entry ==========
+paper_title: Quantitative cross-linking/mass spectrometry to elucidate structural changes in proteins and their complexes.
+source_paper: Chen ZA et al. (2019), Nature protocols, DOI: 10.1038/s41596-018-0089-3, PMID: 30559374
+overall_reproducibility_score: 58/100
+
+workflow_steps: 7
+  Step 1: Cross-linking reaction optimization
+    tool: BS3 cross-linker titration
+    algorithm: empirical titration
+    parameters: protein_crosslinker_molar_ratio=1.0, protein_crosslinker_mass_ratio=[1.0, 1.0, 2.0], crosslinker_types=['BS3', 'BS3-d4']
+    input: purified protein or protein complex
+    output: cross-linked sample with optimal monomeric product formation
+    confidence: medium
+  Step 2: Peptide digestion and fractionation
+    tool: trypsin digestion + SCX chromatography
+    algorithm: strong cation exchange (SCX) enrichment
+    parameters: gradient_profile=curved HPLC gradient, fraction_number=12
+    input: cross-linked protein sample
+    output: SCX-fractionated cross-linked peptides
+    confidence: low
+  Step 3: LC-MS/MS data acquisition
+    tool: mass spectrometer (not specified)
+    algorithm: data-dependent acquisition (DDA)
+    parameters: instrument_type=not specified, scan_range_mz=None, resolution=None, collision_energy=None
+    input: SCX-fractionated peptides
+    output: raw .raw or .d files
+    confidence: low
+  Step 4: Cross-link identification
+    tool: XiSearch
+    algorithm: cross-link specific search engine
+    parameters: crosslinker=BS3, digestion_enzyme=trypsin, modifications=['lysine acetylation', 'N-terminal acetylation', 'BS3 modification on lysine and N-terminus'], mass_tolerance_ppm=None, fragment_tolerance_da=None
+    input: raw MS data
+    output: identified cross-linked peptide pairs (.csv/.tsv)
+    confidence: medium
+  Step 5: Quantitation of cross-linked peptides
+    tool: Skyline
+    algorithm: targeted MS1 filtering and extracted ion chromatogram (XIC) integration
+    parameters: transition_settings=defined per cross-link, retention_time_window=±0.5 min, isotope_pattern_tolerance_idotp=0.9, heavy_light_pair_matching=pseudo-identification via shared RT from light MS2 event
+    input: raw MS data + XiSearch results
+    output: quantified cross-link abundance table (light/heavy ratios)
+    confidence: high
+  Step 6: Manual quantitation correction
+    tool: Skyline GUI
+    algorithm: visual inspection and manual peak integration
+    parameters: correction_criteria=['peak shape', 'isotope pattern agreement (idotp)', 'signal overlap', 'MS1 signal purity']
+    input: Skyline auto-quantified results
+    output: curated cross-link abundance table
+    confidence: high
+  Step 7: Differential cross-link analysis
+    tool: custom interpretation (no software specified)
+    algorithm: comparative abundance analysis across conformers
+    parameters: replicates_required=carefully selected, labeling_scheme=['forward-labeled', 'reverse-labeled'], thresholds=['fold-change', 'statistical significance not specified']
+    input: curated cross-link abundance table
+    output: list of differentially cross-linked residue pairs (structural change indicators)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: not_mentioned (not mentioned)
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: https://github.com/Rappsilber-Laboratory/XiSearch
+  license: MIT
+
+figure_recipes: 3
+  Figure 1: [workflow_diagram]
+    caption: Schematic overview of QCLMS workflows for label-free and isotope-labeled cross-linking experiments.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7]
+    visualization_tool: Adobe Illustrator / custom diagramming
+  Figure 2: [other]
+    caption: Demonstration of linearization strategy for representing cross-linked peptide sequences in database search.
+    produced_by_step: [4]
+    visualization_tool: Adobe Illustrator / custom diagramming
+  Figure 3: [other]
+    caption: Examples of biological applications of QCLMS workflows, including conformational changes, ensemble shifts, and interaction changes.
+    produced_by_step: [7]
+    visualization_tool: Adobe Illustrator / custom diagramming
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository
+  - LC-MS instrument parameters and acquisition method not specified
+  - No statistical test or significance threshold defined for differential cross-link calling
+  - No script or pipeline code provided for automated quantitation or analysis
+  - SCX curved gradient equation only shown in Supplementary Figure 3 without executable specification
+reproducibility_strengths:
+  - XiSearch source code publicly available on GitHub
+  - Skyline is open-source and fully documented
+  - Detailed experimental optimization (e.g., BS3:protein ratios) provided for key steps
+  - Comprehensive supplementary figures explain Skyline setup, pseudo-ID generation, and error modes

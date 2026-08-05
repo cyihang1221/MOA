@@ -1,0 +1,65 @@
+========== reproducibility_recipe entry ==========
+paper_title: Cross-validated Matrix-Assisted Laser Desorption/Ionization Mass Spectrometry Imaging Quantitation Protocol for a Pharmaceutical Drug and Its Drug-Target Effects in the Brain Using Time-of-Flight and Fourier Transform Ion Cyclotron Resonance Analyzers.
+source_paper: Källback P et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.0c03203, PMID: 33086792
+overall_reproducibility_score: 30/100
+
+workflow_steps: 6
+  Step 1: MALDI sample preparation with calibration standards and internal standard
+    tool: Custom MALDI workflow
+    parameters: calibration_standard_application=dilution_series_applied_before_matrix, internal_standard_application=homogeneous_application_of_stable_isotopically_labeled_standard, matrix_application=sprayed_on_top_of_tissue_section, tissue_type=mouse_brain_sections
+    input: fresh-frozen mouse brain tissue sections
+    output: MALDI target plates ready for imaging
+    confidence: medium
+  Step 2: Mass spectrometry imaging acquisition
+    tool: MALDI-TOF MS and MALDI-FTICR MS
+    parameters: instrument_types=['TOF', 'FTICR'], spatial_resolution=not_specified, laser_frequency=not_specified, laser_spot_size=not_specified, mass_range=not_specified, acquisition_mode=full_scan, polarity=positive
+    input: MALDI target plates
+    output: raw imaging datasets (.imzML or vendor format)
+    confidence: low
+  Step 3: Data preprocessing and peak integration
+    tool: SCiLS Lab (for TOF) and FTMS Toolkit / custom scripts (for FTICR)
+    parameters: peak_picking_method=intensity_thresholding_and_centroiding, mass_tolerance_ppm=not_specified, smoothing=not_specified, baseline_correction=not_specified
+    input: raw .imzML or vendor files
+    output: ion intensity images and peak tables per pixel
+    confidence: low
+  Step 4: Quantitation using calibration curves and isotopic internal standard normalization
+    tool: Custom calculation protocol
+    algorithm: Linear regression of calibration curve (area_ratio_vs_concentration)
+    parameters: calibration_levels=6, response_type=linear, weighting=not_specified, acceptance_criteria=guideline_compliant_(e.g.,_FDA/EMA)
+    input: peak-integrated ion images and calibration standard intensities
+    output: quantified concentration maps (pmol/mg tissue)
+    confidence: medium
+  Step 5: Validation of quantitative method
+    tool: Custom validation framework
+    parameters: validation_parameters=['selectivity', 'accuracy', 'precision', 'recovery', 'calibration_curve_linearity', 'sensitivity_(LLOQ)', 'reproducibility', 'stability'], acceptance_limits=regulatory_guideline_based
+    input: quantified concentration maps and reference LC-MS/MS data
+    output: validation report with metrics
+    confidence: medium
+  Step 6: Biological interpretation: drug-target effect analysis
+    tool: Statistical testing + biological annotation
+    algorithm: two-tailed t-test
+    parameters: comparison_groups=['citalopram-treated_vs_control'], significance_threshold=0.05, correction_method=not_specified
+    input: quantified serotonin and 5-HIAA concentration maps from hippocampus ROI
+    output: fold-change and p-value for neurotransmitter/metabolite levels
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw MALDI-MSI imaging data not deposited in public repository (e.g., MetaboLights, MassIVE, or ImagingMSDB)
+  - No access to SCiLS Lab or FTICR-specific processing scripts or parameters
+  - No description of spatial ROI definition (e.g., hippocampus segmentation method)
+  - No specification of mass tolerance, peak integration settings, or calibration curve fitting details
+  - Custom internal standard synthesis and validation not described
+  - No link to validation dataset or reference LC-MS/MS raw/processed data
+reproducibility_strengths:
+  - Cross-validation against gold-standard LC-MS/MS quantification
+  - Explicit reporting of quantitative results with mean ± SD (TOF: 51.1 ± 4.4 pmol/mg; FTICR: 56.9 ± 6.0 pmol/mg; LC-MS/MS: 55.0 ± 4.9 pmol/mg)
+  - Comprehensive regulatory-style validation covering selectivity, accuracy, precision, recovery, etc.

@@ -1,0 +1,60 @@
+========== reproducibility_recipe entry ==========
+paper_title: A lipid atlas of the human kidney.
+source_paper: Farrow MA et al. (2025), Science advances, DOI: 10.1126/sciadv.adu3730, PMID: 40498844
+overall_reproducibility_score: 30/100
+
+workflow_steps: 6
+  Step 1: Tissue preparation and multimodal imaging acquisition
+    tool: MALDI imaging mass spectrometry
+    input: frozen human kidney tissue sections
+    output: raw .imzML and .ibd files (mass spectra per pixel)
+    confidence: low
+  Step 2: Histopathological annotation
+    tool: Stained microscopy (H&E, PAS, etc.)
+    input: tissue sections
+    output: annotated histology images
+    confidence: medium
+  Step 3: Tissue segmentation and functional unit identification
+    tool: Autofluorescence microscopy + machine learning
+    algorithm: unsupervised, supervised, and interpretable ML
+    input: autofluorescence images, histology images
+    output: segmented FTU masks (glomerulus, proximal tubules, etc.)
+    confidence: low
+  Step 4: Spatial lipid feature extraction
+    tool: MALDI-IMS data processing pipeline
+    input: raw .imzML/.ibd files, FTU masks
+    output: FTU-level lipid intensity matrices (m/z × FTU)
+    confidence: low
+  Step 5: Lipid annotation and identification
+    tool: LipidSearch / in-house spectral libraries
+    algorithm: MS1/MS2 matching, retention time (not applicable) + m/z tolerance
+    parameters: mass_tolerance_ppm=None
+    input: peak lists, MS/MS spectra
+    output: annotated lipid features (e.g., PC(34:1), SM(d18:1/16:0))
+    confidence: low
+  Step 6: Multivariate lipid profiling and statistical analysis
+    tool: Machine learning and statistical modeling
+    algorithm: unsupervised (e.g., clustering), supervised (e.g., classification), interpretable ML (e.g., SHAP)
+    input: FTU-level lipid intensity matrix, clinical metadata (sex, BMI)
+    output: differential lipid profiles, feature importance rankings, association statistics
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (MassIVE)
+  processed_data: not_mentioned (Science Advances Data Repository)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw MALDI-IMS data deposition specified
+  - No code or workflow scripts shared
+  - No details on ML algorithms, hyperparameters, or software (e.g., Python packages, versions)
+  - No description of lipid annotation parameters (e.g., ppm tolerance, database versions, FDR thresholds)
+  - Autofluorescence-based segmentation method not detailed
+  - Commercial software (e.g., LipidSearch, SCiLS Lab, Bruker flexImaging) not named or versioned
+reproducibility_strengths:
+  - Explicit definition of functional tissue units (FTUs) enables biological interpretability
+  - Integration of histopathology and clinical metadata supports hypothesis-driven analysis

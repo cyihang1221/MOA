@@ -1,0 +1,96 @@
+========== reproducibility_recipe entry ==========
+paper_title: Computational mass spectrometry accelerates C = C position-resolved untargeted lipidomics using oxygen attachment dissociation.
+source_paper: Uchino H et al. (2022), Communications chemistry, DOI: 10.1038/s42004-022-00778-1, PMID: 36698019
+overall_reproducibility_score: 52/100
+
+workflow_steps: 7
+  Step 1: Data conversion
+    tool: LabSolutions
+    algorithm: vendor-specific conversion
+    input: raw .lcd files
+    output: .mzML files
+    confidence: high
+  Step 2: Peak detection and alignment
+    tool: MS-DIAL (v4.38 and 4.80)
+    algorithm: centWave-like (bootstrap version)
+    parameters: rt_begin=0, rt_end=18, mass_range_begin=0, mass_range_end=2000, ms1_tolerance_da=0.01, ms2_tolerance_da=0.025, min_peak_height=300, mass_slice_width_da=0.1, smoothing_method=linear weighted moving average, smoothing_level_scans=3, min_peak_width_scans=5, sigma_window_value=0.5, ms2_abundance_cutoff=0, retention_time_tolerance_ms_ms_assignment_min=2, ms1_accurate_mass_tolerance_da=0.01, ms2_mass_tolerance_da=0.05, identification_score_cutoff_percent=70, rt_tolerance_post_id_min=0.15, mass_tolerance_post_id_da=0.01, alignment_rt_tolerance_min=0.05, alignment_ms1_tolerance_da=0.015
+    input: .mzML files (CID-MS/MS)
+    output: aligned feature table with MS/MS assignments and CID-based annotations
+    confidence: high
+  Step 3: OAD-MS/MS spectral assignment using CID-aligned library
+    tool: MS-DIAL (v4.38 and 4.80)
+    algorithm: library-based spectral matching (text library import)
+    parameters: rt_tolerance_alignment_min=0.05, ms1_tolerance_da=0.015
+    input: .mzML files (OAD-MS/MS) + CID-aligned .txt library
+    output: OAD-MS/MS spectra annotated with molecular species IDs
+    confidence: high
+  Step 4: C=C position-resolved annotation via diagnostic fragment analysis
+    tool: MS-RIDD
+    algorithm: rule-based diagnostic ion matching with reference ions
+    parameters: mass_accuracy_ppm=15, min_intensity_others_percent=0.01, min_intensity_delta4_sphingoid_base_percent=0.005, reference_ions_count=14
+    input: OAD-MS/MS spectra (text format) with molecular species IDs
+    output: C=C position-resolved lipid annotations (e.g., PC 18:1(9Z)/16:0)
+    confidence: high
+  Step 5: Human verification of annotations
+    tool: manual curation
+    algorithm: expert review
+    input: MS-RIDD output (text)
+    output: curated C=C position-resolved lipid identifications
+    confidence: medium
+  Step 6: LOD and LOA evaluation
+    tool: MS-DIAL + custom logic
+    algorithm: signal-to-noise thresholding (S/N ≥ 3) for LOD; diagnostic ion presence for LOA
+    parameters: s_n_cutoff=3, loa_definition=minimum concentration where essential C=C diagnostic ions are detected
+    input: dilution series of standards + MS-DIAL peak table + MS-RIDD output
+    output: LOD and LOA values per lipid
+    confidence: high
+  Step 7: Hierarchical clustering and visualization
+    tool: SciPy (v1.5.3)
+    algorithm: hierarchical clustering (default linkage)
+    input: curated C=C-resolved lipid abundance matrix
+    output: clustered heatmap, pairwise plots, bar charts
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: mentioned_no_link
+
+figure_recipes: 5
+  Figure 1: [workflow_diagram]
+    caption: Overview of the OAD mass fragmentation scheme using authentic lipid standards.
+    produced_by_step: [4]
+    visualization_tool: Matplotlib (3.0.3)
+  Figure 2: [workflow_diagram]
+    caption: Integrated strategy combining CID- and OAD-MS/MS for C=C position-resolved untargeted lipidomics.
+    produced_by_step: [2, 3, 4]
+    visualization_tool: Matplotlib (3.0.3)
+  Figure 3: [heatmap]
+    caption: Analysis of lipid extract from HEK293 cells fed with PUFA-supplemented media.
+    produced_by_step: [4, 5, 7]
+    visualization_tool: Matplotlib (3.0.3), SciPy (1.5.3)
+  Figure 4: [workflow_diagram]
+    caption: Construction of true positive spectral records and validation of MS-RIDD program.
+    produced_by_step: [4, 5, 6]
+    visualization_tool: Matplotlib (3.0.3)
+  Figure 5: [bar_chart]
+    caption: Lipidome profiles of C=C positional isomers in PUFAs, sphingoid bases, and VLC-PUFAs.
+    produced_by_step: [4, 5, 7]
+    visualization_tool: Matplotlib (3.0.3)
+
+reproducibility_gaps:
+  - Raw .lcd data not deposited in public repository
+  - MS-RIDD source code mentioned but no URL or DOI provided
+  - No details on hierarchical clustering distance metric or linkage method
+  - Gradient profile lacks exact dwell times and equilibration steps
+  - No description of batch correction or QC filtering steps
+  - Human verification criteria not defined (e.g., required diagnostic ions, minimum intensity thresholds)
+  - No information on statistical significance testing for differential C=C isomer abundance
+reproducibility_strengths:
+  - Full MS-DIAL parameter set explicitly reported
+  - All internal standards and solvent protocols detailed in Supplementary Tables
+  - Oxygen attachment dissociation experimental setup referenced (ref 50)
+  - MS-RIDD dependencies (Python 3.7.3, Pandas 0.24.2, etc.) fully specified
+  - Authentic and biogenic standard validation strategy described

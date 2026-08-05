@@ -1,0 +1,58 @@
+========== reproducibility_recipe entry ==========
+paper_title: Untargeted Swab Touch Spray-Mass Spectrometry Analysis with Machine Learning for On-Site Breast Surgical Margin Assessment.
+source_paper: Chai LMX et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.4c06062, PMID: 39827470
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Swab sampling
+    tool: OmniSwab
+    parameters: sterile_packaged=True, swab_material=polyester
+    input: in vivo breast surgical margin tissue
+    output: swab sample for direct MS analysis
+    confidence: high
+  Step 2: Direct mass spectrometry analysis
+    tool: compact mass spectrometer
+    parameters: ionization_mode=positive, ambient_ionization=touch-spray, acquisition_time_per_spectrum=seconds unspecified, mass_range_mz=[50, 1000]
+    input: OmniSwab sample
+    output: raw MS spectra (centroided or profile, unspecified)
+    confidence: medium
+  Step 3: Spectral preprocessing
+    tool: unspecified software
+    parameters: peak_picking_threshold=not specified, baseline_correction=implied but not detailed, noise_filtering=implied
+    input: raw MS spectra
+    output: preprocessed spectral features (m/z-intensity vectors)
+    confidence: low
+  Step 4: Feature selection and classification
+    tool: LASSO (Least Absolute Shrinkage and Selection Operator)
+    algorithm: L1-regularized logistic regression
+    parameters: cross_validation_folds=5, penalty_parameter_tuning=via CV, feature_count_selected=not specified
+    input: preprocessed spectral feature matrix (m/z bins × samples)
+    output: binary classification (normal vs. tumor margin)
+    confidence: medium
+  Step 5: Model evaluation
+    tool: custom/standard ML evaluation
+    algorithm: accuracy, sensitivity, specificity
+    parameters: train_test_split_ratio=not specified, validation_strategy=separate validation dataset
+    input: LASSO model predictions and ground truth labels
+    output: performance metrics (accuracy >90%, 3/4 tumor margins correctly identified)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw MS spectra not deposited in public repository
+  - No details on spectral preprocessing (binning width, alignment, normalization)
+  - Compact mass spectrometer model and vendor not specified
+  - No description of m/z binning or feature extraction parameters
+  - Validation dataset size and composition not reported
+  - No code or scripts shared for LASSO implementation or evaluation
+reproducibility_strengths:
+  - Use of standardized swab (OmniSwab) improves reproducibility over generic swabs
+  - Clear clinical context and workflow timing (<5 min end-to-end)

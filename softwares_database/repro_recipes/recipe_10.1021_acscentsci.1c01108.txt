@@ -1,0 +1,43 @@
+========== reproducibility_recipe entry ==========
+paper_title: NP Analyst: An Open Online Platform for Compound Activity Mapping.
+source_paper: Lee S et al. (2022), ACS central science, DOI: 10.1021/acscentsci.1c01108, PMID: 35233454
+overall_reproducibility_score: 40/100
+
+workflow_steps: 3
+  Step 1: Data ingestion and format compatibility
+    tool: NP Analyst
+    input: bioassay data (any type), mzML files, MZmine 2 output, GNPS output
+    output: integrated compound activity map
+    confidence: high
+  Step 2: Compound Activity Mapping
+    tool: NP Analyst
+    algorithm: correlation-based activity profiling (implied from 'predicting compound bioactivity profiles directly from primary screening results')
+    input: bioassay results + feature-aligned MS data (e.g., peak table with sample/feature intensities)
+    output: compound-level bioactivity profile predictions
+    confidence: medium
+  Step 3: Dereplication and novel bioactive compound prioritization
+    tool: NP Analyst
+    algorithm: activity-guided feature ranking (implied by 'dereplication of known compounds' and 'discovery of novel bioactive natural products')
+    input: Compound Activity Map + annotation metadata (e.g., GNPS or MZmine annotations)
+    output: prioritized list of dereplicated known compounds and novel bioactive features
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://www.npanalyst.org
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of underlying algorithms or statistical methods for Compound Activity Mapping
+  - No example dataset or tutorial data provided in paper or linked site (as per text)
+  - No specification of how bioassay data is preprocessed or normalized
+  - No details on MS data alignment, normalization, or filtering steps performed within NP Analyst
+  - No versioning or release notes for the web platform
+reproducibility_strengths:
+  - Web platform is openly accessible at www.npanalyst.org
+  - Supports open standards (mzML) and outputs from open-source tools (MZmine 2, GNPS)

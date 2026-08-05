@@ -1,0 +1,82 @@
+========== reproducibility_recipe entry ==========
+paper_title: Annotation of natural product compound families using molecular networking topology and structural similarity fingerprinting.
+source_paper: Morehouse NJ et al. (2023), Nature communications, DOI: 10.1038/s41467-022-35734-z, PMID: 36658161
+overall_reproducibility_score: 78/100
+
+workflow_steps: 4
+  Step 1: Molecular network construction
+    tool: GNPS
+    algorithm: cosine similarity scoring
+    parameters: precursor_mass_tolerance_da=2.0, fragment_mass_tolerance_da=0.5, cosine_score_threshold=0.7, min_matched_peaks=6, top_n_similar_nodes=10, max_molecular_family_size=100, msms_filter_window_da=50, top_n_fragment_ions=6, msms_precursor_exclusion_window_da=17
+    input: raw .mzML or .mgf files
+    output: GraphML molecular network
+    confidence: high
+  Step 2: Structural similarity network generation for fingerprint selection
+    tool: RDKit
+    algorithm: Morgan (ECFP4), MACCS, or atom-pair fingerprints with Sørensen–Dice or Tanimoto coefficients
+    parameters: fingerprint_radius=2, similarity_coefficient=Dice, similarity_cutoff_range_min=0.01, similarity_cutoff_range_max=1.0, edge_retention_threshold_excluded=0.995
+    input: SMILES strings from NPAtlas/NIH Natural Products Library
+    output: structural similarity network (GraphML or adjacency matrix)
+    confidence: medium
+  Step 3: Compound family annotation via SNAP-MS
+    tool: SNAP-MS
+    algorithm: Morgan fingerprinting (radius=2) + Dice similarity clustering
+    parameters: mass_tolerance_ppm=None, min_cluster_size=None, max_node_count=2000, max_edge_count=10000, dice_similarity_cutoff=0.71, taxonomic_filtering_enabled=True, adducts_included=True, fragments_included=True
+    input: GNPS GraphML network file or CSV mass list
+    output: annotated GraphML network or Cytoscape session (.cys)
+    confidence: medium
+  Step 4: Validation of compound family predictions
+    tool: NMR spectroscopy, co-injection with standards, LC-MS retention time matching
+    algorithm: experimental orthogonal validation
+    input: annotated subnetworks and prefractions
+    output: validated compound family assignments
+    confidence: high
+
+data_availability:
+  raw_data: available (GNPS: ['GNPS-NIH-NATURALPRODUCTSLIBRARY.json', 'GNPS-NIH-NATURALPRODUCTSLIBRARY_ROUND2_POSITIVE.json'])
+  processed_data: available (GNPS: ['868a61e685cb401385f1c24bc0edbe62', 'd909a4dccc2747218f9a290d05e7841a', '2c39751a78824609a0fdadad989003b6'])
+  metadata: in_paper_only
+  data_urls: https://gnps-external.ucsd.edu/gnpslibrary/GNPS-NIH-NATURALPRODUCTSLIBRARY.json, https://gnps-external.ucsd.edu/gnpslibrary/GNPS-NIH-NATURALPRODUCTSLIBRARY_ROUND2_POSITIVE.json, https://massive.ucsd.edu/ProteoSAFe/dataset.jsp?task=MSV000089680, https://gnps.ucsd.edu//ProteoSAFe/status.jsp?task=868a61e685cb401385f1c24bc0edbe62, https://gnps.ucsd.edu/ProteoSAFe/status.jsp?task=d909a4dccc2747218f9a290d05e7841a, https://gnps.ucsd.edu/ProteoSAFe/status.jsp?task=2c39751a78824609a0fdadad989003b6
+
+code_availability: mentioned_no_link
+  code_url: https://liningtonlab.github.io/snapms_documentation/
+
+figure_recipes: 6
+  Figure 1: [distribution_plot]
+    caption: Shows intra-family distributions of molecular formulae across natural product compound families.
+    produced_by_step: [2]
+    visualization_tool: custom Python/R plotting (not specified)
+  Figure 2: [scatter_plot]
+    caption: Compares cheminformatic structural similarity networks with MS²-based molecular networks to identify optimal fingerprinting method.
+    produced_by_step: [2]
+    visualization_tool: custom plotting (not specified)
+    statistical_test: percentage agreement (correctly created/excluded edges)
+  Figure 3: [workflow_diagram]
+    caption: Schematic overview of the SNAP-MS workflow from input mass lists or GraphML networks to annotated compound family networks.
+    produced_by_step: [3]
+    visualization_tool: diagramming software (not specified)
+  Figure 4: [network_visualization]
+    caption: Evaluates SNAP-MS performance on a molecular network built from reference spectra, showing correct family annotations.
+    produced_by_step: [3]
+    visualization_tool: Cytoscape
+  Figure 5: [network_visualization]
+    caption: Displays bacterial molecular network with SNAP-MS-derived compound family annotations overlaid.
+    produced_by_step: [3]
+    visualization_tool: Cytoscape
+  Figure 6: [network_visualization]
+    caption: Shows SNAP-MS analysis applied to six published GNPS subnetworks, demonstrating cross-instrument robustness.
+    produced_by_step: [3]
+    visualization_tool: Cytoscape
+
+reproducibility_gaps:
+  - Exact mass tolerance (ppm) used in SNAP-MS mass binning not specified
+  - No public source code repository linked for SNAP-MS (only documentation site provided)
+  - Supplementary Table 4 (dataset-specific SNAP-MS parameters) not included in provided text
+  - RDKit version and exact fingerprint implementation details (e.g., bond types, isomer handling) not reported
+  - No description of how taxonomic filtering was implemented computationally
+reproducibility_strengths:
+  - All three molecular network datasets publicly available via GNPS and MassIVE with stable accession IDs
+  - Full GNPS workflow parameters explicitly reported (tolerances, cosine thresholds, filtering rules)
+  - SNAP-MS platform freely accessible and documented online
+  - Experimental validation performed with orthogonal methods (NMR, co-injection) and fully described in supplementary materials
+  - Cytoscape compatibility ensures interoperability with standard network analysis tools

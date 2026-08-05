@@ -1,0 +1,72 @@
+========== reproducibility_recipe entry ==========
+paper_title: Machine-learning assisted molecular formula assignment to high-resolution mass spectrometry data of dissolved organic matter.
+source_paper: Pan Q et al. (2023), Talanta, DOI: 10.1016/j.talanta.2023.124484, PMID: 37001397
+overall_reproducibility_score: 35/100
+
+workflow_steps: 7
+  Step 1: HRMS data acquisition
+    tool: FT-ICR MS
+    parameters: ionization_mode=negative electrospray ionization, sample_introduction=direct infusion
+    input: dissolved organic matter (DOM) samples
+    output: raw FT-ICR MS spectra (.ser or vendor format)
+    confidence: medium
+  Step 2: Peak detection and feature extraction
+    tool: Bruker DataAnalysis or custom script
+    parameters: minimum_signal_to_noise_ratio=None, mass_accuracy_threshold_ppm=None, isotope_pattern_consistency_check=True
+    input: raw FT-ICR MS spectra
+    output: peak list with m/z, intensity, S/N, isotope type, isotope peak count
+    confidence: low
+  Step 3: Candidate molecular formula generation
+    tool: SIRIUS, Formularity, or custom mass-based enumeration
+    algorithm: elemental composition enumeration
+    parameters: mass_tolerance_ppm=None, elemental_constraints=['C', 'H', 'O', 'N', 'S', 'P'], max_atoms={'C': 100, 'H': 200, 'O': 50, 'N': 10, 'S': 5, 'P': 2}, valence_rules=True, isotopic_pattern_matching=True
+    input: peak list (m/z, intensity)
+    output: candidate formula list per peak
+    confidence: medium
+  Step 4: Feature engineering for ML training
+    tool: custom Python/R script
+    algorithm: feature vector construction
+    parameters: features_included=['m/z', 'signal_to_noise_ratio', 'isotope_type', 'number_of_isotope_peaks', 'peak_intensity', 'mass_error_ppm', 'elemental_unsaturation_index', 'heteroatom_ratios']
+    input: candidate formulas + manually validated ground truth
+    output: labeled feature matrix (X) and binary labels (y)
+    confidence: high
+  Step 5: Machine learning model training
+    tool: scikit-learn
+    algorithm: logistic regression
+    parameters: penalty=l2, C=1.0, solver=liblinear, max_iter=1000, class_weight=balanced
+    input: labeled feature matrix
+    output: trained logistic regression classifier
+    confidence: high
+  Step 6: Molecular formula scoring and ranking
+    tool: custom inference pipeline
+    algorithm: logistic regression probability scoring
+    parameters: decision_threshold=0.5, top_k_ranking=1
+    input: candidate formulas + extracted features
+    output: ranked top-1 formula assignment per peak with confidence score
+    confidence: medium
+  Step 7: Validation and accuracy assessment
+    tool: custom evaluation script
+    algorithm: accuracy calculation against manual curation
+    parameters: metric=accuracy, comparison_baseline=traditional mass-matching method
+    input: predicted vs manually validated formulas
+    output: accuracy score (~90%), confusion matrix
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw FT-ICR MS data not deposited in public repository (e.g., MetaboLights, MassIVE)
+  - No access to manually curated ground-truth dataset used for training/validation
+  - Custom feature extraction and inference scripts not shared
+  - Exact mass tolerance, elemental constraints, and validation sample details unspecified
+  - No information on Bruker DataAnalysis version or processing parameters (e.g., S/N threshold, apodization)
+reproducibility_strengths:
+  - Clear description of ML algorithm (logistic regression) and input features
+  - Reported performance metric (~90% accuracy) with defined baseline comparison

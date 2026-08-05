@@ -1,0 +1,131 @@
+========== reproducibility_recipe entry ==========
+paper_title: Data processing, multi-omic pathway mapping, and metabolite activity analysis using XCMS Online.
+source_paper: Forsberg EM et al. (2018), Nature protocols, DOI: 10.1038/nprot.2017.151, PMID: 29494574
+overall_reproducibility_score: 78/100
+
+workflow_steps: 10
+  Step 1: Data upload
+    tool: XCMS Online (vv3.0 (as of 2018))
+    input: raw LC-MS data files (.mzML, .mzXML, .cdf, .wiff, .raw)
+    output: uploaded dataset
+    confidence: high
+  Step 2: Feature detection
+    tool: XCMS Online (vv3.0)
+    algorithm: centWave
+    parameters: peak_width_sec=[10, 60], mz_tolerance_ppm=25, sn_thresh=10, prefilter=[3, 10000], noise=500
+    input: raw LC-MS data files
+    output: feature table (m/z, RT, intensity)
+    confidence: high
+  Step 3: Retention time correction
+    tool: XCMS Online (vv3.0)
+    algorithm: obiwarp
+    parameters: profiling=true, span=0.5, smooth=true
+    input: feature table
+    output: retention time-aligned feature table
+    confidence: high
+  Step 4: Peak filling and missing value imputation
+    tool: XCMS Online (vv3.0)
+    algorithm: fillpeaks
+    parameters: max_peakwidth_sec=30, min_peakwidth_sec=5, mz_tolerance_ppm=25, sn_thresh=10
+    input: retention time-aligned feature table
+    output: filled/complete feature matrix
+    confidence: high
+  Step 5: Statistical analysis (univariate)
+    tool: XCMS Online (vv3.0)
+    algorithm: t-test, ANOVA, fold-change
+    parameters: p_value_cutoff=0.05, fold_change_threshold=2.0, multiple_testing_correction=FDR (Benjamini-Hochberg)
+    input: filled feature matrix with sample class annotations
+    output: list of statistically significant features
+    confidence: high
+  Step 6: Metabolite annotation (MS1-based)
+    tool: XCMS Online (vv3.0)
+    algorithm: mzCloud, HMDB, METLIN, MassBank matching
+    parameters: mass_tolerance_ppm=5, retention_time_window_sec=30, database_priority_order=['mzCloud', 'HMDB', 'METLIN', 'MassBank']
+    input: significant features (m/z, RT)
+    output: putatively annotated metabolites
+    confidence: medium
+  Step 7: Predictive metabolic pathway analysis
+    tool: XCMS Online (vv3.0)
+    algorithm: MetaboAnalyst-style overrepresentation analysis + impact analysis
+    parameters: pathway_database=KEGG, organism=Homo sapiens, method=hypergeometric test + pathway topology analysis, p_value_cutoff=0.05, impact_threshold=0.1
+    input: annotated significant metabolites (KEGG IDs)
+    output: dysregulated pathways with p-values and impact scores
+    confidence: high
+  Step 8: Multi-omics integration (transcriptomics overlay)
+    tool: XCMS Online (vv3.0)
+    algorithm: gene-metabolite mapping via KEGG/Reactome
+    parameters: omics_type=transcriptomics, mapping_database=KEGG, directionality=up/down-regulated genes overlaid on pathway maps
+    input: significant transcriptomics data (Supplementary Data 1)
+    output: integrated pathway maps with gene and metabolite regulation
+    confidence: medium
+  Step 9: Multi-omics integration (proteomics overlay)
+    tool: XCMS Online (vv3.0)
+    algorithm: protein-metabolite mapping via KEGG/Reactome
+    parameters: omics_type=proteomics, mapping_database=KEGG, directionality=up/down-regulated proteins overlaid on pathway maps
+    input: significant proteomics data (Supplementary Data 2)
+    output: integrated multi-omic pathway maps
+    confidence: medium
+  Step 10: Pathway cloud visualization
+    tool: XCMS Online (vv3.0)
+    algorithm: custom pathway enrichment cloud
+    parameters: score_metric=combined p-value and impact score, font_size_scaling=log10(1/p), color_by=impact_score
+    input: pathway analysis results
+    output: interactive pathway cloud plot
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: https://xcmsonline.scripps.edu
+  license: CC-BY-NC-ND (per Nature Protocols terms)
+
+figure_recipes: 8
+  Figure 1: [workflow_diagram]
+    caption: Schematic of LC-MS data upload interface and steps 2–5 in XCMS Online.
+    produced_by_step: [1, 2, 3, 4]
+    visualization_tool: XCMS Online internal UI
+  Figure 2: [table]
+    caption: Screenshot of parameter settings for predictive pathway analysis (Step 14), including organism, database, and statistical thresholds.
+    produced_by_step: [7]
+    visualization_tool: XCMS Online internal UI
+    statistical_test: hypergeometric test
+  Figure 3: [table]
+    caption: Tabular output of predictive metabolic pathway results, ranked by p-value and impact score.
+    produced_by_step: [7]
+    visualization_tool: XCMS Online internal table renderer
+    statistical_test: hypergeometric test, pathway topology analysis
+  Figure 4: [pathway_map]
+    caption: Visualization of overlapping metabolite information on KEGG pathway maps, highlighting annotated metabolites and their regulation status.
+    produced_by_step: [6, 7]
+    visualization_tool: XCMS Online KEGG pathway viewer
+  Figure 5: [table]
+    caption: List of predictive metabolites ranked by pathway contribution and significance.
+    produced_by_step: [6, 7]
+    visualization_tool: XCMS Online internal table renderer
+  Figure 6: [pathway_cloud]
+    caption: Pathway cloud plot where font size reflects -log10(p-value) and color reflects pathway impact score.
+    produced_by_step: [10]
+    visualization_tool: XCMS Online pathway cloud generator
+  Figure 7: [workflow_diagram]
+    caption: Interface for uploading and integrating transcriptomics and proteomics data with metabolomics pathways.
+    produced_by_step: [8, 9]
+    visualization_tool: XCMS Online internal UI
+  Figure 8: [pathway_map]
+    caption: Integrated multi-omics pathway map showing coordinated dysregulation of metabolites, transcripts, and proteins.
+    produced_by_step: [8, 9]
+    visualization_tool: XCMS Online KEGG pathway viewer with multi-omic overlay
+
+reproducibility_gaps:
+  - Raw LC-MS data not deposited in public repository (e.g., MetaboLights or GNPS)
+  - No explicit description of chromatographic conditions (gradient, column, flow rate) affecting retention time correction robustness
+  - Supplementary Data 1 and 2 are provided but lack metadata (e.g., experimental design, normalization method, platform details)
+  - XCMS Online backend implementation details (e.g., exact centWave version, obiwarp parameters) not fully disclosed
+reproducibility_strengths:
+  - Fully web-based, no local installation required
+  - All workflow steps explicitly numbered and described in protocol format
+  - Parameter settings shown in figures (Figs. 2, 4, 6, 7)
+  - Supplementary datasets provided (transcriptomics and proteomics) for integration demonstration
+  - Uses open reference databases (KEGG, HMDB, METLIN, MassBank)
