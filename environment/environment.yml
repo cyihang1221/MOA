@@ -1,0 +1,40 @@
+# MOA / MassAgent — recommended recreate file
+# Python 3.10 + bioconda/R stack. Pip packages come from requirements.txt.
+#
+# Create:
+#   conda env create -f environment.yml
+#   conda activate MOA
+# Then finish GitHub R packages (see install.md):
+#   remotes::install_github(...)
+#
+# If this fails on your platform, follow install.md stepwise instead,
+# or try the exact snapshot: environment.full.yml (Linux x86_64, may not resolve elsewhere).
+
+name: MOA
+channels:
+  - conda-forge
+  - bioconda
+  - nlesc
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  - r-base=4.4.3
+  - r-devtools=2.4.5
+  - r-biocmanager
+  - r-remotes
+  - r-mixomics
+  - r-pheatmap
+  - r-plotly
+  - bioconductor-xcms
+  - bioconductor-camera
+  - bioconductor-clusterprofiler
+  - bioconductor-enrichplot
+  - bioconductor-dose
+  - bioconductor-go.db
+  - thermorawfileparser
+  - mzmine
+  - openms
+  - spec2vec
+  - pip:
+      - -r requirements.txt

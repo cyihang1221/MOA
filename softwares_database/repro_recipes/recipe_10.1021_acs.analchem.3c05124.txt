@@ -1,85 +1,131 @@
 ========== reproducibility_recipe entry ==========
 paper_title: ChloroDBPFinder: Machine Learning-Guided Recognition of Chlorinated Disinfection Byproducts from Nontargeted LC-HRMS Analysis.
-source_paper: Zhao T et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.3c05124, PMID: 38294426
-overall_reproducibility_score: 88/100
+source_paper: Zhao T et al., (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.3c05124, PMID: 38294426
+overall_reproducibility_score: 92/100
 
-workflow_steps: 5
-  Step 1: Molecular formula generation
-    tool: XCMS
-    algorithm: centWave
-    parameters: ppm=5, snthr=10, prefilter=3, peakwidth=[10, 60]
-    input: raw .mzML files
-    output: feature table with m/z and RT
-    confidence: medium
-  Step 2: Molecular formula prediction
-    tool: SIRIUS
-    algorithm: CSI:FingerID + CANOPUS
-    parameters: mass_error_ppm=5, adducts=['[M+H]+', '[M+Na]+']
-    input: feature table with m/z and RT
-    output: candidate molecular formulas per feature
-    confidence: medium
-  Step 3: Chlorine-containing molecular formula recognition
-    tool: ChloroDBPFinder (v1.0.0)
-    algorithm: hierarchical random forest
-    parameters: n_trees=500, min_node_size=1, mtry=10
-    input: candidate molecular formulas (MFs)
-    output: Cl-MF classification (binary) and Cl-count annotation (multiclass)
+workflow_steps: 12
+  Step 1: Raw data conversion to mzML
+    tool: MSConvert version 3.0.22035
+    parameters: not_reported
+    input: Sciex wiff2 files
+    output: mzML files
     confidence: high
-  Step 4: Feature prioritization and filtering
-    tool: ChloroDBPFinder (v1.0.0)
-    algorithm: intensity-based and retention time consistency filtering
-    parameters: min_intensity_ratio=3, rt_window_sec=5
-    input: Cl-MF-annotated features
-    output: high-confidence Cl-DBP features
+  Step 2: Isotopic pattern simulation
+    tool: enviPat R package
+    algorithm: isopattern()
+    parameters: error~U(0, 5) ppm, fluctuation~N(0, δ²), δ=11.8% for M+1, δ=15.8% for M+2,+3,+4
+    input: theoretical monoisotopic mass and elemental composition
+    output: simulated experimental MS spectra
+    confidence: high
+  Step 3: Molecular formula assignment
+    tool: MassTools R package
+    algorithm: calcMF()
+    parameters: not_reported
+    input: accurate m/z with simulated error
+    output: candidate molecular formulas
     confidence: medium
-  Step 5: Tentative structural annotation via molecular networking
-    tool: GNPS
-    algorithm: Molecular Networking (Cosine score ≥ 0.7, min matched peaks ≥ 6)
-    parameters: cosine_score_threshold=0.7, min_matched_peaks=6, max_mass_diff_da=0.02
-    input: MS/MS spectra of Cl-DBP features
-    output: tentatively annotated structures via spectral matching and network propagation
+  Step 4: Binary Cl-presence classification
+    tool: randomForest R package version 4.3.0
+    algorithm: random forest
+    parameters: n.tree=500, mtry=sqrt(n.features), six engineered features from M, M+1, M+2 peaks
+    input: simulated isotope patterns (M, M+1, M+2 intensities and masses)
+    output: Cl-containing vs non-Cl prediction
+    confidence: high
+  Step 5: Multiclass Cl-count classification
+    tool: randomForest R package version 4.3.0
+    algorithm: random forest
+    parameters: n.tree=500, mtry=sqrt(n.features), eleven engineered features from M, M+1, M+2, M+3, M+4 peaks
+    input: simulated isotope patterns (M–M+4 intensities and masses)
+    output: predicted number of Cl atoms (1, 2, or ≥3)
+    confidence: high
+  Step 6: Feature extraction and isotope averaging
+    tool: XCMS R package (embedded in ChloroDBPFinder)
+    algorithm: chromatographic peak averaging
+    parameters: not_reported
+    input: mzML files
+    output: averaged MS1 spectra per feature
+    confidence: medium
+  Step 7: False positive filtering
+    tool: ChloroDBPFinder internal algorithms
+    algorithm: salt adduct, natural isotope, and in-source fragment removal
+    parameters: not_reported
+    input: Cl-containing features from ML classification
+    output: high-quality Cl-DBP features
+    confidence: medium
+  Step 8: Spectral library search
+    tool: ChloroDBPFinder internal function
+    algorithm: dot product similarity
+    parameters: MS/MS match number ≥4, dot product score ≥0.7
+    input: experimental MS/MS spectra
+    output: tentative compound annotations against NIST20
+    confidence: high
+  Step 9: Molecular networking (spectral similarity)
+    tool: GNPS-based MS/MS similarity
+    algorithm: cosine similarity
+    parameters: cosine=0.7, minimum matched peaks=6, minimum cosine score=0.7
+    input: MS/MS spectra of reference and unknown compounds
+    output: spectral similarity network
+    confidence: medium
+  Step 10: Integrated molecular networking
+    tool: ChloroDBPFinder internal implementation
+    algorithm: combined spectral similarity + reaction connectivity
+    parameters: not_reported
+    input: reference compounds + unknown Cl-DBP features
+    output: integrated network with dual-criteria edges
+    confidence: medium
+  Step 11: Reaction networking
+    tool: ChloroDBPFinder internal implementation
+    algorithm: mass shift–based transformation inference
+    parameters: not_reported
+    input: m/z pairs with plausible biotransformation mass shifts (e.g., +67.9224 Da for Cl₂/H₂ substitution)
+    output: reaction network links
+    confidence: medium
+  Step 12: Quantitative confidence assessment
+    tool: custom R script (implied)
+    algorithm: linear correlation across injection volumes
+    parameters: seven injection volumes: 2, 4, 6, 10, 13, 16, 20 μL
+    input: feature intensities across triplicate injections at varying volumes
+    output: correlation coefficient per feature (mean=0.98)
     confidence: high
 
 data_availability:
-  raw_data: available (GNPS: MSV000093284)
-  processed_data: available (GitHub: ChloroDBPFinder/data/)
-  metadata: available
-  data_urls: https://gnps.ucsd.edu/ProteoSAFe/dataset.jsp?task=5a7b8c1d1e2f4a5b8c9d0e1f2a3b4c5d, https://github.com/HuanLab/ChloroDBPFinder/tree/main/data
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+  data_urls: []
 
 code_availability: repository_linked
-  code_url: https://github.com/HuanLab/ChloroDBPFinder
-  license: MIT
 
-figure_recipes: 5
+figure_recipes: 4
   Figure 1: [workflow_diagram]
-    caption: Schematic overview of the ChloroDBPFinder pipeline: from LC-HRMS data to Cl-MF recognition and structural annotation.
-    produced_by_step: [1, 2, 3, 4, 5]
-    visualization_tool: Inkscape
-  Figure 2: [bar_chart]
-    caption: Performance evaluation of the hierarchical RF model on NIST20 MFs: accuracy for Cl-MF recognition and Cl-count classification.
-    produced_by_step: [3]
-    visualization_tool: ggplot2
-    statistical_test: accuracy (93.3% and 92.9%)
-  Figure 3: [volcano_plot]
-    caption: Volcano plot showing differential abundance of Cl-DBP features in aspartame chlorination vs. control, highlighting 159 significantly elevated Cl-containing features.
-    produced_by_step: [4]
-    visualization_tool: ggplot2
-    statistical_test: t-test p<0.01, fold-change ≥ 2
-  Figure 4: [network]
-    caption: Molecular network of Cl-DBPs from aspartame chlorination, with nodes colored by Cl count and edges indicating spectral similarity.
-    produced_by_step: [5]
-    visualization_tool: Cytoscape + GNPS web interface
-  Figure 5: [table]
-    caption: Tentative annotations of 10 Cl-DBPs from aspartame chlorination, including MF, predicted Cl count, MS/MS evidence, and network-based structural hypotheses.
-    produced_by_step: [5]
-    visualization_tool: R (knitr)
+    caption: Hierarchical machine learning model generation: MF extraction → isotope simulation → binary classifier training → multiclass classifier training
+    produced_by_step: [4, 5]
+    visualization_tool: not_reported
+    statistical_test: not_reported
+  Figure 4: [workflow_diagram]
+    caption: Schematic workflow of ChloroDBPFinder: (1) Cl-feature extraction, (2) alignment, (3) missing value imputation, (4) annotation via spectral library and molecular networking
+    produced_by_step: [6, 7, 8, 9, 10, 11]
+    visualization_tool: not_reported
+    statistical_test: not_reported
+  Figure 5C: [network]
+    caption: Integrated molecular networking between 11 reference compounds and 151 newly discovered Cl-containing features
+    produced_by_step: [9, 10]
+    visualization_tool: Cytoscape version 3.9.1
+    statistical_test: not_reported
+  Figure 6A: [bar_chart]
+    caption: Histogram of correlation coefficients between signal intensity and injection volume for 79 Cl-containing features
+    produced_by_step: [12]
+    visualization_tool: not_reported
+    statistical_test: not_reported
 
 reproducibility_gaps:
-  - XCMS parameters (e.g., peakwidth range) not fully justified or optimized per instrument
-  - SIRIUS version and database versions (e.g., MassBank, MoNA) not specified
-  - GNPS workflow parameters (e.g., precursor ion tolerance) only partially reported
+  - XCMS version not specified
+  - exact randomForest hyperparameters (e.g., ntree, mtry) only partially reported
+  - GNPS cosine threshold inferred but not explicitly stated in Methods text
+
 reproducibility_strengths:
-  - Full source code publicly available under MIT license
-  - Raw MS data deposited in GNPS with public accession ID
-  - All processed data and example inputs included in GitHub repository
-  - Model training data derived from PubChem and NIST20 — publicly accessible resources
+  - All key ML simulation parameters (error distribution, δ values) explicitly reported
+  - Injection volume series fully enumerated
+  - Spectral library match criteria (≥4 matches, ≥0.7 dot product) explicitly stated
+  - Public GitHub repository linked
+  - Cytoscape version specified for network visualization

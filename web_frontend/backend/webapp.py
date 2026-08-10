@@ -68,6 +68,34 @@ app = FastAPI(title="MassAgent Web UI")
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 _logger = logging.getLogger(__name__)
+
+
+@app.on_event("startup")
+def _warmup_literature_rag_on_startup() -> None:
+    """后台预热文献向量索引，避免首条 Agent 消息冷启动超时。"""
+
+    def _run() -> None:
+        try:
+            from web_frontend.backend.literature_rag import warmup_literature_rag
+
+            persist = str(BASE_DIR / "softwares_database_RAG")
+            source = str(BASE_DIR / "softwares_database")
+            if not (BASE_DIR / "softwares_database_RAG" / "docstore.json").is_file():
+                _logger.info("文献 RAG 索引不存在，跳过预热")
+                return
+            hit = warmup_literature_rag(persist_dir=persist, source_dir=source)
+            _logger.info(
+                "文献 RAG 预热完成 mode=%s chars=%s error=%s",
+                hit.get("mode"),
+                len(hit.get("text") or ""),
+                hit.get("error"),
+            )
+        except Exception as exc:
+            _logger.warning("文献 RAG 预热失败: %s", exc)
+
+    threading.Thread(target=_run, name="literature-rag-warmup", daemon=True).start()
+
+
 try:
     from web_frontend.backend.semantic_plot_renderer import is_vl_convert_available
 

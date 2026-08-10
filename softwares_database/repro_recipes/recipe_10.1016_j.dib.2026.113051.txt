@@ -1,0 +1,63 @@
+========== reproducibility_recipe entry ==========
+paper_title: Metabolomic data of melittin-intervened murine cervical cancer cells based on liquid chromatography-mass spectrometry.
+source_paper: Jiang J et al., (2026), Data in Brief, DOI: 10.1016/j.dib.2026.113051, PMID: 42434505
+overall_reproducibility_score: 55/100
+
+workflow_steps: 5
+  Step 1: Peak picking and alignment
+    tool: XCMS
+    parameters: not_reported
+    input: LC-MS raw data (.cdf or .mzML)
+    output: aligned peak table with m/z, RT, intensity
+    confidence: high
+  Step 2: Quality control normalization
+    tool: metaX
+    parameters: not_reported
+    input: XCMS output peak table
+    output: QC-normalized, median-normalized, missing-value-imputed matrix
+    confidence: high
+  Step 3: Metabolite annotation
+    tool: HMDB, KEGG, in-house MS/MS spectral library
+    algorithm: accurate mass matching and MS/MS spectral matching
+    parameters: not_reported
+    input: precursor m/z, RT, MS/MS spectra
+    output: Level 1 (MS2-confirmed) and Level 2 (library-matched) metabolite identifications
+    confidence: high
+  Step 4: Differential metabolite screening
+    tool: Student's t-test + PLS-DA
+    parameters: FC ≥ 1.2 or ≤ 1/1.2, P < 0.05, VIP ≥ 1
+    input: normalized metabolite abundance matrix
+    output: list of statistically significant differentially abundant metabolites
+    confidence: high
+  Step 5: HMDB superclass annotation
+    tool: HMDB
+    algorithm: ontology-based classification
+    parameters: not_reported
+    input: annotated metabolite IDs
+    output: metabolite superclass assignments (e.g., Lipids and lipid-like molecules)
+    confidence: medium
+
+data_availability:
+  raw_data: available
+  processed_data: available
+  metadata: available
+  data_urls: ['https://ngdc.cncb.ac.cn/bioproject/browse/PRJCA065444', 'https://ngdc.cncb.ac.cn/omix/release/OMIX017279']
+
+code_availability: not_mentioned
+
+figure_recipes: 1
+  Figure 1: [microscopy_image]
+    caption: Scanning electron microscopy (SEM) images comparing morphology of vehicle control vs. melittin-treated U14 cells
+    produced_by_step: [0]
+    visualization_tool: not_reported
+
+reproducibility_gaps:
+  - XCMS and metaX parameter settings (e.g., ppm tolerance, peakwidth, snthresh, method) not specified
+  - no software versions reported
+  - no details on missing value imputation method
+  - score_adjusted: few explicit software parameters found in Methods
+
+reproducibility_strengths:
+  - explicit statistical thresholds (FC, P, VIP)
+  - clear annotation strategy using HMDB/KEGG/in-house library
+  - public deposition of raw and processed data at NGDC with accession PRJCA065444

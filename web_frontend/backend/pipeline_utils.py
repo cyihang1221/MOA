@@ -197,6 +197,10 @@ def conversion_environment_hint() -> str:
     docker = resolve_docker()
     docker_ok = docker_daemon_accessible()
     pref = preferred_raw_converter()
+    tool = str(pref.get("tool") or "")
+    # Linux 优先 ThermoRawFileParser 时，不必用 Docker 警告刷屏
+    if thermo and "ThermoRawFileParser" in tool:
+        return f"将使用 ThermoRawFileParser（{thermo}）"
     lines = [str(pref.get("reason") or "")]
     if thermo:
         lines.append(f"ThermoRawFileParser: {thermo}")
@@ -207,11 +211,12 @@ def conversion_environment_hint() -> str:
             lines.append("Docker: daemon 可访问")
         else:
             lines.append(
-                "Docker: 已安装但 daemon 不可访问（权限不足或未启动，如 sudo usermod -aG docker $USER 或 sudo systemctl start docker）"
+                "Docker: 已安装但 daemon 不可访问（如需 msconvert：sudo systemctl start docker，"
+                "或将当前用户加入 docker 组）"
             )
     else:
-        lines.append("Docker: 未安装")
-    return " ".join(lines)
+        lines.append("Docker: 未安装（msconvert 需要）")
+    return " ".join(x for x in lines if x)
 
 
 def prune_mzml_dependent_tasks(tasks: list[str]) -> tuple[list[str], list[str]]:
