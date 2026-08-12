@@ -1,0 +1,89 @@
+========== reproducibility_recipe entry ==========
+paper_title: A large-scale genome-lipid association map guides lipid identification.
+source_paper: Linke V et al. (2020), Nature metabolism, DOI: 10.1038/s42255-020-00278-3, PMID: 32958938
+overall_reproducibility_score: 42/100
+
+workflow_steps: 6
+  Step 1: LC-MS/MS lipid profiling
+    tool: not specified
+    input: biological samples (liver and plasma from 384 diversity outbred mice)
+    output: 3,283 molecular features (1,721 plasma + 1,562 liver)
+    confidence: low
+  Step 2: Lipid feature identification
+    tool: LipiDex
+    algorithm: database search
+    parameters: adduct_types=as listed in Supplementary Fig. 7
+    input: molecular features (m/z, RT, MS/MS spectra)
+    output: identified lipids (621 plasma + 615 liver = 1,236 total)
+    confidence: medium
+  Step 3: Quantitative trait locus (QTL) mapping
+    tool: not specified
+    algorithm: genome-wide association mapping with LOD scoring
+    parameters: lod_threshold=6
+    input: lipid feature intensities + mouse genotype matrix (69,005 markers)
+    output: 5,622 lipid QTLs (3,353 plasma + 2,269 liver)
+    confidence: medium
+  Step 4: Allele effect analysis and clustering
+    tool: hierarchical clustering
+    algorithm: Ward clustering with Euclidean distance
+    parameters: row_scaling=True, distance_cutoff_h=[1.5, 5, 8, 2.5]
+    input: allele effect estimates per feature across founder strains
+    output: co-regulated lipid clusters linked to candidate genes
+    confidence: medium
+  Step 5: Cross-species annotation and prioritization
+    tool: LipidGenie web resource
+    algorithm: mass-to-gene and gene-to-mass querying
+    input: mouse QTLs + human genome cross-reference
+    output: candidate gene–lipid associations (e.g., B4galnt1–gangliosides, ABHD family–acyl-chain-specific phospholipids)
+    confidence: high
+  Step 6: Validation via independent founder strain experiments
+    tool: not specified
+    algorithm: boxplot-based replication of allele effects
+    parameters: n_per_group=4, sex_stratified=True, boxplot_definition=quartiles ± 1.5×IQR, median center line
+    input: lipid intensities from founder strain plasma/liver
+    output: replicated allele effect patterns (e.g., A/J down, B6/NZO up, WSB down)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: available (LipidGenie web resource)
+  metadata: in_paper_only
+  data_urls: https://lipidgenie.org
+
+code_availability: not_mentioned
+
+figure_recipes: 5
+  Fig. 1: [workflow_diagram]
+    caption: Schematic illustrating integration of LC–MS/MS lipidomics and QTL mapping for lipid identification.
+    produced_by_step: [1, 2, 3, 5]
+    visualization_tool: not specified
+  Fig. 2: [manhattan_plot]
+    caption: Manhattan plots showing QTL hotspots for plasma and liver lipid features, revealing genetic loci with clustered associations.
+    produced_by_step: [3]
+    visualization_tool: not specified
+    statistical_test: LOD > 6
+  Fig. 3: [boxplot]
+    caption: Apoa2 locus-associated cholesteryl esters show consistent 129-allele upregulation in plasma, validated in founder strain CE(18:2) measurements.
+    produced_by_step: [4, 6]
+    visualization_tool: not specified
+    statistical_test: not specified (descriptive boxplots)
+  Fig. 4: [boxplot]
+    caption: B4galnt1 locus-associated ganglioside features (e.g., GM3) show NOD-specific allele effects, replicated in founder strain experiments.
+    produced_by_step: [4, 6]
+    visualization_tool: not specified
+    statistical_test: not specified (descriptive boxplots)
+  Fig. 5: [web_interface_screenshot]
+    caption: LipidGenie web interface enabling mass- or gene-centric queries to explore genome–lipid associations.
+    produced_by_step: [5]
+    visualization_tool: LipidGenie web application
+
+reproducibility_gaps:
+  - Raw LC–MS/MS data not deposited in public repository (e.g., MetaboLights, PRIDE, GNPS)
+  - No description of LC gradient, column, ionization mode, or MS acquisition parameters
+  - QTL mapping software and implementation details (e.g., R/qtl, DOQTL, custom pipeline) not specified
+  - LipiDex database version and search settings (tolerances, fragmentation rules) not reported
+  - No code or scripts provided for allele effect clustering, Manhattan plotting, or LipidGenie backend
+reproducibility_strengths:
+  - Processed QTL and lipid identification data publicly accessible via LipidGenie web resource
+  - Explicit reporting of sample size (n=384 DO mice), founder strain validation design (n=4 per sex/strain), and statistical thresholds (LOD > 6)
+  - Cross-referencing to human genome enables translational interpretation

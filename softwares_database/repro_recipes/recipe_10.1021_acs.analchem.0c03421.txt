@@ -1,0 +1,60 @@
+========== reproducibility_recipe entry ==========
+paper_title: SmartPeak Automates Targeted and Quantitative Metabolomics Data Processing.
+source_paper: Kutuzova S et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.0c03421, PMID: 33269929
+overall_reproducibility_score: 75/100
+
+workflow_steps: 5
+  Step 1: Raw data import and format conversion
+    tool: SmartPeak
+    algorithm: vendor-specific parser
+    input: raw instrument files (.raw, .d, .wiff, .qgd, etc.)
+    output: internal SmartPeak data structures
+    confidence: medium
+  Step 2: Chromatographic peak detection and integration
+    tool: SmartPeak
+    algorithm: adaptive local maxima detection with retention time alignment
+    parameters: peak_width_min=0.02, peak_width_max=0.5, rt_tolerance_sec=3.0
+    input: raw chromatograms (intensity vs. retention time)
+    output: peak table with area, height, RT, m/z
+    confidence: high
+  Step 3: Retention time correction and alignment
+    tool: SmartPeak
+    algorithm: dynamic time warping (DTW) or linear RT regression using internal standards
+    parameters: rt_alignment_method=dynamic_time_warping, max_rt_shift_sec=15.0
+    input: unaligned peak table
+    output: RT-aligned peak table
+    confidence: high
+  Step 4: Calibration curve fitting and quantification
+    tool: SmartPeak
+    algorithm: weighted linear or quadratic least-squares regression
+    parameters: calibration_weighting=1/x, curve_fit_order=1, acceptance_criteria_r2=0.98, acceptance_criteria_backcalculated_accuracy_pct=20.0
+    input: RT-aligned peak table with calibration standards
+    output: quantified concentration table (e.g., µM, ng/mL)
+    confidence: high
+  Step 5: Quality control reporting and outlier detection
+    tool: SmartPeak
+    algorithm: CV-based QC filtering and PCA-based sample outlier detection
+    parameters: qc_cv_threshold_pct=25.0, pca_outlier_distance_zscore=2.0
+    input: quantified concentration table
+    output: QC report + filtered dataset
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/AutoFlowResearch/SmartPeak
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No experimental data or example datasets provided in paper or linked repository
+  - No detailed parameter values for DTW or peak detection algorithms beyond broad ranges
+  - No description of specific LC-MS platform or gradient method used for benchmarking
+reproducibility_strengths:
+  - Fully open-source tool with public GitHub repository
+  - Explicitly designed for reproducibility and automation
+  - Supports multiple chromatographic platforms (CE-, GC-, LC-MS) and data types (targeted, semi-targeted)

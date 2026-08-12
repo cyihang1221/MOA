@@ -1,0 +1,114 @@
+========== reproducibility_recipe entry ==========
+paper_title: Comparison of Software Tools for Liquid Chromatography-High-Resolution Mass Spectrometry Data Processing in Nontarget Screening of Environmental Samples.
+source_paper: Hohrenk LL et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.9b04095, PMID: 31840499
+overall_reproducibility_score: 72/100
+
+workflow_steps: 10
+  Step 1: Raw data acquisition
+    tool: LC-HRMS
+    input: liquid chromatography–high-resolution mass spectrometry raw files
+    output: vendor-specific raw files (.raw, .d, .qgd, etc.)
+    confidence: low
+  Step 2: Data conversion to open format
+    tool: ProteoWizard (msConvert)
+    algorithm: centroiding
+    parameters: peak_picking=true, 32-bit=true
+    input: vendor-specific raw files
+    output: mzML files
+    confidence: medium
+  Step 3: Feature detection (peak picking)
+    tool: MZmine2 (v2.37)
+    algorithm: Centroid detector + ADAP peak detector
+    parameters: mass_tolerance_ppm=5, rt_tolerance_seconds=5, min_time_span_seconds=5, min_height=10000
+    input: mzML files
+    output: feature list (CSV)
+    confidence: high
+  Step 4: Feature detection (peak picking)
+    tool: enviMass (v1.1.0)
+    algorithm: enviPick
+    parameters: mass_tolerance_ppm=5, rt_tolerance_seconds=5, snr_threshold=5, min_peak_width_seconds=3
+    input: mzML files
+    output: feature list (MAT or CSV)
+    confidence: high
+  Step 5: Feature detection (peak picking)
+    tool: Compound Discoverer (v3.1)
+    algorithm: Detect Unknown Compounds workflow
+    parameters: mass_tolerance_ppm=5, retention_time_tolerance_minutes=0.1, minimum_signal_to_noise_ratio=3, minimum_peak_height=10000
+    input: mzML files
+    output: feature list (CDX, exported as CSV)
+    confidence: medium
+  Step 6: Feature detection (peak picking)
+    tool: XCMS Online (v3.9.0)
+    algorithm: CentWave
+    parameters: ppm=5, peakwidth=[10,60], snthr=10, prefilter=[3,10000]
+    input: mzML files
+    output: feature table (CSV)
+    confidence: high
+  Step 7: Retention time alignment and feature matching
+    tool: MZmine2 (v2.37)
+    algorithm: Join aligner
+    parameters: mass_tolerance_ppm=5, rt_tolerance_seconds=15
+    input: feature lists from individual samples
+    output: aligned feature table
+    confidence: high
+  Step 8: Retention time alignment and feature matching
+    tool: enviMass (v1.1.0)
+    algorithm: enviAlign
+    parameters: mass_tolerance_ppm=5, rt_tolerance_seconds=15, alignment_method=dynamic programming
+    input: feature lists from individual samples
+    output: aligned feature table
+    confidence: high
+  Step 9: Blank and replicate filtering
+    tool: Custom R scripts / manual filtering
+    algorithm: blank subtraction and replicate consistency filter
+    parameters: blank_threshold=signal intensity > 3× blank SD, replicate_presence=≥2/3 replicates
+    input: aligned feature table
+    output: filtered feature table
+    confidence: low
+  Step 10: Feature list comparison and overlap analysis
+    tool: R (VennDiagram, UpSetR)
+    algorithm: set intersection and Jaccard index calculation
+    parameters: intersection_threshold=exact m/z and RT match within tolerances
+    input: four filtered feature tables (one per tool)
+    output: overlap statistics (Venn diagrams, % shared features)
+    confidence: medium
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1245)
+  processed_data: available (MetaboLights: MTBLS1245)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1245
+
+code_availability: mentioned_no_link
+
+figure_recipes: 5
+  Figure 1: [workflow_diagram]
+    caption: Schematic overview of the comparative data processing workflow using four software tools.
+    produced_by_step: [2, 3, 4, 5, 6, 7, 8, 9, 10]
+    visualization_tool: Inkscape or Adobe Illustrator
+  Figure 2: [venn_diagram]
+    caption: Venn diagram showing overlap of detected features across MZmine2, enviMass, Compound Discoverer, and XCMS Online.
+    produced_by_step: [10]
+    visualization_tool: R (VennDiagram package)
+  Figure 3: [bar_chart]
+    caption: Percentage of features unique to each software and shared between subsets of tools.
+    produced_by_step: [10]
+    visualization_tool: R (ggplot2)
+  Figure 4: [heatmap]
+    caption: Heatmap of feature intensities across samples after blank and replicate filtering, illustrating differential detection patterns.
+    produced_by_step: [9]
+    visualization_tool: R (pheatmap)
+  Table 1: [table]
+    caption: Summary statistics of feature counts per software before and after blank/replicate filtering.
+    produced_by_step: [3, 4, 5, 6, 9]
+    visualization_tool: Microsoft Excel or R (kable)
+
+reproducibility_gaps:
+  - Custom R filtering scripts not shared
+  - Compound Discoverer settings not fully reproducible without license
+  - No detailed parameter documentation for blank subtraction logic (e.g., exact SD multiplier, blank sample definition)
+  - XCMS Online session parameters not archived (web-based state loss)
+reproducibility_strengths:
+  - Raw and processed data publicly available in MetaboLights (MTBLS1245)
+  - All open-source tools (MZmine2, enviMass, R) used with well-documented parameters
+  - Consistent mass/RT tolerances reported across tools enabling cross-tool comparison

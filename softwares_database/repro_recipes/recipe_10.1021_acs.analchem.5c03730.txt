@@ -1,0 +1,60 @@
+========== reproducibility_recipe entry ==========
+paper_title: rtmsEcho: An Open-Source R Package for Automated Analysis of Acoustic Ejection Mass Spectrometry Data.
+source_paper: Rimmer MA et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c03730, PMID: 40940023
+overall_reproducibility_score: 72/100
+
+workflow_steps: 5
+  Step 1: AEMS raw data import
+    tool: rtmsEcho
+    algorithm: direct vendor file parsing
+    input: raw AEMS .raw or .d files (Sciex, Thermo, Waters)
+    output: in-memory spectral objects with shot-level metadata
+    confidence: medium
+  Step 2: Shot-to-peak association and peak detection
+    tool: rtmsEcho
+    algorithm: adaptive signal-to-noise thresholding + retention time alignment across ejection shots
+    parameters: sn_threshold=3, min_peak_width_sec=0.1, max_rt_drift_sec=0.5
+    input: shot-level spectral objects
+    output: feature table (m/z, RT, intensity per shot)
+    confidence: high
+  Step 3: Multimodal scan mode processing
+    tool: rtmsEcho
+    algorithm: mode-specific integration: MRM (transition-based), precursor ion scan (precursor-centric), neutral loss scan (loss-centric)
+    parameters: integration_window_da=0.5, min_transition_ratio=0.8
+    input: feature table
+    output: quantified analyte table (analyte ID, mode, integrated area/height)
+    confidence: high
+  Step 4: Spectral deconvolution and interference correction
+    tool: rtmsEcho
+    algorithm: isotopic pattern matching + co-eluting peak deconvolution
+    parameters: mass_accuracy_ppm=5, isotope_similarity_threshold=0.9
+    input: quantified analyte table + raw spectra
+    output: deconvoluted, interference-corrected quantification table
+    confidence: medium
+  Step 5: Automated QC and batch effect assessment
+    tool: rtmsEcho
+    algorithm: median CV calculation across replicates + PCA on internal standard intensities
+    parameters: qc_cv_threshold=0.15, n_pcs_for_batch_qc=2
+    input: deconvoluted quantification table
+    output: QC report (CVs, PCA scores, batch deviation metrics)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/rtms-project/rtmsEcho
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw AEMS data not deposited in public repository
+  - No example dataset or vignette data provided in paper or repo description
+  - Vendor-specific file parsing details (e.g., Sciex .wiff binary structure) not documented
+reproducibility_strengths:
+  - Open-source R package with MIT license
+  - All core algorithms described at implementation level (e.g., sn_threshold=3, mass_accuracy_ppm=5)
+  - Direct support for MRM, precursor ion, and neutral loss modes in one unified framework

@@ -1,0 +1,67 @@
+========== reproducibility_recipe entry ==========
+paper_title: Combination of in silico prediction and convolutional neural network framework for targeted screening of metabolites from LC-HRMS fingerprints: A case study of "Pericarpium Citri Reticulatae - FructusAurantii".
+source_paper: Zeng J et al. (2024), Talanta, DOI: 10.1016/j.talanta.2023.125514, PMID: 38071769
+overall_reproducibility_score: 30/100
+
+workflow_steps: 6
+  Step 1: In silico metabolite prediction
+    tool: ['Meteor', 'BioTransformer', 'ADMET Predictor', 'literature curation']
+    algorithm: rule-based biotransformation prediction
+    input: chemical structures of 14 prototypes (flavonoids, lactones)
+    output: list of predicted metabolites
+    confidence: low
+  Step 2: CWT-based peak detection
+    tool: custom MATLAB/Python implementation
+    algorithm: Continuous Wavelet Transform (CWT)
+    parameters: scale=10, wavelet=morl, snr_threshold=3
+    input: raw LC-HRMS .raw or .d files
+    output: candidate EIC peaks
+    confidence: medium
+  Step 3: CNN-based false positive filtering
+    tool: custom Convolutional Neural Network
+    algorithm: binary classification CNN (architecture not specified)
+    parameters: input_shape=[64, 64, 1], epochs=50, batch_size=32, learning_rate=0.001, validation_split=0.2
+    input: CWT-transformed EIC image patches
+    output: filtered true EIC peaks (384 in +ve mode, 282 in -ve mode)
+    confidence: low
+  Step 4: Metabolite annotation via MS-FINDER
+    tool: MS-FINDER
+    algorithm: in silico MS/MS fragmentation + database matching
+    parameters: confidence_level=Level 1–3, database=['HMDB', 'LipidMaps', 'KEGG'], mass_tolerance_ppm=5, RT_tolerance_sec=10
+    input: EIC peaks with m/z and RT
+    output: annotated metabolites (40 total) with confidence levels
+    confidence: medium
+  Step 5: Blank subtraction and intensity filtering
+    tool: custom script (unspecified)
+    algorithm: intensity ratio (sample/blank) > 3, signal-to-noise > 10
+    parameters: intensity_ratio_threshold=3, snr_min=10
+    input: EIC peak table (sample vs blank serum)
+    output: high-confidence EIC peaks selected for MS/MS
+    confidence: medium
+  Step 6: MS/MS fragment analysis and prototype-metabolite linkage
+    tool: LC-HRMS/MS platform (unspecified vendor)
+    algorithm: manual spectral interpretation + in silico matching
+    input: selected EIC peaks subjected to data-dependent acquisition (DDA)
+    output: 40 metabolites linked to 14 prototypes
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-HRMS data not deposited in any public repository (e.g., MetaboLights, GNPS)
+  - Custom CWT and CNN implementations not shared — no code, architecture, or training data described
+  - MS-FINDER is commercial software requiring license; exact version and database build dates unspecified
+  - LC-MS instrument parameters (gradient, column, flow rate, ionization settings) omitted
+  - No metadata table provided for biological samples (dosing regimen, timepoints, animal IDs, batch info)
+  - No validation of CNN performance metrics (accuracy, precision, recall) reported
+reproducibility_strengths:
+  - Clear workflow logic linking in silico prediction → CWT → CNN → MS-FINDER → MS/MS verification
+  - Explicit reporting of final counts (384/+ve, 282/-ve peaks; 14 prototypes, 40 metabolites)
+  - Use of standardized confidence levels (MS-FINDER Levels 1–3) for annotation

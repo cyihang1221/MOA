@@ -1,0 +1,70 @@
+========== reproducibility_recipe entry ==========
+paper_title: Gábor Transform-Based Signal Isolation, Rapid Deconvolution, and Quantitation of Intact Protein Ions with Mass Spectrometry.
+source_paper: Meldrum KL et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.4c00978, PMID: 38788216
+overall_reproducibility_score: 30/100
+
+workflow_steps: 7
+  Step 1: Gábor transform-based signal isolation
+    tool: iFAMS
+    algorithm: Gábor transform (GT)
+    parameters: mass_accuracy=10.0, signal_threshold=automated, baseline_correction=applied
+    input: raw mass spectra (e.g., .d, .raw, or vendor format)
+    output: Gábor spectrogram with isolated ion signals
+    confidence: medium
+  Step 2: Interactive signal detection and thresholding
+    tool: iFAMS
+    algorithm: Automated signal detection with user-adjustable thresholds
+    parameters: min_user_input=minimal, signal_selection_threshold=user-defined or automated
+    input: Gábor spectrogram
+    output: detected ion signals with charge state candidates
+    confidence: medium
+  Step 3: Charge state assignment and adjustment
+    tool: iFAMS
+    algorithm: Visual charge adjuster
+    input: detected ion signals with initial charge assignments
+    output: refined charge-state-annotated ion signals
+    confidence: low
+  Step 4: Deconvolution refinement using second Gábor transform
+    tool: iFAMS
+    algorithm: Second Gábor transform on isotopically resolved data
+    parameters: artifact_removal=targeted
+    input: isotopically resolved spectral regions
+    output: artifact-corrected deconvolved mass spectrum (intact protein masses)
+    confidence: low
+  Step 5: Batch processing and quantitation
+    tool: iFAMS
+    algorithm: Integrated quantitation module
+    parameters: quantitation_method=integrated peak intensity in deconvolved domain
+    input: deconvolved mass spectra across samples
+    output: quantitative table of intact protein ions
+    confidence: medium
+  Step 6: Comparative deconvolution validation
+    tool: ['UniDec', 'Agilent MassHunter BioConfirm (MaxEnt)']
+    algorithm: ['Bayesian deconvolution', 'Maximum Entropy']
+    input: same raw mass spectra used for iFAMS
+    output: alternative deconvolved spectra for comparison
+    confidence: low
+  Step 7: Quantitation method comparison
+    tool: ['iFAMS quantitation', 'extracted ion chromatogram (XIC) approach']
+    algorithm: XIC-based quantitation (standard method)
+    parameters: extraction_window=not specified, integration_method=not specified
+    input: raw chromatographic mass spectra
+    output: quantitative results for method comparison
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - iFAMS software is not publicly available or open-source; no repository link or license stated
+  - No raw or processed data deposited or referenced
+  - No parameter values provided for GT (e.g., window size, time-frequency resolution)
+  - No details on XIC extraction parameters (m/z window, retention time range)
+  - Commercial tools (MassHunter BioConfirm, UniDec) require licenses and are not reproducible without access
+  - All interactive steps ('Gábor Slicer', 'charge adjuster') lack automation or scriptable specifications

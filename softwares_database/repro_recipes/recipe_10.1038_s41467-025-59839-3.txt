@@ -1,0 +1,70 @@
+========== reproducibility_recipe entry ==========
+paper_title: Deep MALDI-MS spatial omics guided by quantum cascade laser mid-infrared imaging microscopy.
+source_paper: Gruber L et al. (2025), Nature communications, DOI: 10.1038/s41467-025-59839-3, PMID: 40404613
+overall_reproducibility_score: 35/100
+
+workflow_steps: 6
+  Step 1: QCL-MIR imaging acquisition
+    tool: Bruker Hyperion II ILIM FT-IR and QCL microscope
+    algorithm: single wavenumber mode & sweep scan mode
+    parameters: wavenumber_range_cm1=[950, 1800], spectral_sampling_interval_cm1=4, objectives=['3.5x (0.15 NA)', '15x (0.4 NA)', '20x (0.6 NA)'], nominal_pixel_sizes_um=[4.66, 1.15, 0.86], optical_resolution_um_at_1500cm1=[22.2, 8.3, 5.5], acquisition_mode=reflection mode on ITO slides, key_wavenumber_cm1=1656
+    input: fresh-frozen tissue sections on ITO-coated slides
+    output: MIR hyperspectral data cubes (.pickle), single-wavenumber TIFF images
+    confidence: high
+  Step 2: MIR data preprocessing
+    tool: in-house Python software
+    algorithm: asymmetric least squares baseline correction, Savitzky-Golay differentiation, cubic interpolation
+    parameters: baseline_correction={'method': 'asymmetric least squares', 'smoothing_factor': 1000000, 'weighting_factor': 0.01, 'iterations': 10}, differentiation=first and second order derivative, interpolation=cubic
+    input: MIR hyperspectral data cubes (.pickle)
+    output: preprocessed, differentiated spectral images
+    confidence: high
+  Step 3: Feature-selective ROI segmentation
+    tool: in-house Python software
+    algorithm: Gaussian Mixture Model (2 clusters), k-means clustering, blob detection with thresholding/size/eccentricity filters, random walker segmentation
+    parameters: segmentation_methods=['GMM', 'k-means', 'blob detection', 'random walker'], kmeans_cluster_selection=Calinski-Harabasz-Score (yellowbrick), blob_detection_threshold_range=[30, 60], blob_size_filter_pixels=[40, 60, 1000], blob_eccentricity_threshold=0.94, spectral_features_cm1={'use_case_1_brain': [1466, 1740], 'use_case_2_spheroids': [1466, 1740], 'use_case_3_glomeruli': [1726, 1142], 'use_case_4_neurons': [1726, 1142], 'use_case_5_kidney_ISOM_IMP': [1466, 988, 1740, 1548, 1656]}
+    input: preprocessed MIR spectral images
+    output: binary masks and spatial ROIs for MSI targeting
+    confidence: medium
+  Step 4: MALDI-MSI acquisition guided by MIR ROIs
+    tool: timsTOF fleX / timsTOF Pro (Bruker Daltonics)
+    algorithm: imaging parallel reaction monitoring–Parallel Accumulation–Serial Fragmentation (iprm-PASEF)
+    parameters: acquisition_mode=on-tissue tandem-MS, instrument=timsTOF fleX/Pro, calibration_standard=ESI-L Low Concentration Tuning Mix, matrix=DHAP, spatial_resolution=not explicitly quantified; targeted sub-regions (e.g., glomeruli, spheroid cores, neurons)
+    input: ROI-masked tissue sections on ITO slides
+    output: spatially resolved MS1 and MS/MS imaging datasets
+    confidence: medium
+  Step 5: Lipid identification and annotation
+    tool: Bruker SCiLS Lab + in-house workflows
+    algorithm: MS1 mass accuracy filtering, MS/MS spectral matching, sulfatide-specific annotation using literature standards
+    parameters: mass_tolerance_ppm=None, reference_standards=['C17 sulfatide SM4 35:1;O2', 'C18:0 GM3-d5', 'Sulfatides Brain Mix', 'PE 28:0'], lipid_class_focus=sulfatides, ceramide-1-phosphate, ceramide phosphatidylethanolamine
+    input: iprm-PASEF MS1 and MS/MS imaging data
+    output: confidently annotated spatial lipid maps (n = 157 sulfatides)
+    confidence: low
+  Step 6: Spatial statistical analysis and biomarker discovery
+    tool: custom Python/R scripts (implied)
+    algorithm: summed signal intensity quantification per ROI, differential expression (implied t-test/ANOVA)
+    parameters: quantification_method=summed intensities of 87 sulfatides, comparisons=['ARSA−/− vs WT', 'EAE vs healthy spinal cord']
+    input: annotated spatial lipid intensity maps
+    output: differential lipid markers (e.g., ceramide-1-phosphate, ceramide PE)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: not_mentioned (not mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No public repository accession or data availability statement for raw MIR or MSI data
+  - In-house Python tools for MIR preprocessing and segmentation are not shared or described in sufficient detail for replication
+  - No parameters for MS1 mass tolerance, peak picking, or ion mobility calibration reported
+  - iprm-PASEF acquisition parameters (e.g., isolation windows, cycle time, ramp times) omitted
+  - Statistical methods for differential lipid detection unspecified (no p-value thresholds, FDR correction, or software named)
+  - No code, scripts, or workflow documentation provided for integration of QCL-MIR and MSI pipelines
+reproducibility_strengths:
+  - Detailed experimental protocols for animal models, tissue preparation, and MIR acquisition optics
+  - Explicit spectral feature selection per use case (wavenumbers, objectives, pixel sizes)
+  - Clear description of segmentation logic (GMM, k-means, blob detection with numeric thresholds)
+  - Use of community-standard reference materials (Avanti lipids, ESI-L tuning mix)

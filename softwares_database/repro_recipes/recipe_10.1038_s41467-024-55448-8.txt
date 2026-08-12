@@ -1,0 +1,74 @@
+========== reproducibility_recipe entry ==========
+paper_title: diaTracer enables spectrum-centric analysis of diaPASEF proteomics data.
+source_paper: Li K et al. (2025), Nature communications, DOI: 10.1038/s41467-024-55448-8, PMID: 39747075
+overall_reproducibility_score: 92/100
+
+workflow_steps: 7
+  Step 1: 3D peak tracing and feature detection
+    tool: diaTracer
+    algorithm: 3D (m/z, RT, IM) Gaussian peak fitting + Savitzky-Golay + Z-Score peak detection
+    parameters: Delta_Apex_IM=0.01, Delta_Apex_RT=3, RF_max=500, Corr_threshold=0.3, mass_defect_filter_enabled=True, isotope_clustering_min_isotopes=1, isotope_mass_difference=C13-based, neighbor_requirement_relaxed_for_MS2=True, IM_window_frame_scan_range_divided_by_min_IM_difference=True, mz_range_divided_by_min_mz_difference=True
+    input: raw .d files (Bruker timsTOF diaPASEF)
+    output: precursor-resolved pseudo-MS/MS spectra in mzML format
+    confidence: high
+  Step 2: Spectral library generation
+    tool: MSFragger + MSBooster + Percolator + EasyPQP
+    algorithm: Database search (DDA-derived library), PSM rescoring, RT/MS2 prediction, spectral library compilation
+    parameters: precursor_mass_tolerance_ppm=10, fragment_mass_tolerance_ppm=20, isotope_error=0/1/2, enzyme_specificity=stricttrypsin, max_missed_cleavages=2, variable_modifications=['Oxidation of methionine', 'N-terminal acetylation', 'pyro-Glu', 'phosphorylation (in PTM workflows)'], fixed_modifications=['methylthiolation of cysteine', 'carbamidomethylation of cysteine (CSF/plasma)', 'cysteinylation (+119) (HLA)'], peptide_length_range=[7, 50], peptide_mass_range_Da=[500, 5000], semi_tryptic=True, nonspecific_cleavage=True, mass_offset_search_windows=[-150, 500], mass_offset_list=predefined common PTMs
+    input: DDA mzML (for library) + pseudo-MS/MS mzML (from diaTracer)
+    output: spectral library (.splib)
+    confidence: high
+  Step 3: Library-based DIA quantification
+    tool: DIA-NN (v1.8.1)
+    algorithm: Library-matched peak integration and protein inference
+    parameters: precursor_mz_range=[300, 1800], max_missed_cleavages=1, FDR_threshold=0.01
+    input: diaPASEF .d files + spectral library (.splib)
+    output: quantified peptide/protein matrix (report.tsv)
+    confidence: high
+  Step 4: Library-free DIA quantification
+    tool: DIA-NN (v1.8.1)
+    algorithm: Direct deconvolution and identification without spectral library
+    parameters: mode=library-free, default_settings_used=True, precursor_mz_range=[300, 1800], variable_modifications=['Oxidation of methionine'], fixed_modifications=['carbamidomethylation of cysteine'], max_missed_cleavages=1
+    input: diaPASEF .d files
+    output: quantified peptide/protein matrix (report.tsv)
+    confidence: high
+  Step 5: Differential expression analysis
+    tool: FragPipe-Analyst
+    algorithm: Missing value imputation + t-test / ANOVA with FDR correction
+    parameters: min_percentage_non_missing_globally=25, min_percentage_non_missing_in_one_condition=25, DE_adjusted_p_value_cutoff=0.05, DE_log2_fold_change_cutoff=1, imputation_type=Perseus-type, FDR_correction_type=Benjamini Hochberg
+    input: DIA-NN or FragPipe quantification matrix (report.pg_matrix.tsv) + experiment_annotation.tsv
+    output: DE_result.tsv (differentially expressed proteins/peptides)
+    confidence: high
+  Step 6: PTM discovery via open/mass-offset search
+    tool: MSFragger (within FragPipe)
+    algorithm: Mass-offset search (targeted) and open search (untargeted)
+    parameters: mass_offset_search_window_ppm=10, open_search_mass_tolerance_Da=[-150, 500], common_PTMs_database=built-in
+    input: pseudo-MS/MS mzML (from diaTracer)
+    output: PTM-localized PSMs and modification site assignments
+    confidence: high
+  Step 7: HLA immunopeptide binding affinity prediction
+    tool: NetMHCpan (v4.1)
+    algorithm: Neural network-based MHC class I binding prediction
+    parameters: peptide_length_range=[8, 12], binding_affinity_percentile_rank_cutoff_strong=0.5, binding_affinity_percentile_rank_cutoff_weak=2.0
+    input: HLA-identified peptides (FASTA or list)
+    output: ranked immunopeptides with percentile ranks
+    confidence: high
+
+data_availability:
+  raw_data: available (PRIDE: PXD042187)
+  processed_data: available (PRIDE: PXD042187)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/pride/archive/projects/PXD042187
+
+code_availability: repository_linked
+  code_url: https://github.com/Nesvilab/diaTracer
+  license: Apache-2.0
+
+figure_recipes: 0
+
+reproducibility_strengths:
+  - All raw data deposited in PRIDE (PXD042187) with full metadata
+  - diaTracer is open-source (GitHub, Apache-2.0 license) with Zenodo DOI
+  - FragPipe workflows fully specified with parameter overrides documented
+  - All computational tools (MSFragger, DIA-NN, NetMHCpan, iq R package) are publicly available and versioned
+  - Parameter values explicitly reported for all key steps (e.g., Delta Apex IM = 0.01, Corr threshold = 0.3)

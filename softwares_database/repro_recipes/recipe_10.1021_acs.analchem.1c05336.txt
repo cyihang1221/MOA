@@ -1,0 +1,64 @@
+========== reproducibility_recipe entry ==========
+paper_title: Automated Feature Mining for Two-Dimensional Liquid Chromatography Applied to Polymers Enabled by Mass Remainder Analysis.
+source_paper: Molenaar SRA et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.1c05336, PMID: 35343683
+overall_reproducibility_score: 20/100
+
+workflow_steps: 7
+  Step 1: Region of interest (ROI) selection
+    tool: custom algorithm
+    algorithm: automated ROI detection
+    input: raw LC × LC-MS data
+    output: reduced data subset
+    confidence: low
+  Step 2: Isotopic distribution clustering
+    tool: custom algorithm
+    algorithm: clustering in time and m/z domain
+    input: reduced data subset
+    output: isotopic clusters
+    confidence: low
+  Step 3: Background and single-value cluster removal
+    tool: custom algorithm
+    algorithm: filtering based on cluster size and intensity
+    input: isotopic clusters
+    output: cleaned isotopic clusters
+    confidence: low
+  Step 4: Charge state determination and charge-state reduced mass calculation
+    tool: custom algorithm
+    algorithm: charge deconvolution using isotopic spacing
+    input: cleaned isotopic clusters
+    output: charge-state reduced masses
+    confidence: low
+  Step 5: Repeating unit (monomer) mass identification
+    tool: custom algorithm
+    algorithm: mass difference analysis across all charge-state reduced masses
+    input: charge-state reduced masses
+    output: monomer mass
+    confidence: low
+  Step 6: Mass remainder analysis
+    tool: custom algorithm
+    algorithm: remainder calculation modulo monomer mass
+    input: charge-state reduced masses and monomer mass
+    output: end-group composition groups
+    confidence: low
+  Step 7: Compositional series mapping and separation
+    tool: custom algorithm
+    algorithm: integration of chromatographic behavior and mass remainder grouping
+    input: cleaned isotopic clusters, mass remainder groups
+    output: compositional series mapped on LC × LC chromatogram
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No software or code made available
+  - No raw or processed data repository accession provided
+  - No algorithmic parameters (e.g., m/z tolerance, RT window, clustering threshold) specified
+  - No validation dataset or benchmarking details beyond one industrial example
+  - All steps rely on unspecified 'custom algorithm' with no pseudocode, implementation language, or public release

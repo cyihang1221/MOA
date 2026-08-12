@@ -1,0 +1,106 @@
+========== reproducibility_recipe entry ==========
+paper_title: Biomolecular condensates create phospholipid-enriched microenvironments.
+source_paper: Dumelie JG et al. (2024), Nature chemical biology, DOI: 10.1038/s41589-023-01474-4, PMID: 37973889
+overall_reproducibility_score: 32/100
+
+workflow_steps: 8
+  Step 1: Metabolite extraction from condensate/aqueous/input fractions
+    tool: custom_protocol
+    algorithm: heat-assisted extraction
+    parameters: heating_temperature_c=65, heating_duration_min=2
+    input: centrifuged condensate, aqueous, and input fractions
+    output: extracted metabolite samples in LC-MS-compatible buffer
+    confidence: high
+  Step 2: LC-MS data acquisition
+    tool: liquid_chromatography_mass_spectrometry
+    algorithm: untargeted metabolomics
+    input: extracted metabolite samples
+    output: raw .raw or .d files (vendor format)
+    confidence: low
+  Step 3: Data filtering and quality control
+    tool: custom_R_script_or_in-house_pipeline
+    algorithm: abundance- and variance-based filtering
+    parameters: min_median_log2_ion_count=1000, max_log2_ion_count_std=2.5
+    input: feature intensity table (ion counts)
+    output: filtered feature table
+    confidence: high
+  Step 4: Condensate enrichment calculation
+    tool: custom_calculation
+    algorithm: log2-fold enrichment (condensate / input)
+    input: filtered feature table
+    output: enrichment table (log2 fold-change per metabolite)
+    confidence: high
+  Step 5: Statistical testing for differential enrichment
+    tool: R_stats
+    algorithm: two-sided paired t-test with Benjamini-Hochberg FDR correction
+    parameters: fdr_threshold=0.1
+    input: enrichment values across replicates
+    output: FDR-adjusted p-values, significant metabolites
+    confidence: high
+  Step 6: Non-parametric comparison of lipid classes
+    tool: R_stats
+    algorithm: two-sided Wilcoxon rank-sum test
+    input: enrichment distributions by lipid class
+    output: p-values for class-wise comparisons
+    confidence: high
+  Step 7: Correlation analysis of enrichment consistency
+    tool: R_stats
+    algorithm: Pearson correlation
+    input: enrichment vectors across experimental conditions
+    output: correlation coefficients (r), p-values
+    confidence: high
+  Step 8: Spearman correlation for structural trends
+    tool: R_stats
+    algorithm: two-sided Spearman’s rank correlation
+    parameters: alpha=0.005
+    input: lipid carbon chain length vs. log2 enrichment
+    output: rho, p-value
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 5
+  Extended Data Fig. 1: [workflow_diagram]
+    caption: Validation of condensate formation, stability, and fractionation efficiency using FRAP, salt-induced dissolution, and protein/RNA quantification.
+    produced_by_step: [1, 4, 5, 6]
+    visualization_tool: GraphPad Prism or custom Python/R plotting
+    statistical_test: two-sided paired t-test
+  Extended Data Fig. 2: [scatter_plot]
+    caption: Quality control plots showing filtering thresholds based on median abundance and variability, and validation of heating step and metabolite addition timing via correlation of enrichment scores.
+    produced_by_step: [3, 4, 7]
+    visualization_tool: custom R/Python plotting
+    statistical_test: Pearson’s r = 0.93 and 0.92
+  Extended Data Fig. 3: [violin_plot]
+    caption: Assessment of RNA concentration effects on metabolite enrichment, showing no significant differences across RNA conditions and consistent fatty acyl–dependent partitioning.
+    produced_by_step: [4, 5, 6]
+    visualization_tool: R ggplot2 or GraphPad
+    statistical_test: FDR > 0.1 (t-test), p < 0.005 (Wilcoxon)
+  Extended Data Fig. 4: [heatmap]
+    caption: Heatmap of phospholipid enrichment across condensates, revealing head-group– and fatty acyl length–dependent partitioning patterns.
+    produced_by_step: [4]
+    visualization_tool: R pheatmap or ComplexHeatmap
+    statistical_test: Spearman’s rho < −0.41, p < 0.005
+  Extended Data Fig. 5: [scatter_plot]
+    caption: Analysis of synthetic phospholipid library showing dependence of condensate enrichment on combined fatty acyl length and head group charge neutrality.
+    produced_by_step: [4, 6]
+    visualization_tool: GraphPad Prism or R ggplot2
+    statistical_test: two-sided Wilcoxon rank-sum test (p-values reported)
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository (e.g., MetaboLights, MassIVE)
+  - No description of LC-MS platform (instrument model, column, gradient, ionization mode, MS parameters)
+  - No software specified for peak picking, alignment, or annotation (e.g., XCMS, MS-DIAL, Compound Discoverer)
+  - Custom data filtering and enrichment pipeline not shared or documented
+  - No code repository or analysis scripts provided
+  - No metabolite identification details (e.g., MS/MS spectra, database matches, confidence level)
+  - No metadata schema or sample annotation table provided beyond brief text
+reproducibility_strengths:
+  - Explicit numerical filtering thresholds provided (median ion count ≥1000, log2 std ≤2.5)
+  - Statistical methods fully named and parameterized (paired t-test, Wilcoxon, Spearman, BH-FDR)
+  - Replicate numbers explicitly stated per experiment (n = 2–8)
+  - Biological rationale for filtering (high variability impedes enrichment scoring) explained

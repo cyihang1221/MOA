@@ -1,0 +1,47 @@
+========== reproducibility_recipe entry ==========
+paper_title: Predicting HLA class II antigen presentation through integrated deep learning.
+source_paper: Chen B et al. (2019), Nature biotechnology, DOI: 10.1038/s41587-019-0280-2, PMID: 31611695
+overall_reproducibility_score: 40/100
+
+workflow_steps: 0
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://maria.stanford.edu/
+
+figure_recipes: 6
+  Fig. 1: [workflow_diagram]
+    caption: Illustrates the rationale and integrated framework for MARIA, combining peptide sequence, protease cleavage signatures, gene expression, and HLA binding data to predict HLA-II antigen presentation.
+    visualization_tool: not_mentioned
+  Fig. 2: [other]
+    caption: Shows MARIA's feature representation, multimodal recurrent neural network architecture, and validation performance metrics (AUC = 0.89–0.92).
+    visualization_tool: not_mentioned
+  Fig. 3: [roc_curve]
+    caption: Benchmarks MARIA against existing binding-based methods (e.g., NetMHCIIpan) on independent HLA-DR test sets, demonstrating superior AUC performance.
+    visualization_tool: not_mentioned
+    statistical_test: not_mentioned
+  Fig. 4: [bar_chart]
+    caption: Demonstrates MARIA’s ability to identify celiac disease–related gluten antigens using HLA-DQ ligand training data.
+    visualization_tool: not_mentioned
+  Fig. 5: [heatmap]
+    caption: Displays MARIA-predicted immunogenic hotspots in immunoglobulin genes across mantle cell lymphoma (MCL) patients, highlighting recurrent HLA-DR presentation sites.
+    visualization_tool: not_mentioned
+  Fig. 6: [boxplot]
+    caption: Shows association between high MARIA scores and increased CD4+ T cell responses post-vaccination in melanoma patients, with statistical significance indicated.
+    visualization_tool: not_mentioned
+    statistical_test: two-tailed paired t-test
+
+reproducibility_gaps:
+  - No mass spectrometry raw data (e.g., .raw, .mzML) or processed ligand lists deposited in public repositories (e.g., PRIDE, MassIVE, MetaboLights)
+  - No training datasets explicitly shared or accessioned (e.g., MCL HLA-DR ligands, IEDB binding subsets, RNA-seq expression matrices)
+  - No model weights, hyperparameters, or training scripts provided beyond web interface
+  - Architecture details (e.g., RNN type, layer sizes, dropout rates, optimizer settings) are only schematically described, not quantitatively specified
+  - Supplementary Figures refer to internal controls and validations but lack full experimental metadata (e.g., flow cytometry gating strategies, instrument parameters, replicate counts)
+reproducibility_strengths:
+  - Public web server available at https://maria.stanford.edu/
+  - Method built on publicly available resources (IEDB, GO annotations, TCGA/GTEx RNA-seq)
+  - Clear description of input features (peptide sequence, flanking context, gene expression, cleavage scores)

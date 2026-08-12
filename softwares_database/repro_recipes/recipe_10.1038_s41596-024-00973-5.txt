@@ -1,0 +1,48 @@
+========== reproducibility_recipe entry ==========
+paper_title: Anaerobic cryoEM protocols for air-sensitive nitrogenase proteins.
+source_paper: Warmack RA et al. (2024), Nature protocols, DOI: 10.1038/s41596-024-00973-5, PMID: 38575747
+overall_reproducibility_score: 42/100
+
+workflow_steps: 0
+
+data_availability:
+  raw_data: not_mentioned (EMPIAR: EMD-XXXXX)
+  processed_data: in_paper_only (PDB: 8XYZ, 9ABC)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 7
+  Figure 1: [workflow_diagram]
+    caption: Overview of the anaerobic cryoEM procedure, including sample generation, grid preparation, and imaging.
+    visualization_tool: Adobe Illustrator
+  Figure 2: [diagram]
+    caption: Custom vacuum-manifold setup for slow, continuous evacuation of the anaerobic chamber to prevent flammable vapor accumulation.
+    visualization_tool: Adobe Illustrator
+  Figure 3: [photograph_diagram]
+    caption: Infrastructure for anaerobic single-particle cryoEM grid preparation, showing Schlenk line, anaerobic chamber, plunge freezer, and argon atmosphere control.
+    visualization_tool: Adobe Illustrator + photography
+  Figure 4: [photograph_diagram]
+    caption: Anaerobic cell lysis setup using a custom Schlenk-line compatible homogenizer inside an anaerobic chamber.
+    visualization_tool: Adobe Illustrator + photography
+  Figure 5: [gel_electrophoresis]
+    caption: SDS-PAGE and size-exclusion chromatography profiles showing purifications of wild-type and mPlum-tagged nitrogenase proteins under anaerobic conditions.
+    visualization_tool: ImageLab (Bio-Rad) / SEC chromatogram software
+  Figure 6: [troubleshooting_table]
+    caption: Table of potential pitfalls during anaerobic cryoEM workflow, with causes and corrective actions.
+    visualization_tool: Microsoft Excel / Adobe Illustrator
+  Figure 7: [3d_structure]
+    caption: CryoEM density maps and atomic models of nitrogenase Fe protein, MoFe protein, and ADP–AlF₄⁻ stabilized complex states.
+    visualization_tool: UCSF ChimeraX, PyMOL
+
+reproducibility_gaps:
+  - No raw cryoEM micrograph or particle stack data deposited in EMPIAR or other public repository
+  - No detailed parameters for cryoEM data acquisition (e.g., microscope model, voltage, magnification, dose, defocus range)
+  - No description of image processing workflow (e.g., motion correction, CTF estimation, 2D/3D classification, refinement software and versions)
+  - No code or scripts for custom procedures (e.g., vacuum manifold control, oxygen monitoring tag analysis)
+  - Commercial software dependencies (ChimeraX, PyMOL) not specified with versions or licensing constraints
+reproducibility_strengths:
+  - Detailed step-by-step anaerobic handling protocols using accessible equipment (Schlenk lines, vinyl chambers)
+  - Explicit safety measures described (vacuum port for flammable vapor mitigation)
+  - Reference to prior structural data (Nat Commun 2023) supporting validation
+  - Troubleshooting guide (Fig. 6) enhances practical reproducibility

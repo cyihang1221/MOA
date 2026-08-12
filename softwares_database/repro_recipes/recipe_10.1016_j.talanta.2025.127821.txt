@@ -1,0 +1,60 @@
+========== reproducibility_recipe entry ==========
+paper_title: Intelligent characterization multi-components in Yangxinshi tablet by online comprehensive two-dimensional liquid chromatography-quadrupole time-of-flight mass spectrometry combined with deep learning-assisted mass defect filtering classification and multidimensional data annotation strategy.
+source_paper: Wen J et al. (2025), Talanta, DOI: 10.1016/j.talanta.2025.127821, PMID: 40020613
+overall_reproducibility_score: 25/100
+
+workflow_steps: 5
+  Step 1: Online comprehensive 2DLC-Q-TOF-MS/MS system construction and orthogonality evaluation
+    tool: 2DLC-Q-TOF-MS/MS platform
+    input: raw YXST extract
+    output: 2D chromatographic-mass spectral datasets
+    confidence: low
+  Step 2: Deep learning-assisted mass defect filtering (DLA-MDF) intelligent classification
+    tool: custom deep learning interface
+    algorithm: deep learning model (unspecified architecture)
+    parameters: mass_defect_tolerance=None, training_dataset=in-house reference compounds
+    input: full-scan MS1 data from 2DLC-Q-TOF-MS/MS
+    output: compound-class-specific preferred ion lists (PILs)
+    confidence: low
+  Step 3: Data acquisition using DLA-MDF-PIL-AE mode
+    tool: Q-TOF instrument control software
+    algorithm: active exclusion (AE) with PIL-triggered MS/MS
+    parameters: preferred_ion_list_size=None, exclusion_window=None, MS2_acquisition_mode=data-dependent acquisition (DDA) with AE
+    input: PILs from step 2
+    output: targeted MS/MS spectra for classified compound types
+    confidence: low
+  Step 4: Compound annotation via multidimensional strategy
+    tool: ['Molecular Networking (GNPS)', 'in-house CDI/NL rules']
+    algorithm: ['Molecular networking', 'neutral loss matching', 'characteristic diagnosis ion filtering']
+    parameters: network_similarity_score_threshold=None, NL_masses=['18 Da (H2O)', '162 Da (hexose)', '146 Da (rhamnose)'], CDIs=['m/z 151 (flavonoid A-ring)', 'm/z 174 (alkaloid fragment)']
+    input: MS/MS spectra from step 3
+    output: preliminarily annotated compounds (228 total) with class and source attribution
+    confidence: medium
+  Step 5: Quantification of 39 compounds
+    tool: UHPLC-MS/MS (triple quadrupole)
+    algorithm: multiple reaction monitoring (MRM)
+    parameters: dwell_time=None, collision_energy=None, calibration_curve_range=None
+    input: YXST extract (separate batch)
+    output: quantified concentrations (ng/mg or μg/g)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposited in public repository
+  - Custom deep learning interface not shared or described (architecture, training data, code)
+  - No parameters reported for DLA-MDF classification or PIL-AE acquisition
+  - In-house CDI/NL rules and source attribution logic not disclosed
+  - UHPLC-MS/MS quantification method lacks calibration details and MRM transitions
+  - 2DLC orthogonality metrics not numerically reported
+reproducibility_strengths:
+  - Strategy explicitly names key components (DLA-MDF-PIL-AE, MN+NL+CDI)
+  - Compound counts and classes are tabulated (228 compounds, breakdown by class)
+  - Use of GNPS (open-source) for molecular networking

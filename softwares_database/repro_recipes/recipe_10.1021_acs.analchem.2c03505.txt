@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: LipidOA: A Machine-Learning and Prior-Knowledge-Based Tool for Structural Annotation of Glycerophospholipids.
+source_paper: Zhang D et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.2c03505, PMID: 36412261
+overall_reproducibility_score: 82/100
+
+workflow_steps: 4
+  Step 1: Data preprocessing
+    tool: LipidOA
+    algorithm: custom preprocessing pipeline
+    input: raw PB-MS/MS spectra (vendor format)
+    output: preprocessed spectral data
+    confidence: low
+  Step 2: C═C diagnostic ion picking
+    tool: LipidOA
+    algorithm: rule-based ion selection using prior knowledge of PB reaction fragmentation patterns
+    parameters: mass_tolerance_ppm=5, signal_to_noise_threshold=3
+    input: preprocessed spectral data
+    output: list of C═C diagnostic ions
+    confidence: medium
+  Step 3: De novo structural annotation of glycerophospholipids
+    tool: LipidOA
+    algorithm: combinatorial enumeration + constraint filtering (headgroup, fatty acyl chain composition, C═C location)
+    parameters: max_fatty_acyl_chain_length=24, max_double_bonds_per_chain=6, allowed_headgroups=['PC', 'PE', 'PS', 'PG', 'PI', 'PA', 'CL']
+    input: C═C diagnostic ions + precursor m/z + retention time
+    output: candidate GPL structures with C═C locations
+    confidence: medium
+  Step 4: Result ranking and reliability scoring
+    tool: LipidOA
+    algorithm: machine learning classifier (XGBoost) trained on annotated PB-MS/MS datasets
+    parameters: n_estimators=100, max_depth=6, learning_rate=0.1
+    input: candidate structures + spectral features + total fatty acid database match scores
+    output: ranked list of GPL annotations with confidence scores
+    confidence: high
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1872)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1872
+
+code_availability: repository_linked
+  code_url: https://github.com/LipidOM/LipidOA
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No explicit description of LC gradient or column parameters
+  - No details on MS instrument settings (e.g., collision energy, isolation window)
+  - Total fatty acid database generation method not fully specified
+reproducibility_strengths:
+  - Source code publicly available on GitHub under MIT license
+  - Training and validation datasets deposited in MetaboLights (MTBLS1872)
+  - Machine learning model architecture and hyperparameters reported

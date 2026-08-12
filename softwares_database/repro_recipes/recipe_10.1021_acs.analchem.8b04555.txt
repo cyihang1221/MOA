@@ -1,0 +1,60 @@
+========== reproducibility_recipe entry ==========
+paper_title: Mass Difference Maps and Their Application for the Recalibration of Mass Spectrometric Data in Nontargeted Metabolomics.
+source_paper: Smirnov KS et al. (2019), Analytical chemistry, DOI: 10.1021/acs.analchem.8b04555, PMID: 30707557
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Mass difference map (MDiM) construction
+    tool: Custom MATLAB implementation
+    algorithm: Pairwise mass difference calculation
+    parameters: reference_list_size=sufficient, mass_tolerance_ppm=None
+    input: List of m/z values (experimental or simulated)
+    output: Mass difference map (2D histogram of pairwise Δm/z)
+    confidence: low
+  Step 2: Density estimation on MDiM
+    tool: Custom MATLAB implementation
+    algorithm: Gaussian kernel density estimation
+    parameters: kernel_bandwidth=adapted empirically, grid_resolution=None
+    input: Mass difference map (binned Δm/z matrix)
+    output: Smoothed density surface
+    confidence: low
+  Step 3: Systematic error detection and modeling
+    tool: Custom MATLAB implementation
+    algorithm: Curve fitting using adapted particle swarm optimization (PSO)
+    parameters: fitness_function=maximize peak sharpness at zero difference, iterations=None, swarm_size=None
+    input: Smoothed MDiM density surface
+    output: Estimated systematic mass error function (e.g., m/z-dependent bias)
+    confidence: low
+  Step 4: Mass recalibration
+    tool: Custom MATLAB implementation
+    algorithm: Bias correction: m/z_corrected = m/z_observed − error(m/z_observed)
+    parameters: correction_applied_to=original m/z list
+    input: Original m/z list + estimated error function
+    output: Recalibrated m/z list
+    confidence: medium
+  Step 5: Validation of recalibration
+    tool: Custom MATLAB implementation
+    algorithm: Residual mass error distribution analysis
+    parameters: metric=median absolute error (MAE), standard deviation of errors
+    input: Recalibrated m/z values vs. reference compound masses
+    output: Recalibration performance metrics (ppm error statistics)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposited or referenced
+  - No code repository or supplementary software provided
+  - MATLAB implementation details (e.g., PSO adaptation, kernel parameters, reference list composition) not specified
+  - No public reference list or calibration standard metadata provided
+  - Instrumental acquisition parameters (e.g., FTHMS settings, lock mass, internal standard protocol) omitted
+reproducibility_strengths:
+  - Method conceptually well-described with clear mathematical motivation
+  - Validation performed on both simulated and real FTR-ICR-MS plasma data

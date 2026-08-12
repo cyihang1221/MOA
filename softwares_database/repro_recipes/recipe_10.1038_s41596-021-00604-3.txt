@@ -1,0 +1,38 @@
+========== reproducibility_recipe entry ==========
+paper_title: Affinity-based profiling of endogenous phosphoprotein phosphatases by mass spectrometry.
+source_paper: Brauer BL et al. (2021), Nature protocols, DOI: 10.1038/s41596-021-00604-3, PMID: 34518704
+overall_reproducibility_score: 42/100
+
+workflow_steps: 0
+
+data_availability:
+  raw_data: available (ProteomeXchange: PXD018765)
+  processed_data: in_paper_only (Supplementary Table 1)
+  metadata: in_paper_only
+  data_urls: https://doi.org/10.1038/s41596-021-00604-3, https://www.ebi.ac.uk/pride/archive/projects/PXD018765
+
+code_availability: not_mentioned
+
+figure_recipes: 3
+  Fig. 1: [workflow_diagram]
+    caption: Schematic overview of the PIB-MS workflow, showing affinity capture of phosphoprotein phosphatases using immobilized inhibitor beads, followed by on-bead digestion, peptide labeling (TMT), LC-MS/MS an
+    visualization_tool: Adobe Illustrator
+  Fig. 2: [table]
+    caption: Summary of PPP subunits and interactors identified in the PPPome discovery experiment, including Uniprot ID, gene name, subunit type (C/R/i/a), and assigned PPP family (PP1–PP7).
+    visualization_tool: Microsoft Excel
+  Fig. 3: [bar_chart]
+    caption: Quantitative comparison of mitotic versus asynchronous cell PPPome and phospho-PPPome using TMT-based MS, showing fold-changes for selected PPP subunits and phosphorylation sites.
+    visualization_tool: GraphPad Prism
+    statistical_test: two-tailed t-test, p < 0.05
+
+reproducibility_gaps:
+  - No description of mass spectrometry data acquisition parameters (e.g., instrument type, gradient, fragmentation method)
+  - No details on database search settings (search engine, FDR threshold, modifications considered)
+  - No bioinformatic pipeline or software versions specified for peptide identification/quantification
+  - No code or scripts provided for TMT quantification, normalization, or statistical analysis
+  - PIB-MS protocol relies on custom-synthesized inhibitor beads not commercially available or fully characterized
+reproducibility_strengths:
+  - Raw proteomics data deposited in ProteomeXchange (PXD018765)
+  - Supplementary Table 1 provides annotated PPP subunits and interactors with Uniprot IDs
+  - Detailed wet-lab protocol described in Nature Protocols format
+  - Reference to prior methodological papers (Lyons et al. 2018; Nasa et al. 2020) supporting reproducibility

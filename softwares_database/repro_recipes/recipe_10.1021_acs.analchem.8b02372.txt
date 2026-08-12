@@ -1,0 +1,82 @@
+========== reproducibility_recipe entry ==========
+paper_title: Highly Sensitive Quantification Method for Amine Submetabolome Based on AQC-Labeled-LC-Tandem-MS and Multiple Statistical Data Mining: A Potential Cancer Screening Approach.
+source_paper: Zhang Q et al. (2018), Analytical chemistry, DOI: 10.1021/acs.analchem.8b02372, PMID: 30208276
+overall_reproducibility_score: 42/100
+
+workflow_steps: 8
+  Step 1: Amine derivatization
+    tool: AQC labeling
+    parameters: derivatization_time_min=10, temperature_celsius=55, pH=8.5
+    input: plasma samples
+    output: AQC-derivatized amine standards and samples
+    confidence: high
+  Step 2: Chromatographic separation
+    tool: HPLC
+    algorithm: HILIC
+    parameters: column=TSKgel Amide-80, mobile_phase_A=20 mM ammonium formate (pH 3.0), mobile_phase_B=acetonitrile, gradient_profile=not fully specified, flow_rate_mL_per_min=0.3, column_temperature_celsius=40, injection_volume_uL=5
+    input: AQC-derivatized amine samples
+    output: chromatographically separated analytes
+    confidence: medium
+  Step 3: Mass spectrometric detection
+    tool: tandem MS (MS/MS)
+    algorithm: multiple reaction monitoring (MRM)
+    parameters: ionization_mode=electrospray ionization (ESI) positive mode, collision_energy_eV=optimized per analyte, dwell_time_ms=not specified, Q1_Q3_transitions=listed in supplementary material (not provided here)
+    input: HPLC eluent
+    output: peak area/intensity for each MRM transition
+    confidence: low
+  Step 4: Quantification using surrogate matrix
+    tool: surrogate matrix calibration
+    algorithm: external calibration with plasma-mimicking surrogate matrix
+    parameters: dilution_factor=large (exact value not specified), surrogate_matrix_types_tested=['water', 'buffer', 'delipidated plasma'], selected_surrogate=delipidated plasma
+    input: raw peak areas from MRM
+    output: quantified amine concentrations (nmol/mL)
+    confidence: medium
+  Step 5: Univariate statistical analysis and biomarker selection
+    tool: ROC curve analysis
+    algorithm: receiver operating characteristic
+    parameters: statistical_significance_threshold=p < 0.05, AUC_threshold=AUC > 0.7, cutoff_optimization_method=Youden index
+    input: quantified amine concentrations across groups
+    output: candidate discriminatory amines (biomarkers)
+    confidence: high
+  Step 6: Multivariate pattern recognition
+    tool: PLS-DA
+    algorithm: partial least-squares discriminant analysis
+    parameters: number_of_components=not specified, cross_validation=leave-one-out or k-fold (not specified), model_validation_metrics=['R2X', 'R2Y', 'Q2']
+    input: quantified amine concentrations matrix
+    output: discriminatory model, variable importance in projection (VIP) scores
+    confidence: low
+  Step 7: Amino-index calculation
+    tool: custom scoring
+    algorithm: multiplicative index: ∏(raised markers) / ∏(reduced markers)
+    parameters: raised_markers_selection=p < 0.05 and upregulated in cancer, reduced_markers_selection=p < 0.05 and downregulated in cancer
+    input: normalized amine concentrations
+    output: amino-index scalar per sample
+    confidence: high
+  Step 8: Multivariate ROC analysis
+    tool: multivariate ROC
+    algorithm: ROC analysis on amino-index values
+    parameters: AUC_calculation_method=nonparametric, confidence_interval=95%
+    input: amino-index values per sample
+    output: multivariate AUC, sensitivity/specificity at optimal cutoff
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS/MS data not deposited in public repository
+  - Exact HPLC gradient profile not reported
+  - MRM transition parameters only referenced as 'supplementary' without accession
+  - PLS-DA implementation details (software, preprocessing, validation) not specified
+  - Custom amino-index computation code not shared
+  - Surrogate matrix preparation protocol (e.g., delipidation method) not described
+reproducibility_strengths:
+  - Explicit derivatization conditions provided
+  - Clear description of statistical logic for amino-index construction
+  - Use of standard statistical methods (ROC, PLS-DA) with interpretable thresholds

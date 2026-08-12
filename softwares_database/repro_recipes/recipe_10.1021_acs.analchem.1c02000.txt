@@ -1,0 +1,91 @@
+========== reproducibility_recipe entry ==========
+paper_title: Assessment of XCMS Optimization Methods with Machine-Learning Performance.
+source_paper: Lassen J et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.1c02000, PMID: 34585906
+overall_reproducibility_score: 92/100
+
+workflow_steps: 7
+  Step 1: Raw data conversion to mzML
+    tool: ProteoWizard msconvert
+    algorithm: default conversion settings
+    input: vendor raw files (.raw, .d)
+    output: mzML files
+    confidence: medium
+  Step 2: Feature detection and alignment
+    tool: XCMS (v3.12.0)
+    algorithm: centWave
+    parameters: ppm=5, peakwidth=[10, 60], snthresh=10, prefilter=[3, 100], noise=0, verbose.columns=False
+    input: mzML files
+    output: feature table (ion matrix)
+    confidence: high
+  Step 3: Retention time correction
+    tool: XCMS (v3.12.0)
+    algorithm: loess
+    parameters: span=0.2, plottype=none
+    input: feature table with retention time shifts
+    output: retention time-aligned feature table
+    confidence: high
+  Step 4: Peak filling and missing value imputation
+    tool: XCMS (v3.12.0)
+    algorithm: fillPeaks
+    parameters: minfrac=0.5, max=3
+    input: aligned feature table
+    output: gap-filled feature table
+    confidence: high
+  Step 5: Quality assessment via machine learning
+    tool: R (caret, randomForest, e1071)
+    algorithm: random forest classification
+    parameters: ntree=500, mtry=sqrt(p), repeatedcv_folds=5, repeats=10
+    input: normalized feature table
+    output: classification accuracy (AUC, balanced accuracy)
+    confidence: high
+  Step 6: XCMS parameter optimization
+    tool: Autotuner (v1.4.0)
+    algorithm: genetic algorithm
+    parameters: n_iterations=50, population_size=20, mutation_rate=0.1
+    input: mzML files and class labels
+    output: optimized XCMS parameters
+    confidence: high
+  Step 7: XCMS parameter optimization
+    tool: IPO (isotopologue parameter optimization) (v1.18.0)
+    algorithm: isotopologue-based scoring
+    parameters: minfrac=0.5, maxiso=3, mzdiff=0.01
+    input: mzML files and isotopologue patterns
+    output: optimized XCMS parameters
+    confidence: high
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1234)
+  processed_data: available (MetaboLights: MTBLS1234)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1234
+
+code_availability: repository_linked
+  code_url: https://github.com/ribozzu/XCMS-optimization-ML-evaluation
+  license: MIT
+
+figure_recipes: 4
+  Figure 1: [workflow_diagram]
+    caption: Schematic overview of the XCMS optimization evaluation pipeline using machine learning performance as quality metric.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7]
+    visualization_tool: Inkscape, R (ggplot2)
+  Figure 2: [bar_chart]
+    caption: Comparison of classification accuracy (balanced accuracy) across default, Autotuner-, IPO-, and expert-optimized XCMS parameter sets.
+    produced_by_step: [5]
+    visualization_tool: R (ggplot2)
+    statistical_test: ANOVA with Tukey HSD post-hoc (p < 0.05)
+  Figure 3: [boxplot]
+    caption: Distribution of AUC scores for random forest models trained on datasets processed with different XCMS optimization strategies.
+    produced_by_step: [5]
+    visualization_tool: R (ggplot2)
+    statistical_test: Kruskal-Wallis test with Dunn's post-hoc (p < 0.05)
+  Figure 4: [heatmap]
+    caption: Hierarchical clustering heatmap of top 50 features ranked by variable importance in the best-performing random forest model.
+    produced_by_step: [5]
+    visualization_tool: R (pheatmap)
+
+reproducibility_strengths:
+  - Full code repository with versioned scripts and Dockerfile
+  - Raw and processed data publicly available on MetaboLights (MTBLS1234)
+  - All software tools are open-source with specified versions
+  - Detailed parameter values reported for all key steps
+  - Machine learning evaluation protocol fully described and reproducible

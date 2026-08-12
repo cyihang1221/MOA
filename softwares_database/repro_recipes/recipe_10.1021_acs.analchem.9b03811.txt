@@ -1,0 +1,56 @@
+========== reproducibility_recipe entry ==========
+paper_title: Dose-Response Metabolomics To Understand Biochemical Mechanisms and Off-Target Drug Effects with the TOXcms Software.
+source_paper: Yao CH et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.9b03811, PMID: 31804057
+overall_reproducibility_score: 45/100
+
+workflow_steps: 4
+  Step 1: Dose-response experimental design
+    tool: custom
+    algorithm: concentration series
+    parameters: concentrations=multiple doses, controls=untreated replicates
+    input: biological samples (e.g., cells, tissue)
+    output: raw mass spectrometry data (.raw, .mzML)
+    confidence: medium
+  Step 2: Data preprocessing and feature detection
+    tool: XCMS
+    algorithm: centWave or matchedFilter (implied by XCMS framework)
+    parameters: mass_tolerance_ppm=None, peak_width=None, snthresh=None
+    input: raw .mzML files
+    output: feature table (m/z, RT, intensity matrix)
+    confidence: low
+  Step 3: Dose-response trend modeling and statistical evaluation
+    tool: TOXcms
+    algorithm: user-defined tolerance-based dose-response fitting (e.g., sigmoidal, linear, threshold models)
+    parameters: tolerance=user-defined, p_value_threshold=None, fitting_method=not specified
+    input: feature table + dose metadata
+    output: grouped dose-response patterns (clusters of features with shared EC50/IC50-like behavior)
+    confidence: medium
+  Step 4: Multi-omics integration
+    tool: TOXcms
+    algorithm: correlation-based pattern matching across platforms
+    parameters: data_types=['metabolomics', 'respirometry', 'cell death', 'other omics']
+    input: dose-response matrices from heterogeneous assays
+    output: integrated response clusters linking biochemical and phenotypic endpoints
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: http://pattilab.wustl.edu/software/toxcms
+  license: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw metabolomics data not deposited in public repository
+  - No specification of XCMS parameters (e.g., ppm tolerance, peak width, snthresh)
+  - TOXcms source code not publicly archived (only web-hosted binary)
+  - No details on dose-response fitting algorithms or statistical thresholds
+  - No example dataset or tutorial provided for TOXcms usage
+reproducibility_strengths:
+  - TOXcms software is freely available via lab website
+  - Explicit compatibility with open-source XCMS
+  - Conceptual workflow clearly described for multi-target deconvolution

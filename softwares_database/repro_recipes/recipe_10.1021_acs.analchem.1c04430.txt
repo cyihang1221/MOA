@@ -1,0 +1,47 @@
+========== reproducibility_recipe entry ==========
+paper_title: Combining Isotopologue Workflows and Simultaneous Multidimensional Separations to Detect, Identify, and Validate Metabolites in Untargeted Analyses.
+source_paper: Dodds JN et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.1c04430, PMID: 35089687
+overall_reproducibility_score: 30/100
+
+workflow_steps: 3
+  Step 1: Isotopic labeling of biological system
+    tool: IROA / MIRACLE / credentialing
+    algorithm: isotopic ratio outlier analysis, mass isotopomer ratio analysis of U-13C labeled extracts
+    parameters: labeling=U-13C, organism=Escherichia coli
+    input: live bacterial culture
+    output: isotopically labeled metabolite extract
+    confidence: medium
+  Step 2: Four-dimensional separation and detection
+    tool: LC-IMS-CID-MS
+    algorithm: ion mobility spectrometry coupled with liquid chromatography, collision-induced dissociation, and tandem mass spectrometry
+    parameters: dimensions=['LC', 'IMS', 'MS', 'MS/MS'], drift_time_alignment=codrift of isotopologues
+    input: isotopically labeled metabolite extract
+    output: multidimensional raw data (.raw or vendor format)
+    confidence: high
+  Step 3: Metabolite annotation using orthogonal molecular descriptors
+    tool: custom annotation pipeline
+    algorithm: integrated scoring using accurate mass, carbon number, MS/MS spectra, and collision cross section (CCS)
+    parameters: mass_tolerance_ppm=None, CCS_tolerance_percent=None, fragment_match_threshold=None
+    input: processed LC-IMS-CID-MS data (features with m/z, RT, drift time, CCS, MS/MS spectra)
+    output: putatively annotated metabolite list (n = 30)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-IMS-CID-MS data not deposited in public repository
+  - No software or code for the integrated annotation pipeline shared
+  - No details on CCS calibration method or database used for annotation
+  - No parameter values provided for mass/CCS tolerances or spectral matching
+  - IMS instrument settings (e.g., wave velocity, gas temperature) not specified
+  - Vendor-specific data acquisition software (e.g., Waters, Agilent, Bruker) not named
+reproducibility_strengths:
+  - Clear conceptual framework linking isotopologue workflows with IMS dimensionality
+  - Explicit reporting of molecular descriptors used in annotation (accurate mass, carbon number, MS/MS, CCS)

@@ -1,0 +1,111 @@
+========== reproducibility_recipe entry ==========
+paper_title: DIP-MS: ultra-deep interaction proteomics for the deconvolution of protein complexes.
+source_paper: Frommelt F et al. (2024), Nature methods, DOI: 10.1038/s41592-024-02211-y, PMID: 38532014
+overall_reproducibility_score: 72/100
+
+workflow_steps: 8
+  Step 1: Affinity purification of protein complexes
+    tool: Twin-Strep/HA (SH)-tag AP
+    algorithm: immunoaffinity chromatography
+    parameters: cell_type=HEK293, lysis_buffer=HNN-lysis buffer (50 mM HEPES, 100 mM NaCl, 50 mM NaF, pH 7.4), protease_inhibitors=['protease inhibitor cocktail', '1 mM PMSF', '400 nM vanadate', '1.2 µM avidin', '0.5% NP40'], benzonase_dose=5625 U, incubation=10 °C, 500 r.p.m., 45 min, centrifugation=16,000 g, 4 °C, 20 min, beads=Strep-Tactin Sepharose (200 µl slurry per 7.5 ml lysate), wash_buffers=['ice-cooled HNN-lysis buffer (2×)', 'HNN buffer w/o supplements (3×)'], elution=2 mM biotin buffer, 3×200 µl, concentration=30 kDa MWCO filter, 4 °C, 3,000 g, to 35–50 µl
+    input: cultured HEK293 cells expressing SH-tagged baits
+    output: affinity-purified native protein complexes
+    confidence: high
+  Step 2: Blue-native PAGE separation
+    tool: BN-PAGE
+    algorithm: native electrophoresis
+    parameters: gel=3–12% Bis-Tris precast native gel, loading_ratio=1:4 (sample: native loading buffer), sample_volume_per_lane=45 µl, cathode_buffer=Light Blue Cathode Buffer, voltage_profile=[{'time_min': 25, 'voltage_V': 120}, {'time_min': 125, 'voltage_V': 160}, {'time_min': 30, 'voltage_V': 200}], temperature=4 °C, total_run_time_min=180, molecular_weight_standard=NativeMARK
+    input: concentrated affinity-purified complexes (35–50 µl)
+    output: native-separated protein complexes across gel lanes/fractions
+    confidence: high
+  Step 3: In-gel digestion and peptide extraction
+    tool: in-house optimized gel processing
+    algorithm: destaining, reduction, alkylation, trypsin/Lys-C digestion
+    parameters: stain=SimplyBlue SafeStain, destaining=overnight in diH₂O, gel_slicing=1 mm slices using custom 100-blade tool, destaining_washes=['3× 200 µl 50% MeOH in 20 mM ABC', '2× 200 µl 100% ACN'], reduction=25 mM TCEP in 20 mM ABC, 37 °C, 30 min, 90 r.p.m., alkylation=50 mM IAA in 20 mM ABC, RT, 45 min, dark, digestion_enzymes=['0.5 µg trypsin', '0.1 µg Lys-C', '0.01% ProteaseMax'], digestion_time=overnight, 37 °C, 100 r.p.m., peptide_collection=centrifugation at 700 g, 5 min; pooled washes
+    input: BN-PAGE gel slices
+    output: peptide fractions per gel slice (96-well format)
+    confidence: high
+  Step 4: DIA-MS data acquisition
+    tool: Q Exactive Plus Hybrid Quadrupole-Orbitrap + EvosepOne
+    algorithm: data-independent acquisition
+    parameters: instrument_mode=positive ion mode, capillary_temperature_C=275, spray_voltage_V=2500, MS1_resolution=70000, MS1_mass_range_mz=[150, 2000], MS1_AGC_target=3000000, MS1_max_it_ms=200, DIA_window_scheme=22 variable windows with +1 Da overlap, DIA_mz_range_mz=[350, 1650], MS2_resolution=17500, MS2_AGC_target=200000, collision_energy_percent=[25, 27, 30], collision_energy_reference_mz=500, MS2_max_it_ms=50, cycle_time_s=1.3, gradient_method=Evosep '60 samples per day', gradient_length_min={'PFDN2': 24, 'UXT': 21}, iRT_spiking=1:2500 (v/v)
+    input: dried peptides from gel slices
+    output: raw DIA .raw files
+    confidence: high
+  Step 5: DIA data analysis and quantification
+    tool: Spectronaut (vv.13.12.200217.43655)
+    algorithm: library-free directDIA
+    parameters: database=UniProtKB human FASTA (downloaded 2019-12-01), + GFP + SH-quant peptide, decoy_generation=internal decoys, peptide_length_min=7, peptide_length_max=52, missed_cleavages=2, fixed_modifications=['Carbamidomethylation of Cys (+57 Da)'], variable_modifications=['Oxidation of Met', 'Acetylation of N-term'], max_modifications_per_peptide=5, q_value_cutoff_percent=5, quantification_level=MS2, cross_run_normalization=False, best_n_fragments=False, reporting=mean quantity per stripped peptide sequence across all quantified fragments
+    input: DIA .raw files
+    output: protein-level quantification matrix (fraction × protein × replicate)
+    confidence: high
+  Step 6: DIP-MS postprocessing and complex profiling
+    tool: CCprofiler R package
+    algorithm: co-elution profile filtering and complex inference
+    parameters: filtering=within-gradient noise filtering (CCprofiler defaults), input_columns=['protein accession', 'stripped peptide sequence', 'peptide quantity per fraction']
+    input: Spectronaut-exported peptide/protein quantities per fraction
+    output: co-elution profiles, inferred complex isoforms and assemblies
+    confidence: medium
+  Step 7: Reciprocal AP-MS data processing
+    tool: MaxQuant (vv.1.5.2.8)
+    algorithm: Andromeda search engine
+    parameters: database=UniProtKB human + GFP + SH-quant peptide (2019-12-01), contaminants=MaxQuant built-in contaminant list, fixed_modification=Carbamidomethylation of Cys, variable_modifications=['Oxidation of Met', 'Acetylation of N-term'], max_modifications=5, enzyme=trypsin, missed_cleavages=2, FDR=0.01, LFQ=True, match_between_runs=True, requantification=True
+    input: DDA .raw files
+    output: MaxQuant proteinGroups table
+    confidence: high
+  Step 8: AP-MS statistical scoring and filtering
+    tool: SAINTExpress
+    algorithm: Bayesian significance scoring
+    parameters: controls=['GFP control', 'virtual controls (n=10)'], iterations=4000, normalization=SAINT score normalization, FC_threshold_log2=2, SAINT_score_threshold=0.95, spectral_count_min=5, CRAPome_frequency_threshold_percent=30, high_confidence_thresholds={'log2_FC': 5, 'SAINT': 0.99}
+    input: MaxQuant proteinGroups table + CRAPome controls
+    output: filtered binary PPIs (high/medium confidence)
+    confidence: high
+
+data_availability:
+  raw_data: available (PRIDE: PXD042187)
+  processed_data: in_paper_only (Supplementary Data 1)
+  metadata: in_paper_only
+  data_urls: https://www.ebi.ac.uk/pride/archive/projects/PXD042187
+
+code_availability: repository_linked
+  code_url: https://github.com/CCprofiler/CCprofiler
+  license: GPL-3.0
+
+figure_recipes: 6
+  Fig. 1: [workflow_diagram]
+    caption: Schematic overview of the experimental and computational DIP-MS workflow, from affinity purification through BN-PAGE, DIA-MS, and deep-learning-assisted signal processing.
+    produced_by_step: [1, 2, 3, 4, 5, 6]
+    visualization_tool: Adobe Illustrator
+  Fig. 2: [bar_chart]
+    caption: Benchmark comparing DIP-MS to reciprocal AP-MS and other methods in terms of resolved complex isoforms, subunit resolution, and throughput.
+    produced_by_step: [6, 8]
+    visualization_tool: GraphPad Prism
+  Fig. 3: [heatmap]
+    caption: Heatmap showing migration profiles of proteins across BN-PAGE fractions for PFDN2 and UXT baits, revealing distinct co-elution clusters corresponding to holo- and subcomplexes.
+    produced_by_step: [5, 6]
+    visualization_tool: R (pheatmap)
+  Fig. 4: [network]
+    caption: Data-driven interaction network of PFD family complexes, highlighting alternative assemblies and shared subunits identified via DIP-MS co-elution profiling.
+    produced_by_step: [6]
+    visualization_tool: Cytoscape
+  Fig. 5: [chromatogram]
+    caption: Overlay of elution profiles for PFD and CCT/TRiC chaperone complex subunits, demonstrating co-migration and physical association.
+    produced_by_step: [6]
+    visualization_tool: R (ggplot2)
+  Fig. 6: [bar_chart]
+    caption: Assignment of PAQosome client proteins and their associated complexes based on co-elution with core subunits in DIP-MS.
+    produced_by_step: [6]
+    visualization_tool: GraphPad Prism
+
+reproducibility_gaps:
+  - Q Exactive Plus + EvosepOne hardware configuration not fully replicable without vendor-specific components
+  - Custom gel-slicing tool not publicly available or 3D-printable design shared
+  - Deep-learning-based signal processing component mentioned but not implemented or released (‘deep-learning-based signal processing’ is described only conceptually, no model/code provided)
+  - Supplementary Methods referenced but not included in provided text — critical protocol details (e.g., exact gradient profiles, BNP running conditions beyond voltage/time) reside there
+  - No public repository link for Spectronaut project files or DIA spectral libraries
+reproducibility_strengths:
+  - Raw DIA and DDA data deposited in PRIDE (PXD042187)
+  - CCprofiler R package publicly available on GitHub with Zenodo DOI
+  - Detailed, step-by-step wet-lab protocols including buffers, timings, concentrations, and centrifugation parameters
+  - All software tools explicitly versioned (MaxQuant v1.5.2.8, Spectronaut v13.12.200217.43655)
+  - CRAPome-integrated SAINTExpress analysis pipeline fully specified with thresholds and controls

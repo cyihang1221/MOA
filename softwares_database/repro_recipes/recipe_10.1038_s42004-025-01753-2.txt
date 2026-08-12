@@ -1,0 +1,108 @@
+========== reproducibility_recipe entry ==========
+paper_title: Comparative evaluation of Olink Explore 3072 and mass spectrometry with peptide fractionation for plasma proteomics.
+source_paper: Sissala N et al. (2025), Communications chemistry, DOI: 10.1038/s42004-025-01753-2, PMID: 41188494
+overall_reproducibility_score: 82/100
+
+workflow_steps: 12
+  Step 1: Plasma depletion
+    tool: High Select Top14 Abundant Protein Depletion Mini Spin Columns
+    parameters: incubation_time_min=20, temperature_c=25, centrifugation_g=2500, centrifugation_time_min=10
+    input: raw plasma (EDTA)
+    output: depleted plasma flowthrough
+    confidence: high
+  Step 2: Buffer exchange and protein quantification
+    tool: 5 kDa spin concentrators (Agilent), Micro BCA Protein Assay Kit (Thermo)
+    parameters: molecular_weight_cutoff_kda=5, centrifugation_rpm=5000, centrifugation_time_min=30, repeats=3, buffer=50 mM HEPES pH 7.6
+    input: depleted plasma
+    output: protein concentration estimate (μg/μL), buffer-exchanged sample
+    confidence: high
+  Step 3: In-solution digestion (LysC + trypsin)
+    tool: LysC and trypsin (Pierce, sequencing grade modified)
+    parameters: alkylation_reagent=chloroacetamide, alkylation_concentration_mM=8, urea_concentration_mM=500, enzyme_to_protein_ratio=1:50, incubation_time_hours=16, temperature_c=25, pH=7.6
+    input: 40 μg protein in HEPES buffer
+    output: peptide mixture
+    confidence: high
+  Step 4: TMTpro 16plex labeling
+    tool: TMTpro 16plex Label Reagent Set (Thermo Scientific)
+    parameters: peptide_amount_μg=40, labeling_efficiency_threshold_percent=95, internal_standard_per_set=1, sets_used=8, total_samples=120
+    input: peptides
+    output: isobarically labeled peptides
+    confidence: high
+  Step 5: HiRIEF fractionation
+    tool: Immobilized pH gradient isoelectric focusing (IPG-IEF) strips (pH 3–10)
+    parameters: fraction_count=72, gel_strip_pH_range=3-10, elution_method=liquid-handling robot (GE Healthcare prototype)
+    input: pooled TMT-labeled peptides
+    output: 72 peptide fractions per pool
+    confidence: high
+  Step 6: LC-MS/MS analysis
+    tool: Dionex UltiMate™ 3000 RSLCnano System coupled to Q-Exactive-HF (Thermo Scientific)
+    parameters: column_guard=Acclaim PepMap 100, 75 μm × 2 cm, nanoViper, C18, 5 µm, 100 Å, column_analytical=Easy spray PepMap RSLC, C18, 2 μm, 100 Å, 75 μm × 50 cm, flow_rate_ul_min=0.25, solvent_A=94.9% water, 5% DMSO, 0.1% formic acid, solvent_B=5% water, 5% DMSO, 89.9% acetonitrile, 0.1% formic acid, gradient_profile=6–10% B up to 40% B (dynamic length per fraction), then 40% → 100% B in 5 min, ms1_resolution=60000, ms1_mass_range_mz=[300, 1500], ms2_resolution=30000, ms2_top_n=5, collision_energy_percent=30, isolation_window_mz=2.0, agc_target_ms1=1000000, agc_target_ms2=100000, max_injection_time_ms_ms1=100, max_injection_time_ms_ms2=400, duty_cycle_s=2.5, dynamic_exclusion_s=30, exclude_charge_states=[1], underfill_ratio_percent=1
+    input: HiRIEF fractions (resuspended in solvent A)
+    output: Orbitrap raw MS/MS files (.raw)
+    confidence: high
+  Step 7: Raw file conversion
+    tool: msConvert (ProteoWizard)
+    algorithm: default centroiding and filtering
+    parameters: output_format=mzML
+    input: Thermo .raw files
+    output: mzML files
+    confidence: high
+  Step 8: Peptide identification
+    tool: ddamsproteomics Nextflow pipeline (vv22.10.5)
+    algorithm: MSGF+ + Percolator
+    parameters: database=UniProtKB/Swiss-Prot (May 2022 release), precursor_mass_tolerance_ppm=10, digestion=fully tryptic, max_peptide_length_aa=50, max_charge_state=6, fixed_modifications=['carbamidomethylation on C', 'TMTpro 16plex on K and N-term'], variable_modifications=['oxidation on M'], fdr_threshold=0.01, psm_fdr=0.01
+    input: mzML files
+    output: PSM-level identifications (1% FDR)
+    confidence: high
+  Step 9: TMT reporter ion quantification
+    tool: IsobaricAnalyzer (OpenMS) (vv2.5.0)
+    algorithm: TMTpro 16plex reporter ion extraction and ratio calculation
+    parameters: quantification_level=peptide and protein, filter_missing_values=exclude PSMs with missing values in any channel within a TMT set, normalization_method=median-centering per channel, transformation=log2, reference=internal standard per TMT set
+    input: PSMs + mzML
+    output: log2-transformed, normalized protein-level relative abundances (TMT ratios vs internal standard)
+    confidence: high
+  Step 10: Olink PEA Explore 3072 profiling
+    tool: Olink Proteomics PEA Explore 3072 platform
+    algorithm: probe-based proximity extension assay + Illumina NovaSeq 6000 sequencing
+    parameters: panels=['Inflammation', 'Oncology', 'Cardiometabolic', 'Neurology', 'Inflammation II', 'Oncology II', 'Cardiometabolic II', 'Neurology II'], plex=3072, qc_method=manufacturer-defined QC using internal/external controls, output_unit=NPX (log2 scale), lod_determination=run-time based on negative controls
+    input: plasma (n=88)
+    output: NPX matrix (proteins × samples)
+    confidence: high
+  Step 11: Cross-platform protein matching and reference proteome curation
+    tool: custom mapping (UniProt ID + gene name fallback)
+    algorithm: exact UniProt ID match; gene name fallback for HPA entries
+    parameters: reference_sources=['PeptideAtlas build 2023-04', 'HPA v24', 'HPA secreted proteins'], reference_proteome_size=4889, background_for_enrichment=4362
+    input: MS protein IDs, Olink protein IDs, HPPP/HPA annotations
+    output: unified protein annotation table with tissue/blood concentration metadata
+    confidence: medium
+  Step 12: Statistical comparison of platform coverage and concordance
+    tool: R (implied)
+    algorithm: hypergeometric test, Spearman correlation, median/IQR summary
+    parameters: correlation_method=Spearman, multiple_testing_correction=FDR (Benjamini-Hochberg), significance_threshold_fdr=0.05, concordance_metric=median pairwise correlation (r)
+    input: MS abundance matrix, Olink NPX matrix, matched protein IDs
+    output: coverage overlap statistics, correlation matrix, enrichment p-values
+    confidence: medium
+
+data_availability:
+  raw_data: available (PRIDE: PXD047822)
+  processed_data: available (Zenodo: 10.5281/zenodo.10923456)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/pride/archive/projects/PXD047822, https://zenodo.org/records/10923456
+
+code_availability: repository_linked
+  code_url: https://github.com/lehtiolab/ddamsproteomics
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Olink NPX data not deposited in public repository (only processed matrices shared)
+  - Exact HiRIEF gradient profile per fraction not fully specified (refers to Table S2, not provided in text)
+  - No code provided for cross-platform agreement tool (described as 'publicly available' but no URL/DOI in text or methods)
+  - PEA workflow details (e.g., probe sequences, amplification cycles, NovaSeq run parameters) not disclosed
+reproducibility_strengths:
+  - Raw MS data publicly available in PRIDE (PXD047822)
+  - Processed data and metadata openly shared on Zenodo with DOI
+  - Full open-source proteomics pipeline (ddamsproteomics) with versioned GitHub repo and MIT license
+  - Detailed MS acquisition and search parameters reported with high precision
+  - Transparent statistical methods including FDR correction and correlation metrics

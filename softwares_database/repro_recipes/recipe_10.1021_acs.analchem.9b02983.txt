@@ -1,0 +1,59 @@
+========== reproducibility_recipe entry ==========
+paper_title: Deep Neural Networks for Classification of LC-MS Spectral Peaks.
+source_paper: Kantz ED et al. (2019), Analytical chemistry, DOI: 10.1021/acs.analchem.9b02983, PMID: 31483992
+overall_reproducibility_score: 40/100
+
+workflow_steps: 5
+  Step 1: LC-MS data acquisition and preprocessing
+    tool: unknown
+    input: raw instrument files (.raw, .wiff, etc.)
+    output: preprocessed spectral data (peak lists or feature tables)
+    confidence: low
+  Step 2: Spectral peak feature extraction
+    tool: custom Python pipeline
+    algorithm: hand-crafted spectral descriptors
+    parameters: n_descriptors=24
+    input: chromatographic peak regions (m/z, RT, intensity)
+    output: feature vector per peak (24-dimensional descriptor vector)
+    confidence: medium
+  Step 3: Peak classification using deep neural network
+    tool: TensorFlow/Keras
+    algorithm: deep feedforward neural network
+    parameters: hidden_layers=[128, 64, 32], activation=ReLU, output_activation=sigmoid, optimizer=Adam, learning_rate=0.001, batch_size=32, epochs=100, dropout_rate=0.3, l2_regularization=0.001
+    input: 24-dimensional spectral descriptor vectors
+    output: binary classification (true peak vs false peak)
+    confidence: medium
+  Step 4: Peak classification using logistic regression
+    tool: scikit-learn
+    algorithm: multiple logistic regression
+    parameters: penalty=L2, C=1.0, max_iter=1000
+    input: 24-dimensional spectral descriptor vectors
+    output: binary classification (true peak vs false peak)
+    confidence: medium
+  Step 5: Performance evaluation and validation
+    tool: scikit-learn
+    algorithm: cross-validation and confusion matrix metrics
+    parameters: cv_folds=5, metrics=['accuracy', 'precision', 'recall', 'F1', 'AUC']
+    input: ground-truth labeled peak dataset
+    output: classification performance metrics
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS data not deposited in public repository
+  - No access to ground-truth labeled peak dataset used for training/validation
+  - No link to source code or model weights
+  - Insufficient detail on LC-MS acquisition parameters (e.g., gradient, column, ionization mode)
+  - No specification of how 'true' vs 'false' peaks were manually curated or validated
+reproducibility_strengths:
+  - Describes 24 spectral descriptors explicitly (enabling feature recreation)
+  - Specifies neural architecture dimensions and key hyperparameters
+  - Reports standardized evaluation metrics (AUC, F1, etc.) across multiple datasets

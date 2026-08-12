@@ -1,0 +1,67 @@
+========== reproducibility_recipe entry ==========
+paper_title: New Approaches To Identify Urine and Hair Adulteration Attempts in Forensic Toxicology: A Proof-of-Concept Study Using a Proteomics Approach Based on Liquid Chromatography-Mass Spectrometry (LC-MS).
+source_paper: Schneider TD et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c03096, PMID: 40763070
+overall_reproducibility_score: 55/100
+
+workflow_steps: 6
+  Step 1: Sample preparation and oxidative treatment
+    tool: manual_protocol
+    parameters: h2o2_concentrations=[0.03, 0.06, 0.09, 0.12], urine_treatment=10% H2O2, hair_treatment=graded H2O2 exposure
+    input: biological samples (urine, hair)
+    output: oxidatively treated and untreated biological samples
+    confidence: high
+  Step 2: Bottom-up proteomics sample processing
+    tool: standard_proteomics_workflow
+    parameters: digestion_enzyme=trypsin, reduction_alkylation=DTT followed by iodoacetamide
+    input: treated/untreated urine and hair samples
+    output: peptide mixtures
+    confidence: medium
+  Step 3: LC-HR-MS/MS analysis
+    tool: liquid_chromatography_mass_spectrometry
+    algorithm: data-dependent acquisition (DDA)
+    parameters: instrument_platform=LC-HR-MS/MS, acquisition_mode=DDA
+    input: peptide mixtures
+    output: raw MS/MS spectra (.raw or .d files)
+    confidence: high
+  Step 4: Peptide identification and quantification
+    tool: search_engine_pipeline
+    algorithm: database searching against human proteome
+    parameters: database=human_uniprot_fasta, modifications=['oxidation_M', 'carbamidomethyl_C'], false_discovery_rate=0.01
+    input: raw MS/MS spectra
+    output: identified peptides with oxidation status and abundance
+    confidence: medium
+  Step 5: Differential peptide analysis
+    tool: custom_analysis
+    algorithm: presence/absence filtering
+    parameters: group_comparison=['untreated vs H2O2-treated'], specificity_criterion=peptides exclusively detected in treated or untreated groups
+    input: identified peptides table
+    output: candidate biomarker peptides (oxidation-specific, nonphysiological)
+    confidence: medium
+  Step 6: Concentration-dependent pattern analysis (hair)
+    tool: trend_analysis
+    algorithm: dose-response presence/abundance correlation
+    parameters: peroxide_levels=[0, 0.03, 0.06, 0.09, 0.12], response_metric=peptide detection frequency or intensity
+    input: peptide identifications across H2O2 concentrations
+    output: concentration-dependent marker peptides
+    confidence: low
+
+data_availability:
+  raw_data: available (ProteomeXchange: PXD064208)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+  data_urls: https://www.ebi.ac.uk/pride/archive/projects/PXD064208
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No software tools explicitly named (e.g., search engine like MaxQuant, FragPipe, or Spectronaut not specified)
+  - No version numbers for instrumentation, software, or databases provided
+  - No details on LC gradient, column type, or MS instrument model
+  - No statistical thresholds or reproducibility metrics (e.g., replicate number, CVs) reported
+  - Custom analysis scripts for differential peptide filtering and concentration trends not shared or described
+reproducibility_strengths:
+  - Raw MS data publicly available via ProteomeXchange (PXD064208)
+  - Clear experimental design (graded H2O2 concentrations, defined treatment conditions)
+  - Explicit identification of key analytical goal: nonphysiological oxidation-specific peptides

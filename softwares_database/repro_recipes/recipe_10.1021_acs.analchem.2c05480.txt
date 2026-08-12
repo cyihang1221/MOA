@@ -1,0 +1,42 @@
+========== reproducibility_recipe entry ==========
+paper_title: Biogenic Solution Map Based on the Definition of the Metabolic Correlation Distance between 4-Dimensional Fingerprints.
+source_paper: Wang RQ et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.2c05480, PMID: 37130068
+overall_reproducibility_score: 20/100
+
+workflow_steps: 3
+  Step 1: 4D fingerprint generation from DIA data
+    tool: untargeted metabolomics pipeline
+    algorithm: data-independent acquisition (DIA) based 4D fingerprinting
+    input: raw DIA mass spectrometry data
+    output: 4-dimensional fingerprints (retention time, m/z, intensity, fragmentation pattern)
+    confidence: low
+  Step 2: Metabolic correlation distance calculation
+    tool: custom method
+    algorithm: averaged similarity between 4D fingerprints of sample groups
+    input: group-level 4D fingerprints
+    output: metabolic correlation distance matrix
+    confidence: low
+  Step 3: Hierarchical classification and biogenic solution map construction
+    tool: ontology-based mapping
+    algorithm: hierarchical clustering with species/genus/family definition based on metabolic correlation distance thresholds
+    input: metabolic correlation distance matrix
+    output: biogenic solution map (hierarchical structure)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No software, tools, or parameters specified for 4D fingerprinting
+  - No description of DIA data processing (peak picking, alignment, calibration)
+  - No details on similarity metric used for 4D fingerprints
+  - No threshold values or criteria for defining 'species', 'genus', 'family'
+  - No raw or processed data deposition reported
+  - No code or workflow repository shared
+  - Method described only at conceptual/ontological level without technical implementation details

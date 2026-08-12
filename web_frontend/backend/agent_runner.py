@@ -1,6 +1,6 @@
 """
-Web 端 Agent 执行：计划 → 工具匹配 → 执行（MCP 分析工具 + 本地 visual 工具）。
-不加载 src.agent / RAG，逻辑集中在 web_frontend。
+Web 端 Agent 执行：文献检索增强 → 计划 → 工具匹配 → 执行（MCP + 本地 visual）。
+RAG 索引目录由 webapp 传入（softwares_database / softwares_database_RAG）。
 """
 from __future__ import annotations
 
@@ -90,6 +90,12 @@ from web_frontend.backend.anti_hallucination import (
     messages_with_system,
 )
 from web_frontend.backend.web_prompts import build_plan_prompt, build_tool_match_prompt
+from web_frontend.backend.literature_rag import (
+    build_plan_literature_query,
+    retrieve_literature,
+)
+from web_frontend.backend.skill_match import env_enabled as skill_match_enabled
+from web_frontend.backend.skill_match import match_skills
 
 
 def build_session_paths(
@@ -144,22 +150,14 @@ def _prune_remaining_differential_tasks(
     return kept, reason
 
 
-def build_data_list(upload_dir: str, paths: dict[str, str]) -> str:
-    return "\n".join(summarize_session_files(paths, upload_dir))
+def build_data_list(upload_dir: str, paths: dict[str, str], *, meta_report: dict | None = None) -> str:
+    return "\n".join(summarize_session_files(paths, upload_dir, meta_report=meta_report))
 
 
-def build_metadata_csv(upload_dir: str) -> str:
-    upload = Path(upload_dir)
-    meta = upload / "metadata.csv"
-    if meta.is_file():
-        return (
-            f"{normalize_display_path(meta)}: "
-            "This CSV file contains sample metadata, including columns for sample ID and experimental group."
-        )
-    return (
-        f"{normalize_display_path(upload)}: "
-        "Place metadata.csv in this session input folder when sample metadata is required."
-    )
+def build_metadata_csv(upload_dir: str, *, report: dict | None = None) -> str:
+    from web_frontend.backend.session_metadata import format_metadata_file_description
+
+    return format_metadata_file_description(upload_dir, report=report)
 
 
 def _scan_existing_outputs(paths: dict[str, str]) -> list[str]:
@@ -395,11 +393,22 @@ async def stream_agent_pipeline(
     is_disconnected: Optional[Callable[[], Awaitable[bool]]] = None,
     recent_messages: Optional[list[dict]] = None,
 ) -> AsyncIterator[dict]:
-    del persist_dir, source_dir  # Web 流水线不使用 RAG 索引目录
-
     paths = build_session_paths(session_id, project_root, storage_slug=storage_slug)
-    data_list = build_data_list(paths["upload"], paths)
-    metadata_csv = build_metadata_csv(paths["upload"])
+    meta_report: dict | None = None
+    try:
+        from web_frontend.backend.session_metadata import (
+            ensure_metadata_from_inputs,
+            format_metadata_report_summary,
+        )
+
+        _, meta_report = ensure_metadata_from_inputs(paths["upload"], paths=paths)
+    except FileNotFoundError:
+        meta_report = None
+    except Exception:
+        meta_report = None
+
+    data_list = build_data_list(paths["upload"], paths, meta_report=meta_report)
+    metadata_csv = build_metadata_csv(paths["upload"], report=meta_report)
     existing_outputs = _scan_existing_outputs(paths)
     goal = build_web_goal_description(
         user_message,
@@ -409,6 +418,10 @@ async def stream_agent_pipeline(
     )
     history_summary: list[dict] = []
     loop = asyncio.get_event_loop()
+    literature_context = ""
+    literature_mode = "empty"
+    skill_context = ""
+    skill_matched: list[str] = []
 
     async def _should_stop() -> bool:
         if is_cancelled(cancel_event):
@@ -450,6 +463,17 @@ async def stream_agent_pipeline(
                     raise
 
     yield {"delta": "🔧 **Agent 模式**：正在加载工具列表并生成执行计划…\n\n"}
+    if meta_report:
+        from web_frontend.backend.session_metadata import format_metadata_report_summary
+
+        summary = format_metadata_report_summary(meta_report)
+        if summary:
+            yield {
+                "delta": (
+                    f"ℹ️ **样本分组**：{summary}"
+                    "（metadata.csv 已写入会话 inputspace，mixOmics/PCA 将使用此分组）\n\n"
+                )
+            }
 
     try:
         tools_info = await _load_allowed_tools()
@@ -474,6 +498,110 @@ async def stream_agent_pipeline(
     if raw_conversion_needed(paths):
         mandatory_first_step = build_conversion_plan_step(paths, convert_tool)
 
+    yield {"delta": "📚 正在检索文献/方法学知识库…\n"}
+
+    def _retrieve_literature():
+        return retrieve_literature(
+            build_plan_literature_query(
+                user_message=user_message,
+                goal_description=goal,
+            ),
+            persist_dir=persist_dir,
+            source_dir=source_dir,
+            top_k=5,
+        )
+
+    try:
+        lit_payload = await _run_cancellable(_retrieve_literature, label="文献检索")
+    except Exception as exc:
+        lit_payload = {
+            "text": "",
+            "mode": "empty",
+            "sources": [],
+            "error": str(exc),
+        }
+
+    if (
+        isinstance(lit_payload, tuple)
+        and len(lit_payload) == 2
+        and lit_payload[0] == "__cancelled__"
+    ):
+        yield {"delta": lit_payload[1]}
+        yield {"cancelled": True}
+        return
+
+    lit_sources: list[Any] = []
+    lit_error = None
+    if isinstance(lit_payload, dict):
+        literature_context = str(lit_payload.get("text") or "")
+        literature_mode = str(lit_payload.get("mode") or "empty")
+        lit_sources = list(lit_payload.get("sources") or [])
+        lit_error = lit_payload.get("error")
+    else:
+        lit_error = "invalid_literature_payload"
+
+    if literature_context.strip():
+        if literature_mode == "vector":
+            yield {
+                "delta": (
+                    f"✅ 已注入向量文献检索结果"
+                    f"（约 {len(literature_context)} 字符）。\n\n"
+                )
+            }
+        else:
+            src_preview = "、".join(str(s) for s in lit_sources[:4]) or "softwares_database"
+            prefer_vector = False
+            if isinstance(lit_payload, dict):
+                prefer_vector = bool(lit_payload.get("prefer_vector"))
+            if prefer_vector or (lit_error and "vector" in str(lit_error)):
+                reason = ""
+                if lit_error and ":" in str(lit_error):
+                    reason = f"（{str(lit_error).split(':', 1)[-1]}）"
+                yield {
+                    "delta": (
+                        f"⚠️ 向量检索未成功{reason}，已回退关键词文献检索：{src_preview}"
+                        f"（约 {len(literature_context)} 字符）。\n\n"
+                    )
+                }
+            else:
+                yield {
+                    "delta": (
+                        f"✅ 已注入关键词文献检索：{src_preview}"
+                        f"（约 {len(literature_context)} 字符）。\n\n"
+                    )
+                }
+    else:
+        detail = f"（{lit_error}）" if lit_error else ""
+        yield {
+            "delta": (
+                f"ℹ️ 未检索到可用文献上下文{detail}，将按工具白名单与用户意图规划。\n\n"
+            )
+        }
+
+    if skill_match_enabled():
+        yield {"delta": "🧩 正在匹配文献参数 Skill…\n"}
+        try:
+            skill_payload = match_skills(
+                f"{user_message}\n{goal}",
+                project_root=Path(project_root),
+            )
+            skill_context = str(skill_payload.get("text") or "")
+            skill_matched = list(skill_payload.get("matched") or [])
+            skill_err = skill_payload.get("error")
+            if skill_matched:
+                yield {
+                    "delta": (
+                        f"✅ 已注入 Skill：{', '.join(skill_matched)}"
+                        f"（约 {len(skill_context)} 字符）。\n\n"
+                    )
+                }
+            elif skill_err:
+                yield {"delta": f"ℹ️ Skill 未加载（{skill_err}）。\n\n"}
+            else:
+                yield {"delta": "ℹ️ 未命中场景 Skill 触发词，继续文献/默认规划。\n\n"}
+        except Exception as exc:
+            yield {"delta": f"ℹ️ Skill 匹配跳过（{exc}）。\n\n"}
+
     def _plan():
         prompt = build_plan_prompt(
             goal_description=goal,
@@ -484,6 +612,8 @@ async def stream_agent_pipeline(
             existing_outputs=existing_outputs,
             user_message=user_message,
             mandatory_first_step=mandatory_first_step,
+            literature_context=literature_context or None,
+            skill_context=skill_context or None,
         )
         return llm.think_complete(
             messages_with_system(PLAN_SYSTEM_GUARD, str(prompt)),
@@ -538,17 +668,23 @@ async def stream_agent_pipeline(
     if raw_conversion_needed(paths):
         tasks = ensure_raw_conversion_step(tasks, paths, convert_tool)
         yield {
-            "delta": f"ℹ️ 格式转换环境：{conversion_environment_hint()}\n\n"
+            "delta": f"ℹ️ 格式转换：{conversion_environment_hint()}\n\n"
         }
 
+    # 新分析计划里若含 mixOmics，会在本轮产出 differential_metabolites.csv；
+    # 不可因「当前还没有差异表」而提前裁掉注释/KEGG。
+    plan_will_make_diff = any(
+        "statistical_analysis_mixomics" in str(t).lower() for t in tasks
+    )
     blocked, block_reason = differential_downstream_blocked(paths)
-    if blocked:
+    if blocked and not plan_will_make_diff:
         pruned, removed = prune_differential_dependent_tasks(tasks)
         if removed:
             tasks = pruned
             yield {
                 "delta": (
-                    "ℹ️ 无差异代谢物表，已跳过差异提取/谱库注释/KEGG 富集相关步骤；"
+                    "ℹ️ 当前无可用差异代谢物表，且本轮计划不含统计分析，"
+                    "已跳过差异提取/谱库注释/KEGG 富集；"
                     "上传 .mgf 时仍可执行分子网络或 DeepMASS。\n\n"
                 )
             }
@@ -557,10 +693,12 @@ async def stream_agent_pipeline(
     tasks = inject_visual_standalone_tasks(tasks, user_message, tool_names)
     try:
         from web_frontend.backend.session_metadata import (
+            ensure_metadata_from_inputs,
             list_metadata_columns,
             resolve_metadata_csv,
         )
 
+        _, _ = ensure_metadata_from_inputs(paths["upload"], paths=paths)
         meta_for_intent = resolve_metadata_csv(paths["upload"])
         meta_cols = [str(c["name"]) for c in list_metadata_columns(meta_for_intent)]
     except Exception:
@@ -662,6 +800,8 @@ async def stream_agent_pipeline(
                     outputspace=paths["outputspace"],
                     tools_info=tools_info,
                     history_summary=history_summary,
+                    literature_context=literature_context or None,
+                    skill_context=skill_context or None,
                 )
                 return llm.think(
                     messages_with_system(TOOL_MATCH_SYSTEM_GUARD, str(prompt)),
@@ -690,6 +830,8 @@ async def stream_agent_pipeline(
                             t for t in tools_info if getattr(t, "name", None) == tool_name
                         ],
                         history_summary=history_summary,
+                        literature_context=literature_context or None,
+                        skill_context=skill_context or None,
                     )
                     try:
                         raw2 = await loop.run_in_executor(

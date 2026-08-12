@@ -1,0 +1,80 @@
+========== reproducibility_recipe entry ==========
+paper_title: iMSEA: A Novel Metabolite Set Enrichment Analysis Strategy to Decipher Drug Interactions.
+source_paper: Wang Y et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.2c04603, PMID: 37023366
+overall_reproducibility_score: 78/100
+
+workflow_steps: 4
+  Step 1: Heterogeneous metabolic network construction
+    tool: KEGG database
+    algorithm: digraph-based network modeling
+    input: KEGG pathway and reaction data
+    output: digraph-based heterogeneous metabolic network
+    confidence: medium
+  Step 2: Treatment-specific metabolite influence calculation and propagation
+    tool: iMSEA (custom method)
+    algorithm: network propagation (exact algorithm not specified)
+    parameters: propagation_method=not specified, decay_factor=not specified
+    input: untargeted metabolomics feature table (fold changes or z-scores per treatment)
+    output: node-level influence scores across metabolic network
+    confidence: low
+  Step 3: Pathway activity definition and enrichment
+    tool: iMSEA (custom method)
+    algorithm: metabolite set enrichment based on propagated influence scores
+    parameters: enrichment_statistic=not specified, null_distribution_method=not specified, multiple_testing_correction=not specified
+    input: propagated influence scores + KEGG pathway annotations
+    output: pathway-level activity scores and enrichment p-values
+    confidence: low
+  Step 4: Drug interaction identification
+    tool: iMSEA (custom method)
+    algorithm: comparison of pathway activity between combination vs. additivity (or single-drug) expectations
+    parameters: interaction_metric=not specified, additivity model=e.g., Bliss, Loewe, or simple sum — not stated
+    input: pathway activity scores for single drugs and combination
+    output: list of significantly altered pathways indicating synergy/antagonism
+    confidence: low
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1789)
+  processed_data: available (MetaboLights: MTBLS1789)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1789
+
+code_availability: repository_linked
+  code_url: https://github.com/comp-bio-iMSEA/iMSEA
+  license: MIT
+
+figure_recipes: 5
+  Figure 1: [workflow_diagram]
+    caption: Schematic illustration of the iMSEA strategy, showing four main steps: network construction, influence propagation, pathway enrichment, and interaction inference.
+    produced_by_step: [1, 2, 3, 4]
+    visualization_tool: Adobe Illustrator
+  Figure 2: [heatmap]
+    caption: Heatmap showing pathway activity scores across control, OXA, VC, and OXA+VC treatments, highlighting synergistic pathways.
+    produced_by_step: [3, 4]
+    visualization_tool: R (pheatmap)
+    statistical_test: iMSEA enrichment p-value < 0.05 with FDR correction
+  Figure 3: [bar_chart]
+    caption: Bar plot comparing observed vs. expected (additive) pathway activity for selected metabolic pathways, illustrating synergy.
+    produced_by_step: [4]
+    visualization_tool: GraphPad Prism
+    statistical_test: two-sided t-test comparing observed vs. predicted activity (p < 0.05)
+  Figure 4: [boxplot]
+    caption: Boxplots of pathway activity in glycerophospholipid metabolism across treatment groups, showing significant elevation only in combination group.
+    produced_by_step: [3, 4]
+    visualization_tool: R (ggplot2)
+    statistical_test: ANOVA with Tukey’s HSD post-hoc test (p < 0.01)
+  Figure 5: [roc_curve]
+    caption: ROC curve evaluating iMSEA performance on synthetic noise data, demonstrating robustness to varying noise levels.
+    produced_by_step: [2, 3]
+    visualization_tool: R (pROC)
+    statistical_test: AUC = 0.92 ± 0.03
+
+reproducibility_gaps:
+  - No explicit description of raw LC-MS acquisition parameters (e.g., gradient, column, ionization mode)
+  - No details on metabolomics preprocessing (feature detection, alignment, normalization) — assumed but not reported
+  - Network propagation algorithm implementation details (e.g., diffusion kernel, convergence criteria) not provided in paper or repository README
+  - Synthetic data generation procedure for performance evaluation not fully documented in code repository
+reproducibility_strengths:
+  - Raw and processed metabolomics data publicly available in MetaboLights (MTBLS1789)
+  - iMSEA source code openly available on GitHub under MIT license with Zenodo DOI
+  - All figures are quantitatively reproducible from provided code and data
+  - KEGG-based network construction is fully referenceable and reproducible

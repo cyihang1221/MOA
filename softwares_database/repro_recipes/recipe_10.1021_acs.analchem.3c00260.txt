@@ -1,0 +1,52 @@
+========== reproducibility_recipe entry ==========
+paper_title: Contrastive Learning-Based Embedder for the Representation of Tandem Mass Spectra.
+source_paper: Guo H et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c00260, PMID: 37172113
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: MS/MS spectral preprocessing and representation learning
+    tool: CLERMS
+    algorithm: contrastive learning with transformer architecture, sinusoidal embedder, InfoNCE + MSE loss
+    parameters: loss_components=['InfoNCE', 'MSE'], architecture=transformer, embedder_type=sinusoidal
+    input: MS/MS spectra (peak lists + metadata)
+    output: low-dimensional spectral embeddings
+    confidence: medium
+  Step 2: Compound identification evaluation
+    tool: GNPS platform tools
+    algorithm: spectral similarity search (e.g., cosine similarity) using learned embeddings
+    input: CLERMS embeddings + reference spectral library
+    output: compound identification results (top-k matches, scores)
+    confidence: low
+  Step 3: Spectra clustering evaluation
+    tool: unsupervised clustering (e.g., UMAP + HDBSCAN or t-SNE + k-means)
+    algorithm: clustering on CLERMS embeddings
+    input: CLERMS embeddings
+    output: cluster assignments, silhouette scores
+    confidence: low
+  Step 4: Performance benchmarking
+    tool: custom Python evaluation scripts
+    algorithm: accuracy, F1-score, NMI, silhouette score, cosine similarity ranking
+    input: ground-truth annotations + predicted identifications/clusters
+    output: quantitative performance metrics
+    confidence: low
+
+data_availability:
+  raw_data: available (GNPS)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+  data_urls: https://gnps.ucsd.edu
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - CLERMS model implementation not publicly shared
+  - No training details (e.g., optimizer, learning rate, batch size, epochs, hardware)
+  - No description of spectral preprocessing (peak filtering, normalization, binning)
+  - GNPS data subset used is not specified (dataset ID, task, size)
+  - No information on embedding dimensionality or output format
+  - Clustering and identification evaluation pipelines not described or shared
+reproducibility_strengths:
+  - Uses publicly accessible GNPS data
+  - Method grounded in established deep learning paradigms (contrastive learning, transformers)

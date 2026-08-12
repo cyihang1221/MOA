@@ -1,0 +1,112 @@
+========== reproducibility_recipe entry ==========
+paper_title: Comprehensive structural glycomic characterization of the glycocalyxes of cells and tissues.
+source_paper: Li Q et al. (2020), Nature protocols, DOI: 10.1038/s41596-020-0350-4, PMID: 32681150
+overall_reproducibility_score: 42/100
+
+workflow_steps: 7
+  Step 1: Cell/tissue membrane fraction enrichment
+    tool: ultracentrifugation
+    parameters: centrifugation_speed_rpm=100000, duration_h=1.5, temperature_c=4
+    input: cell or tissue homogenate
+    output: enriched membrane fraction
+    confidence: medium
+  Step 2: Release and derivatization of N-glycans and O-glycans
+    tool: enzymatic release (PNGase F, O-glycanase) + permethylation
+    parameters: enzyme_concentration_ug_ml=1, incubation_time_h=16, temperature_c=37, permethylation_protocol=sodium hydroxide/methyl iodide
+    input: enriched membrane fraction
+    output: permethylated N- and O-glycans
+    confidence: medium
+  Step 3: Extraction and preparation of glycolipids
+    tool: chloroform/methanol/water extraction
+    parameters: solvent_ratio_chcl3_meoh_h2o=2:1:0.8, phase_separation_centifugation=3000 rpm, 10 min
+    input: enriched membrane fraction
+    output: intact glycolipids (glycosphingolipids)
+    confidence: medium
+  Step 4: NanoLC-MS/MS analysis
+    tool: nanoLC coupled to high-resolution mass spectrometer
+    parameters: column=C18 reversed-phase nano-column, gradient_profile=linear gradient from 5% to 40% B over 60 min, mobile_phase_A=0.1% formic acid in water, mobile_phase_B=0.1% formic acid in acetonitrile, flow_rate_nL_min=300, mass_analyzer=Orbitrap, resolution_mz=60000, scan_range_mz=500–2000, ms1_acquisition_mode=full scan, ms2_acquisition_mode=HCD fragmentation with normalized collision energy 25–35%
+    input: permethylated glycans and intact glycolipids
+    output: raw .raw files
+    confidence: high
+  Step 5: Glycan and glycolipid identification and annotation
+    tool: in-house glycomics database search + manual spectral interpretation
+    algorithm: mass tolerance matching + fragment ion pattern matching
+    parameters: mass_tolerance_ppm=5, fragment_tolerance_da=0.02, minimum_fragment_ions_matched=3
+    input: raw .raw files
+    output: annotated glycan/glycolipid list with compositions and structures
+    confidence: low
+  Step 6: Quantitation of glycoforms and glycoconjugates
+    tool: peak area integration (Xcalibur or in-house script)
+    algorithm: label-free quantitation
+    parameters: integration_method=extracted ion chromatogram (XIC), peak_width_s=10
+    input: raw .raw files
+    output: quantitative glycan/glycolipid abundance table
+    confidence: medium
+  Step 7: Site-specific glycoproteomic analysis
+    tool: trypsin digestion + LC-MS/MS + glycopeptide search engine
+    algorithm: Byonic or pGlyco
+    parameters: digestion_time_h=16, enzyme=trypsin, search_mass_tolerance_ppm=5, variable_modifications=['Oxidation (M)', 'Deamidation (NQ)'], fixed_modifications=['Carbamidomethyl (C)'], glycan_mass_shifts=user-defined glycan library
+    input: separate enriched membrane fraction
+    output: site-specific glycopeptide identifications with glycoform assignments
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: available (Supplementary Data 1–5)
+  metadata: in_paper_only
+  data_urls: https://doi.org/10.1039/c8sc01875h, https://doi.org/10.1038/s41598-018-29324-7, https://doi.org/10.1039/c9sc01360a
+
+code_availability: not_mentioned
+
+figure_recipes: 9
+  Figure 1: [workflow_diagram]
+    caption: Schematic of cell sample collection and membrane extraction steps.
+    produced_by_step: [1]
+    visualization_tool: Adobe Illustrator or similar
+  Figure 2: [workflow_diagram]
+    caption: Summary of the comprehensive LC-MS/MS analysis workflow for glycocalyx components.
+    produced_by_step: [2, 3, 4, 5, 6, 7]
+    visualization_tool: Adobe Illustrator or similar
+  Figure 3: [other]
+    caption: Examples of tissues with cell surface glycocalyxes analyzed by LC-MS/MS.
+    produced_by_step: [1, 4]
+    visualization_tool: microscopy + schematic labeling
+  Figure 4: [chromatogram]
+    caption: Examples of LC-MS profiles from the Caco-2 cell line.
+    produced_by_step: [4, 6]
+    visualization_tool: Xcalibur or Thermo Compound Discoverer
+  Figure 5: [table]
+    caption: Glycoproteomic data of serum standard.
+    produced_by_step: [7]
+    visualization_tool: Excel or Proteome Discoverer
+  Figure 6: [other]
+    caption: Tandem MS spectra of selected compounds.
+    produced_by_step: [5]
+    visualization_tool: Xcalibur or MSnBase
+  Figure 7: [other]
+    caption: Examples of site-specific glycopeptide mapping of N-linked and O-linked glycoproteins.
+    produced_by_step: [7]
+    visualization_tool: Byonic or pGlyco visualization module
+  Figure 8: [bar_chart]
+    caption: N-glycomic analysis of Caco-2 cells cultured at different days.
+    produced_by_step: [5, 6]
+    visualization_tool: GraphPad Prism or R ggplot2
+    statistical_test: t-test or ANOVA (implied by comparative quantitation)
+  Figure 9: [bar_chart]
+    caption: Identification and quantitation of glycosphingolipids from Caco-2 and PNT2 cell lines.
+    produced_by_step: [5, 6]
+    visualization_tool: GraphPad Prism or R ggplot2
+    statistical_test: t-test or ANOVA (implied by comparative quantitation)
+
+reproducibility_gaps:
+  - Raw mass spectrometry data (.raw files) not deposited in public repository (e.g., PRIDE, GlycoPOST)
+  - No software version or configuration details for glycopeptide search engines (Byonic/pGlyco)
+  - No code or scripts for data processing, peak integration, or database matching provided
+  - In-house glycomics database not publicly accessible or described in detail
+  - Gradient profile only partially specified (no exact solvent composition timing or column temperature)
+  - Permethylation protocol lacks reagent purity grades, reaction quenching method, and cleanup steps
+reproducibility_strengths:
+  - Supplementary Data 1–5 provide curated glycan/glycolipid reference tables (CSV/XLSX)
+  - Key references include DOI-linked publications with methodological details
+  - Workflow is modular and clearly segmented across glycan, glycolipid, and glycoproteomic branches
+  - Use of standardized enzymatic and chemical protocols (PNGase F, permethylation) enhances transferability

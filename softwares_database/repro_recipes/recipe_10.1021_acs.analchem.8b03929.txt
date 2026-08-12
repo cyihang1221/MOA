@@ -1,0 +1,43 @@
+========== reproducibility_recipe entry ==========
+paper_title: Peak-Tracking Algorithm for Use in Automated Interpretive Method-Development Tools in Liquid Chromatography.
+source_paper: Pirok BWJ et al. (2018), Analytical chemistry, DOI: 10.1021/acs.analchem.8b03929, PMID: 30396266
+overall_reproducibility_score: 20/100
+
+workflow_steps: 3
+  Step 1: Chromatogram preprocessing and peak detection
+    tool: Custom algorithm
+    algorithm: Peak-tracking algorithm based on spectrometric information, statistical moments (e.g., retention time, peak width, asymmetry), and relative retention
+    parameters: mass_tolerance_ppm=None, rt_tolerance_seconds=None, peak_width_factor=None, moment_calculation_window=None, preselection_threshold=None
+    input: Raw chromatographic data (LC-MS chromatograms)
+    output: Tracked peak pairs across chromatograms
+    confidence: low
+  Step 2: Cross-chromatogram peak pairing
+    tool: Custom algorithm
+    algorithm: Candidate preselection using similarity of gradient profiles and retention behavior
+    parameters: gradient_similarity_threshold=None, relative_retention_window=None, spectral_correlation_threshold=None
+    input: Set of chromatograms from same sample under varying LC gradients
+    output: Paired peaks with correspondence mapping
+    confidence: low
+  Step 3: Retention parameter modeling
+    tool: Custom regression
+    algorithm: Empirical or thermodynamic retention modeling (e.g., linear solvent strength model)
+    parameters: model_type=linear solvent strength, error_threshold_percent=1.0
+    input: Paired peak retention times across gradients
+    output: Retention model parameters (e.g., log k₀, S)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of software implementation or code availability
+  - No public data deposition (raw or processed chromatograms)
+  - No specification of parameter values (e.g., rt tolerance, correlation thresholds, moment calculation windows)
+  - Algorithm described conceptually but lacks executable details (e.g., spectral similarity metric, moment normalization)
+  - No mention of validation dataset or isomer-specific peak resolution criteria

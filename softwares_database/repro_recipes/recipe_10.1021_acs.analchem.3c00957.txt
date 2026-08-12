@@ -1,0 +1,46 @@
+========== reproducibility_recipe entry ==========
+paper_title: Alternative Identification of Glycosides Using MS/MS Matching with an In Silico-Modified Aglycone Mass Spectra Library.
+source_paper: Rodríguez EP et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c00957, PMID: 37390485
+overall_reproducibility_score: 55/100
+
+workflow_steps: 3
+  Step 1: LC-HRMS/MS data acquisition
+    tool: liquid chromatography coupled to electrospray ionization high-resolution mass spectrometry
+    input: biological samples (chocolate and tea)
+    output: raw .mzML or vendor-native MS/MS files
+    confidence: low
+  Step 2: MS/MS library expansion via in silico glycosylation
+    tool: custom in silico modification script
+    algorithm: mass shift addition (pentose: +132.0423 Da, hexose: +162.0528 Da, glucuronide: +176.0321 Da)
+    parameters: aglycone_library_size=3057, glycosyl_moieties=['pentose', 'hexose', 'glucuronide'], mass_shifts_da={'pentose': 132.0423, 'hexose': 162.0528, 'glucuronide': 176.0321}
+    input: MS/MS library of aglycones (3057 entries)
+    output: in silico-glycosylated MS/MS product ion library
+    confidence: high
+  Step 3: MS/MS spectral matching for glycoside identification
+    tool: MS-DIAL
+    algorithm: standard MS/MS search algorithm (library matching with mass tolerance and score thresholding)
+    parameters: match_score_threshold=None, mass_tolerance_da=None, min_matched_ions=None
+    input: untargeted LC-MS/MS metabolomics data (.mzML), in silico-glycosylated MS/MS library
+    output: structurally annotated glycosides (n=108)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS/MS data not deposited in public repository (e.g., MetaboLights, GNPS)
+  - No details on LC conditions (gradient, column, flow rate, temperature)
+  - No instrument parameters (collision energy ramp, isolation window, resolution settings)
+  - MS-DIAL version and exact search parameters (mass tolerance, score cutoff, min matched peaks) not specified
+  - No description of how aglycone library was curated (source, instrumentation, confidence level)
+reproducibility_strengths:
+  - In silico-glycosylated MS/MS library publicly shared on GitHub
+  - Explicit mass shifts provided for pentose/hexose/glucuronide moieties
+  - Use of open-source software (MS-DIAL) for identification

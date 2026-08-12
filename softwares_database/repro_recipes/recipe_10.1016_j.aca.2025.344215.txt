@@ -1,0 +1,61 @@
+========== reproducibility_recipe entry ==========
+paper_title: Development of a quantitative structure-response relationships to estimate concentrations of plasticizer metabolites in urine without reference standards using non-targeted analysis with liquid chromatography high-resolution mass spectrometry.
+source_paper: Feng YL et al. (2025), Analytica chimica acta, DOI: 10.1016/j.aca.2025.344215, PMID: 40480691
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: LC-HRMS data acquisition
+    tool: Liquid chromatography high-resolution mass spectrometry
+    parameters: ionization=['electrospray ionization (ESI)'], mass_resolution=high-resolution, chromatography=liquid chromatography, sample_matrix=urine
+    input: urine samples
+    output: raw .raw or .d files (vendor format)
+    confidence: low
+  Step 2: Non-targeted analysis (NTA) feature detection and alignment
+    tool: XCMS or similar NTA platform
+    algorithm: not specified
+    input: raw LC-HRMS files
+    output: feature table (m/z, RT, intensity)
+    confidence: low
+  Step 3: Retention time prediction and structural descriptor calculation
+    tool: Computational chemistry software (e.g., RDKit, Dragon, or ACD/Labs)
+    algorithm: QSRR modeling
+    parameters: number_of_descriptors=11, retention_time_included=True, model_variables_total=12
+    input: chemical structures (SMILES or molfiles), observed retention times
+    output: predicted signal response factors
+    confidence: medium
+  Step 4: Response factor estimation and concentration approximation
+    tool: Custom QSRR model (linear or ML regression)
+    algorithm: regression modeling
+    parameters: error_threshold_training=30, error_threshold_prediction=50, units=percent error
+    input: feature table intensities, predicted response factors
+    output: estimated concentrations (ng/mL or μM)
+    confidence: medium
+  Step 5: Model updating with routine calibration curves
+    tool: Custom script or spreadsheet-based calibration
+    algorithm: daily calibration curve fitting
+    parameters: calibration_frequency=daily, reference_chemicals=eleven testing chemicals
+    input: calibration standards (limited set)
+    output: updated QSRR model parameters
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-HRMS data not deposited in public repository
+  - No mention of software tools used for feature detection or alignment
+  - No specification of molecular descriptor computation method or software
+  - No access to QSRR model implementation (code or parameters)
+  - No details on calibration curve methodology (concentrations, replicates, fitting function)
+  - Ionization mode (positive/negative) and LC gradient profile not specified
+  - No validation dataset or cross-validation strategy reported
+reproducibility_strengths:
+  - Clear description of QSRR variable composition (12 total: RT + 11 descriptors)
+  - Quantitative performance metrics provided (error <30% for training, <50% for prediction)
+  - Demonstrated applicability across two ionization systems

@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: Untargeted metabolomics approach using UHPLC-IMS-QTOF MS for surface body samples to identify low-volatility chemosignals related to maternal care in mice.
+source_paper: Lacalle-Bergeron L et al. (2023), Talanta, DOI: 10.1016/j.talanta.2023.124389, PMID: 36867958
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Data acquisition
+    tool: UHPLC-IMS-QTOF MS
+    parameters: chromatography=ultra-high pressure liquid chromatography, ion_mobility=travelling wave ion mobility spectrometry (TWIMS), mass_analyzer=quadrupole time-of-flight (QTOF), resolution=high resolution mass spectrometry (HRMS), polarity=both positive and negative mode, acquisition_mode=data-dependent acquisition (DDA) or data-independent acquisition (DIA) not specified
+    input: surface swab extracts from facial and anogenital areas of mouse pups
+    output: raw .raw or .d files (vendor format, unspecified)
+    confidence: medium
+  Step 2: Data processing and feature detection
+    tool: Progenesis QI
+    algorithm: peak picking, alignment, normalization
+    parameters: peak_picking_algorithm=not specified, retention_time_alignment=enabled, ion_mobility drift time alignment=implied but not detailed, mass_tolerance_ppm=None, rt_tolerance_min=None, drift_time_tolerance_ms=None, min_peak_intensity=None, noise_threshold=None
+    input: raw vendor files (.raw or .d)
+    output: feature table (m/z, RT, drift time, intensity)
+    confidence: low
+  Step 3: Multivariate statistical analysis
+    tool: Progenesis QI
+    algorithm: PCA, PLS-DA, OPLS-DA
+    parameters: components=None, permutation_test=not mentioned, cross_validation=not specified, variable_importance_plot_threshold=None
+    input: normalized feature table
+    output: discriminatory features (biomarkers), model metrics (R², Q²)
+    confidence: low
+  Step 4: Metabolite annotation and identification
+    tool: Progenesis QI
+    algorithm: in-silico fragmentation, database matching (ChemSpider, HMDB, LipidMaps)
+    parameters: mass_tolerance_ppm=5, retention_time_match=used, drift_time_match=used (as additional structural descriptor), fragmentation_similarity_score_threshold=None, database_search_priority=['ChemSpider', 'HMDB', 'LipidMaps']
+    input: features with MS/MS spectra
+    output: tentatively identified metabolites (level 2 confidence)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository
+  - Progenesis QI is commercial software requiring license and proprietary algorithms
+  - No details on IMS calibration, wave height/velocity parameters, or collision cross-section (CCS) calculation method
+  - No specification of UHPLC gradient profile, column temperature, or mobile phase composition
+  - No description of sample preparation protocol (extraction solvent, volume, derivatization, cleanup)
+  - No reporting of batch correction or QC-based filtering steps
+  - No code, scripts, or workflow parameters for Progenesis QI analysis shared
+reproducibility_strengths:
+  - Use of four-dimensional data (m/z, RT, intensity, drift time) enhances specificity in annotation
+  - Tentative identifications supported by orthogonal structural information from IMS

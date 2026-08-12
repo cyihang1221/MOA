@@ -1,0 +1,61 @@
+========== reproducibility_recipe entry ==========
+paper_title: Development of a comprehensive two-dimensional liquid chromatographic mass spectrometric method for the non-targeted identification of poly- and perfluoroalkyl substances in aqueous film-forming foams.
+source_paper: Renai L et al. (2022), Analytica chimica acta, DOI: 10.1016/j.aca.2022.340485, PMID: 36257728
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Two-dimensional liquid chromatography method development and optimization
+    tool: LC × LC system
+    algorithm: modulation optimization
+    parameters: modulation_approaches_compared=['active solvent assisted', 'stationary phase assisted'], selected_modulation=stationary phase assisted, peak_capacity_corrected_for_undersampling=>300, total_separation_time_minutes=60.0
+    input: reference training set of 24 anionic PFAS standards
+    output: optimized LC × LC separation conditions
+    confidence: medium
+  Step 2: Chromatographic separation using mixed-mode column
+    tool: mixed-mode weak anion exchange-reversed phase column
+    parameters: first_dimension_column=weak anion exchange-reversed phase, second_dimension_column=octadecyl (C18), separation_criteria=['ionic class', 'chain length']
+    input: AFFF samples and PFAS standards
+    output: chromatographically resolved analytes
+    confidence: high
+  Step 3: High-resolution mass spectrometric detection
+    tool: HRMS
+    input: LC × LC eluent
+    output: high-resolution MS and MS/MS spectra
+    confidence: low
+  Step 4: Non-targeted feature detection and Kendrick mass defect analysis
+    tool: Kendrick mass defect analysis
+    algorithm: Kendrick mass defect (KMD) filtering
+    parameters: KMD_unit=CH2, mass_defect_filtering_applied=True
+    input: HRMS full-scan data
+    output: list of potential PFAS features
+    confidence: medium
+  Step 5: Chromatographic region-based validation of PFAS candidates
+    tool: retention behavior interpretation
+    algorithm: elution pattern correlation with ionic group and chain length
+    parameters: validation_criterion=co-elution in expected chromatographic regions for ionic class and chain length
+    input: retention times from LC × LC + KMD-annotated features
+    output: validated PFAS candidates (n = 39)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw HRMS or LC × LC data deposited or referenced
+  - No details on HRMS instrument parameters (e.g., resolution, scan range, AGC targets, fragmentation settings)
+  - No software specified for data processing (feature detection, KMD calculation, alignment)
+  - No description of data processing pipelines or parameters (e.g., peak picking thresholds, RT tolerance, m/z tolerance)
+  - No information on vendor-specific software (e.g., ChromaTOF, Compound Discoverer, MS-DIAL) or open-source alternatives used
+  - Modulation hardware configuration and timing parameters not reported
+  - Gradient programs for both dimensions not provided
+reproducibility_strengths:
+  - Clear description of column chemistries and separation rationale
+  - Use of a defined reference standard set (24 PFASs) for method development
+  - Quantitative performance metric reported (peak capacity >300)
+  - Retention-based orthogonal validation strategy described

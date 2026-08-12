@@ -1,0 +1,66 @@
+========== reproducibility_recipe entry ==========
+paper_title: Glycan Mapping of Low-Molecular-Weight Heparin Using Mass Spectral Correction Based on Chromatography Fitting with "Glycomapping" Software.
+source_paper: Yan N et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.2c01579, PMID: 36102213
+overall_reproducibility_score: 20/100
+
+workflow_steps: 7
+  Step 1: Chromatographic separation
+    tool: ultrahigh-performance liquid chromatography
+    input: enoxaparin sample
+    output: chromatogram
+    confidence: low
+  Step 2: Mass spectrometry detection
+    tool: mass spectrometry
+    input: chromatographic eluate
+    output: raw MS data
+    confidence: low
+  Step 3: Size exclusion chromatography
+    tool: size exclusion chromatography
+    input: LMWH sample
+    output: size-fractionated glycan profile
+    confidence: low
+  Step 4: Virtual glycan database construction
+    tool: Glycomapping software (vfirst version)
+    algorithm: database-driven glycan search
+    parameters: constraint=chromatographic retention time range
+    input: enoxaparin structure knowledge, MS data
+    output: virtual database of enoxaparin glycans
+    confidence: medium
+  Step 5: Chromatogram fitting and resolution enhancement
+    tool: Glycomapping software (vfirst version)
+    algorithm: chromatography fitting
+    input: complex chromatogram
+    output: fitted chromatogram with improved resolution
+    confidence: medium
+  Step 6: MS data correction using retention time constraints
+    tool: Glycomapping software (vfirst version)
+    algorithm: retention time–constrained MS correction
+    parameters: constraint=corresponding chromatographic retention time range
+    input: randomly matched MS data
+    output: corrected MS data (reduced false positives)
+    confidence: medium
+  Step 7: Comparative analysis of LMWHs from different sources
+    tool: Glycomapping software (vfirst version)
+    algorithm: comparative glycan mapping
+    input: enoxaparin (different manufacturers, animal sources), nadroparin, dalteparin
+    output: robust and accurate glycan distribution profiles
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - 'Glycomapping' software not publicly released or described in sufficient technical detail
+  - No information on raw data deposition
+  - No parameters for chromatography (e.g., column, gradient, flow rate) or MS (e.g., ionization mode, resolution, fragmentation settings)
+  - No version number or repository link for Glycomapping
+  - No validation of algorithmic details (e.g., fitting model, peak deconvolution method)
+reproducibility_strengths:
+  - Conceptual workflow clearly outlined for glycan mapping of LMWHs
+  - Retention time constraint strategy explicitly described as key for reducing false positives

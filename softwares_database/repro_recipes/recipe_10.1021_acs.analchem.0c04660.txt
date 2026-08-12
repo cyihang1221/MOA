@@ -1,0 +1,74 @@
+========== reproducibility_recipe entry ==========
+paper_title: From Metabolomics to HRMS-Based Exposomics: Adapting Peak Picking and Developing Scoring for MS1 Suspect Screening.
+source_paper: Chaker J et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.0c04660, PMID: 33351605
+overall_reproducibility_score: 58/100
+
+workflow_steps: 7
+  Step 1: Raw data conversion to mzML
+    tool: ProteoWizard (msconvert)
+    algorithm: default conversion settings
+    input: vendor raw files (.wiff, .raw, .d)
+    output: centroided .mzML files
+    confidence: medium
+  Step 2: Feature detection (peak picking)
+    tool: XCMS
+    algorithm: centWave
+    parameters: ppm=5, snthr=10, prefilter=[3, 100], noise=1000, fwht=10
+    input: raw .mzML files
+    output: feature table (m/z, Rt, intensity)
+    confidence: high
+  Step 3: Feature detection (peak picking)
+    tool: MZmine2
+    algorithm: ADAP chromatogram builder + Join aligner + Peak shape-based deconvolution
+    parameters: min_time_span_sec=5, min_height=10000, mz_tolerance_ppm=5, rt_tolerance_sec=5
+    input: raw .mzML files
+    output: feature table (m/z, Rt, intensity)
+    confidence: medium
+  Step 4: Feature detection (peak picking)
+    tool: MarkerView
+    algorithm: peak detection with manual parameter tuning
+    input: vendor raw files
+    output: feature table
+    confidence: low
+  Step 5: Feature detection (peak picking)
+    tool: Progenesis QI
+    algorithm: peak detection with manual parameter tuning
+    input: vendor raw files
+    output: feature table
+    confidence: low
+  Step 6: Retention time prediction and scoring for MS1 suspect screening
+    tool: Custom R workflow
+    algorithm: Nonlinear RT scoring combining multiple predictors
+    parameters: rt_prediction_models=['PredRet', 'Retip', 'retention time indices', 'logP model'], isotope_ratio_weight=0.3, mz_accuracy_weight=0.4, rt_deviation_penalty=nonlinear (Gaussian-like)
+    input: feature table + suspect list (m/z, formula, structure)
+    output: ranked preannotation table with global score
+    confidence: medium
+  Step 7: False negative rate assessment
+    tool: Custom R/Python scripts
+    algorithm: spike recovery analysis
+    parameters: spike_concentration_range=low-level (sub-nM to low nM), matrix=human blood
+    input: preannotation table + spike metadata
+    output: false negative rate (%) per software/tool
+    confidence: medium
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1527)
+  processed_data: available (MetaboLights: MTBLS1527)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1527
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Custom R suspect screening workflow not publicly shared (no repository or code link provided)
+  - Exact parameters for commercial tools (MarkerView, Progenesis QI) not reported
+  - No details on nonlinear RT scoring implementation (e.g., functional form, training data)
+  - RT prediction model hierarchization criteria not quantitatively specified
+  - Spike compound identities, concentrations, and preparation protocol only partially described
+reproducibility_strengths:
+  - Raw and processed data deposited in MetaboLights (MTBLS1527)
+  - Use of open-source peak pickers (XCMS, MZmine2) with key parameters reported
+  - Explicit comparison across multiple widely used tools
+  - Clear experimental design using spiked human blood matrix

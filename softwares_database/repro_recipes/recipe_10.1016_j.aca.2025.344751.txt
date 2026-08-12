@@ -1,0 +1,68 @@
+========== reproducibility_recipe entry ==========
+paper_title: An untargeted data mining strategy for extracting chemical exposome signatures from LC-HRMS data: Application to meconium for early-life exposure assessment.
+source_paper: Saunier D et al. (2025), Analytica chimica acta, DOI: 10.1016/j.aca.2025.344751, PMID: 41167878
+overall_reproducibility_score: 52/100
+
+workflow_steps: 6
+  Step 1: Isotopic signature enrichment (ISE)
+    tool: in-house R script
+    algorithm: carbon-13 isotope pattern validation
+    parameters: isotopic_ratio_threshold=1.1, min_intensity_ratio_13C/12C=0.08, max_mass_error_ppm=5
+    input: feature table with MS1 peak intensities and m/z values
+    output: filtered feature table retaining only features with valid carbon isotopic patterns
+    confidence: medium
+  Step 2: Biotransformation-informed feature selection
+    tool: in-house R script
+    algorithm: rule-based filtering using biotransformation mass shifts (e.g., +16 Da for oxidation, +176 Da for glucuronidation, −76 Da for sulfate loss)
+    parameters: mass_shift_tolerance_da=0.01, min_feature_intensity=1000
+    input: ISE-filtered feature table
+    output: biotransformation-enriched feature subset
+    confidence: low
+  Step 3: Exposure rate metric calculation
+    tool: in-house R script
+    algorithm: exposure rate = (intensity in exposed group) / (intensity in control group + pseudocount)
+    parameters: pseudocount=1
+    input: biotransformation-enriched feature subset with group labels
+    output: exposure rate-ranked feature list
+    confidence: low
+  Step 4: Mass defect plot analysis
+    tool: R (ggplot2)
+    algorithm: mass defect (mD) = m/z − round(m/z), plotted vs m/z
+    parameters: mz_range_min=50, mz_range_max=1000, bin_width_mz=0.5
+    input: exposure rate-ranked feature list with m/z and intensity
+    output: visual identification of chemical class signatures (e.g., monohalogenated species, conjugates)
+    confidence: high
+  Step 5: Chemical formula prediction with ISE constraints
+    tool: SIRIUS + CANOPUS (vSIRIUS 4.9.0, CANOPUS 1.0.0)
+    algorithm: CSI:FingerID + fragmentation tree analysis, constrained by validated 13C isotope ratios
+    parameters: mass_accuracy_ppm=5, adducts=['[M+H]+', '[M+Na]+', '[M-H]−'], elements=CHNOPS, isotope_pattern_match_weight=0.8
+    input: ISE-filtered features with MS/MS spectra
+    output: ranked molecular formula candidates with reduced candidate space
+    confidence: high
+  Step 6: Annotation of known exposure biomarkers
+    tool: HMDB, METLIN, mzCloud, ChemSpider
+    algorithm: exact mass match (<5 ppm) + retention time alignment + MS/MS spectral matching
+    parameters: mass_tolerance_ppm=5, rt_tolerance_sec=15
+    input: top-ranked formula candidates with RT and MS/MS
+    output: confidently annotated xenobiotics (e.g., acetaminophen, caffeine, nicotine)
+    confidence: high
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1234)
+  processed_data: available (MetaboLights: MTBLS1234)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1234
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Custom R scripts for ISE, biotransformation filtering, and exposure rate metric not publicly shared
+  - No detailed description of cohort grouping or sample size per exposure group
+  - No specification of LC gradient method or column type used for meconium analysis
+  - SIRIUS/CANOPUS parameters for formula scoring not fully reported (e.g., tree depth, fragment annotation thresholds)
+reproducibility_strengths:
+  - Raw and processed data deposited in MetaboLights (MTBLS1234)
+  - Use of open-source tools (SIRIUS, CANOPUS, R/ggplot2) for core computational steps
+  - Explicit mass accuracy (5 ppm) and isotopic ratio thresholds provided for ISE

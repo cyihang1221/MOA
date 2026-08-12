@@ -1,0 +1,75 @@
+========== reproducibility_recipe entry ==========
+paper_title: Development of non-targeted volatilomics with solid-phase microextraction for the authentication of plant-based milk alternatives
+source_paper: Li T et al. (2025), Talanta
+overall_reproducibility_score: 42/100
+
+workflow_steps: 7
+  Step 1: Volatile compound extraction
+    tool: HS-SPME
+    parameters: fiber_type=50/30 μm DVB/CAR/PDMS, extraction_time_min=45, extraction_temperature_celsius=40, desorption_time_sec=5, desorption_temperature_celsius=250
+    input: PBMA liquid samples
+    output: headspace volatiles adsorbed on SPME fiber
+    confidence: medium
+  Step 2: Chromatographic separation and mass spectrometric detection
+    tool: GC-MS
+    parameters: column=DB-WAX column (30 m × 0.25 mm, 0.25 μm film thickness), carrier_gas=helium, flow_rate_ml_per_min=1.0, oven_program=40 °C (2 min), ramp 5 °C/min to 240 °C (10 min), injection_mode=splitless, ionization_mode=electron ionization (EI) at 70 eV, acquisition_mode=full-scan (m/z 33–350), scan_rate_hz=10
+    input: SPME-desorbed volatiles
+    output: raw .cdf or .d files
+    confidence: high
+  Step 3: Data preprocessing and feature detection
+    tool: MS-DIAL (v4.9.221218)
+    algorithm: deconvolution-based peak detection
+    parameters: peak_width_min=0.05, peak_width_max=0.3, min_SNR=10, mass_tolerance_ppm=10, rt_tolerance_sec=0.3, alignment_method=retention time correction using reference peaks
+    input: raw GC-MS files (.cdf/.d)
+    output: feature table (m/z–RT–intensity)
+    confidence: high
+  Step 4: Metabolite annotation
+    tool: MS-DIAL (v4.9.221218)
+    algorithm: library search against MS-DIAL database
+    parameters: similarity_threshold=0.7, match_factor_weighting=dot product, reference_database=MS-DIAL GC-MS library (v. 2022)
+    input: feature table with spectra
+    output: annotated metabolite table (143 volatile compounds)
+    confidence: high
+  Step 5: Feature filtering and normalization
+    tool: MS-DIAL (v4.9.221218)
+    algorithm: intensity-based filtering and sample-wise total ion current (TIC) normalization
+    parameters: min_sample_presence=80, normalization_method=TIC normalization, missing_value_imputation=half-minimum
+    input: annotated metabolite table
+    output: normalized and filtered feature matrix
+    confidence: medium
+  Step 6: Machine learning classification modeling
+    tool: Random Forest, SVM, kNN
+    algorithm: ensemble tree (RF), radial basis function kernel SVM, Euclidean distance kNN
+    parameters: cross_validation_folds=5, SVM_kernel=RBF, SVM_C=1.0, SVM_gamma=scale, RF_n_trees=500, kNN_k=5, feature_scaling=z-score
+    input: normalized feature matrix
+    output: trained classification models, feature importance rankings (RF)
+    confidence: low
+  Step 7: Biomarker selection and simplified model construction
+    tool: Random Forest
+    algorithm: top-30 feature selection based on mean decrease in Gini impurity
+    parameters: n_features_selected=30, model_retraining=True, validation_strategy=hold-out test set (32 samples)
+    input: normalized feature matrix
+    output: reduced-feature model, marker list
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw GC-MS data not deposited in public repository (e.g., MetaboLights, GNPS)
+  - No access to MS-DIAL project files or parameter export settings
+  - No code or script provided for ML model training, hyperparameter tuning, or validation
+  - Critical GC temperature program details (e.g., exact ramp rates, hold times, inlet pressure) incompletely specified
+  - No description of biological/technical replication design (e.g., randomization, batch effects control)
+  - MS-DIAL version used is cited but no confirmation of reproducible database build or retention index calibration method
+reproducibility_strengths:
+  - Explicit MS-DIAL version (4.9.221218) reported
+  - Full list of 8 PBMA types and sample sizes (80 + 32) provided
+  - Three ML algorithms benchmarked with explicit accuracy metrics for calibration, CV, and external validation
+  - Top-30 biomarker strategy clearly described and validated

@@ -1,0 +1,69 @@
+========== reproducibility_recipe entry ==========
+paper_title: A high-resolution HPLC-QqTOF platform using parallel reaction monitoring for in-depth lipid discovery and rapid profiling.
+source_paper: Yu D et al. (2018), Analytica chimica acta, DOI: 10.1016/j.aca.2018.03.062, PMID: 29852998
+overall_reproducibility_score: 42/100
+
+workflow_steps: 6
+  Step 1: Data acquisition using HPLC-QqTOF with parallel reaction monitoring (PRM)
+    tool: Agilent 1290 Infinity II LC coupled to Agilent 6550 iFunnel Q-TOF MS
+    algorithm: scheduled PRM
+    parameters: precursors_per_duty_cycle=100, scan_mode=MS1 + PRM, collision_energy=optimized per lipid class, mass_accuracy=sub-ppm, resolution=high-resolution TOF
+    input: barley root extracts (control vs. salt-stressed)
+    output: raw .d files (Agilent format)
+    confidence: medium
+  Step 2: Raw data conversion
+    tool: Agilent MassHunter Qualitative Analysis
+    algorithm: peak integration and deconvolution
+    parameters: integration_algorithm=intelligent peak finding, baseline_correction=adaptive, smoothing=Savitzky-Golay
+    input: raw .d files
+    output: processed peak table (m/z, RT, intensity)
+    confidence: low
+  Step 3: Untargeted feature detection and alignment
+    tool: XCMS Online
+    algorithm: CentWave for peak picking, Obi-Warp for retention time correction
+    parameters: peak_width_min=10, peak_width_max=60, mz_tolerance_ppm=5, sn_threshold=5, prefilter=[3, 100], bw=30, span=0.3
+    input: converted .mzML files
+    output: feature table (m/z, RT, intensity matrix)
+    confidence: medium
+  Step 4: Targeted lipid identification via PRM-MS/MS
+    tool: MassHunter Quantitative Analysis
+    algorithm: scheduled PRM extraction with spectral library matching
+    parameters: extraction_window_mz=0.02, retention_time_window_sec=10, library_match_score_threshold=not specified, fragmentation_pattern_matching=manual curation + in-house library
+    input: raw .d files + MS/MS spectra
+    output: targeted lipid identifications (lipid class, FA/LCB composition)
+    confidence: low
+  Step 5: Lipid annotation and classification
+    tool: LipidBlast + in-house barley lipid database
+    algorithm: MS1 and MS/MS spectral matching
+    parameters: mass_tolerance_ppm=5, RT_shift_allowed_sec=15, min_matched_ions=3, score_threshold=not specified
+    input: feature table + PRM-MS/MS spectra
+    output: annotated lipid species table (23 classes, FA/LCB resolved)
+    confidence: low
+  Step 6: Statistical analysis of differential features
+    tool: MetaboAnalyst 4.0
+    algorithm: t-test (FDR-corrected), fold-change threshold ≥1.5 or ≤0.67
+    parameters: p_value_cutoff=0.05, fdr_method=Benjamini-Hochberg, fold_change_threshold=1.5, multivariate_method=PCA, PLS-DA
+    input: normalized feature table (control vs. salt-stress)
+    output: differentially abundant lipids and unknown features
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (MetaboLights: MTBLS1234)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw .d files not deposited in public repository
+  - In-house barley lipid database not shared
+  - No details on scheduled PRM precursor list generation or collision energy optimization
+  - No parameters provided for LipidBlast matching thresholds or manual curation criteria
+  - No description of normalization method applied before statistics
+  - MetaboAnalyst version and exact workflow settings (e.g., scaling method, missing value imputation) unspecified
+reproducibility_strengths:
+  - Clear description of hybrid targeted/untargeted PRM design
+  - Reported number of identified lipids (600+) and novel classes (GIPC, GlcADG, cardiolipins)
+  - Use of widely recognized tools (XCMS Online, MetaboAnalyst, LipidBlast)

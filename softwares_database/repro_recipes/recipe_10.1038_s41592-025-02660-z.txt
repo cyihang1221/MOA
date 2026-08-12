@@ -1,0 +1,61 @@
+========== reproducibility_recipe entry ==========
+paper_title: A universal language for finding mass spectrometry data patterns.
+source_paper: Damiani T et al. (2025), Nature methods, DOI: 10.1038/s41592-025-02660-z, PMID: 40355727
+overall_reproducibility_score: 70/100
+
+workflow_steps: 5
+  Step 1: Mass spectrometry data ingestion
+    tool: pyteomics
+    algorithm: mzML/mzXML/MGF parsing
+    input: raw .mzML, .mzXML, or .MGF files
+    output: pandas DataFrame of spectra
+    confidence: high
+  Step 2: MassQL query parsing
+    tool: lark
+    algorithm: EBNF-based parsing
+    input: MassQL string query
+    output: parse tree → internal query data structure
+    confidence: high
+  Step 3: Pattern-based spectral filtering
+    tool: MassQL reference query engine (Python)
+    algorithm: pandas-based conditional filtering
+    parameters: mass_tolerance_ppm=None, mass_tolerance_da=None, intensity_value_threshold=None, intensity_percent_of_base_peak=None, intensity_percent_of_TIC=None, mobility_range_min=None, mobility_range_max=None, rt_min_minutes=None, rt_max_minutes=None, scan_number_min=None, scan_number_max=None, mass_defect_min=None, mass_defect_max=None, exclusion_flag=None
+    input: pandas DataFrame of spectra + parsed MassQL query
+    output: filtered pandas DataFrame of matching spectra
+    confidence: medium
+  Step 4: Query result export
+    tool: MassQL reference query engine
+    algorithm: tabular/JSON/MGF/mzML serialization
+    parameters: export_format=['tsv', 'json', 'mgf', 'mzml'], cache_as_feather=True
+    input: filtered pandas DataFrame
+    output: exported spectra in selected format(s)
+    confidence: high
+  Step 5: High-throughput distributed querying
+    tool: NextFlow
+    algorithm: parallel file processing workflow
+    parameters: parallelization_strategy=multicore or batch cluster, merge_results=True
+    input: directory of MS files + MassQL query
+    output: aggregated results across all files (JSON/MGF/mzML/tsv)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: mentioned_no_link
+  code_url: https://mwang87.github.io/MassQueryLanguage_Documentation/
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No public repository link provided for MassQL reference implementation code (only documentation URL given)
+  - No example dataset or benchmark data provided to validate queries
+  - No specification of default tolerance values (e.g., TOLERANCEPPM default not stated)
+  - No versioning or release tag for MassQL reference implementation mentioned
+  - No test suite or validation protocol described for query engine correctness
+reproducibility_strengths:
+  - Fully open-source stack (lark, pyteomics, pandas, NextFlow)
+  - Formal grammar defined in EBNF enabling independent implementations
+  - Support for open standards (mzML, mzXML, MGF) and interoperable output formats (JSON, MGF, mzML, TSV)
+  - Documentation publicly available with syntax examples and qualifiers

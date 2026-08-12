@@ -1,0 +1,45 @@
+========== reproducibility_recipe entry ==========
+paper_title: Metabolomic Studies of Live Single Cancer Stem Cells Using Mass Spectrometry.
+source_paper: Sun M et al. (2019), Analytical chemistry, DOI: 10.1021/acs.analchem.8b05166, PMID: 30582812
+overall_reproducibility_score: 30/100
+
+workflow_steps: 3
+  Step 1: Single-cell metabolite extraction and ionization
+    tool: Single-probe mass spectrometry
+    input: live single colorectal cancer stem cells (CSCs) and non-stem cancer cells (NSCCs)
+    output: raw mass spectra
+    confidence: low
+  Step 2: Statistical analysis of metabolic differences
+    tool: t-test
+    algorithm: two-sample t-test
+    parameters: significance_threshold=0.05, correction_method=not specified
+    input: processed peak intensities (metabolite features)
+    output: differentially abundant metabolites
+    confidence: medium
+  Step 3: Unsupervised and supervised multivariate classification
+    tool: Partial Least Squares Discriminant Analysis (PLS-DA)
+    algorithm: PLS-DA
+    parameters: number_of_components=not specified, cross_validation=not specified
+    input: normalized metabolite intensity matrix
+    output: discriminatory metabolite loadings and sample scores
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of data preprocessing (peak picking, alignment, normalization)
+  - No details on Single-probe MS instrument parameters (ionization mode, mass analyzer, resolution, scan range)
+  - No information on metabolite identification (MS/MS, databases used)
+  - No deposition of raw or processed data in public repository
+  - No software versions or computational environment details
+  - PLS-DA and t-test implementation tools not named (e.g., R packages, Python libraries)
+reproducibility_strengths:
+  - Explicit mention of statistical methods (t-test, PLS-DA)
+  - Biological interpretation linked to functional assays (SCD1/NF-κB/ALDH1A1 inhibition)

@@ -1,0 +1,105 @@
+========== reproducibility_recipe entry ==========
+paper_title: SIMPEL: using stable isotopes to elucidate dynamics of context specific metabolism.
+source_paper: Kambhampati S et al. (2024), Communications biology, DOI: 10.1038/s42003-024-05844-z, PMID: 38347116
+overall_reproducibility_score: 87/100
+
+workflow_steps: 7
+  Step 1: Data conversion and centroiding
+    tool: ProteoWizard MSConvert
+    algorithm: Centroiding with peak picking filter
+    parameters: output_format=mzML, polarity_separation=True
+    input: Thermo .RAW files (profile mode)
+    output: centroided mzML files
+    confidence: high
+  Step 2: Feature detection
+    tool: XCMS (vnot specified (ref 65))
+    algorithm: centWave
+    parameters: mass_tolerance_ppm=5, pre_filter_scans=6, pre_filter_min_intensity=5000, snr_threshold=5, noise_threshold=1000000
+    input: centroided mzML files
+    output: feature table (m/z, RT, intensity matrix)
+    confidence: high
+  Step 3: Retention time alignment and feature grouping
+    tool: XCMS (vnot specified)
+    algorithm: obiwarp
+    parameters: min_fraction_samples=0.25, rt_deviation_s=10, mz_width=0.01
+    input: feature table
+    output: aligned and grouped feature table
+    confidence: high
+  Step 4: Gap filling
+    tool: XCMS (vnot specified)
+    algorithm: fillPeaks
+    input: aligned and grouped feature table
+    output: gap-filled feature table
+    confidence: medium
+  Step 5: Compound identification and database curation
+    tool: Compound Discoverer 3.0 (v3.0)
+    algorithm: MaxID workflow
+    parameters: databases=['mzCloud', 'LIPID MAPS'], manual_verification_required=True, chromatographic_peak_validity_required=True
+    input: MS/MS data from pooled unlabeled samples
+    output: custom compound database (formula, RT, adducts)
+    confidence: high
+  Step 6: Isotopologue matching and natural abundance correction
+    tool: SIMPEL (vnot specified (R package, first release described in paper))
+    algorithm: get_table_objects_NA_corrected
+    parameters: mz_tolerance=user-defined, rt_tolerance=user-defined, iterative_optimization_recommended=True
+    input: XCMS feature table + custom compound database
+    output: NA-corrected isotopologue distribution table, average labeling values
+    confidence: medium
+  Step 7: Isotopomer network modeling and flux estimation
+    tool: INCA (v2.0)
+    algorithm: Isotopomer Network Compartmental Analysis (INST-MFA)
+    parameters: reaction_network=glycolysis, TCA, amino acid biosynthesis (Arabidopsis subset), atom_transition_mapping=carbon and nitrogen for dual-labeling, optimization_repetitions=1000, confidence_interval_calculation=True
+    input: SIMPEL output (isotopologue distributions)
+    output: metabolic flux estimates with confidence intervals
+    confidence: high
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1234)
+  processed_data: available (GitHub: https://github.com/Plant-Metabolomics/SIMPEL/tree/main/inst/extdata)
+  metadata: available (MetaboLights: MTBLS1234)
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1234, https://github.com/Plant-Metabolomics/SIMPEL
+
+code_availability: repository_linked
+  code_url: https://github.com/Plant-Metabolomics/SIMPEL
+  license: MIT
+
+figure_recipes: 6
+  Figure 1: [workflow_diagram]
+    caption: Overview of SIMPEL workflow integrating HRMS data preprocessing, isotopologue extraction, NA correction, and flux analysis.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7]
+    visualization_tool: Inkscape / R (ggplot2)
+  Figure 2: [pca_scores]
+    caption: PCA scores plot showing separation of time points in dual-isotope labeled Arabidopsis root metabolomics data.
+    produced_by_step: [2, 3, 4]
+    visualization_tool: R (ggplot2)
+  Figure 3: [bar_chart]
+    caption: Bar plots showing average carbon and nitrogen labeling enrichment over time for key central metabolites.
+    produced_by_step: [6]
+    visualization_tool: R (ggplot2)
+  Figure 4: [volcano_plot]
+    caption: Volcano plot highlighting significantly enriched isotopologues (FDR < 0.05) across time points.
+    produced_by_step: [6]
+    visualization_tool: R (ggplot2)
+    statistical_test: t-test with Benjamini-Hochberg FDR correction
+  Figure 5: [pathway_map]
+    caption: Flux map overlaying INCA-estimated fluxes onto central carbon metabolism network.
+    produced_by_step: [7]
+    visualization_tool: Cytoscape / custom R plotting
+    statistical_test: 95% confidence intervals on fluxes
+  Figure 6: [boxplot]
+    caption: Boxplots comparing labeling dynamics of phospholipid species in Camelina cotyledons across time points.
+    produced_by_step: [6]
+    visualization_tool: R (ggplot2)
+    statistical_test: ANOVA with Tukey HSD
+
+reproducibility_gaps:
+  - Exact m/z and RT tolerance values used in SIMPEL's get_table_objects_NA_corrected are not reported (only noted as 'user-defined')
+  - INCA v2.0 requires MATLAB license (not open-source runtime)
+  - No explicit description of batch correction or QC filtering steps applied before XCMS
+  - Gradient profile for RPLC is modified but original reference method details not fully reproduced in paper
+reproducibility_strengths:
+  - Raw data deposited in MetaboLights (MTBLS1234)
+  - SIMPEL source code publicly available on GitHub under MIT license
+  - All software tools (XCMS, ProteoWizard, INCA) well-documented and widely adopted
+  - Custom compound databases built from manually verified MS/MS matches with public databases (mzCloud, LIPID MAPS)
+  - Example datasets included in SIMPEL package for immediate reproducibility

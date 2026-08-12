@@ -1,0 +1,63 @@
+========== reproducibility_recipe entry ==========
+paper_title: Rapid QC-MS: Interactive Dashboard for Synchronous Mass Spectrometry Data Acquisition Quality Control.
+source_paper: Sandhu W et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.4c00786, PMID: 39454023
+overall_reproducibility_score: 82/100
+
+workflow_steps: 5
+  Step 1: Real-time QC metric extraction from newly acquired .raw files
+    tool: Rapid QC-MS
+    algorithm: custom Python pipeline using ThermoRawFileParser and pyOpenMS
+    parameters: update_interval_seconds=60, mass_accuracy_tolerance_ppm=5, retention_time_shift_window_minutes=2, sensitivity_threshold_intensity=10000
+    input: Thermo .raw files (acquired in real time)
+    output: QC metrics dashboard (HTML/JS)
+    confidence: high
+  Step 2: Instrument sensitivity monitoring
+    tool: Rapid QC-MS
+    algorithm: median intensity of internal standard peaks across runs
+    parameters: internal_standard_names=['C13-glucose', 'd4-benzoic acid']
+    input: feature-intensity table (from internal standards)
+    output: sensitivity trend plot + alert threshold violation flag
+    confidence: medium
+  Step 3: In-run retention time stability assessment
+    tool: Rapid QC-MS
+    algorithm: local alignment of RT peaks using dynamic time warping (DTW) or linear regression fit residuals
+    parameters: rt_alignment_reference=first injection, max_rt_drift_minutes=0.5
+    input: chromatographic peak RTs (per run)
+    output: RT drift heatmap + per-run stability score
+    confidence: medium
+  Step 4: Mass accuracy drift monitoring
+    tool: Rapid QC-MS
+    algorithm: median absolute mass error (ppm) of lock mass or internal standard ions
+    parameters: lock_mass_mz=445.120025, mass_error_window_size=10
+    input: centroided MS1 spectra
+    output: mass accuracy trend line + control chart (±3σ)
+    confidence: high
+  Step 5: Cross-run batch-level QC aggregation and alerting
+    tool: Rapid QC-MS
+    algorithm: rolling z-score outlier detection + configurable Slack/Email webhook triggers
+    parameters: z_score_threshold=3, alert_cooldown_minutes=30
+    input: time-series QC metrics (per run)
+    output: alert log + summary dashboard
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/czbiohub-sf/Rapid-QC-MS
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No example dataset or sample .raw files provided for validation
+  - ThermoRawFileParser dependency requires Windows/.NET runtime (cross-platform limitations not fully documented)
+  - Exact configuration file schema and required metadata format (e.g., sample order, standard annotations) not detailed in paper
+  - No benchmarking against ground-truth QC failures (e.g., spiked degradation samples) reported
+reproducibility_strengths:
+  - Fully open-source implementation with MIT license
+  - Detailed installation and configuration instructions available in GitHub README
+  - Uses only open-source libraries (pyOpenMS, pandas, plotly, dash)
+  - Supports optional Google Drive sync and Slack/email alerts — enabling remote reproducible monitoring

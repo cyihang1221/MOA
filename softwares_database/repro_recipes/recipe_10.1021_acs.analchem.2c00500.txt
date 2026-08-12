@@ -1,0 +1,46 @@
+========== reproducibility_recipe entry ==========
+paper_title: Global Tracking of Transformation Products of Environmental Contaminants by <sup>2</sup>H-Labeled Stable Isotope-Assisted Metabolomics.
+source_paper: Chen K et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.2c00500, PMID: 35510918
+overall_reproducibility_score: 70/100
+
+workflow_steps: 3
+  Step 1: Data acquisition using high-resolution mass spectrometry
+    tool: HRMS
+    input: raw .raw files (implied vendor format)
+    output: raw mass spectra
+    confidence: low
+  Step 2: Feature detection and isotopic pattern recognition for deuterium-labeled compounds
+    tool: 2H-SIAM(1.0) (v1.0)
+    algorithm: deuterium-specific isotopic pattern matching
+    parameters: noise_discard_rate=0.99
+    input: raw mass spectra
+    output: filtered feature table containing 2H-labeled transformation products
+    confidence: high
+  Step 3: Annotation of transformation products
+    tool: Metabolite identification workflow (Level 2a–5)
+    algorithm: MS1 and MS/MS spectral matching, retention time alignment, database querying
+    parameters: identification_confidence_levels=['Level 2a', 'Level 3', 'Level 4', 'Level 5']
+    input: feature table with MS/MS spectra
+    output: annotated TPs list (n=13, including 5 novel)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/kechen1984/2H-SIAM
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw HRMS data not deposited in public repository
+  - No details on chromatographic conditions (e.g., column, gradient, flow rate)
+  - No specification of HRMS instrument type (e.g., Q-TOF, Orbitrap) or acquisition parameters (e.g., resolution, AGC target, CE)
+  - Metabolite annotation tools and databases not named (e.g., GNPS, HMDB, mzCloud, MassBank)
+  - No description of peak alignment, retention time correction, or normalization methods
+reproducibility_strengths:
+  - Custom open-source tool 2H-SIAM(1.0) publicly available on GitHub
+  - Explicit performance metrics reported (99% noise removal, 52 features extracted, 13 annotated TPs, 5 novel)
+  - Clear identification confidence levels applied (Level 2a–5 per MSI guidelines)

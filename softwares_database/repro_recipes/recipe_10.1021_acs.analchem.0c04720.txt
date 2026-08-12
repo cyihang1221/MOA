@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: Determination of Abundant Metabolite Matrix Adducts Illuminates the Dark Metabolome of MALDI-Mass Spectrometry Imaging Datasets.
+source_paper: Janda M et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.0c04720, PMID: 34097397
+overall_reproducibility_score: 87/100
+
+workflow_steps: 4
+  Step 1: High-resolution MALDI-MSI data acquisition
+    tool: Multiple vendor mass spectrometers
+    parameters: ionization_mode=positive, matrix=2,5-dihydroxybenzoic acid (DHB), mass_resolution=high_mass_resolution
+    input: tissue sections
+    output: raw .imzML or vendor-specific MSI datasets
+    confidence: medium
+  Step 2: Adduct detection via co-localization and mass accuracy
+    tool: mass2adduct
+    algorithm: co-localization-based adduct assignment
+    parameters: mass_tolerance_ppm=5, spatial_correlation_threshold=0.7, minimum_peak_intensity=user-defined, adduct_templates=['[M + (DHB-H2O) + H]+', '[M + DHB + Na]+']
+    input: raw MSI datasets (.imzML or vendor formats)
+    output: putative metabolite-matrix adduct table with spatial maps
+    confidence: high
+  Step 3: Adduct quantification and abundance estimation
+    tool: mass2adduct
+    algorithm: intensity-based relative quantification
+    parameters: normalization_method=total_ion_current, abundance_threshold=relative_to_parent_ion
+    input: adduct-annotated peak lists with spatial intensity matrices
+    output: adduct abundance matrix (per dataset)
+    confidence: high
+  Step 4: Cross-platform adduct frequency analysis
+    tool: R
+    algorithm: descriptive statistics across 20 datasets
+    parameters: datasets_count=20, sample_types=diverse biological tissues, vendor_platforms=multiple
+    input: adduct abundance matrices from step 3
+    output: summary statistics on adduct prevalence (e.g., up to one third of peaks)
+    confidence: medium
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1826)
+  processed_data: available (GitHub: mass2adduct/examples)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1826, https://github.com/mass2adduct/mass2adduct/tree/main/examples
+
+code_availability: repository_linked
+  code_url: https://github.com/mass2adduct/mass2adduct
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No explicit description of preprocessing steps (e.g., denoising, baseline correction) prior to adduct detection
+  - Exact spatial correlation metric implementation details not provided in methods
+reproducibility_strengths:
+  - Raw MSI data deposited in MetaboLights (MTBLS1826)
+  - Open-source tool mass2adduct with documented examples and Zenodo DOI
+  - Cross-platform validation across 20 datasets with public metadata

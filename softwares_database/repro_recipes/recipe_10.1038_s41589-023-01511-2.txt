@@ -1,0 +1,108 @@
+========== reproducibility_recipe entry ==========
+paper_title: Acylspermidines are conserved mitochondrial sirtuin-dependent metabolites.
+source_paper: Zhang B et al. (2024), Nature chemical biology, DOI: 10.1038/s41589-023-01511-2, PMID: 38167917
+overall_reproducibility_score: 40/100
+
+workflow_steps: 5
+  Step 1: Untargeted comparative metabolomics
+    tool: HPLC-HRMS
+    algorithm: extracted ion chromatogram (EIC) analysis
+    parameters: mass_tolerance_ppm=5
+    input: raw exo-metabolome extracts from C. elegans
+    output: feature table with peak areas
+    confidence: medium
+  Step 2: Targeted quantification of N-acylspermidines
+    tool: HILIC-MS1 and HILIC-PRM
+    algorithm: peak integration of extracted ion chromatograms
+    parameters: mass_tolerance_ppm=5, gaussian_smoothing_points={'daspid#3,daspid#7,daspid#8,maspid#7,#8': 5, 'daspid#5,maspid#3,#4': 7}
+    input: fractionated metabolite extracts
+    output: quantified metabolite levels (peak area)
+    confidence: high
+  Step 3: MS/MS structural characterization
+    tool: tandem mass spectrometry (ESI+)
+    algorithm: fragmentation pattern matching to synthetic standards
+    parameters: ion_mode=ESI+, fragment_ions_identified=True
+    input: purified or spiked metabolite standards and biological samples
+    output: structural annotation of N-acylspermidine isomers
+    confidence: high
+  Step 4: Isotope tracing analysis
+    tool: HRMS-based isotopologue detection
+    algorithm: 13C/15N/2H label incorporation analysis in molecular and fragment ions
+    parameters: labeling_source=['13C6,15N2-L-lysine', 'D4-glutaric acid']
+    input: isotope-labeled biological samples
+    output: origin inference (e.g., lysine vs. glutaric acid)
+    confidence: high
+  Step 5: Statistical testing
+    tool: unpaired, two-tailed t-test with Welch correction
+    algorithm: Welch's t-test
+    parameters: alpha=0.05, two_tailed=True, welch_correction=True
+    input: quantified metabolite peak areas across biological replicates
+    output: p-values and significance calls
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 10
+  Extended Data Fig. 1: [workflow_diagram]
+    caption: Model for mitochondrial lysine acylation regulation by sirtuins and OAADPR formation mechanism.
+    visualization_tool: not_mentioned
+  Extended Data Fig. 2: [chromatogram]
+    caption: EICs showing absence of m/z 302.2074 feature in sir-2.3 mutants and bacterial food; quantification of daspid isomers and related N-acylspermidines.
+    produced_by_step: [1, 2]
+    visualization_tool: not_mentioned
+    statistical_test: unpaired, two-tailed t-test with Welch correction
+  Extended Data Fig. 3: [other]
+    caption: MS/MS spectra and fragmentation schemes of synthetic N-acylspermidine standards.
+    produced_by_step: [3]
+    visualization_tool: not_mentioned
+  Extended Data Fig. 4: [bar_chart]
+    caption: Quantification of acyl transfer products and enzyme kinetics of MacroD1 hydrolysis of OAcADPR/OGADPR.
+    produced_by_step: [2, 4, 5]
+    visualization_tool: not_mentioned
+    statistical_test: unpaired, two-tailed t-test with Welch correction
+  Extended Data Fig. 5: [chromatogram]
+    caption: Representative EICs of N-acylspermidine fragment ions across mouse tissues; MS/MS of N-acylspermines.
+    produced_by_step: [2, 3]
+    visualization_tool: not_mentioned
+  Extended Data Fig. 6: [bar_chart]
+    caption: Relative abundances of N-acylspermidines in WT vs Sirt5 KO mouse tissues.
+    produced_by_step: [2, 5]
+    visualization_tool: not_mentioned
+    statistical_test: unpaired, two-tailed t-test with Welch correction
+  Extended Data Fig. 7: [bar_chart]
+    caption: N-acylspermidine levels in WT vs SIRT5 KO AT-3 and HCT116 cell cultures.
+    produced_by_step: [2, 5]
+    visualization_tool: not_mentioned
+    statistical_test: unpaired, two-tailed t-test with Welch correction
+  Extended Data Fig. 8: [other]
+    caption: 13C-labeling evidence for lysine origin of glutaryl moiety; developmental phenotypes in sir-2.3 mutants.
+    produced_by_step: [4]
+    visualization_tool: not_mentioned
+  Extended Data Fig. 9: [bar_chart]
+    caption: Bioactivity assays: N-glutarylspermidine uptake, clonogenic inhibition, and oxidation product detection.
+    produced_by_step: [2, 4, 5]
+    visualization_tool: not_mentioned
+    statistical_test: unpaired, two-tailed t-test with Welch correction
+  Extended Data Fig. 10: [other]
+    caption: In vitro assessment of maspid#3/#4 as SIRT5 substrates or inhibitors.
+    produced_by_step: [2, 5]
+    visualization_tool: not_mentioned
+    statistical_test: unpaired, two-tailed t-test with Welch correction
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository (e.g., MetaboLights, GNPS)
+  - No software or pipeline details provided for peak detection, alignment, or feature annotation (e.g., XCMS, OpenMS, MZmine not mentioned)
+  - No instrument parameters (e.g., LC gradient, column type, MS resolution, AGC targets) specified
+  - No description of data preprocessing steps (e.g., retention time alignment, batch correction, missing value imputation)
+  - No code or workflow scripts shared; all analyses appear performed using vendor software or custom in-house methods without documentation
+  - Commercial or proprietary software (e.g., Thermo Compound Discoverer, Sciex OS, Waters MassLynx) likely used but not named
+reproducibility_strengths:
+  - Explicit mass tolerance (±5 ppm) reported for EIC extraction
+  - Clear statistical method stated (unpaired two-tailed t-test with Welch correction)
+  - Use of synthetic standards and isotope tracers enhances structural confidence
+  - Biological replication numbers (n) consistently reported per experiment

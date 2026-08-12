@@ -1,0 +1,45 @@
+========== reproducibility_recipe entry ==========
+paper_title: Cross-Normalization of MALDI Mass Spectrometry Imaging Data Improves Site-to-Site Reproducibility.
+source_paper: Boskamp T et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.1c01792, PMID: 34297545
+overall_reproducibility_score: 30/100
+
+workflow_steps: 3
+  Step 1: Spectral preprocessing
+    tool: Custom R implementation
+    algorithm: Cross-normalization based on full statistical distribution estimation and non-linear, mass-dependent intensity transformation
+    parameters: reference_distribution=empirically derived from pooled dataset, mass_dependence=explicitly modeled, transformation_type=non-linear
+    input: raw MALDI MSI spectra (mz-intensity vectors per pixel)
+    output: cross-normalized spectral intensities per pixel
+    confidence: medium
+  Step 2: Model-driven resampling
+    tool: Custom R implementation
+    algorithm: Resampling tailored for tryptic peptide MALDI imaging data
+    parameters: resampling_target=tryptic peptide m/z range, model_assumption=proteolytic digestion pattern
+    input: cross-normalized spectra
+    output: resampled and aligned spectral profiles
+    confidence: low
+  Step 3: Batch effect evaluation
+    tool: Unspecified statistical software
+    algorithm: Inter-lab and cross-protocol variability assessment
+    parameters: comparison_scenarios=['inter-sample', 'inter-lab', 'cross-protocol'], metrics=['coefficient of variation', 'PCA dispersion', 'class separation']
+    input: resampled spectral profiles
+    output: quantified batch effect reduction metrics
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (Not specified)
+  processed_data: not_mentioned (Not specified)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposited in public repository
+  - Custom R algorithms not shared or described with sufficient detail for implementation
+  - No software versioning or parameter specifications for cross-normalization (e.g., kernel bandwidth, reference selection criteria, functional form of non-linear transform)
+  - No information on spectral preprocessing steps prior to cross-normalization (e.g., denoising, baseline correction, peak picking)
+reproducibility_strengths:
+  - Explicit description of experimental design (two labs, multiple protocols, N=241 patients, FFPE tissue types)
+  - Clear articulation of methodological novelty (distribution-based, mass-dependent, non-linear normalization + tryptic-peptide-specific resampling)

@@ -1,0 +1,58 @@
+========== reproducibility_recipe entry ==========
+paper_title: Mycobacteria that cause tuberculosis have retained ancestrally acquired genes for the biosynthesis of chemically diverse terpene nucleosides.
+source_paper: Mayfield JA et al. (2024), PLoS biology, DOI: 10.1371/journal.pbio.3002813, PMID: 39348416
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Whole-cell lipid profiling via mass spectrometry
+    tool: limms (linear models for mass spectrometry)
+    algorithm: linear modeling of MS ion intensities across genotypes/conditions
+    input: raw mass spectrometry data (unspecified format, likely .raw or .mzML)
+    output: differentially abundant lipid features (terpene nucleosides)
+    confidence: low
+  Step 2: Metabolite identification and structural validation
+    tool: collisional mass spectrometry (MS/MS)
+    algorithm: fragmentation pattern analysis
+    parameters: fragmentation_mode=collision-induced dissociation
+    input: candidate terpene nucleoside ions from limms output
+    output: structurally validated metabolites (e.g., adenine-, adenosine-, lipid-modified tuberculosinol derivatives)
+    confidence: medium
+  Step 3: Synthetic chemistry validation
+    tool: chemical synthesis
+    algorithm: de novo synthesis of candidate metabolites
+    input: putative metabolite structures from MS/MS
+    output: authentic synthetic standards for MS confirmation
+    confidence: high
+  Step 4: Comprehensive adenine-fragmenting lipid profiling
+    tool: mass spectrometry with adenine-specific fragmentation filtering
+    algorithm: targeted MS/MS screening for adenine immonium ion (m/z 135.05) and related fragments
+    parameters: target_fragment_mz=135.05, tolerance_ppm=5
+    input: whole-cell lipid extracts
+    output: adenine-containing terpene nucleoside feature list
+    confidence: medium
+  Step 5: Comparative genomics and horizontal gene transfer analysis
+    tool: sequence alignment and nucleotide composition analysis
+    algorithm: codon usage bias analysis (e.g., GC skew, dinucleotide frequency), phylogenetic mapping
+    parameters: comparison_group=Mycobacterium tuberculosis complex and non-MTC species, reference_database=plasmid sequences from plant-associated bacteria
+    input: genomic sequences of Rv3376–Rv3378c locus across Mycobacterium species
+    output: evolutionary origin hypothesis (plasmid-mediated HGT), timing inference
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - limms software not publicly available or documented
+  - No raw or processed mass spectrometry data deposited in public repository (e.g., MetaboLights, GNPS)
+  - No code, parameters, or workflow scripts shared
+  - Instrument acquisition methods (LC gradient, column, ionization mode, resolution settings) not specified
+  - No details on sample preparation (extraction protocol, internal standards, QC procedures)
+reproducibility_strengths:
+  - Explicit biological validation via synthetic standards
+  - Use of orthogonal methods (genomics + metabolomics + chemistry)

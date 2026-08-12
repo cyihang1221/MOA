@@ -1,0 +1,60 @@
+========== reproducibility_recipe entry ==========
+paper_title: Development of Chemical Isotope Labeling Liquid Chromatography Orbitrap Mass Spectrometry for Comprehensive Analysis of Dipeptides.
+source_paper: Cheng Z et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.2c05796, PMID: 37039432
+overall_reproducibility_score: 42/100
+
+workflow_steps: 5
+  Step 1: Chemical isotope labeling (CIL) of dipeptides
+    tool: Dansylation reagent
+    parameters: labeling_scheme=differential ^12C/^13C dansylation, reaction_conditions=pH 9.0, 60°C, 30 min
+    input: sample extracts containing dipeptides
+    output: labeled dipeptide derivatives
+    confidence: medium
+  Step 2: Liquid chromatography separation
+    tool: LC system (not specified model)
+    parameters: column=C18 reversed-phase column, gradient=optimized (not fully specified), temperature=40°C, flow_rate=0.3 mL/min, injection_volume=5 μL
+    input: dansyl-labeled dipeptide samples
+    output: LC-separated analytes
+    confidence: low
+  Step 3: Orbitrap tandem mass spectrometry acquisition
+    tool: Orbitrap MS (Thermo Scientific)
+    algorithm: data-dependent acquisition (DDA)
+    parameters: mass_resolution_ms1=60000, mass_resolution_ms2=15000, collision_energy_orbitrap_ms2=optimized for dansyl-dipeptides (value not specified), scan_range_ms1=m/z 100–1000, top_n=10
+    input: LC eluent
+    output: raw .raw files
+    confidence: medium
+  Step 4: Dipeptide identification using CIL standard library
+    tool: IsoMS
+    algorithm: retention time + MS + MS/MS matching
+    parameters: rt_tolerance=±0.2 min, mass_tolerance_ppm=5, ms_ms_similarity_threshold=not specified, library_entries=400
+    input: raw .raw files + CIL standard library
+    output: annotated dipeptide list with confidence scores
+    confidence: low
+  Step 5: Relative quantification via isotope pair intensity ratios
+    tool: IsoMS
+    algorithm: peak-pair ratio calculation
+    parameters: ratio_acceptance_window=±20% around 1.0, rsd_threshold=10, min_coverage_fraction=0.96
+    input: annotated feature table with ^12C/^13C peak pairs
+    output: relative quantification table (fold-changes, RSDs)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data (.raw files) not deposited in public repository
+  - IsoMS software is not publicly available or described in detail — no version, source, or installation instructions provided
+  - Exact LC gradient profile not reported (only described as 'optimized')
+  - Orbitrap MS/MS collision energy value not specified
+  - No access to the 400-entry CIL standard library (no repository link or file format details)
+  - No metadata schema or sample annotation details provided beyond 'rice wine' and 'human serum'
+reproducibility_strengths:
+  - Explicit description of labeling chemistry (dansylation under defined pH/temperature/time)
+  - Clear performance metrics reported (e.g., 96% of dipeptides within ±20% ratio error, >90% with RSD <10%)
+  - Use of differential ^12C/^13C labeling enables built-in internal standardization

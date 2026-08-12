@@ -1,0 +1,67 @@
+========== reproducibility_recipe entry ==========
+paper_title: Integrating time since deposition estimation of bloodstains into a DNA profiling workflow: A novel approach using fluorescence spectroscopy.
+source_paper: Elliott CI et al. (2025), Talanta, DOI: 10.1016/j.talanta.2024.127234, PMID: 39603014
+overall_reproducibility_score: 35/100
+
+workflow_steps: 6
+  Step 1: Fluorescence data acquisition
+    tool: Fluorescence spectrometer
+    parameters: excitation_range_nm=[240, 450], emission_range_nm=[280, 600], excitation_step_nm=5, emission_step_nm=5, slit_width_nm=5
+    input: cell lysate (eluate) from spin-column DNA extraction
+    output: excitation-emission matrices (EEMs)
+    confidence: medium
+  Step 2: Fluorophore deconvolution
+    tool: PARAFAC
+    algorithm: Parallel factor analysis
+    parameters: number_of_components=None, convergence_criteria=default, replicates=100
+    input: EEMs
+    output: resolved fluorophore profiles (excitation/emission spectra + concentrations)
+    confidence: low
+  Step 3: Untargeted metabolomics profiling
+    tool: HPLC-MS
+    parameters: chromatography=high-performance liquid chromatography, ionization=electrospray ionization, mass_analyzer=time-of-flight or high-resolution mass spectrometer, polarity=['positive', 'negative'], scan_range_mz=[50, 1000]
+    input: same eluates used for fluorescence
+    output: raw .mzML files
+    confidence: low
+  Step 4: Metabolite feature detection and alignment
+    tool: XCMS
+    algorithm: centWave
+    parameters: ppm=10, peak_width_sec=[5, 30], snthresh=10, prefilter=[3, 10000]
+    input: raw .mzML files
+    output: feature table (m/z, RT, intensity)
+    confidence: medium
+  Step 5: Fluorophore identification support
+    tool: MetaboAnalyst
+    algorithm: database matching (HMDB, METLIN, MassBank)
+    parameters: mass_tolerance_ppm=10, retention_time_shift_sec=30, fragmentation_match=True
+    input: XCMS feature table + MS/MS spectra
+    output: putatively annotated metabolites linked to fluorophores (e.g., tryptophan, FOX, AGEs)
+    confidence: low
+  Step 6: Chemometric TSD modeling
+    tool: Random Forest regression
+    algorithm: Boruta feature selection + Random Forest
+    parameters: ntree=500, mtry=sqrt(n_features), nodesize=5, importance=True
+    input: PARAFAC scores (fluorophore concentrations)
+    output: TSD prediction model (R², RMSEP)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw fluorescence EEMs not deposited in public repository
+  - No accession ID or repository link for HPLC-MS raw data
+  - PARAFAC component number not specified
+  - Exact HPLC gradient profile and column details omitted
+  - No code or scripts shared for Boruta+RF implementation
+  - AC-free vs AC-treated experimental design details (e.g., anticoagulant type, concentration) not fully described
+reproducibility_strengths:
+  - Uses established open-source tools (XCMS, PARAFAC, Random Forest)
+  - Clear performance metrics reported (R², RMSEP) for model validation
+  - Biological interpretation provided (tryptophan decay, FOX/AGE accumulation)

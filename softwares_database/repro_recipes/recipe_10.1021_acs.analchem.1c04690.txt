@@ -1,0 +1,51 @@
+========== reproducibility_recipe entry ==========
+paper_title: Glycan and Protein Analysis of Glycoengineered Bacterial <i>E. coli</i> Vaccines by MALDI-in-Source Decay FT-ICR Mass Spectrometry.
+source_paper: Nicolardi S et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.1c04690, PMID: 35293727
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Sample preparation with MALDI matrix selection
+    tool: Manual preparation
+    parameters: protein_ISD_matrix=1,5-diaminonaphthalene, glycan_ISD_matrix=2,5-dihydroxybenzoic acid / 2-hydroxy-5-methoxybenzoic acid (super-DHB), salt_condition_for_protein_analysis=absence of salts, salt_condition_for_glycan_analysis=presence of salt (for sodiated glycan detection)
+    input: purified glycoconjugate vaccine candidates (E. coli O2/O6A/O25B conjugated to Pseudomonas exotoxin A)
+    output: MALDI target spots ready for ISD FT-ICR MS analysis
+    confidence: high
+  Step 2: MALDI-in-source decay (ISD) FT-ICR mass spectrometry
+    tool: FT-ICR MS
+    parameters: instrument_type=Fourier transform ion cyclotron resonance mass spectrometer, ionization_mode=MALDI, decay_type=in-source decay (ISD), resolution_requirement=ultrahigh-resolution, mass_accuracy_requirement=sub-ppm
+    input: MALDI-prepared samples
+    output: raw ISD mass spectra (protein fragment ions and glycan fragment ions)
+    confidence: medium
+  Step 3: Selective detection and interpretation of ISD fragments
+    tool: Manual spectral interpretation / custom annotation
+    parameters: fragment_ion_types_interpreted=['protein N-terminal sequence ions', 'glycan repeat unit signature ions'], adducts_monitored=['sodiated glycan fragments']
+    input: raw ISD FT-ICR MS spectra
+    output: annotated protein terminal sequences and O-antigen repeat unit structures
+    confidence: low
+  Step 4: MS/MS analysis of O-antigen ISD fragments
+    tool: Tandem MS (MS/MS) on FT-ICR platform
+    parameters: target_ions=O-antigen ISD fragment ions, purpose=detection of specific repeat unit signatures
+    input: selected ISD glycan fragment ions
+    output: MS/MS spectra supporting repeat unit composition and linkage inference
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw FT-ICR MS data not deposited in any public repository
+  - No details on instrument parameters (e.g., laser energy, source pressure, accumulation time, excitation waveform) for ISD
+  - No software or scripts provided for spectral annotation or repeat unit identification
+  - No reference standards or spectral libraries shared for O-antigen ISD fragment validation
+  - Matrix application protocol (e.g., drying method, layering, concentration) not fully specified
+  - No description of data processing pipeline (peak picking, deconvolution, charge state assignment)
+reproducibility_strengths:
+  - Clear rationale for matrix selection and salt modulation strategy
+  - Explicit reporting of three distinct glycoconjugate vaccine candidates (E. coli O2/O6A/O25B + exotoxin A)
+  - Use of ultrahigh-resolution FT-ICR enables confident sub-ppm mass measurement — critical for glycan/protein fragment assignment

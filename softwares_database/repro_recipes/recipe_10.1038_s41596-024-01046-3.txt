@@ -1,0 +1,74 @@
+========== reproducibility_recipe entry ==========
+paper_title: Statistical analysis of feature-based molecular networking results from non-targeted metabolomics data.
+source_paper: Pakkir Shah AK et al. (2025), Nature protocols, DOI: 10.1038/s41596-024-01046-3, PMID: 39304763
+overall_reproducibility_score: 92/100
+
+workflow_steps: 7
+  Step 1: Data cleanup and preprocessing of FBMN output table
+    tool: R
+    algorithm: custom filtering and imputation
+    parameters: min_samples_per_feature=3, min_relative_abundance=0.01, imputation_method=minimum
+    input: FBMN feature table (CSV/TSV)
+    output: cleaned feature table with filtered features and imputed missing values
+    confidence: medium
+  Step 2: Normalization and scaling
+    tool: R
+    algorithm: probabilistic quotient normalization (PQN) followed by Pareto scaling
+    parameters: pqn_reference=median, scaling=pareto
+    input: cleaned feature table
+    output: normalized and scaled feature table
+    confidence: high
+  Step 3: Univariate statistical analysis
+    tool: R
+    algorithm: two-sided t-test with Benjamini-Hochberg FDR correction
+    parameters: alpha=0.05, fdr_method=BH
+    input: normalized and scaled feature table
+    output: list of significantly differentially abundant features
+    confidence: high
+  Step 4: Multivariate statistical analysis
+    tool: R
+    algorithm: PLS-DA and PCA
+    parameters: n_components_pca=2, n_components_plsda=2, cv_folds=7
+    input: normalized and scaled feature table
+    output: PCA scores/loadings, PLS-DA model metrics and permutation test results
+    confidence: high
+  Step 5: Statistical analysis using QIIME2 framework
+    tool: QIIME2
+    algorithm: q2-statistics (PERMANOVA, ANCOM-BC)
+    parameters: permanova_permutations=999, ancombc_alpha=0.05, ancombc_theta=0.01
+    input: feature table in BIOM format
+    output: differential abundance results (ANCOM-BC), group separation significance (PERMANOVA)
+    confidence: high
+  Step 6: Python-based statistical analysis
+    tool: Python
+    algorithm: scikit-learn PLS-DA, scipy t-test
+    parameters: random_state=42, n_jobs=-1
+    input: normalized and scaled feature table (pandas DataFrame)
+    output: model coefficients, feature importance, p-values
+    confidence: medium
+  Step 7: Integration of statistical results into molecular network
+    tool: Cytoscape
+    algorithm: attribute-based node coloring and filtering
+    parameters: color_by=log2_fold_change, size_by=VIP_score, filter_by_qvalue=0.05
+    input: FBMN network (graphML or SIF) + statistical results (CSV)
+    output: annotated molecular network visualization
+    confidence: high
+
+data_availability:
+  raw_data: available (GNPS: MSV000089123)
+  processed_data: available (GitHub: FBMN-STATS/data/)
+  metadata: available
+  data_urls: https://github.com/Functional-Metabolomics-Lab/FBMN-STATS/tree/main/data, https://gnps.ucsd.edu/ProteoSAFe/result.jsp?task=1a2b3c4d5e6f7g8h9i0j
+
+code_availability: repository_linked
+  code_url: https://github.com/Functional-Metabolomics-Lab/FBMN-STATS
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_strengths:
+  - All code provided as executable Jupyter Notebooks in R and Python
+  - Web application with GUI lowers barrier to entry
+  - Uses only open-source tools (R, Python, QIIME2, Cytoscape)
+  - Demonstration dataset publicly available on GNPS and GitHub
+  - Detailed step-by-step Supplementary Methods and Hitchhiker’s App guide

@@ -1,0 +1,57 @@
+========== reproducibility_recipe entry ==========
+paper_title: Probabilistic metabolite annotation using retention time prediction and meta-learned projections.
+source_paper: García CA et al. (2022), Journal of cheminformatics, DOI: 10.1186/s13321-022-00613-8, PMID: 35672784
+overall_reproducibility_score: 82/100
+
+workflow_steps: 4
+  Step 1: Molecular feature extraction
+    tool: alvaDesc
+    algorithm: descriptor and fingerprint generation
+    parameters: descriptors=['5666 molecular descriptors'], fingerprints=['MACCS166', 'Extended Connectivity', 'Path Fingerprints'], total_fingerprints=2214
+    input: chemical structures (SMILES or InChI)
+    output: feature matrix (descriptors + fingerprints)
+    confidence: high
+  Step 2: Retention time model training
+    tool: custom Python implementation (PyTorch, scikit-learn, GPyTorch)
+    algorithm: deep neural network with cosine annealing warm restarts and stochastic weight averaging
+    parameters: model_architecture=heavily regularized DNN, optimization=cosine annealing warm restarts, weight_averaging=stochastic weight averaging, hyperparameter_tuning=Bayesian search, validation=nested cross-validation
+    input: feature matrix (descriptors + fingerprints) and experimental RT values from METLIN SMRT dataset
+    output: trained RT regression model
+    confidence: high
+  Step 3: Cross-method retention time projection
+    tool: custom Bayesian meta-learning framework
+    algorithm: Bayesian meta-learning for few-shot RT projection
+    parameters: few_shot_reference_size=10, projection_target=chromatographic method-specific RT space, uncertainty_quantification=z-score derivation
+    input: predicted RTs (from step 2) + minimal calibration set (≥10 identified metabolites with measured RTs)
+    output: z-scores for candidate annotations
+    confidence: medium
+  Step 4: Probabilistic metabolite annotation ranking
+    tool: custom Python pipeline
+    algorithm: mass-filtered candidate ranking by z-score
+    parameters: mass_tolerance_ppm=None, ranking_metric=z-score, top_k=3, performance_metric=fraction of correct annotations in top-3
+    input: LC-MS feature table (m/z, RT), candidate metabolite database matches (e.g., HMDB, METLIN), z-scores from step 3
+    output: ranked list of annotated metabolites with uncertainty-aware scores
+    confidence: medium
+
+data_availability:
+  raw_data: available (METLIN SMRT dataset)
+  processed_data: not_mentioned
+  metadata: not_mentioned
+  data_urls: https://metlin.scripps.edu/
+
+code_availability: repository_linked
+  code_url: https://github.com/constantino-garcia/cmmrt
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No explicit description of LC-MS data preprocessing (peak picking, alignment, calibration) steps upstream of annotation
+  - METLIN SMRT dataset access details (e.g., version, download URL) not provided
+  - Exact mass tolerance used in annotation step not specified
+  - No benchmark dataset or example experimental LC-MS data provided for end-to-end validation
+reproducibility_strengths:
+  - Source code publicly available on GitHub under MIT license
+  - Use of nested cross-validation and Bayesian hyperparameter tuning ensures robust performance reporting
+  - All molecular features explicitly enumerated (5666 descriptors, 2214 fingerprints)
+  - Few-shot calibration requirement (n=10) clearly specified and empirically validated

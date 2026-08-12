@@ -1,0 +1,59 @@
+========== reproducibility_recipe entry ==========
+paper_title: Identification of Serine-Containing Microcystins by UHPLC-MS/MS Using Thiol and Sulfoxide Derivatizations and Detection of Novel Neutral Losses.
+source_paper: Premathilaka SH et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.3c04047, PMID: 38170221
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: UHPLC-MS/MS data acquisition
+    tool: UHPLC-MS/MS platform
+    parameters: ionization_mode=['positive', 'negative'], fragmentation_method=CID
+    input: cyanobacterial bloom extract
+    output: raw .raw or .d files (vendor format)
+    confidence: medium
+  Step 2: Thiol derivatization
+    tool: chemical derivatization
+    parameters: reagents=various thiolation reagents, reaction_target=α,β-unsaturated carbonyl on Mdha residue, mechanism=Michael addition
+    input: MC-containing extract
+    output: thiol-derivatized MCs
+    confidence: low
+  Step 3: Sulfoxide derivatization
+    tool: chemical derivatization
+    parameters: oxidation_target=thiol-adducted Mdha, product=sulfoxide-modified [Ser¹]MCs
+    input: thiol-derivatized MCs
+    output: sulfoxide-derivatized MCs
+    confidence: low
+  Step 4: MS/MS spectral analysis for neutral loss detection
+    tool: custom Python scripts
+    algorithm: neutral loss screening
+    parameters: neutral_losses=['oxidized thiols', 'oxidized sulfoxides'], mz_shifts=corresponding to loss of oxidized thiol/sulfoxide from Ser¹-MCs
+    input: CID-MS/MS spectra (positive/negative ESI)
+    output: putatively identified Ser¹-MC candidates
+    confidence: medium
+  Step 5: Structural elucidation and confirmation
+    tool: custom Python scripts
+    algorithm: pattern-based structural inference
+    parameters: key_evidence=observation of novel neutral losses unique to Ser¹-MCs with Mdha-Ser adjacency, mechanistic_basis=gas-phase O–S cyclization yielding stable cyclic ions
+    input: annotated MS/MS spectra + derivatization metadata
+    output: putative identifications: [Ser¹]MC-RR and [Ser¹]MC-YR
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository
+  - Exact UHPLC gradient, column, or MS instrument parameters not specified
+  - No details on 'various thiolation reagents' (e.g., identity, concentration, reaction time, temperature)
+  - Custom Python codes described only as 'two Python codes' — no repository link, version, or algorithmic details provided
+  - No validation via standards or retention time matching for novel MCs
+  - No description of spectral processing (peak picking, deconvolution, adduct filtering)
+reproducibility_strengths:
+  - Mechanistic interpretation of novel neutral losses is clearly articulated
+  - Derivatization chemistry (Michael addition to Mdha) is well-motivated and chemically plausible
+  - Dual ESI polarity and CID fragmentation context provided

@@ -1,0 +1,120 @@
+========== reproducibility_recipe entry ==========
+paper_title: Advanced multi-modal mass spectrometry imaging reveals functional differences of placental villous compartments at microscale resolution.
+source_paper: Veličković M et al. (2025), Nature communications, DOI: 10.1038/s41467-025-57107-y, PMID: 40021619
+overall_reproducibility_score: 42/100
+
+workflow_steps: 13
+  Step 1: On-tissue chemical derivatization (OTCD) for metabolomic imaging
+    tool: Custom MALDI-MSI workflow with EDC/4-APEBA
+    algorithm: Chemical derivatization targeting carboxyl groups
+    parameters: EDC_concentration_mg_per_mL=6, 4_APEBA_concentration_mg_per_mL=2, spray_flow_rate_uL_per_min=25, nozzle_temperature_C=37.5, spray_cycles=4, track_spacing_mm=3, drying_period_s=2, spray_head_velocity_mm_per_min=1200, nitrogen_gas_pressure_PSI=10, nozzle_height_mm=40, crisscross_pattern=True
+    input: 12-μm frozen placental tissue sections on ITO slides
+    output: derivatized tissue sections ready for DHB matrix application
+    confidence: high
+  Step 2: DHB matrix application for metabolomic imaging
+    tool: M5 Sprayer (HTX Technologies)
+    algorithm: Matrix deposition
+    parameters: DHB_concentration_mg_per_mL=40, solvent_composition=70% MeOH, spray_flow_rate_uL_per_min=50, nozzle_temperature_C=70, spray_cycles=12, track_spacing_mm=3, drying_period_s=2, spray_head_velocity_mm_per_min=1200, nitrogen_gas_pressure_PSI=10, nozzle_height_mm=40, crisscross_pattern=True, matrix_coverage_ug_per_cm2=667
+    input: OTCD-treated tissue sections
+    output: DHB-coated tissue sections ready for FTICR-MALDI-MSI
+    confidence: high
+  Step 3: Metabolomic imaging acquisition
+    tool: Bruker solariX FTICR MS (12 T)
+    algorithm: FTICR mass spectrometry imaging
+    parameters: ion_mode=positive, laser_shots_per_pixel=100, laser_frequency_Hz=1000, step_size_um=25, laser_spot_size_um=25 μm SmartWalk, mass_range_mz_min=98.3, mass_range_mz_max=1000, transient_length_s=0.5593, mass_resolution_at_mz_400=110000, lock_mass_compound=4-APEBA molecular ion, mass_error_ppm=3
+    input: DHB-coated tissue sections
+    output: raw .imzML or .d files (centroided in SCiLS Lab)
+    confidence: high
+  Step 4: Metabolite annotation and spatial quantification
+    tool: METASPACE (cloud platform) (vnot specified)
+    algorithm: Spatially aware metabolite annotation using accurate mass, isotopic patterns, and spatial colocalization
+    parameters: mass_error_ppm=3, chemical_modifications=['+C18H22N2Br'], database=CoreMetabolome-v3, FDR_threshold=0.2, spatial_chaos_metric_used=True
+    input: centroided .imzML datasets from SCiLS Lab
+    output: annotated feature table with spatial coordinates, m/z, putative identity, FDR, spatial chaos score
+    confidence: high
+  Step 5: DHA matrix application for lipidomic imaging
+    tool: M5 Sprayer (HTX Technologies)
+    algorithm: Matrix deposition
+    parameters: DHA_concentration_mg_per_mL=15, solvent_composition=90% ACN + 0.2% TFA, spray_flow_rate_uL_per_min=150, nozzle_temperature_C=30.0, spray_cycles=4, track_spacing_mm=2, spray_head_velocity_mm_per_min=1300, nitrogen_gas_pressure_PSI=10, nozzle_height_mm=40, crisscross_pattern=True, matrix_coverage_ug_per_cm2=277
+    input: 12-μm frozen placental tissue sections on ITO slides
+    output: DHA-coated tissue sections ready for Orbitrap-MALDI-MSI
+    confidence: high
+  Step 6: Lipidomic imaging acquisition
+    tool: Thermo Q Exactive Orbitrap MS with custom UHMR boards and MALDI source
+    algorithm: Orbitrap-based MALDI-MSI
+    parameters: ion_mode=positive, laser_shots_per_pixel=1000, laser_frequency_Hz=1000, pulse_energy_uJ=1.2, laser_wavelength_nm=349, step_size_um=15, spot_size_um=12 × 15, mass_range_mz_min=600, mass_range_mz_max=2000, transient_length_s=1.024, observed_resolution_at_mz_804=260000, in_source_trapping_disabled=True, ion_transmission_setting=low, mz_detection_setting=low, mass_error_ppm=3
+    input: DHA-coated tissue sections
+    output: raw .raw files combined with .xml coordinates
+    confidence: high
+  Step 7: Lipid annotation and spatial quantification
+    tool: METASPACE (cloud platform) (vnot specified)
+    algorithm: Spatially aware lipid annotation using accurate mass and spatial colocalization
+    parameters: mass_error_ppm=3, database=LipidMaps-2017-12-12, FDR_threshold=0.2
+    input: centroided datasets exported from Mozaic (v2023.4.0.b3)
+    output: annotated lipid feature table with spatial coordinates, m/z, putative identity, FDR
+    confidence: high
+  Step 8: Histological staining and registration
+    tool: H&E staining kit (Abcam)
+    algorithm: Standard hematoxylin and eosin staining
+    parameters: matrix_removal_metabolomics=two changes of 70% MeOH, 1 min each, matrix_removal_lipidomics=two changes of 70% ACN, 1 min each, hydration_steps=['96% ethanol (30 s)', 'water (1 min)'], staining_protocol=manufacturer protocol
+    input: post-MALDI tissue sections on ITO and PEN slides
+    output: H&E-stained histology images aligned to MSI data
+    confidence: medium
+  Step 9: Laser capture microdissection (LCM) of metabolically enriched regions
+    tool: PALM MicroBeam system (ZEISS)
+    algorithm: Spatially targeted tissue isolation
+    parameters: target_regions=['syncytiotrophoblast (STB)', 'villous core'], tissue_area_per_replicate_um2=10000, replicates_STB=14, replicates_core=13, tissue_depth_um=96, capturing_medium=2 µL DMSO in microPOTS chip wells
+    input: H&E-registered metabolomic/lipidomic maps (sections 18 & 22)
+    output: microdissected STB and core tissue replicates in microPOTS chip
+    confidence: high
+  Step 10: Microscale proteomics sample processing
+    tool: microPOTS chip + custom protocols
+    algorithm: In-chip protein extraction, reduction, alkylation, and digestion
+    parameters: DDM_concentration_percent=0.1, PBS_dilution_factor=0.5, TEAB_concentration_mM=50, DTT_concentration_mM=1, IAA_concentration_mM=10, Lys_C_amount_ng=10, trypsin_amount_ng=40, incubation_temperatures_C=[75, 25, 37], incubation_times_min=[60, 30, 600], acidification_FA_final_percent=1, DDM_coating_autosampler_vials_percent=0.01, evaporation_control=ice pack + humidified chamber + aluminum foil sealing
+    input: LCM-collected tissue voxels in microPOTS chip
+    output: digested peptide samples in autosampler vials
+    confidence: high
+  Step 11: LC-MS/MS proteomics analysis
+    tool: Thermo Vanquish Neo UHPLC + Orbitrap Exploris 240
+    algorithm: Data-dependent acquisition (DDA)
+    parameters: column_dimensions_um_id_length_cm=75×300, particle_size_um=1.7, gradient_duration_min=120, gradient_profile_percent_B=[1, 8, 21, 28, 37, 75, 95], gradient_timepoints_min=[0, 7, 82, 102, 112, 117, 120], buffer_A_composition=water + 0.1% FA, buffer_B_composition=acetonitrile + 0.1% FA, flow_rate_nL_per_min=200, MS1_resolution=60000, MS1_scan_range_mz_min=300, MS1_scan_range_mz_max=1800, AGC_standard=True, max_injection_time_auto=True, intensity_threshold=5000, isolation_window_mz=0.7, HCD_collision_energy_percent=30, MS2_resolution=30000, MS2_normalized_AGC_percent=250, first_mass_mz=110, S_Lens_RF_level=60, ion_transfer_tube_temp_C=300, spray_voltage_V=2200
+    input: peptide samples from microPOTS chip
+    output: raw .raw files
+    confidence: high
+  Step 12: Proteomics database search and quantification
+    tool: MS-GF+ (PMID: 25358478)
+    algorithm: Spectral matching against human proteome
+    parameters: database=UniProt human proteome (release 2023_01), MS1_mass_accuracy_ppm=5, FDR_threshold=0.01, minimum_peptides_per_protein=1, minimum_samples_with_peptide=2
+    input: raw .raw files
+    output: protein identification table with PSMs, AUC intensities (via MASIC), and FDR-filtered protein list
+    confidence: high
+  Step 13: Multi-omics integration and pathway reconstruction
+    tool: Custom analysis (not explicitly named)
+    algorithm: Spatial co-localization-driven biological pathway mapping
+    parameters: integration_level=metabolite-lipid-protein spatial concordance, biological_focus=['steroid metabolism', 'lipid metabolism', 'maternal-fetal signaling'], resolution=micrometer-scale, compartment_annotation=['STB', 'villous core']
+    input: METASPACE-annotated metabolite/lipid tables + MS-GF+-quantified protein table + H&E-aligned spatial coordinates
+    output: integrated pathway maps showing compartment-specific molecular synthesis and signaling
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: not_mentioned (not mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw MSI and LC-MS/MS data not deposited in public repository (e.g., MetaboLights, PRIDE, MassIVE)
+  - No code/scripts shared for multi-omics integration (Step 13), which is central to the paper's conclusions
+  - Critical instrument parameters missing: exact laser power calibration for FTICR, UHMR board firmware version, SCiLS Lab/Mozaic export settings
+  - microPOTS chip design and fabrication details not provided (proprietary hardware barrier)
+  - No description of statistical methods for differential spatial abundance testing (e.g., no mention of t-test, LDA, or spatial permutation tests)
+  - H&E-to-MSI image registration method unspecified (manual? automated? software used?)
+reproducibility_strengths:
+  - Detailed, step-by-step experimental protocols for OTCD, matrix application, and LCM
+  - Full reagent sources and concentrations listed
+  - Use of open cloud annotation platform METASPACE with explicit FDR and mass error thresholds
+  - Public proteome database (UniProt) and open-source search engine (MS-GF+) used
+  - Explicit chromatographic gradients and MS acquisition parameters reported

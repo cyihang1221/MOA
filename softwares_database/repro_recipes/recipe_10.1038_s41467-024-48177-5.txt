@@ -1,0 +1,115 @@
+========== reproducibility_recipe entry ==========
+paper_title: BERNN: Enhancing classification of Liquid Chromatography Mass Spectrometry data with batch effect removal neural networks.
+source_paper: Pelletier SJ et al. (2024), Nature communications, DOI: 10.1038/s41467-024-48177-5, PMID: 38710683
+overall_reproducibility_score: 82/100
+
+workflow_steps: 8
+  Step 1: Raw data conversion to open format
+    tool: ProteoWizard (vnot specified)
+    algorithm: msconvert
+    parameters: to_mzXML=True
+    input: raw .raw files (Orbitrap Fusion Tribrid)
+    output: .mzXML files
+    confidence: medium
+  Step 2: Protein identification and quantification (DIA-MS)
+    tool: DIA-NN (v1.8.1)
+    algorithm: library-free + library-based DIA search
+    parameters: database=Uniprot Reference Homo Sapiens, search_mode=Gas Phase Fractionation (GPF) library generation followed by sample search, quantification_type=unique gene-level protein quantification
+    input: .raw files + GPF QC files
+    output: protein quantification matrix (gene-level)
+    confidence: high
+  Step 3: Metabolite/feature detection and alignment
+    tool: XCMS (vnot specified)
+    algorithm: centWave or matchedFilter (inferred from typical XCMS usage)
+    parameters: method=centWave, ppm=10, peakwidth=[10, 60]
+    input: .mzXML files
+    output: feature table (m/z–RT matrix with intensities)
+    confidence: low
+  Step 4: Contaminant removal
+    tool: custom R script
+    algorithm: manual filtering by protein ID list
+    parameters: contaminant_list_source=Supplementary information file 'List of contaminants'
+    input: protein quantification matrix
+    output: cleaned protein quantification matrix
+    confidence: medium
+  Step 5: Batch effect correction using BERNN
+    tool: BERNN (custom neural network suite) (vnot specified)
+    algorithm: batch-aware deep neural network with adversarial or contrastive loss (architecture shown in Fig. 1)
+    parameters: model_type=['AE', 'VAE', 'GAN', 'Contrastive'], batch_prediction_head=True, adversarial_weight=None, latent_dim=None, epochs=None, optimizer=Adam, learning_rate=None
+    input: preprocessed feature/protein matrix (log-transformed, batch-annotated)
+    output: batch-corrected feature/protein matrix
+    confidence: low
+  Step 6: Batch effect evaluation
+    tool: custom R implementation
+    algorithm: k-nearest neighbors (k=20) + batch entropy + ARI + AMI
+    parameters: k_neighbors=20, entropy_normalization=nBE = (log(K) - BE) / log(K), ARI_adjustment=adjusted for chance
+    input: batch-corrected matrix
+    output: batch mixing metrics (nBE, ARI, AMI)
+    confidence: high
+  Step 7: Dimensionality reduction for visualization
+    tool: PCA / UMAP / t-SNE (vnot specified)
+    algorithm: PCA (default), UMAP, t-SNE
+    parameters: n_components=2, random_state=42
+    input: batch-corrected matrix
+    output: 2D embedding coordinates
+    confidence: medium
+  Step 8: Classification performance assessment
+    tool: scikit-learn or custom classifier
+    algorithm: k-nearest neighbors (k=20) or SVM/RF (implied by classification focus)
+    parameters: cv_folds=5, metric=accuracy / F1
+    input: batch-corrected matrix + class labels
+    output: classification accuracy, AUC, confusion matrix
+    confidence: low
+
+data_availability:
+  raw_data: available (ProteomeXchange: ['PXD043216', 'PXD009160', 'PXD015912'])
+  processed_data: available (GitHub: ['BERNN_MSMS/data', 'WaveICA_2.0/data', 'batch_effects_workflow_code', 'ETH Zurich Research Collection'])
+  metadata: available
+  data_urls: https://github.com/spell00/BERNN_MSMS/tree/main/data, https://github.com/dengkuistat/WaveICA_2.0/tree/master/data, https://github.com/symbioticMe/batch_effects_workflow_code, https://doi.org/10.3929/ethz-b-000545373, http://ftp.pride.ebi.ac.uk/pride/data/archive/2021/11/PXD009160/E1801171630_feature_alignment_requant.tsv.gz
+
+code_availability: repository_linked
+  code_url: https://github.com/spell00/BERNN_MSMS
+  license: MIT
+
+figure_recipes: 6
+  Figure 1: [workflow_diagram]
+    caption: Schematic illustration of the architectures of the different BERNN models (AE, VAE, GAN, Contrastive).
+    produced_by_step: [5]
+    visualization_tool: Python (matplotlib/seaborn) or draw.io
+  Figure 2: [other]
+    caption: Dataset description and overview of batch effect correction performance across all five datasets.
+    produced_by_step: [2, 3, 5, 6, 7]
+    visualization_tool: R/ggplot2 or Python/matplotlib
+  Figure 3: [bar_chart]
+    caption: Batch mixing metrics (nBE, ARI, AMI) and classification accuracy before and after BERNN correction on the Alzheimer dataset.
+    produced_by_step: [6, 8]
+    visualization_tool: R/ggplot2 or Python/matplotlib
+    statistical_test: paired t-test or Wilcoxon signed-rank test (implied by before/after comparison)
+  Figure 4: [bar_chart]
+    caption: Batch mixing metrics and classification accuracy before and after BERNN correction on the Adenocarcinoma dataset.
+    produced_by_step: [6, 8]
+    visualization_tool: R/ggplot2 or Python/matplotlib
+    statistical_test: paired t-test or Wilcoxon signed-rank test
+  Figure 5: [bar_chart]
+    caption: Batch mixing metrics and classification accuracy before and after BERNN correction on the AgingMice dataset.
+    produced_by_step: [6, 8]
+    visualization_tool: R/ggplot2 or Python/matplotlib
+    statistical_test: paired t-test or Wilcoxon signed-rank test
+  Figure 6: [bar_chart]
+    caption: Batch mixing metrics and classification accuracy before and after BERNN correction on the Benchmark dataset.
+    produced_by_step: [6, 8]
+    visualization_tool: R/ggplot2 or Python/matplotlib
+    statistical_test: paired t-test or Wilcoxon signed-rank test
+
+reproducibility_gaps:
+  - Exact hyperparameters (learning rate, epochs, latent dimension, adversarial weight) for BERNN models not reported
+  - No Docker/conda environment specification provided
+  - UMAP/t-SNE parameters (e.g., n_neighbors, min_dist) not specified
+  - No explicit description of log-transformation base or zero-imputation method for missing values
+  - DIA-NN R package version (ref 39) not specified
+reproducibility_strengths:
+  - All raw data deposited in ProteomeXchange (PXD043216, PXD009160, PXD015912)
+  - Preprocessed datasets and full preprocessing scripts publicly available on GitHub
+  - BERNN source code openly available under MIT license
+  - Detailed batch definitions and class annotations provided for all datasets
+  - Multiple complementary batch effect metrics (nBE, ARI, AMI) rigorously applied and defined

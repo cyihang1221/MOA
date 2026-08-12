@@ -1,0 +1,67 @@
+========== reproducibility_recipe entry ==========
+paper_title: In-Silico-Generated Library for Sensitive Detection of 2-Dimethylaminoethylamine Derivatized FAHFA Lipids Using High-Resolution Tandem Mass Spectrometry.
+source_paper: Ding J et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.0c00172, PMID: 32202765
+overall_reproducibility_score: 82/100
+
+workflow_steps: 6
+  Step 1: Chemical derivatization of FAHFAs with DMED
+    tool: 2-dimethylaminoethylamine (DMED) derivatization
+    parameters: derivatization_reagent=2-dimethylaminoethylamine, ionization_mode=positive
+    input: native FAHFA lipid extracts
+    output: DMED-derivatized FAHFA samples
+    confidence: high
+  Step 2: LC-MS/MS data acquisition
+    tool: high-resolution tandem mass spectrometry
+    parameters: instrument_type=high-resolution LC-MS/MS, ionization_mode=positive
+    input: DMED-derivatized FAHFA samples
+    output: raw .mzML or vendor format files
+    confidence: medium
+  Step 3: In silico MS/MS spectral library generation
+    tool: custom in-house computational pipeline
+    algorithm: heuristic fragmentation pattern propagation
+    parameters: base_patterns_from=authentic DMED-FAHFA standards, library_size=4290, compound_classes=264
+    input: MS/MS spectra of authentic DMED-FAHFA standards + chemical structures
+    output: in silico DMED-FAHFA spectral library (.msp format)
+    confidence: low
+  Step 4: Library search and metabolite annotation
+    tool: NIST MS Search
+    algorithm: spectral matching (dot product or similar)
+    parameters: match_threshold=None, mass_tolerance_ppm=None, min_match_peaks=None
+    input: experimental LC-MS/MS spectra + in silico library (.msp)
+    output: annotated DMED-FAHFA identifications
+    confidence: low
+  Step 5: LC-MS/MS data processing and feature detection
+    tool: MS-DIAL
+    algorithm: centroid detection, deconvolution, alignment
+    parameters: peak_detection_method=centWave-like, alignment_method=retention_time correction + spectral matching, score_threshold=None
+    input: raw LC-MS/MS files
+    output: feature table with MS/MS spectra
+    confidence: medium
+  Step 6: Integrated annotation using in silico library
+    tool: MS-DIAL + custom DMED-FAHFA library
+    algorithm: library search against in silico DMED-FAHFA spectra
+    parameters: library_matching_score=reverse dot product, min_similarity_score=None, precursor_mass_tolerance_ppm=None
+    input: MS-DIAL feature table + .msp library
+    output: confidently annotated DMED-FAHFA list (19 compounds, 16 families)
+    confidence: medium
+
+data_availability:
+  raw_data: available (Zenodo: 3606905)
+  processed_data: available (Zenodo: 3606905)
+  metadata: available
+  data_urls: https://zenodo.org/record/3606905
+
+code_availability: repository_linked
+  code_url: https://zenodo.org/record/3606905
+  license: CC-BY-4.0
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No explicit LC gradient method or instrument parameters (e.g., column, flow rate, scan settings) provided
+  - Heuristic fragmentation rules and exact in silico generation algorithm not fully disclosed
+  - No version numbers for MS-DIAL or NIST MS Search used
+reproducibility_strengths:
+  - Full in silico library (4290 spectra), templates, and spectra publicly available under CC-BY-4.0
+  - Compatible with open-source tools MS-DIAL and widely used NIST MS Search
+  - Validation performed on biological samples (Arabidopsis thaliana) with reporting of novel annotations

@@ -1,0 +1,75 @@
+========== reproducibility_recipe entry ==========
+paper_title: Integration WGCNA with LC-MS data for evaluating the processing status and transformation rules of Ligustri Lucidi Fructus: A novel strategy for evaluating the processing technology of traditional Chinese medicines.
+source_paper: Zhang X et al. (2025), Talanta, DOI: 10.1016/j.talanta.2024.127029, PMID: 39418977
+overall_reproducibility_score: 30/100
+
+workflow_steps: 7
+  Step 1: LC-MS data acquisition
+    tool: UHPLC-Q-Orbitrap-MS
+    algorithm: data-independent acquisition (DIA)
+    parameters: acquisition_mode=DIA
+    input: raw plant extract samples (RLLF and WLLF)
+    output: raw .raw files
+    confidence: medium
+  Step 2: Compound identification
+    tool: compound identification pipeline
+    algorithm: tentative identification based on MS1 and MS/MS spectra
+    parameters: number_identified=227
+    input: raw .raw files
+    output: annotated compound list (227 compounds)
+    confidence: low
+  Step 3: Differential metabolite screening
+    tool: statistical analysis unspecified
+    algorithm: comparative analysis between RLLF and WLLF (wine steaming for 18 h)
+    parameters: n_differential_metabolites=73, comparison_groups=['RLLF', 'WLLF'], processing_time=18
+    input: peak intensity table (from LC-MS)
+    output: list of 73 differential metabolites
+    confidence: low
+  Step 4: Quantification of selected compounds
+    tool: quantitative LC-MS method
+    algorithm: targeted quantification
+    parameters: n_quantified_compounds=11
+    input: LC-MS data (selected ion monitoring or similar)
+    output: concentration values for 11 compounds in WLLF
+    confidence: low
+  Step 5: Weighted gene co-expression network analysis (WGCNA) applied to metabolomics data
+    tool: WGCNA
+    algorithm: weighted correlation network analysis
+    parameters: network_type=signed, soft_power=None, min_module_size=30, deep_split=2, detect_cut_height=0.995
+    input: metabolite abundance matrix (73 differential metabolites across samples)
+    output: co-expression modules, eigengenes, trait-metabolite correlations
+    confidence: medium
+  Step 6: Correlation-based metabolite transformation inference
+    tool: custom analysis
+    algorithm: negative correlation with salidroside
+    parameters: top_n_negatively_correlated=5, reference_metabolite=salidroside
+    input: WGCNA module-trait correlations
+    output: candidate precursor metabolites (G13, specnuezhenide, oleuropein, acteoside, neonuzhenide)
+    confidence: low
+  Step 7: Validation of transformation relationships
+    tool: experimental validation
+    algorithm: not specified
+    input: candidate precursors and salidroside
+    output: validated biotransformation rules
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository
+  - No details on LC-MS method parameters (gradient, column, flow rate, temperature)
+  - No software or parameter settings for peak picking, alignment, or normalization
+  - WGCNA parameters only partially reported (e.g., soft power not specified)
+  - No code or scripts shared for integration of WGCNA with metabolomics
+  - Quantification method (calibration curves, internal standards) not described
+  - Validation experiments not detailed (e.g., time-course, enzymatic assays, or tracer studies)
+reproducibility_strengths:
+  - Use of widely accepted open-source WGCNA R package
+  - Clear biological hypothesis (precursor → salidroside transformation)

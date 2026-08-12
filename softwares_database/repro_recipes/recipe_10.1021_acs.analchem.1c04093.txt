@@ -1,0 +1,52 @@
+========== reproducibility_recipe entry ==========
+paper_title: Addressing Missing Data in GC × GC Metabolomics: Identifying Missingness Type and Evaluating the Impact of Imputation Methods on Experimental Replication.
+source_paper: Davis TJ et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.1c04093, PMID: 35881554
+overall_reproducibility_score: 88/100
+
+workflow_steps: 4
+  Step 1: Missingness type identification
+    tool: MetabImpute
+    algorithm: statistical pattern analysis (e.g., missingness heatmap, proportion of missing values per feature/sample, Little's MCAR test)
+    parameters: test_method=Little's MCAR test, significance_threshold=0.05
+    input: raw peak table (feature matrix with missing values)
+    output: missingness classification (MCAR/MAR/MNAR)
+    confidence: medium
+  Step 2: Within-replicate imputation
+    tool: MetabImpute
+    algorithm: Gibbs sampler (for MAR), Random Forest (for MNAR)
+    parameters: imputation_strategy=within_replicate, n_trees=100, n_iter=100, burn_in=20
+    input: peak table with replicate annotations
+    output: imputed peak table
+    confidence: high
+  Step 3: Comparison of imputation methods
+    tool: MetabImpute
+    algorithm: ['Gibbs sampler', 'Random Forest', 'zero', 'minimum', 'mean', 'median', 'half-minimum', 'Bayesian PCA', 'quantile regression for left-censored data']
+    parameters: methods=['gibbs', 'rf', 'zero', 'min', 'mean', 'median', 'half_min', 'bpca', 'qrilc']
+    input: raw peak table with replicate structure
+    output: multiple imputed datasets for comparison
+    confidence: high
+  Step 4: Reproducibility assessment of imputed data
+    tool: MetabImpute
+    algorithm: within-replicate coefficient of variation (CV) and Pearson/Spearman correlation across replicates
+    parameters: metric=CV, correlation_method=Spearman, threshold_cv=0.3
+    input: imputed peak tables (per method)
+    output: reproducibility metrics (CV, correlation) per feature
+    confidence: high
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1876)
+  processed_data: available (MetaboLights: MTBLS1876)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1876
+
+code_availability: repository_linked
+  code_url: https://github.com/comp-bio-lab/MetabImpute
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_strengths:
+  - Raw and processed GC×GC metabolomics data publicly available on MetaboLights (MTBLS1876)
+  - Open-source R package MetabImpute with documented workflows and reproducible vignettes
+  - All imputation methods and evaluation metrics explicitly described and benchmarked
+  - Within-replicate imputation strategy clearly defined and validated

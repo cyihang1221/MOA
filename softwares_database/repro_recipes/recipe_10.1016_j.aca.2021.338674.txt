@@ -1,0 +1,67 @@
+========== reproducibility_recipe entry ==========
+paper_title: Dynamic binning peak detection and assessment of various lipidomics liquid chromatography-mass spectrometry pre-processing platforms.
+source_paper: Feng X et al. (2021), Analytica chimica acta, DOI: 10.1016/j.aca.2021.338674, PMID: 34172146
+overall_reproducibility_score: 58/100
+
+workflow_steps: 6
+  Step 1: Data acquisition
+    tool: Orbitrap LC-MS/MS
+    input: human plasma lipid sample
+    output: raw .raw files
+    confidence: medium
+  Step 2: Peak detection with dynamic binning
+    tool: XCMS
+    algorithm: dynamic binning
+    parameters: mass_tolerance_scaling=mz^1.5, mass_analyzer=Orbitrap
+    input: raw .raw files
+    output: feature table (peak matrix)
+    confidence: high
+  Step 3: Peak detection with fixed mass tolerance (baseline comparison)
+    tool: XCMS
+    algorithm: centWave
+    parameters: ppm=5
+    input: raw .raw files
+    output: feature table (peak matrix)
+    confidence: high
+  Step 4: Peak detection using alternative platforms
+    tool: mzMine
+    algorithm: unknown (default peak detection)
+    input: raw .raw files
+    output: feature table (peak matrix)
+    confidence: low
+  Step 5: Peak detection using alternative platforms
+    tool: Progenesis
+    algorithm: unknown (proprietary algorithm)
+    input: raw .raw files
+    output: feature table (peak matrix)
+    confidence: low
+  Step 6: Differential compound detection
+    tool: XCMS
+    algorithm: two-sample Wilcoxon test
+    parameters: p_value_threshold=0.05, max_p_value=0.0098
+    input: feature table
+    output: list of differential spiked lipids
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: https://github.com/xiaodfeng/DynamicXCMS
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS data not deposited in public repository
+  - No details on chromatographic conditions (gradient, column, flow rate)
+  - No specification of XCMS version or R/Bioconductor environment
+  - mzMine and Progenesis parameter settings not reported
+  - Internal standard spiking concentrations only implied (‘various concentrations’), not tabulated
+  - No metadata schema or sample annotation file provided
+reproducibility_strengths:
+  - Dynamic binning implementation publicly available on GitHub
+  - Explicit mass tolerance scaling law for Orbitrap (mz^1.5) provided
+  - Statistical significance (Wilcoxon p-value) and performance metric (quality score) clearly defined
+  - Use of well-established open-source tools (XCMS, mzMine) alongside commercial ones enables partial replication

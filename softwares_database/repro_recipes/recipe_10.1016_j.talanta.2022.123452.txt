@@ -1,0 +1,63 @@
+========== reproducibility_recipe entry ==========
+paper_title: Nanoconfined liquid phase nanoextraction combined with in-fiber derivatization for simultaneous quantification of seventy amino-containing metabolites in plasma by LC-MS/MS: Exploration of lung cancer screening model.
+source_paper: Yu C et al. (2022), Talanta, DOI: 10.1016/j.talanta.2022.123452, PMID: 35413629
+overall_reproducibility_score: 25/100
+
+workflow_steps: 6
+  Step 1: Nanoconfined liquid phase nanoextraction (NLPNE)
+    tool: Custom NLPNE setup
+    parameters: nanoconfined_solvent=methanol-water (2:1, v/v), extraction_time=not specified numerically, carbon_nanofiber_type=reusable carbon nanofibers (CNFs), extraction_mechanism=nanoconfinement effect
+    input: raw plasma samples
+    output: extracted amino-containing metabolites
+    confidence: low
+  Step 2: In-fiber derivatization (IFD)
+    tool: Custom IFD protocol
+    parameters: derivatization_reagent=benzoyl chloride (BzCl), derivatization_time=within 5 min, optimization_method=response surface methodology (RSM), optimized_factors=['derivatization time', 'amount of BzCl', 'desorption solution', 'CNF amount']
+    input: NLPNE-extracted metabolites
+    output: derivatized metabolites
+    confidence: medium
+  Step 3: LC-MS/MS analysis
+    tool: LC-MS/MS platform
+    parameters: instrumentation=not specified (no vendor/model given), ionization_mode=not specified, acquisition_mode=multiple reaction monitoring (MRM), target_analytes=70, analyte_classes=['amines', 'nucleosides', 'nucleoside metabolites']
+    input: derivatized metabolites
+    output: peak area/intensity data for 70 analytes
+    confidence: low
+  Step 4: Integrated data processing workflow
+    tool: Custom integrated data processing workflow
+    input: LC-MS/MS raw peak areas
+    output: quantified metabolite concentrations (absolute)
+    confidence: low
+  Step 5: Method validation
+    tool: Standard bioanalytical validation guidelines
+    parameters: validation_parameters=['selectivity', 'linearity', 'LLOQ', 'precision', 'accuracy', 'stability', 'matrix effect', 'recovery']
+    input: quantified metabolite concentrations
+    output: validated quantitative dataset
+    confidence: medium
+  Step 6: Binary logistic regression modeling
+    tool: Statistical software (unspecified)
+    algorithm: binary logistic regression
+    parameters: model_objective=lung cancer diagnosis, outcome=binary (lung cancer vs. control), predictors=multi-metabolites index (70 analytes)
+    input: validated quantitative dataset
+    output: diagnostic prediction model (e.g., probability score)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS/MS data not deposited in any public repository
+  - No details on LC-MS/MS instrumentation (vendor, model, column, gradient, flow rate, temperature)
+  - No specification of the 'integrated data processing workflow' — no software, scripts, or parameters disclosed
+  - Binary logistic regression implementation details missing (feature selection method, cross-validation strategy, regularization, software used)
+  - RSM optimization parameters and design matrix not reported
+  - No access to derivatization reagent lots, CNF batch info, or plasma sample metadata (e.g., cohort demographics, clinical annotations)
+reproducibility_strengths:
+  - Explicit list of 70 targeted amino-containing metabolites implied (though not enumerated in abstract)
+  - Clear analytical innovation (NLPNE + IFD) with mechanistic rationale
+  - Method validation performed per standard bioanalytical guidelines

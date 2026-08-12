@@ -1,0 +1,33 @@
+========== reproducibility_recipe entry ==========
+paper_title: Deep Learning-Assisted Peak Curation for Large-Scale LC-MS Metabolomics.
+source_paper: Gloaguen Y et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.1c02220, PMID: 35290737
+overall_reproducibility_score: 75/100
+
+workflow_steps: 1
+  Step 1: Peak detection and curation
+    tool: NeatMS
+    algorithm: convolutional neural network (CNN)
+    input: raw LC-MS data (e.g., .mzML, .mzXML, .d)
+    output: curated feature table (reduced false positives)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/ebi-gene-expression-group/NeatMS
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of input data format requirements (e.g., vendor-specific preprocessing) for NeatMS
+  - No details on training data used to pre-train the CNN model
+  - No specification of LC-MS acquisition parameters (e.g., resolution, scan mode, gradient) needed for optimal performance
+  - No benchmark dataset or evaluation metrics explicitly tied to figures/tables
+reproducibility_strengths:
+  - Open-source implementation with MIT license
+  - Available via PyPi and Bioconda for easy installation
+  - Support for transfer learning enables model adaptation

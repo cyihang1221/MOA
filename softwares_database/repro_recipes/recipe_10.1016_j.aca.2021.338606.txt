@@ -1,0 +1,60 @@
+========== reproducibility_recipe entry ==========
+paper_title: Comprehensive Isotope Ratio Metabolomics: Gas chromatography Isotope Ratio Mass Spectrometry of urinary metabolites and exhaled breath.
+source_paper: Rodas Sánchez L et al. (2021), Analytica chimica acta, DOI: 10.1016/j.aca.2021.338606, PMID: 34090584
+overall_reproducibility_score: 40/100
+
+workflow_steps: 5
+  Step 1: Calibration of reference CO2 gas
+    tool: IAEA-certified standards
+    algorithm: calibration using certified δ(13C) standards
+    parameters: standards=['undecane', 'pentadecane', 'eicosane'], reference_material=CRM IAEA-600 caffeine
+    input: certified isotopic reference materials
+    output: calibrated CO2 reference gas
+    confidence: high
+  Step 2: Gas chromatography Isotope Ratio Mass Spectrometry (GC-IRMS) analysis
+    tool: GC-IRMS system
+    algorithm: continuous-flow isotope ratio MS
+    parameters: chromatographic_resolution_requirement=≥1, mass_channels_monitored=[44, 45, 46]
+    input: derivatized urinary metabolites and exhaled breath condensates
+    output: raw ion current signals (m/z 44, 45, 46) vs. time
+    confidence: medium
+  Step 3: Time-lag correction between Faraday cup amplifiers
+    tool: custom data treatment procedure
+    algorithm: time-shift correction
+    parameters: lag_mass_45_ms=44, lag_mass_46_ms=-160
+    input: raw ion current signals (m/z 44, 45, 46)
+    output: time-aligned ion current signals
+    confidence: high
+  Step 4: Chromatographic isotope effect correction (isotope shift correction)
+    tool: custom data treatment procedure
+    algorithm: chromatographic isotope effect correction per peak
+    input: time-aligned ion current signals
+    output: isotope-effect-corrected peak profiles
+    confidence: low
+  Step 5: Isotope ratio calculation using linear regression slope
+    tool: custom data treatment procedure
+    algorithm: linear regression on top of chromatographic peak
+    parameters: data_window=top of peak only, ratio_calculated_from=slope of m/z 45/44 and m/z 46/44
+    input: isotope-effect-corrected peak profiles
+    output: δ(13C) values per metabolite
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw GC-IRMS data deposited or referenced
+  - No custom data treatment code shared or described in sufficient detail (e.g., peak top selection criteria, regression window size, isotope shift model)
+  - GC-IRMS instrument configuration (column, temperature program, carrier gas flow) not fully specified
+  - Derivatization protocol details incomplete (reagents, reaction times, temperatures)
+  - No public repository accession for metabolite identifications or δ(13C) values
+reproducibility_strengths:
+  - Explicit time-lag correction parameters provided
+  - Clear calibration strategy using IAEA-certified standards
+  - Quantitative performance metrics reported (SD range and median δ(13C) reproducibility)

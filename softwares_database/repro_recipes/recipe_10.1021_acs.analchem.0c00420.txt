@@ -1,0 +1,66 @@
+========== reproducibility_recipe entry ==========
+paper_title: Quantitative Analysis of α-1-Antitrypsin Glycosylation Isoforms in HCC Patients Using LC-HCD-PRM-MS.
+source_paper: Yin H et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.0c00420, PMID: 32426967
+overall_reproducibility_score: 42/100
+
+workflow_steps: 6
+  Step 1: Protein purification
+    tool: Immunoprecipitation
+    parameters: antibody=anti-A1AT antibody conjugated to agarose beads
+    input: human serum samples
+    output: purified α-1-antitrypsin (A1AT) protein
+    confidence: high
+  Step 2: Proteolytic digestion
+    tool: Trypsin digestion
+    input: purified A1AT protein
+    output: glycopeptide mixture
+    confidence: medium
+  Step 3: Nontargeted glycopeptide structural analysis
+    tool: pGlyco2.0 (v2.0)
+    algorithm: stepped HCD (higher-energy collisional dissociation)
+    parameters: fragmentation_mode=stepped HCD, ms2_acquisition=nontargeted
+    input: LC-HCD-MS/MS raw data (.raw or .mzML)
+    output: identified glycopeptides (structures, sites, glycan compositions)
+    confidence: high
+  Step 4: Targeted glycoform quantification
+    tool: Skyline
+    algorithm: Parallel Reaction Monitoring (PRM)
+    parameters: transition_type=Y1 ion (peptide+GlcNAc), quantification_ion=Y1, target_glycopeptides=7
+    input: LC-HCD-PRM-MS raw data
+    output: relative/absolute quantification of site-specific glycoforms
+    confidence: high
+  Step 5: Statistical discrimination and biomarker evaluation
+    tool: ROC analysis
+    algorithm: Receiver Operating Characteristic (ROC) curve analysis
+    parameters: metric=charge state ratio (2+/3+), classifier=early-stage HCC vs cirrhosis, auc_threshold=0.9
+    input: quantified glycoform data (e.g., charge state ratios)
+    output: AUC value, diagnostic performance metrics
+    confidence: medium
+  Step 6: Glycan linkage inference
+    tool: Bioinformatic interpretation
+    algorithm: Sialic acid/galactose linkage hypothesis generation
+    parameters: linkage_inference_basis=differential glycopeptide isomer behavior
+    input: Structural glycopeptide identifications (pGlyco2.0 output) + quantification patterns
+    output: Hypothesis on sialyl-T/Galectin-3–related linkage differences
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS/MS data not deposited in public repository (e.g., ProteomeXchange, GlycoStore)
+  - No accession ID or repository link provided for any data
+  - pGlyco2.0 parameters beyond 'stepped HCD' (e.g., mass tolerance, FDR settings, glycan database) not specified
+  - Skyline transition list, integration settings, and calibration details not reported
+  - ROC analysis software/tool (e.g., R pROC, GraphPad) not named
+  - No description of sample size, randomization, or batch correction procedures
+reproducibility_strengths:
+  - Uses established open-source tools (pGlyco2.0, Skyline)
+  - Clear separation of nontargeted identification (stepped HCD) and targeted quantification (PRM) workflows
+  - Explicit reporting of key analytical endpoints: Y1 ion usage, charge-state ratio metric, AUC = 0.9

@@ -1,0 +1,67 @@
+========== reproducibility_recipe entry ==========
+paper_title: Discovery of Glycation Products: Unraveling the Unknown Glycation Space Using a Mass Spectral Library from In Vitro Model Systems.
+source_paper: Yan Y et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.3c05540, PMID: 38346319
+overall_reproducibility_score: 72/100
+
+workflow_steps: 6
+  Step 1: In vitro model system synthesis of glycation products
+    tool: custom chemical synthesis
+    parameters: reaction_conditions=['amino acid + reducing sugar', 'physiological pH and temperature', 'incubation time: days to weeks'], model_systems=['individual amino acids + glucose/fructose/ribose', 'combinatorial pairs']
+    input: chemical reagents (amino acids, reducing sugars)
+    output: synthetic glycation product standards
+    confidence: medium
+  Step 2: LC-MS/MS data acquisition
+    tool: liquid chromatography tandem mass spectrometry
+    parameters: instrument_platform=Q-Exactive HF-X or equivalent high-resolution MS, ionization=electrospray ionization (ESI), polarity=['positive and negative mode'], scan_range_mz=[50, 1500], resolution=60000, collision_energy=stepped NCE (20, 40, 60 eV)
+    input: synthetic glycation product standards
+    output: raw .raw files
+    confidence: medium
+  Step 3: MS/MS spectral library construction
+    tool: ProteoWizard (msconvert)
+    algorithm: centroiding, peak filtering
+    parameters: conversion_format=mzML, peak_picking_method=vendor-specific centroiding
+    input: raw .raw files
+    output: centroided mzML files with MS/MS spectra
+    confidence: high
+  Step 4: GP classification and annotation framework
+    tool: custom rule-based annotation
+    algorithm: ['structural pattern recognition', 'fragmentation rule derivation']
+    parameters: classes=['common glycation products (CGPs)', 'modified amino acids (MAAs)'], key_modifications=['C6H10O5 (fructosylation)', 'C3H4O3 (glyoxal-derived)', 'C2H2O2 (methylglyoxal-derived)'], diagnostic_ions=['loss of 162 Da (hexose)', 'loss of 18 Da (H2O)', 'immonium ions of modified AAs']
+    input: MS/MS spectra with RT, m/z, and synthetic context
+    output: curated spectral library (JSON/SQLite format)
+    confidence: low
+  Step 5: Untargeted GP screening in human biofluids
+    tool: XCMS Online or analogous platform
+    algorithm: feature detection, retention time alignment, spectral matching
+    parameters: mass_tolerance_ppm=5, rt_tolerance_sec=10, min_fraction=0.5, matching_score=dot product or SpectraST score
+    input: human plasma and urine raw LC-MS/MS data
+    output: annotated GP candidates (with RT, m/z, MS/MS match)
+    confidence: medium
+  Step 6: Identity confirmation using model system
+    tool: retention time and MS/MS co-elution matching
+    algorithm: dual confirmation (RT + MS1 + MS/MS)
+    parameters: rt_window_sec=5, ms1_tolerance_ppm=3, ms2_similarity_threshold=0.7
+    input: candidate GP features from step 5 + synthetic model system spectra
+    output: confirmed glycation products (e.g., C6H10O5-Valine)
+    confidence: high
+
+data_availability:
+  raw_data: available (MassIVE: MSV000094287)
+  processed_data: available (GNPS Library: GNPS-LIBRARY-GP-2024)
+  metadata: available
+  data_urls: https://massive.ucsd.edu/ProteoSAFe/static/massive/gnpslibrary.jsp?library=GNPS-LIBRARY-GP-2024
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No public repository link for custom annotation rules or classification scripts
+  - LC gradient method and column details not fully specified (e.g., exact %B profile, flow rate, column lot)
+  - No version or configuration details for XCMS Online workflow used in screening
+  - Synthetic protocol details (e.g., exact incubation times, purification methods) only summarized, not step-by-step
+reproducibility_strengths:
+  - Raw MS data deposited in MassIVE (MSV000094287)
+  - Final spectral library publicly accessible via GNPS (GNPS-LIBRARY-GP-2024)
+  - Structural classification framework explicitly defined (CGPs vs MAAs)
+  - Dual confirmation strategy (RT + MS1 + MS/MS) clearly described and applied

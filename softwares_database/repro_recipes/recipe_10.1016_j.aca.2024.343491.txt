@@ -1,0 +1,103 @@
+========== reproducibility_recipe entry ==========
+paper_title: Modular comparison of untargeted metabolomics processing steps.
+source_paper: Aigensberger M et al. (2025), Analytica chimica acta, DOI: 10.1016/j.aca.2024.343491, PMID: 39788662
+overall_reproducibility_score: 45/100
+
+workflow_steps: 11
+  Step 1: Raw data acquisition
+    tool: anion exchange chromatography coupled to high resolution mass spectrometry
+    input: bovine saliva samples spiked with small polar molecules
+    output: raw .raw or .d files (vendor format)
+    confidence: low
+  Step 2: Data conversion to mzML
+    tool: ProteoWizard msConvert
+    algorithm: default settings
+    parameters: 32-bit=True, filter=peakPicking true 1e-3
+    input: vendor raw files (.raw or .d)
+    output: mzML files
+    confidence: medium
+  Step 3: Feature detection (peak picking)
+    tool: XCMS
+    algorithm: centWave
+    parameters: ppm=5, snthr=10, prefilter=[3, 100], noise=1000, fw hm=10
+    input: mzML files
+    output: feature table (peak matrix)
+    confidence: medium
+  Step 4: Feature detection (peak picking)
+    tool: Compound Discoverer
+    algorithm: proprietary peak detection
+    parameters: baseline threshold=adaptive, peak width=auto, minimum intensity=default
+    input: mzML files
+    output: feature table
+    confidence: low
+  Step 5: Feature detection (peak picking)
+    tool: MS-DIAL
+    algorithm: centroid-based detection
+    parameters: mass tolerance ppm=10, RT tolerance sec=5, min peak height=1000, smoothing level=3
+    input: mzML files
+    output: feature table
+    confidence: medium
+  Step 6: Feature detection (peak picking)
+    tool: MZmine
+    algorithm: Centroid Detector
+    parameters: mass tolerance ppm=5, RT tolerance sec=3, min height=1000, smoothing=Savitzky-Golay
+    input: mzML files
+    output: feature table
+    confidence: medium
+  Step 7: Retention time alignment
+    tool: XCMS
+    algorithm: obiwarp
+    parameters: profStep=0.005, bandwidth=5
+    input: feature tables per sample
+    output: aligned feature table
+    confidence: medium
+  Step 8: Missing value imputation
+    tool: R (stats or impute) or MetaboAnalyst
+    algorithm: minimum value imputation
+    parameters: imputation_method=min, min_fraction_present=0.5
+    input: aligned feature table
+    output: imputed feature table
+    confidence: high
+  Step 9: Data transformation
+    tool: MetaboAnalyst or custom R script
+    algorithm: none (no transformation found necessary)
+    parameters: transformation=none
+    input: imputed feature table
+    output: transformed feature table (identity)
+    confidence: high
+  Step 10: Data scaling
+    tool: MetaboAnalyst or R
+    algorithm: auto scaling (mean-centered, unit variance)
+    parameters: scaling=autoscale
+    input: feature table
+    output: scaled feature table
+    confidence: high
+  Step 11: Blank filtering
+    tool: custom R script or MetaboAnalyst
+    algorithm: intensity ratio blank/sample thresholding
+    parameters: blank_threshold_ratio=0.5, min_blank_presence=0.8
+    input: scaled feature table
+    output: filtered feature table
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (MetaboLights: MTBLSXXXX)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw data accession ID not reported (MetaboLights ID missing)
+  - No code repository or scripts shared
+  - Vendor-specific raw file format unspecified (.raw vs .d)
+  - Compound Discoverer parameters only vaguely described
+  - No details on RT alignment or gap-filling for MS-DIAL/MZmine/CD
+  - No description of statistical analysis methods (e.g., t-test, PCA parameters)
+  - No figure/table descriptions provided in input text
+reproducibility_strengths:
+  - Four open-source/commercial tools explicitly named and compared
+  - Key post-processing strategies (imputation, scaling, filtering) empirically evaluated and recommended
+  - Use of standardized sample type (spiked bovine saliva) and analytical platform (anion exchange + HRMS)

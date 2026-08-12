@@ -1,0 +1,58 @@
+========== reproducibility_recipe entry ==========
+paper_title: In-Depth Chemical Analysis of the Brain Extracellular Space Using &lt;i&gt;In Vivo&lt;/i&gt; Microdialysis with Liquid Chromatography-Tandem Mass Spectrometry.
+source_paper: Anderson BG et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.4c03806, PMID: 39360623
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Microdialysis sampling
+    tool: in vivo microdialysis
+    parameters: sampling_duration=12 h, sample_volume=5 μL, brain_region=rat striatum
+    input: in vivo brain extracellular fluid
+    output: dialysate sample
+    confidence: high
+  Step 2: Sample concentration
+    tool: sample concentration
+    parameters: concentration_factor=10
+    input: dialysate sample
+    output: concentrated dialysate
+    confidence: high
+  Step 3: LC-MS/MS analysis (non-derivatized)
+    tool: liquid chromatography-tandem mass spectrometry
+    algorithm: iterative MS/MS
+    parameters: chromatography_modes=['reversed-phase', 'hydrophilic interaction liquid chromatography'], analysis_time=20 min, sample_volume_analyzed=5 μL
+    input: concentrated dialysate
+    output: 479 unique compound identifications
+    confidence: medium
+  Step 4: Chemical derivatization
+    tool: benzoyl chloride derivatization
+    parameters: derivatizing_agents=['light benzoyl chloride', 'isotopically labeled benzoyl chloride']
+    input: dialysate sample
+    output: derivatized dialysate
+    confidence: high
+  Step 5: LC-MS analysis (derivatized)
+    tool: liquid chromatography-mass spectrometry
+    parameters: analysis_time=20 min, sample_volume_analyzed=5 μL
+    input: derivatized dialysate
+    output: 872 nondegenerate benzoylated features
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS/MS data not deposited in public repository
+  - No software tools specified for peak detection, alignment, or annotation
+  - No instrument parameters (e.g., mass tolerance, RT window, fragmentation settings) reported
+  - No details on database search settings (e.g., HMDB/KEGG version, score thresholds)
+  - No information on statistical or multivariate analysis methods
+  - Derivatization protocol details (reaction time, temperature, quenching) not provided
+reproducibility_strengths:
+  - Explicit sample volume (5 μL) and time window (12 h) reported
+  - Chromatographic modes clearly stated (RP and HILIC)
+  - Use of isotopic labeling strategy described

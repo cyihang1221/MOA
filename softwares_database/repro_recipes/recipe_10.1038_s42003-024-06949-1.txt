@@ -1,0 +1,145 @@
+========== reproducibility_recipe entry ==========
+paper_title: Spatial multi-omics in whole skeletal muscle reveals complex tissue architecture.
+source_paper: Martínez Mir C et al. (2024), Communications biology, DOI: 10.1038/s42003-024-06949-1, PMID: 39369093
+overall_reproducibility_score: 42/100
+
+workflow_steps: 12
+  Step 1: TOMOseq library preparation and sequencing
+    tool: CELseq2-based SORTseq
+    algorithm: robotized scRNA-seq library prep
+    parameters: read_length=75, paired_end=True
+    input: RNA from 70 μm cryosections
+    output: FASTQ files (R1 with UMI+barcode, R2 with transcript)
+    confidence: medium
+  Step 2: TOMOseq read processing and alignment
+    tool: TrimGalore (v0.6.6)
+    algorithm: adapter trimming
+    parameters: default_parameters=True
+    input: FASTQ files
+    output: trimmed FASTQ
+    confidence: high
+  Step 3: TOMOseq alignment to reference genome
+    tool: STAR (v2.7.7a)
+    algorithm: splice-aware alignment
+    parameters: default_parameters=True, genome=mouse GRCm38 Ensembl 102
+    input: trimmed FASTQ
+    output: BAM files
+    confidence: high
+  Step 4: TOMOseq quantification and filtering
+    tool: custom_pipeline
+    algorithm: UMI-corrected transcript counting
+    parameters: min_transcripts_muscle1=100000, min_transcripts_muscle2=70794, min_transcripts_muscle3=79432, min_transcripts_muscle4=100000, min_unique_transcripts_per_gene=4, consecutive_sections=3, excluded_genes=['Kcnq1ot1', 'Mir5109', 'Lars2', 'Malat1']
+    input: BAM files
+    output: gene-by-section count matrix
+    confidence: low
+  Step 5: TOMOseq normalization and integration
+    tool: Scanpy (v1.9.3)
+    algorithm: z-score normalization per sample, median normalization per section
+    parameters: n_pcs=16, k_neighbors=65, distance_metric=euclidean, clustering_method=Leiden
+    input: gene-by-section count matrix
+    output: integrated z-score matrix, PCA embedding, Leiden clusters
+    confidence: high
+  Step 6: TOMOseq differential expression analysis
+    tool: Scanpy (v1.9.3)
+    algorithm: two-sided t-test with Benjamini–Hochberg correction
+    parameters: p_value_threshold=0.05, z_score_difference_threshold=0.4
+    input: z-score transformed gene expression matrix
+    output: differentially expressed genes (DEGs) list
+    confidence: high
+  Step 7: MALDI-MSI data acquisition (TOF/TOF)
+    tool: rapifleX MALDI-TOF/TOF
+    algorithm: imaging mass spectrometry
+    parameters: ion_mode=negative, mass_range=[80, 1000], pixel_size=20x20 μm², laser_shots_per_pixel=None
+    input: 8 μm cryosections on ITO slides
+    output: raw .d directory (Bruker format)
+    confidence: high
+  Step 8: MALDI-MSI data acquisition (FTICR)
+    tool: solariX 2xR-FTICR
+    algorithm: imaging mass spectrometry
+    parameters: ion_mode=negative, mass_range=[550, 1000], pixel_size=75x75 μm², laser_shots_per_pixel=25
+    input: 8 μm cryosections on ITO slides
+    output: raw .d directory (Bruker format)
+    confidence: high
+  Step 9: MALDI-MSI preprocessing
+    tool: custom pipeline
+    algorithm: baseline correction, total ion current normalization
+    parameters: min_pixel_intensity=2000, min_features_per_pixel=140, exclusion_criteria=['freezing damage patterns', 'matrix peaks']
+    input: raw .d files
+    output: preprocessed imzML or equivalent feature table
+    confidence: low
+  Step 10: MALDI-MSI peak filtering and normalization
+    tool: custom pipeline
+    algorithm: intensity normalization to mean total intensity, log10 transformation, z-score scaling
+    parameters: normalization_method=total intensity mean, transformation=['log10', 'z-score']
+    input: feature table (m/z vs pixel)
+    output: normalized, scaled feature table
+    confidence: medium
+  Step 11: MALDI-MSI metabolite annotation
+    tool: HMDB + LIPID MAPS + Wang et al. 2017 reference
+    algorithm: m/z matching with mass tolerance not specified
+    parameters: databases=['HMDB', 'LIPID MAPS'], validation_method=['cross-platform MSI validation (TOF vs FTICR)', 'biological plausibility']
+    input: m/z features with intensity images
+    output: putatively annotated metabolite/lipid table
+    confidence: low
+  Step 12: Spatial integration of TOMOseq and MALDI-MSI
+    tool: custom in silico binning
+    algorithm: proximal-distal axis binning into 50 equal-length regions, pixel-count normalization
+    parameters: n_bins=50, binning_axis=proximal-distal, normalization=pixels_per_bin
+    input: MALDI-MSI feature table + spatial coordinates
+    output: pseudo-TOMOseq metabolite-by-section table
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 8
+  Fig. 1: [spatial_transcriptome_map]
+    caption: Spatial organization of transcripts in homeostatic TA muscles.
+    produced_by_step: [5, 6]
+    visualization_tool: Scanpy + custom plotting
+  Fig. 2: [volcano_plot]
+    caption: Differential gene expression analysis between proximal-distal and central areas of TA muscles.
+    produced_by_step: [6]
+    visualization_tool: Scanpy + matplotlib/seaborn
+    statistical_test: two-sided t-test with Benjamini–Hochberg correction
+  Fig. 3: [msi_heatmap]
+    caption: Mass spectrometry imaging on longitudinal sections of TA muscles.
+    produced_by_step: [9, 10, 11]
+    visualization_tool: Bruker SCiLS Lab or custom Python (matplotlib)
+  Fig. 4: [bar_chart]
+    caption: Fiber type characterization along the proximal-distal axis of TAs.
+    produced_by_step: [12]
+    visualization_tool: custom Python (matplotlib/seaborn)
+  Table 1: [table]
+    caption: Quantification of fiber types across proximal, central, and distal TA sections used for fiber type quantification analysis
+    produced_by_step: [12]
+    visualization_tool: custom Python/pandas
+  Fig. 5: [bar_chart]
+    caption: Fiber type characterization along the proximal-distal axis of EDLs and SOLs.
+    produced_by_step: [12]
+    visualization_tool: custom Python (matplotlib/seaborn)
+  Table 2: [table]
+    caption: Absolute number of fiber types across proximal, central, and distal EDL sections used for fiber type quantification analysis
+    produced_by_step: [12]
+    visualization_tool: custom Python/pandas
+  Table 3: [table]
+    caption: Absolute number of fiber types across proximal, central, and distal SOL sections used for fiber type quantification analysis
+    produced_by_step: [12]
+    visualization_tool: custom Python/pandas
+
+reproducibility_gaps:
+  - Raw TOMOseq FASTQ and MALDI-MSI .d files not deposited in public repositories
+  - No code repository or scripts shared for preprocessing, integration, or visualization
+  - MALDI-MSI peak picking parameters (e.g., mass tolerance, SNR thresholds) not specified
+  - Custom in silico binning and integration pipeline not described in sufficient detail for replication
+  - No access provided to CELseq2/SORTseq service protocols or robotized liquid handling configurations
+  - HMDB/LIPID MAPS annotation workflow lacks mass tolerance, adduct assumptions, or scoring criteria
+reproducibility_strengths:
+  - Use of standard open-source tools (STAR, TrimGalore, Scanpy) with version numbers
+  - Explicit parameter thresholds reported for filtering (e.g., min transcripts, z-score difference)
+  - Public databases (HMDB, LIPID MAPS) used for annotation
+  - Cross-platform MSI validation (TOF vs FTICR) performed for annotation confidence

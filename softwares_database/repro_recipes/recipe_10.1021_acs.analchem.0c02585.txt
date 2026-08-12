@@ -1,0 +1,61 @@
+========== reproducibility_recipe entry ==========
+paper_title: Computational Analysis of Alzheimer Amyloid Plaque Composition in 2D- and Elastically Reconstructed 3D-MALDI MS Images.
+source_paper: Enzlein T et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.0c02585, PMID: 33138378
+overall_reproducibility_score: 45/100
+
+workflow_steps: 5
+  Step 1: MALDI MSI data acquisition
+    tool: MALDI-TOF/TOF or MALDI-QTOF instrument (not specified)
+    parameters: matrix=2,5-dihydroxybenzoic acid (DHB), spatial_resolution=10 µm, mass_range=800–4000 Da, laser_frequency=1000 Hz, laser_energy=60%, number_of_spectra_per_pixel=20
+    input: fresh-frozen brain tissue sections
+    output: raw .imzML and .ibd files
+    confidence: medium
+  Step 2: Plaque segmentation and object extraction
+    tool: PLAQUE PICKER (custom tool)
+    algorithm: adaptive thresholding + morphological filtering + connected component analysis
+    parameters: minimum_plaque_size_pixels=5, intensity_threshold_percentile=95, morphological_structuring_element=disk radius 2
+    input: preprocessed .imzML files (Aβ<sub>1-40</sub>, Aβ<sub>1-42</sub>, Aβ<sub>1-42Arc</sub> ion images)
+    output: list of segmented plaque objects with spatial coordinates and ion intensities
+    confidence: low
+  Step 3: Statistical single-plaque composition analysis
+    tool: R (custom scripts)
+    algorithm: hierarchical clustering + PCA + t-SNE
+    parameters: distance_metric=Euclidean, clustering_method=Ward's minimum variance, tSNE_perplexity=30, tSNE_iterations=1000
+    input: plaque-wise intensity vectors (Aβ isoform ratios)
+    output: plaque subpopulations (clusters), cluster centroids, statistical significance (p-values via permutation test)
+    confidence: medium
+  Step 4: 2D-to-3D elastic image registration and reconstruction
+    tool: Custom registration pipeline (based on elastix or similar)
+    algorithm: rigid followed by B-spline elastic registration using reference ion images (e.g., m/z 1127.6, 1143.6 — plaque-unrelated lipid ions)
+    parameters: reference_ion_mz=[1127.6, 1143.6], elastix_parameter_file=BSplineTransform, number_of_resolutions=4, maximum_number_of_iterations=1024, metric=AdvancedMattesMutualInformation
+    input: stack of 2D MALDI MSI layers (.imzML)
+    output: 3D-reconstructed ion density volumes, 3D plaque masks
+    confidence: low
+  Step 5: 3D plaque quantification and colocalization analysis
+    tool: Custom Python/R scripts
+    algorithm: voxel-wise Pearson correlation + spatial overlap ratio (Jaccard index)
+    parameters: colocalization_threshold_r=0.7, minimum_overlap_fraction=0.25
+    input: 3D ion volumes and 3D plaque segmentations
+    output: colocalization matrix per plaque, 3D plaque size distribution, Aβ<sub>1-42Arc</sub> core vs. periphery localization statistics
+    confidence: medium
+
+data_availability:
+  raw_data: available (ProteomeXchange: PXD020824)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+  data_urls: http://www.proteomexchange.org/cgi/GetDataset?ID=PXD020824
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - PLAQUE PICKER tool not publicly released or described in sufficient detail for reimplementation
+  - No source code or scripts provided for statistical clustering, registration, or colocalization analysis
+  - Exact instrument model and acquisition software (e.g., flexImaging, SCiLS Lab) not specified
+  - Preprocessing steps (e.g., denoising, baseline correction, normalization method) not described
+  - Elastix parameter files and reference ion selection rationale not provided
+reproducibility_strengths:
+  - Raw MSI data publicly available via ProteomeXchange (PXD020824)
+  - Use of open standards (.imzML format) supports interoperability
+  - Clear biological validation (two AD mouse models) and quantitative metrics proposed

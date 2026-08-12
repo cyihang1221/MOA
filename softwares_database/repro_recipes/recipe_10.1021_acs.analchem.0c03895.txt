@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: Rapid Development of Improved Data-Dependent Acquisition Strategies.
+source_paper: Davies V et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.0c03895, PMID: 33784814
+overall_reproducibility_score: 52/100
+
+workflow_steps: 4
+  Step 1: Simulation-based DDA method development
+    tool: ViMMS
+    algorithm: in silico mass spectrometry simulation with customizable DDA logic
+    input: virtual chromatograms and metabolite libraries (e.g., HMDB, MassBank)
+    output: optimized DDA acquisition methods (e.g., priority scoring rules, exclusion windows, dynamic exclusion settings)
+    confidence: medium
+  Step 2: Instrument integration via IAPI
+    tool: ViMMS Instrument Application Programming Interface (IAPI)
+    algorithm: real-time instrument control interface
+    input: optimized in silico DDA method configuration
+    output: executable DDA method file compatible with real LC-MS/MS instruments
+    confidence: low
+  Step 3: Experimental validation on real samples
+    tool: LC-MS/MS instrument (unspecified vendor/model)
+    algorithm: data-dependent acquisition with custom prioritization logic
+    parameters: max_number_of_ions_per_cycle=10, dynamic_exclusion_time=15, exclusion_window=±1.5 Da
+    input: complex metabolite mixtures (two unspecified samples)
+    output: MS/MS spectra and peak lists
+    confidence: low
+  Step 4: Performance evaluation of DDA strategies
+    tool: custom Python/R analysis
+    algorithm: unique ion fragmentation count comparison
+    parameters: ion_uniqueness_threshold=MS1 m/z ± 5 ppm and RT ± 0.1 min
+    input: MS/MS acquisition logs and feature tables
+    output: quantification of fragmented unique ions per run
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/ViMMS/vimms
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS/MS data not deposited or referenced
+  - Exact composition of the two complex metabolite mixtures not specified
+  - No details on LC gradient, column, or MS instrument model/settings
+  - IAPI implementation details and instrument-specific drivers not described or shared
+  - Custom analysis code for step 4 not provided or linked
+reproducibility_strengths:
+  - ViMMS framework is open-source with DOI and GitHub repository
+  - Framework enables reproducible in silico DDA development
+  - Core methodology decouples simulation from hardware constraints

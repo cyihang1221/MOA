@@ -1,0 +1,47 @@
+========== reproducibility_recipe entry ==========
+paper_title: CycloBranch 2: Molecular Formula Annotations Applied to imzML Data Sets in Bimodal Fusion and LC-MS Data Files.
+source_paper: Novák J et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.0c00170, PMID: 32338876
+overall_reproducibility_score: 70/100
+
+workflow_steps: 3
+  Step 1: Molecular formula annotation for unknown compounds
+    tool: CycloBranch 2
+    algorithm: de novo molecular formula generation
+    input: imzML data sets, LC-MS data files
+    output: molecular formula annotations
+    confidence: medium
+  Step 2: Bimodal image fusion and characterization
+    tool: CycloBranch 2
+    algorithm: database-free annotation
+    input: imzML data sets
+    output: fused bimodal images and small molecule characterizations (e.g., metallophores)
+    confidence: low
+  Step 3: Fine isotope ratio filtering
+    tool: CycloBranch 2
+    algorithm: isotope ratio discrimination
+    parameters: discriminated_pairs=['34S/13C2', '41K/13C2']
+    input: isotopic pattern data
+    output: filtered isotopic features
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://ms.biomed.cas.cz/cyclobranch/
+  license: GNU General Public License
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of input data format specifications (e.g., imzML version, LC-MS vendor formats)
+  - No parameters or thresholds reported for molecular formula generation (e.g., mass tolerance, element ranges, valence rules)
+  - No details on bimodal fusion methodology (e.g., registration, normalization, weighting)
+  - Raw or processed datasets not deposited or referenced
+reproducibility_strengths:
+  - Open-source software with public download URL
+  - Clear licensing (GPL)
+  - Explicit description of key algorithmic capability (de novo formula generation)
+  - Specific mention of isotopic discrimination logic

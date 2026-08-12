@@ -1,0 +1,67 @@
+========== reproducibility_recipe entry ==========
+paper_title: Five Easy Metrics of Data Quality for LC-MS-Based Global Metabolomics.
+source_paper: Zhang X et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.0c01493, PMID: 32865396
+overall_reproducibility_score: 35/100
+
+workflow_steps: 6
+  Step 1: Data acquisition
+    tool: LC-QTOF-MS
+    parameters: sample=pooled human serum, replicates=50, acquisition_mode=['profile', 'centroid'], instrument_platforms=2, resolution=high-resolution
+    input: biological sample (human serum)
+    output: raw .d files (Waters/Agilent/SCIEX vendor format)
+    confidence: medium
+  Step 2: Data processing and feature detection
+    tool: Progenesis QI
+    algorithm: peak picking, alignment, deconvolution
+    parameters: ion_mode=positive and negative, mass_tolerance_ppm=None, rt_tolerance_min=None, min_peak_intensity=None, noise_threshold=None
+    input: raw .d files
+    output: feature table (peak intensity matrix)
+    confidence: low
+  Step 3: Retention time drift assessment
+    tool: Progenesis QI
+    algorithm: RT alignment quality metric
+    parameters: drift_threshold_min=None
+    input: aligned feature table with RT information
+    output: RT drift summary (e.g., median absolute RT shift)
+    confidence: medium
+  Step 4: Compound detection count and abundance distribution analysis
+    tool: custom analysis in Progenesis QI or exported R/Python
+    algorithm: γ-distribution fitting to compound abundance ranks
+    parameters: normalization_method=abundance normalization for cross-platform comparison
+    input: feature table with intensity values
+    output: γ-distribution fit parameters, normalized abundance rank plot
+    confidence: low
+  Step 5: Missing value characterization
+    tool: custom analysis
+    algorithm: detection frequency curve
+    parameters: extraction_frequency_range=1–50, detection_threshold=intensity > noise threshold
+    input: feature table with binary detection matrix (present/absent per run)
+    output: characteristic curve: % compounds detected vs. extraction frequency
+    confidence: medium
+  Step 6: MS reproducibility assessment
+    tool: custom analysis
+    algorithm: ['accumulative CV vs. % compounds detected', 'ICC vs. compound abundance']
+    parameters: cv_calculation=across 50 replicates per feature, icc_model=two-way random effects, abundance_bin_size=None
+    input: feature table with intensity values across 50 runs
+    output: accumulative CV curve, ICC-abundance scatterplot
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS data not deposited in public repository (e.g., MetaboLights, MassIVE)
+  - Progenesis QI is commercial software with no open-source alternative provided
+  - No details on Progenesis QI parameter settings (e.g., mass/RT tolerances, noise thresholds, peak integration rules)
+  - Custom analyses (γ-fitting, detection frequency curves, ICC/CV plots) lack code, scripts, or implementation details
+  - No description of how 'compound abundance' was defined (e.g., summed ion chromatogram area, base peak intensity, TIC-normalized)
+reproducibility_strengths:
+  - Experimental design clearly described (50 replicates of pooled serum on two platforms)
+  - Five quantitative metrics explicitly named and conceptually defined
+  - Distinction between profile vs. centroid mode performance reported

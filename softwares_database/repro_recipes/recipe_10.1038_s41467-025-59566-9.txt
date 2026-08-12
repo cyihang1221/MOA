@@ -1,0 +1,108 @@
+========== reproducibility_recipe entry ==========
+paper_title: Association of distinct microbial and metabolic signatures with microscopic colitis.
+source_paper: Chen AS et al. (2025), Nature communications, DOI: 10.1038/s41467-025-59566-9, PMID: 40410138
+overall_reproducibility_score: 42/100
+
+workflow_steps: 11
+  Step 1: Metagenomic read preprocessing and QC
+    tool: KneadData (vv0.12.0)
+    algorithm: adapter trimming and short-read filtering
+    parameters: min_length=50
+    input: raw Illumina FASTQ files
+    output: trimmed, quality-filtered FASTQ
+    confidence: high
+  Step 2: Human read removal
+    tool: Bowtie2 (vv2.5.1)
+    algorithm: alignment to human reference genome
+    parameters: reference_genome=GRCh37/hg19
+    input: trimmed FASTQ
+    output: human-depleted FASTQ
+    confidence: high
+  Step 3: Metagenomic taxonomic profiling
+    tool: MetaPhlAn (vv4.0.6)
+    algorithm: marker-based species-level profiling
+    parameters: minimum_relative_abundance=0.0001
+    input: human-depleted FASTQ
+    output: species relative abundance table
+    confidence: high
+  Step 4: Metagenomic functional pathway profiling
+    tool: HUMAnN3 (vv3.8)
+    algorithm: gene-family-to-pathway mapping via ChocoPhlAn + UniRef90
+    parameters: minimum_relative_abundance=0.001, prevalence_threshold=0.1
+    input: human-depleted FASTQ + MetaPhlAn species output
+    output: microbial pathway relative abundance table
+    confidence: high
+  Step 5: Alpha diversity calculation
+    tool: R (vegan) (vv2.6–4)
+    algorithm: Chao1 and Shannon index
+    input: species relative abundance table
+    output: alpha diversity metrics per sample
+    confidence: high
+  Step 6: Beta diversity and ordination
+    tool: R (vegan) (vv2.6–4)
+    algorithm: Bray–Curtis dissimilarity + PCoA; Aitchison distance + PCoA
+    input: species relative abundance table
+    output: PCoA coordinates, distance matrices
+    confidence: high
+  Step 7: Multivariate community association testing
+    tool: PERMANOVA
+    algorithm: permutational multivariate analysis of variance
+    parameters: n_permutations=999
+    input: distance matrix + metadata
+    output: R², p-value per factor (disease, BSS, age, sex, BMI)
+    confidence: high
+  Step 8: Multivariable association testing (microbiome & metabolome)
+    tool: MaAsLin2 (vv3.18)
+    algorithm: multivariate linear regression with covariate adjustment
+    parameters: transform=log, covariates=['Disease type', 'BSS', 'age', 'sex', 'BMI'], z_score_standardization=['age', 'BMI']
+    input: species/pathway/metabolite abundance table + metadata
+    output: coefficients, t-statistics, p-values per feature
+    confidence: high
+  Step 9: Metabolite annotation and classification
+    tool: Metabolon proprietary platform
+    algorithm: library matching (RT/RI, m/z ±10 ppm, MS/MS spectra)
+    parameters: mass_tolerance_ppm=10
+    input: raw UPLC-MS/MS .raw files
+    output: annotated metabolite feature table (HMDB/KEGG/PubChem IDs)
+    confidence: medium
+  Step 10: Metabolomic data preprocessing
+    tool: Metabolon internal pipeline
+    algorithm: log-transformation, median batch normalization, minimum imputation
+    parameters: normalization_target=median, imputation_method=minimum_per_metabolite
+    input: raw peak area matrix
+    output: log-transformed, normalized, imputed metabolite abundance table
+    confidence: medium
+  Step 11: Metabolite class-level prioritization
+    tool: R (custom)
+    algorithm: median t-statistic aggregation by Metabolon class
+    parameters: prevalence_threshold=0.1, abundance_threshold=0.001
+    input: MaAsLin2 metabolite results
+    output: ranked metabolite classes (enriched/depleted in MC)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (European Nucleotide Archive (ENA): PRJEBXXXXX)
+  processed_data: not_mentioned (MetaboLights: MTBLS1234)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 1
+  Fig. 6: [workflow_diagram]
+    caption: Overall study design showing recruitment, sample collection, and cohort stratification.
+    produced_by_step: [1, 2, 3, 4, 9, 10]
+    visualization_tool: BioRender
+
+reproducibility_gaps:
+  - Raw metagenomic FASTQ files not deposited in public repository (ENA/SRA)
+  - Raw UPLC-MS/MS .raw files not publicly available
+  - Metabolon's proprietary identification library and preprocessing pipeline not accessible or documented
+  - No code or scripts shared for MaAsLin2 analysis, custom R aggregation, or visualization
+  - Exact chromatographic gradient profiles and instrument method parameters omitted
+  - No details on Metabolon's internal imputation or normalization implementation beyond 'minimum per metabolite'
+  - Supplementary Data 2 referenced but no access information provided
+reproducibility_strengths:
+  - Uses well-documented open-source tools (KneadData, Bowtie2, MetaPhlAn, HUMAnN3, vegan, MaAsLin2)
+  - Explicit version numbers provided for all open-source software
+  - Clear QC thresholds (e.g., ≥7M reads, ≥0.01% species abundance, ≥10% prevalence)
+  - Detailed description of UPLC-MS/MS methods including columns, mobile phases, ionization modes, and mass spec settings

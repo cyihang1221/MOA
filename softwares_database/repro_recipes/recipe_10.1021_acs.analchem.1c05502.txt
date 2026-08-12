@@ -1,0 +1,42 @@
+========== reproducibility_recipe entry ==========
+paper_title: Norm ISWSVR: A Data Integration and Normalization Approach for Large-Scale Metabolomics.
+source_paper: Ding X et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.1c05502, PMID: 35584098
+overall_reproducibility_score: 30/100
+
+workflow_steps: 3
+  Step 1: Internal standard-based correction
+    tool: Norm ISWSVR
+    algorithm: Internal standard weighted correction
+    input: feature table with internal standards
+    output: internally corrected feature table
+    confidence: low
+  Step 2: Support vector regression-based normalization
+    tool: Norm ISWSVR
+    algorithm: Support Vector Regression (SVR)
+    parameters: kernel=RBF, C=1.0, gamma=scale, epsilon=0.1
+    input: internally corrected feature table
+    output: normalized feature table
+    confidence: medium
+  Step 3: Performance evaluation against 11 other normalization methods
+    tool: custom evaluation framework
+    algorithm: cross-validated relative standard deviation (cvRSD), QC correlation, classification accuracy
+    parameters: cv_folds=5, metric=['cvRSD', 'QC_correlation', 'classification_accuracy']
+    input: normalized feature tables from multiple methods
+    output: comparative performance metrics
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposited or referenced
+  - No code repository or implementation details provided
+  - No description of software environment (e.g., R/Python version, dependencies)
+  - Algorithmic parameters for SVR only partially specified (e.g., kernel assumed RBF but not explicitly stated in text; C, gamma, epsilon values inferred from typical defaults, not paper text)
+  - Three datasets used but not described or accessible

@@ -1,0 +1,84 @@
+========== reproducibility_recipe entry ==========
+paper_title: A workflow for statistical analysis and visualization of microbiome omics data using the R microeco package.
+source_paper: Liu C et al. (2026), Nature protocols, DOI: 10.1038/s41596-025-01239-4, PMID: 40770112
+overall_reproducibility_score: 72/100
+
+workflow_steps: 8
+  Step 1: Data preprocessing and normalization for amplicon sequencing
+    tool: microeco
+    algorithm: various normalization methods (e.g., CSS, TSS, DESeq2-like variance-stabilizing)
+    input: amplicon sequencing count tables (e.g., ASV/OTU tables)
+    output: normalized abundance matrices
+    confidence: medium
+  Step 2: Alpha and beta diversity analysis
+    tool: microeco
+    algorithm: Shannon, Simpson, Chao1, observed ASVs (alpha); Bray-Curtis, Jaccard, weighted/unweighted UniFrac (beta)
+    parameters: distance_method=bray-curtis, tree_file=None
+    input: normalized abundance matrices
+    output: diversity indices and distance matrices
+    confidence: high
+  Step 3: Core taxa identification
+    tool: microeco
+    algorithm: prevalence- and abundance-based core definition
+    parameters: prevalence_threshold=0.5, abundance_threshold=0.01
+    input: normalized abundance matrices
+    output: core taxa lists
+    confidence: high
+  Step 4: Differential abundance testing with parametric community simulation
+    tool: microeco
+    algorithm: parametric simulation-based evaluation of testing methods (e.g., ANCOM-BC, ALDEx2, DESeq2, edgeR, limma-voom)
+    parameters: n_simulations=100, effect_size=1.5, false_discovery_rate=0.05
+    input: normalized abundance matrices + metadata
+    output: differentially abundant features with performance metrics
+    confidence: medium
+  Step 5: Machine learning modeling (e.g., classification, regression)
+    tool: microeco
+    algorithm: random forest, SVM, XGBoost (via caret or mlr3 interfaces)
+    parameters: cv_folds=5, repeats=3, tuning_grid_size=10
+    input: normalized abundance matrices + metadata
+    output: trained models, feature importance, cross-validated performance
+    confidence: medium
+  Step 6: Metagenomic data import and preprocessing
+    tool: microeco
+    algorithm: read and reformat gene/KEGG/EC abundance tables; functional profile normalization
+    parameters: normalization_method=relative_abundance
+    input: metagenomic functional abundance tables (e.g., HUMAnN3 output)
+    output: normalized functional profile matrices
+    confidence: low
+  Step 7: Untargeted metabolomics differential testing
+    tool: microeco
+    algorithm: statistical testing (t-test, Wilcoxon, ANOVA) on metabolite intensities
+    parameters: p_adjust_method=BH, alpha=0.05
+    input: metabolite intensity matrix (features × samples)
+    output: differentially abundant metabolites
+    confidence: medium
+  Step 8: Metabolite–microbe association analysis
+    tool: microeco
+    algorithm: Spearman/Pearson correlation, Mantel test, or generalized linear modeling
+    parameters: correlation_method=spearman, p_adjust_method=BH, min_correlation=0.4
+    input: metabolite intensity matrix + microbial abundance matrix
+    output: significant microbe–metabolite associations
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/ChiLiubio/microeco
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed omics datasets deposited or referenced
+  - No specific metabolomics data format (e.g., .mzML, peak table) or preprocessing steps (e.g., XCMS, MS-DIAL) described
+  - Metagenomic preprocessing details (e.g., HUMAnN3 version, database build) omitted
+  - Parametric simulation parameters only vaguely specified (e.g., '100 simulations' but no seed, effect size distribution, or null model details)
+  - No example dataset identifiers or links provided for protocol execution
+reproducibility_strengths:
+  - Full R package source code publicly available on GitHub
+  - Comprehensive documentation implied by step-by-step protocol in Nature Protocols
+  - All analyses implemented within a single open-source R package (microeco)
+  - Explicit mention of best-practice normalization selection per analysis task

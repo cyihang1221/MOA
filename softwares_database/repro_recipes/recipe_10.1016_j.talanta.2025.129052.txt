@@ -1,0 +1,63 @@
+========== reproducibility_recipe entry ==========
+paper_title: Integrated native digestion and molecular weight cutoff enrichment with DIA-MS: a sensitive and selective approach for quantitative analysis of HCP.
+source_paper: Gong Y et al. (2026), Talanta, DOI: 10.1016/j.talanta.2025.129052, PMID: 41187478
+overall_reproducibility_score: 30/100
+
+workflow_steps: 6
+  Step 1: Native digestion
+    tool: native digestion protocol
+    parameters: digestion_stage=two-stage, condition=native
+    input: intact therapeutic protein + HCP mixture
+    output: partially digested protein/peptide mixture
+    confidence: medium
+  Step 2: Molecular weight cutoff enrichment
+    tool: molecular weight cutoff filtration
+    parameters: cutoff_kda=None, filtration_type=enrichment
+    input: partially digested mixture
+    output: HCP-enriched fraction (depleted of high-MW therapeutic protein)
+    confidence: low
+  Step 3: Data-independent acquisition mass spectrometry
+    tool: DIA-MS
+    parameters: acquisition_mode=DIA, instrument_platform=None
+    input: HCP-enriched fraction
+    output: raw DIA .d or .raw files
+    confidence: medium
+  Step 4: Spectral library construction and DIA data processing
+    tool: Spectronaut
+    parameters: library_source=sample-derived, quantification_method=peak area, normalization=None
+    input: raw DIA files + (implied) library-building runs
+    output: quantified HCP peptide/protein table
+    confidence: high
+  Step 5: Quantitative tracking and sensitivity assessment
+    tool: custom analysis (not specified)
+    parameters: limit_of_detection_ppm=0.5, target_analyte=PLBD2
+    input: Spectronaut output table
+    output: quantified HCP levels across purification steps, LOD report
+    confidence: low
+  Step 6: Method validation and comparative analysis with ELISA
+    tool: ELISA
+    parameters: comparison_metric=sensitivity and specificity
+    input: same samples analyzed by DIA-MS and ELISA
+    output: validation report (accuracy, precision, selectivity, robustness)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw DIA-MS data not deposited in public repository (e.g., Panorama, PRIDE)
+  - No details on native digestion conditions (enzyme, time, temperature, buffer)
+  - Molecular weight cutoff value unspecified
+  - No spectral library sharing or Spectronaut project export details
+  - No code or script for quantitative tracking or PLBD2-specific analysis
+  - Spectronaut is commercial software requiring license and proprietary settings
+reproducibility_strengths:
+  - Explicit LOD (0.5 ppm) and target analyte (PLBD2) reported
+  - Clear workflow description integrating native digestion + MWCO + DIA-MS
+  - Comparative validation against orthogonal method (ELISA)

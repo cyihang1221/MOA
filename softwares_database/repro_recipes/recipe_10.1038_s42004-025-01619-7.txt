@@ -1,0 +1,59 @@
+========== reproducibility_recipe entry ==========
+paper_title: Reference library for suspect screening of environmental toxicants using ion mobility spectrometry-mass spectrometry.
+source_paper: Teri D et al. (2025), Communications chemistry, DOI: 10.1038/s42004-025-01619-7, PMID: 40750668
+overall_reproducibility_score: 58/100
+
+workflow_steps: 4
+  Step 1: Chemical standard preparation and dilution
+    tool: Manual lab protocol
+    parameters: stock_concentration=0.4, final_concentration=1e-05, diluent_composition=50:50 methanol/water, volume_transferred=5e-06, diluent_volume=0.000195, purity_threshold=0.9
+    input: chemical standards in DMSO (0.4 mM)
+    output: 10 µM solutions in 50:50 methanol/water
+    confidence: high
+  Step 2: IMS-MS data acquisition
+    tool: Agilent 6560 IM-QTOF MS
+    algorithm: single-field CCS calculation
+    parameters: drift_tube_length_cm=78.24, drift_gas=nitrogen, drift_gas_pressure_torr=3.95, electric_field_v_per_cm=17, flow_rate_ml_per_min=0.4, solvent_composition=50% water / 50% acetonitrile, ionization_sources=['ESI[+]', 'ESI[−]', 'APCI[+]'], mass_error_tolerance_ppm=10, isotopic_distribution_validation=True, CCS_replicate_agreement_percent=1.0, carryover_control=methanol wash after 24 injections, replicates_per_chemical=6, duplicates_per_ion_mode=2
+    input: 10 µM chemical solutions
+    output: raw IMS-MS files (.d format)
+    confidence: high
+  Step 3: Feature detection and CCS calculation
+    tool: Agilent IM-MS Browser
+    algorithm: single-field DT CCS<sub>N2</sub> calculation
+    parameters: calibrant=Agilent Tune Mix, CCS_filter_trendline_deviation_percent=15.0, multimer_rejection=True, manual_peak_verification=True
+    input: raw IMS-MS files
+    output: CCS and m/z table (DT CCS<sub>N2</sub>, ion type, m/z)
+    confidence: high
+  Step 4: Data curation and quality filtering
+    tool: Manual curation + Agilent Mass Profiler
+    algorithm: trendline-based outlier rejection
+    parameters: intra_lab_CCS_error_percent=1.0, inter_lab_CCS_error_percent=2.0, minimum_replicates_for_inclusion=2, ion_types_included=['[M+H]+', '[M+Na]+', '[M-H]−', '[M]•+'], chemical_class_assignment_method=expert judgement using PubChem and CompTox Dashboard
+    input: CCS and m/z table
+    output: curated reference database (2144 chemicals, 4004 ions)
+    confidence: medium
+
+data_availability:
+  raw_data: available (PubChem)
+  processed_data: available (PubChem)
+  metadata: in_paper_only
+  data_urls: https://pubchem.ncbi.nlm.nih.gov/
+
+code_availability: not_mentioned
+
+figure_recipes: 1
+  Figure 1: [workflow_diagram]
+    caption: Schematic of the project workflow from chemical standard selection and preparation through IMS-MS analysis to CCS database curation.
+    produced_by_step: [1, 2, 3, 4]
+    visualization_tool: Not specified
+
+reproducibility_gaps:
+  - Agilent IM-MS Browser and Mass Profiler are commercial tools requiring license and not accessible without Agilent hardware
+  - No raw data accession IDs provided — only 'uploaded to PubChem' without specific dataset identifiers or deposition links
+  - Instrumental settings detailed only in 'Supporting Information File' (not provided in text), limiting full parameter reproducibility
+  - No code or scripts shared for trendline fitting, manual verification logic, or class assignment
+  - Chemical class assignment relies on 'expert judgement' without standardized ontology or reproducible rules
+reproducibility_strengths:
+  - Highly specific experimental parameters reported (e.g., 17 V/cm, 3.95 torr N₂, 78.24 cm drift tube)
+  - Explicit QC criteria: ≤1% intra-lab CCS error, ≤10 ppm mass error, isotopic pattern validation
+  - Public deposition of CCS values in PubChem enables external access and reuse
+  - Use of standardized calibrants (Agilent Tune Mix) and published single-field method enhances cross-lab reproducibility

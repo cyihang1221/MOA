@@ -1,0 +1,129 @@
+========== reproducibility_recipe entry ==========
+paper_title: Serum metabolic traits reveal therapeutic toxicities and responses of neoadjuvant chemoradiotherapy in patients with rectal cancer.
+source_paper: Wang H et al. (2022), Nature communications, DOI: 10.1038/s41467-022-35511-y, PMID: 36528604
+overall_reproducibility_score: 78/100
+
+workflow_steps: 11
+  Step 1: Data conversion (raw to mzXML)
+    tool: ProteoWizard (v3.0.20360)
+    algorithm: msConvert
+    parameters: input_format=Thermo .raw, output_format=mzXML
+    input: raw .raw files
+    output: mzXML files
+    confidence: high
+  Step 2: Peak detection, retention time correction, and peak alignment
+    tool: XCMS (v3.12)
+    algorithm: centWave
+    parameters: mass_accuracy_ppm=10, peak_width_c=[5, 30], snthresh=3, minfrac=0.5
+    input: mzXML files
+    output: feature table (peak matrix)
+    confidence: high
+  Step 3: Quality control filtering and outlier handling
+    tool: Custom R script (XCMS-based)
+    algorithm: SD-based outlier removal
+    parameters: outlier_threshold_sd=5, qc_missing_threshold=0.7
+    input: feature table
+    output: QC-filtered feature table
+    confidence: medium
+  Step 4: Missing value imputation
+    tool: R (impute package or XCMS internal)
+    algorithm: k-Nearest Neighbor (KNN)
+    parameters: k=5
+    input: QC-filtered feature table
+    output: imputed feature table
+    confidence: medium
+  Step 5: Normalization and batch effect correction
+    tool: MetFlow
+    algorithm: QC-based normalization (e.g., LOESS, linear regression on QC trends)
+    parameters: qc_rsd_threshold=30
+    input: imputed feature table
+    output: normalized feature table
+    confidence: medium
+  Step 6: Metabolite identification (MSI level 1–3)
+    tool: MetDNA
+    algorithm: Accurate mass + RT + MS/MS dot-product matching
+    parameters: mass_tolerance_ppm=10, msms_similarity_cutoff=0.8, isotope_exclusion=True, dynamic_exclusion_s=3.0
+    input: normalized feature table + dd-MS2 spectra
+    output: annotated metabolite table (MSI levels 1–3)
+    confidence: high
+  Step 7: Unsupervised multivariate analysis
+    tool: R (stats package) (v3.6.1)
+    algorithm: Principal Component Analysis (PCA)
+    parameters: center=True, scale=True
+    input: normalized feature table
+    output: PCA scores & loadings
+    confidence: high
+  Step 8: Differential metabolite detection (longitudinal/time-series)
+    tool: SAM (Significance Analysis of Microarrays)
+    algorithm: SAM with Wilcoxon-based ranking and sample-wise permutation
+    parameters: fdr_threshold=0.05, ranking_method=Wilcoxon, permutation_type=sample-wise
+    input: normalized feature table (with time-point labels)
+    output: differentially abundant metabolic features
+    confidence: high
+  Step 9: Pathway enrichment analysis
+    tool: MetaboAnalyst
+    algorithm: Hypergeometric test + topology analysis (out-degree centrality)
+    parameters: database=KEGG, species=Homo sapiens, kegg_access_date=2019-10, reference_metabolome=all_compounds_in_pathway_library
+    input: differentially abundant metabolites (KEGG IDs mapped)
+    output: enriched pathways with p-values and impact scores
+    confidence: high
+  Step 10: Hierarchical clustering and heatmap visualization
+    tool: pheatmap (v1.0.12)
+    algorithm: Ward’s linkage + Euclidean distance
+    parameters: clustering_distance_rows=euclidean, clustering_method=ward.D2
+    input: normalized feature table (subsetted)
+    output: clustered heatmap
+    confidence: high
+  Step 11: Predictive modeling and feature selection
+    tool: glmnet (v4.0.2)
+    algorithm: Adaptive lasso
+    parameters: alpha=1.0, family=gaussian, standardize=True
+    input: normalized feature table + clinical covariates (age, sex, BMI)
+    output: selected predictive metabolite panel
+    confidence: high
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1722)
+  processed_data: available (MetaboLights: MTBLS1722)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1722
+
+code_availability: mentioned_no_link
+
+figure_recipes: 5
+  Fig. 1: [workflow_diagram]
+    caption: Overview of serum metabolic traits dynamically changing across five time points during nCRT in LARC patients.
+    produced_by_step: [2, 5, 7, 8]
+    visualization_tool: ['pheatmap', 'ggplot2 (implied)']
+  Fig. 2: [boxplot]
+    caption: Acyl carnitine levels stratified by sex and diarrhea grade, showing sex-disparate association with nCRT-induced diarrhea.
+    produced_by_step: [8, 11]
+    visualization_tool: ['ggplot2']
+    statistical_test: Wilcoxon rank-sum test, FDR < 0.05
+  Fig. 3: [volcano_plot]
+    caption: Volcano plot of pre-treatment metabolites associated with hematologic toxicities during nCRT.
+    produced_by_step: [8]
+    visualization_tool: ['ggplot2']
+    statistical_test: SAM FDR < 0.05
+  Fig. 4: [pathway_map]
+    caption: Phenylalanine metabolism pathway enriched in non-pCR vs pCR patients, highlighting key differentially abundant metabolites.
+    produced_by_step: [9]
+    visualization_tool: ['MetaboAnalyst']
+    statistical_test: Hypergeometric test p < 0.05
+  Fig. 5: [bar_chart]
+    caption: Relative abundance of essential amino acids in pCR vs non-pCR patients, showing elevation in pCR group.
+    produced_by_step: [8, 11]
+    visualization_tool: ['ggplot2']
+    statistical_test: Wilcoxon rank-sum test, FDR < 0.05
+
+reproducibility_gaps:
+  - No public repository link for custom R scripts (e.g., adaptive lasso workflow, SAM implementation details)
+  - MetFlow and MetDNA are web tools without open-source code or Docker containers
+  - Exact gradient profiles for T3 column lack solvent composition precision (e.g., '0.1% formic acid' — unspecified purity or preparation method)
+  - No explicit description of how clinical covariates were integrated into glmnet (e.g., interaction terms, cross-validation strategy)
+reproducibility_strengths:
+  - Raw and processed data deposited in MetaboLights (MTBLS1722) with full metadata
+  - All major software tools specified with versions (XCMS v3.12, R v3.6.1, ProteoWizard v3.0.20360)
+  - Detailed LC-MS parameters including column specs, gradients, source settings, and acquisition modes
+  - Use of MSI-compliant metabolite identification with clear confidence level criteria
+  - QC metrics reported (RSDs < 30% in QC, tight PCA clustering)

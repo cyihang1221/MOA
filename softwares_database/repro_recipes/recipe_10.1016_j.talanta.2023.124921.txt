@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: Comprehensive analysis of oxylipins using reverse phase liquid chromatography and data dependent acquisition workflow on LTQ-Orbitrap® Velos Pro.
+source_paper: Nouwade K et al. (2024), Talanta, DOI: 10.1016/j.talanta.2023.124921, PMID: 37454517
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Chromatographic separation
+    tool: Reverse phase liquid chromatography
+    parameters: column=not specified, gradient_profile=not fully specified, flow_rate=not specified, temperature=not specified, injection_volume=not specified
+    input: biological extracts (J774 and THP-1 macrophage supernatants)
+    output: chromatographically separated analytes
+    confidence: low
+  Step 2: Mass spectrometric acquisition using DDA
+    tool: LTQ-Orbitrap Velos Pro
+    algorithm: Data Dependent Acquisition (DDA)
+    parameters: acquisition_frequency_optimization=performed on both linear trap and Orbitrap analyzers, chromatographic_segmentation=used, HCD_collision_energy_optimization=per eicosanoid, mass_tolerance_ppm=5, data_points_per_peak=sufficient (not quantified), detection_threshold_pg={'prostanoids': 2, 'leukotrienes_and_oxidized_species': [0.02, 2]}
+    input: chromatographically separated analytes
+    output: raw .raw files (Thermo format)
+    confidence: medium
+  Step 3: Method validation
+    tool: custom validation protocol
+    parameters: specificity_RSD_percent=<10, intra_day_accuracy_percent=[86.56, 114.93], inter_day_accuracy_percent=[86.56, 114.93], intra_day_precision_RSD_percent=<15, inter_day_precision_RSD_percent=<15, linear_range_pg=[2.5, 12500]
+    input: calibration standards and QC samples
+    output: validation report (specificity, accuracy, precision, linearity)
+    confidence: high
+  Step 4: Quantitative comparison of prostanoids between cell types
+    tool: not specified (likely vendor software or custom script)
+    algorithm: relative quantification (peak area comparison)
+    parameters: biological_conditions=['J774', 'THP-1', 'LPS-stimulated'], analytes=['prostanoids']
+    input: integrated peak areas from DDA data
+    output: comparative prostanoid release levels
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data (.raw files) not deposited in public repository
+  - No details on LC column, gradient, flow rate, or temperature — critical for chromatographic reproducibility
+  - No description of data processing pipeline (peak picking, integration, alignment, calibration curve fitting)
+  - No software or algorithm specified for peak integration or quantification
+  - HCD collision energy values per eicosanoid not reported
+  - No access to calibration standards preparation or QC sample protocols
+  - LTQ-Orbitrap Velos Pro method files (.meth) or acquisition methods not shared
+reproducibility_strengths:
+  - Explicit detection thresholds and validation metrics reported
+  - Clear biological context and experimental design (J774 vs THP-1, LPS stimulation)
+  - Quantitative performance parameters (linearity, accuracy, precision) fully tabulated in paper (implied)

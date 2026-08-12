@@ -1,0 +1,89 @@
+========== reproducibility_recipe entry ==========
+paper_title: Short-term high-fat diet impacts bone material properties and metabolism for adult and aged C57BL/6JN mice.
+source_paper: Brown K et al. (2025), Communications biology, DOI: 10.1038/s42003-025-08263-w, PMID: 40461602
+overall_reproducibility_score: 42/100
+
+workflow_steps: 8
+  Step 1: Metabolite extraction
+    tool: manual protocol
+    parameters: solvent_ratio=3:1 methanol:acetone, resuspension_solvent=1:1 acetonitrile:water
+    input: pulverized cortical bone tissue (right humeri)
+    output: metabolite extract in solvent
+    confidence: high
+  Step 2: LC-MS data acquisition
+    tool: Agilent 1290 LC / 6538 Q-TOF
+    parameters: mode=positive ion, column=Cogent Diamond Hydride HIILIC, blank_frequency=every 7–10 samples
+    input: metabolite extract
+    output: raw .d files (Agilent proprietary format)
+    confidence: high
+  Step 3: Raw data conversion
+    tool: MSCConvert
+    input: Agilent .d raw files
+    output: mzML files
+    confidence: medium
+  Step 4: Feature detection and alignment
+    tool: XCMS
+    algorithm: centWave or similar (not specified)
+    input: mzML files
+    output: feature table (peak matrix)
+    confidence: low
+  Step 5: Ensemble clustering and signature derivation
+    tool: ECCO
+    algorithm: ensemble clustering with cluster optimization
+    parameters: clustering_algorithms=['K-means', 'Dunn', 'PBM'], number_of_solutions=13, weighting_method=frequency-based, cluster_similarity_threshold=1.0
+    input: feature table
+    output: metabolite clusters and frequency-weighted cluster assignments
+    confidence: medium
+  Step 6: Pathway enrichment analysis
+    tool: Mummichog (within MetaboAnalyst)
+    algorithm: hypergeometric test with gamma correction
+    parameters: significance_threshold=0.05, gamma_p=0.05
+    input: metabolite clusters
+    output: enriched metabolic pathways (significant/non-significant)
+    confidence: high
+  Step 7: Signature filtering and comparative pathway analysis
+    tool: custom workflow (ECCO-based)
+    algorithm: signature comparison (shared vs. distinct pathways)
+    parameters: signature_definition=non-significant pathways filtered for uniqueness, comparison_pairs=['aging vs. control', 'HFD vs. control', 'aging+HFD vs. control']
+    input: pathway enrichment results
+    output: shared/distinct metabolic signatures
+    confidence: medium
+  Step 8: Two-group statistical pathway testing
+    tool: ECCO
+    algorithm: gamma p-value testing per cluster
+    parameters: gamma_p=0.05, comparisons=['age', 'diet', 'sex', 'and all relevant two-way combinations']
+    input: feature table + metadata
+    output: statistically significant pathways per comparison
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 2
+  Supplementary Fig. S5: [pathway_map]
+    caption: Venn diagram illustrating shared and distinct metabolic pathways between aging and HFD signatures.
+    produced_by_step: [7]
+    visualization_tool: not specified
+  Fig. 9c: [heatmap]
+    caption: Heatmap showing statistically significant pathways (gamma p < 0.05) from ECCO-based two-group comparisons across age, diet, and sex.
+    produced_by_step: [8]
+    visualization_tool: not specified
+    statistical_test: gamma p < 0.05
+
+reproducibility_gaps:
+  - Raw LC-MS data not deposited in public repository (e.g., MetaboLights, GNPS)
+  - ECCO software not publicly available or documented — no GitHub/DOI/link provided
+  - No version numbers for XCMS or MetaboAnalyst used
+  - No details on XCMS parameters (e.g., ppm tolerance, peak width, bw, mzwid, snthresh)
+  - No description of Mummichog database version or organism setting (e.g., mouse, Mus musculus)
+  - No information on sample randomization order or batch correction applied during LC-MS runs
+  - No metabolite identification level reported (e.g., confidence level per metabolite per MSI guidelines)
+reproducibility_strengths:
+  - Explicit mention of blank injection frequency to monitor drift
+  - Use of established open-source tools (XCMS, MSCConvert) and widely used web platform (MetaboAnalyst)
+  - Clear biological context and grouping logic for signature analysis (shared/distinct pathways)
+  - Reference to ECCO methodology paper (citation 42) — though implementation details remain inaccessible

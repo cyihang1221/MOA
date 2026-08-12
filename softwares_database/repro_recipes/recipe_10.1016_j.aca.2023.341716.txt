@@ -1,0 +1,59 @@
+========== reproducibility_recipe entry ==========
+paper_title: Untargeted cannabinomics reveals the chemical differentiation of industrial hemp based on the cultivar and the geographical field location.
+source_paper: Cerrato A et al. (2023), Analytica chimica acta, DOI: 10.1016/j.aca.2023.341716, PMID: 37709459
+overall_reproducibility_score: 35/100
+
+workflow_steps: 5
+  Step 1: LC-HRMS data acquisition
+    tool: LC-HRMS
+    parameters: instrumentation=high-resolution mass spectrometry, chromatography=liquid chromatography, ionization=electrospray ionization (ESI), polarity=['positive', 'negative'], mass_resolution=high resolution, mass_accuracy=sub-ppm
+    input: extracted hemp plant samples
+    output: raw .raw or .d files (vendor format)
+    confidence: medium
+  Step 2: Data processing following MQ4 guidelines
+    tool: metabolomics Quality Assurance and Quality Control Consortium (MQ4) workflow
+    input: raw vendor files
+    output: processed feature table (m/z, RT, intensity)
+    confidence: low
+  Step 3: Compound annotation
+    tool: in-house spectral libraries and public databases
+    algorithm: MS1 and MS/MS spectral matching
+    parameters: mass_tolerance_ppm=5, retention_time_window_min=0.2, fragment_match_threshold=0.7
+    input: feature table + MS/MS spectra
+    output: annotated metabolite table (54 phytocannabinoids, 134 flavonoids, 77 phenolic acids)
+    confidence: medium
+  Step 4: Multivariate statistical analysis
+    tool: ANOVA-simultaneous component analysis (ASCA)
+    algorithm: ASCA
+    parameters: factors=['cultivar', 'geographical_field_location'], permutation_test=True, n_permutations=1000
+    input: annotated metabolite table
+    output: ASCA model outputs (factor effects, explained variance, significance)
+    confidence: high
+  Step 5: Low-level data fusion
+    tool: low-level fused model
+    algorithm: concatenation of features across polarity modes and/or compound classes
+    parameters: fusion_level=low-level, data_integration=feature-wise concatenation of positive/negative mode and phytocannabinoid/flavonoid/phenolic acid features
+    input: multiple annotated metabolite tables (by class and polarity)
+    output: fused feature matrix for discrimination modeling
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-HRMS data not deposited in any public repository (e.g., MetaboLights, MassIVE)
+  - No description of software tools used for data conversion (e.g., ProteoWizard), peak picking, alignment, or normalization
+  - MQ4 workflow implementation details unspecified (no tool names, versions, or parameters)
+  - In-house spectral libraries not shared or described
+  - Low-level fusion methodology lacks algorithmic or implementation detail
+  - No access to custom R/Python scripts or analysis pipelines
+reproducibility_strengths:
+  - Explicit reference to MQ4 quality control guidelines
+  - Clear reporting of annotated compound counts per chemical class
+  - Use of ASCA — a well-documented multivariate method for designed experiments

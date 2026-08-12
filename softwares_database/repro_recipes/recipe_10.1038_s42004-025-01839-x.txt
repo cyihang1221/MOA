@@ -1,0 +1,91 @@
+========== reproducibility_recipe entry ==========
+paper_title: Structure characterization with NMR molecular networking.
+source_paper: Stienstra CMK et al. (2025), Communications chemistry, DOI: 10.1038/s42004-025-01839-x, PMID: 41407924
+overall_reproducibility_score: 42/100
+
+workflow_steps: 5
+  Step 1: HSQC spectral library generation
+    tool: Mestrelab Mnova NMRPredict
+    algorithm: ECMAScript-based HSQC simulation
+    parameters: mass_range_da=[120, 1200], allowed_elements=['C', 'H', 'N', 'O', 'P', 'S', 'F', 'Cl', 'Br', 'I'], charge_state=neutral, peak_count_minimum=5, lipid_filtering=heuristic rules
+    input: SMILES or molecular structures (COCONUT + LOTUS databases)
+    output: simulated HSQC spectra (F1/F2 peak lists)
+    confidence: high
+  Step 2: Spectral similarity computation (all-vs-all)
+    tool: Custom implementation of Modified Hungarian Distance
+    algorithm: Modified Hungarian Algorithm with functional-group-aware tolerance and dimensionless coordinate normalization
+    parameters: sigma_H_ppm=0.01, sigma_C_ppm=0.2, f_H_ppm=0.5, f_C_ppm=2.5, edge_similarity_threshold=30, padding_strategies=['zero', 'truncation', 'nearest_neighbor']
+    input: HSQC peak lists (unordered (δH, δC) pairs)
+    output: pairwise spectral similarity matrix / edge list
+    confidence: high
+  Step 3: Structural similarity calculation
+    tool: Custom hybrid metric (Tanimoto + MCS)
+    algorithm: Hybrid similarity = 0.5 × (Tanimoto + Maximum Common Subgraph)
+    parameters: tanimoto_fingerprint=standard RDKit Morgan fingerprint (radius=2), mcs_algorithm=VFLib or similar subgraph isomorphism solver, structural_similarity_threshold=0.6
+    input: molecular structures (SMILES/InChI)
+    output: pairwise structural similarity scores (Hybrid, Tanimoto, MCS)
+    confidence: medium
+  Step 4: HSQC molecular network construction
+    tool: Custom graph construction pipeline
+    algorithm: Thresholded all-vs-all similarity graph with structural edge filtering
+    parameters: network_size=99719, edge_retention_threshold_mod_hungarian=30, structural_edge_filter=Hybrid > 0.6, edge_features=['Tanimoto', 'MCS', 'Hybrid']
+    input: Modified Hungarian similarity matrix + structural similarity scores
+    output: undirected weighted graph (GML or adjacency list)
+    confidence: high
+  Step 5: Annotation propagation & dereplication
+    tool: Algorithmic molecular networking (graph topology–driven ranking correction)
+    algorithm: Graph-based ranking refinement using topology metrics (e.g., centrality, clustering coefficient)
+    parameters: ranking_correction_method=topology-aware re-ranking, false_positive_reduction_strategy=structural consistency filtering across network neighborhoods
+    input: HSQC molecular network + annotated nodes (experimental spectra from HMDB/PubChem)
+    output: propagated annotations, dereplicated compound clusters, improved candidate rankings
+    confidence: low
+
+data_availability:
+  raw_data: available (Not specified)
+  processed_data: available (Not specified)
+  metadata: in_paper_only
+
+code_availability: mentioned_no_link
+
+figure_recipes: 7
+  Figure 1: [scatter_plot]
+    caption: Shows discordance between spectral similarity (Modified Hungarian distance) and structural similarity (Hybrid score), illustrating structural false positives in molecular networks.
+    produced_by_step: [2, 3, 4]
+    visualization_tool: Unknown (likely Python matplotlib or R ggplot2)
+  Fig. S1: [chemical_structures]
+    caption: Examples of compounds falling in the 'Excellent Match' regime (Hybrid > 0.8).
+    produced_by_step: [3]
+    visualization_tool: ChemDraw or RDKit drawing
+  Fig. S2: [chemical_structures]
+    caption: Examples of compounds falling in the 'Close Match' regime (0.6 < Hybrid ≤ 0.8).
+    produced_by_step: [3]
+    visualization_tool: ChemDraw or RDKit drawing
+  Fig. S3: [chemical_structures]
+    caption: Examples of compounds falling in the 'Poor Match' regime (Hybrid ≤ 0.6).
+    produced_by_step: [3]
+    visualization_tool: ChemDraw or RDKit drawing
+  Fig. S4: [chemical_structures]
+    caption: Additional examples illustrating structural coverage regimes.
+    produced_by_step: [3]
+    visualization_tool: ChemDraw or RDKit drawing
+  Fig. S5: [chemical_structures]
+    caption: Additional examples illustrating structural coverage regimes.
+    produced_by_step: [3]
+    visualization_tool: ChemDraw or RDKit drawing
+  Fig. S6: [histogram]
+    caption: Distribution of maximum Hybrid similarity values for experimental HSQC annotations.
+    produced_by_step: [3]
+    visualization_tool: Unknown (likely Python matplotlib or R ggplot2)
+
+reproducibility_gaps:
+  - No public code repository or software link provided for Modified Hungarian Distance implementation
+  - Mestrelab Mnova NMRPredict is commercial software requiring license and is not open-source or freely available
+  - No explicit details on graph topology metrics used in 'algorithmic molecular networking' (Step 5)
+  - No specification of how experimental spectra were preprocessed (e.g., peak picking, noise filtering, referencing) before network integration
+  - No deposition information (repository name, accession ID) for the 100,000-spectrum HSQC library or experimental HMDB/PubChem subset
+  - Hybrid similarity implementation details (e.g., MCS algorithm variant, fingerprint parameters) are underspecified
+reproducibility_strengths:
+  - Explicit spectral simulation parameters (mass range, elements, peak count filter)
+  - Full description of Modified Hungarian Distance modifications including tolerances and normalization
+  - Clear definition and motivation for structural efficiency (η) metric
+  - Public experimental HSQC data sourced from HMDB via PubChem (accessible, though filtering steps not fully reproducible)

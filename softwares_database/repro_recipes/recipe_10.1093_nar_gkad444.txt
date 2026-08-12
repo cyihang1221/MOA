@@ -1,0 +1,33 @@
+========== reproducibility_recipe entry ==========
+paper_title: FLUXestimator: a webserver for predicting metabolic flux and variations using transcriptomics data.
+source_paper: Zhang Z et al. (2023), Nucleic acids research, DOI: 10.1093/nar/gkad444, PMID: 37216602
+overall_reproducibility_score: 40/100
+
+workflow_steps: 1
+  Step 1: Input transcriptomics data preprocessing
+    tool: FLUXestimator
+    algorithm: scFEA (single cell flux estimation analysis)
+    input: transcriptomics data (single-cell or bulk, human/mouse/15 other organisms)
+    output: sample-wise metabolic flux estimates and metabolite variation predictions
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/changwn/scFEA
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of computational workflow steps (e.g., normalization, gene-to-reaction mapping, neural network architecture details, training data, hyperparameters)
+  - No benchmarking datasets or example input/output provided in paper
+  - No information on required input format (e.g., count matrix vs. TPM, gene ID type, species annotation requirements)
+  - Webserver backend implementation details not disclosed
+  - No validation against experimental flux data (e.g., 13C-MFA)
+reproducibility_strengths:
+  - Source code available on GitHub
+  - Web interface publicly accessible at http://scFLUX.org/
+  - Supports multiple model organisms

@@ -747,6 +747,7 @@ def agent_apply_plot_edit(
     instruction: str,
     model: str | None = None,
     filename: str | None = None,
+    goal_text: str | None = None,
 ) -> dict[str, Any]:
     output_root = session_work_dir(project_root, storage_slug).resolve()
     try:
@@ -809,6 +810,16 @@ def agent_apply_plot_edit(
                 ]
             except Exception:
                 metadata_columns = []
+        from web_frontend.backend.literature_plot_knowledge import match_plot_literature
+
+        lit_payload = match_plot_literature(
+            goal_text=goal_text or "",
+            plot_type=plot_type,
+            instruction=instruction,
+            source_rel=canonical_rel,
+            project_root=project_root,
+        )
+        literature_context = str(lit_payload.get("text") or "")
         patch = parse_plot_edit_instruction(
             instruction=instruction,
             plot_type=plot_type,
@@ -816,6 +827,7 @@ def agent_apply_plot_edit(
             current_config=current,
             model=model,
             metadata_columns=metadata_columns,
+            literature_context=literature_context or None,
         )
         out_name = filename or stable_intent_filename(base or type_stem or source.stem)
         result = apply_plot_config(
@@ -830,6 +842,9 @@ def agent_apply_plot_edit(
         )
         result["agent_patch"] = patch
         result["edit_mode"] = "semantic"
+        if lit_payload.get("matched"):
+            result["literature_skills"] = lit_payload.get("matched")
+            result["literature_hints"] = lit_payload.get("hints") or []
         return result
 
     # 通用改图：任意结果 PNG（标题/字号/颜色）

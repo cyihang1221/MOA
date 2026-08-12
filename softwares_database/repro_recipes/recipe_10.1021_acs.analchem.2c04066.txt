@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: Optimization of Diffusion-Ordered NMR Spectroscopy Experiments for High-Throughput Automation in Human Metabolic Phenotyping.
+source_paper: Harvey N et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.2c04066, PMID: 36720172
+overall_reproducibility_score: 42/100
+
+workflow_steps: 4
+  Step 1: DOSY experiment acquisition
+    tool: Bruker TopSpin
+    parameters: acquisition_time=3 min 36 s, pulse_sequence=['standard DOSY', 'relaxation-edited DOSY', 'diffusion-edited DOSY'], gradient_strength_range=2.5–95% of max gradient, number_of_gradient_steps=16, diffusion_time=100 ms, recovery_delay=2 s, temperature=298 K, spectral_width=12 ppm, number_of_scans=4, relaxation_delay=2 s
+    input: biofluid samples (human plasma and urine)
+    output: raw DOSY NMR data (.fid, .ser)
+    confidence: high
+  Step 2: DOSY data processing and diffusion coefficient calculation
+    tool: MATLAB-based custom scripts
+    algorithm: inverse Laplace transform (ILT) with non-negative least squares (NNLS)
+    parameters: regularization_parameter=optimized per sample, diffusion_coefficient_range=1e-11 to 1e-9 m²/s, number_of_diffusion_coefficient_bins=64, apodization=exponential line broadening (0.3 Hz)
+    input: raw DOSY NMR data (.fid, .ser)
+    output: diffusion-ordered spectra and peak-picked diffusion coefficients
+    confidence: medium
+  Step 3: Metabolite signal assignment and peak picking
+    tool: Chenomx NMR Suite
+    algorithm: pattern matching against in-house and HMDB reference libraries
+    parameters: chemical_shift_tolerance_ppm=0.01, diffusion_coefficient_tolerance_pct=10
+    input: processed DOSY spectra + 1D ¹H NMR reference spectra
+    output: annotated diffusion coefficient table (metabolite ID, δ [ppm], D [m²/s])
+    confidence: high
+  Step 4: Data integration and metabolic profile generation
+    tool: custom MATLAB scripts
+    algorithm: signal intensity normalization to total spectral integral
+    parameters: normalization_method=total spectral integral, minimum_signal_to_noise_ratio=3, minimum_peak_picking_confidence_score=0.7
+    input: annotated diffusion coefficient table
+    output: quantitative DOSY metabolic profile matrix (samples × metabolites × D-values)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw NMR data not deposited in public repository (e.g., NMReDATA, MetaboLights)
+  - Custom MATLAB scripts described but neither shared nor archived (no GitHub/DOI/link provided)
+  - Chenomx NMR Suite is commercial software requiring license and proprietary database access
+  - No details on ILT regularization parameter selection method or validation strategy
+  - No sample preparation protocol (e.g., protein precipitation, filtration, pH adjustment) provided
+reproducibility_strengths:
+  - Explicit acquisition parameters (timing, gradient steps, temperature, spectral width) reported
+  - Three complementary DOSY variants clearly defined and justified
+  - Performance benchmark stated (≥90% signal coverage vs. 1D ¹H spectrum)

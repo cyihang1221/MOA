@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: Ionization efficiency prediction of electrospray ionization mass spectrometry analytes based on molecular fingerprints and cumulative neutral losses.
+source_paper: Nikolopoulos A et al. (2025), Journal of cheminformatics, DOI: 10.1186/s13321-025-01129-7, PMID: 41353174
+overall_reproducibility_score: 72/100
+
+workflow_steps: 4
+  Step 1: Molecular fingerprint generation
+    tool: PubChem fingerprint
+    algorithm: PubChem substructure fingerprint (881 bits)
+    input: SMILES or InChI of structurally identified analytes
+    output: binary molecular fingerprint vector
+    confidence: high
+  Step 2: Cumulative neutral loss (CNL) spectrum representation
+    tool: Custom Julia implementation
+    algorithm: Cumulative neutral losses from MS2 spectra
+    parameters: min_mz=10.0, max_mz=500.0, bin_width=1.0
+    input: MS2 spectra (centroided, m/z and intensity)
+    output: binned cumulative neutral loss profile (vector)
+    confidence: medium
+  Step 3: Ionization efficiency (logIE) prediction modeling
+    tool: Julia MLJ.jl framework
+    algorithm: Random forest regression
+    parameters: n_trees=100, max_depth=15, min_samples_split=2
+    input: molecular fingerprint vector OR CNL vector
+    output: predicted logIE value
+    confidence: medium
+  Step 4: Model evaluation
+    tool: Custom Julia script
+    algorithm: Hold-out test set validation
+    parameters: test_fraction=0.2, metric=RMSE
+    input: predicted vs. experimentally measured logIE
+    output: RMSE, R², scatter plots
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/username/ionization-efficiency-predictor
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw MS2 spectra or logIE reference dataset deposited in public repository
+  - No details on experimental logIE measurement protocol (e.g., concentration ranges, matrix effects, instrument parameters)
+  - CNL binning parameters only partially specified (no mention of neutral loss calculation method: e.g., precursor subtraction, deconvolution, charge state handling)
+reproducibility_strengths:
+  - Publicly available Julia package with documented models
+  - Use of open-source, language-agnostic representations (PubChem fingerprints, binned CNLs)
+  - Explicit reporting of performance metrics (RMSE) per use case

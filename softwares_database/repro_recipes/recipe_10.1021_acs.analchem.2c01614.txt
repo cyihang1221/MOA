@@ -1,0 +1,52 @@
+========== reproducibility_recipe entry ==========
+paper_title: Introducing "DoPP": A Graphical User-Friendly Application for the Rapid Species Identification of Psychoactive Plant Materials and Quantification of Psychoactive Small Molecules Using DART-MS Data.
+source_paper: Beyramysoltan S et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.2c01614, PMID: 36395354
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Direct analysis of plant material by DART-HRMS
+    tool: DART-HRMS
+    input: native plant material (no extraction or derivatization)
+    output: raw high-resolution mass spectra
+    confidence: low
+  Step 2: Spectral preprocessing and feature representation
+    tool: DoPP
+    algorithm: peak picking and m/z binning (implied, not specified)
+    parameters: mass_tolerance_ppm=None, intensity_threshold=None, mz_range_min=50, mz_range_max=1000
+    input: raw DART-HRMS spectra
+    output: feature matrix (m/z-intensity vectors)
+    confidence: low
+  Step 3: Hierarchical machine learning classification
+    tool: DoPP
+    algorithm: ensemble of random forest, k-nearest neighbors, and support vector machine fused via posterior probabilities
+    parameters: cross_validation_folds=10, class_balancing=None, feature_selection_method=None
+    input: feature matrix
+    output: species identity prediction with confidence scores
+    confidence: medium
+  Step 4: Quantification model development and validation
+    tool: DoPP
+    algorithm: regression statistics (unspecified: likely linear or PLS regression)
+    parameters: validation_method=external validation, metrics_reported=['accuracy']
+    input: calibration spectra + reference concentrations
+    output: quantification models for psychoactive small molecules
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - DoPP software is not publicly available or described in sufficient detail for independent implementation
+  - No access to raw DART-HRMS spectral data or processed feature matrices
+  - No specification of preprocessing parameters (e.g., mass tolerance, peak picking thresholds, noise filtering)
+  - No details on regression model type, features used for quantification, or calibration design
+  - Commercial DART-HRMS hardware and vendor-specific acquisition software not characterized
+reproducibility_strengths:
+  - Explicit description of hierarchical ML ensemble architecture
+  - Reported high cross-validation and external validation accuracies (98%, 99%)
+  - Clear scope: 57 plant species included in DoPP database

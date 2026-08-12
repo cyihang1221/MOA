@@ -1,0 +1,46 @@
+========== reproducibility_recipe entry ==========
+paper_title: Automated Annotation of Sphingolipids Including Accurate Identification of Hydroxylation Sites Using MS<i><sup>n</sup></i> Data.
+source_paper: Hartler J et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.0c03016, PMID: 33003696
+overall_reproducibility_score: 72/100
+
+workflow_steps: 3
+  Step 1: MS/MS data acquisition
+    tool: LC-MS/MS platform
+    input: biological samples (murine brain, human plasma)
+    output: raw MS/MS spectra
+    confidence: low
+  Step 2: Sphingolipid annotation using extended decision rule sets
+    tool: Lipid Data Analyzer (LDA) (vv2.7.0 or later (implied by context of extension))
+    algorithm: decision rule set matching specific to sphingolipid structural features (e.g., hydroxylation site patterns, fragment ion ratios, neutral losses)
+    parameters: hydroxylation_site_rules_enabled=True, sphingolipid_class_specific_rules=True, authentic_standard_based_training=True
+    input: MS/MS spectra
+    output: annotated sphingolipid species table with hydroxylation site assignments
+    confidence: high
+  Step 3: Benchmarking annotation performance
+    tool: custom evaluation script (implied)
+    algorithm: sensitivity and reliability calculation against ground truth from authentic standards
+    parameters: ground_truth_source=authentic sphingolipid standards, metrics=['sensitivity', 'reliability']
+    input: annotated results + standard reference annotations
+    output: benchmark metrics (sensitivity, reliability)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: https://github.com/lipid-data-analyzer/lda
+  license: GPL-3.0
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw MS/MS data not deposited in public repository
+  - Exact LC-MS/MS instrument parameters (e.g., collision energy ramp, isolation window) not specified
+  - No explicit description of decision rule set files or their format for reproduction
+  - Benchmark dataset (murine brain) not publicly shared with spectral identifiers linked to ground truth
+reproducibility_strengths:
+  - LDA is open-source with DOI and GitHub repository
+  - Method built on authentic standard-derived decision rules — methodology transferable
+  - Explicit focus on sphingolipid-specific structural logic improves interpretability

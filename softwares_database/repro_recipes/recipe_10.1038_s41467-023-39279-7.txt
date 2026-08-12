@@ -1,0 +1,99 @@
+========== reproducibility_recipe entry ==========
+paper_title: Ultra-fast and accurate electron ionization mass spectrum matching for compound identification with million-scale in-silico library.
+source_paper: Yang Q et al. (2023), Nature communications, DOI: 10.1038/s41467-023-39279-7, PMID: 37349295
+overall_reproducibility_score: 82/100
+
+workflow_steps: 6
+  Step 1: Chemical dataset filtering and deduplication
+    tool: Custom Python/RDKit pipeline
+    algorithm: Rule-based filtering + exact SMILES deduplication
+    parameters: molecular_mass_cutoff_Da=1000, allowed_elements=['H', 'C', 'O', 'N', 'P', 'S', 'Cl', 'F', 'Br', 'I', 'Si'], ionic_compound_exclusion=True, logp_range=[-12, 24], cross_dataset_deduplication=True
+    input: SMILES or SDF files (NIST 2017, ChEMBL 28, HMDB 5.0, extra test set)
+    output: Filtered and deduplicated molecular datasets (f-NIST, f-ChEMBL, f-HMDB, extra test set)
+    confidence: high
+  Step 2: ECFP generation
+    tool: RDKit (v2022.03.3)
+    algorithm: Extended Connectivity Fingerprint (ECFP4)
+    parameters: radius=2, nBits=2048, useFeatures=False, useChirality=False
+    input: SMILES strings
+    output: ECFP bit vectors
+    confidence: high
+  Step 3: In-silico EI-MS spectrum prediction
+    tool: NEIMS
+    algorithm: Deep neural network (pre-trained)
+    input: ECFP bit vectors
+    output: Predicted spectral intensity vectors (m/z-binned)
+    confidence: medium
+  Step 4: Word2vec spectral embedding
+    tool: gensim
+    algorithm: Continuous Bag of Words (CBOW) Word2vec
+    parameters: window_size=1000, vector_size=500, negative=5, alpha=0.025, min_alpha=0.00025, epochs=60, sg=0, sample=1e-05
+    input: Predicted spectral peak lists (m/z-intensity pairs)
+    output: d-dimensional spectral embeddings (d=500)
+    confidence: high
+  Step 5: HNSW index construction
+    tool: hnswlib or FAISS (implied by context)
+    algorithm: Hierarchical Navigable Small World graph
+    parameters: M=16, ef_construction=200, ef_search=100, num_threads=0
+    input: Word2vec spectral embeddings
+    output: HNSW index structure for approximate nearest neighbor search
+    confidence: medium
+  Step 6: Spectrum matching via ANNS
+    tool: HNSW-based search + L2 norm re-ranking
+    algorithm: Approximate Nearest Neighbor Search with post-hoc Euclidean distance ranking
+    parameters: ef_search=100, top_k=10, mass_filter_Da=5.0
+    input: Query experimental spectrum (m/z-intensity), HNSW index
+    output: Top-k candidate molecules with scores (recall@10, recall@1)
+    confidence: high
+
+data_availability:
+  raw_data: available (NEIMS GitHub: https://github.com/brain-research/deep-molecular-massspec)
+  processed_data: not_mentioned (Not explicitly deposited)
+  metadata: in_paper_only
+  data_urls: https://github.com/brain-research/deep-molecular-massspec/tree/main/training_splits, https://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/releases/chembl_28/chembl_28.sdf.gz, https://hmdb.ca/system/downloads/current/structures.zip, https://storage.googleapis.com/deep-molecular-massspec/massspec_weights/massspec_weights.zip
+
+code_availability: repository_linked
+  code_url: https://github.com/brain-research/deep-molecular-massspec
+  license: MIT
+
+figure_recipes: 7
+  Fig. 1: [workflow_diagram]
+    caption: Flowchart comparing FastEI and traditional weighted cosine similarity (WCS) methods.
+    produced_by_step: [1, 3, 4, 5, 6]
+    visualization_tool: Not specified
+  Fig. 2: [bar_chart]
+    caption: Dataset statistics and FastEI performance metrics (recall@10, speedup).
+    produced_by_step: [1, 4, 6]
+    visualization_tool: Not specified
+  Table 1: [table]
+    caption: Spectrum matching performance on the in-silico library (2.15M compounds).
+    produced_by_step: [6]
+    visualization_tool: Not specified
+  Table 2: [table]
+    caption: Matching performance on the expanded library (2.25M compounds).
+    produced_by_step: [6]
+    visualization_tool: Not specified
+  Fig. 3: [bar_chart]
+    caption: FastEI performance on 10 compounds beyond NIST 2017 (50% recall@1).
+    produced_by_step: [6]
+    visualization_tool: Not specified
+  Fig. 4: [other]
+    caption: Screenshot of the FastEI standalone software GUI.
+    produced_by_step: [6]
+    visualization_tool: Not specified
+  Fig. 5: [other]
+    caption: Illustration of Word2vec spectral embedding and HNSW graph architecture.
+    produced_by_step: [4, 5]
+    visualization_tool: Not specified
+
+reproducibility_gaps:
+  - Exact HNSW implementation details (library name, version, parameters like M, ef_construction) not fully specified
+  - No public release of the final FastEI software binary or source code repository distinct from NEIMS
+  - Experimental GC-MS conditions for extra test set only in Supplementary Note 2 (not provided in main text)
+  - No accession ID for final in-silico library (2.25M spectra) — only intermediate datasets described
+reproducibility_strengths:
+  - All input datasets publicly available via URLs
+  - RDKit version explicitly stated (2022.03.3)
+  - Full Word2vec hyperparameters listed in Supplementary Table 1 (implied completeness)
+  - Pre-trained NEIMS model publicly downloadable
+  - Open-source tools used throughout (RDKit, gensim, implied hnswlib/FAISS)

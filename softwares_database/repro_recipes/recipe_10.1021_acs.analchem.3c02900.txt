@@ -1,0 +1,61 @@
+========== reproducibility_recipe entry ==========
+paper_title: Rapid Metabolic Profiling of 1 μL Crude Cerebrospinal Fluid by Matrix-Assisted Laser Desorption/Ionization Mass Spectrometry Imaging Can Differentiate <i>De Novo</i> Parkinson's Disease.
+source_paper: Vallianatou T et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c02900, PMID: 38059473
+overall_reproducibility_score: 35/100
+
+workflow_steps: 5
+  Step 1: Sample preparation and MALDI-MSI acquisition
+    tool: MALDI mass spectrometry imaging
+    parameters: sample_volume=1.0, sample_unit=μL, matrix=2,5-dihydroxybenzoic acid (DHB), ionization_mode=positive, mass_accuracy=subppm, spatial_resolution=None, laser_frequency=None, laser_spot_size=None
+    input: crude cerebrospinal fluid (CSF)
+    output: raw MSI data (.imzML or vendor format)
+    confidence: medium
+  Step 2: Metabolite feature detection and peak picking
+    tool: SCiLS Lab
+    algorithm: centroiding and peak detection
+    parameters: mass_tolerance_ppm=None, snr_threshold=None, min_peak_width=None
+    input: raw MSI data
+    output: peak list / feature table (m/z, intensity, spatial coordinates)
+    confidence: low
+  Step 3: Metabolite annotation
+    tool: MassBank
+    algorithm: exact mass matching
+    parameters: mass_tolerance_ppm=None, database_source=MassBank, HMDB, METLIN
+    input: feature table (m/z list)
+    output: putatively annotated metabolites
+    confidence: medium
+  Step 4: Statistical analysis and biomarker discovery
+    tool: univariate analysis and multivariate classification
+    algorithm: t-test, permutation test, multivariate classification (not specified)
+    parameters: significance_threshold=0.001, test_type=two-group comparison (PD vs control), permutation_repeats=None
+    input: normalized feature intensities
+    output: differentially abundant metabolites, classification model
+    confidence: low
+  Step 5: Pathway-level interpretation
+    tool: neuromelanin pathway analysis
+    algorithm: manual curation and literature-based mapping
+    input: differentially abundant metabolites
+    output: pathway-enriched biological interpretation
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw MALDI-MSI data not deposited in public repository (e.g., MetaboLights, MassIVE)
+  - No details on SCiLS Lab version, parameters, or preprocessing workflow
+  - Multivariate classification algorithm unspecified (e.g., PLS-DA, SVM, RF)
+  - No description of normalization/scaling method applied to intensity data
+  - Exact gradient or acquisition parameters (laser settings, raster size, pixel size) omitted
+  - No code, scripts, or analysis pipelines shared
+  - Mass tolerance thresholds for annotation not reported
+reproducibility_strengths:
+  - Clear cohort design (12 de novo PD, 12 age-matched controls)
+  - Reported high analytical performance (subppm mass accuracy, LODs with R² > 0.99)
+  - Use of established public metabolite databases (MassBank, HMDB, METLIN) for annotation

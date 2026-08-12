@@ -1,0 +1,62 @@
+========== reproducibility_recipe entry ==========
+paper_title: A simultaneous exploratory and quantitative amino acid and biogenic amine metabolic profiling platform for rapid disease phenotyping via UPLC-QToF-MS.
+source_paper: Gray N et al. (2021), Talanta, DOI: 10.1016/j.talanta.2020.121872, PMID: 33298292
+overall_reproducibility_score: 35/100
+
+workflow_steps: 6
+  Step 1: Chemical derivatization
+    tool: 6-aminoquinolyl-N-hydroxysuccinimidyl carbamate (AQC)
+    parameters: derivatization_time_min=10, temperature_celsius=55, reaction_pH=8.6
+    input: biological samples (plasma, serum, urine)
+    output: derivatized amino acids and biogenic amines
+    confidence: medium
+  Step 2: Chromatographic separation
+    tool: UPLC
+    parameters: column=Acquity UPLC BEH C18, column_temperature_celsius=35, flow_rate_ml_per_min=0.4, injection_volume_ul=2, gradient_profile=not fully specified
+    input: derivatized samples
+    output: chromatographically separated analytes
+    confidence: low
+  Step 3: Mass spectrometric detection
+    tool: Waters TQ-XS (QQQ) and Bruker Impact II QToF
+    parameters: ionization_mode=electrospray ionization (ESI) positive mode, acquisition_mode=['multiple reaction monitoring (MRM) for QQQ', 'full-scan HRAM for QToF'], mass_resolution=high-resolution accurate mass (HRAM), mass_tolerance_ppm=None, scan_range_mz=not specified
+    input: chromatographically separated analytes
+    output: raw MS data (.raw or .d files)
+    confidence: medium
+  Step 4: Quantitative data processing
+    tool: TargetLynx (Waters) and Bruker Compass QuantAnalysis
+    parameters: integration_method=peak area, calibration_curve_fitting=linear regression, R_squared_threshold=0.99, quantification_range_umol_per_l=[1, 400], acceptance_criteria_accuracy_precision_percent=15
+    input: raw MS data
+    output: quantified concentrations of 34 biogenic amines
+    confidence: high
+  Step 5: Exploratory metabolic phenotyping
+    tool: Bruker DataAnalysis and/or in-house processing
+    parameters: retrospective_mining=True, target_list_expansion=beyond 34 pre-defined amines, feature_detection_strategy=not described
+    input: full-scan HRAM-MS data
+    output: exploratory metabolite features
+    confidence: low
+  Step 6: Statistical classification and biomarker assessment
+    tool: Not explicitly named; implied use of standard statistical software
+    parameters: statistical_test=not specified, classification_method=SARS-CoV-2 positivity classification, validation=not described
+    input: quantified and exploratory metabolite data
+    output: classifier performance (e.g., accuracy, sensitivity)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository
+  - No code or scripts shared for exploratory mining or statistical analysis
+  - Chromatographic gradient profile incompletely specified
+  - No details on feature detection, alignment, or annotation algorithms for HRAM data
+  - Commercial software (TargetLynx, QuantAnalysis, DataAnalysis) requires licenses and is not reproducible without access
+reproducibility_strengths:
+  - Quantitative performance rigorously validated using NIST SRM 1950
+  - Cross-platform (QQQ vs QToF) concordance demonstrated
+  - Use of standardized derivatization chemistry (AQC) enhances protocol transferability

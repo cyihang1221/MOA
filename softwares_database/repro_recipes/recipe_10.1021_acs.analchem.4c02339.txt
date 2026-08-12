@@ -1,0 +1,68 @@
+========== reproducibility_recipe entry ==========
+paper_title: Chemical Isotope Labeling and Dual-Filtering Strategy for Comprehensive Profiling of Urinary Glucuronide Conjugates.
+source_paper: Chen ZQ et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.4c02339, PMID: 39102235
+overall_reproducibility_score: 40/100
+
+workflow_steps: 6
+  Step 1: Chemical isotope labeling of carboxylic acids
+    tool: Derivatization chemistry
+    parameters: labeling_reagents=['DMED-d0', 'DMED-d6'], reaction_type=amidation, target_functional_group=carboxylic acid
+    input: urine sample extract
+    output: isotopically labeled metabolite derivatives
+    confidence: high
+  Step 2: Filter I: Carboxyl-containing compound screening
+    tool: MS1-based differential mass filtering
+    algorithm: mass difference filtering
+    parameters: mass_tolerance_ppm=5, delta_mz=6.037, ion_mode=positive
+    input: raw LC-MS data (light/heavy pairs)
+    output: candidate carboxyl-containing features
+    confidence: medium
+  Step 3: Filter II: Glucuronide-specific MS/MS diagnostic ion screening
+    tool: MS/MS fragment ion filtering
+    algorithm: diagnostic ion pair matching
+    parameters: diagnostic_ion_pairs=[[247.1294, 253.1665], [229.1188, 235.1559]], mass_tolerance_ppm=5, fragmentation_method=CID or HCD (not specified)
+    input: MS/MS spectra of Filter I candidates
+    output: putative glucuronide-conjugated features
+    confidence: medium
+  Step 4: Sensitivity enhancement evaluation
+    tool: Limit of detection (LOD) assessment
+    algorithm: signal-to-noise based LOD calculation
+    parameters: lod_fold_improvement_range=[3, 55], reference_standards=representative glucuronide standards
+    input: spiked standard calibration curves
+    output: LOD comparison table
+    confidence: medium
+  Step 5: Metabolite annotation
+    tool: Database matching + enzymatic biosynthesis validation
+    algorithm: exact mass + retention time + MS/MS spectral matching
+    parameters: databases_used=['HMDB', 'METLIN', 'GNPS'], mass_accuracy_ppm=5, validation_method=enzymatic glucuronidation with UDP-glucuronosyltransferase (UGT)
+    input: putative glucuronide features (m/z, RT, MS/MS)
+    output: annotated glucuronides (181 identified)
+    confidence: high
+  Step 6: Biological interpretation
+    tool: Class-based metabolite grouping
+    algorithm: chemical ontology classification
+    parameters: classes_reported=['lipids', 'organic oxygen compounds', 'phenylpropanoids']
+    input: annotated glucuronide list
+    output: metabolite class distribution
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS data not deposited in public repository (e.g., MetaboLights, PRIDE)
+  - No code or scripts provided for dual-filtering implementation (e.g., custom Python/R workflow for Δm/z and diagnostic ion pair matching)
+  - LC-MS acquisition parameters incompletely specified (e.g., gradient profile, column temperature, injection volume, MS resolution, AGC target, max IT)
+  - Enzymatic biosynthesis protocol details missing (UGT isoform, incubation conditions, quenching method)
+  - No information on feature detection, alignment, or peak integration software/tools used
+reproducibility_strengths:
+  - Explicit chemical derivatization protocol with reagent structures and reaction rationale
+  - Precise m/z values reported for diagnostic ions (247.1294, 253.1665, 229.1188, 235.1559) enabling computational replication
+  - Clear two-tier filtering logic (Δm/z → diagnostic fragments) fully described
+  - Validation via enzymatic synthesis strengthens annotation confidence

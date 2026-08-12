@@ -1,0 +1,52 @@
+========== reproducibility_recipe entry ==========
+paper_title: I-SVVS: integrative stochastic variational variable selection to explore joint patterns of multi-omics microbiome data.
+source_paper: Dang T et al. (2025), Briefings in bioinformatics, DOI: 10.1093/bib/bbaf132, PMID: 40441709
+overall_reproducibility_score: 72/100
+
+workflow_steps: 4
+  Step 1: Multi-omics data integration modeling
+    tool: I-SVVS
+    algorithm: Integrative stochastic variational variable selection
+    input: microbiome count matrix (e.g., ASV/OTU table) and metabolome feature table (e.g., peak intensities)
+    output: joint clusters with selected representative variables (microbial taxa and metabolites)
+    confidence: medium
+  Step 2: Bayesian mixture modeling per omics layer
+    tool: I-SVVS
+    algorithm: ['infinite Dirichlet multinomial mixture model', 'infinite Gaussian mixture model']
+    input: per-omics data matrices
+    output: latent cluster assignments and posterior variable inclusion probabilities
+    confidence: high
+  Step 3: Stochastic variational inference
+    tool: I-SVVS
+    algorithm: Stochastic variational inference for scalable Bayesian inference
+    input: model parameters and data
+    output: approximate posterior distributions, cluster labels, variable selection indicators
+    confidence: high
+  Step 4: Variable selection and biomarker identification
+    tool: I-SVVS
+    algorithm: Posterior inclusion probability thresholding
+    parameters: selection_threshold=not specified
+    input: posterior inclusion probabilities from variational inference
+    output: selected microbiome species and metabolites per cluster
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/tungtokyo1108/I-SVVS
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of preprocessing steps (e.g., microbiome rarefaction, metabolome normalization, batch correction)
+  - No details on data formatting (e.g., log-transform, CLR, z-score), feature filtering thresholds, or missing value handling
+  - No specification of convergence criteria, number of iterations, or random seed for reproducibility
+  - Selection threshold for variable inclusion not reported
+  - No accession IDs or repository links for the three test datasets (soybean, mice, human)
+reproducibility_strengths:
+  - Source code publicly available on GitHub
+  - Method implements fully specified Bayesian generative models per omics type
+  - Computational runtime comparisons provided for benchmarking

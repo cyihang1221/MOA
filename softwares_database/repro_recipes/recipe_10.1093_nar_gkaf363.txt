@@ -1,0 +1,46 @@
+========== reproducibility_recipe entry ==========
+paper_title: MMEASE: enhanced analytical workflow for single-cell metabolomics.
+source_paper: Yang Q et al. (2025), Nucleic acids research, DOI: 10.1093/nar/gkaf363, PMID: 40308213
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: SCM data processing
+    tool: MMEASE 2.0 (v2.0)
+    input: raw single-cell metabolomics data (vendor-specific formats)
+    output: processed feature table with peak alignment, normalization, and quality control
+    confidence: low
+  Step 2: Cellular heterogeneity analysis
+    tool: MMEASE 2.0 (v2.0)
+    input: processed feature table
+    output: cell clusters, heterogeneity metrics, visualization-ready matrices
+    confidence: low
+  Step 3: High-resolution metabolite annotation
+    tool: MMEASE 2.0 (v2.0)
+    input: feature table with m/z and RT
+    output: annotated metabolite list (level 1–3 confidence)
+    confidence: low
+  Step 4: Cell-based biological interpretation
+    tool: MMEASE 2.0 (v2.0)
+    input: annotated metabolite table + cell metadata
+    output: pathway enrichment results, cell-type-specific metabolic signatures
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://idrblab.org/mmease/
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No methodological details provided (no algorithms, parameters, or software dependencies specified)
+  - No description of data preprocessing steps (e.g., noise filtering, retention time correction, peak picking)
+  - No mention of benchmark datasets, accession IDs, or raw data availability
+  - No information on statistical methods, normalization strategies, or annotation databases used
+  - Web tool interface described but no API, container, or offline mode mentioned
+reproducibility_strengths:
+  - Tool is freely accessible via public web server
+  - Explicit versioning (MMEASE 2.0) and dedicated SCM focus indicate intentional design for reproducibility

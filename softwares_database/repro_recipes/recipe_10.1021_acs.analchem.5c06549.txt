@@ -1,0 +1,137 @@
+========== reproducibility_recipe entry ==========
+paper_title: Challenges and Good Practices in Preprocessing and Normalization of Untargeted DNA Adductomics Data in Exposomics Research.
+source_paper: Vangeenderhuysen P et al., (2026), Analytical chemistry, DOI: 10.1021/acs.analchem.5c06549, PMID: 41834712
+overall_reproducibility_score: 92/100
+
+workflow_steps: 12
+  Step 1: CentWave peak detection
+    tool: xcms R package v. 4.3.4
+    algorithm: centWave
+    parameters: ppm=5, peakwidth=[4,30], peakwidth=[1,25], snthresh=10, integrate=TRUE, extendLengthMSW=TRUE, firstBaselineCheck=TRUE
+    input: raw UHPLC-HRMS .raw files (Q-Exactive, 100,000 FWHM, 70–700 Da)
+    output: chromatographic peaks (m/z–RT pairs with intensity)
+    confidence: high
+  Step 2: Retention time alignment (ENVIRONAGE)
+    tool: xcms R package v. 4.3.4
+    algorithm: OBI-Warp
+    parameters: binSize=0.01, centerSample=1
+    input: centWave-detected peaks from 10 sample runs
+    output: aligned RTs across samples
+    confidence: high
+  Step 3: Retention time alignment (ESCCAPE)
+    tool: xcms R package v. 4.3.4
+    algorithm: PeakGroups
+    parameters: anchor_peaks=[13C3]-M1-G,[13C,15N2]-Cro-dG,O6-[d3]-Me-dG
+    input: centWave-detected peaks from 10 sample runs
+    output: aligned RTs across samples
+    confidence: high
+  Step 4: Feature grouping
+    tool: xcms R package v. 4.3.4
+    algorithm: PeakDensity
+    parameters: bw=2, minFraction=0.1, minFraction=0.05, ppm=5, binSize=0.01
+    input: aligned peaks
+    output: features (consensus m/z–RT clusters across samples)
+    confidence: high
+  Step 5: Gap filling
+    tool: xcms R package v. 4.3.4
+    algorithm: fillChromPeaks()
+    parameters: not_reported
+    input: original raw files and feature list
+    output: integrated intensities for missing features
+    confidence: medium
+  Step 6: Missing value filtering
+    tool: R v. 4.4.1
+    algorithm: feature removal
+    parameters: missing_threshold=50%
+    input: feature matrix with missing values
+    output: filtered feature matrix
+    confidence: high
+  Step 7: Missing value imputation
+    tool: R v. 4.4.1
+    algorithm: uniform sampling imputation
+    parameters: range=[0.5*min_value, min_value]
+    input: filtered feature matrix
+    output: imputed feature matrix
+    confidence: high
+  Step 8: QC-based robust LOESS smoothing (QC-RLSC)
+    tool: fANCOVA R package
+    algorithm: LOESS with GCV
+    parameters: loess.as_gcv=TRUE
+    input: imputed feature matrix and iQC/eQC runs
+    output: QC-RLSC normalized feature matrix
+    confidence: high
+  Step 9: Within-batch normalization + batch alignment
+    tool: R v. 4.4.1
+    algorithm: mean response alignment
+    parameters: batch_definition=column_1&2_vs_column_3, alignment_method=mean_response
+    input: QC-RLSC normalized data per batch
+    output: batch-corrected feature matrix
+    confidence: high
+  Step 10: RSD* and D-ratio filtering
+    tool: MetaboCoreUtils R package
+    algorithm: rsd() and rowDratio()
+    parameters: mad=TRUE, RSD*_threshold=0.2, RSD*_threshold=0.3, D-ratio_threshold=0.4, D-ratio_threshold=0.5
+    input: normalized feature matrix, ISTDs, technical replicates, QCs
+    output: final retained features for downstream analysis
+    confidence: high
+  Step 11: PCA evaluation
+    tool: R v. 4.4.1
+    algorithm: principal component analysis
+    parameters: log2_transform=TRUE, center=TRUE, scale=TRUE
+    input: final retained features
+    output: PCA score plots for QC/sample clustering assessment
+    confidence: high
+  Step 12: DNA concentration correction
+    tool: R v. 4.4.1
+    algorithm: linear scaling
+    parameters: correction_factor=DNA_concentration / mean_DNA_concentration
+    input: final retained features and sample DNA concentrations (ng/μL)
+    output: DNA-concentration-normalized feature matrix
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+  data_urls: []
+
+code_availability: supplement
+
+figure_recipes: 5
+  Figure 1: [workflow_diagram]
+    caption: Proposed end-to-end workflow for untargeted DNA adductomics preprocessing in exposome research
+    produced_by_step: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    visualization_tool: not_reported
+    statistical_test: not_reported
+  Figure 2: [pca_scores]
+    caption: PCA score plots comparing non-normalized vs QC-RLSC normalized + batch-aligned ENVIRONAGE data, colored by LC column and shaped by run type
+    produced_by_step: [10]
+    visualization_tool: not_reported
+    statistical_test: not_reported
+  Figure 3: [boxplot]
+    caption: RSD* comparisons of three ISTD targets across normalization methods in ESCCAPE and ENVIRONAGE
+    produced_by_step: [9]
+    visualization_tool: not_reported
+    statistical_test: Durbin-Conover test with Holm correction, p<0.05
+  Figure 4: [workflow_diagram]
+    caption: Integrated workflow diagram summarizing preprocessing, normalization, filtering, and evaluation steps
+    produced_by_step: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    visualization_tool: not_reported
+    statistical_test: not_reported
+  Figure S17: [pathway_map]
+    caption: DNA adductome map of all retained features using selected normalization method
+    produced_by_step: [9]
+    visualization_tool: not_reported
+    statistical_test: not_reported
+
+reproducibility_gaps:
+  - xcms version 4.3.4 parameter defaults not fully listed in Table S1 (e.g., integrate, extendLengthMSW, firstBaselineCheck values are implied but not numerically restated in main text)
+  - no public code repository link provided
+  - no accession numbers for raw or processed data
+
+reproducibility_strengths:
+  - all key xcms parameters (ppm, peakwidth, bw, minFraction, binSize, centerSample) explicitly quantified and dataset-specific
+  - full statistical testing framework described (Durbin-Conover, Dunn’s test, Holm correction)
+  - clear separation of ENVIRONAGE vs ESCCAPE parameter choices with biological rationale
+  - use of technical replicates and independent QCs for unbiased normalization evaluation
+  - comprehensive PCA-based qualitative validation alongside quantitative metrics

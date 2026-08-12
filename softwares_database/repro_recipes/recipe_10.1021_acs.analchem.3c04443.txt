@@ -1,0 +1,57 @@
+========== reproducibility_recipe entry ==========
+paper_title: Toward Comprehensive Analysis of the 3D Chemistry of <i>Pseudomonas aeruginosa</i> Biofilms.
+source_paper: Kotowska AM et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c04443, PMID: 38044628
+overall_reproducibility_score: 25/100
+
+workflow_steps: 5
+  Step 1: OrbiSIMS data acquisition
+    tool: Orbitrap-based secondary ion mass spectrometry (OrbiSIMS)
+    parameters: instrument_mode=depth profiling, sample_state=frozen-hydrated, ion_source=O2+ primary ions, mass_resolution=high resolution (Orbitrap)
+    input: frozen-hydrated Pseudomonas aeruginosa biofilm sample
+    output: 3D OrbiSIMS depth profile raw spectra (.raw or vendor format)
+    confidence: medium
+  Step 2: Untargeted chemical filtering using mass spectral databases
+    tool: custom untargeted chemical filtering process
+    algorithm: database-driven peak annotation
+    parameters: databases_used=['lipid', 'protein fragment', 'quorum sensing molecule', 'polysaccharide', 'glycolipid'], filtering_strategy=secondary ion matching to known molecular classes
+    input: 3D OrbiSIMS depth profile raw spectra
+    output: annotated peak list with putative chemical class assignments
+    confidence: low
+  Step 3: Molecular formula prediction
+    tool: custom molecular formula prediction approach
+    algorithm: elemental composition assignment
+    parameters: assignment_rate=0.81, mass_accuracy_constraint=not specified, elemental constraints=['C', 'H', 'N', 'O', 'P', 'S']
+    input: annotated peak list
+    output: putatively assigned molecular formulas for 81% of peaks
+    confidence: low
+  Step 4: Chemical class cataloging and spatial mapping
+    tool: custom spatial analysis pipeline
+    algorithm: class-specific ion mapping across depth profiles
+    parameters: classes_mapped=['lipids and fragments', 'protein fragments', 'quorum sensing molecules (2-alkyl-4-quinolones, N-acylhomoserine lactones)', 'polysaccharide fragments', 'glycolipids'], total_lipids=1000, total_protein_fragments=3500, total_quorum_sensing_molecules=71, total_polysaccharide_fragments=150
+    input: putatively assigned molecular formulas + spatial coordinates
+    output: spatially resolved molecular class maps (3D)
+    confidence: low
+  Step 5: Comparative analysis of biofilm chemistry on different polymers
+    tool: custom comparative analysis
+    algorithm: differential spatial distribution analysis
+    parameters: comparisons=['biofilm-promoting polymer', 'biofilm-resistant polymer']
+    input: spatially resolved molecular class maps from two substrate conditions
+    output: differences in chemical distribution between substrates
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw OrbiSIMS data deposited in public repository
+  - No metadata schema or experimental parameters (e.g., sputter time, pixel size, matrix effects correction) provided
+  - All analytical steps rely on custom, unpublished methods with no algorithmic or parameter details
+  - No software tools, versions, or code repositories disclosed
+  - Mass accuracy thresholds, elemental constraints, and database versions for annotation are unspecified
+  - No description of peak detection, noise filtering, or background subtraction methods

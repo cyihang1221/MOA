@@ -1,0 +1,52 @@
+========== reproducibility_recipe entry ==========
+paper_title: Democratizing data-independent acquisition proteomics analysis on public cloud infrastructures via the Galaxy framework.
+source_paper: Fahrner M et al. (2022), GigaScience, DOI: 10.1093/gigascience/giac005, PMID: 35166338
+overall_reproducibility_score: 82/100
+
+workflow_steps: 4
+  Step 1: DIA data preprocessing and feature detection
+    tool: OpenSwath
+    algorithm: targeted extraction using spectral libraries
+    input: raw .d, .mzML, or .mgf files
+    output: transition-level feature table
+    confidence: medium
+  Step 2: Statistical validation and false discovery rate estimation
+    tool: PyProphet
+    algorithm: machine learning-based scoring and FDR estimation
+    input: OpenSwath output (transition-level TSV)
+    output: FDR-filtered peptide/protein-level results
+    confidence: medium
+  Step 3: Peptide-to-protein inference and summarization
+    tool: diapysef
+    algorithm: protein inference and quantification aggregation
+    input: PyProphet output (peptide-level TSV)
+    output: protein-level quantification table
+    confidence: medium
+  Step 4: Statistical analysis and export for downstream analysis
+    tool: swath2stats
+    algorithm: statistical testing and formatting for R/Bioconductor
+    input: diapysef protein table
+    output: R-compatible data frame (e.g., SummarizedExperiment-ready TSV)
+    confidence: medium
+
+data_availability:
+  raw_data: available (PRIDE: PXD017892)
+  processed_data: available (GigaScience GigaDB: 10.5524/100962)
+  metadata: available
+  data_urls: https://doi.org/10.5524/100962, https://www.ebi.ac.uk/pride/archive/projects/PXD017892
+
+code_availability: repository_linked
+  code_url: https://github.com/galaxyproteomics/tools-galaxyp
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No explicit description of Galaxy server instance configuration (e.g., compute resources, Docker/Singularity versions)
+  - No detailed parameter settings (e.g., OpenSwath mass tolerance, PyProphet score thresholds) reported in methods
+  - Spike-in case study dataset used is described but exact sample preparation protocol not fully specified
+reproducibility_strengths:
+  - All tools are open-source and integrated in Galaxy with version-controlled wrappers
+  - Raw and processed data publicly available via PRIDE and GigaDB with DOIs
+  - Galaxy workflows shared and executable via public servers (e.g., usegalaxy.eu)
+  - Comprehensive training material and documentation provided

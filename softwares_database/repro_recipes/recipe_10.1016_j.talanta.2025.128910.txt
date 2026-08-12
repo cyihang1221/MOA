@@ -1,0 +1,48 @@
+========== reproducibility_recipe entry ==========
+paper_title: Metabolic profiling of Yangxinshi tablet based on time-staggered ion list dynamic detection integrated with metabolic molecular network.
+source_paper: Wen J et al. (2026), Talanta, DOI: 10.1016/j.talanta.2025.128910, PMID: 41016099
+overall_reproducibility_score: 25/100
+
+workflow_steps: 4
+  Step 1: Data acquisition using custom ion monitoring mode
+    tool: BS-VPMDF-tsPIL-AE
+    algorithm: background subtraction-assisted virtual polygonal mass defect filter with time-staggered preferred ion list and active exclusion
+    input: raw LC-MS/MS data from rat plasma and urine
+    output: enhanced MS/MS spectra with reduced background interference
+    confidence: low
+  Step 2: Metabolic molecular network construction and pathway mapping
+    tool: Metabolic Molecular Network (MMN)
+    algorithm: automated prototype-metabolite relationship mapping and biotransformation pathway annotation
+    input: processed MS/MS spectral features (m/z, RT, intensity, fragmentation patterns)
+    output: metabolite annotation table with prototype-metabolite links and biotransformation types
+    confidence: low
+  Step 3: Metabolite classification by deep learning-assisted mass defect filtering
+    tool: Deep learning-assisted MDF
+    algorithm: mass defect-based intelligent classification of metabolite types
+    input: m/z values with high mass accuracy
+    output: classified metabolite type labels (e.g., phase I/II metabolites, glycosides, aglycones)
+    confidence: low
+  Step 4: Metabolite identification and validation against reference standards
+    tool: Reference standard comparison
+    algorithm: Retention time and MS/MS spectral matching
+    parameters: match_criteria=RT ± 0.1 min, MS/MS similarity > 80%
+    input: annotated features, authentic chemical standards
+    output: preliminarily confirmed prototypes (29 in plasma, 31 in urine)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - BS-VPMDF-tsPIL-AE is a custom, unpublished acquisition method with no implementation details or code
+  - Metabolic Molecular Network (MMN) tool is not publicly described, available, or referenced to a known software package
+  - Deep learning-assisted MDF classifier lacks architecture, training data, or model sharing
+  - No raw or processed data deposited in public repositories (e.g., MetaboLights, GNPS)
+  - No R/Python scripts, parameters, or workflow configuration provided
+  - No vendor-specific instrument method files (e.g., .meth, .seq) or chromatographic conditions fully specified

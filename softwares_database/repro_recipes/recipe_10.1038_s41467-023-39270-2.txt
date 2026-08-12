@@ -1,0 +1,110 @@
+========== reproducibility_recipe entry ==========
+paper_title: Unraveling the glycosylated immunopeptidome with HLA-Glyco.
+source_paper: Bedran G et al. (2023), Nature communications, DOI: 10.1038/s41467-023-39270-2, PMID: 37308510
+overall_reproducibility_score: 72/100
+
+workflow_steps: 8
+  Step 1: Dataset selection and curation
+    tool: PRIDE database
+    algorithm: keyword-based screening + manual curation
+    parameters: keywords=['immunopeptidomics'], instruments=['Orbitrap fusion lumos/fusion', 'Q Exactive', 'LTQ Orbitrap', 'Orbitrap Exploris 480', 'TripleTOF', 'impact II', 'maXis'], exclusion_criteria=['low-resolution analyses'], final_dataset_count=8
+    input: public PRIDE proteomics datasets
+    output: curated list of 8 immunopeptidomics datasets
+    confidence: high
+  Step 2: Raw file conversion to mzML
+    tool: msconvert (v3.0.20287)
+    algorithm: peak picking
+    parameters: peak_picking=True, fragpipe_compatibility=True, remove_zero_value_filters=True
+    input: raw .raw and .wiff files
+    output: .mzML files
+    confidence: high
+  Step 3: Glycopeptide search with MSFragger-Glyco
+    tool: MSFragger-Glyco (vv3.5)
+    algorithm: non-specific cleavage search with sequon filtering
+    parameters: variable_modifications=['methionine oxidation', 'N-terminal acetylation', 'cysteinylation'], glycan_list_size=198, peptide_length_class_II=[7, 25], peptide_length_class_I=[7, 12], peptide_length_proteome=[7, 50], enzymatic_cleavage=non-specific for class II/I; fully enzymatic for proteome, sequon_filter=N-X-S/T (target) and reversed sequon (decoy), oxonium_ion_threshold=summed intensity ≥ 10% of base peak, mass_tolerance_precursor_ppm=20, mass_tolerance_fragment_ppm=15, monoisotopic_error_allowed=[1, 2], parameter_optimization=per-study, built-in in MSFragger
+    input: mzML files + protein database (UniProt Swiss-Prot UP000005640 + contaminants + reversed decoys)
+    output: PSM-level search results (glycosylated and non-glycosylated)
+    confidence: high
+  Step 4: FDR-controlled filtering with Philosopher
+    tool: Philosopher (vv4.5.1-RC10)
+    algorithm: group-specific semi-parametric FDR filtering
+    parameters: fdr_level=0.01, delta_mass_cutoff_da=145, peptideprophet_model=semi-parametric, f_value_contributor=expectation value, ntt_model_disabled=True, filtering_sequence=['group-specific PSM FDR', 'peptide-level FDR', 'protein-level FDR', 'sequential removal of PSMs mapping to non-FDR-passing proteins']
+    input: MSFragger-Glyco PSM results
+    output: FDR-filtered glycosylated and non-glycosylated PSMs at 1% level
+    confidence: high
+  Step 5: Glycan assignment
+    tool: PTM-Shepherd
+    algorithm: N-glycan deconvolution using default database
+    parameters: glycan_database=default N-glycan database, q_value_threshold=0.05
+    input: FDR-filtered PSMs
+    output: confidently assigned glycopeptides with glycan structures
+    confidence: medium
+  Step 6: HLA-binding motif deconvolution (MoDec)
+    tool: MoDec
+    algorithm: clustering-based motif discovery
+    parameters: max_clusters=10, max_runs=20, min_peptide_length=12, grouping_unit=subject (replicate instances)
+    input: glycosylated HLA peptides
+    output: HLA motif clusters requiring manual annotation
+    confidence: medium
+  Step 7: HLA-binding motif deconvolution (NetMHCIIpan)
+    tool: NetMHCIIpan (v4.1)
+    algorithm: percentile rank–based allele assignment
+    parameters: percentile_rank_threshold=20, assignment_rule=assign to lowest-scoring (best-binding) allele per subject, alleles_considered=all MHC alleles expressed per subject
+    input: unique glycosylated peptides + subject-specific HLA alleles
+    output: allele-assigned glycopeptides without manual intervention
+    confidence: high
+  Step 8: Data processing and visualization
+    tool: Python (Anaconda) + R (vPython 3.9, R 4.1.2)
+    algorithm: custom analysis pipeline
+    parameters: python_packages=['Biopython==1.79', 'Matplotlib==3.5.1', 'Plotly==4.14.3', 'Scikit-learn==1.0.2', 'Pandas==1.4.1', 'Pyteomics==4.5.3', 'Matplotlib-venn==0.11.6', 'Seaborn==0.11.2', 'UMAP-learn==0.5.2', 'HDBSCAN==0.8.28', 'xlrd==2.0.1', 'Logomaker==0.8'], r_packages=['R-essentials', 'R-base==4.1.2', 'R-devtools==2.4.3']
+    input: filtered glycopeptides + allele assignments + metadata
+    output: figures, tables, HLA-Glyco resource
+    confidence: high
+
+data_availability:
+  raw_data: available (PRIDE)
+  processed_data: available (HLA-Glyco web resource)
+  metadata: in_paper_only
+  data_urls: https://hla-glyco.org, https://www.ebi.ac.uk/pride/archive/
+
+code_availability: mentioned_no_link
+
+figure_recipes: 6
+  Fig. 1: [workflow_diagram]
+    caption: Schematic of the HLA-Glyco computational workflow for detecting glycosylated MHC-associated peptides.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7, 8]
+    visualization_tool: Not specified (likely custom Python/Plotly or Illustrator)
+  Fig. 2: [bar_chart]
+    caption: Infographics summarizing HLA class II dataset characteristics across the eight selected studies.
+    produced_by_step: [1, 8]
+    visualization_tool: Python (Matplotlib/Plotly/Seaborn)
+  Fig. 3: [bar_chart]
+    caption: Comparison of glycosylation frequency across proteome, HLA class I, and HLA class II peptidomes.
+    produced_by_step: [5, 8]
+    visualization_tool: Python (Matplotlib/Plotly/Seaborn)
+  Fig. 4: [logo_plot]
+    caption: Semi-supervised deconvolution of glycosylated HLA peptides using MoDec, showing binding motifs and core offsets.
+    produced_by_step: [6, 8]
+    visualization_tool: Logomaker v0.8
+  Fig. 5: [logo_plot]
+    caption: Unsupervised deconvolution of glycosylated HLA peptides using NetMHCIIpan 4.1, showing allele-specific binding motifs.
+    produced_by_step: [7, 8]
+    visualization_tool: Logomaker v0.8
+  Fig. 6: [bar_chart]
+    caption: Glycan structural characteristics (e.g., truncation, composition) of HLA class II–presented N-glycopeptides.
+    produced_by_step: [5, 8]
+    visualization_tool: Python (Matplotlib/Plotly/Seaborn)
+
+reproducibility_gaps:
+  - No GitHub or code repository link provided for custom analysis scripts (e.g., MoDec integration, NetMHCIIpan batch processing, figure generation)
+  - Exact PRIDE accession IDs for the 8 datasets are only in Supplementary Data 2 (not embedded in methods text)
+  - MSFragger-Glyco parameters lack full specification (e.g., fragmentation type, dynamic range settings, number of missed cleavages)
+  - PTM-Shepherd version not stated; default N-glycan database not enumerated
+  - MoDec version not specified; manual inspection criteria not quantified
+  - No Docker/Snakemake/Nextflow workflow packaging described
+reproducibility_strengths:
+  - End-to-end open-source toolchain (msconvert, FragPipe, MSFragger, Philosopher, PTM-Shepherd, NetMHCIIpan, Python/R)
+  - Public raw data hosted on PRIDE (FAIR-compliant repository)
+  - Final resource (HLA-Glyco) freely accessible via dedicated web portal
+  - Detailed parameterization of key steps (mass tolerances, FDR strategy, oxonium filter, sequon logic)
+  - Explicit description of group-specific FDR handling for glycopeptides

@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: MixONat, a Software for the Dereplication of Mixtures Based on <sup>13</sup>C NMR Spectroscopy.
+source_paper: Bruguière A et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.0c00193, PMID: 32479074
+overall_reproducibility_score: 45/100
+
+workflow_steps: 4
+  Step 1: Input spectral data acquisition and preprocessing
+    tool: MixONat
+    algorithm: custom Python-based peak detection and carbon-type assignment
+    parameters: nucleus=13C, experiment_types=['{1H}-13C HSQC', 'DEPT-135', 'DEPT-90'], carbon_type_classification=['CH3', 'CH2', 'CH', 'C']
+    input: 13C NMR spectrum (1D or 2D HSQC) + optional DEPT-135/90 spectra
+    output: carbon-type classified peak list with chemical shifts (δc)
+    confidence: medium
+  Step 2: Carbon chemical shift database matching
+    tool: MixONat
+    algorithm: exact and tolerance-based δc matching against user-provided databases
+    parameters: chemical_shift_tolerance_ppm=1.0, database_format=CSV or tabular text with columns: compound_name, molecular_weight, carbon_count, delta_c_list
+    input: carbon-type classified peak list + predicted/experimental δc database
+    output: candidate compound list ranked by matched carbon count and type consistency
+    confidence: medium
+  Step 3: Molecular weight filtering
+    tool: MixONat
+    algorithm: MW-based candidate pruning
+    parameters: mw_tolerance_da=1.0
+    input: candidate compound list + user-defined MW range or exact MW
+    output: MW-filtered candidate list
+    confidence: high
+  Step 4: Interactive refinement and structural prioritization
+    tool: MixONat
+    algorithm: user-guided ranking based on carbon-type pattern agreement and structural knowledge
+    input: MW-filtered candidate list + user input (e.g., known class, stereochemistry constraints)
+    output: prioritized list of dereplicated natural product candidates
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No public repository link or DOI provided for MixONat source code
+  - No description of the carbon chemical shift databases used (e.g., COCONUT, NPAtlas, or in-house)
+  - No example input files, parameter files, or test datasets provided
+  - DEPT experiment processing logic (e.g., sign interpretation, phase correction) not algorithmically specified
+  - Python 3.5 dependency noted but no environment file (e.g., requirements.txt) or package versions listed
+reproducibility_strengths:
+  - Software described as freely distributed
+  - Clear input requirements (NMR experiment types and δc databases)
+  - Open-source language (Python) and modular workflow design implied

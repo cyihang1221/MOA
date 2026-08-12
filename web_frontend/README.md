@@ -12,7 +12,8 @@ web_frontend/
 │   └── styles.css          # 页面样式与三栏布局
 ├── backend/
 │   ├── webapp.py           # FastAPI 应用、REST/SSE API、静态资源挂载
-│   ├── agent_runner.py     # Web Agent 执行（调用 MCP 工具链，与 run_agent 类似）
+│   ├── agent_runner.py     # Web Agent：文献增强 → 计划 → 工具 → MCP
+│   ├── literature_rag.py   # softwares_database(_RAG) 文献检索
 │   ├── session_storage.py  # SQLite 会话/消息持久化
 │   ├── agent_jobs.py       # 后台任务与取消（终止生成）
 │   └── json_parse.py       # Agent 输出中的 JSON / tool_call 解析
@@ -49,9 +50,10 @@ python -m uvicorn web_frontend.backend.webapp:app --host 0.0.0.0 --port 8010
 | 文件 | 用途 |
 |------|------|
 | `backend/webapp.py` | 路由：`/` 首页、`/api/chat/stream` Agent SSE、`/api/sessions/*` 会话与文件、`/api/sessions/{id}/workspace-files` 输入输出文件树、`/api/tools` MCP 工具列表等 |
-| `backend/agent_runner.py` | Web Agent 流水线（无 RAG）：计划 → 工具匹配 → MCP，结果写入 `outputspace/{slug}/` |
+| `backend/agent_runner.py` | Web Agent 流水线：文献检索增强 → 计划 → 工具匹配 → MCP/本地工具；结果写入 `outputspace/{slug}/` |
+| `backend/literature_rag.py` | 接入 `softwares_database_RAG`（向量）与 `softwares_database`（关键词回退） |
 | `backend/web_llm.py` | Web 专用 LLM 客户端（静默流式、`stream_to_stdout`） |
-| `backend/web_prompts.py` | Web 提示词（不触发 DashScope 嵌入 / 不加载 transformers） |
+| `backend/web_prompts.py` | Web 提示词；可注入 `literature_context`（文献检索结果） |
 | `backend/plan_utils.py` | 计划过滤、从任务文本推断工具名 |
 | `backend/constants.py` | 允许展示的 MCP 工具白名单 |
 | `backend/session_storage.py` | 会话标题、`storage_slug`、消息历史、分享状态 |

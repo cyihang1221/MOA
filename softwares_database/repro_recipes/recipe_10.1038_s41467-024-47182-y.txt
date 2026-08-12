@@ -1,0 +1,97 @@
+========== reproducibility_recipe entry ==========
+paper_title: Comparative characterization of the infant gut microbiome and their maternal lineage by a multi-omics approach.
+source_paper: Barker-Tejeda TC et al. (2024), Nature communications, DOI: 10.1038/s41467-024-47182-y, PMID: 38589361
+overall_reproducibility_score: 42/100
+
+workflow_steps: 9
+  Step 1: Sample preparation and derivatization
+    tool: Custom protocol (adapted from Zhao et al.)
+    algorithm: Methylchloroformate (MCF) derivatization
+    parameters: lyophilization_temperature_c=-110, lyophilization_duration_h=16, sample_weight_mg=10, NaOH_concentration_m=1, IS1_volume_ul=10, IS1_concentration_ppm=1000, MCF_volume_ul_first_addition=20, MCF_volume_ul_second_addition=20, pyridine_volume_ul=34, IS2_volume_ul=400, IS2_concentration_ppm=20, NaHCO3_concentration_m=0.05, centrifugation_g=16000, centrifugation_time_min=20, centrifugation_temperature_c=4, second_extraction_volume_ul=200, anhydrous_Na2SO4_mass_mg=100
+    input: frozen fecal samples
+    output: derivatized metabolite extracts in chloroform phase
+    confidence: high
+  Step 2: GC-QTOF-MS acquisition
+    tool: Agilent MassHunter Workstation GC/MS Data Acquisition (v10.0)
+    algorithm: Electron impact ionization (EI)
+    parameters: injection_volume_ul=1, injection_mode=splitless, column=DB-5 MS (30 m × 0.25 mm i.d., 0.25 μm), carrier_gas=helium, carrier_gas_flow_ml_min=1.0, solvent_delay_min=2.9, oven_temperature_program=[{'temp_c': 30, 'hold_min': 1}, {'ramp_c_min': 10, 'to_temp_c': 120, 'hold_min': 9}, {'ramp_c_min': 20, 'to_temp_c': 320, 'hold_min': 10}, {'temp_c': 320, 'hold_min': 2}], total_run_time_min=22, injector_temp_c=270, transfer_interface_temp_c=270, ion_source_temp_c=220, ionization_energy_ev=70, mz_range=[38, 650], acquisition_rate_spectra_per_sec=20, detector_off_rt_segments_min=[[3.52, 3.9], [4.84, 5.3]]
+    input: derivatized metabolite extracts
+    output: raw .d files (Agilent format)
+    confidence: high
+  Step 3: Peak detection and deconvolution
+    tool: Agilent MassHunter Unknowns Analysis (vB.10.0)
+    algorithm: SureMass mass spectral deconvolution
+    parameters: library_search_order=['Personal Compound Database and Library (PCDL)', 'NIST20'], RT_alignment_enabled=True, coelution_resolution=enabled
+    input: raw .d files
+    output: deconvoluted peak table with putative identifications
+    confidence: medium
+  Step 4: Quantification and integration
+    tool: Agilent MassHunter Quantitative (vB.10.0)
+    algorithm: Targeted ion integration
+    parameters: exclusion_criteria=['saturated ions', 'solvent-derived peaks', 'derivatization_agent artifacts', 'column bleeding']
+    input: deconvoluted peak table
+    output: quantified feature table (Excel per batch)
+    confidence: high
+  Step 5: Blank subtraction and quality filtering
+    tool: Custom Excel-based processing
+    algorithm: Presence and RSD filtering
+    parameters: blank_subtraction_enabled=True, presence_threshold_qc_percent=50, presence_threshold_sample_percent=70, RSD_threshold_qc_percent=30, filtering_applied_per_batch=True
+    input: quantified feature table (Excel per batch)
+    output: filtered feature table (146 features)
+    confidence: high
+  Step 6: Intra-batch normalization
+    tool: QC-SVRC (Support Vector Regression Correction)
+    algorithm: Support Vector Regression
+    parameters: QC_samples_per_batch=11, equilibrium_QCs_per_batch=3, QC_spacing=every 9–10 samples
+    input: filtered feature table per batch
+    output: intra-batch normalized feature table
+    confidence: medium
+  Step 7: Inter-batch normalization
+    tool: QC-Norm
+    algorithm: Quality Control-based normalization
+    parameters: QC_pool_composition=10 random samples per age group (30 total), split into 3 batches, QC_pool_weight_mg_per_batch=170
+    input: intra-batch normalized feature tables (3 batches)
+    output: inter-batch normalized merged feature table
+    confidence: medium
+  Step 8: Metabolite annotation refinement
+    tool: NIST MS Search + MS Interpreter (vv.2.4)
+    algorithm: Library matching with retention index (RI) calibration
+    parameters: RI_calibration_compounds=n-alkane mix, RI_calibration_method=linear interpolation, annotation_confidence_levels=['confirmed (standard match + RI)', 'probable (library match + RT consistency)']
+    input: merged feature table + RI-calibrated RT data
+    output: annotated metabolite table with confidence levels
+    confidence: medium
+  Step 9: Ratio calculation (SCFA/BCFA, MUFA/PUFA)
+    tool: Microsoft Excel (vMicrosoft® Excel® for Microsoft 365 MSO v. 2401)
+    algorithm: Arithmetic summation and division
+    parameters: SCFA_components=['Acetic', 'Propionic', 'Valeric', 'Caproic'], BCFA_components=['Isotridecanoic', 'Isomyristic', 'Isopentadecanoic', 'Anteisopentadecanoic']
+    input: annotated metabolite table
+    output: metabolite ratio table
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (MetaboLights: MTBLSXXXX)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 1
+  Fig. S10: [workflow_diagram]
+    caption: Schematics detailing the preparation of QC samples and the worklists measured in the GC-QTOF-MS equipment.
+    produced_by_step: [6, 7]
+    visualization_tool: Not specified
+
+reproducibility_gaps:
+  - Raw GC-QTOF-MS data (.d files) not deposited in public repository
+  - No accession ID provided for MetaboLights or any repository
+  - QC-SVRC and QC-Norm are cited but no implementation details or code shared
+  - Personal Compound Database and Library (PCDL) not publicly available
+  - Custom Excel-based filtering and normalization steps lack script or macro documentation
+  - Retention index (RI) calibration parameters and n-alkane standards not fully specified (e.g., chain lengths, concentrations)
+  - Agilent MassHunter versions B.08.00 and B.10.0 are commercial and require license; no open-source alternative workflow provided
+reproducibility_strengths:
+  - Detailed derivatization protocol with exact volumes, times, temperatures, and reagents
+  - Fully specified GC temperature program and instrument parameters
+  - Explicit QC strategy (pool composition, placement, number per batch)
+  - Transparent filtering criteria (50% QC presence, 70% sample presence, RSD <30%)
+  - Clear description of internal standards (IS1: 4-methyl valeric acid; IS2: tricosane) and their roles

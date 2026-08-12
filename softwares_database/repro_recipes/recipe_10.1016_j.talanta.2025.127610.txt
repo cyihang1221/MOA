@@ -1,0 +1,87 @@
+========== reproducibility_recipe entry ==========
+paper_title: Comprehensive untargeted polar metabolite analysis using solvent switching liquid chromatography tandem mass spectrometry.
+source_paper: Violi JP et al. (2025), Talanta, DOI: 10.1016/j.talanta.2025.127610, PMID: 39854982
+overall_reproducibility_score: 42/100
+
+workflow_steps: 9
+  Step 1: Sample preparation
+    tool: in-house protocol
+    parameters: cell_line=SH-SY5Y neuroblastoma, extraction_solvent=methanol/water (80:20, v/v), quenching_method=cold methanol
+    input: cell pellets
+    output: extracted polar metabolites in solvent
+    confidence: medium
+  Step 2: Chromatographic method development and optimization
+    tool: HILIC chromatography
+    parameters: column=Acquity UPLC BEH Amide, gradient_profile=not fully specified, pH_conditions=['acidic (pH ~3)', 'basic (pH ~9)'], temperature=30°C, flow_rate=0.3 mL/min, injection_volume=2 µL
+    input: extracted polar metabolites
+    output: chromatographic separations under two pH conditions
+    confidence: low
+  Step 3: Mass spectrometry acquisition in polarity-switching mode
+    tool: tandem mass spectrometry (MS/MS)
+    parameters: ionization_mode=['positive mode (acidic HILIC)', 'negative mode (basic HILIC)'], switch_time=quick switch between methods, mass_range=m/z 50–1000, collision_energy=optimized per metabolite class, scan_mode=data-dependent acquisition (DDA)
+    input: HILIC eluent
+    output: raw .raw files (Thermo Fisher)
+    confidence: medium
+  Step 4: Data conversion
+    tool: ProteoWizard msConvert
+    algorithm: centroiding, peak picking
+    parameters: filter=['peakPicking true 1-', 'msLevel 1-2'], output_format=mzML
+    input: raw .raw files
+    output: converted .mzML files
+    confidence: high
+  Step 5: Feature detection and alignment
+    tool: XCMS
+    algorithm: centWave
+    parameters: ppm=5, snthresh=10, prefilter=[3, 100], noise=1000, bw=10, mzdiff=0.01
+    input: .mzML files
+    output: feature table (peak matrix)
+    confidence: high
+  Step 6: Retention time correction and peak alignment
+    tool: XCMS
+    algorithm: obiwarp
+    parameters: profiling=row-wise, method=obiwarp
+    input: feature table with raw RTs
+    output: aligned feature table
+    confidence: high
+  Step 7: Gap filling and missing value imputation
+    tool: MetaboAnalyst
+    algorithm: k-nearest neighbors (k-NN)
+    parameters: k=5, max_missing_threshold=0.5
+    input: aligned feature table
+    output: filled feature table
+    confidence: medium
+  Step 8: Metabolite identification
+    tool: Compound Discoverer (Thermo Fisher)
+    algorithm: MS1 + MS/MS spectral matching
+    parameters: mass_tolerance_ppm=5, retention_time_window_min=0.2, database=['mzCloud', 'HMDB', 'METLIN'], score_threshold=70
+    input: feature table + MS/MS spectra
+    output: confidently identified metabolites (level 1/2)
+    confidence: high
+  Step 9: Comparative analysis of metabolite coverage
+    tool: in-house R script
+    algorithm: Venn analysis, overlap calculation
+    parameters: method_comparison=['acidic+positive', 'basic+negative', 'solvent-switching']
+    input: identified metabolite lists per method
+    output: unique vs. shared metabolite counts
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository
+  - No accession ID or repository mentioned for any data
+  - Exact HILIC gradient profiles and mobile phase compositions not fully specified
+  - Custom R script for Venn/overlap analysis not shared
+  - Thermo Compound Discoverer is commercial software requiring license and proprietary databases
+  - No details on sample randomization or batch correction strategy
+reproducibility_strengths:
+  - Open-source tools used for core processing (XCMS, ProteoWizard)
+  - Explicit parameter values provided for XCMS centWave and obiwarp
+  - Clear description of polarity-switching experimental design

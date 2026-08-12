@@ -1,0 +1,40 @@
+========== reproducibility_recipe entry ==========
+paper_title: Nontargeted High-Resolution Mass Spectrometric Workflow for the Detection of Butyrylcholinesterase-Derived Adducts with Organophosphorus Toxicants and Structural Characterization of Their Phosphyl Moiety after In-Source Fragmentation.
+source_paper: John H et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.1c04116, PMID: 35041786
+overall_reproducibility_score: 40/100
+
+workflow_steps: 2
+  Step 1: Nontargeted HR-MS detection of phosphylated nonapeptide (NP(OP))
+    tool: Thermo Scientific Orbitrap mass spectrometer
+    algorithm: data-dependent MS2 (ddMS2)
+    parameters: resolution=120000, mass_range_mz=[600, 1200], ionization_mode=positive, collision_energy_ddMS2=normalized, diagnostic_ions_mz=[778.33661, 673.29402, 602.2569], extraction_window_ppm=5
+    input: pepsin-digested BChE immunomagnetic extract
+    output: feature table with precursor m/z and diagnostic fragment ions
+    confidence: high
+  Step 2: Targeted IS-CID + PRM for phosphyl moiety structural characterization
+    tool: Thermo Scientific Orbitrap mass spectrometer
+    algorithm: in-source CID followed by parallel reaction monitoring (PRM)
+    parameters: IS_CID_voltage=optimized per compound (not specified numerically), PRM_isolation_window_da=0.7, PRM_resolution=30000, target_ion_mz=derived from step 1 diagnostic ions, product_ion_mass_accuracy_ppm=5
+    input: fraction containing NP(OP) identified in step 1
+    output: elemental composition and structure of phosphyl moiety
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: not_mentioned (not mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-HRMS data not deposited in public repository (e.g., MetaboLights, MassIVE)
+  - No details on IS-CID voltage optimization or exact chromatographic conditions (gradient, column, flow rate)
+  - No software used for data processing (peak picking, alignment, annotation) specified
+  - No description of data analysis pipeline — e.g., whether XCMS, Compound Discoverer, or Thermo BioPharma Finder was used
+  - No code, scripts, or parameter files shared for feature extraction or elemental composition assignment
+reproducibility_strengths:
+  - High-resolution accurate mass parameters explicitly reported (e.g., m/z values at 5 ppm tolerance)
+  - Clear two-step experimental design distinguishing nontargeted detection from targeted fragmentation
+  - Diagnostic ions and their elemental assignments provided for three Tamelin esters and VX

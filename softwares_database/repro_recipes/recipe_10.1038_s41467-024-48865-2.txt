@@ -1,0 +1,113 @@
+========== reproducibility_recipe entry ==========
+paper_title: In-depth organic mass cytometry reveals differential contents of 3-hydroxybutanoic acid at the single-cell level.
+source_paper: Qin S et al. (2024), Nature communications, DOI: 10.1038/s41467-024-48865-2, PMID: 38782922
+overall_reproducibility_score: 35/100
+
+workflow_steps: 12
+  Step 1: Single-cell online sampling and lysis
+    tool: Custom pressure-driven microfluidic system
+    algorithm: Pressure injection + ordering capillary monodispersion
+    parameters: cell_concentration=7000, cell_concentration_unit=cells/mL, N2_pressure=20, N2_pressure_unit=psi, ordering_capillary_id=40, ordering_capillary_id_unit=μm, ordering_capillary_od=100, ordering_capillary_od_unit=μm, sheath_liquid_composition=['methanol', '1% ammonia', 'or 0.1% formic acid'], sheath_flow_rate=10, sheath_flow_rate_unit=μL/min, sheath_capillary_id=150, sheath_capillary_id_unit=μm, sheath_capillary_od=360, sheath_capillary_od_unit=μm, ultrasonication_bath_temperature=ice-bath
+    input: live single-cell suspension in 140 mM ammonium formate
+    output: lysed single-cell effluent for electrospray ionization
+    confidence: medium
+  Step 2: Mass spectrometry acquisition (full-scan MS)
+    tool: Orbitrap Exploris 480
+    algorithm: Orbitrap full-scan detection
+    parameters: polarity=['positive', 'negative'], scan_range_mz_min=80, scan_range_mz_max=1200, resolution=35000, microscans=1, AGC_target=1000000, max_injection_time_ms=50, spray_voltage_kV=2.5, capillary_temperature_C=320, tube_lens_voltage_V=60, sheath_gas_flow=0, aux_gas_flow=0, sweep_gas_flow=0
+    input: lysed single-cell effluent
+    output: raw .raw files (Thermo format)
+    confidence: high
+  Step 3: Data-dependent MS/MS acquisition (ddMS2)
+    tool: Orbitrap Exploris 480
+    algorithm: Top-N ddMS2 with dynamic exclusion
+    parameters: full_MS_resolution=35000, full_MS_AGC_target=3000000, full_MS_max_injection_time_ms=100, ddMS2_resolution=17500, ddMS2_AGC_target=100000, ddMS2_max_injection_time_ms=50, loop_count_or_top_N=7, isolation_window_mz=0.4, NCE_values=[30, 40, 50], minimum_AGC_target=8000, exclude_isotopes=True, dynamic_exclusion_s=20
+    input: raw .raw files
+    output: raw .raw files with MS2 spectra
+    confidence: high
+  Step 4: Single-cell spectrum extraction
+    tool: Xcalibur (v4.0)
+    algorithm: EIC-based peak detection and S/N thresholding
+    parameters: S_N_threshold=5, pulse_time_min_s=10, selection_criterion=highest total ion current (TIC)
+    input: raw .raw files
+    output: single-cell mass spectra (centroided or profile)
+    confidence: high
+  Step 5: Metabolite identification (MS1 + MS2)
+    tool: Compound Discoverer (v3.3)
+    algorithm: Database search with mzCloud and KEGG
+    parameters: mass_tolerance_ppm=5, database_sources=['mzCloud', 'KEGG', 'HMDB']
+    input: single-cell mass spectra
+    output: putatively identified metabolites with confidence levels
+    confidence: high
+  Step 6: Lipid identification
+    tool: LipidSearch (v5.1)
+    algorithm: Lipid-specific database search
+    parameters: precursor_mass_tolerance_ppm=5, product_mass_tolerance_ppm=8, use_default_parameters=True
+    input: single-cell MS/MS spectra
+    output: lipid identifications (class, chain composition, isomer level)
+    confidence: high
+  Step 7: Manual curation and database extension
+    tool: ChemSpider + literature curation
+    algorithm: Manual validation and annotation using published single-cell MS/MS data
+    parameters: literature_references=['21', '22', '24', '56'], curation_criteria=MS/MS spectral match + diagnostic ions + biological plausibility
+    input: Compound Discoverer & LipidSearch outputs
+    output: curated single-cell metabolite annotation table
+    confidence: low
+  Step 8: Data matrix assembly and normalization
+    tool: Custom workflow (implied)
+    algorithm: TIC normalization per cell spectrum
+    parameters: normalization_method=total ion current (TIC), filtering_threshold=S/N > 5 for diagnostic ions (isomer quantitation)
+    input: curated metabolite annotation table + intensities
+    output: normalized single-cell metabolite abundance matrix
+    confidence: medium
+  Step 9: Unsupervised clustering and visualization
+    tool: OmicShare online platform
+    algorithm: UMAP and t-SNE
+    parameters: clustering_algorithm=['UMAP', 't-SNE'], annotation_database=KEGG, visualization_types=['heatmap', 'cluster plot']
+    input: normalized single-cell metabolite abundance matrix
+    output: cell clusters, heatmaps, UMAP/t-SNE plots
+    confidence: medium
+  Step 10: Isomer quantification
+    tool: Custom (diagnostic ion ratio method)
+    algorithm: Diagnostic ion intensity ratio
+    parameters: diagnostic_ion_S_N_threshold=5, isomer_ratio_calculation=intensity_of_specific_diagnostic_ion / sum_of_all_diagnostic_ion_intensities
+    input: MS/MS spectra with diagnostic ions
+    output: relative isomer abundances per cell
+    confidence: medium
+  Step 11: Integration with transcriptomics
+    tool: 10x Genomics pipeline (implied)
+    algorithm: Cross-omic correlation (metabolite vs gene expression)
+    parameters: transcriptome_protocol=10x Genomics Chromium, viability_threshold_percent=90, cell_density_pre_loading=10000000, cell_density_pre_loading_unit=cells/mL
+    input: single-cell metabolite matrix + scRNA-seq counts
+    output: correlated gene-metabolite modules (e.g., MT2A vs 3-hydroxybutanoic acid)
+    confidence: low
+  Step 12: Validation by fluorescence flow cytometry
+    tool: Astrios EQ flow cytometer + Nikon Eclipse Ti
+    algorithm: Indirect immunofluorescence labeling
+    parameters: fixation=4% paraformaldehyde, permeabilization=cold methanol, primary_antibody_dilution=['1:1000', '1:500', '1:10000'], secondary_antibody_dilution=1:3000, blocking_buffer=3% BSA in PBS, incubation_temperature=4°C
+    input: fixed/permeabilized cells
+    output: fluorescence intensity per cell (protein level)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data (.raw files) not deposited in public repository (e.g., MetaboLights, PRIDE, MassIVE)
+  - No code or scripts shared for single-cell spectrum extraction, TIC normalization, or diagnostic ion quantification
+  - Custom microfluidic hardware (pressure injection cell, ordering capillary geometry, emitter fabrication parameters) lacks CAD files or fabrication protocols
+  - OmicShare analysis is web-based but session parameters, preprocessing steps, and clustering hyperparameters are unspecified
+  - No details on how metabolite IDs were reconciled across Compound Discoverer, LipidSearch, and manual curation — no confidence scoring or reporting thresholds provided
+  - 10x Genomics scRNA-seq data not linked to any repository or accession number
+  - Fluorescence microscopy and FACS raw image/flow data not made available
+reproducibility_strengths:
+  - Detailed Orbitrap instrument parameters (full-scan and ddMS2) fully reported
+  - Exact chemical reagents, cell culture conditions, and staining protocols specified
+  - Key software versions named (Xcalibur 4.0, Compound Discoverer 3.3, LipidSearch 5.1)
+  - Mass tolerance (5 ppm) and diagnostic ion S/N threshold (5) explicitly defined

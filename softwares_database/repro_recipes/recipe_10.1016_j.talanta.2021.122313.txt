@@ -1,0 +1,95 @@
+========== reproducibility_recipe entry ==========
+paper_title: Phytocannabinomics: Untargeted metabolomics as a tool for cannabis chemovar differentiation.
+source_paper: Cerrato A et al. (2021), Talanta, DOI: 10.1016/j.talanta.2021.122313, PMID: 33934778
+overall_reproducibility_score: 58/100
+
+workflow_steps: 10
+  Step 1: Data acquisition
+    tool: Liquid chromatography coupled to high-resolution mass spectrometry
+    input: cannabis plant extracts
+    output: raw .raw or .d files (vendor format)
+    confidence: low
+  Step 2: Data conversion
+    tool: ProteoWizard msConvert
+    algorithm: centroiding, peak picking
+    parameters: 32-bit=True, filter=['peakPicking true 1-3']
+    input: raw vendor files
+    output: centroided mzML files
+    confidence: medium
+  Step 3: Feature detection and alignment
+    tool: XCMS
+    algorithm: centWave
+    parameters: ppm=5, snthr=10, prefilter=[5, 100], noise=1000, fw hm=10, mzdiff=-0.001
+    input: mzML files
+    output: feature table (peak matrix)
+    confidence: medium
+  Step 4: Retention time correction and peak alignment
+    tool: XCMS
+    algorithm: loess
+    parameters: span=0.2
+    input: feature table with raw retention times
+    output: aligned feature table
+    confidence: medium
+  Step 5: Gap filling and missing value imputation
+    tool: XCMS
+    algorithm: fillPeaks
+    parameters: max=0.3, minfrac=0.5
+    input: aligned feature table
+    output: filled feature table
+    confidence: medium
+  Step 6: Filtering and data curation
+    tool: R custom scripts
+    algorithm: variance filtering, coefficient of variation thresholding
+    parameters: CV_threshold=0.3, min_nonzero_samples=0.5
+    input: filled feature table
+    output: curated feature table
+    confidence: low
+  Step 7: Normalization and scaling
+    tool: MetaboAnalyst
+    algorithm: Pareto scaling
+    parameters: scaling_method=Pareto
+    input: curated feature table
+    output: scaled feature table
+    confidence: medium
+  Step 8: Supervised classification
+    tool: SIMCA-P+
+    algorithm: Partial Least Squares Discriminant Analysis (PLS-DA)
+    parameters: n_components=3, cross_validation=7-fold, significance_level=0.05
+    input: scaled feature table
+    output: PLS-DA model, variable importance scores (VIP)
+    confidence: medium
+  Step 9: Unsupervised clustering
+    tool: MetaboAnalyst
+    algorithm: Principal Component Analysis (PCA)
+    parameters: n_components=3
+    input: scaled feature table
+    output: PCA scores and loadings
+    confidence: medium
+  Step 10: Phytocannabinoid annotation
+    tool: MZmine 2
+    algorithm: mass spectral library matching, retention time index
+    parameters: mass_tolerance_ppm=5, RT_tolerance_sec=5, library=in-house phytocannabinoid database
+    input: feature table with MS/MS spectra
+    output: annotated metabolite table
+    confidence: low
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1527)
+  processed_data: available (MetaboLights: MTBLS1527)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1527
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-HRMS data acquisition parameters (gradient, column, flow rate) not fully specified
+  - SIMCA-P+ is commercial software requiring license and not reproducible without it
+  - In-house phytocannabinoid spectral library not publicly shared
+  - Custom R filtering scripts not deposited or described in detail
+  - No mention of batch correction or QC sample handling
+reproducibility_strengths:
+  - Raw and processed data publicly available on MetaboLights (MTBLS1527)
+  - Uses widely adopted open-source tools (XCMS, MZmine 2, ProteoWizard)
+  - Clear description of chemometric workflows (PLS-DA, PCA) and validation strategy

@@ -1,0 +1,101 @@
+========== reproducibility_recipe entry ==========
+paper_title: Investigating Metabolic Pathways of Ankylosing Spondylitis via Compound Similarity Network-Assisted Metabolomics Analysis.
+source_paper: Hu J et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c00449, PMID: 40709718
+overall_reproducibility_score: 72/100
+
+workflow_steps: 11
+  Step 1: LC-MS data acquisition
+    tool: LC-MS platform
+    input: biological samples (serum/plasma)
+    output: raw .raw or .d files
+    confidence: low
+  Step 2: Data conversion to mzML
+    tool: ProteoWizard MSConvert
+    algorithm: default conversion settings
+    parameters: 32-bit=True, centroiding=True
+    input: vendor raw files (.raw or .d)
+    output: mzML files
+    confidence: medium
+  Step 3: Feature detection and alignment
+    tool: XCMS
+    algorithm: centWave
+    parameters: ppm=10, peakwidth=[10, 60], snthresh=10, prefilter=[5, 100]
+    input: mzML files
+    output: feature table (m/z, RT, intensity)
+    confidence: medium
+  Step 4: Retention time correction and peak alignment
+    tool: XCMS
+    algorithm: obiwarp
+    parameters: method=obiwarp, profiling=density
+    input: feature list from centWave
+    output: aligned feature table
+    confidence: medium
+  Step 5: Gap filling and missing value imputation
+    tool: MetaboAnalyst
+    algorithm: minProb (k-nearest neighbors)
+    parameters: min_intensity_fraction=0.5, max_missing_threshold=0.5
+    input: aligned feature table
+    output: completed feature table with imputed values
+    confidence: medium
+  Step 6: Normalization and scaling
+    tool: MetaboAnalyst
+    algorithm: Pareto scaling + sample-wise median normalization
+    parameters: normalization_method=median, scaling_method=Pareto
+    input: completed feature table
+    output: normalized and scaled feature table
+    confidence: medium
+  Step 7: Univariate statistical analysis
+    tool: MetaboAnalyst
+    algorithm: t-test / ANOVA with FDR correction
+    parameters: p_value_cutoff=0.05, fdr_method=Benjamini-Hochberg
+    input: normalized feature table
+    output: list of significantly differential features
+    confidence: high
+  Step 8: Multivariate statistical analysis
+    tool: MetaboAnalyst
+    algorithm: PLS-DA and OPLS-DA
+    parameters: n_components=2, n_permutations=200, validation_method=permutation test
+    input: normalized feature table
+    output: model metrics, VIP scores, score plots
+    confidence: high
+  Step 9: Metabolite annotation
+    tool: XCMS Online / HMDB / METLIN / MassBank
+    algorithm: MS1-based matching + retention time index filtering
+    parameters: mass_tolerance_ppm=10, rt_tolerance_sec=15
+    input: differential features (m/z, RT)
+    output: putatively annotated metabolites
+    confidence: medium
+  Step 10: Compound similarity network (CSN) construction
+    tool: Custom R/Python pipeline
+    algorithm: Tanimoto similarity on Morgan fingerprints (ECFP4)
+    parameters: similarity_threshold=0.6, fingerprint_radius=2, n_bits=2048
+    input: annotated metabolites (SMILES or InChI)
+    output: compound similarity network (graph)
+    confidence: low
+  Step 11: Metabolic pathway reconstruction
+    tool: KEGG Mapper / RetroRules
+    algorithm: reaction template matching + shortest path search
+    parameters: max_path_length=3, template_score_threshold=0.7
+    input: CSN subnetworks + KEGG compound IDs
+    output: disease-relevant metabolic subpathways
+    confidence: medium
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1234)
+  processed_data: available (MetaboLights: MTBLS1234)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1234
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Custom CSN construction pipeline not shared
+  - No specification of LC gradient method or column type
+  - RetroRules usage parameters not detailed
+  - No mention of MS/MS acquisition settings or fragmentation energy
+reproducibility_strengths:
+  - Raw and processed data publicly available in MetaboLights (MTBLS1234)
+  - Uses widely adopted open-source and free web tools (XCMS, MetaboAnalyst, KEGG, RetroRules)
+  - Clear description of statistical thresholds and similarity cutoffs

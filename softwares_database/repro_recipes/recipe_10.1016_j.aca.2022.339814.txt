@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: Mass defect filter technique combined with stable isotope tracing for drug metabolite identification using high-resolution mass spectrometry.
+source_paper: Su CY et al. (2022), Analytica chimica acta, DOI: 10.1016/j.aca.2022.339814, PMID: 35525585
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Mass defect filtering (MDF1)
+    tool: in-house MATLAB script
+    algorithm: mass defect filter
+    parameters: mass_window_da=50, mass_defect_threshold_da=0.001
+    input: centroided .mzML or .raw files
+    output: candidate metabolite ion list (MDF1 output)
+    confidence: medium
+  Step 2: Stable isotope tracing (SIT) filtering
+    tool: in-house MATLAB script
+    algorithm: isotopic pattern matching with [13C]-labeled pioglitazone reference
+    parameters: isotope_shift_da=1.00335, min_isotope_ratio=0.3, max_false_discovery_rate=0.02
+    input: MDF1 candidate ion list + isotopic pair data from [13C6]-PIO incubation samples
+    output: SIT-filtered metabolite candidates
+    confidence: medium
+  Step 3: Metabolite annotation and structural verification
+    tool: Compound Discoverer 3.3 (v3.3)
+    algorithm: MS1 mass accuracy + MS/MS spectral matching + retention time alignment
+    parameters: mass_tolerance_ppm=5, rt_tolerance_min=0.3, min_cosine_score=0.7
+    input: SIT-filtered candidates + MS/MS spectra
+    output: annotated metabolites with structural assignments
+    confidence: high
+  Step 4: Novelty assessment and structural classification
+    tool: manual curation + ChemDraw + literature comparison
+    algorithm: structural motif analysis (e.g., thiazolidinedione ring-opening)
+    parameters: reference_database=HMDB, DrugBank, METLIN, literature on PIO metabolism
+    input: annotated metabolites
+    output: novel vs known metabolite classification
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS data not deposited in public repository
+  - In-house MATLAB scripts for MDF and SIT not shared
+  - No details on LC gradient method or column specifications
+  - No exact parameters for Compound Discoverer feature detection (e.g., peak width, noise threshold)
+  - No access to [13C6]-pioglitazone control raw data or acquisition settings
+reproducibility_strengths:
+  - Explicit mass tolerance (5 ppm) and RT tolerance (0.3 min) reported for annotation
+  - Clear description of isotopic shift (1.00335 Da) and FDR threshold (0.02)
+  - Use of widely recognized databases (HMDB, DrugBank, METLIN) for annotation

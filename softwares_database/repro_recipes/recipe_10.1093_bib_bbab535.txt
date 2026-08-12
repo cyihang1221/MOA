@@ -1,0 +1,33 @@
+========== reproducibility_recipe entry ==========
+paper_title: TIGER: technical variation elimination for metabolomics data using ensemble learning architecture.
+source_paper: Han S et al. (2022), Briefings in bioinformatics, DOI: 10.1093/bib/bbab535, PMID: 34981111
+overall_reproducibility_score: 75/100
+
+workflow_steps: 1
+  Step 1: Technical variation elimination using ensemble learning
+    tool: TIGER
+    algorithm: Random Forest-based ensemble learning architecture
+    input: metabolomics feature table (e.g., peak intensities matrix)
+    output: technically corrected feature table
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://CRAN.R-project.org/package=TIGERr
+  license: GPL-3
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of input data format (e.g., matrix dimensions, sample annotation structure)
+  - No specification of preprocessing steps prior to TIGER (e.g., log-transformation, missing value imputation, filtering)
+  - No details on ensemble architecture (e.g., number of base learners, RF hyperparameters, QC sample handling logic)
+  - No access to the three human cohort datasets or longitudinal kit-comparison data used in evaluation
+reproducibility_strengths:
+  - Open-source R package available on CRAN
+  - Dynamic web interface provided for performance evaluation and visualization (https://han-siyu.github.io/TIGER_web/)
+  - Method explicitly designed for multi-QC-type datasets — addresses a documented limitation in existing tools

@@ -1,0 +1,135 @@
+========== reproducibility_recipe entry ==========
+paper_title: Spatially resolved multi-omics highlights cell-specific metabolic remodeling and interactions in gastric cancer.
+source_paper: Sun C et al. (2023), Nature communications, DOI: 10.1038/s41467-023-38360-5, PMID: 37164975
+overall_reproducibility_score: 42/100
+
+workflow_steps: 12
+  Step 1: Tissue section preparation for spatial omics
+    tool: Leica CM 1860 UV cryostat
+    parameters: section_thickness_um=10, temperature_c=-20, embedding_medium=OTC
+    input: frozen gastric cancer tissue
+    output: serial frozen tissue sections on SUPERFROST PLUS, ITO-coated, and Visium slides
+    confidence: high
+  Step 2: AFADESI-MSI data acquisition
+    tool: Custom-built AFADESI-MSI platform with Q-Exactive Orbitrap
+    parameters: ion_mode=['positive', 'negative'], mz_range=[70, 1000], solvent_composition=acetonitrile:water (80:20 v/v), solvent_flow_rate_ul_per_min=5.0, sprayer_voltage_V={'positive': 4500, 'negative': -4500}, extracting_gas_flow_L_per_min=45, nebulizing_gas_pressure_MPa=0.7, scan_speed_um_per_sec=100, spatial_step_um=100
+    input: dried tissue sections on SUPERFROST PLUS slides
+    output: raw AFADESI-MSI spectra (mzML or proprietary format)
+    confidence: high
+  Step 3: MALDI-MSI data acquisition
+    tool: rapifleX MALDI TOF/TOF MS
+    parameters: matrix=1,5-diaminonaphthalene (2.0 mg/mL in acetonitrile:water 70:30 v/v), matrix_spraying_cycles=8, spray_flow_rate_ul_per_min=75, spray_gas_pressure_psi=10, spray_temperature_c=55, track_speed_mm_per_min=800, track_spacing_mm=3, ion_mode=['positive', 'negative'], mz_range=[80, 1000], spatial_resolution_um=50
+    input: dried tissue sections on ITO-coated slides
+    output: raw MALDI-MSI spectra (flexImaging or proprietary format)
+    confidence: high
+  Step 4: Spatial transcriptomics library prep & sequencing
+    tool: 10x Genomics Visium Spatial Gene Expression (vCG000239 / CG000238 / CG000240)
+    parameters: spot_diameter_um=55, spot_distance_um=100, array_area_mm2=6.5 x 6.5, spots_per_capture_area=5000, permeabilization_optimization=empirical time selection maximizing signal-to-diffusion ratio, cDNA_synthesis=on-slide reverse transcription with spatial barcodes and UMIs, library_construct_components=['P5', 'P7', 'i7', 'i5', 'TruSeq Read 1 (16bp barcode + 12bp UMI)', 'TruSeq Read 2 (cDNA insert)']
+    input: adjacent 10 μm frozen tissue sections on Visium slides
+    output: spatially barcoded cDNA libraries
+    confidence: high
+  Step 5: Image registration and spatial matching
+    tool: MassImager Pro
+    algorithm: manual/semi-automated H&E image fusion
+    parameters: reference_image=H&E-stained Visium slide, target_data=['AFADESI-MSI', 'MALDI-MSI']
+    input: H&E whole-slide image + MSI raw data
+    output: spatially aligned ROI masks mapped to Visium spot coordinates
+    confidence: medium
+  Step 6: Region-specific spectral extraction
+    tool: MassImager Pro (metabolomics) and SCiLS Lab 2018b (lipidomics) (v2018b)
+    algorithm: arbitrary polygonal region selection
+    parameters: mass_tolerance_da={'metabolomics': 0.01, 'lipidomics': None}, region_definition=pathologist-defined heterogeneous area → Visium-aligned ROIs
+    input: spatially aligned MSI data + ROI masks
+    output: region-specific mass spectra matrices (m/z-intensity per ROI)
+    confidence: high
+  Step 7: Peak detection and alignment
+    tool: Markerview 1.2.1 (v1.2.1)
+    algorithm: peak picking, alignment, isotope removal
+    parameters: mass_tolerance_da=0.01, process_spectra_options=['peak picking', 'alignment', 'isotope removal']
+    input: region-specific spectra matrices
+    output: aligned feature table (m/z, RT, intensity matrix)
+    confidence: high
+  Step 8: Multivariate statistical analysis
+    tool: SIMCA-P 14.0 (v14.0)
+    algorithm: PCA, PLS-DA, OPLS-DA
+    parameters: analysis_types=['PCA', 'PLS-DA', 'OPLS-DA'], validation_method=cross-validation, significance_threshold=VIP > 1.0
+    input: aligned feature table
+    output: discriminating metabolites/lipids (VIP scores, loadings, scores plots)
+    confidence: high
+  Step 9: Univariate statistical testing
+    tool: unpaired two-tailed t-test
+    algorithm: Student's t-test
+    parameters: confidence_interval=0.95, p_value_threshold=0.05, correction=not specified
+    input: feature table grouped by tissue region
+    output: differentially abundant metabolites/lipids (p-values, fold-changes)
+    confidence: medium
+  Step 10: Metabolite and lipid identification
+    tool: in-house LuMet-animal database, HMDB, METLIN, LIPID MAPS
+    algorithm: exact mass matching + MS/MS validation
+    parameters: mass_accuracy_ppm={'Orbitrap': 5, 'MALDI-TOF/TOF': 10}, identification_levels=['Level 1 (confirmed standard)', 'Level 2 (probable structure)', 'Level 3 (tentative class)'], MS_MS_strategy=['on-tissue MS/MS', 'off-tissue if low abundance']
+    input: m/z features + MS/MS spectra
+    output: annotated metabolite/lipid list with confidence levels
+    confidence: high
+  Step 11: Spatial transcriptomics data analysis
+    tool: Loupe Browser 6 (v6)
+    algorithm: graph-based clustering, UMAP, differential expression
+    parameters: clustering_method=graph-based (Leiden or similar), dimensionality_reduction=UMAP, differential_expression_tool=Significant Features tool, statistical_test=not specified (likely Wilcoxon rank-sum or MAST)
+    input: Visium count matrices + spatial coordinates
+    output: cell-type annotations, differentially expressed genes, spatial clusters
+    confidence: medium
+  Step 12: Multi-omics integration and pathway mapping
+    tool: custom workflow (not named)
+    algorithm: colocalization + pathway enrichment (KEGG/Reactome implied)
+    parameters: integration_level=spatially matched spots (Visium coordinates), pathway_databases=['KEGG', 'Reactome', 'not explicitly named but implied by Figs 3–5'], colocalization_metric=spatial overlap of metabolite/gene expression heatmaps
+    input: annotated metabolite/lipid table + DEG table + spatial coordinates
+    output: integrated metabolic-transcriptional pathways, interface region signatures
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: not_mentioned (not mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 6
+  Fig. 1: [workflow_diagram]
+    caption: Overview of integrated spatial multi-omics pipeline combining AFADESI-MSI, MALDI-MSI, and Visium spatial transcriptomics to map intratumor heterogeneity.
+    produced_by_step: [1, 2, 3, 4, 5]
+    visualization_tool: custom illustration (not specified)
+  Fig. 2: [heatmap]
+    caption: Heatmaps showing gene, lipid, and metabolite expression profiles across spatially defined tumor micro-regions.
+    produced_by_step: [6, 7, 8, 11]
+    visualization_tool: Loupe Browser 6, MassImager Pro, SCiLS Lab
+  Fig. 3: [pathway_map]
+    caption: Spatial visualization of reprogrammed arginine and proline metabolism pathway, linking metabolites and genes in gastric cancer tissue.
+    produced_by_step: [10, 12]
+    visualization_tool: custom (likely Adobe Illustrator or Python matplotlib/seaborn)
+  Fig. 4: [pathway_map]
+    caption: Spatial visualization of reprogrammed lipid synthesis and metabolism pathways, integrating lipidomic and transcriptomic data.
+    produced_by_step: [10, 12]
+    visualization_tool: custom
+  Fig. 5: [pathway_map]
+    caption: Stepwise metabolic reprogramming visualization across tumor regions, suggesting progressive alterations in core metabolism.
+    produced_by_step: [12]
+    visualization_tool: custom
+  Fig. 6: [pca_scores]
+    caption: Imaging of immunometabolic reprogramming at the tumor-normal interface, highlighting distinct metabolite and immune gene co-expression.
+    produced_by_step: [8, 11, 12]
+    visualization_tool: SIMCA-P 14.0, Loupe Browser 6, custom overlay
+    statistical_test: t-test p<0.05 (implied by 'significant immunometabolic alterations')
+
+reproducibility_gaps:
+  - Raw MSI and Visium sequencing data not deposited in public repository (e.g., MetaboLights, GEO, or EGA)
+  - No code or scripts shared for spatial matching, multi-omics integration, or pathway colocalization
+  - SIMCA-P 14.0 and Markerview 1.2.1 are commercial tools requiring licenses
+  - SCiLS Lab 2018b and MassImager Pro are proprietary; no open alternatives or parameter export details provided
+  - Exact gradient profile, chromatographic conditions, and LC parameters omitted (AFADESI is ambient, but no separation used — noted)
+  - Permeabilization optimization times and exact RT/cDNA synthesis protocols not quantified in methods
+  - No description of batch correction, QC metrics, or missing value imputation strategies
+  - Statistical test for transcriptomics differential expression not specified (e.g., test type, FDR method)
+reproducibility_strengths:
+  - Detailed instrument parameters and acquisition settings reported for both MSI platforms
+  - Clear description of tissue processing, sectioning, and spatial ROI selection workflow
+  - Explicit mass accuracy tolerances (5 ppm for Orbitrap, 10 ppm for MALDI-TOF/TOF) and databases used for annotation
+  - Publicly available commercial platforms (10x Visium, Thermo Orbitrap, Bruker rapifleX) with documented protocols

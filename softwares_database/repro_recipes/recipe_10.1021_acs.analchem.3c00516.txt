@@ -1,0 +1,88 @@
+========== reproducibility_recipe entry ==========
+paper_title: Real-Time Volatile Metabolomics Analysis of Dendritic Cells.
+source_paper: Arnold K et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c00516, PMID: 37311562
+overall_reproducibility_score: 40/100
+
+workflow_steps: 9
+  Step 1: Real-time headspace sampling
+    tool: SESI-HRMS
+    parameters: sampling_frequency=real-time, time_resolution=not specified, acquisition_duration=6, acquisition_duration_unit=hours
+    input: live dendritic cell cultures (immature and activated) in headspace
+    output: raw mass spectrometry time-series data (.raw or vendor format)
+    confidence: low
+  Step 2: Data conversion and preprocessing
+    tool: XCMS
+    algorithm: centWave
+    parameters: mass_tolerance_ppm=5, peak_width_seconds=[5, 30], snthr=10
+    input: raw .raw files
+    output: feature table (m/z, RT, intensity)
+    confidence: medium
+  Step 3: Retention time alignment and correction
+    tool: XCMS
+    algorithm: obiwarp
+    parameters: refine_method=obiwarp, method=obiwarp
+    input: feature table
+    output: aligned feature table
+    confidence: medium
+  Step 4: Gap filling and missing value imputation
+    tool: MetaboAnalyst
+    algorithm: k-nearest neighbors
+    parameters: k=5, missing_threshold_sample=0.5, missing_threshold_feature=0.8
+    input: aligned feature table
+    output: filled/filtered feature table
+    confidence: medium
+  Step 5: Normalization and scaling
+    tool: MetaboAnalyst
+    algorithm: Pareto scaling
+    input: filled/filtered feature table
+    output: normalized and scaled feature table
+    confidence: high
+  Step 6: Univariate statistical analysis
+    tool: MetaboAnalyst
+    algorithm: Student's t-test
+    parameters: p_value_cutoff=0.05, fdr_method=Benjamini-Hochberg
+    input: normalized and scaled feature table
+    output: list of significantly differentially abundant features
+    confidence: high
+  Step 7: Multivariate statistical analysis (PCA, PLS-DA, OPLS-DA)
+    tool: MetaboAnalyst
+    algorithm: OPLS-DA
+    parameters: n_components=1, n_permutations=200
+    input: normalized and scaled feature table
+    output: model scores, loadings, VIP scores
+    confidence: medium
+  Step 8: Metabolite annotation
+    tool: HMDB
+    algorithm: accurate mass matching
+    parameters: mass_tolerance_ppm=5, database=HMDB v5.0
+    input: differentially abundant features (m/z, RT)
+    output: putatively annotated metabolites
+    confidence: medium
+  Step 9: Pathway enrichment analysis
+    tool: MetaboAnalyst
+    algorithm: hypergeometric test
+    parameters: organism=Homo sapiens, database=KEGG, p_value_cutoff=0.05, fdr_method=BH
+    input: annotated differential metabolites
+    output: enriched metabolic pathways
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw SESI-HRMS data not deposited in public repository
+  - No details on SESI source parameters (e.g., temperature, flow rates, ionization voltage)
+  - No description of DC culture conditions (media, passage number, cell density) affecting volatile emission
+  - No information on chromatographic or drift-time separation — SESI is label-free and non-chromatographic, but instrumental parameters (e.g., resolving power, scan range, dwell time) are unspecified
+  - No access to custom acquisition scripts or real-time data streaming pipeline
+  - MetaboAnalyst usage implies web-based analysis, but no session ID or exportable workflow provided
+reproducibility_strengths:
+  - Use of standard open-source (XCMS) and widely accessible web tools (MetaboAnalyst)
+  - Clear biological comparisons (naïve vs. activated DCs; SN-treated vs. control)
+  - Reporting of three statistically enriched pathways with biological relevance

@@ -1,0 +1,47 @@
+========== reproducibility_recipe entry ==========
+paper_title: Functionalizing tandem mass tags for streamlining click-based quantitative chemoproteomics.
+source_paper: Burton NR et al. (2024), Communications chemistry, DOI: 10.1038/s42004-024-01162-x, PMID: 38600184
+overall_reproducibility_score: 72/100
+
+workflow_steps: 0
+
+data_availability:
+  raw_data: available (PRIDE: PXD042317)
+  processed_data: available (PRIDE: PXD042317)
+  metadata: in_paper_only
+  data_urls: https://www.ebi.ac.uk/pride/archive/projects/PXD042317
+
+code_availability: not_mentioned
+
+figure_recipes: 5
+  Figure 1: [bar_chart]
+    caption: Compares sample preparation time and sample-to-sample variance between sCIP-TMT and conventional TMT workflows.
+    visualization_tool: GraphPad Prism
+    statistical_test: mean ± SD; n = 3 biological replicates
+  Figure 2: [workflow_diagram]
+    caption: Illustrates in situ synthesis of sCIP-TMT reagents via CuAAC between sCIP–Gly–NH₂ and commercial TMT amines.
+    visualization_tool: ChemDraw / Adobe Illustrator
+  Figure 3: [chromatogram]
+    caption: Shows LC-MS/MS chromatographic performance and diagnostic ion detection (e.g., y-ion series, DADPS cleavage fragments) for sCIP-TMT-labeled peptides.
+    visualization_tool: Thermo Proteome Discoverer / custom Python scripts
+  Figure 4: [scatter_plot]
+    caption: Demonstrates quantitative accuracy and precision of sCIP-TMT by spiking known ratios of cysteine-labeled standards and comparing measured vs. expected ratios.
+    visualization_tool: GraphPad Prism
+    statistical_test: Pearson correlation (r = 0.998), linear regression
+  Figure 5: [heatmap]
+    caption: Displays hierarchical clustering of liganded cysteines across four electrophiles, revealing compound-specific target profiles.
+    visualization_tool: R (pheatmap)
+    statistical_test: log₂ fold-change threshold ≥ 1.5, FDR < 0.05 (Benjamini-Hochberg)
+
+reproducibility_gaps:
+  - No publicly shared code or FragPipe workflow files (.fragpipe) for MSFragger search parameters or TMT integrator configuration
+  - Exact DADPS diagnostic fragment masses used in labile search are only shown schematically in Fig. 2 and Fig. S4 — not tabulated numerically
+  - sCIP–Gly–NH₂ synthesis protocol is in supplementary methods (section C) but not deposited in protocols.io or similar open repository
+  - FAIMS compensation voltages and specific MS2 resolution values per experiment are omitted from main text and Table S2 is not provided in the public version of the paper
+  - No metadata schema or structured sample annotation file (e.g., MAGE-TAB, ISA-Tab) provided — only described narratively in supplementary biology methods (section D)
+reproducibility_strengths:
+  - Raw and processed proteomics data deposited in PRIDE (PXD042317) with full acquisition metadata
+  - Detailed LC gradient programs (70- and 180-min) including flow rates, buffer composition, and timing specified
+  - MSFragger/FragPipe versions (v3.7–3.8, v19.0–20.0) and database build date (UniProtKB Jan 1, 2020) explicitly stated
+  - All chemical reagent catalog numbers and concentrations provided (e.g., GE Healthcare beads, Pierce Streptavidin Agarose, Worthington trypsin)
+  - Clear specification of variable/fixed modifications and mass offsets for each probe type (sCIP-TMT: C(638.40614), IA-DTB: C(455.2743), ethynyl-2PCA: N-term(614.3492))

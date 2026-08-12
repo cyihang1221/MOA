@@ -1,0 +1,30 @@
+========== reproducibility_recipe entry ==========
+paper_title: WaveICA: A novel algorithm to remove batch effects for large-scale untargeted metabolomics data based on wavelet analysis.
+source_paper: Deng K et al. (2019), Analytica chimica acta, DOI: 10.1016/j.aca.2019.02.010, PMID: 30926040
+overall_reproducibility_score: 30/100
+
+workflow_steps: 1
+  Step 1: Batch effect detection via time trend analysis
+    tool: WaveICA
+    algorithm: wavelet transform + independent component analysis (ICA)
+    parameters: threshold_method=threshold processing, decomposition_level=None, wavelet_family=None, ICA_algorithm=infomax, number_of_components=None
+    input: feature table (peak intensity matrix)
+    output: batch-corrected feature table
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of input data format or preprocessing prior to WaveICA
+  - No specification of wavelet parameters (e.g., mother wavelet, decomposition level)
+  - No details on ICA implementation (e.g., number of components, convergence criteria)
+  - No public code or software repository linked
+  - No raw or processed data deposition reported
+  - No benchmark dataset identifiers or access instructions

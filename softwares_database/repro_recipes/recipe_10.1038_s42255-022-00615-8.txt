@@ -1,0 +1,128 @@
+========== reproducibility_recipe entry ==========
+paper_title: Analyzing cell-type-specific dynamics of metabolism in kidney repair.
+source_paper: Wang G et al. (2022), Nature metabolism, DOI: 10.1038/s42255-022-00615-8, PMID: 36008550
+overall_reproducibility_score: 42/100
+
+workflow_steps: 12
+  Step 1: Tissue sectioning and incubation with 13C-labeled nutrients
+    tool: Vibratome VT1200
+    parameters: section_thickness=350, section_thickness_unit=µm, slicing_speed=0.1, slicing_speed_unit=mm/second, vibration_amplitude=2, vibration_amplitude_unit=mm, incubation_time_max=2, incubation_time_unit=hours, incubation_temperature=37, incubation_co2=5, glucose_concentration=5, glucose_concentration_unit=mM, glutamine_concentration=500, glutamine_concentration_unit=µM, acetate_concentration=100, acetate_concentration_unit=µM, citrate_concentration=50, citrate_concentration_unit=µM, linoleic_acid_concentration=3, linoleic_acid_concentration_unit=mM, fcs_percentage=2, bsa_percentage_for_lipid_solubilization=1
+    input: fresh mouse kidney tissue
+    output: metabolically labeled tissue slices
+    confidence: high
+  Step 2: Cryosectioning and MALDI matrix deposition
+    tool: Cryostar NX70 cryostat, SunCollect sprayer
+    parameters: cryosection_thickness=10, cryosection_thickness_unit=µm, cryostat_temperature=-20, cryostat_temperature_unit=°C, matrix_solution_composition_vol_percent=['70', '25', '5'], matrix_solution_composition_solvents=['methanol', 'acetonitrile', 'deionized_water'], matrix_concentration=7, matrix_concentration_unit=mg/mL, matrix_layers_total=21, matrix_layer_flow_rates=[{'layers': '1-3', 'flow_rate': 5, 'flow_rate_unit': 'µL/min'}, {'layers': '4-6', 'flow_rate': 10, 'flow_rate_unit': 'µL/min'}, {'layers': '7-9', 'flow_rate': 15, 'flow_rate_unit': 'µL/min'}, {'layers': '10-21', 'flow_rate': 20, 'flow_rate_unit': 'µL/min'}], vacuum_drying_time=15, vacuum_drying_time_unit=minutes
+    input: gelatin-embedded tissue slices
+    output: matrix-coated tissue sections on ITO slides
+    confidence: high
+  Step 3: MALDI-TOF/TOF-MSI acquisition
+    tool: RapifleX MALDI-TOF/TOF
+    parameters: ion_mode=negative, pixel_size=['5x5', '20x20'], pixel_size_unit=µm², mass_range=[80, 1000], mass_range_unit=m/z, laser_shots_per_pixel=[15, 200], laser_repetition_rate=10, laser_repetition_rate_unit=kHz, calibration_standard=red phosphorus, external_calibration=True
+    input: matrix-coated tissue sections
+    output: raw MSI spectra (imzML format)
+    confidence: high
+  Step 4: MALDI-FTICR-MSI acquisition
+    tool: solariX 12 T FTICR
+    parameters: ion_mode=negative, pixel_size=50, pixel_size_unit=µm, mass_range=[100, 1000], mass_range_unit=m/z, laser_shots_per_pixel=30, data_points_transient=2000000, transient_length=0.5592, transient_length_unit=seconds, calibration_standard=red phosphorus, external_calibration=True
+    input: matrix-coated tissue sections
+    output: raw MSI spectra (imzML format)
+    confidence: high
+  Step 5: MSI data preprocessing and peak picking
+    tool: SCiLS Lab 2016b (v2016b)
+    algorithm: convolution-based baseline correction
+    parameters: normalization_method=total ion count (TIC), signal_to_noise_threshold=3, matrix_peak_exclusion=True, mz_feature_selection_criterion=presence in both TOF and FTICR datasets with similar spatial distribution
+    input: raw imzML spectra
+    output: peak table (m/z features × pixel intensities)
+    confidence: high
+  Step 6: Metabolite and lipid annotation
+    tool: mMass + HMDB
+    algorithm: mass error filtering
+    parameters: hmdb_url=https://hmdb.ca/, mass_error_threshold_ppm_fticr=5, mass_error_threshold_ppm_tof=20, re_calibration_required=True, isotope_pattern_matching=False, 13c_peak_selection_method=comparative (control vs labeled)
+    input: m/z feature lists from TOF and FTICR
+    output: annotated metabolite/lipid IDs with confidence levels
+    confidence: medium
+  Step 7: Natural isotope abundance correction
+    tool: IsoCorrectoR
+    algorithm: linear algebra-based correction
+    parameters: package=IsoCorrectoR, reference=34
+    input: TIC-normalized peak intensities
+    output: isotope-corrected intensities for 13C-labeled species
+    confidence: high
+  Step 8: Cell-type-specific pixel assignment via IF co-registration
+    tool: CaseViewer + MATLAB R2019a (vR2019a)
+    algorithm: pixel-wise staining intensity thresholding
+    parameters: staining_resolution_matching=5x5 µm², staining_intensity_cutoff=5, staining_intensity_cutoff_unit=%, staining_intensity_threshold_value=13, pixel_selection_criterion=fully covered MECA32/NPHS1 staining
+    input: IF-stained slide images + MSI pixel coordinates
+    output: cell-type-labeled pixel mask (endothelial, podocyte, etc.)
+    confidence: high
+  Step 9: UMAP dimensionality reduction and cell clustering
+    tool: Seurat 3.0 (R) (v3.0)
+    algorithm: SCTransform + UMAP
+    parameters: transformation_method=SCTransform, count_matrix_scaling_factor=100, dimensionality_reduction_algorithm=UMAP, r_version=4.0
+    input: isotope-corrected, cell-type-masked peak intensities
+    output: 2D UMAP embedding with cluster labels
+    confidence: high
+  Step 10: Metabolite production imputation across cell types
+    tool: Seurat 3.0 (R) (v3.0)
+    algorithm: anchor-based transfer (FindTransferAnchors + TransferData)
+    parameters: query_dataset=unlabeled lipid features only, reference_dataset=13C-labeling time-series MSI data, normalization_method=SCTransform, imputation_output=time-resolved 13C-enrichment per pixel per metabolite
+    input: cell-type-labeled MSI data (labeled and unlabeled)
+    output: imputed 13C-metabolite production matrix
+    confidence: high
+  Step 11: Isotopologue fraction enrichment calculation and pseudoimage generation
+    tool: Custom R/MATLAB
+    algorithm: isotopologue ratio normalization
+    parameters: enrichment_calculation=fraction = labeled_isotopologue / sum(all_isotopologues), AUC_normalization=normalized to total time, hotspot_removal_quantile=99, pseudoimage_generation=True
+    input: imputed 13C-production matrix + pixel coordinates
+    output: spatially resolved isotopologue enrichment maps (pseudoimages)
+    confidence: medium
+  Step 12: Trajectory analysis of metabolic dynamics
+    tool: Monocle3 (R)
+    algorithm: learn_graph + fit_models
+    parameters: reference=35, input_data=integrated Seurat dataset from 3 IRI kidneys
+    input: cell-type-clustered, imputed, time-resolved metabolite data
+    output: pseudotime-ordered metabolic trajectories
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 5
+  Fig. 1: [workflow_diagram]
+    caption: Schematic overview of the integrated MALDI-MSI, isotope tracing, immunofluorescence, and computational pipeline for cell-type-specific dynamic metabolic analysis.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    visualization_tool: Not specified
+  Fig. 2: [heatmap]
+    caption: Spatial heterogeneity of lipid species across kidney regions in IRI model, visualized via MALDI-MSI.
+    produced_by_step: [3, 4, 5, 6]
+    visualization_tool: flexImaging 5.0
+  Fig. 3: [line_plot]
+    caption: Time-resolved 13C-enrichment dynamics of central carbon metabolites in proximal tubule cells from sham kidneys.
+    produced_by_step: [10, 11]
+    visualization_tool: Not specified
+  Fig. 4: [line_plot]
+    caption: Altered 13C-enrichment kinetics in proximal tubule cells following bilateral ischemia-reperfusion injury.
+    produced_by_step: [10, 11, 12]
+    visualization_tool: Not specified
+  Extended Data Table 1: [table]
+    caption: List of lipid species identified in mouse kidney using complementary MALDI-TOF/TOF and MALDI-FTICR MS, including m/z, annotation, and detection mode.
+    produced_by_step: [4, 5, 6]
+    visualization_tool: Not specified
+
+reproducibility_gaps:
+  - Raw MALDI-MSI imaging data not deposited in public repository (e.g., MetaboLights, MassIVE)
+  - No code repository or scripts provided for Seurat/Monocle3 pipelines, MATLAB preprocessing, or IsoCorrectoR usage
+  - SCiLS Lab 2016b is commercial software requiring license; no open alternative workflow provided
+  - Exact gradient or acquisition parameters for RapifleX/FTICR not fully specified (e.g., laser focus, detector gain, accumulation settings)
+  - No details on statistical thresholds for cluster identification or trajectory significance testing
+  - CaseViewer and MATLAB are commercial tools with version-specific workflows not fully documented
+reproducibility_strengths:
+  - Detailed experimental protocols for tissue handling, labeling, and matrix application
+  - Explicit mass accuracy thresholds (±5 ppm for FTICR, ±20 ppm for TOF) and SNR criteria (≥3)
+  - Use of established open-source tools (Seurat 3.0, Monocle3, IsoCorrectoR, mMass, HMDB)
+  - Clear description of co-registration strategy between IF and MSI at matched resolution

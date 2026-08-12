@@ -1,0 +1,86 @@
+========== reproducibility_recipe entry ==========
+paper_title: Ion suppression correction and normalization for non-targeted metabolomics.
+source_paper: Mahmud I et al. (2025), Nature communications, DOI: 10.1038/s41467-025-56646-8, PMID: 39905052
+overall_reproducibility_score: 42/100
+
+workflow_steps: 8
+  Step 1: Sample preparation with IROA-IS spiking
+    tool: Manual protocol
+    parameters: spike_volume=40, spike_solution=IROA-IS dissolved in 1.2 mL H2O, extraction_solvent=8:2 methanol:water or dry ice-cooled methanol, centrifugation=16100 × g, 4 °C, 10 min, drying_method=centrifugal vacuum concentrator (SpeedVac), storage_temperature=-80
+    input: biological matrix (plasma, urine, cell pellets)
+    output: reconstituted extracts spiked with IROA-IS
+    confidence: high
+  Step 2: Chromatographic separation
+    tool: Thermo Vanquish / Dionex ICS-6000+ / Thermo UltiMate 3000
+    parameters: RPLC_column=Phenomenex Kinetex C18, 150 × 2.1 mm, 2.6 µm, RPLC_flow_rate=200, RPLC_gradient=0–5 min 5% B; 5–30 min 5–95% B; 30–40 min 95% B; 40–45 min 5% B; total 60 min, RPLC_mobile_phase_A=water + 10 mM ammonium acetate + 0.1% formic acid, RPLC_mobile_phase_B=methanol + 10 mM ammonium acetate + 0.1% formic acid, HILIC_column=Waters Xbridge BEH Amide, 100 × 4.6 mm, 3.5 µm, HILIC_flow_rate=300, HILIC_gradient=0–3 min 85% B; 3–10 min 85–30% B; 10–20 min 30–2% B; 20–25 min 2% B; 26–30 min 2–85% B; total 30 min, HILIC_mobile_phase_A=95/5 water/acetonitrile + 20 mM ammonium acetate + 20 mM ammonium hydroxide (pH~9), HILIC_mobile_phase_B=acetonitrile, IC_column=Thermo IonPac AS11, 250 × 2 mm, 4 µm, IC_flow_rate=360, IC_gradient=0–5 min 1% B; 5–25 min 1–35% B; 25–39 min 35–99% B; 39–49 min 99% B; 49–50 min 99–1% B; total 50 min, IC_mobile_phase_A=water, IC_mobile_phase_B=water + 100 mM KOH, column_temperature_RPLC=40, column_temperature_HILIC=30, column_temperature_IC=35, autosampler_temperature=4
+    input: reconstituted extracts
+    output: chromatographic raw data (.raw)
+    confidence: high
+  Step 3: Mass spectrometry acquisition
+    tool: Thermo Orbitrap Fusion Lumos Tribrid / Orbitrap IQ-X
+    parameters: scan_mode=full scan, mz_range=[70, 1400], resolution=240000, ionization_mode=['positive', 'negative'], spray_voltage_positive=3500, spray_voltage_negative=-2800, vaporizer_temperature=250, capillary_temperature=375, sheath_gas_pressure=35, aux_gas_pressure=10, sweep_gas_pressure=0, detector=Orbitrap
+    input: chromatographic eluent
+    output: raw .raw files
+    confidence: high
+  Step 4: Data conversion to mzXML
+    tool: ProteoWizard msConvert (v3.0.193336)
+    algorithm: peak picking by vendor
+    parameters: convert_ms1=True, convert_ms2=True, output_format=mzXML
+    input: Thermo .raw files
+    output: mzXML files
+    confidence: high
+  Step 5: Non-targeted peak detection and LTRS characterization
+    tool: ClusterFinder (v4.2.21)
+    algorithm: non-targeted mode
+    parameters: mode=non-targeted, reference_standard=IROA-LTRS
+    input: mzXML files (IROA-LTRS runs)
+    output: runtime libraries (Dual MSTUS Metabolite Lists)
+    confidence: high
+  Step 6: Metabolite annotation and quantification
+    tool: ClusterFinder (IROA TruQuant Workflow) (v4.2.21)
+    algorithm: isotopic pattern matching (5%/95% 13C), monoisotopic mass + carbon count → molecular formula
+    parameters: isotope_balance=95%:5% U-13C, carbon_range=[3, 50], identity_algorithm=comparison to IROA-LTRS, reporting_standard=IROA-defined tiers (e.g., Level 1–4)
+    input: mzXML files (experimental samples) + Dual MSTUS Metabolite Lists
+    output: quantitative table (raw, suppression-corrected, normalized intensities), annotation table (compound name, RT, m/z_12C, m/z_13C, reporting standard)
+    confidence: high
+  Step 7: Ion suppression correction
+    tool: IROA TruQuant Workflow (proprietary algorithm)
+    algorithm: Dual MSTUS normalization using IROA-IS and IROA-LTRS
+    parameters: correction_basis=ratio of 12C/13C peak intensities for each metabolite, suppression_factor=calculated per-metabolite from IROA-IS response deviation, normalization_strategy=Dual MSTUS (Metabolite-Specific Total Unlabeled Standard)
+    input: quantitative peak table + IROA-IS/LTRS response data
+    output: suppression-corrected and normalized feature table
+    confidence: medium
+  Step 8: Quality control and batch assessment
+    tool: Manual + ClusterFinder QC metrics
+    algorithm: CV-based QC (IROA-IS metabolites)
+    parameters: qc_metric=coefficient of variation (CV), acceptance_threshold_cv=20, qc_frequency=IROA-LTRS every 20 samples, blank_types=['distilled water blank', 'process blank', 'IS-only control', 'extract-only control']
+    input: suppression-corrected feature table + QC injections
+    output: batch quality report, flagged samples
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 1
+  Fig. 2: [workflow_diagram]
+    caption: Brief workflow of the IROA 13C labeling process and TruQuant protocol.
+    produced_by_step: [1, 5, 6]
+    visualization_tool: not specified
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository
+  - Processed data and metadata not publicly available
+  - ClusterFinder software is commercial and not openly accessible
+  - IROA TruQuant Workflow algorithms are proprietary and not disclosed
+  - No code repository or script sharing for Dual MSTUS implementation
+  - Exact IROA-LTRS compound list only in Supplementary Table 5 (not linked or described in methods text)
+  - No details on how suppression factors are mathematically computed (black-box correction)
+reproducibility_strengths:
+  - Detailed chromatographic and MS acquisition parameters provided
+  - Full sample preparation SOP including volumes, temperatures, centrifugation specs
+  - Explicit IROA-IS and LTRS preparation protocol described
+  - QC design clearly outlined (blanks, controls, LTRS frequency, CV threshold)

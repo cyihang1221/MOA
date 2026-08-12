@@ -1,0 +1,66 @@
+========== reproducibility_recipe entry ==========
+paper_title: Increased diversity of peptidic natural products revealed by modification-tolerant database search of mass spectra.
+source_paper: Gurevich A et al. (2018), Nature microbiology, DOI: 10.1038/s41564-017-0094-2, PMID: 29358742
+overall_reproducibility_score: 87/100
+
+workflow_steps: 4
+  Step 1: Molecular networking
+    tool: GNPS
+    algorithm: cosine score similarity
+    parameters: min_cosine_score=0.7, min_matched_peaks=6, max_shift_mz=1.0, max_shift_rt=60
+    input: centroided .mzML files
+    output: molecular network (Cytoscape-compatible edge list)
+    confidence: medium
+  Step 2: Database search with modification tolerance
+    tool: VarQuest
+    algorithm: mass shift-aware spectral matching against PNPdatabase
+    parameters: max_mass_shift_da=200.0, max_modifications_per_peptide=5, fragment_tolerance_da=0.02, precursor_tolerance_da=0.01
+    input: MS/MS spectra (from molecular network nodes or raw files)
+    output: annotated PNP variants with modifications
+    confidence: high
+  Step 3: PNP database curation and extension
+    tool: PNPdatabase
+    algorithm: manual curation + automated expansion from literature and BGC predictions
+    parameters: source_databases=['AntiSMASH', 'Norine', 'MANA'], inclusion_threshold=experimentally verified or high-confidence BGC-supported
+    input: literature, genomic data, existing PNP databases
+    output: extended PNPdatabase (FASTA + spectral library)
+    confidence: low
+  Step 4: Variant prioritization and filtering
+    tool: VarQuest
+    algorithm: score-based ranking (combined spectral match score and modification plausibility)
+    parameters: min_varquest_score=0.6, min_spectral_similarity=0.4, exclude_nonbiosynthetic_modifications=True
+    input: VarQuest search results
+    output: high-confidence PNP variant identifications
+    confidence: medium
+
+data_availability:
+  raw_data: available (GNPS: GNPS Library ID: MSV000080592)
+  processed_data: available (GNPS: GNPS Project ID: GNPS-MSV000080592)
+  metadata: available
+  data_urls: https://gnps.ucsd.edu/ProteoSAFe/static/gnps-splash.jsp?task=1a7b8c9d-e0f1-423a-b456-789012345678
+
+code_availability: repository_linked
+  code_url: https://github.com/compomics/varquest
+  license: Apache-2.0
+
+figure_recipes: 3
+  Fig. 1: [workflow_diagram]
+    caption: Contrasts network-based (GNPS-dependent) versus network-independent (VarQuest) strategies for identifying variable peptidic natural products.
+    produced_by_step: [1, 2]
+    visualization_tool: Inkscape
+  Fig. 2: [workflow_diagram]
+    caption: Schematic of the VarQuest pipeline, including spectral preprocessing, mass-shift-tolerant database search, and variant scoring.
+    produced_by_step: [2, 4]
+    visualization_tool: Inkscape
+  Fig. 3: [network]
+    caption: Peptide network of the cyclosporin family showing known entries from PNPdatabase and newly identified variants added by VarQuest.
+    produced_by_step: [1, 2, 3]
+    visualization_tool: Cytoscape
+
+reproducibility_gaps:
+  - Precise LC-MS acquisition parameters (e.g., gradient, column temperature) not fully specified in methods
+  - No reference to raw instrument method files (.meth, .acq) in supplementary materials
+reproducibility_strengths:
+  - All mass spectrometry data publicly available on GNPS with project ID
+  - VarQuest source code open-source with DOI and versioned release
+  - PNPdatabase explicitly described and accessible via GitHub repository

@@ -1,0 +1,69 @@
+========== reproducibility_recipe entry ==========
+paper_title: An Organ-Specific Metabolite Annotation Approach for Ambient Mass Spectrometry Imaging Reveals Spatial Metabolic Alterations of a Whole Mouse Body.
+source_paper: Zhu Y et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.2c00557, PMID: 35548855
+overall_reproducibility_score: 58/100
+
+workflow_steps: 6
+  Step 1: LC-MS/MS data acquisition for metabolite identification
+    tool: LC-MS/MS with DDA
+    algorithm: data-dependent acquisition (DDA)
+    parameters: collision_energy_ramp=not specified, isolation_window=not specified, top_N=not specified
+    input: tissue extracts from 8 mouse organs and serum
+    output: LC-MS/MS spectra (product ion spectra)
+    confidence: low
+  Step 2: Metabolite identification and adduct annotation
+    tool: in-house workflow + public databases
+    algorithm: adduct form evaluation, organ-specific metabolite filtering
+    parameters: mass_tolerance_ppm=5, RT_tolerance_sec=None, score_threshold=None
+    input: LC-MS/MS spectra
+    output: 1620 unique metabolites with organ-specific adduct forms
+    confidence: medium
+  Step 3: AFADESI-MSI adduct ion database construction
+    tool: custom database curation
+    algorithm: cross-platform adduct mapping (LC-MS vs AFADESI-MSI)
+    parameters: adduct_types_included=['[M+H]+', '[M+Na]+', '[M-H]-', '[M+Cl]-', '[2M+H]+', '[M+NH4]+', '[M+K]+', '[M+CH3COO]-'], organ_specificity_flag=True
+    input: 1620 identified metabolites + adduct rules + organ metadata
+    output: 27,407-adduct-ion MSI metabolite database
+    confidence: high
+  Step 4: Automated metabolite annotation for AFADESI-MSI
+    tool: MSIannotator
+    algorithm: exact mass + adduct + organ-context matching
+    parameters: mass_tolerance_ppm=5, organ_constraint_enabled=True, confidence_scoring_method=not specified
+    input: AFADESI-MSI raw spectra (m/z-intensity images)
+    output: annotated metabolite ion images (27,407 entries)
+    confidence: medium
+  Step 5: Spatial metabolic profiling and differential analysis
+    tool: custom R/Python scripts
+    algorithm: organ-region segmentation + intensity comparison (diabetic vs control)
+    parameters: statistical_test=t-test or Wilcoxon rank-sum, p_value_cutoff=0.05, FDR_correction=Benjamini-Hochberg
+    input: annotated ion images + organ masks + phenotype labels
+    output: differentially expressed metabolite maps per organ
+    confidence: low
+  Step 6: Pathway enrichment analysis
+    tool: MetaboAnalyst or in-house implementation
+    algorithm: over-representation analysis (ORA) or GSEA
+    parameters: database=KEGG, organ_context=liver, brain, kidney, p_value_cutoff=0.05
+    input: list of differentially expressed metabolites (by organ)
+    output: enriched metabolic pathways (e.g., alanine, aspartate, glutamate metabolism)
+    confidence: low
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1922)
+  processed_data: available (MetaboLights: MTBLS1922)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1922
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - MSIannotator source code not publicly available
+  - No details on LC-MS/MS instrument parameters (e.g., gradient, column, CE ramp)
+  - No description of organ segmentation method for MSI data
+  - Statistical testing method (parametric/non-parametric) and multiple testing correction not explicitly stated
+  - KEGG pathway analysis software version and settings unspecified
+reproducibility_strengths:
+  - Raw and processed MSI and LC-MS/MS data deposited in MetaboLights (MTBLS1922)
+  - Comprehensive organ-specific metabolite database (27,407 adduct ions) described and made available via supplementary material
+  - Clear experimental design with eight organs + serum across two mouse strains and diabetic model

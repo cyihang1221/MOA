@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: Mass Spectrometry Fingerprints of Small-Molecule Metabolites in Biofluids: Building a Spectral Library of Recurrent Spectra for Urine Analysis.
+source_paper: Simón-Manso Y et al. (2019), Analytical chemistry, DOI: 10.1021/acs.analchem.9b02977, PMID: 31424920
+overall_reproducibility_score: 52/100
+
+workflow_steps: 4
+  Step 1: LC-ESI-MS data acquisition
+    tool: liquid chromatography-mass spectrometry
+    input: urine biofluid samples
+    output: raw .raw or .d files (vendor format)
+    confidence: low
+  Step 2: Spectral processing and recurrent spectrum extraction
+    tool: NIST MS Search + custom spectral recurrence detection
+    algorithm: recurrent spectrum identification across multiple urine profiles
+    parameters: min_occurrence=3, similarity_threshold=0.7
+    input: raw LC-ESI-MS datasets
+    output: library of recurrent unidentified spectra
+    confidence: medium
+  Step 3: Library integration with NIST tandem mass spectral library
+    tool: NIST Mass Spectral Library (MS/MS) (vv2.3 (or later, unspecified))
+    algorithm: spectral matching using probability-based scoring
+    parameters: mass_tolerance_ppm=5, cosine_similarity_threshold=0.7
+    input: recurrent spectra + NIST MS/MS library
+    output: integrated searchable spectral library
+    confidence: medium
+  Step 4: Metabolite fingerprinting and class-specific annotation (acylcarnitines)
+    tool: custom workflow (not named)
+    algorithm: targeted spectral matching + retention time consistency
+    parameters: rt_window_min=0.2, ion_mode=positive
+    input: integrated spectral library + urine LC-MS/MS data
+    output: annotated acylcarnitine fingerprint table
+    confidence: low
+
+data_availability:
+  raw_data: in_paper_only (NIST Mass Spectrometry Data Center: N/A (no accession provided))
+  processed_data: available (NIST Mass Spectrometry Data Center: freely available online)
+  metadata: in_paper_only
+  data_urls: https://www.nist.gov/srd/nist-standard-reference-data
+
+code_availability: mentioned_no_link
+  license: freely available
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS data not deposited in public repository with accession ID
+  - No description of LC gradient, column, or instrument parameters
+  - Custom spectral recurrence algorithm not disclosed or shared
+  - No version or download link for the derived acylcarnitine library or software
+  - NIST MS Search is commercial software requiring license
+reproducibility_strengths:
+  - Integrated spectral library made freely available via NIST
+  - Workflow described at conceptual level for generalizability to other biofluids
+  - Focus on recurrent spectra addresses real-world untargeted metabolomics challenge

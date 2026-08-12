@@ -1,0 +1,75 @@
+========== reproducibility_recipe entry ==========
+paper_title: An Untargeted Metabolomics Workflow that Scales to Thousands of Samples for Population-Based Studies.
+source_paper: Stancliffe E et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.2c01270, PMID: 36475608
+overall_reproducibility_score: 42/100
+
+workflow_steps: 7
+  Step 1: Reference sample construction
+    tool: custom
+    algorithm: pooling
+    parameters: pooling_strategy=equal-volume aliquots from all cohort biospecimens
+    input: raw biospecimens (plasma)
+    output: pooled reference sample
+    confidence: high
+  Step 2: LC-MS acquisition of reference sample
+    tool: LC-MS platform
+    parameters: runs=3, instrument_platform=not specified
+    input: pooled reference sample
+    output: raw .raw or .d files
+    confidence: medium
+  Step 3: Feature detection and alignment on reference runs
+    tool: XCMS
+    algorithm: centWave or similar (implied by conventional XCMS usage)
+    parameters: method=centWave, peakwidth=[10, 60], ppm=10, snthresh=10
+    input: raw .raw/.d files (reference runs)
+    output: feature table (m/z, RT, intensity)
+    confidence: medium
+  Step 4: Feature filtering to retain biologically relevant compounds
+    tool: established informatics tools
+    algorithm: intensity-based and quality-based filtering
+    parameters: min_samples=2, min_intensity=1000, presence_in_reference_runs=True
+    input: XCMS feature table
+    output: curated reference feature list (m/z + RT pairs)
+    confidence: low
+  Step 5: Targeted extraction of curated features from all cohort samples
+    tool: Skyline
+    algorithm: targeted peak integration
+    parameters: mz_tolerance_ppm=10, rt_tolerance_sec=15, integration_method=smoothed chromatogram
+    input: raw .raw/.d files (all >2000 samples) + curated reference feature list
+    output: quantitative peak area matrix (samples × features)
+    confidence: high
+  Step 6: Batch correction
+    tool: custom random forest implementation
+    algorithm: random forest regression
+    parameters: n_trees=100, max_features=sqrt, cross_validation_folds=5
+    input: quantitative peak area matrix
+    output: batch-corrected quantitative matrix
+    confidence: medium
+  Step 7: Statistical analysis and pattern discovery
+    tool: unknown (likely R/Python)
+    algorithm: unsupervised clustering / PCA / association testing
+    parameters: geographic_location_as_covariate=True, FDR_correction=Benjamini-Hochberg
+    input: batch-corrected quantitative matrix
+    output: geographically associated metabolite profiles
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS data not deposited in public repository
+  - Custom random forest batch correction code not shared
+  - No details on Skyline configuration (e.g., integration settings, transition lists)
+  - Instrument method parameters (gradient, column, flow rate) not specified
+  - XCMS parameter values only partially reported
+  - No accession ID or repository for the >2000 plasma samples
+reproducibility_strengths:
+  - Workflow design explicitly addresses scalability
+  - Use of open-source XCMS and free Skyline software
+  - Empirical comparison of 14 batch correction methods reported

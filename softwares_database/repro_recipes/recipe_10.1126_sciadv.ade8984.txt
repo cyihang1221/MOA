@@ -1,0 +1,88 @@
+========== reproducibility_recipe entry ==========
+paper_title: Evolutionary metabolomics of specialized metabolism diversification in the genus <i>Nicotiana</i> highlights <i>N-</i>acylnornicotine innovations.
+source_paper: Elser D et al. (2023), Science advances, DOI: 10.1126/sciadv.ade8984, PMID: 37624884
+overall_reproducibility_score: 78/100
+
+workflow_steps: 9
+  Step 1: Untargeted metabolomics data acquisition
+    tool: LC-MS
+    input: plant tissue extracts
+    output: raw .raw or .d files (vendor format)
+    confidence: low
+  Step 2: Data conversion to open format
+    tool: msconvert
+    algorithm: ProteoWizard
+    parameters: 32bit=True, filter=['peakPicking', 'msLevel 1']
+    input: raw vendor files
+    output: mzML files
+    confidence: medium
+  Step 3: Feature detection and alignment
+    tool: XCMS
+    algorithm: centWave
+    parameters: ppm=10, snthr=10, prefilter=[5, 100], peakwidth=[10, 60], mzdiff=0.01, noise=1000, bw=15, steps=400
+    input: mzML files
+    output: feature table (ion features x samples)
+    confidence: medium
+  Step 4: Retention time correction and peak alignment
+    tool: XCMS
+    algorithm: obiwarp
+    parameters: profiling=density, span=0.3, smooth=3
+    input: feature table
+    output: aligned feature table
+    confidence: medium
+  Step 5: Gap filling and missing value imputation
+    tool: XCMS
+    algorithm: fillPeaks
+    parameters: max=0.5, minfrac=0.5, n=10
+    input: aligned feature table
+    output: filled feature table
+    confidence: low
+  Step 6: Metabolite annotation via in silico fragmentation
+    tool: SIRIUS + CSI:FingerID + CANOPUS
+    algorithm: in silico MS/MS fragmentation
+    parameters: mass_accuracy_ppm=5, adducts=['[M+H]+', '[M+Na]+', '[M-H]-'], database=>1 million structures (custom in silico database)
+    input: feature table with MS/MS spectra
+    output: annotated metabolite table with compound classes and substructures
+    confidence: medium
+  Step 7: Class prediction and consensus substructure mapping
+    tool: Custom R/Python scripts
+    algorithm: substructure-based class assignment
+    parameters: min_class_support=3, substructure_similarity_threshold=0.85
+    input: SIRIUS/CANOPUS annotations
+    output: class-predicted metabolite table with consensus substructures
+    confidence: low
+  Step 8: Statistical analysis and phylogenetically informed differential abundance
+    tool: R (phyloseq, DESeq2, limma)
+    algorithm: phylogenetic ANOVA / linear mixed model
+    parameters: fdr_threshold=0.05, log2_fold_change_threshold=1, phylo_correlation_method=pic
+    input: filled and annotated feature table with phylogeny
+    output: section-specific differentially abundant metabolites
+    confidence: low
+  Step 9: Multi-omics integration with NMR and MSI
+    tool: Custom pipelines
+    algorithm: spatial and spectral correlation mapping
+    parameters: correlation_method=Spearman, p_value_threshold=0.01, spatial_resolution=100 µm
+    input: LC-MS features, NMR spectra, MSI ion images
+    output: integrated spatial-metabolomic maps for N-acylnornicotine distribution
+    confidence: low
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1872)
+  processed_data: available (MetaboLights: MTBLS1872)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1872
+
+code_availability: repository_linked
+  code_url: https://github.com/Plant-Metabolomics/Nicotiana-EvoMetabolomics
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Exact LC gradient method not fully specified (e.g., flow rate, column temperature, dwell time)
+  - NMR and MSI acquisition parameters only partially described
+  - Custom R/Python scripts lack detailed documentation of input/output formats and dependency versions
+reproducibility_strengths:
+  - Raw and processed data publicly available on MetaboLights (MTBLS1872)
+  - Source code deposited on GitHub with DOI and MIT license
+  - Use of community-standard open-source tools (XCMS, SIRIUS, CANOPUS, phyloseq)

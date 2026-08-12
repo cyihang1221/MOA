@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: Using clusterProfiler to characterize multiomics data.
+source_paper: Xu S et al. (2024), Nature protocols, DOI: 10.1038/s41596-024-01020-z, PMID: 39019974
+overall_reproducibility_score: 75/100
+
+workflow_steps: 1
+  Step 1: Multiomics data integration and functional enrichment analysis
+    tool: clusterProfiler
+    algorithm: over-representation analysis (ORA) and gene set enrichment analysis (GSEA)
+    input: gene/metabolite/gene-set identifiers (e.g., KEGG IDs, GO terms, metabolite HMDB/KEGG IDs mapped to pathways)
+    output: enriched biological pathways, functional profiles, visualization-ready results
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+  data_urls: https://doi.org/10.1038/s41596-024-01020-z, https://bioconductor.org/packages/clusterProfiler/
+
+code_availability: repository_linked
+  code_url: https://bioconductor.org/packages/clusterProfiler/
+  license: Artistic-2.0
+
+figure_recipes: 4
+  Figure 1: [workflow_diagram]
+    caption: Overview of the protocol illustrating how clusterProfiler enables multiomics characterization across metabolomics, metagenomics, transcription factor analysis, and single-cell annotation.
+    produced_by_step: [1]
+    visualization_tool: clusterProfiler built-in plotting functions (e.g., dotplot, enrichmap, gseaplot)
+  Figure 2: [bar_chart]
+    caption: Comparison of functional profiles among distinct subtypes of inflammatory bowel disease (IBD), showing enriched pathways differentially active across subtypes.
+    produced_by_step: [1]
+    visualization_tool: clusterProfiler (dotplot/enrichment barplot)
+    statistical_test: hypergeometric test (ORA) or GSEA p-value/FDR
+  Figure 3: [bar_chart]
+    caption: Biological function characterization of transcription factors responding to cold stress in bamboo, highlighting enriched stress-response and regulatory pathways.
+    produced_by_step: [1]
+    visualization_tool: clusterProfiler (dotplot/enrichment barplot)
+    statistical_test: hypergeometric test (ORA) or GSEA p-value/FDR
+  Figure 4: [heatmap]
+    caption: Cell-type identification at single-cell level using functional enrichment of marker gene sets, visualized as a heatmap of pathway enrichment scores across clusters.
+    produced_by_step: [1]
+    visualization_tool: clusterProfiler + custom heatmap (e.g., pheatmap or ComplexHeatmap)
+    statistical_test: hypergeometric test (ORA) or GSEA p-value/FDR
+
+reproducibility_gaps:
+  - No raw or processed multiomics datasets provided or deposited in public repositories
+  - Specific input data formats (e.g., metabolite-to-pathway mapping strategy, taxonomic-metabolic integration method) not detailed
+  - No executable code/scripts shared for the three use cases (IBD, bamboo stress, scRNA-seq)
+  - No description of preprocessing steps prior to clusterProfiler (e.g., metabolite ID mapping, orthology inference, feature filtering)
+reproducibility_strengths:
+  - clusterProfiler is open-source, well-documented, and Bioconductor-hosted
+  - All cited use cases reference peer-reviewed publications with potentially available data/code
+  - Protocol explicitly supports metabolomics, metagenomics, and single-cell data — confirmed by examples in figures

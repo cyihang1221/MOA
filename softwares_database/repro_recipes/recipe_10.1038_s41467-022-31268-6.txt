@@ -1,0 +1,124 @@
+========== reproducibility_recipe entry ==========
+paper_title: Global stable-isotope tracing metabolomics reveals system-wide metabolic alternations in aging Drosophila.
+source_paper: Wang R et al. (2022), Nature communications, DOI: 10.1038/s41467-022-31268-6, PMID: 35725845
+overall_reproducibility_score: 72/100
+
+workflow_steps: 10
+  Step 1: Stable-isotope labeling in vivo
+    tool: custom_protocol
+    algorithm: pulse-chase with [U-13C]-glucose
+    parameters: isotope=[U-13C]-glucose, dose=10%, duration_hours=[0, 1, 3, 6, 12, 24], organism=Drosophila melanogaster (male, w1118), age_groups=['3d', '30d'], biological_replicates=10, tissue_types=['head', 'muscle'], pool_size=15, starvation_duration_h=6
+    input: live flies
+    output: frozen tissue extracts
+    confidence: high
+  Step 2: Metabolite extraction
+    tool: custom_protocol
+    algorithm: cold organic solvent extraction
+    parameters: solvent_ratio_ACN_MeOH=1:1, solvent_volume_μL=800, homogenization_beads=20 × 0.1 mm ceramic, sonication_frequency_Hz=50, sonication_temperature_C=4, sonication_duration_min=10, protein_precipitation_temperature_C=-20, precipitation_duration_h=2, centrifugation_g=16200, centrifugation_duration_min=15, centrifugation_temperature_C=4, reconstitution_solvent_ratio_ACN_H2O=1:1, reconstitution_volume_μL=100
+    input: frozen tissue
+    output: dried extract reconstituted in ACN:H2O
+    confidence: high
+  Step 3: LC–MS data acquisition (Orbitrap Exploris 480)
+    tool: Thermo Xcalibur (v4.4.16.14)
+    algorithm: full-scan + ddMS2 polarity switching
+    parameters: instrument=Thermo Exploris 480, chromatography_mode=['HILIC', 'RP'], column_HILIC=Waters ACQUITY UPLC BEH Amide, 1.7 μm, 100×2.1 mm, column_RP=Phenomenex Kinetex C18, 2.6 μm, 100×2.1 mm, column_temperature_C=25, flow_rate_HILIC_mL/min=0.5, flow_rate_RP_mL/min=0.3, injection_volume_μL=2, scan_mode=full_scan_polarity_switching, resolution_full_scan=60000, AGC_target_full_scan=1000000, max_injection_time_ms=100, scan_range_mz=[70, 1200], ddMS2_resolution=30000, AGC_target_ddMS2=100000, max_injection_time_ddMS2_ms=60, top_N=6, isolation_width_mz=1.0, collision_energy_percent=[20, 30, 40], dynamic_exclusion_s=4, spray_voltage_V_positive=3500, spray_voltage_V_negative=-2800, aux_gas_heater_temp_C=350, sheath_gas_arb=50, aux_gas_arb=15, capillary_temp_C=400
+    input: reconstituted extracts
+    output: Thermo .raw files
+    confidence: high
+  Step 4: LC–MS data acquisition (Sciex TripleTOF 6600)
+    tool: Sciex Analyst TF (v1.7.1)
+    algorithm: IDA (information-dependent acquisition)
+    parameters: instrument=Sciex TripleTOF 6600, chromatography_mode=HILIC, column=Waters ACQUITY UPLC BEH Amide, 1.7 μm, 100×2.1 mm, ion_source_gas1_psi=60, ion_source_gas2_psi=60, curtain_gas_psi=35, temperature_C=600, ion_spray_voltage_V_positive=5000, ion_spray_voltage_V_negative=-4000, declustering_potential_V_positive=60, declustering_potential_V_negative=-60, TOF_MS_scan_range_mz=[60, 1200], product_ion_scan_range_mz=[25, 1200], TOF_MS_accumulation_time_ms=150, product_ion_accumulation_time_ms=30, collision_energy_eV=30, collision_energy_spread_eV=0, unit_resolution_selection=True, IDA_charge_state=1, IDA_intensity_threshold_cps=100, IDA_mass_tolerance_ppm=10, IDA_max_candidate_ions=12, IDA_exclude_former_target_ions_s=4, IDA_exclude_isotopes_within_Da=4, IDA_dynamic_background_subtraction=True
+    input: reconstituted extracts
+    output: Sciex .wiff files
+    confidence: high
+  Step 5: Raw data conversion
+    tool: ProteoWizard (v3.0.20360 (Orbitrap), 3.0.6150 (TripleTOF))
+    algorithm: file format conversion
+    parameters: input_format_Orbitrap=.raw, output_format_Orbitrap=['.mzXML', '.mgf'], input_format_TripleTOF=.wiff, output_format_TripleTOF=.mzXML
+    input: .raw or .wiff files
+    output: .mzXML (MS1), .mgf (MS2)
+    confidence: high
+  Step 6: Peak detection and alignment
+    tool: XCMS (v3.12.0 (Orbitrap), 1.46.0 (TripleTOF))
+    algorithm: centWave
+    parameters: method=centWave, ppm_Orbitrap=10, ppm_TripleTOF=25, snthr=10, peakwidth=[5, 30], minfrac=0.5
+    input: .mzXML files (unlabeled samples only)
+    output: xcmsSet object (.Rda), peak table (MS1)
+    confidence: high
+  Step 7: Metabolite annotation
+    tool: MetDNA (v1.2.2)
+    algorithm: spectral library matching + MS/MS network propagation
+    parameters: lc_mode=['HILIC', 'RP'], instrument_platform=['Thermo Exploris', 'Sciex TripleTOF'], collision_energy_setting=['30', 'SNCE_20_30_40%'], ionization_mode=['positive', 'negative'], filter_isotopes=True, filter_grade_4=True, filter_redundant_peaks=True, keep_adducts=['[M+H]+', '[M+Na]+', '[M+NH4]+', '[M-H]-', '[M+Cl]-', '[M-H-H2O]-'], annotation_confidence_levels=['MSI Level 1', 'MSI Level 2', 'MSI Level 3']
+    input: xcmsSet object, MS2 files (.mgf or .mzXML)
+    output: annotated metabolite table with confidence levels
+    confidence: high
+  Step 8: Formula prediction and annotation refinement
+    tool: MS-Finder (v3.24)
+    algorithm: in silico formula generation + spectral scoring
+    parameters: top_candidates=5, elemental_constraints=C H N O P S Cl Br I, mass_accuracy_ppm=10
+    input: MS1 peak table, MS2 spectra
+    output: refined annotation table (Supplementary Data 1–3)
+    confidence: medium
+  Step 9: Isotopic tracing quantification and kinetic modeling
+    tool: MetTracer
+    algorithm: isotopologue distribution analysis
+    parameters: labeling_timepoints_h=[0, 1, 3, 6, 12, 24], metabolic_network_context=curated_system-wide_metabolic_network, normalization_method=internal_standard_or_total_signal, correction_for_natural_abundance=True
+    input: annotated peak table with isotopic patterns
+    output: fractional enrichment, labeling rates, metabolic flux estimates
+    confidence: low
+  Step 10: Statistical and systems-level analysis
+    tool: custom_R_scripts
+    algorithm: PCA, correlation network analysis, pathway enrichment, inter-tissue coordination metrics
+    parameters: statistical_tests=['t-test', 'ANOVA'], multivariate_methods=['PCA', 'correlation_clustering'], pathway_database=KEGG, coordination_metric=inter-tissue_metabolite_correlation_decay
+    input: MetTracer output (labeling kinetics, enrichment)
+    output: differential labeling, system-wide coordination loss, pathway activity scores
+    confidence: low
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1723)
+  processed_data: in_paper_only (Supplementary Data 1–3)
+  metadata: in_paper_only
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1723
+
+code_availability: mentioned_no_link
+
+figure_recipes: 5
+  Fig. 1: [workflow_diagram]
+    caption: Schematic of global stable-isotope tracing metabolomics platform integrating in vivo labeling, multi-platform LC–MS, and system-wide network analysis.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    visualization_tool: Adobe Illustrator
+  Fig. 2: [line_plot]
+    caption: Time-resolved isotopic labeling kinetics across 1035 metabolites in Drosophila head and muscle tissues at 3d and 30d ages.
+    produced_by_step: [9]
+    visualization_tool: ggplot2 (R)
+    statistical_test: two-way ANOVA (age × time)
+  Fig. 3: [heatmap]
+    caption: Hierarchical clustering of metabolite labeling profiles showing tissue-specific and age-dependent differences.
+    produced_by_step: [9, 10]
+    visualization_tool: pheatmap (R)
+    statistical_test: Pearson correlation + Ward’s clustering
+  Fig. 4: [network]
+    caption: Curated system-wide metabolic network highlighting loss of inter- and intra-tissue coordination during aging.
+    produced_by_step: [10]
+    visualization_tool: Cytoscape
+    statistical_test: correlation decay significance (permutation test)
+  Fig. 5: [bar_chart]
+    caption: Relative enrichment shift from glycolytic intermediates to serine and purine pathway metabolites in aged flies.
+    produced_by_step: [9, 10]
+    visualization_tool: GraphPad Prism
+    statistical_test: unpaired t-test (3d vs 30d, p < 0.05 with FDR correction)
+
+reproducibility_gaps:
+  - MetTracer software not publicly available or documented; no version or repository link provided
+  - Custom R scripts for systems-level analysis (Step 10) not shared
+  - No detailed description of the 'curated system-wide metabolic network' construction (e.g., reaction stoichiometry, compartmentalization)
+  - Internal standard or normalization strategy for isotopic quantification not specified
+  - Gradient profiles for RP mode on TripleTOF not reported (only Orbitrap RP gradient described)
+  - PRC2 mutant re-analysis data retrieved from prior study but raw files not linked to MTBLS1723
+reproducibility_strengths:
+  - Raw data deposited in MetaboLights (MTBLS1723) with full metadata
+  - All major open-source tools explicitly versioned (XCMS, ProteoWizard)
+  - Detailed LC–MS parameters for both platforms (Orbitrap & TripleTOF)
+  - Explicit MSI confidence level assignment per metabolite
+  - Biological replication fully described (n=10 per group, pooling strategy, dissection timing)

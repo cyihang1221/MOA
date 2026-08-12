@@ -12,6 +12,7 @@ from src.platform_utils import resolve_rscript
 from web_frontend.backend.export.editable_export import ensure_editable_sidecars
 from web_frontend.backend.session_metadata import (
     ensure_aligned_metadata_csv,
+    ensure_metadata_from_inputs,
     resolve_metadata_csv,
     sample_ids_from_feature_table,
 )
@@ -190,6 +191,85 @@ _GROUP_GUARD_CLOSE = """
 # ============================= Session Info =============================
 """
 
+_MIXOMICS_FN_KWARGS = frozenset({
+    "ncomp_pca",
+    "ncomp_plsda",
+    "scale_method",
+    "top_n_heatmap",
+    "seed",
+    "vip_threshold",
+    "pvalue_threshold",
+    "padj_threshold",
+    "log2fc_threshold",
+    "use_fdr",
+})
+
+_METADATA_GROUP_CHECK_OLD = """if (!all(c("Sample", "Group") %in% colnames(metadata))) {{
+    stop("metadata must contain Sample and Group columns")
+}}"""
+
+_METADATA_GROUP_CHECK_NEW = """group_col <- Sys.getenv("MASS_MIXOMICS_GROUP_COLUMN", unset = "Group")
+if (!nzchar(group_col)) group_col <- "Group"
+if (!"Sample" %in% colnames(metadata)) {{
+    stop("metadata must contain Sample column")
+}}
+if (!group_col %in% colnames(metadata)) {{
+    stop(paste0("metadata must contain column: ", group_col))
+}}"""
+
+_Y_FACTOR_OLD = "Y <- factor(metadata$Group)"
+_Y_FACTOR_NEW = "Y <- factor(metadata[[group_col]])"
+
+_VOLCANO_COND_OLD = """if (nlevels(Y) == 2) {{
+
+    idx1 <- which(Y == levels(Y)[1])
+    idx2 <- which(Y == levels(Y)[2])
+"""
+
+_VOLCANO_COND_NEW = """contrast_g1 <- Sys.getenv("MASS_MIXOMICS_CONTRAST_G1", unset = "")
+contrast_g2 <- Sys.getenv("MASS_MIXOMICS_CONTRAST_G2", unset = "")
+volcano_do <- nlevels(Y) == 2
+if (!volcano_do && nzchar(contrast_g1) && nzchar(contrast_g2)) {{
+    volcano_do <- contrast_g1 %in% levels(Y) && contrast_g2 %in% levels(Y)
+}}
+if (volcano_do) {{
+
+    if (nlevels(Y) > 2) {{
+        idx1 <- which(Y == contrast_g1)
+        idx2 <- which(Y == contrast_g2)
+    }} else {{
+        idx1 <- which(Y == levels(Y)[1])
+        idx2 <- which(Y == levels(Y)[2])
+    }}
+"""
+
+
+def _patch_mixomics_r_script(text: str) -> str:
+    text = _patch_mixomics_source(text)
+    if _METADATA_GROUP_CHECK_OLD in text:
+        text = text.replace(_METADATA_GROUP_CHECK_OLD, _METADATA_GROUP_CHECK_NEW)
+    if _Y_FACTOR_OLD in text:
+        text = text.replace(_Y_FACTOR_OLD, _Y_FACTOR_NEW)
+    if _VOLCANO_COND_OLD in text:
+        text = text.replace(_VOLCANO_COND_OLD, _VOLCANO_COND_NEW)
+    return text
+
+
+def _maybe_patch_rscript_file(cmd: list) -> list:
+    if len(cmd) < 2:
+        return cmd
+    r_path = Path(str(cmd[1]))
+    if r_path.suffix.lower() != ".r" or not r_path.is_file():
+        return cmd
+    try:
+        text = r_path.read_text(encoding="utf-8")
+        patched = _patch_mixomics_r_script(text)
+        if patched != text:
+            r_path.write_text(patched, encoding="utf-8")
+    except OSError:
+        pass
+    return cmd
+
 
 def _patch_mixomics_source(text: str) -> str:
     text = text.replace("\r\n", "\n").replace("✓", "OK")
@@ -256,14 +336,12 @@ def run_statistical_analysis_mixomics(
         if meta_candidate.suffix.lower() == ".csv"
         else meta_candidate
     )
-    # 先保证有会话 metadata 文件，再按特征表样本自动对齐（避免旧实验 Sample 残留）
-    resolve_metadata_csv(upload_for_meta)
     sample_ids = sample_ids_from_feature_table(imputed)
     if not sample_ids:
         raise ValueError(f"特征表中未找到样本列: {imputed}")
-    metadata_csv, align_report = ensure_aligned_metadata_csv(
+    metadata_csv, align_report = ensure_metadata_from_inputs(
         upload_for_meta,
-        sample_ids,
+        sample_ids=sample_ids,
     )
     _ensure_mixomics_r_packages()
 
@@ -299,6 +377,21 @@ def run_statistical_analysis_mixomics(
     os.environ["MASS_MIXOMICS_METADATA_CSV"] = meta_csv
     os.environ["MASS_MIXOMICS_OUTPUT_DIR"] = out_dir
 
+    group_column = str(kwargs.pop("group_column", None) or "Group").strip() or "Group"
+    contrast_g1 = kwargs.pop("contrast_group1", None)
+    contrast_g2 = kwargs.pop("contrast_group2", None)
+    os.environ["MASS_MIXOMICS_GROUP_COLUMN"] = group_column
+    if contrast_g1 and str(contrast_g1).strip():
+        os.environ["MASS_MIXOMICS_CONTRAST_G1"] = str(contrast_g1).strip()
+    else:
+        os.environ.pop("MASS_MIXOMICS_CONTRAST_G1", None)
+    if contrast_g2 and str(contrast_g2).strip():
+        os.environ["MASS_MIXOMICS_CONTRAST_G2"] = str(contrast_g2).strip()
+    else:
+        os.environ.pop("MASS_MIXOMICS_CONTRAST_G2", None)
+
+    fn_kwargs = {k: v for k, v in kwargs.items() if k in _MIXOMICS_FN_KWARGS}
+
     from src.tools.xcms import statistical_analysis_mixomics_impl as fn
 
     log_path = output_path / "statistical_analysis_mixomics.log"
@@ -326,6 +419,7 @@ def run_statistical_analysis_mixomics(
         ):
             run_kwargs.pop(key, None)
         cmd = _normalize_rscript_cmd(list(cmd))
+        cmd = _maybe_patch_rscript_file(cmd)
         if _cancelled():
             raise RuntimeError("已终止：mixOmics 在启动前被取消")
         with open(log_path, "w", encoding="utf-8") as log_f:
@@ -386,7 +480,7 @@ def run_statistical_analysis_mixomics(
             input_dir=input_path.as_posix(),
             metadata_csv=meta_csv,
             output_dir=out_dir,
-            **kwargs,
+            **fn_kwargs,
         )
     finally:
         sp.run = _orig_run

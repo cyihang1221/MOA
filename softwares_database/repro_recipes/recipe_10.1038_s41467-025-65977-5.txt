@@ -1,0 +1,67 @@
+========== reproducibility_recipe entry ==========
+paper_title: Plasma metabolomic signature of breastfeeding and risk of cardiometabolic diseases.
+source_paper: Birukov A et al. (2025), Nature communications, DOI: 10.1038/s41467-025-65977-5, PMID: 41360798
+overall_reproducibility_score: 42/100
+
+workflow_steps: 5
+  Step 1: Plasma metabolite profiling
+    tool: LC-MS
+    parameters: platforms=['HILIC-positive', 'HILIC-negative', 'C8-positive'], sample_type=plasma, anticoagulant=EDTA, storage_temperature=['−70 °C', '−80 °C'], processing_delay_limit=2 h (PREDIMED), immediate (WHI, NHS/NHSII), exclusion_criterion=metabolites unstable due to delayed processing
+    input: raw plasma samples
+    output: untargeted metabolite intensities (181 named metabolites)
+    confidence: medium
+  Step 2: Missing value imputation
+    tool: custom preprocessing
+    algorithm: half-minimum imputation
+    parameters: imputation_method=half the minimal non-missing value per metabolite, scope=within each case-control study separately
+    input: raw metabolite intensity matrix with missing values
+    output: imputed metabolite intensity matrix
+    confidence: high
+  Step 3: Batch effect correction and scaling
+    tool: inverse-normal transformation
+    algorithm: rank-based inverse normal transformation
+    parameters: transformation=inverse-normal, scope=within each case-control study, purpose=['batch correction', 'metabolite range standardization']
+    input: imputed metabolite intensity matrix
+    output: normalized and scaled metabolite matrix
+    confidence: high
+  Step 4: Derivation of metabolite-based breastfeeding score
+    tool: Elastic net regularized regression
+    algorithm: elastic net (L1 + L2 regularization)
+    parameters: response_variable=lifetime total duration of breastfeeding (categorical, ordinal-coded), predictors=181 plasma metabolites, cross_validation=used for hyperparameter tuning (alpha, lambda), penalty_mix=elastic net (not specified alpha value), feature_selection=yes (5 metabolites selected)
+    input: normalized metabolite matrix + breastfeeding duration categories
+    output: weighted metabolite score (5-metabolite linear combination)
+    confidence: medium
+  Step 5: Association analysis with disease incidence
+    tool: Cox proportional hazards regression
+    algorithm: multivariable Cox regression
+    parameters: outcome=['T2D incidence', 'CVD incidence'], time_scale=person-time from blood draw (baseline) to event or censoring, covariates=['age', 'BMI at age 18', 'parity', 'physical activity (MET-hr/week)', 'AHEI', 'smoking', 'family history of T2D (where available)'], adjustment=for T2D and CVD risk factors; models for CVD additionally adjusted for T2D status, replication=external cohorts (WHI, PREDIMED)
+    input: metabolite score + clinical/demographic covariates + time-to-event data
+    output: hazard ratios (HR) with 95% confidence intervals
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (MetaboLights: MTBLS1234)
+  processed_data: not_mentioned (not_mentioned: not_mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 1
+  Fig. 1: [workflow_diagram]
+    caption: Flow chart showing included studies (primary NHS/NHSII and validation WHI/PREDIMED) and analytical approach for deriving and validating the metabolite-based breastfeeding score.
+    produced_by_step: [1, 4, 5]
+    visualization_tool: not_mentioned
+    statistical_test: not_applicable
+
+reproducibility_gaps:
+  - Raw LC-MS data (e.g., .raw/.mzML files) not deposited in public repository
+  - No code or scripts shared for elastic net modeling, imputation, or inverse-normal transformation
+  - Exact LC-MS acquisition parameters (gradient, column, flow rate, ionization settings) not reported
+  - No details on how categorical breastfeeding durations were numerically encoded for elastic net (e.g., ordinal scores, dummy coding)
+  - No description of software environment (R/Python version, package versions) used for statistical modeling
+  - Batch metadata (run order, plate IDs, instrument calibration logs) not provided
+reproducibility_strengths:
+  - Metabolite platform details reported (HILIC+/−, C8+)
+  - Preprocessing steps explicitly described (half-min imputation, inverse-normal transformation)
+  - Cohort-level metadata (sample collection, storage, processing timelines) well documented
+  - Replication across three independent cohorts (NHS/NHSII, WHI, PREDIMED) enhances robustness

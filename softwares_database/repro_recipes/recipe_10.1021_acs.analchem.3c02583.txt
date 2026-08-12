@@ -1,0 +1,55 @@
+========== reproducibility_recipe entry ==========
+paper_title: Novel Peak Shift Correction Method Based on the Retention Index for Peak Alignment in Untargeted Metabolomics.
+source_paper: Hao JD et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c02583, PMID: 37609864
+overall_reproducibility_score: 72/100
+
+workflow_steps: 4
+  Step 1: Calibrant synthesis
+    tool: chemical synthesis
+    parameters: fatty_acid_chain_length_range=C2-C23, reaction_type=amidation, target_compound_class=N-acyl glycine homologues
+    input: glycine + saturated fatty acids (C2–C23)
+    output: N-acyl glycine calibrant mixture
+    confidence: high
+  Step 2: Retention index (RI) system establishment
+    tool: custom Python implementation
+    algorithm: linear interpolation of log-transformed retention times against carbon number
+    parameters: calibrant_series=N-acyl glycines C2–C23, ion_modes_supported=['positive', 'negative'], chromatographic_space_coverage=broad
+    input: LC-MS runs of N-acyl glycine calibrants
+    output: N-acyl glycine RI calibration curve and lookup table
+    confidence: high
+  Step 3: Retention time shift correction using RI
+    tool: RI-based CPSC (Custom Peak Shift Correction)
+    algorithm: RI-mapped RT correction model (piecewise linear or spline-based mapping between observed RT and expected RI-derived RT)
+    parameters: rt_shift_sources_handled=['flow_rate_variation', 'gradient_elution_differences', 'instrument_systems', 'LC_column_batches'], time_span_validated=157
+    input: raw .mzML or vendor files + RI calibration data
+    output: RT-corrected feature table (aligned peaks)
+    confidence: medium
+  Step 4: Peak alignment accuracy evaluation
+    tool: custom validation script
+    algorithm: percentage of correctly aligned features across samples using calibrant-derived ground truth
+    parameters: accuracy_metric=correct_alignment_rate, baseline_accuracy=15.5, improved_accuracy=80.9, time_span=157
+    input: aligned feature table + calibrant annotations
+    output: alignment accuracy score (%)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/WHU-Fenglab/RI-based-CPSC
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS data not deposited or referenced
+  - No details on LC gradient profile or column specifications used for RI calibration
+  - No description of input file format requirements (e.g., mzML vs. .raw)
+  - No version tag or commit hash for GitHub code
+  - No test dataset or example files provided in repository
+reproducibility_strengths:
+  - Custom RI calibration compounds fully described (synthesis route and structure)
+  - Open-source Python tool publicly available on GitHub
+  - Quantitative performance improvement reported with clear baseline and post-correction metrics (15.5% → 80.9%)
+  - Method validated over long time span (157 days), supporting robustness claims

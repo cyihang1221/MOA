@@ -1,0 +1,64 @@
+========== reproducibility_recipe entry ==========
+paper_title: Serum metabolome indicators of early childhood development in the Brazilian National Survey on Child Nutrition (ENANI-2019).
+source_paper: Padilha M et al. (2025), eLife, DOI: 10.7554/elife.97982, PMID: 39812094
+overall_reproducibility_score: 20/100
+
+workflow_steps: 6
+  Step 1: Untargeted metabolomics profiling
+    tool: not specified
+    input: serum samples
+    output: untargeted metabolomics data
+    confidence: low
+  Step 2: Developmental age estimation
+    tool: Graded Response Model (GRM)
+    algorithm: Graded Response Model
+    input: Survey of Well-being of Young Children (SWYC) milestones questionnaire responses
+    output: developmental age scores
+    confidence: medium
+  Step 3: Developmental quotient calculation
+    tool: custom calculation
+    algorithm: DQ = developmental age / chronological age
+    input: developmental age scores, chronological age
+    output: developmental quotient (DQ)
+    confidence: high
+  Step 4: Metabolite selection via variable importance
+    tool: Partial Least Squares Regression (PLSR)
+    algorithm: Variable Importance in Projection (VIP) ≥ 1
+    parameters: vip_threshold=1
+    input: metabolite abundance matrix, DQ
+    output: top-ranked metabolites (n=28)
+    confidence: high
+  Step 5: Association analysis
+    tool: Linear regression
+    algorithm: Multivariable linear regression
+    parameters: adjustment_variables=['nutritional status', 'diet quality', 'infant age']
+    input: VIP-selected metabolites, DQ, covariates
+    output: beta coefficients, adjusted p-values
+    confidence: high
+  Step 6: Interaction analysis
+    tool: Linear regression with interaction term
+    algorithm: Metabolite × age interaction testing
+    parameters: interaction_term=metabolite * age
+    input: metabolite levels, DQ, age
+    output: interaction beta estimates, p-values
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No information on mass spectrometry platform or vendor
+  - No details on metabolomics data acquisition (e.g., LC-MS parameters, column, gradient)
+  - No description of data processing tools (XCMS, MS-DIAL, etc.) or parameters
+  - No mention of raw or processed data deposition
+  - No code or analysis scripts shared or referenced
+  - GRM implementation not specified (software/package)
+  - PLSR and regression implementation unspecified (R/Python package?)
+reproducibility_strengths:
+  - Clear statistical modeling strategy described (VIP threshold, adjustment variables, interaction testing)

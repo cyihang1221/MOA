@@ -50,6 +50,20 @@ const toolsCount = document.getElementById("toolsCount");
 const runtimeInfo = document.getElementById("runtimeInfo");
 const filesPanel = document.getElementById("filesPanel");
 const refreshFilesBtn = document.getElementById("refreshFilesBtn");
+const editMetadataBtn = document.getElementById("editMetadataBtn");
+const metadataEditor = document.getElementById("metadataEditor");
+const metadataEditorBackdrop = document.getElementById("metadataEditorBackdrop");
+const metadataEditorClose = document.getElementById("metadataEditorClose");
+const metadataEditorCancel = document.getElementById("metadataEditorCancel");
+const metadataEditorSave = document.getElementById("metadataEditorSave");
+const metadataEditorHint = document.getElementById("metadataEditorHint");
+const metadataEditorMeta = document.getElementById("metadataEditorMeta");
+const metadataEditorStatus = document.getElementById("metadataEditorStatus");
+const metadataTableHead = document.getElementById("metadataTableHead");
+const metadataTableBody = document.getElementById("metadataTableBody");
+const metadataAddRowBtn = document.getElementById("metadataAddRowBtn");
+const metadataAddColBtn = document.getElementById("metadataAddColBtn");
+const metadataInferBtn = document.getElementById("metadataInferBtn");
 const inputFilesList = document.getElementById("inputFilesList");
 const outputFilesList = document.getElementById("outputFilesList");
 const inputFilesDir = document.getElementById("inputFilesDir");
@@ -173,6 +187,9 @@ const plotAgentPreviewImg = document.getElementById("plotAgentPreviewImg");
 const plotAgentEditorCancel = document.getElementById("plotAgentEditorCancel");
 const plotAgentEditorApply = document.getElementById("plotAgentEditorApply");
 const plotAgentEditorStatus = document.getElementById("plotAgentEditorStatus");
+const plotAgentLiteratureHints = document.getElementById("plotAgentLiteratureHints");
+const plotAgentLiteratureMeta = document.getElementById("plotAgentLiteratureMeta");
+const plotAgentLiteratureList = document.getElementById("plotAgentLiteratureList");
 const mergeAgentEditor = document.getElementById("mergeAgentEditor");
 const mergeAgentEditorBackdrop = document.getElementById("mergeAgentEditorBackdrop");
 const mergeAgentEditorClose = document.getElementById("mergeAgentEditorClose");
@@ -337,6 +354,242 @@ function workspaceFileUrl(sessionId, relOrAbs) {
 let sessions = [];
 let currentSessionId = null;
 let isSharedView = false;
+let metadataEditorState = {
+  columns: ["Sample", "Group"],
+  rows: [],
+  user_locked: false,
+  source: "empty",
+};
+
+function setMetadataEditorStatus(text, kind = "") {
+  if (!metadataEditorStatus) return;
+  metadataEditorStatus.textContent = text || "";
+  metadataEditorStatus.classList.toggle("error", kind === "error");
+  metadataEditorStatus.classList.toggle("ok", kind === "ok");
+}
+
+function formatMetadataSourceKey(source) {
+  const key = `metadata.source.${source || "empty"}`;
+  const translated = t(key);
+  return translated === key ? String(source || "") : translated;
+}
+
+function updateMetadataEditorMeta() {
+  if (!metadataEditorMeta) return;
+  const groups = [
+    ...new Set(
+      (metadataEditorState.rows || [])
+        .map((row) => String(row.Group || row.group || "").trim())
+        .filter(Boolean)
+    ),
+  ];
+  const parts = [
+    t("metadata.meta", {
+      n: (metadataEditorState.rows || []).length,
+      groups: groups.length ? groups.join(", ") : "-",
+      source: formatMetadataSourceKey(metadataEditorState.source),
+    }),
+  ];
+  if (metadataEditorState.user_locked) {
+    parts.push(t("metadata.locked"));
+  }
+  metadataEditorMeta.textContent = parts.join(" · ");
+}
+
+function renderMetadataEditorTable() {
+  if (!metadataTableHead || !metadataTableBody) return;
+  const columns = (metadataEditorState.columns || ["Sample", "Group"]).slice();
+  if (!columns.includes("Sample")) columns.unshift("Sample");
+  if (!columns.includes("Group") && columns.length === 1) columns.push("Group");
+  metadataEditorState.columns = columns;
+
+  metadataTableHead.innerHTML = "";
+  const headRow = document.createElement("tr");
+  columns.forEach((col) => {
+    const th = document.createElement("th");
+    th.textContent = col;
+    headRow.appendChild(th);
+  });
+  const actionTh = document.createElement("th");
+  actionTh.className = "metadata-row-actions";
+  actionTh.textContent = "";
+  headRow.appendChild(actionTh);
+  metadataTableHead.appendChild(headRow);
+
+  metadataTableBody.innerHTML = "";
+  const rows = metadataEditorState.rows || [];
+  if (!rows.length) {
+    metadataEditorState.rows = [{ Sample: "", Group: "" }];
+  }
+  metadataEditorState.rows.forEach((row, rowIndex) => {
+    const tr = document.createElement("tr");
+    columns.forEach((col) => {
+      const td = document.createElement("td");
+      const input = document.createElement("input");
+      input.type = "text";
+      input.value = row[col] != null ? String(row[col]) : "";
+      input.dataset.row = String(rowIndex);
+      input.dataset.col = col;
+      input.addEventListener("input", () => {
+        if (!metadataEditorState.rows[rowIndex]) {
+          metadataEditorState.rows[rowIndex] = {};
+        }
+        metadataEditorState.rows[rowIndex][col] = input.value;
+        updateMetadataEditorMeta();
+      });
+      td.appendChild(input);
+      tr.appendChild(td);
+    });
+    const actionTd = document.createElement("td");
+    actionTd.className = "metadata-row-actions";
+    const delBtn = document.createElement("button");
+    delBtn.type = "button";
+    delBtn.className = "secondary-btn metadata-delete-row";
+    delBtn.textContent = "×";
+    delBtn.title = t("attach.remove");
+    delBtn.addEventListener("click", () => {
+      metadataEditorState.rows.splice(rowIndex, 1);
+      renderMetadataEditorTable();
+      updateMetadataEditorMeta();
+    });
+    actionTd.appendChild(delBtn);
+    tr.appendChild(actionTd);
+    metadataTableBody.appendChild(tr);
+  });
+}
+
+function collectMetadataRowsFromTable() {
+  if (!metadataTableBody) return [];
+  const columns = metadataEditorState.columns || ["Sample", "Group"];
+  const rows = [];
+  metadataTableBody.querySelectorAll("tr").forEach((tr) => {
+    const row = {};
+    tr.querySelectorAll("input[data-col]").forEach((input) => {
+      row[input.dataset.col] = input.value;
+    });
+    const sample = String(row.Sample || "").trim();
+    if (!sample && columns.every((col) => !String(row[col] || "").trim())) {
+      return;
+    }
+    rows.push(row);
+  });
+  return rows;
+}
+
+async function loadMetadataEditorState(sessionId) {
+  const res = await fetch(`/api/sessions/${sessionId}/metadata`);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.detail || t("metadata.loadFail", { msg: "" }));
+  metadataEditorState = {
+    columns: data.columns || ["Sample", "Group"],
+    rows: data.rows || [],
+    user_locked: Boolean(data.user_locked),
+    source: data.source || "empty",
+  };
+  if (!metadataEditorState.rows.length) {
+    metadataEditorState.rows = [{ Sample: "", Group: "" }];
+  }
+  renderMetadataEditorTable();
+  updateMetadataEditorMeta();
+}
+
+function closeMetadataEditor() {
+  if (!metadataEditor) return;
+  metadataEditor.classList.add("hidden");
+  metadataEditor.setAttribute("aria-hidden", "true");
+  setMetadataEditorStatus("");
+}
+
+async function openMetadataEditor() {
+  if (!metadataEditor || !currentSessionId || isSharedView) {
+    setStatus(t("metadata.needSession"));
+    return;
+  }
+  setMetadataEditorStatus(t("files.refreshing"));
+  metadataEditor.classList.remove("hidden");
+  metadataEditor.setAttribute("aria-hidden", "false");
+  try {
+    await loadMetadataEditorState(currentSessionId);
+    setMetadataEditorStatus("");
+  } catch (err) {
+    setMetadataEditorStatus(t("metadata.loadFail", { msg: err.message }), "error");
+  }
+}
+
+function addMetadataRow() {
+  metadataEditorState.rows = metadataEditorState.rows || [];
+  metadataEditorState.rows.push({ Sample: "", Group: "" });
+  renderMetadataEditorTable();
+  updateMetadataEditorMeta();
+}
+
+function addMetadataColumn() {
+  const name = window.prompt(t("metadata.colPrompt"));
+  if (!name) return;
+  const col = String(name).trim();
+  if (!col) return;
+  if ((metadataEditorState.columns || []).includes(col)) return;
+  metadataEditorState.columns = [...(metadataEditorState.columns || ["Sample", "Group"]), col];
+  metadataEditorState.rows = (metadataEditorState.rows || []).map((row) => ({ ...row, [col]: row[col] || "" }));
+  renderMetadataEditorTable();
+}
+
+async function saveMetadataEditor() {
+  if (!currentSessionId || isSharedView) return;
+  const rows = collectMetadataRowsFromTable();
+  if (!rows.length) {
+    setMetadataEditorStatus(t("metadata.saveFail", { msg: "empty rows" }), "error");
+    return;
+  }
+  if (metadataEditorSave) metadataEditorSave.disabled = true;
+  setMetadataEditorStatus("");
+  try {
+    const res = await fetch(`/api/sessions/${currentSessionId}/metadata`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rows, align_to_inputs: true }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.detail || t("metadata.saveFail", { msg: "" }));
+    metadataEditorState.columns = data.columns || metadataEditorState.columns;
+    metadataEditorState.rows = data.rows || rows;
+    metadataEditorState.user_locked = Boolean(data.user_locked);
+    metadataEditorState.source = "session";
+    renderMetadataEditorTable();
+    updateMetadataEditorMeta();
+    setMetadataEditorStatus(t("metadata.saveOk"), "ok");
+    await loadWorkspaceFiles(currentSessionId);
+  } catch (err) {
+    setMetadataEditorStatus(t("metadata.saveFail", { msg: err.message }), "error");
+  } finally {
+    if (metadataEditorSave) metadataEditorSave.disabled = false;
+  }
+}
+
+async function inferMetadataFromFiles() {
+  if (!currentSessionId || isSharedView) return;
+  if (!window.confirm(t("metadata.inferConfirm"))) return;
+  if (metadataInferBtn) metadataInferBtn.disabled = true;
+  setMetadataEditorStatus("");
+  try {
+    const res = await fetch(`/api/sessions/${currentSessionId}/metadata/infer`, { method: "POST" });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.detail || t("metadata.inferFail", { msg: "" }));
+    metadataEditorState.columns = data.columns || metadataEditorState.columns;
+    metadataEditorState.rows = data.rows || [];
+    metadataEditorState.user_locked = Boolean(data.user_locked);
+    metadataEditorState.source = "session";
+    renderMetadataEditorTable();
+    updateMetadataEditorMeta();
+    setMetadataEditorStatus(t("metadata.inferOk"), "ok");
+    await loadWorkspaceFiles(currentSessionId);
+  } catch (err) {
+    setMetadataEditorStatus(t("metadata.inferFail", { msg: err.message }), "error");
+  } finally {
+    if (metadataInferBtn) metadataInferBtn.disabled = false;
+  }
+}
+
 let pendingFiles = [];
 let isStreaming = false;
 let activeStreamAbort = null;
@@ -865,6 +1118,7 @@ function setSharedViewMode(enabled) {
   clearSessionBtn.disabled = enabled;
   shareBtn.disabled = enabled;
   attachBtn.disabled = enabled;
+  if (editMetadataBtn) editMetadataBtn.disabled = enabled;
   filesPanel.classList.toggle("hidden", enabled);
 }
 
@@ -3120,6 +3374,71 @@ function closePlotlyEditor() {
   setPlotlyEditorStatus("");
 }
 
+function clearPlotLiteratureHints() {
+  if (plotAgentLiteratureHints) plotAgentLiteratureHints.classList.add("hidden");
+  if (plotAgentLiteratureMeta) plotAgentLiteratureMeta.textContent = "";
+  if (plotAgentLiteratureList) plotAgentLiteratureList.innerHTML = "";
+}
+
+async function loadPlotLiteratureHints(sourceRel) {
+  clearPlotLiteratureHints();
+  if (!currentSessionId || !sourceRel || !plotAgentLiteratureHints) return;
+  try {
+    const params = new URLSearchParams({ source_rel: sourceRel });
+    const res = await fetch(
+      `/api/sessions/${currentSessionId}/plot-literature-hints?${params.toString()}`
+    );
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return;
+    const hints = Array.isArray(data.hints) ? data.hints : [];
+    const matched = Array.isArray(data.matched) ? data.matched : [];
+    if (!hints.length) return;
+
+    plotAgentLiteratureHints.classList.remove("hidden");
+    if (plotAgentLiteratureMeta) {
+      const ids = matched.join(", ");
+      plotAgentLiteratureMeta.textContent = t("image.plotLiteratureMatched", { skills: ids });
+    }
+    if (!plotAgentLiteratureList) return;
+    plotAgentLiteratureList.innerHTML = "";
+    hints.forEach((hint) => {
+      const card = document.createElement("button");
+      card.type = "button";
+      card.className = "plot-literature-hint-card";
+      const title = document.createElement("span");
+      title.className = "plot-literature-hint-title";
+      title.textContent = hint.skill_id || hint.source || "skill";
+      const doi = (hint.doi || "").trim();
+      if (doi) {
+        const doiEl = document.createElement("span");
+        doiEl.className = "plot-literature-hint-doi muted";
+        doiEl.textContent = `DOI:${doi}`;
+        card.appendChild(title);
+        card.appendChild(doiEl);
+      } else {
+        card.appendChild(title);
+      }
+      const summary = document.createElement("p");
+      summary.className = "plot-literature-hint-summary muted";
+      summary.textContent = (hint.summary || "").slice(0, 160);
+      card.appendChild(summary);
+      const applyLabel = document.createElement("span");
+      applyLabel.className = "plot-literature-hint-apply";
+      applyLabel.textContent = t("image.plotLiteratureApply");
+      card.appendChild(applyLabel);
+      card.addEventListener("click", () => {
+        if (plotAgentInstruction && hint.instruction) {
+          plotAgentInstruction.value = hint.instruction;
+          plotAgentInstruction.focus();
+        }
+      });
+      plotAgentLiteratureList.appendChild(card);
+    });
+  } catch (_err) {
+    /* 文献提示为增强能力，失败时静默 */
+  }
+}
+
 function setPlotAgentEditorStatus(text, kind = "") {
   if (!plotAgentEditorStatus) return;
   plotAgentEditorStatus.textContent = text || "";
@@ -3162,6 +3481,7 @@ function openPlotAgentEditor({ rel, title }) {
   plotAgentEditor.classList.remove("hidden");
   plotAgentEditor.setAttribute("aria-hidden", "false");
   setPlotAgentEditorStatus("");
+  void loadPlotLiteratureHints(rel);
 }
 
 function closePlotAgentEditor() {
@@ -3170,6 +3490,7 @@ function closePlotAgentEditor() {
   plotAgentEditor.setAttribute("aria-hidden", "true");
   disposePlotAgentEcharts();
   plotAgentState = { sourceRel: "", sourceTitle: "", echartsInstance: null, vegaView: null };
+  clearPlotLiteratureHints();
   setPlotAgentEditorStatus("");
 }
 
@@ -3249,7 +3570,14 @@ async function submitPlotAgentEdit() {
     await renderPlotAgentPreview(data);
     await loadWorkspaceFiles(currentSessionId);
     const name = data.file?.name?.split("/").pop() || "";
-    setPlotAgentEditorStatus(t("image.plotAgentDone", { name }));
+    if (Array.isArray(data.literature_skills) && data.literature_skills.length) {
+      setPlotAgentEditorStatus(
+        t("image.plotLiteratureApplied", { skills: data.literature_skills.join(", ") }),
+        "ok"
+      );
+    } else {
+      setPlotAgentEditorStatus(t("image.plotAgentDone", { name }));
+    }
     setStatus(t("image.plotAgentDone", { name }));
   } catch (err) {
     setPlotAgentEditorStatus(t("image.plotAgentFail", { msg: err.message }), "error");
@@ -5228,6 +5556,15 @@ refreshFilesBtn.addEventListener("click", async () => {
   await loadWorkspaceFiles(currentSessionId);
 });
 
+if (editMetadataBtn) editMetadataBtn.addEventListener("click", openMetadataEditor);
+if (metadataEditorSave) metadataEditorSave.addEventListener("click", saveMetadataEditor);
+if (metadataEditorCancel) metadataEditorCancel.addEventListener("click", closeMetadataEditor);
+if (metadataEditorClose) metadataEditorClose.addEventListener("click", closeMetadataEditor);
+if (metadataEditorBackdrop) metadataEditorBackdrop.addEventListener("click", closeMetadataEditor);
+if (metadataAddRowBtn) metadataAddRowBtn.addEventListener("click", addMetadataRow);
+if (metadataAddColBtn) metadataAddColBtn.addEventListener("click", addMetadataColumn);
+if (metadataInferBtn) metadataInferBtn.addEventListener("click", inferMetadataFromFiles);
+
 shareBtn.addEventListener("click", async () => {
   if (!currentSessionId || isSharedView) return;
   await enableShare(currentSessionId);
@@ -5622,6 +5959,10 @@ if (mergeAgentEditorBackdrop) mergeAgentEditorBackdrop.addEventListener("click",
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && llmSettingsModal && !llmSettingsModal.classList.contains("hidden")) {
     closeLlmSettingsModal();
+    return;
+  }
+  if (event.key === "Escape" && metadataEditor && !metadataEditor.classList.contains("hidden")) {
+    closeMetadataEditor();
     return;
   }
   if (event.key === "Escape" && semanticEditor && !semanticEditor.classList.contains("hidden")) {

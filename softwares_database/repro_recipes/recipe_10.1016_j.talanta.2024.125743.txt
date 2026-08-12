@@ -1,0 +1,57 @@
+========== reproducibility_recipe entry ==========
+paper_title: Quantitation of circulating short-chain fatty acids in small volume blood samples from animals and humans.
+source_paper: Fristedt R et al. (2024), Talanta, DOI: 10.1016/j.talanta.2024.125743, PMID: 38382298
+overall_reproducibility_score: 42/100
+
+workflow_steps: 5
+  Step 1: Derivatization of SCFAs
+    tool: chemical derivatization (p-bromophenacyl bromide)
+    parameters: reaction_time_min=30, temperature_celsius=60, quenching_agent=sodium thiosulfate
+    input: small-volume plasma samples (human and animal)
+    output: derivatized SCFA analytes
+    confidence: medium
+  Step 2: Extraction and sample cleanup
+    tool: protein precipitation + liquid-liquid extraction
+    parameters: precipitant=acetonitrile, extraction_solvent=ethyl acetate, vortex_time_sec=30, centrifugation_g=15000, centrifugation_time_min=10
+    input: derivatized plasma samples
+    output: extracted and purified derivatized SCFAs
+    confidence: low
+  Step 3: Chromatographic separation
+    tool: UHPLC
+    parameters: column=Acquity UPLC BEH C18 (2.1 × 100 mm, 1.7 µm), flow_rate_ul_min=400, injection_volume_ul=5, gradient_profile=not fully specified, column_temperature_celsius=40, run_time_min=5
+    input: extracted derivatized SCFAs
+    output: chromatographically resolved analytes
+    confidence: low
+  Step 4: Detection and quantification
+    tool: tandem mass spectrometry (MS/MS)
+    parameters: ionization_mode=negative electrospray ionization (ESI−), detection_mode=multiple reaction monitoring (MRM), mass_tolerance_ppm=None, collision_energy_eV=compound-specific (not listed)
+    input: chromatographically resolved analytes
+    output: quantified SCFA concentrations (nM/μM)
+    confidence: medium
+  Step 5: Method validation
+    tool: in-house analytical validation protocol
+    parameters: linearity_range_nM={'formic': [0.6, 3200], 'acetic': [0.6, 3200], 'propionic': [0.3, 1600], 'butyric': [0.16, 800], 'isobutyric': [0.16, 800], 'valeric': [0.16, 800], 'isovaleric': [0.16, 800], 'succinic': [0.16, 800], 'caproic': [0.16, 800]}, precision_within_day_pct=12, precision_between_days_pct=28, recovery_pct=94
+    input: QC plasma samples (3 levels, 29 batches over 3 months)
+    output: validated quantitative method performance metrics
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw chromatographic and MS/MS data not deposited or referenced
+  - Exact UHPLC gradient profile not provided
+  - No public repository accession for QC or human plasma datasets (n=5380)
+  - Derivatization quenching details insufficient for full replication (e.g., exact sodium thiosulfate concentration/volume)
+  - No code, scripts, or processing pipelines shared for peak integration or calibration
+  - Instrument method files (e.g., MRM transitions, CE values) not reported
+reproducibility_strengths:
+  - Explicit linearity ranges and precision metrics reported for all 9 analytes
+  - Extraction recovery quantified and reported (94% avg)
+  - Large-scale application demonstrated (55 samples/batch, 5380 human samples over 3 years)

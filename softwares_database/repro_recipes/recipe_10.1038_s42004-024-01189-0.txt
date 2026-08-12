@@ -1,0 +1,83 @@
+========== reproducibility_recipe entry ==========
+paper_title: Structural annotation of unknown molecules in a miniaturized mass spectrometer based on a transformer enabled fragment tree method.
+source_paper: Yang Y et al. (2024), Communications chemistry, DOI: 10.1038/s42004-024-01189-0, PMID: 38740942
+overall_reproducibility_score: 52/100
+
+workflow_steps: 7
+  Step 1: Dataset curation and filtering
+    tool: Custom Python pipeline
+    algorithm: Rule-based filtering
+    parameters: molecular_weight_cutoff=500, allowed_elements=['C', 'H', 'O', 'N', 'P', 'S', 'Cl', 'Br', 'I', 'F'], ion_mode=positive, smiles_standardization=canonical, duplicate_removal=True
+    input: Raw MS/MS spectra + SMILES from GNPS, HMDB 5.0, MoNA
+    output: Curated training dataset (220,638 molecule-spectrum pairs)
+    confidence: high
+  Step 2: Spectral preprocessing for model input
+    tool: Custom Python script
+    algorithm: m/z quantization + one-hot encoding
+    parameters: max_peaks_per_spectrum=100, peak_selection_strategy=top 5–6 most abundant peaks + 5 nearby points, mz_precision=0.01, mz_truncation_decimal_places=2, mz_scaling_factor=100, abundance_discarded=True, encoding_scheme=one-hot
+    input: MS² peak list (m/z, intensity)
+    output: Quantized m/z vector → one-hot encoded matrix
+    confidence: high
+  Step 3: SMILES tokenization and encoding
+    tool: RDKit + custom tokenizer
+    algorithm: SMILES segmentation + dictionary indexing + padding
+    parameters: tokenization_method=atomic + connector tokens, special_tokens=['<SOS>', '<EOS>', '<PAD>'], max_sequence_length=100, vocabulary_size=44, smiles_representation=canonical SMILES, alternative_representations_tested=['SELFIES']
+    input: Canonical SMILES strings
+    output: Padded token ID sequence → one-hot encoded matrix
+    confidence: high
+  Step 4: Transformer model training
+    tool: PyTorch
+    algorithm: Encoder-decoder Transformer with multi-head self-attention
+    parameters: num_encoder_layers=6, num_decoder_layers=6, hidden_dim=512, num_attention_heads=8, batch_size=150, learning_rate=0.001, optimizer=SGD, training_duration_hours=19, gpu=RTX 3090, ram_usage_mb=7289
+    input: One-hot m/z matrices + one-hot SMILES matrices
+    output: Trained TeFT model weights
+    confidence: high
+  Step 5: Inference and candidate generation
+    tool: Custom PyTorch inference script
+    algorithm: Greedy decoding
+    parameters: inference_iterations=100, decoding_strategy=greedy, output_format=candidate SMILES list
+    input: Preprocessed MS² spectrum
+    output: Ranked list of candidate SMILES strings
+    confidence: high
+  Step 6: SMILES tree generation via customized RECAP
+    tool: RDKit
+    algorithm: SMARTS-based fragmentation rule simulation
+    parameters: fragmentation_rules=['C-C cleavage', 'C-O cleavage', 'C-N cleavage', 'McLafferty rearrangement', 'RDA rearrangement', 'flavanol-specific rules', 'stilbene-specific rules'], max_tree_nodes=1500, rule_database_extensible=True, reaction_template_language=SMARTS
+    input: Candidate SMILES list
+    output: Fragment tree (directed graph: nodes = fragments, edges = neutral losses with molecular formulas)
+    confidence: high
+  Step 7: Structural annotation by consensus scoring
+    tool: Custom scoring module
+    algorithm: Tree-based plausibility ranking
+    parameters: scoring_criteria=['spectral match to fragment tree nodes', 'chemical feasibility of losses', 'coverage of experimental peaks'], final_output=Top-ranked structure
+    input: Fragment tree + experimental MS² spectrum
+    output: Annotated molecular structure (SMILES + confidence)
+    confidence: medium
+
+data_availability:
+  raw_data: available (GNPS, HMDB 5.0, MoNA)
+  processed_data: not_mentioned
+  metadata: not_mentioned
+  data_urls: https://gnps.ucsd.edu, https://hmdb.ca, https://mona.fiehnlab.ucdavis.edu
+
+code_availability: mentioned_no_link
+
+figure_recipes: 1
+  Fig. 6: [workflow_diagram]
+    caption: Illustrates the full TeFT pipeline: MSⁿ spectrum preprocessing → Transformer encoder-decoder → SMILES tokenization → SMILES tree generation via customized RECAP.
+    produced_by_step: [2, 3, 4, 5, 6]
+    visualization_tool: Not specified
+
+reproducibility_gaps:
+  - No public code repository linked — implementation details (e.g., SMARTS rules in Supplementary Table S1) not shared
+  - Custom RECAP rule database and SMARTS templates not provided or deposited
+  - Training dataset not released as a single downloadable artifact (only source DBs cited)
+  - No model weights or checkpoints made available
+  - Ultrasound extraction parameters (e.g., exact sample mass, solvent volume) incompletely reported
+  - Miniaturized instrument control parameters (RF amplitude, auxiliary AC frequency/voltage, collision energy) not specified
+reproducibility_strengths:
+  - Uses open-source databases (GNPS, HMDB, MoNA) with versioning (HMDB 5.0)
+  - Full architectural specs of Transformer provided (layers, dimensions, attention heads)
+  - Explicit preprocessing steps (m/z quantization, tokenization, padding) detailed
+  - RDKit and SMARTS-based methodology is open and reproducible in principle
+  - Supplementary Notes referenced for key design choices (SELFIES comparison, encoding methods, decoding strategies)

@@ -1,0 +1,79 @@
+========== reproducibility_recipe entry ==========
+paper_title: Integrating multi-omics to reveal the molecular mechanism of lipid metabolism regulated by a splice variant of Lysyl-oxidase like-2, LOXL2Δ13.
+source_paper: Chen Y et al. (2025), Communications biology, DOI: 10.1038/s42003-025-09199-x, PMID: 41272297
+overall_reproducibility_score: 42/100
+
+workflow_steps: 7
+  Step 1: LC-MS data acquisition
+    tool: Waters Xevo G2 XS QTOF
+    algorithm: Centroid MSE mode
+    parameters: ion_mode=['positive', 'negative'], capillary_voltage_positive_kV=3.0, capillary_voltage_negative_kV=2.0, sampling_cone_voltage_V=40.0, mass_range_Da=[50, 1200], scan_time_s=0.2, collision_energy_eV=[20, 40], le_calibration_interval_s=3, column=ACQUITY UPLC HSS T3 (100 mm × 2.1 mm, 1.8 μm), column_temperature_C=50, flow_rate_mL_min=0.4, injection_volume_μL=10, gradient_profile=[{'time_min': '0-2', 'solvent_A_pct': 100}, {'time_min': '2-11', 'solvent_B_pct': '0→100'}, {'time_min': '11-13', 'solvent_B_pct': 100}, {'time_min': '13-15', 'solvent_A_pct': '0→100'}], mobile_phase_A=water + 0.1% formic acid, mobile_phase_B=acetonitrile + 0.1% formic acid, qc_frequency=every 10 samples, qc_samples_count=10, instrument_equilibration_qc_count=10
+    input: raw liver tissue extracts
+    output: raw .raw files (Waters format)
+    confidence: high
+  Step 2: Metabolite feature detection and preprocessing
+    tool: metaX
+    algorithm: KNN imputation, QC-RSC correction, RSD filtering
+    parameters: missing_value_imputation_method=KNN, low_quality_feature_removal_threshold_qc_missing_pct=50, low_quality_feature_removal_threshold_sample_missing_pct=80, qc_rsc_correction=True, rsd_filter_threshold_qc=30, mass_accuracy_ppm=10
+    input: raw .raw files
+    output: preprocessed feature table (peak matrix)
+    confidence: high
+  Step 3: Metabolite identification and annotation
+    tool: Compound Discoverer 2.1 (v2.1)
+    algorithm: database matching (KEGG, HMDB), MS/MS spectral similarity scoring
+    parameters: ms1_mass_accuracy_ppm=10, ms2_similarity_score_threshold=0.85, msi_level=Level 2, lipid_annotation_level=class/molecular_species/sum_composition, sn_position_resolution=not_determined, double_bond_location_resolution=not_determined
+    input: preprocessed feature table + raw .raw files
+    output: tentatively annotated metabolite table (n = 22,882 features)
+    confidence: high
+  Step 4: Statistical analysis and biomarker selection
+    tool: MetabolAnalystR
+    algorithm: Wilcoxon rank-sum test, fold-change analysis, PCA, PLS-DA
+    parameters: adjusted_p_value_threshold=0.05, log2_fold_change_threshold=0.585, vip_threshold=1.0, sam_count=530, gene_mapping_database=KEGG
+    input: annotated metabolite table
+    output: statistically altered metabolites (SAMs) and mapped enzyme-encoding genes (n = 277)
+    confidence: high
+  Step 5: Transcriptome preprocessing and differential expression
+    tool: FastQC, TrimGalore, STAR, EdgeR
+    algorithm: quality control, adapter trimming, alignment, count-based DE analysis
+    parameters: alignment_software=STAR, differential_analysis_package=EdgeR, expression_quantification=RPKM, gene_count=13740
+    input: RNA-seq FASTQ files
+    output: differentially expressed genes (DEGs)
+    confidence: high
+  Step 6: Proteomic and phosphoproteomic quantification
+    tool: Proteome Discoverer 2.4 (v2.4)
+    algorithm: SEQUEST HT search, TMTpro 16plex quantification
+    parameters: precursor_mass_tolerance_ppm=20, fragment_mass_tolerance_Da=0.02, variable_modifications=['Oxidation (M)', 'TMTpro (K)', 'Phosphorylation (S,T,Y)', 'Acetylation (protein N-term)'], fixed_modifications=['Carbamidomethylation (C)', 'TMTpro (N-term)'], fdr_threshold=0.01, unique_peptides_required=1, normalization_method=mean centering (log2-transformed ratios)
+    input: Orbitrap Fusion Lumos .raw files
+    output: quantified proteins and phosphopeptides
+    confidence: high
+  Step 7: Acetylome enrichment and analysis
+    tool: PTMScan Acetyl-Lysine Motif immunoaffinity beads (CST)
+    algorithm: immunoprecipitation-based acetyl-lysine enrichment
+    parameters: enrichment_kit=Cell Signaling Technology PTMScan Acetyl-Lysine Motif Kit, incubation_time_h=6, incubation_temperature_C=4, wash_cycles=3, lysis_buffer=modified SDT buffer (0.1 M Tris-HCl pH 7.6, 0.1 M DTT, 3% SDS, 1% SDC), alkylation_reagent=iodoacetamide, digestion_enzymes=['Lys-C', 'trypsin'], desalting_method=SepPak tC18 cartridges
+    input: liver tissue lysates
+    output: enriched acetylated peptides
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data (.raw files) not deposited in public repository (e.g., PRIDE, MetaboLights)
+  - Compound Discoverer 2.1 and Proteome Discoverer 2.4 are commercial software requiring licenses
+  - No code or scripts shared for metaX or MetabolAnalystR analyses
+  - TMTpro 16plex reagents and PTMScan kit are proprietary and not openly replicable without purchase
+  - Gradient profile lacks precise timepoints (e.g., exact %B at each minute beyond broad ranges)
+  - No details on metaX version or MetabolAnalystR version used
+  - Supplementary Tables/Figures referenced (e.g., Supplementary Table 1, Fig. S8) are not provided in text and inaccessible without supplementary materials
+reproducibility_strengths:
+  - Detailed LC-MS acquisition parameters reported (voltages, gradients, column, temperatures)
+  - Clear statistical thresholds stated (adj. p < 0.05, |log2FC| > 0.585, VIP ≥ 1)
+  - Public databases explicitly named (KEGG, HMDB, UniProt)
+  - MSI/LSI annotation levels reported and lipid nomenclature clarified
+  - Open-source tools specified (FastQC, TrimGalore, STAR, EdgeR, metaX, MetabolAnalystR)

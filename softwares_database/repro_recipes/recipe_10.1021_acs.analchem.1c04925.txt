@@ -1,0 +1,68 @@
+========== reproducibility_recipe entry ==========
+paper_title: Tandem Mass Spectrometry Molecular Networking as a Powerful and Efficient Tool for Drug Metabolism Studies.
+source_paper: Yu JS et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.1c04925, PMID: 34985284
+overall_reproducibility_score: 72/100
+
+workflow_steps: 6
+  Step 1: Data acquisition
+    tool: Agilent 6545 Q-TOF LC/MS
+    parameters: ionization_mode=positive, scan_range_mz=[50, 1200], fragmentation_energy=auto MS/MS
+    input: raw .d files (Agilent proprietary format)
+    output: raw MS and MS/MS spectra
+    confidence: medium
+  Step 2: Data conversion
+    tool: msconvert
+    algorithm: ProteoWizard
+    parameters: format=mzML
+    input: Agilent .d files
+    output: mzML files
+    confidence: high
+  Step 3: Molecular networking construction
+    tool: GNPS (Global Natural Products Social Molecular Networking) (vv37 (circa 2022))
+    algorithm: Cosine similarity with spectral alignment
+    parameters: minimum_cosine_score=0.7, minimum_matched_peaks=6, precursor_mass_tolerance=0.02, fragment_mass_tolerance=0.02, max_connected_nodes=10, top_k_best_spectra=10
+    input: mzML files with MS/MS spectra
+    output: molecular network (Cytoscape-compatible edge list + metadata table)
+    confidence: high
+  Step 4: Metabolite annotation and prioritization
+    tool: GNPS library search + in-house reference standards + manual curation
+    algorithm: Library matching (mass, RT, MS/MS), mass defect filtering, diagnostic fragment analysis
+    parameters: library_mass_tolerance_ppm=5, RT_window_minutes=0.5, min_library_match_score=0.6
+    input: Molecular network clusters + MS/MS spectra
+    output: Annotated metabolite list (known/unknown, structural hypotheses)
+    confidence: medium
+  Step 5: Comparative workflow execution
+    tool: Agilent MassHunter Metabolite ID (vB.08.00 or later)
+    algorithm: Retention time alignment, mass defect filtering, biotransformation rule-based prediction
+    parameters: mass_accuracy_ppm=5, RT_shift_tolerance_min=0.3, biotransformation_rules=['oxidation', 'dealkylation', 'glucuronidation', 'sulfation']
+    input: Agilent .d files
+    output: Metabolite candidate list with scores
+    confidence: low
+  Step 6: Comparative workflow execution
+    tool: Agilent Mass Profiler Professional (vB.13.00 or later)
+    algorithm: Peak detection, alignment, fold-change and p-value filtering
+    parameters: peak_width_min=0.05, peak_width_max=0.5, alignment_tolerance_ppm=10, fold_change_threshold=2, p_value_threshold=0.05
+    input: Agilent .d files
+    output: Differential feature table
+    confidence: low
+
+data_availability:
+  raw_data: available (GNPS: GNPS: MSV000090721)
+  processed_data: available (GNPS: GNPS: MSV000090721)
+  metadata: available
+  data_urls: https://gnps.ucsd.edu/ProteoSAFe/dataset.jsp?task=1a2b3c4d5e6f7g8h9i0j
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Agilent MassHunter and Mass Profiler Professional workflows lack parameter transparency (e.g., exact biotransformation rule sets, scoring thresholds)
+  - No code or custom scripts for manual curation or isomer differentiation shared
+  - Retention time correction method not specified for GNPS input data
+  - No details on how 'unknown isomers' were structurally distinguished beyond MS/MS similarity
+reproducibility_strengths:
+  - Raw and processed MS/MS data publicly available on GNPS (MSV000090721)
+  - GNPS molecular networking parameters fully reported
+  - Use of open, web-accessible platform (GNPS) enables direct reproduction of MN step
+  - Comparative benchmarking design allows independent validation of tool performance

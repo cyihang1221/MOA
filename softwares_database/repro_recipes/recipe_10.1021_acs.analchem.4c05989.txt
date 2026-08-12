@@ -1,0 +1,51 @@
+========== reproducibility_recipe entry ==========
+paper_title: Rapid MALDI-MS/MS-Based Profiling of Lipid A Species from Gram-Negative Bacteria Utilizing Trapped Ion Mobility Spectrometry and mzmine.
+source_paper: Rudt E et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.4c05989, PMID: 40167996
+overall_reproducibility_score: 40/100
+
+workflow_steps: 4
+  Step 1: Sample preparation
+    tool: microextraction
+    input: bacterial cells (uropathogenic Escherichia coli)
+    output: lipid A extract
+    confidence: low
+  Step 2: Ionization and acquisition
+    tool: MALDI-MS/MS with TIMS
+    algorithm: PASEF in PRM-mode
+    parameters: acquisition_mode=parallel reaction monitoring, fragmentation_strategy=spatial ion mobility-scheduled exhaustive fragmentation (SIMSEF)
+    input: lipid A extract
+    output: TIMS-resolved MS/MS spectra
+    confidence: high
+  Step 3: Data processing and feature detection
+    tool: MZmine
+    algorithm: SIMSEF-adapted automated MS/MS acquisition
+    input: raw TIMS-MALDI-MS/MS data (.d directory or equivalent)
+    output: feature table with MS/MS spectra
+    confidence: medium
+  Step 4: Lipid A annotation
+    tool: MZmine rule-based lipid annotation module (custom extension)
+    algorithm: rule-based annotation with custom lipid class and fragmentation rules
+    parameters: lipid_class=lipid A, fragmentation_rules=custom
+    input: feature table with MS/MS spectra
+    output: annotated lipid A species list with CCS values
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw TIMS-MALDI-MS/MS data not deposited in public repository
+  - Custom MZmine lipid A annotation extension not shared
+  - No details on microextraction protocol (e.g., solvents, volumes, temperatures)
+  - No instrument method parameters (e.g., TIMS ramp time, collision energy, MALDI matrix, laser frequency) provided
+  - CCS calibration procedure not described
+reproducibility_strengths:
+  - Uses open-source MZmine with documented extension strategy
+  - Explicit naming of key acquisition mode (PASEF-PRM) and fragmentation strategy (SIMSEF)
+  - First reported CCS values for lipid A — enables future cross-lab validation

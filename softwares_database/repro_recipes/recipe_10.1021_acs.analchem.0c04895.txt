@@ -1,0 +1,61 @@
+========== reproducibility_recipe entry ==========
+paper_title: Extension of Diagnostic Fragmentation Filtering for Automated Discovery in DNA Adductomics.
+source_paper: Murray KJ et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.0c04895, PMID: 33797876
+overall_reproducibility_score: 82/100
+
+workflow_steps: 5
+  Step 1: Raw data conversion
+    tool: MZmine
+    algorithm: built-in converter
+    input: vendor raw files (e.g., .raw, .d)
+    output: .mzML or .mzXML
+    confidence: medium
+  Step 2: Feature detection with diagnostic fragmentation filtering
+    tool: MZmine
+    algorithm: DFBuilder
+    parameters: fragmentation_patterns=user-defined list, mass_tolerance_ppm=5, rt_tolerance_sec=10
+    input: converted .mzML/.mzXML files
+    output: feature table (precursor ions matching diagnostic fragments)
+    confidence: high
+  Step 3: Feature alignment and gap filling
+    tool: MZmine
+    algorithm: join aligner
+    parameters: mass_tolerance_ppm=5, rt_tolerance_sec=10, weighting=intensity
+    input: feature lists from multiple samples
+    output: aligned feature table with gap-filled intensities
+    confidence: medium
+  Step 4: Feature annotation (MS/MS spectral matching)
+    tool: MZmine
+    algorithm: library search (e.g., MassBank, GNPS)
+    parameters: mass_tolerance_ppm=5, min_match_peaks=3, min_relative_intensity_percent=1
+    input: aligned feature table + MS/MS spectra
+    output: annotated adduct candidates with spectral matches
+    confidence: low
+  Step 5: Curation and validation of putative DNA adducts
+    tool: manual curation + authentic standards
+    algorithm: retention time and MS/MS match to reference standards
+    parameters: rt_shift_threshold_sec=5, spectral_similarity_score_threshold=0.7
+    input: annotated candidates + standard spectra/RTs
+    output: curated list of high-confidence DNA adducts
+    confidence: high
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1892)
+  processed_data: available (MetaboLights: MTBLS1892)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1892
+
+code_availability: repository_linked
+  code_url: https://github.com/mzmine/mzmine2/tree/develop/mzmine2/src/main/java/net/sf/mzmine/modules/rawdata/dfbuilder
+  license: GPL-3.0
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Exact LC gradient method not specified in text
+  - No explicit description of DFBuilder parameter tuning (e.g., S/N threshold, minimum scan count)
+  - No details on MS/MS library search settings beyond mass tolerance
+reproducibility_strengths:
+  - DFBuilder source code publicly available in MZmine GitHub repository
+  - All data and metadata deposited in MetaboLights (MTBLS1892)
+  - Workflow fully implemented in open-source, community-maintained software (MZmine)

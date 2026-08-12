@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: MANTI: Automated Annotation of Protein N-Termini for Rapid Interpretation of N-Terminome Data Sets.
+source_paper: Demir F et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.1c00310, PMID: 33729755
+overall_reproducibility_score: 82/100
+
+workflow_steps: 4
+  Step 1: N-terminal peptide identification
+    tool: MaxQuant
+    algorithm: Andromeda search engine
+    input: raw .raw or .d folder files (Thermo)
+    output: peptide-spectrum matches (PSMs), protein groups, evidence.txt table
+    confidence: medium
+  Step 2: N-termini validation and annotation
+    tool: MANTI
+    algorithm: multistep decision process integrating UniProtKB/Swiss-Prot, signal peptide predictions (SignalP), transmembrane domain predictions (TMHMM), subcellular localization, protein isoforms, and cleavage site context
+    parameters: min_peptide_length=7, max_peptide_length=30, allow_internal_met_start=True, use_signalp=True, use_tmhmm=True
+    input: MaxQuant evidence.txt output
+    output: annotated N-terminal peptides with origin classification (e.g., mature N-terminus, neo-N-terminus, signal peptide cleavage, etc.)
+    confidence: high
+  Step 3: Quantitative differential analysis
+    tool: R scripts (included with MANTI)
+    algorithm: limma-based linear modeling or t-test
+    parameters: p_value_threshold=0.05, log2_fold_change_threshold=1.0, adjust_method=Benjamini-Hochberg
+    input: MANTI-annotated peptide abundance table (LFQ intensities)
+    output: differentially abundant N-terminal peptides, classified by origin
+    confidence: medium
+  Step 4: Functional interpretation and visualization
+    tool: R scripts (included with MANTI)
+    algorithm: custom summarization and plotting
+    parameters: plot_types=['barplot', 'heatmap', 'volcano', 'PCA']
+    input: differential N-termini results + annotation metadata
+    output: summary plots and tables (e.g., origin distribution, enriched protease families)
+    confidence: low
+
+data_availability:
+  raw_data: available (PRIDE: PXD021987)
+  processed_data: available (PRIDE: PXD021987)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/pride/archive/projects/PXD021987
+
+code_availability: repository_linked
+  code_url: https://github.com/compomics/manti
+  license: Apache-2.0
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No explicit description of MaxQuant search parameters (enzyme specificity, modifications, FDR settings)
+  - R script details (e.g., exact ggplot2 versions, custom functions) not documented in paper
+  - No specification of TAILS protocol variants (e.g., blocking reagents, enrichment resin batch)
+reproducibility_strengths:
+  - Raw and processed data publicly available in PRIDE (PXD021987)
+  - MANTI source code open-source with DOI and GitHub repository
+  - Integrated workflow from identification to annotation to quantification with reusable R scripts

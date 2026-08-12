@@ -1,0 +1,62 @@
+========== reproducibility_recipe entry ==========
+paper_title: Simultaneous detection of volatile and non-volatile metabolites in urine using UPLC-Q-Exactive Orbitrap-MS and HS-SPME/GC-HRMS: A promising strategy for improving the breast cancer diagnosis accuracy.
+source_paper: Li X et al. (2025), Talanta, DOI: 10.1016/j.talanta.2025.127812, PMID: 40023122
+overall_reproducibility_score: 30/100
+
+workflow_steps: 6
+  Step 1: Volatile metabolite profiling
+    tool: HS-SPME/GC-HRMS
+    input: urine samples
+    output: raw GC-HRMS data (.raw or .cdf)
+    confidence: low
+  Step 2: Non-volatile metabolite profiling
+    tool: UPLC-Q-Exactive Orbitrap-MS
+    input: urine samples
+    output: raw LC-MS data (.raw)
+    confidence: low
+  Step 3: Univariate and multivariate statistical analysis per platform
+    tool: not specified
+    algorithm: ['t-test', 'ANOVA', 'PCA', 'OPLS-DA']
+    parameters: p-value_threshold=0.05, VIP_threshold=1.0
+    input: peak-aligned feature tables (per platform)
+    output: candidate biomarker lists (per platform)
+    confidence: medium
+  Step 4: Mid-level data fusion
+    tool: not specified
+    algorithm: feature concatenation (row-wise or column-wise fusion of normalized feature matrices)
+    input: candidate biomarker lists from GC-HRMS and UPLC-Orbitrap
+    output: fused biomarker matrix
+    confidence: low
+  Step 5: Multivariate classification modeling
+    tool: OPLS-DA and Random Forest
+    algorithm: ['OPLS-DA', 'Random Forest']
+    parameters: n_trees=500, cross_validation_folds=5, AUC_evaluation=True
+    input: fused biomarker matrix
+    output: classification models, AUC/sensitivity/specificity metrics
+    confidence: medium
+  Step 6: Metabolic pathway analysis
+    tool: not specified
+    algorithm: over-representation analysis (ORA) or pathway topology analysis
+    parameters: pathway_database=KEGG, p_value_method=hypergeometric test
+    input: annotated biomarker list
+    output: significantly enriched metabolic pathways
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposition reported
+  - No software tools explicitly named for data processing (e.g., XCMS, MS-DIAL, AMDIS, or vendor software)
+  - No parameter details for chromatographic methods (gradients, column types, SPME fiber, GC oven program)
+  - No description of peak picking, alignment, or retention time correction algorithms or settings
+  - Mid-level fusion method not defined algorithmically
+  - No information on metabolite identification (MS/MS spectra, databases, confidence levels)
+  - No code or workflow scripts shared
+  - Commercial instrument software (e.g., Thermo Compound Discoverer, TraceFinder, or Chromeleon) implied but not specified

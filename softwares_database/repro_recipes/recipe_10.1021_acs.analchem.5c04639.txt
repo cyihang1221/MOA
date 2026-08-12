@@ -1,0 +1,61 @@
+========== reproducibility_recipe entry ==========
+paper_title: Adaptive Modeling of Tandem Mass Spectrometry Data: Creation of the METLIN 960K MRM Database.
+source_paper: Aisporna A et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c04639, PMID: 41150651
+overall_reproducibility_score: 55/100
+
+workflow_steps: 5
+  Step 1: MS/MS data acquisition
+    tool: Triple Quadrupole Mass Spectrometer
+    parameters: ionization_mode=['positive', 'negative'], collision_energies_eV=[0, 10, 20, 40], number_of_energies=4
+    input: authentic compound standards (n > 100)
+    output: CE-dependent MS/MS spectra (raw .raw or .d files)
+    confidence: high
+  Step 2: Spline-based CE intensity modeling
+    tool: AI BioSync
+    algorithm: empirical spline fitting
+    parameters: spline_type=cubic spline, fit_target=CE-dependent fragment ion intensity profile, interpolation=continuous CE prediction
+    input: experimental MS/MS spectra at discrete CEs
+    output: predicted optimal CE and transition intensities
+    confidence: medium
+  Step 3: Supervised machine learning refinement
+    tool: AI BioSync
+    algorithm: supervised learning model (chemical class-aware)
+    parameters: training_data=experimental CE profiles across diverse chemical classes, refinement_goal=improve spline accuracy per compound class
+    input: spline-fitted CE profiles + compound class labels
+    output: refined CE-optimal transitions and intensities
+    confidence: low
+  Step 4: MRM transition selection
+    tool: AI BioSync
+    algorithm: intensity- and specificity-driven selection
+    parameters: selection_criteria=highest absolute intensity fragment ions, filtering=precursor m/z-centric, vendor-independent
+    input: refined CE-optimized MS/MS profiles
+    output: MRM transition library (960K entries)
+    confidence: medium
+  Step 5: Library validation
+    tool: Triple Quadrupole Mass Spectrometer
+    parameters: limit_of_detection=1 nM, validation_compounds=>100 authentic standards, compound_types=['rare metabolites', 'diverse small molecules']
+    input: MRM transitions applied to authentic standards
+    output: validated sensitivity and reproducibility metrics
+    confidence: high
+
+data_availability:
+  raw_data: available (METLIN)
+  processed_data: available (METLIN)
+  metadata: available
+  data_urls: https://metlin.scripps.edu
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - AI BioSync is not open-source; no code, architecture, or training details disclosed
+  - No specification of mass spectrometer vendor/model or instrument parameters (e.g., dwell time, Q1/Q3 resolution, dwell time)
+  - Spline fitting implementation and supervised learning model type (e.g., RF, XGBoost, neural net) not described
+  - No deposition of raw MS/MS .raw/.d files in public repositories (e.g., MassIVE, Panorama)
+  - No metadata schema or compound annotation provenance (e.g., source, purity, solvent) provided
+reproducibility_strengths:
+  - MRM library publicly accessible via METLIN portal
+  - All transitions derived from empirical MS/MS data (not in silico)
+  - Explicit CE values and ionization modes reported
+  - Validation performed with >100 authentic standards including rare metabolites

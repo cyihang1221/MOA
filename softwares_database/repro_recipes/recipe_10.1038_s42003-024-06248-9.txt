@@ -1,0 +1,68 @@
+========== reproducibility_recipe entry ==========
+paper_title: Palmitic acid induces lipid droplet accumulation and senescence in nucleus pulposus cells via ER-stress pathway.
+source_paper: Chen X et al. (2024), Communications biology, DOI: 10.1038/s42003-024-06248-9, PMID: 38714886
+overall_reproducibility_score: 35/100
+
+workflow_steps: 6
+  Step 1: LC/MS data acquisition
+    tool: AB TripleTOF 6600 Plus
+    algorithm: information-dependent acquisition (IDA)
+    parameters: ion_mode=['positive', 'negative'], mass_range_full_scan=[70, 1000], mass_range_ida=[25, 1000], collision_energy={'positive': 10, 'negative': -10, 'ida': 30}, ion_source_temperature={'positive': 550, 'negative': 550}, ion_spray_voltage={'positive': 5500, 'negative': 4500}, curtain_gas_psi=35, declustering_potential_v={'positive': 100, 'negative': -100}, interface_heater_temperature_c={'positive': 550, 'negative': 600}, lc_flow_rate_ml_min=0.4, ms_flow_rate_ml_min=0.35, injection_volume_ul=2, column_temperature_c=45, sample_temperature_c=4, gradient_program_min_b_percent=[[0, 5], [2, 20], [4, 60], [11, 100], [13, 100], [13.5, 5], [14.5, 5]], tr_ms=1000, te_ms=37
+    input: raw .wiff files (AB SCIEX)
+    output: raw LC/MS spectra (.wiff)
+    confidence: high
+  Step 2: Peak detection and alignment
+    tool: Progenesis QI
+    algorithm: peak picking with retention time alignment
+    parameters: precursor_tolerance_ppm=5, fragment_tolerance_ppm=10, product_threshold_percent=5, missing_value_filter_threshold=0.5
+    input: raw .wiff files
+    output: feature table (RT, m/z, normalized intensity matrix)
+    confidence: high
+  Step 3: Metabolite identification
+    tool: Progenesis QI
+    algorithm: database matching (HMDB, LipidMaps, in-house)
+    input: feature table
+    output: annotated metabolite table (putative IDs)
+    confidence: medium
+  Step 4: Multivariate statistical analysis
+    tool: R
+    algorithm: OPLS-DA
+    parameters: vip_threshold=1, p_value_threshold=0.5
+    input: annotated metabolite table
+    output: differential metabolites list (VIP > 1, p < 0.5)
+    confidence: low
+  Step 5: Transcriptomic data processing
+    tool: Trimmomatic, HISAT2, Cufflinks, HTSeq, DESeq2 (vDESeq2 (2012))
+    algorithm: alignment + differential expression
+    parameters: p_value_threshold=0.05, fold_change_threshold_up=2, fold_change_threshold_down=0.5
+    input: FASTQ files
+    output: differentially expressed genes (DEGs)
+    confidence: high
+  Step 6: Proteomic data processing
+    tool: Proteome Discoverer v2.4 (v2.4)
+    algorithm: database search (TMT-labeled peptides)
+    parameters: fdr_threshold=0.01, unique_peptides_min=2, p_value_threshold=0.05, fold_change_threshold_up=1.2, fold_change_threshold_down=0.83, digestion=trypsin, fixed_modifications=['cysteine alkylation', 'TMT addition']
+    input: raw .raw files (Thermo Q-Exactive)
+    output: quantified proteins (differentially abundant)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC/MS (.wiff), RNA-seq (FASTQ), and proteomics (.raw) data not deposited in public repositories
+  - Progenesis QI and Proteome Discoverer are commercial tools requiring licenses
+  - No code or R scripts shared for OPLS-DA, integration, or multi-omics correlation analysis
+  - In-house database used for metabolite ID is not accessible or described
+  - MRS acquisition parameters lack voxel size, shimming method, water suppression details, and post-processing (e.g., eddy current correction, phasing, baseline correction)
+  - No description of batch correction, normalization method (beyond 'normalized ion intensities' in Progenesis), or QC sample handling in metabolomics
+reproducibility_strengths:
+  - Detailed LC gradient and MS instrument parameters reported
+  - Statistical thresholds explicitly stated (VIP > 1, p < 0.5; DEG p < 0.05, FC >2/<0.5; protein p < 0.05, FC >1.2/<0.83)
+  - Public databases (HMDB, LipidMaps) cited for metabolite annotation

@@ -1,0 +1,55 @@
+========== reproducibility_recipe entry ==========
+paper_title: SCALiR: A Web Application for Automating Absolute Quantification of Mass Spectrometry-Based Metabolomics Data.
+source_paper: Ponce LF et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.3c04988, PMID: 38642077
+overall_reproducibility_score: 72/100
+
+workflow_steps: 4
+  Step 1: Standard curve fitting
+    tool: SCALiR
+    algorithm: linear regression (y = mx + b)
+    parameters: r_squared_threshold=0.9, outlier_removal=iterative residual-based
+    input: peak area or height from LC-MS data for standard mixtures at known concentrations
+    output: calibration equations (slope, intercept, R²) and linear dynamic range per metabolite
+    confidence: high
+  Step 2: Absolute quantification
+    tool: SCALiR
+    algorithm: concentration calculation using fitted linear equation
+    parameters: use_internal_standard=False, concentration_unit=μM
+    input: LC-MS signal intensities (peak area/height) of samples and standards
+    output: absolute metabolite concentrations (e.g., μM)
+    confidence: high
+  Step 3: Quantification limit evaluation
+    tool: SCALiR
+    algorithm: deterministic LOD/LOQ estimation based on calibration curve statistics
+    parameters: lod_definition=signal-to-noise ratio ≥ 3, loq_definition=signal-to-noise ratio ≥ 10 or RSD ≤ 20%
+    input: calibration curve parameters and replicate standard measurements
+    output: limit of detection (LOD) and limit of quantification (LOQ) per metabolite
+    confidence: medium
+  Step 4: Internal standard correction
+    tool: SCALiR
+    algorithm: ratio-based normalization using internal standard peak area
+    parameters: is_correction_mode=area_ratio, is_normalization=True
+    input: sample and internal standard peak areas
+    output: matrix-effect-corrected absolute concentrations
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://www.lewisresearchgroup.org/software
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS data and standard curve raw files not deposited in public repository
+  - No accession ID or repository link for the 77-metabolite standard mixture data used for validation
+  - No description of preprocessing steps (e.g., peak integration, alignment) prior to SCALiR input
+reproducibility_strengths:
+  - SCALiR is open-source and vendor-agnostic
+  - Web application with deterministic, documented algorithms
+  - Quantitative performance metrics reported (R² = 0.99, CV = 0.091)
+  - Clear use cases for external calibration and internal standard correction

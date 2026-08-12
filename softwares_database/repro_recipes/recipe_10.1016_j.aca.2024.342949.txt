@@ -1,0 +1,52 @@
+========== reproducibility_recipe entry ==========
+paper_title: Identification of synthetic cathinone positional isomers using electron activated dissociation mass spectrometry.
+source_paper: Che P et al. (2024), Analytica chimica acta, DOI: 10.1016/j.aca.2024.342949, PMID: 39122291
+overall_reproducibility_score: 35/100
+
+workflow_steps: 4
+  Step 1: LC-HRMS² data acquisition with EAD
+    tool: Liquid chromatography-high-resolution tandem mass spectrometry
+    parameters: electron_kinetic_energy_eV=[15, 18, 20], fragmentation_method=electron activated dissociation (EAD), instrument_type=high-resolution tandem MS
+    input: synthetic cathinone standards (methylmethcathinones, methylethcathinones, chloromethcathinones)
+    output: EAD mass spectra (product ion spectra)
+    confidence: medium
+  Step 2: Feature extraction and spectral preprocessing
+    tool: not specified
+    input: EAD mass spectra
+    output: processed spectral features (e.g., m/z intensities, ion ratios)
+    confidence: low
+  Step 3: Unsupervised dimensionality reduction
+    tool: t-distributed stochastic neighbor embedding (t-SNE)
+    algorithm: t-SNE
+    input: processed spectral features
+    output: 2D/3D t-SNE embedding coordinates
+    confidence: medium
+  Step 4: Supervised classification
+    tool: Random Forest (RF)
+    algorithm: Random Forest
+    parameters: classification_accuracy=0.97, cross_validation=not specified, feature_importance_used=True
+    input: processed spectral features
+    output: isomer classification labels (with 97% accuracy on training set; 92% on blind street samples; 100% on 15-eV subset)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-HRMS²/EAD spectral data not deposited in public repository
+  - No details on chromatographic conditions (column, gradient, flow rate, temperature)
+  - No details on mass spectrometer parameters (resolution, AGC target, max injection time, isolation window)
+  - No description of spectral preprocessing (peak picking, noise filtering, normalization, ion ratio calculation)
+  - No specification of t-SNE hyperparameters (perplexity, iterations, learning rate)
+  - No RF implementation details (number of trees, mtry, class weights, cross-validation strategy)
+  - No code or scripts shared for chemometric analysis
+reproducibility_strengths:
+  - Clear experimental design with defined isomer sets and controlled EAD energy levels
+  - Reported classification accuracies per energy level (15/18/20 eV) and per sample type (standards vs. blind street samples)
+  - Use of established open-source algorithms (t-SNE, Random Forest)

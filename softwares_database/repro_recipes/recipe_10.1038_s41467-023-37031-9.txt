@@ -1,0 +1,71 @@
+========== reproducibility_recipe entry ==========
+paper_title: PeakDecoder enables machine learning-based metabolite annotation and accurate profiling in multidimensional mass spectrometry measurements.
+source_paper: Bilbao A et al. (2023), Nature communications, DOI: 10.1038/s41467-023-37031-9, PMID: 37117207
+overall_reproducibility_score: 42/100
+
+workflow_steps: 6
+  Step 1: Automated chromatographic method selection
+    tool: AMSS (Automated Chromatographic Method Selection Software)
+    algorithm: Random Forest with Boruta feature selection
+    parameters: feature_set=PaDEL molecular descriptors, training_compounds_pos=467, training_compounds_neg=508, pH_conditions=[9.2, 2.7], chromatography_modes=['HILIC+', 'HILIC−', 'RP+', 'RP−'], explanation_method=LIME
+    input: PubChem IDs → SMILES + physicochemical properties
+    output: Predicted optimal HPLC method(s) per compound
+    confidence: medium
+  Step 2: Sample preparation and extraction
+    tool: MPLEx protocol
+    algorithm: Liquid-liquid extraction (chloroform/methanol/water)
+    parameters: solvent_ratio=chloroform:methanol:water, temperature=ice bath, resuspension_solvent=3:2 acetonitrile:water, resuspension_volume=300 µL
+    input: Frozen microbial cell pellets
+    output: Dried polar/non-polar extract resuspended for LC-MS
+    confidence: high
+  Step 3: LC-IM-MS data acquisition
+    tool: Agilent 6560 DTIMS-QTOF MS + Agilent 1290 UHPLC (vMassHunter v.B.09.00 (B9044.0))
+    algorithm: Data-independent acquisition (DIA)
+    parameters: column=Waters XBridge BEH Amide XP, 2.1 × 50 mm, 2.5 µm, column_temperature=50, injection_volume=10, autosampler_temperature=4, mobile_phase_A=10 mM ammonium acetate, 10 µM deactivator, pH 9.2, 90% water/10% ACN, mobile_phase_B=10 mM ammonium acetate, pH 9.2, 90% ACN, gradient_length_min=8.7, gradient_profile=[[0.0, 0.35, 90], [1.0, 0.35, 90], [1.1, 1.0, 85], [4.0, 0.75, 80], [5.0, 0.75, 40], [6.5, 0.75, 40], [6.8, 0.75, 20], [7.0, 0.75, 20], [7.5, 0.75, 90]], equilibration_time_min=3.0, ion_mode=negative, mass_range_mz=[65, 1400], drift_gas=high-purity nitrogen, gas_temperature_C=325, drying_gas_flow_L_per_min=5, nebulizer_pressure_psi=30, calibration=Agilent ESI Tune solution before each batch
+    input: Resuspended extracts
+    output: Raw .d files (Agilent MassHunter format)
+    confidence: high
+  Step 4: SRM method development and quantification
+    tool: Agilent 6490 QQQ + Skyline (vSkyline v.64.21.1.0.146)
+    algorithm: Selected reaction monitoring
+    parameters: ion_mode=negative, ion_spray_voltage_V=3000, capillary_inlet_temperature_C=225, gas_flow_ml_per_min=15, nebulizer_pressure_psi=20, sheath_gas_temperature_C=250, sheath_gas_flow_ml_per_min=11, mass_range_mz=[65, 1400], biological_replicates={'P_putida': {'mucK_PP2224': 2, 'others': 3}}
+    input: Standard mixes and microbial samples
+    output: Calibration curves and peak area integrations for targeted metabolites
+    confidence: high
+  Step 5: Metabolite annotation and profiling
+    tool: PeakDecoder
+    algorithm: Machine learning-based co-elution/co-mobility discrimination + identification error rate estimation
+    parameters: input_data=LC-IM-MS DIA raw data (.d files), reference_library=64 standards, features_used=['retention time', 'collision cross-section (CCS)', 'm/z', 'intensity', 'peak shape', 'mobility drift time'], error_rate_estimation=built-in probabilistic model
+    input: Raw LC-IM-MS DIA data
+    output: Annotated feature table with confidence scores and error rates
+    confidence: low
+  Step 6: Validation against orthogonal platforms
+    tool: GC-MS + SRM
+    algorithm: Cross-platform quantitative validation
+    parameters: GC-MS_method=as described previously (ref 52), SRM_validation_targets=subset of 2683 annotated features, validation_metrics=['correlation', 'recovery', 'LOD/LOQ']
+    input: Same biological samples analyzed by GC-MS and SRM
+    output: Manually validated metabolite identifications and quantification concordance
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (MetaboLights: MTBLSXXXX)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - PeakDecoder source code not shared or linked
+  - Raw LC-IM-MS data not deposited in public repository (no accession ID provided)
+  - AMSS software not publicly available; no repository or download link
+  - No details on PeakDecoder architecture, training data, or hyperparameters
+  - Gradient profile specified only as tabular list — lacks precise interpolation logic or dwell times
+  - No description of peak picking, alignment, or normalization steps prior to PeakDecoder
+  - MPLEx protocol cited but not fully detailed (e.g., phase separation ratios, centrifugation parameters)
+reproducibility_strengths:
+  - Explicit instrument parameters (UHPLC, DTIMS-QTOF, QQQ) provided
+  - Full list of 64 standards implied via 'central carbon metabolism + engineered pathways'
+  - Biological sample preparation protocols described in strain-specific detail
+  - Validation strategy explicitly includes SRM and GC-MS orthogonal confirmation

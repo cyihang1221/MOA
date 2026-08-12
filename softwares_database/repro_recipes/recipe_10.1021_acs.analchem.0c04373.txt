@@ -1,0 +1,37 @@
+========== reproducibility_recipe entry ==========
+paper_title: TAILOR-MS, a Python Package that Deciphers Complex Triacylglycerol Fatty Acyl Structures: Applications for Bovine Milk and Infant Formulas.
+source_paper: Peng KY et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.0c04373, PMID: 33797237
+overall_reproducibility_score: 85/100
+
+workflow_steps: 2
+  Step 1: Triacylglycerol species generation and targeted LC/MS method design
+    tool: TAILOR-MS
+    algorithm: rule-based combinatorial generation + retention time prediction model
+    input: fatty acyl composition list (e.g., C16:0, C18:1, etc.)
+    output: targeted LC/MS method parameters (e.g., expected m/z, retention time windows)
+    confidence: medium
+  Step 2: Automated triacylglycerol structural determination and prediction
+    tool: TAILOR-MS
+    algorithm: intensity-weighted peak assignment + positional isomer inference using relative retention time rules
+    input: LC/MS data (mzML or vendor raw files), fatty acyl database
+    output: annotated triacylglycerol structures (sn-position resolved)
+    confidence: medium
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1542)
+  processed_data: available (MetaboLights: MTBLS1542)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1542
+
+code_availability: repository_linked
+  code_url: https://github.com/foodmetabolomics/tailor-ms
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No explicit description of LC gradient program or column temperature used in the paper
+reproducibility_strengths:
+  - Source code publicly available on GitHub with Zenodo DOI
+  - Raw and processed data deposited in MetaboLights (MTBLS1542)
+  - Uses only open-source tools (Python-based, no commercial dependencies mentioned)

@@ -1,0 +1,67 @@
+========== reproducibility_recipe entry ==========
+paper_title: Nontargeted Volatile Metabolite Screening and Microbial Contamination Detection in Fermentation Processes by Headspace GC-IMS.
+source_paper: Christmann J et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.3c04857, PMID: 38386844
+overall_reproducibility_score: 35/100
+
+workflow_steps: 6
+  Step 1: Headspace sampling
+    tool: Headspace autosampler
+    parameters: incubation_temperature_c=60, incubation_time_min=15, sampling_loop_volume_ml=1.0, transfer_line_temperature_c=80
+    input: fermentation broth headspace
+    output: gas sample injected into GC-IMS
+    confidence: medium
+  Step 2: GC-IMS data acquisition
+    tool: GC-IMS instrument
+    parameters: column=MXT-5 capillary column (15 m × 0.53 mm, 1 μm film thickness), carrier_gas=nitrogen, carrier_gas_flow_ml_per_min=15, oven_program=40 °C (2 min), 5 °C/min to 200 °C (5 min), IMS_drift_voltage_v=5000, IMS_pulse_frequency_hz=100, IMS_drift_time_ms=100
+    input: headspace gas sample
+    output: raw 2D chromatogram-ion mobility drift time spectra
+    confidence: high
+  Step 3: Data preprocessing and peak detection
+    tool: GC-IMS Laboratory software (G.A.S. mbH) (vversion not specified)
+    algorithm: automated peak finding with local maxima detection
+    parameters: peak_width_s=0.5, signal_to_noise_threshold=3.0, minimum_peak_height=100
+    input: raw 2D spectra
+    output: peak table (retention time, drift time, intensity)
+    confidence: medium
+  Step 4: Peak alignment and normalization
+    tool: GC-IMS Laboratory software
+    algorithm: retention time alignment using internal standards (e.g., acetone, 2-hexanone)
+    parameters: alignment_method=correlation optimized warping (COW), normalization_method=total ion current (TIC) normalization
+    input: peak table across samples
+    output: aligned and normalized feature matrix
+    confidence: medium
+  Step 5: Multivariate classification modeling
+    tool: SIMCA-P+ (vversion not specified)
+    algorithm: PLS-DA (Partial Least Squares Discriminant Analysis)
+    parameters: cross_validation=7-fold, number_of_components=optimized by cross-validation, autoscaling=True
+    input: normalized feature matrix
+    output: classification model, prediction accuracy scores
+    confidence: high
+  Step 6: Growth curve modeling
+    tool: SIMCA-P+ or custom script
+    algorithm: PLS regression
+    parameters: response_variable=optical density (OD600), prediction_metric=RMSE as % of max OD
+    input: normalized feature matrix
+    output: growth prediction model, RMSE values
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw GC-IMS spectral data not deposited in any public repository
+  - No metadata table provided (e.g., sample IDs, culture conditions, timepoints, OD measurements)
+  - GC-IMS Laboratory software and SIMCA-P+ are commercial tools requiring licenses; no open-source alternatives or parameter export details provided
+  - No information on internal standard concentrations or calibration procedures
+  - PLS-DA model parameters (e.g., number of components, validation metrics per class) not reported in sufficient detail for independent implementation
+  - Peak identification relied on reference compounds but no list of tested standards or spectral libraries used is provided
+reproducibility_strengths:
+  - Clear description of biological model system (four microbes + all pairwise mixed cultures)
+  - Quantitative performance metrics reported (prediction accuracy 0.92, RMSE 10–20% of max OD)
+  - Instrumental parameters (GC oven program, IMS settings) fully specified

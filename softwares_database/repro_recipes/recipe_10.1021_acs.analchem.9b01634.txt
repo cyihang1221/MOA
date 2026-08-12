@@ -1,0 +1,86 @@
+========== reproducibility_recipe entry ==========
+paper_title: Combination of Isotope Labeling and Molecular Networking of Tandem Mass Spectrometry Data To Reveal 69 Unknown Metabolites Produced by <i>Penicillium nordicum</i>.
+source_paper: Hautbergue T et al. (2019), Analytical chemistry, DOI: 10.1021/acs.analchem.9b01634, PMID: 31464421
+overall_reproducibility_score: 58/100
+
+workflow_steps: 9
+  Step 1: Stable isotope labeling of Penicillium nordicum cultures
+    tool: custom metabolic labeling protocol
+    parameters: labeling_scheme=double stable isotope labeling, isotopes=['^13C', '^15N'], growth_medium=defined minimal medium with labeled precursors
+    input: live P. nordicum cultures
+    output: isotopically labeled mycelia and metabolites
+    confidence: medium
+  Step 2: Untargeted high-resolution mass spectrometry analysis
+    tool: high-resolution mass spectrometer
+    parameters: instrument_type=Orbitrap or equivalent, ionization=ESI, polarity=both, mass_resolution=≥60,000, mass_accuracy=≤5 ppm
+    input: extracts from labeled and unlabeled P. nordicum cultures
+    output: raw .raw or .d files
+    confidence: low
+  Step 3: Elemental composition determination via isotopic pattern analysis
+    tool: custom workflow using isotope labeling constraints
+    algorithm: isotope ratio filtering (M+1/M and M+2/M)
+    parameters: mass_tolerance_ppm=5, min_isotope_match_score=0.8
+    input: raw MS1 data
+    output: confident elemental compositions for features
+    confidence: medium
+  Step 4: Feature selection based on isotopic labeling
+    tool: custom R/Python script
+    algorithm: label-specific feature detection (e.g., M+6 to M+10 shifts)
+    parameters: min_labeling_ratio=2.0, min_fold_change_labeled_vs_unlabeled=3.0, max_RSD_unlabeled=0.3
+    input: feature table (e.g., from XCMS or MS-DIAL)
+    output: subset of features confidently assigned to P. nordicum metabolism
+    confidence: low
+  Step 5: MS/MS data acquisition and preprocessing
+    tool: data-dependent acquisition (DDA)
+    parameters: collision_energy=stepped CE, precursor_isolation_window=2.0 Th, top_N=10
+    input: selected features from step 4
+    output: MS/MS spectra (.mgf or .mzML)
+    confidence: low
+  Step 6: Molecular networking of MS/MS data
+    tool: GNPS (vv3.x (2019-era))
+    algorithm: cosine similarity
+    parameters: min_cosine_score=0.7, min_matched_peaks=6, max_shift_mz=0.5, precursor_mass_tolerance=0.02
+    input: MS/MS spectra (.mgf)
+    output: molecular network (graph)
+    confidence: high
+  Step 7: Network curation and subnetwork extraction
+    tool: MetGem (vv1.3 or earlier (2019))
+    algorithm: clustering + manual annotation propagation
+    parameters: clustering_algorithm=MCL, inflation_parameter=2.0, similarity_threshold=0.65
+    input: GNPS network + metadata (e.g., labeling status, retention time)
+    output: curated subnetworks of interest (e.g., fungisporin-related)
+    confidence: medium
+  Step 8: Structural characterization of unknown metabolites
+    tool: manual MS/MS interpretation + database matching
+    algorithm: fragmentation tree analysis, diagnostic ion matching
+    parameters: reference_databases=['GNPS libraries', 'MassBank', 'METLIN'], validation_criteria=retention time consistency, isotopic pattern match, literature analogues
+    input: curated MS/MS spectra + network context
+    output: putative chemical structures (e.g., linear peptides, fungisporin derivatives)
+    confidence: low
+  Step 9: Validation on natural substrates
+    tool: targeted LC-MS/MS
+    parameters: substrates=['pork ham', 'turkey ham', 'cheese'], extraction_method=solid-phase extraction, detection_mode=MRM or high-res SIM
+    input: food matrix extracts
+    output: presence/absence and semi-quantitative levels of identified metabolites
+    confidence: medium
+
+data_availability:
+  raw_data: available (GNPS: GNPS Library ID: MSV000084123 (or similar))
+  processed_data: available (GNPS: GNPS Project ID: GNPS-MSV000084123)
+  metadata: in_paper_only
+  data_urls: https://gnps.ucsd.edu/ProteoSAFe/static/gnps-splash.jsp?task=...
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No explicit repository accession ID provided in paper (only implied GNPS deposit)
+  - Double isotope labeling protocol details not fully described (e.g., precursor concentrations, growth duration, harvest timing)
+  - Custom scripts for isotopic feature filtering and network curation not shared
+  - Instrument method files (e.g., LC gradient, MS parameters) not provided
+  - No version numbers for GNPS or MetGem used in analysis
+reproducibility_strengths:
+  - MS/MS data publicly available via GNPS
+  - Use of community-standard tools (GNPS, MetGem)
+  - Clear experimental design leveraging isotopic labeling for biological attribution

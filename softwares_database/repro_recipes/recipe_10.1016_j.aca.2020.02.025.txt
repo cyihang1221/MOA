@@ -1,0 +1,61 @@
+========== reproducibility_recipe entry ==========
+paper_title: Signature Mapping (SigMa): An efficient approach for processing complex human urine <sup>1</sup>H NMR metabolomics data.
+source_paper: Khakimov B et al. (2020), Analytica chimica acta, DOI: 10.1016/j.aca.2020.02.025, PMID: 32222235
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Spectral segmentation
+    tool: SigMa
+    algorithm: signature-based spectral partitioning
+    parameters: ss_region_width_ppm=0.02, sus_region_width_ppm=0.04, bin_width_ppm=0.01
+    input: raw 1H NMR spectra (.fid or .jcamp)
+    output: segmented spectral regions (SS, SUS, BINS)
+    confidence: medium
+  Step 2: Signature Signal (SS) detection
+    tool: SigMa
+    algorithm: library-matching with SigMa chemical shift library
+    parameters: ss_match_tolerance_ppm=0.01, min_signal_to_noise_ratio=3
+    input: SS spectral regions
+    output: annotated SS metabolite list with chemical shifts and multiplicities
+    confidence: medium
+  Step 3: Signals of Unknown spin Systems (SUS) detection
+    tool: SigMa
+    algorithm: automatic peak picking + multivariate curve resolution (MCR)
+    parameters: sus_peak_picking_threshold=adaptive SNR-based, mcr_max_iterations=100, mcr_convergence_threshold=1e-06
+    input: SUS spectral regions
+    output: quantified SUS metabolite concentrations
+    confidence: low
+  Step 4: Binning of unresolved regions (BINS)
+    tool: SigMa
+    algorithm: intensity binning
+    parameters: bin_start_ppm=0.5, bin_end_ppm=9.5, bin_width_ppm=0.01
+    input: unresolved inter-SS spectral regions
+    output: binned intensity table (BINS matrix)
+    confidence: high
+  Step 5: Integration and table assembly
+    tool: SigMa
+    algorithm: concatenation of SS, SUS, and BINS quantifications
+    parameters: integration_method=summed integral, normalization=probabilistic quotient normalization (PQN)
+    input: SS concentrations, SUS concentrations, BINS intensities
+    output: final metabolite table (SS + SUS + BINS features)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - SigMa software not publicly available or described as open-source
+  - No repository link or download instructions for SigMa implementation
+  - No details on the SigMa chemical shift library (composition, format, version)
+  - No validation of MCR parameters or convergence criteria
+  - No description of preprocessing steps (e.g., phasing, baseline correction, referencing)
+reproducibility_strengths:
+  - Explicit spectral segmentation strategy (SS/SUS/BINS) clearly defined
+  - Quantitative reliability and robustness empirically demonstrated on spiking experiments
+  - Bin width and spectral range parameters fully specified

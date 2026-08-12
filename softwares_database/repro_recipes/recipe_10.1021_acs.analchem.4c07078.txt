@@ -1,0 +1,48 @@
+========== reproducibility_recipe entry ==========
+paper_title: QC4Metabolomics: Real-Time and Retrospective Quality Control of Metabolomics Data.
+source_paper: Stanstrup J et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.4c07078, PMID: 40858289
+overall_reproducibility_score: 85/100
+
+workflow_steps: 3
+  Step 1: Real-time or retrospective QC monitoring
+    tool: QC4Metabolomics
+    algorithm: user-defined compound tracking
+    parameters: mz_tolerance_ppm=None, rt_tolerance_sec=None, peak_shape_metrics=['asymmetry', 'tailing_factor', 'width_at_half_height']
+    input: raw .mzML files (or vendor formats via conversion)
+    output: QC metrics dashboard (interactive web interface)
+    confidence: medium
+  Step 2: Diagnostic feature extraction
+    tool: QC4Metabolomics
+    algorithm: targeted extraction of user-defined compounds
+    parameters: intensity_threshold=None, minimum_peak_height=None, contaminant_list=common + user-defined
+    input: raw .mzML files
+    output: per-run QC report (tabular + time-series plots)
+    confidence: medium
+  Step 3: Contaminant level monitoring
+    tool: QC4Metabolomics
+    algorithm: m/z and RT-based contaminant detection
+    parameters: contaminant_mz_list=None, contaminant_rt_window_sec=None
+    input: raw .mzML files
+    output: contaminant abundance time series
+    confidence: low
+
+data_availability:
+  raw_data: available (GitHub: demo data in repo)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+  data_urls: https://github.com/stanstrup/QC4Metabolomics/tree/main/inst/extdata
+
+code_availability: repository_linked
+  code_url: https://github.com/stanstrup/QC4Metabolomics
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No specific real-world dataset accession IDs provided (e.g., MetaboLights, GNPS)
+  - No explicit description of QC thresholds or decision rules used in examples
+  - No version pinning for R/Shiny/Docker dependencies in paper
+reproducibility_strengths:
+  - Fully open-source Shiny app with Docker support
+  - Demo data included in GitHub repository
+  - Comprehensive documentation available at https://stanstrup.github.io/QC4Metabolomics

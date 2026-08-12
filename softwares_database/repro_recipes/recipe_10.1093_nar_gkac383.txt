@@ -1,0 +1,59 @@
+========== reproducibility_recipe entry ==========
+paper_title: CFM-ID 4.0 - a web server for accurate MS-based metabolite identification.
+source_paper: Wang F et al. (2022), Nucleic acids research, DOI: 10.1093/nar/gkac383, PMID: 35610037
+overall_reproducibility_score: 70/100
+
+workflow_steps: 5
+  Step 1: MS/MS spectral prediction
+    tool: CFM-ID 4.0 (v4.0)
+    algorithm: CFM (Computational Fragmentation Model)
+    parameters: collision_energies_eV=[10, 20, 40]
+    input: chemical structure (SMILES, InChI, or molfile) or molecular formula
+    output: predicted ESI-QTOF-MS/MS spectra
+    confidence: high
+  Step 2: MS/MS spectral annotation
+    tool: CFM-ID 4.0 (v4.0)
+    algorithm: CFM-based spectral matching
+    input: chemical structure + observed MS/MS spectrum
+    output: annotated fragment ions and spectral interpretation
+    confidence: medium
+  Step 3: Compound identification from MS/MS
+    tool: CFM-ID 4.0 (v4.0)
+    algorithm: spectral similarity scoring (improved scoring method)
+    parameters: database_search_mode=experimental_and_in_silico_MS2, neutral_loss_enabled=True
+    input: observed ESI-QTOF-MS/MS spectrum (at one or more collision energies)
+    output: ranked list of candidate compounds with scores
+    confidence: high
+  Step 4: Molecular formula identification
+    tool: CFM-ID 4.0 (v4.0)
+    algorithm: formula generation from MS/MS data
+    input: observed MS/MS spectrum
+    output: candidate molecular formulas
+    confidence: medium
+  Step 5: Spectral comparison and visualization
+    tool: CFM-ID 4.0 (v4.0)
+    algorithm: MS mirror plot generation
+    input: observed and predicted MS/MS spectra
+    output: interactive mirror plots with fragment ion structures
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+  data_urls: https://cfmid.wishartlab.com
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed benchmark data (e.g., CASMI 2016 subset) publicly shared
+  - CFM algorithm implementation details not fully disclosed
+  - No access to underlying spectral database composition or versioning
+  - Web service dependency — no offline/local version available for reproducible batch processing
+reproducibility_strengths:
+  - Publicly accessible web interface with documented inputs/outputs
+  - Performance benchmarks reported against standard CASMI 2016 dataset
+  - Explicit specification of collision energies (10/20/40 eV) and supported instrument type (ESI-QTOF)
+  - Transparent description of key improvements: larger spectral database, improved scoring, neutral loss function

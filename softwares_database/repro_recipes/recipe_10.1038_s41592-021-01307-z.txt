@@ -1,0 +1,115 @@
+========== reproducibility_recipe entry ==========
+paper_title: HERMES: a molecular-formula-oriented method to target the metabolome.
+source_paper: Giné R et al. (2021), Nature methods, DOI: 10.1038/s41592-021-01307-z, PMID: 34725482
+overall_reproducibility_score: 78/100
+
+workflow_steps: 7
+  Step 1: Resolution-based isotopic envelope calculation
+    tool: HERMES
+    algorithm: centroidization with resolution-aware peak discrimination
+    parameters: mass_tolerance_ppm=0.27
+    input: raw LC/MS1 profile data
+    output: centroided MS1 signals with distinguishable isotopologues
+    confidence: medium
+  Step 2: Blank subtraction
+    tool: HERMES
+    algorithm: artificial neural network (ANN)
+    input: centroided MS1 signals
+    output: blank-subtracted SOI candidates
+    confidence: low
+  Step 3: Adduct and isotopologue grouping
+    tool: HERMES
+    algorithm: elution profile similarity clustering
+    input: blank-subtracted SOI candidates
+    output: grouped adducts and isotopologues
+    confidence: low
+  Step 4: In-source fragment (ISF) annotation
+    tool: HERMES
+    algorithm: matching against low-energy MS2 reference data
+    input: grouped adducts/isotopologues
+    output: ISF-filtered SOI list
+    confidence: low
+  Step 5: Continuous MS2 deconvolution
+    tool: HERMES
+    algorithm: fragment elution profile grouping + greedy clustering
+    input: continuous MS2 scans
+    output: curated, co-elution-resolved MS2 spectra per SOI
+    confidence: medium
+  Step 6: Isotopic fidelity scoring and filtering
+    tool: HERMES
+    algorithm: characteristic isotopologue presence/absence detection (e.g., ³⁷Cl, ⁴¹K)
+    parameters: isotopic_fidelity_threshold=None
+    input: SOI list with isotopic patterns
+    output: filtered high-fidelity SOI inclusion list
+    confidence: medium
+  Step 7: MS2 spectral matching and metabolite identification
+    tool: HERMES
+    algorithm: cosine similarity scoring + database matching
+    parameters: cosine_score_threshold=0.8, mzCloud_match_threshold=90, mzCloud_confidence_threshold=30
+    input: curated MS2 spectra
+    output: identified metabolites (compound hits)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (MetaboLights: MTBLS1234)
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/rgine/hermes
+  license: GPL-3.0
+
+figure_recipes: 10
+  Extended Data Fig. 1: [workflow_diagram]
+    caption: Illustrates resolution-dependent isotopic envelope calculation and centroidization principles.
+    produced_by_step: [1]
+    visualization_tool: R (ggplot2 or base graphics)
+  Extended Data Fig. 2: [workflow_diagram]
+    caption: Schematic of HERMES filtering steps: ANN-based blank subtraction, adduct/isotopologue grouping, and in-source fragment annotation.
+    produced_by_step: [2, 3, 4]
+    visualization_tool: R (diagrammeR or custom plotting)
+  Extended Data Fig. 3: [workflow_diagram]
+    caption: Demonstrates continuous MS2 deconvolution via fragment elution profile grouping and greedy clustering to resolve co-eluting species.
+    produced_by_step: [5]
+    visualization_tool: R (custom network visualization)
+  Extended Data Fig. 4: [workflow_diagram]
+    caption: Screenshots of the HERMES R GUI showing SOI parameter selection, isotopic profile visualization, and continuous MS2 deconvolution inspection.
+    produced_by_step: [1, 5, 6]
+    visualization_tool: HERMES R GUI (shiny)
+  Extended Data Fig. 5: [chromatogram]
+    caption: Shows isotopic fidelity discrimination using characteristic isotopologues ([³⁷Cl] vs [⁴¹K]) to distinguish chloridazon from 2-amino-alpha-carboline at 0.27 ppm mass difference.
+    produced_by_step: [6]
+    visualization_tool: R (ggplot2 or XCMS-related plotting)
+  Extended Data Fig. 6: [bar_chart]
+    caption: Venn-like bar chart comparing LC/MS1 data point distribution across HERMES workflow stages (Database, SOI, Inclusion List) versus XCMS peaks in E. coli and human plasma.
+    produced_by_step: [1, 2, 3, 4, 6]
+    visualization_tool: R (ggplot2)
+  Extended Data Fig. 7: [bar_chart]
+    caption: Compares isotope and adduct annotation overlap between HERMES and CAMERA/CliqueMS for E. coli and human plasma, showing high isotope but low adduct agreement.
+    produced_by_step: [3, 7]
+    visualization_tool: R (ggplot2)
+  Extended Data Fig. 8: [scatter_plot]
+    caption: Plots ¹³C-enrichment (FC/MIRS) against precursor intensity, showing enrichment bias toward high-intensity ions and HERMES coverage advantage for low-abundance ¹³C-labeled ions.
+    produced_by_step: [1, 7]
+    visualization_tool: R (ggplot2)
+  Extended Data Fig. 9: [bar_chart]
+    caption: Bar plots showing number of identified inclusion list entries binned by MS1 precursor intensity in negative mode for E. coli and human plasma.
+    produced_by_step: [7]
+    visualization_tool: R (ggplot2)
+  Extended Data Fig. 10: [chromatogram]
+    caption: Overlay of experimental vs library MS2 spectra for NADH, biopterin, and NADPH showing improved spectral quality with longer injection time (1500 ms vs 35 ms).
+    produced_by_step: [5, 7]
+    visualization_tool: R (custom spectral overlay)
+
+reproducibility_gaps:
+  - Raw LC/MS data not explicitly deposited or accessioned in public repository
+  - ANN architecture and training details for blank subtraction not provided
+  - Greedy clustering parameters and similarity metric for MS2 fragment grouping unspecified
+  - No description of LC gradient, column, or instrument method parameters affecting retention time behavior
+  - No explicit reporting of mass accuracy calibration procedure or lock mass usage
+reproducibility_strengths:
+  - HERMES R package publicly available on GitHub with DOI
+  - Open-source GPL-3.0 license ensures modifiability and redistribution
+  - Comprehensive GUI and parameter documentation (Extended Data Fig. 4)
+  - Explicit MS2 identification thresholds (cosine > 0.8; mzCloud Match > 90 & Confidence > 30)
+  - Algorithmic descriptions provided in Supplementary Algorithms 1–4 (implied by reference)

@@ -1,0 +1,123 @@
+========== reproducibility_recipe entry ==========
+paper_title: A spectroscopic test suggests that fragment ion structure annotations in MS/MS libraries are frequently incorrect.
+source_paper: van Tetering L et al. (2024), Communications chemistry, DOI: 10.1038/s42004-024-01112-7, PMID: 38355930
+overall_reproducibility_score: 42/100
+
+workflow_steps: 8
+  Step 1: Sample preparation and ionization
+    tool: Electrospray ionization (ESI)
+    parameters: solvent_composition=50:50 MeOH-H2O, formic_acid_percentage=0.005, flow_rate_ul_per_h=[120, 180], capillary_voltage_V=4500, end_plate_voltage_V=500, dry_gas_temperature_C=180, dry_gas_flow_L_per_min=4
+    input: chemical standards in solution
+    output: protonated precursor ions ([M+H]+)
+    confidence: high
+  Step 2: MS/MS and MSⁿ fragmentation
+    tool: Bruker Amazon Speed ETD (3D quadrupole ion trap)
+    algorithm: collision-induced dissociation (CID)
+    parameters: fragmentation_method=CID, mass_isolation=yes, cid_amplitude_optimized=True
+    input: protonated precursor ions
+    output: MS² and MSⁿ fragment ions
+    confidence: medium
+  Step 3: Accurate mass determination of fragments
+    tool: Bruker SolariX XR 7 T FTICR-MS
+    parameters: instrument_type=FTICR-MS, magnetic_field_T=7.0
+    input: MSⁿ fragment ions
+    output: accurate m/z → molecular formula
+    confidence: high
+  Step 4: Infrared ion spectroscopy (IRIS)
+    tool: FELIX free-electron laser + ion trap
+    algorithm: IR-induced dissociation yield measurement
+    parameters: ir_range_cm_minus1=[560, 1950], macropulse_duration_us=[5, 10], macropulse_energy_mJ=[20, 160], repetition_rate_Hz=[5, 10], bandwidth_percent_of_center_frequency=0.004, step_size_cm_minus1=5, spectra_averaged_per_frequency=6, yield_formula=ln[sum(I_all_ions) / I_precursor_ion], laser_calibration_method=grating spectrometer, energy_correction=linear pulse energy correction, normalization_method=max-peak normalization
+    input: mass-isolated MSⁿ fragment ions
+    output: experimental IR vibrational spectrum
+    confidence: high
+  Step 5: Alternative structure enumeration
+    tool: RDKit
+    algorithm: protonation isomer & stereoisomer generation
+    parameters: input_format=SMILES, protonation_isomers_generated=True, stereoisomers_handled=R/S assigned randomly for single stereocenter, enantiomer_exclusion=True
+    input: database-annotated fragment structures (HMDB/METLIN/mzCloud)
+    output: enumerated candidate ion structures
+    confidence: high
+  Step 6: Conformational sampling and filtering
+    tool: RDKit + classical force field
+    algorithm: distance geometry + clustering
+    parameters: conformers_sampled=500, clustering_method=RMSD-based, max_structures_after_clustering=20, energy_cutoff_kJ_per_mol=40
+    input: candidate ion structures
+    output: filtered low-energy conformer ensemble
+    confidence: high
+  Step 7: Quantum chemical geometry optimization and frequency calculation
+    tool: Gaussian16
+    algorithm: DFT B3LYP/6-31++G(d,p)
+    parameters: theory_level=B3LYP/6-31++G(d,p), initial_optimization_level=PM6, final_optimization_level=B3LYP/6-31++G(d,p), frequency_calculation=True, anharmonicity_correction_factor=0.975, H_stretching_correction_factor=0.955, line_shape=Gaussian, fwhm_cm_minus1=20, post_optimization_energy_refinement=MP2/6-31++G(d,p) single-point
+    input: filtered conformer ensemble
+    output: theoretical IR spectra
+    confidence: high
+  Step 8: Spectral matching and annotation validation
+    tool: custom comparison (not specified)
+    algorithm: experimental vs theoretical IR spectrum correlation
+    parameters: matching_metric=visual and spectral similarity, validation_criterion=correctness of database-provided fragment structure annotation
+    input: experimental IR spectrum + theoretical IR spectra
+    output: validated (or invalidated) fragment ion structure annotation
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: not_mentioned (not mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 10
+  Figure 1: [workflow_diagram]
+    caption: Simplified schematic showing the combinatorial fragmentation algorithm.
+    produced_by_step: [5]
+    visualization_tool: not specified
+  Figure 2: [workflow_diagram]
+    caption: Workflow to establish the structure of CID MSⁿ fragment ions.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7, 8]
+    visualization_tool: not specified
+  Figure 3: [tree_diagram]
+    caption: MS² spectral tree for protonated α-amino-adipic acid with structural annotations.
+    produced_by_step: [2, 3, 5, 8]
+    visualization_tool: not specified
+  Figure 4: [tree_diagram]
+    caption: Spectral tree for protonated urocanic acid with structural annotations.
+    produced_by_step: [2, 3, 5, 8]
+    visualization_tool: not specified
+  Figure 5: [tree_diagram]
+    caption: MSⁿ spectral tree for protonated citrulline with structural annotations.
+    produced_by_step: [2, 3, 5, 8]
+    visualization_tool: not specified
+  Figure 6: [spectrum_plot]
+    caption: IRIS spectrum of the m/z 159 MS² ion from [citrulline+H]⁺.
+    produced_by_step: [4]
+    visualization_tool: not specified
+  Figure 7: [tree_diagram]
+    caption: MSⁿ spectral tree for [homocitrulline+H]⁺ with annotations.
+    produced_by_step: [2, 3, 5, 8]
+    visualization_tool: not specified
+  Figure 8: [comparative_tree_diagram]
+    caption: The m/z 130 fragment ion of homocitrulline generated via different MSⁿ pathways.
+    produced_by_step: [2, 3, 5, 8]
+    visualization_tool: not specified
+  Figure 9: [tree_diagram]
+    caption: MSⁿ spectral tree of protonated arginine with annotations.
+    produced_by_step: [2, 3, 5, 8]
+    visualization_tool: not specified
+  Figure 10: [bar_chart]
+    caption: Number of correct and incorrect MS/MS structure annotations.
+    produced_by_step: [8]
+    visualization_tool: not specified
+
+reproducibility_gaps:
+  - Raw IRIS and MSⁿ spectral data not deposited in any public repository
+  - No access to custom scripts for spectral comparison or structure enumeration workflow
+  - FELIX free-electron laser and modified Bruker Amazon instrument are highly specialized and not widely accessible
+  - Gaussian16 is commercial software requiring license; no input files or job scripts shared
+  - No details on how 'spectral similarity' was quantified — visual assessment only implies low objectivity
+  - Supplementary Tables S1–S5 and Figs. S62–S66 are referenced but not described in methods nor linked
+reproducibility_strengths:
+  - Full quantum chemistry protocol explicitly specified (theory level, basis set, scaling factors, line shape)
+  - Chemical standards and preparation conditions fully disclosed
+  - Instrument parameters (voltages, temperatures, flow rates, laser specs) reported in detail
+  - RDKit usage clearly identified for cheminformatics steps
+  - All three major MS/MS libraries (HMDB, METLIN, mzCloud) named as sources of erroneous annotations

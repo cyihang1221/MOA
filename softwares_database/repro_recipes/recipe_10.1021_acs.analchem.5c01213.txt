@@ -1,0 +1,48 @@
+========== reproducibility_recipe entry ==========
+paper_title: mzrtsim: Raw Data Simulation for Reproducible Gas/Liquid Chromatography-Mass Spectrometry-Based Nontargeted Metabolomics Data Analysis.
+source_paper: Yu M et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c01213, PMID: 40762567
+overall_reproducibility_score: 85/100
+
+workflow_steps: 3
+  Step 1: Raw MS data simulation
+    tool: mzrtsim
+    algorithm: chromatographic peak simulation with tailing factor modeling
+    parameters: peak_shape_model=tailing_factor_included, spectral_source=['MassBank of North America (MoNA)', 'Human Metabolome Database (HMDB)'], output_format=mzML
+    input: reference mass spectra (MS1) from MoNA and HMDB
+    output: simulated raw .mzML files
+    confidence: high
+  Step 2: Feature detection benchmarking
+    tool: ['XCMS', 'mzMine', 'OpenMS']
+    algorithm: ['centWave (XCMS)', 'ADAP (mzMine)', 'PeakPickerHiRes (OpenMS)']
+    input: simulated .mzML files
+    output: feature tables (m/z, RT, intensity)
+    confidence: medium
+  Step 3: Performance evaluation against ground truth
+    tool: custom R analysis (mzrtsim package)
+    algorithm: false positive/negative quantification, sensitivity analysis to peak asymmetry
+    parameters: metrics=['false_positive_rate', 'recall', 'sensitivity_to_tailing_peaks', 'sensitivity_to_leading_peaks']
+    input: simulated ground truth (known compound identities + retention times + peak shapes) and software-derived feature tables
+    output: benchmarking report (performance comparison across tools)
+    confidence: high
+
+data_availability:
+  raw_data: available (GitHub: yufree/mzrtsim)
+  processed_data: not_mentioned
+  metadata: not_mentioned
+  data_urls: https://github.com/yufree/mzrtsim
+
+code_availability: repository_linked
+  code_url: https://github.com/yufree/mzrtsim
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No explicit description of simulated chromatographic gradient or instrument noise model parameters
+  - No benchmark dataset (e.g., simulated .mzML files) deposited in public repository like MetaboLights or Zenodo
+  - No specification of XCMS/mzMine/OpenMS versions or exact parameter settings used in evaluation
+reproducibility_strengths:
+  - Source code openly available on GitHub under MIT license
+  - Ground truth-aware simulation design enables rigorous algorithm benchmarking
+  - Uses publicly available spectral libraries (MoNA, HMDB) as input
+  - Focuses on realistic chromatographic distortions (tailing factor) missing in prior simulators

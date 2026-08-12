@@ -70,6 +70,7 @@ def _use_existing_dir(
 
 from web_frontend.backend.session_metadata import (
     ensure_aligned_metadata_csv,
+    ensure_metadata_from_inputs,
     resolve_metadata_csv,
     sample_ids_from_feature_table,
 )
@@ -84,18 +85,14 @@ def _metadata_path(upload_dir: str) -> str:
 
 
 def _aligned_metadata_for_feature_dir(upload_dir: str, feature_dir: str) -> str:
-    """按特征表样本自动对齐 metadata；失败时回退到 resolve_metadata_csv。"""
+    """按特征表样本自动对齐 metadata；无 metadata 时从样本名推断分组。"""
     table = _path_obj(feature_dir) / "feature_table_filtered_imputed.csv"
     if not table.is_file():
         table = _path_obj(feature_dir) / "feature_table.csv"
     samples = sample_ids_from_feature_table(table) if table.is_file() else []
     if not samples:
         return _metadata_path(upload_dir)
-    try:
-        resolve_metadata_csv(upload_dir)
-    except FileNotFoundError:
-        pass
-    meta, _report = ensure_aligned_metadata_csv(upload_dir, samples)
+    meta, _report = ensure_metadata_from_inputs(upload_dir, sample_ids=samples)
     return meta
 
 

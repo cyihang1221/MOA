@@ -1,0 +1,52 @@
+========== reproducibility_recipe entry ==========
+paper_title: Non-target analysis and stability assessment of reference materials using liquid chromatography‒high-resolution mass spectrometry.
+source_paper: Wright EJ et al. (2022), Analytica chimica acta, DOI: 10.1016/j.aca.2022.339622, PMID: 35300790
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: LC-HRMS data acquisition with data-dependent MS/MS
+    tool: commercial LC-HRMS platform
+    algorithm: data-dependent acquisition (DDA)
+    parameters: mass_resolution=high-resolution, ionization_mode=not specified, collision_energy=not specified, top_N_MS2=not numerically specified, precursor_selection_window=not specified, dynamic_exclusion=not specified
+    input: mussel tissue CRM extract
+    output: raw .raw or .d files (vendor format)
+    confidence: low
+  Step 2: Non-target data processing
+    tool: commercial metabolomics software
+    algorithm: automated feature detection, alignment, and annotation
+    parameters: feature_detection=automated, filtering_criteria=putative toxin analogues, retention_time_alignment=implied but not specified, peak filtering=automated
+    input: raw vendor files
+    output: curated list of putative toxin analogues (n=109)
+    confidence: low
+  Step 3: Toxin analogue detection and MS/MS triggering
+    tool: LC-HRMS system + commercial software
+    algorithm: targeted DDA based on m/z and retention time
+    parameters: detected_analogues=125, MS2_triggered=97, retained_after_filtering=109
+    input: list of known toxin analogues (n=128)
+    output: filtered feature table of toxin-related ions
+    confidence: medium
+  Step 4: Stability assessment across storage conditions
+    tool: statistical analysis (implied)
+    algorithm: comparative abundance analysis across temperature/time conditions
+    parameters: temperature_conditions=['≤4 °C', 'higher temperatures'], stability_metric=relative abundance change over time, significance_threshold=not specified (‘significantly less stable’ implied)
+    input: feature table with sample metadata (storage condition, time)
+    output: stability-ranked compounds (certified toxins, analogues, unrelated matrix compounds)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository
+  - Commercial metabolomics software not identified (no name, version, or settings provided)
+  - LC gradient program, column, flow rate, and temperature not specified
+  - No details on MS parameters (e.g., resolution, AGC target, max injection time)
+  - Statistical methods for stability assessment not described (test used, correction, thresholds)
+  - No information on feature annotation confidence (e.g., level 1–5 ID)
+  - No access to custom filtering rules or toxin analogue library used

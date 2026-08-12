@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: Translating community-wide spectral library into actionable chemical knowledge: a proof of concept with monoterpene indole alkaloids.
+source_paper: Szwarc S et al. (2025), Journal of cheminformatics, DOI: 10.1186/s13321-025-01009-0, PMID: 40296170
+overall_reproducibility_score: 40/100
+
+workflow_steps: 4
+  Step 1: MIADB spectral library expansion
+    tool: GNPS
+    input: curated MS/MS spectra of monoterpene indole alkaloids
+    output: expanded public spectral library (MIADB v2, 422 spectra)
+    confidence: high
+  Step 2: Spectral pattern extraction for MIA skeletons
+    tool: custom chemoinformatic workflow
+    algorithm: skeleton-dependent fragmentation pattern mining
+    parameters: skeleton_definition=finely defined MIA scaffolds, similarity_threshold=None
+    input: MS/MS spectra from MIADB v2
+    output: machine-readable spectral signatures per MIA skeleton
+    confidence: low
+  Step 3: Querying biological datasets with spectral signatures
+    tool: MassQL
+    algorithm: spectral query language matching
+    parameters: query_type=spectrum-based, match_tolerance=None, minimum_peaks_matched=None
+    input: LC-MS/MS dataset of 75 plant extracts
+    output: MIA skeleton annotation table
+    confidence: medium
+  Step 4: Structural digitization and FAIRification
+    tool: custom cheminformatics pipeline
+    algorithm: scaffold-to-machine-readable format conversion
+    parameters: output_format=e.g., SMILES, InChI, scaffold graph representation
+    input: MIA structural data (skeletons)
+    output: digitized, FAIR-compliant structural metadata
+    confidence: low
+
+data_availability:
+  raw_data: available (GNPS: library accession ID not specified)
+  processed_data: available (GNPS: MIADB v2)
+  metadata: in_paper_only
+  data_urls: https://gnps.ucsd.edu
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Custom chemoinformatic workflow and scaffold pattern extraction code not shared
+  - No details on MassQL parameters or query construction
+  - No accession ID provided for GNPS MIADB v2 library
+  - No raw LC-MS/MS data deposited (75 plant extracts dataset not publicly available)
+  - Skeleton definitions and fragmentation similarity thresholds unspecified
+reproducibility_strengths:
+  - MIADB v2 uploaded to GNPS — publicly accessible spectral library
+  - Use of open-source MassQL for querying
+  - Explicit focus on FAIR principles and machine-readable structural outputs

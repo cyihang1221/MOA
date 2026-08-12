@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: Rapid label-free cell-based Approach Membrane Permeability Assay using MALDI-hydrogen-deuterium exchange mass spectrometry for peptides.
+source_paper: Makarov AA et al. (2022), Analytica chimica acta, DOI: 10.1016/j.aca.2022.340234, PMID: 36038238
+overall_reproducibility_score: 35/100
+
+workflow_steps: 4
+  Step 1: Cell-based peptide incubation with D2O exposure
+    tool: custom_protocol
+    parameters: cell_lines=['THP-1', 'AsPc-1'], incubation_time_points=['0', '5', '15', '30', '60', '120', '240', '480', '720', '1440'], D2O_exposure_duration=sufficiently_short, endocytosis_inhibitor_used=True
+    input: synthetic peptides in buffer + live cells
+    output: intact cells with differentially deuterium-labeled intracellular vs extracellular peptides
+    confidence: low
+  Step 2: MALDI-HDX-MS data acquisition
+    tool: MALDI-TOF/TOF mass spectrometer
+    parameters: ionization_mode=positive, matrix=α-cyano-4-hydroxycinnamic_acid_(CHCA), laser_frequency=200 Hz, mass_range=500–3000 Da, resolution=high_resolution_(not_quantified)
+    input: intact cells (quenched post-incubation)
+    output: raw MALDI spectra (.fid or .raw)
+    confidence: medium
+  Step 3: Automated MS data processing
+    tool: internally_developed_Python_scripts
+    algorithm: deuterium_labeling_ratio_calculation
+    parameters: peak_detection_method=centroiding, deuterium_labeling_quantification=unlabeled_vs_D-labeled_peak_area_ratios, time_series_plotting=True
+    input: raw MALDI spectra
+    output: deuterium incorporation ratios over time per peptide
+    confidence: low
+  Step 4: Permeability ranking and classification
+    tool: custom_analysis
+    algorithm: kinetic_curve_fitting_and_ranking
+    parameters: permeability_metric=initial_slope_of_D-incorporation_ratio_decay, classification_threshold=empirically_determined, transport_mechanism_discrimination=with_vs_without_endocytosis_inhibitor
+    input: deuterium incorporation ratios over time
+    output: rank-ordered permeability scores; passive vs active transport assignment
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw MALDI spectral data not deposited in any public repository
+  - Internally developed Python scripts not shared or archived
+  - No details on centroiding parameters, peak integration method, or baseline correction
+  - No specification of D2O exposure duration (critical for HDX kinetics)
+  - No description of cell quenching method or timing relative to D2O exposure
+  - No instrument method files or calibration details provided
+  - No metadata table listing peptide sequences, concentrations, or batch information
+reproducibility_strengths:
+  - Clear conceptual workflow (CAMPA) described with biological rationale
+  - Use of orthogonal validation via literature-corroborated permeability trends
+  - Inclusion of mechanistic control (endocytosis inhibitor) for transport mode differentiation

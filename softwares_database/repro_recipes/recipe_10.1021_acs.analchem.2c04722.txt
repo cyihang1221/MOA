@@ -1,0 +1,52 @@
+========== reproducibility_recipe entry ==========
+paper_title: Nucleos'ID: A New Search Engine Enabling the Untargeted Identification of RNA Post-transcriptional Modifications from Tandem Mass Spectrometry Analyses of Nucleosides.
+source_paper: Gosset-Erard C et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.2c04722, PMID: 36598775
+overall_reproducibility_score: 35/100
+
+workflow_steps: 4
+  Step 1: Data acquisition via CE-MS/MS or LC-MS/MS
+    tool: Capillary electrophoresis–tandem mass spectrometry (CE-MS/MS) and liquid chromatography–tandem mass spectrometry (LC-MS/MS)
+    input: nucleoside extracts from RNA hydrolysates
+    output: raw MS/MS data-dependent acquisition (.raw, .wiff, or equivalent vendor format)
+    confidence: medium
+  Step 2: Untargeted identification of RNA modifications
+    tool: Nucleos'ID
+    algorithm: database search against nucleoside modification database
+    parameters: database_content=all modified and unmodified nucleosides referenced in the literature, search_mode=MS/MS data-dependent acquisition
+    input: raw MS/MS spectra
+    output: annotated nucleoside modifications with confidence metrics (TPR, TNR, FDR)
+    confidence: high
+  Step 3: Performance evaluation
+    tool: Custom validation framework
+    algorithm: True positive rate (TPR), true negative rate (TNR), false discovery rate (FDR) calculation
+    parameters: tpr_threshold=0.94, tnr_threshold=0.94, fdr_range=[0.09, 0.17]
+    input: Nucleos'ID output + ground-truth annotations (S. cerevisiae tRNA, B. taurus tRNA)
+    output: performance metrics table
+    confidence: medium
+  Step 4: Application to complex biological sample
+    tool: Nucleos'ID
+    algorithm: Database search
+    parameters: sample_complexity=Pseudomonas aeruginosa 70S ribosome hydrolysate
+    input: CE-MS/MS data from P. aeruginosa ribosome nucleoside extract
+    output: List of putatively identified RNA modifications
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw CE-MS/MS and LC-MS/MS data not deposited in any public repository
+  - Nucleos'ID software source code or executable not linked or described for installation/use
+  - No details on instrument parameters (e.g., collision energy, isolation window, CE separation conditions)
+  - No description of database version, update date, or exact composition (e.g., number of entries, sources)
+  - No workflow parameters for Nucleos'ID (e.g., mass tolerance, scoring thresholds, fragmentation model)
+reproducibility_strengths:
+  - Clear definition of performance metrics (TPR, TNR, FDR) and their reported values
+  - Use of well-characterized biological controls (S. cerevisiae and B. taurus tRNA)
+  - Demonstration across multiple sample types (tRNA extracts and ribosomal RNA)

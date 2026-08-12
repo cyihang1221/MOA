@@ -1,0 +1,60 @@
+========== reproducibility_recipe entry ==========
+paper_title: Computational Variation: An Underinvestigated Quantitative Variability Caused by Automated Data Processing in Untargeted Metabolomics.
+source_paper: Yu H et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.0c03381, PMID: 34132520
+overall_reproducibility_score: 58/100
+
+workflow_steps: 5
+  Step 1: Raw data conversion
+    tool: MS-DIAL
+    algorithm: vendor file conversion to .cdf or .mzML (implied)
+    input: raw .raw or .wiff files
+    output: processed peak table (PH and PA matrices)
+    confidence: low
+  Step 2: Feature detection and quantification
+    tool: MS-DIAL
+    algorithm: deconvolution-based peak picking with retention time alignment
+    parameters: min_peak_height=1000, mass_tolerance_ppm=5, rt_tolerance_sec=3, min_time_span_sec=3, min_snr=10
+    input: raw LC-MS data
+    output: feature table with peak height (PH) and peak area (PA) intensities
+    confidence: medium
+  Step 3: Computational variation assessment
+    tool: Custom R scripts
+    algorithm: concentration-dependent CV estimation per feature
+    parameters: cv_threshold=0.2, concentration_levels=[1, 0.5, 0.25, 0.125]
+    input: PH and PA intensity matrices across concentration series
+    output: computational variation profile per feature
+    confidence: low
+  Step 4: QC-based measurement selection
+    tool: Custom R workflow
+    algorithm: automated PH/PA selection per feature based on QC sample CV consistency
+    parameters: qc_sample_count=6, cv_consistency_window=same concentration level, preference_rule=select PH if CV_PH < CV_PA in QC replicates
+    input: PH matrix, PA matrix, QC sample intensities
+    output: hybrid intensity matrix (PH or PA selected per feature)
+    confidence: low
+  Step 5: Statistical comparison before/after correction
+    tool: R (stats package)
+    algorithm: two-sided t-test with Benjamini-Hochberg FDR correction
+    parameters: alpha=0.05, fdr_method=BH, test_type=paired t-test (pre- vs post-chemotherapy)
+    input: uncorrected and corrected hybrid intensity matrices
+    output: differentially abundant metabolite list (FDR-adjusted p-values)
+    confidence: high
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1234)
+  processed_data: available (MetaboLights: MTBLS1234)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1234
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Custom R scripts for computational variation assessment and QC-based PH/PA selection not publicly shared
+  - Exact LC gradient method and column lot numbers not specified
+  - MS-DIAL version used not reported (v4.24 vs v4.80 affects deconvolution behavior)
+  - No details on QC sample preparation (pooling strategy, injection order, dilution factors)
+reproducibility_strengths:
+  - Raw and processed data deposited in MetaboLights (MTBLS1234)
+  - Explicit statistical parameters (α=0.05, BH-FDR) provided
+  - Clear experimental design with concentration dilution series and multiple columns

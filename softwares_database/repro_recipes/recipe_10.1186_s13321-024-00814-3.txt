@@ -1,0 +1,46 @@
+========== reproducibility_recipe entry ==========
+paper_title: Free and open-source QSAR-ready workflow for automated standardization of chemical structures in support of QSAR modeling.
+source_paper: Mansouri K et al. (2024), Journal of cheminformatics, DOI: 10.1186/s13321-024-00814-3, PMID: 38378618
+overall_reproducibility_score: 85/100
+
+workflow_steps: 3
+  Step 1: Structure encoding and identifier cross-referencing
+    tool: KNIME
+    algorithm: In-memory cheminformatics representation
+    input: Chemical structure encoding (e.g., SMILES, InChI, molfile)
+    output: Consistent in-memory molecular representation with validated identifiers
+    confidence: medium
+  Step 2: Chemical structure standardization
+    tool: RDKit (via KNIME nodes)
+    algorithm: Standardization pipeline
+    parameters: desalting=True, strip_stereochemistry=True, tautomer_standardization=True, nitro_group_standardization=True, valence_correction=True, neutralization=True
+    input: In-memory molecular representation
+    output: QSAR-ready or MS-ready 2D/3D standardized structure
+    confidence: high
+  Step 3: Duplicate removal
+    tool: KNIME + RDKit
+    algorithm: Canonical SMILES or InChI-based deduplication
+    parameters: deduplication_key=InChI
+    input: Standardized structures
+    output: Deduplicated QSAR-ready or MS-ready structure set
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/rdkit/knime-rdkit
+  license: BSD-3-Clause
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No specific example input dataset provided for workflow validation
+  - No version pinning of RDKit or KNIME components specified
+  - No test cases or expected output benchmarks included
+reproducibility_strengths:
+  - Workflow fully implemented in open-source KNIME
+  - Standalone versions and Docker containers publicly available on GitHub
+  - Uses widely adopted, well-documented open-source cheminformatics library (RDKit)

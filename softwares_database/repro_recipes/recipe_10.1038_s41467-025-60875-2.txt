@@ -1,0 +1,146 @@
+========== reproducibility_recipe entry ==========
+paper_title: Iron regulatory pathways differentially expressed during Madurella mycetomatis grain development in Galleria mellonella.
+source_paper: Abugessaisa I et al. (2025), Nature communications, DOI: 10.1038/s41467-025-60875-2, PMID: 40562743
+overall_reproducibility_score: 42/100
+
+workflow_steps: 13
+  Step 1: RNA extraction and QC
+    tool: RNeasy Mini Kit
+    parameters: buffer=RLT + 1% β-Mercaptoethanol, incubation=57°C for 3 min
+    input: larval tissue homogenate
+    output: total RNA
+    confidence: high
+  Step 2: RNA-Seq library preparation
+    tool: TruSeq Stranded mRNA Library Prep kit
+    parameters: input_RNA=1 μg, sequencing_mode=Paired-End, read_length=100
+    input: total RNA
+    output: sequencing libraries
+    confidence: high
+  Step 3: Sequencing
+    tool: Illumina HiSeq2500
+    parameters: platform=HiSeq2500, mode=Paired-End, read_length=100
+    input: libraries
+    output: raw FASTQ reads
+    confidence: high
+  Step 4: Quality control of raw reads
+    tool: FastQC
+    input: FASTQ
+    output: QC reports
+    confidence: high
+  Step 5: Read alignment
+    tool: STAR Aligner (v2.7.1a)
+    algorithm: splice-aware alignment
+    parameters: default_settings=True
+    input: FASTQ
+    output: BAM files
+    confidence: high
+  Step 6: Read quantification
+    tool: Rsubread FeatureCount
+    algorithm: feature-level counting
+    input: BAM files
+    output: raw count matrix
+    confidence: medium
+  Step 7: Normalization and differential expression (sharp change)
+    tool: edgeR + maSigPro
+    algorithm: two-step regression model
+    parameters: maSigPro_R2_thresholds=[0.8, 0.6], FDR_cutoffs=[0.001, 0.01]
+    input: raw count matrix
+    output: differentially expressed genes (sharp changes)
+    confidence: high
+  Step 8: Normalization and differential expression (consecutive change)
+    tool: edgeR + limma
+    algorithm: linear model with eBayes moderation
+    parameters: F_statistic=True, multiple_testing=Benjamini–Hochberg, adj_P_value_cutoff=0.01
+    input: raw count matrix
+    output: differentially expressed genes (consecutive changes)
+    confidence: high
+  Step 9: Integration of DGE results
+    tool: custom R workflow
+    algorithm: logical union of DEG criteria
+    parameters: criteria=['LIMMA FDR < 0.001', 'maSigPro R2 > 80%', 'LIMMA FDR < 0.01 AND maSigPro R2 > 60%']
+    input: DGE lists from maSigPro and limma
+    output: integrated DEG list
+    confidence: low
+  Step 10: Clustering and dimensionality reduction
+    tool: Rtsne (v0.15)
+    algorithm: t-SNE
+    parameters: is_distance=True, perplexity=5
+    input: normalized expression matrix
+    output: t-SNE coordinates
+    confidence: high
+  Step 11: Principal component analysis
+    tool: prcomp (vstats 3.6.2)
+    algorithm: PCA
+    parameters: standard_settings=True
+    input: normalized expression matrix
+    output: PCA scores and loadings
+    confidence: high
+  Step 12: Expression pattern clustering over time
+    tool: DEGreport degPatterns (v1.26.0)
+    algorithm: hierarchical clustering of temporal profiles
+    parameters: minc=15, summarize=merge
+    input: log-transformed DEG matrix
+    output: temporal expression clusters
+    confidence: high
+  Step 13: Gene set enrichment analysis
+    tool: clusterProfiler gseGO (v3.0.4)
+    algorithm: gene set enrichment based on ranked logFC
+    parameters: ontology=['CC', 'BP', 'MF'], permutations=1000, p_value_cutoff=0.05
+    input: ranked gene list (logFC)
+    output: enriched GO terms
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 9
+  Fig. 1: [workflow_diagram]
+    caption: Experimental workflow, infection burden, and transcriptomics data quality.
+    produced_by_step: [1, 2, 3, 4, 5, 6]
+    visualization_tool: BioRender
+  Fig. 2: [heatmap]
+    caption: Hierarchical clustering of host top DEGs and gene set enrichment analysis.
+    produced_by_step: [7, 8, 9, 13]
+    visualization_tool: gplots heatmap.2
+    statistical_test: Benjamini–Hochberg corrected p-value
+  Fig. 3: [other]
+    caption: Pathogen reads in infected host and gene set enrichment analysis.
+    produced_by_step: [5, 6, 13]
+    visualization_tool: unknown
+  Fig. 4: [other]
+    caption: Host and pathogen transcriptomic changes before and after grain development.
+    produced_by_step: [7, 8, 9, 12]
+    visualization_tool: custom R plotting
+  Fig. 5: [pathway_map]
+    caption: Iron regulation in G. mellonella and siderophore biosynthesis pathways in M. mycetomatis.
+    produced_by_step: [13]
+    visualization_tool: BioRender
+  Fig. 6: [bar_chart]
+    caption: Growth of M. mycetomatis measured by mycelium diameter.
+    visualization_tool: GraphPad Prism 8
+  Fig. 7: [other]
+    caption: Validation of M. mycetomatis siderophore biosynthesis.
+    visualization_tool: unknown
+  Fig. 8: [boxplot]
+    caption: Effect of iron on infection in G. mellonella larvae.
+    visualization_tool: GraphPad Prism 8
+    statistical_test: Mann–Whitney U test
+  Fig. 9: [workflow_diagram]
+    caption: Proposed model of iron regulation during infection, created in BioRender.
+    visualization_tool: BioRender
+
+reproducibility_gaps:
+  - Raw sequencing data not deposited in public repository (e.g., SRA or ENA)
+  - No code repository or script sharing for custom workflows (e.g., DGE integration, degPatterns, gseGO customization)
+  - Custom orgDB packages for G. mellonella and M. mycetomatis not shared or described how they were built
+  - LQ-ssCAGE protocol details only referenced in Supplementary Notes (not provided in main text or methods)
+  - No description of LC-MS/MS or RP-HPLC data processing — metabolomics pipeline completely omitted from methods despite being cited in abstract
+reproducibility_strengths:
+  - Detailed description of STAR, edgeR, limma, maSigPro, clusterProfiler usage with versions and key parameters
+  - Explicit statistical thresholds and decision logic for DEG calling
+  - Use of standard open-source bioinformatics tools (R-based ecosystem)
+  - Clear experimental design (time points, replicates, controls)

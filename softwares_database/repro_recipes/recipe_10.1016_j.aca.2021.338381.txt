@@ -1,0 +1,60 @@
+========== reproducibility_recipe entry ==========
+paper_title: Untargeted metabolomics of prostate cancer zwitterionic and positively charged compounds in urine.
+source_paper: Cerrato A et al. (2021), Analytica chimica acta, DOI: 10.1016/j.aca.2021.338381, PMID: 33863412
+overall_reproducibility_score: 30/100
+
+workflow_steps: 6
+  Step 1: Sample enrichment
+    tool: Graphitized carbon black solid-phase extraction
+    parameters: enrichment_factor=40
+    input: urine samples
+    output: enriched polar and positively charged metabolite extracts
+    confidence: high
+  Step 2: Chromatographic separation
+    tool: HILIC
+    input: enriched metabolite extracts
+    output: HILIC-separated fractions
+    confidence: medium
+  Step 3: Mass spectrometry analysis
+    tool: UHPLC-HRMS
+    input: HILIC-separated fractions
+    output: raw high-resolution mass spectra
+    confidence: medium
+  Step 4: Region of interest (ROI) selection
+    tool: ROIMCR
+    algorithm: Multivariate Curve-Resolution Alternating Least Squares (MCR-ALS)
+    input: raw high-resolution mass spectra
+    output: resolved MS regions of interest (ROIs)
+    confidence: low
+  Step 5: Differential metabolite analysis
+    tool: ROIMCR
+    algorithm: MCR-ALS
+    input: resolved ROIs
+    output: tentatively identified differentially expressed metabolites
+    confidence: low
+  Step 6: Metabolite annotation
+    tool: Tentative identification
+    parameters: compound_classes=['amino acids', 'carnitine derivatives']
+    input: differentially expressed features from MCR-ALS
+    output: tentatively identified metabolites
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - ROIMCR procedure not publicly documented or available as software
+  - No details on MCR-ALS parameterization (e.g., number of components, constraints, convergence criteria)
+  - No information on HRMS instrument parameters (e.g., resolution, scan range, polarity mode, collision energy)
+  - No raw data deposition in public repository (e.g., MetaboLights, GNPS)
+  - No metadata schema or clinical annotation details provided beyond group labels (BPH vs. PCa)
+reproducibility_strengths:
+  - Clear description of sample preparation (GCB-SPE enrichment factor)
+  - Explicit mention of analytical platform (HILIC + UHPLC-HRMS)
+  - Identification of biologically relevant compound classes (amino acids, carnitine derivatives)

@@ -1,0 +1,55 @@
+========== reproducibility_recipe entry ==========
+paper_title: Quick-start infrastructure for untargeted metabolomics analysis in GNPS.
+source_paper: Leao TF et al. (2021), Nature metabolism, DOI: 10.1038/s42255-021-00429-0, PMID: 34244695
+overall_reproducibility_score: 88/100
+
+workflow_steps: 4
+  Step 1: Data upload and format conversion
+    tool: GNPS
+    input: raw vendor files (.raw, .wiff, .d, etc.)
+    output: converted .mzML files
+    confidence: medium
+  Step 2: Molecular networking
+    tool: GNPS Molecular Networking
+    algorithm: cosine score
+    parameters: minimum_cosine_score=0.7, minimum_matched_peaks=6, top_k_matches=10, precursor_mass_tolerance=0.02, fragment_mass_tolerance=0.02
+    input: .mzML files with MS/MS spectra
+    output: molecular network graph (Cytoscape-compatible)
+    confidence: high
+  Step 3: Multivariate statistical analysis
+    tool: GNPS Multivariate Analysis
+    algorithm: PCA, PLS-DA, OPLS-DA
+    parameters: scaling=Pareto, cross_validation=7-fold, permutation_tests=100, VIP_threshold=1.0
+    input: feature table (peak area matrix) from feature detection
+    output: score plots, loading plots, VIP-ranked metabolite lists
+    confidence: high
+  Step 4: Feature detection and alignment
+    tool: GNPS Feature Detection
+    algorithm: CentWave (XCMS-based)
+    parameters: peak_width_min=10, peak_width_max=60, mz_tolerance_ppm=20, sn_thresh=5
+    input: .mzML files
+    output: feature table (m/z, RT, intensity matrix)
+    confidence: high
+
+data_availability:
+  raw_data: available (GNPS)
+  processed_data: available (GNPS)
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: https://github.com/CCMS-UCSD/GNPS_Workflows
+  license: MIT
+
+figure_recipes: 1
+  Fig. 1: [workflow_diagram]
+    caption: The quick-start interface of GNPS can be used for molecular networking and multivariate analysis.
+    produced_by_step: [2, 3]
+    visualization_tool: GNPS web interface (D3.js, Plotly)
+
+reproducibility_gaps:
+  - Metadata format and structure not fully specified in paper
+  - No explicit description of sample randomization or batch correction steps
+reproducibility_strengths:
+  - All analysis performed via open, publicly accessible GNPS web platform
+  - Source code openly available on GitHub under MIT license
+  - Standardized workflows with documented parameters

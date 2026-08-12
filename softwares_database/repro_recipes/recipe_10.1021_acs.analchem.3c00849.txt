@@ -1,0 +1,55 @@
+========== reproducibility_recipe entry ==========
+paper_title: A Structure-Guided Molecular Network Strategy for Global Untargeted Metabolomics Data Annotation.
+source_paper: Wang X et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c00849, PMID: 37493263
+overall_reproducibility_score: 78/100
+
+workflow_steps: 4
+  Step 1: Global connectivity molecular network (GCMN) construction
+    tool: Custom implementation
+    algorithm: Molecular fingerprint similarity
+    parameters: fingerprint_type=MACCS, similarity_metric=Tanimoto
+    input: Chemical structures from metabolome databases (e.g., HMDB, GNPS, LipidMaps)
+    output: Global connectivity molecular network (GCMN) graph
+    confidence: medium
+  Step 2: Seed metabolite selection and experimental MS/MS spectral assignment
+    tool: Custom implementation
+    algorithm: Network annotation propagation using known metabolites as seeds
+    parameters: seed_criteria=experimentally confirmed metabolites with reference MS/MS spectra
+    input: Reference MS/MS spectra (e.g., GNPS library), seed metabolite identifiers
+    output: Assigned 'pseudo' MS/MS spectra to neighbor metabolites in GCMN
+    confidence: low
+  Step 3: Pseudo-spectrum guided feature annotation
+    tool: Custom implementation
+    algorithm: Multi-dimensional matching (predicted RT, m/z, pseudo-MS/MS)
+    parameters: rt_tolerance_sec=15, mass_tolerance_ppm=5, cosine_score_threshold=0.7
+    input: Untargeted UPLC-HRMS data (feature table + MS/MS spectra), GCMN with pseudo-spectra
+    output: Annotated metabolite features (level 2 identification)
+    confidence: medium
+  Step 4: Iterative annotation propagation
+    tool: Custom implementation
+    algorithm: Recursive seed expansion
+    parameters: max_iterations=3, minimum_annotation_confidence=0.83
+    input: Previously annotated metabolite features
+    output: Expanded metabolite annotation list (increased coverage)
+    confidence: low
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1927)
+  processed_data: available (MetaboLights: MTBLS1927)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1927
+
+code_availability: repository_linked
+  code_url: https://github.com/ChenLab-UCSD/SGMNS
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No explicit description of UPLC gradient method or column specifications
+  - No details on raw data acquisition parameters (e.g., collision energy ramp, isolation window)
+  - GCMN construction code lacks documentation on fingerprint generation and edge thresholding
+reproducibility_strengths:
+  - Source code publicly available on GitHub with Zenodo DOI
+  - All biological sample data deposited in MetaboLights (MTBLS1927)
+  - Annotation accuracy and RSD metrics reported for validation

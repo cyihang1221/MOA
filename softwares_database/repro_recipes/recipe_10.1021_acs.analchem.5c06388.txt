@@ -1,0 +1,127 @@
+========== reproducibility_recipe entry ==========
+paper_title: GNPS Feature-Based Molecular Networking as a Tool to Visualize Metabolic Toxicity from Drug-Drug Interactions: A Case Study with Methamphetamine and Ethanol.
+source_paper: Kim M et al., (2026), Analytical chemistry, DOI: 10.1021/acs.analchem.5c06388, PMID: 41481198
+overall_reproducibility_score: 87/100
+
+workflow_steps: 12
+  Step 1: Multi-collision energy MS2 acquisition
+    tool: Agilent LC-QTOF
+    parameters: collision_energy=[10,20,40] eV
+    input: LC-separated urine extracts from rat MA/saline and MA/ethanol groups
+    output: merged MS2 spectra across multiple collision energies
+    confidence: high
+  Step 2: Feature detection and alignment
+    tool: GNPS FBMN platform
+    algorithm: feature-based molecular networking
+    parameters: ppm=5,cose=0.7,peakwidth=[10,60],snthresh=10
+    input: centroided LC-MS/MS data (.mzML)
+    output: feature table with m/z, RT, intensity, and MS2 spectra
+    confidence: medium
+  Step 3: Molecular network construction
+    tool: GNPS FBMN
+    algorithm: cosine similarity clustering
+    parameters: cosine=0.7,min_matched_peaks=3,min_cosine=0.7
+    input: aligned feature table with MS2 spectra
+    output: graphml network file with nodes (features) and edges (cosine similarity ≥ 0.7)
+    confidence: high
+  Step 4: Annotation propagation
+    tool: GNPS FBMN + SIRIUS
+    algorithm: spectral matching and in silico fragmentation
+    parameters: matching_score_threshold=75%,in_silico_model=ICEBERGG,NIST-based
+    input: MS2 spectra of features + reference libraries
+    output: annotated metabolite IDs with confidence scores
+    confidence: high
+  Step 5: Neutral loss filtering for conjugates
+    tool: GNPS FBMN
+    algorithm: neutral loss annotation
+    parameters: neutral_loss=-176 Da
+    input: MS2 spectra of glucuronide candidates
+    output: glucuronidated metabolite assignments (e.g., M7a–M13)
+    confidence: high
+  Step 6: Spectral similarity validation
+    tool: mirror plot analysis
+    algorithm: cosine similarity comparison
+    parameters: cosine=0.86 (single-CE), cosine=0.93 (multi-CE),matched_peaks=3 vs 8
+    input: experimental vs authentic standard MS2 spectra
+    output: validation of spectral reproducibility and annotation reliability
+    confidence: high
+  Step 7: Semi-quantitative abundance normalization
+    tool: GNPS FBMN + custom processing
+    algorithm: creatinine-normalized peak area
+    parameters: normalization=creatinine
+    input: MS1 feature intensities
+    output: relative abundance per sample group (M/S vs M/E)
+    confidence: high
+  Step 8: Isomer differentiation
+    tool: MS2 spectral pattern analysis + retention time
+    algorithm: fragment ion pattern matching
+    parameters: diagnostic_ions=[m/z 65,77,91,107,119,135,165,196]
+    input: MS2 spectra of structural isomers (e.g., M1a vs M1b; M3a vs M3b)
+    output: isomer-specific biotransformation assignment (e.g., benzyl-ring vs N-hydroxylation)
+    confidence: high
+  Step 9: In-source fragment identification
+    tool: GNPS FBMN + manual curation
+    algorithm: mass defect and neutral loss analysis
+    parameters: in_source_fragmentation=yes,neutral_loss=not_applicable
+    input: low-mass fragment ions (e.g., m/z 119.0854, 135.0798)
+    output: flagged in-source fragments (M5a–c, M6a–c) to avoid misannotation
+    confidence: high
+  Step 10: Metabolic pathway mapping
+    tool: custom visualization + GNPS network
+    algorithm: biotransformation rule inference
+    parameters: biotransformation_rules=[hydroxylation,+16 Da],[glucuronidation,-176 Da],[acetylation,+42 Da],[demethylation,-14 Da]
+    input: annotated features with MS2 evidence and retention behavior
+    output: EtOH-modulated metabolic pathway map (Figure 3)
+    confidence: high
+  Step 11: Statistical prioritization of DDI features
+    tool: manual inspection + fold-change threshold
+    algorithm: semiquantitative differential analysis
+    parameters: fold_change_threshold=|1.2|,significance=not_statistical
+    input: creatinine-normalized peak areas across groups
+    output: DDI-prioritized nodes (red circles in Figure 2)
+    confidence: medium
+  Step 12: Network topology comparison
+    tool: GNPS FBMN
+    algorithm: cluster count and node connectivity analysis
+    parameters: cluster_count_single_CE=63,cluster_count_multi_CE=60,connected_nodes_single_CE=407,connected_nodes_multi_CE=423
+    input: FBMN outputs from single-CE vs merged multi-CE datasets
+    output: quantified improvement in network robustness
+    confidence: high
+
+data_availability:
+  raw_data: available
+  processed_data: available
+  metadata: not_mentioned
+  data_urls: ['https://www.gnps2.org/status?task=2c4eb144f7ab4e5aa7492ef3515b4664', 'https://www.gnps2.org/status?task=4eaa6e008a8e4f879bad355371315940', 'https://www.gnps2.org/status?task=26c25e4243c8487e87a9d4d402d22c3a']
+
+code_availability: not_mentioned
+
+figure_recipes: 3
+  Figure 1: [network]
+    caption: CE optimization impact on spectral richness and network connectivity: comparison of single-CE vs merged multi-CE MS2 spectra and resulting FBMN parameters
+    produced_by_step: [1, 3, 12]
+    visualization_tool: GNPS web interface
+    statistical_test: not_reported
+  Figure 2: [network]
+    caption: FBMN visualization of MA-related metabolites in rat urine showing two major clusters (MA and glucuronides), node size = intensity, edge thickness = cosine similarity, red circles = |FC| > 1.2
+    produced_by_step: [3, 7, 11]
+    visualization_tool: GNPS web interface
+    statistical_test: not_reported
+  Figure 3: [pathway_map]
+    caption: Proposed metabolic pathway of MA reshaped by ethanol co-administration, illustrating suppression of benzene ring hydroxylation, emergence of N-acetylAM, and formation of novel glucuronidated derivatives
+    produced_by_step: [10]
+    visualization_tool: not_reported
+    statistical_test: not_reported
+
+reproducibility_gaps:
+  - GNPS tool version not specified
+  - SIRIUS version not specified
+  - no statistical testing details (e.g., p-values, FDR)
+
+reproducibility_strengths:
+  - explicit collision energies (10/20/40 eV)
+  - exact cosine thresholds (0.7, 0.86, 0.93)
+  - precise neutral loss (-176 Da)
+  - ppm error tolerances reported (e.g., -5.99 ppm for M0)
+  - public GNPS task URLs provided
+  - diagnostic fragment ions explicitly listed (m/z 65, 77, 91, etc.)

@@ -1,0 +1,57 @@
+========== reproducibility_recipe entry ==========
+paper_title: Comprehensive Profiling of Amine-Containing Metabolite Isomers with Chiral Phosphorus Reagents.
+source_paper: Liu X et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c02325, PMID: 37943818
+overall_reproducibility_score: 20/100
+
+workflow_steps: 5
+  Step 1: Chemical derivatization with chiral phosphorus reagents
+    tool: SIPAL labeling
+    parameters: reagent_type=chiral phosphorus reagent, isotope_pattern=triplex stable isotope (e.g., ^12P/^13P/^14P or analogous), labeling_target=amine-containing metabolites, reaction_conditions=not specified in abstract
+    input: biological extracts (liver cell lysates)
+    output: derivatized metabolite samples ready for LC-MS/MS
+    confidence: low
+  Step 2: High-resolution tandem mass spectrometry analysis
+    tool: LC-MS/MS
+    parameters: instrument_type=high-resolution tandem mass spectrometer, scan_mode=MS/MS, diagnostic_ions_used=yes (for distinguishing constitutional and stereo isomers)
+    input: SIPAL-derivatized samples
+    output: raw MS/MS spectra with triplet isotopic patterns
+    confidence: medium
+  Step 3: Isomer identification and relative quantification
+    tool: MS-Isomerism
+    parameters: feature_detection_criterion=characteristic triplet peaks from SIPAL tags, isomer_grouping=154 isomer groups identified, quantification_method=relative quantification
+    input: raw MS/MS spectra
+    output: isomer-resolved feature table (854 features, 154 isomer groups)
+    confidence: low
+  Step 4: Differential isomer analysis
+    tool: statistical analysis (unspecified)
+    parameters: comparison_groups=['liver cancer cells', 'normal cells'], significance_threshold=not specified, number_of_significant_metabolites=37
+    input: isomer-resolved feature table
+    output: list of differentially abundant amine-containing metabolites (37)
+    confidence: low
+  Step 5: Novel metabolite identification
+    tool: manual/semi-automated MS/MS spectral interpretation
+    parameters: identification_confidence=structural confirmation of S-acetyl-glutathione as endogenous metabolite
+    input: MS/MS spectra of candidate features
+    output: annotated novel metabolite (S-acetyl-glutathione)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - SIPAL chemical protocol (reagent synthesis, labeling conditions, quenching) not described
+  - MS-Isomerism software not publicly available or documented
+  - No raw data deposition reported (no repository or accession ID)
+  - No instrument parameters (LC gradient, column, MS settings) provided
+  - Statistical methods and thresholds for differential analysis unspecified
+  - No validation strategy (e.g., standards, spike-ins, reproducibility metrics) described
+reproducibility_strengths:
+  - Novel chiral derivatization strategy (SIPAL) clearly conceptualized
+  - Isomer resolution principle based on diagnostic MS/MS ions is mechanistically explained
+  - Biological finding (S-acetyl-glutathione) highlights analytical utility

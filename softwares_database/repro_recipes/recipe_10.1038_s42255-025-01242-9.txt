@@ -1,0 +1,123 @@
+========== reproducibility_recipe entry ==========
+paper_title: AI-driven framework to map the brain metabolome in three dimensions.
+source_paper: Ma X et al. (2025), Nature metabolism, DOI: 10.1038/s42255-025-01242-9, PMID: 40102678
+overall_reproducibility_score: 42/100
+
+workflow_steps: 8
+  Step 1: Image registration of serial 2D MALDI-MSI sections
+    tool: MetaVision3D
+    algorithm: computer vision–based image registration
+    input: 2D MALDI mass spectrometry imaging heatmaps (per m/z)
+    output: aligned stack of serial 2D sections
+    confidence: low
+  Step 2: Intensity normalization across serial sections
+    tool: MetaNorm3D
+    algorithm: slide-level normalization
+    input: aligned 2D section heatmaps
+    output: normalized 2D section heatmaps
+    confidence: low
+  Step 3: Gap imputation for tissue imperfections
+    tool: MetaImpute3D
+    algorithm: imputation of missing spatial pixels
+    input: normalized 2D section heatmaps
+    output: gap-filled 2D section heatmaps
+    confidence: low
+  Step 4: Interpolation to generate high-density phantom sections
+    tool: MetaInterp3D
+    algorithm: interpolation using enhanced correlation coefficient (ECC), SSIM, and MSE optimization
+    parameters: target_section_count=316, phantom_sections_added=158
+    input: gap-filled 2D section heatmaps (79 real sections)
+    output: dense 3D voxel grid (316 interpolated sections)
+    confidence: medium
+  Step 5: 3D spatial metabolome reconstruction and visualization
+    tool: ImageJ
+    algorithm: 3D projection and fill rendering
+    parameters: intensity_threshold=top 1% highest intensity pixels, rendering_mode=['projection', '3D fill']
+    input: dense 3D voxel grid
+    output: 3D rendered metabolite distribution maps
+    confidence: high
+  Step 6: Region-of-interest (ROI) extraction using anatomical reference atlases
+    tool: Allen Brain Atlas / Allen Reference Atlas
+    algorithm: spatial pixel masking based on Nissl-stained reference annotations
+    parameters: atlases_used=['Allen Mouse Brain Atlas', 'Allen Reference Atlas'], regions_of_interest=['isocortex', 'hindbrain', 'cerebellar molecular layer', 'hippocampal region', 'ventricular system', 'cerebral nuclei']
+    input: 3D rendered metabolite maps + Nissl-stained reference
+    output: metabolite/lipid intensity values per anatomical ROI
+    confidence: high
+  Step 7: Pathway and ontology enrichment analysis
+    tool: MetaboAnalyst
+    algorithm: hypergeometric test with Bonferroni correction
+    parameters: statistical_test=hypergeometric test, multiple_testing_correction=Bonferroni
+    input: ROI-extracted metabolomics data
+    output: enriched metabolic pathways (-log10 p-value)
+    confidence: high
+  Step 8: Lipid ontology enrichment analysis
+    tool: LION (Lipid Ontology)
+    algorithm: one-sided Kolmogorov-Smirnov test with Bonferroni correction
+    parameters: statistical_test=one-sided Kolmogorov-Smirnov test, multiple_testing_correction=Bonferroni
+    input: ROI-extracted lipidomics data
+    output: enriched lipid categories (-log10 p-value)
+    confidence: high
+
+data_availability:
+  raw_data: available (MetaVision3D web server)
+  processed_data: available (MetaVision3D web server)
+  metadata: in_paper_only
+  data_urls: https://metavision3d.rc.ufl.edu
+
+code_availability: not_mentioned
+
+figure_recipes: 10
+  Extended Data Fig. 1: [heatmap]
+    caption: 2D MALDI heatmaps showing spatial distribution of FFA 20:4 across five or six serial sagittal mouse brain sections before alignment.
+    produced_by_step: [1]
+    visualization_tool: not specified
+  Extended Data Fig. 2: [line_plot]
+    caption: Intensity distribution of PIP 38:4 across 79 serial sections before and after MetaNorm3D slide normalization.
+    produced_by_step: [2]
+    visualization_tool: not specified
+  Extended Data Fig. 3: [heatmap]
+    caption: 2D heatmaps of PIP 38:4 and PI 36:4 across 79 serial sections before and after normalization, highlighting abundance disparities.
+    produced_by_step: [2]
+    visualization_tool: not specified
+  Extended Data Fig. 4: [heatmap]
+    caption: 2D heatmaps of PE 44:10 before and after MetaImpute3D gap imputation, with zoomed insert showing imputed section.
+    produced_by_step: [3]
+    visualization_tool: not specified
+  Extended Data Fig. 5: [heatmap]
+    caption: 2D heatmaps of PI 36:2 across 79 real and 158 phantom sections; quantitative metrics (ECC, SSIM, MSE) shown in box-and-whisker plots.
+    produced_by_step: [4]
+    visualization_tool: box-and-whisker plot (n=857 and n=2571)
+  Extended Data Fig. 6: [3d_rendering]
+    caption: 3D renderings of PI 38:5 and PS 40:6 in mouse brain cerebellum/hippocampus using projection and 3D fill modes in ImageJ.
+    produced_by_step: [5]
+    visualization_tool: ImageJ
+  Extended Data Fig. 7: [3d_rendering]
+    caption: Reproducible 3D lipid distributions (PS 36:2, PI 38:5, PS 40:6) across two independent WT mouse brains.
+    produced_by_step: [5]
+    visualization_tool: MetaVision website
+  Extended Data Fig. 8: [multi_panel_comparison]
+    caption: Side-by-side comparison of Nissl-stained atlas, 2D MALDI, and 3D rendering for six lipid species, highlighting anatomical regions.
+    produced_by_step: [5, 6]
+    visualization_tool: ImageJ + Allen Brain Atlas overlays
+  Extended Data Fig. 9: [multi_panel_comparison]
+    caption: 2D slice and 3D rendered views comparing lipid/metabolite (LPE 22:4, PE 38:5, LPE 20:0, PE 38:4, ADP) distributions across WT, 5xFAD, and Gaa-/- mouse brains.
+    produced_by_step: [5, 6]
+    visualization_tool: ImageJ + MetaVision website
+  Extended Data Fig. 10: [pathway_map]
+    caption: Pathway enrichment results for cerebellar neuronal layers: metabolomics (MetaboAnalyst, hypergeometric test) and lipid ontology (LION, KS test), both Bonferroni-corrected.
+    produced_by_step: [7, 8]
+    visualization_tool: not specified
+    statistical_test: hypergeometric test; one-sided Kolmogorov-Smirnov test; Bonferroni correction
+
+reproducibility_gaps:
+  - MetaVision3D, MetaNorm3D, MetaImpute3D, and MetaInterp3D are custom AI-driven modules with no source code, algorithmic details, or parameter specifications provided
+  - No description of raw data format (e.g., .imzML, vendor-specific), preprocessing (peak picking, noise filtering, m/z calibration), or feature annotation workflow
+  - No information on MALDI acquisition parameters (laser settings, matrix, spatial resolution, mass range, polarity, internal standards)
+  - No version, configuration, or invocation details for MetaboAnalyst or LION analyses
+  - Allen Brain Atlas usage is descriptive but lacks exact coordinate mapping methodology or software interface details
+  - ImageJ rendering parameters (e.g., colormap, opacity, interpolation method) not specified
+reproducibility_strengths:
+  - Processed 3D metabolome atlas publicly available via interactive web server (https://metavision3d.rc.ufl.edu)
+  - Source data for key figures (Fig. 2, Fig. 5) provided as downloadable CSV files
+  - Use of established, open-source (ImageJ) and free web-based tools (MetaboAnalyst, Allen Brain Atlas, LION) for downstream analysis
+  - Explicit reporting of statistical tests and multiple testing correction methods

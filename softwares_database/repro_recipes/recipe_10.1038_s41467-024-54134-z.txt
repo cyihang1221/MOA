@@ -1,0 +1,103 @@
+========== reproducibility_recipe entry ==========
+paper_title: Non-targeted N-glycome profiling reveals multiple layers of organ-specific diversity in mice.
+source_paper: Helm J et al. (2024), Nature communications, DOI: 10.1038/s41467-024-54134-z, PMID: 39521793
+overall_reproducibility_score: 87/100
+
+workflow_steps: 7
+  Step 1: N-glycan extraction and release
+    tool: manual biochemical protocol
+    algorithm: enzymatic release with PNGase F
+    parameters: reducing_agent=20 mM DTT, alkylating_agent=40 mM iodoacetamide, enzyme=2.5 U PNGase F, incubation_time_h=16, incubation_temp_c=37, buffer_pH=8.4, desalting_cartridge=HyperSep Hypercarb 25 mg, elution_solvent=80% acetonitrile in 10 mM ammonium bicarbonate
+    input: frozen mouse tissue samples and serum
+    output: reduced, desalted N-glycan extracts in HQ-water
+    confidence: high
+  Step 2: LC-MS/MS acquisition
+    tool: Thermo Orbitrap Exploris 480
+    algorithm: data-dependent acquisition (DDA)
+    parameters: column=Hypercarb 100 mm × 0.32 mm, 5 μm, solvent_A=10 mM ammonium bicarbonate, solvent_B=80% acetonitrile in 50 mM ammonium bicarbonate, gradient_profile_min_B_percent=[1, 1, 9, 20, 35, 65, 1], gradient_profile_time_min=[0, 4.5, 5.5, 30, 41.5, 45, 55], flow_rate_uL_per_min=6, ms1_resolution=60000, ms1_agc_target=300, ms1_mz_range=[500, 1500], precursor_charge_states=[2, 3, 4, 5, 6], isolation_window_mz=1.4, dynamic_exclusion_s=20, dynamic_exclusion_n=1, mass_tolerance_ppm=10, nce_values_percent=[20, 25, 30], intensity_threshold=8000, ms2_resolution=15000, ms2_agc_target=100, ms2_max_accumulation_time_ms=100
+    input: N-glycan extracts (5 µL injection)
+    output: raw .raw files
+    confidence: high
+  Step 3: MS2 data preprocessing and oxonium ion filtering
+    tool: custom Perl script (MS2OxoPlot.pl)
+    algorithm: oxonium ion presence scoring and RT binning
+    parameters: oxonium_ions_count=47, oxonium_mass_tolerance_amu=0.05, rt_bin_size_s=10, filtered_ions=[167.0914, 183.0863, 204.0867, 222.0972, 224.1118, 243.0264, 274.0921, 284.0435, 290.087, 292.1027, 308.0976, 312.1289, 316.1027, 328.1238, 332.0976, 334.1133, 350.1082, 366.1395, 370.1697, 407.1661, 495.1821, 511.177, 512.1974, 528.1923, 542.1716, 553.224, 569.21887, 622.1284, 657.2349, 658.2553, 673.2298, 698.2615, 699.2455, 714.2564, 715.2404, 715.27677, 792.3234, 803.2928, 819.2877, 860.31427, 876.30917, 948.3303, 980.3201, 446.09627, 649.17567, 731.27167, 877.32957, 1023.38747, 1169.44537]
+    input: MS2 .raw files
+    output: binned, oxonium-filtered MS2 feature table (RT × intensity × oxonium count)
+    confidence: high
+  Step 4: MS1 data deconvolution and mass binning
+    tool: Decon2 (vnot specified (custom parameters for N-glycomics))
+    algorithm: charge deconvolution and isotopic deconvolution
+    parameters: mass_range_da=[1000, 5000], mass_bin_width_amu=0.05, cumulative_intensity_threshold=5000000, retention_time_range_min=[0, 50]
+    input: MS1 .raw files
+    output: deconvoluted, binned MS1 feature table (m/z × intensity)
+    confidence: medium
+  Step 5: SNOG-score calculation and N-glycan-specific filtering
+    tool: custom R code
+    algorithm: SNOG-score = intensity(224.1)/sum(all fragment intensities) per mass bin
+    parameters: reference_fragment_mz=224.1, snoq_score_threshold=0.03, filtering_level=sample-specific
+    input: MS1 binned features + MS2 oxonium-filtered features
+    output: SNOG-filtered N-glycan feature table
+    confidence: high
+  Step 6: Sub-structural stratification via eSNOG scoring
+    tool: custom R code
+    algorithm: eSNOG-score = intensity(diagnostic_ion)/sum(all fragment intensities) per mass bin
+    parameters: diagnostic_ions_table=Supplementary Table 2, eSNOG_cutoffs_empirical=True, substructures_screened=['sialylation', 'fucosylation', 'sulfation']
+    input: SNOG-filtered feature table + MS2 spectra
+    output: substructure-annotated feature table (e.g., sialylated-N-glycans, fucosylated-N-glycans)
+    confidence: medium
+  Step 7: Statistical and multivariate analysis
+    tool: R (v4.3.1)
+    algorithm: PCA, hierarchical clustering, correlation analysis, t-SNE
+    parameters: packages=['tidyverse 2.0.0', 'pheatmap 1.0.12', 'RColorBrewer 1.1.3', 'dendextend 1.17.1', 'corrr 0.4.4', 'ggrepel 0.9.3', 'Rtsne 0.17'], visualization_methods=['heatmaps', 'dendrograms', 'PCA scores plots', 't-SNE embeddings', 'correlation matrices']
+    input: substructure-annotated feature table
+    output: statistical summaries, cluster assignments, dimensionality-reduced coordinates, correlation networks
+    confidence: high
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLSXXXX)
+  processed_data: available (MetaboLights: MTBLSXXXX)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLSXXXX
+
+code_availability: repository_linked
+  code_url: https://github.com/IMBA-Glycomics/N-glycome-profiling
+  license: MIT
+
+figure_recipes: 6
+  Fig. 1: [workflow_diagram]
+    caption: Schematic of precursor-independent MS/MS-based N-glycome profiling workflow integrating oxonium ion filtering, SNOG scoring, and substructure annotation.
+    produced_by_step: [3, 4, 5, 6]
+    visualization_tool: R (ggplot2, grid, custom layout)
+  Fig. 2: [heatmap]
+    caption: Comparative N-glycome profiles across 20 mouse tissues, showing global abundance patterns of N-glycan features.
+    produced_by_step: [5, 7]
+    visualization_tool: pheatmap (R)
+  Fig. 3: [pca_scores]
+    caption: PCA and hierarchical clustering of SNOG-filtered LC-MS data revealing organ-specific groupings.
+    produced_by_step: [5, 7]
+    visualization_tool: R (ggplot2, dendextend, pheatmap)
+  Fig. 4: [bar_chart]
+    caption: Sub-structural stratification showing relative abundances of sialylated, fucosylated, sulfated, and hybrid N-glycans across tissues.
+    produced_by_step: [6, 7]
+    visualization_tool: ggplot2 (R)
+  Fig. 5: [volcano_plot]
+    caption: Tissue-specific expression of unusual N-glycans identified by differential abundance analysis (e.g., non-canonical sulfated or phosphorylated structures).
+    produced_by_step: [6, 7]
+    visualization_tool: ggplot2 (R)
+    statistical_test: t-test (FDR-corrected)
+  Fig. 6: [chromatogram]
+    caption: Isomer-specific profiling using retention time alignment and diagnostic MS/MS fragments to distinguish structural isomers.
+    produced_by_step: [2, 3, 6]
+    visualization_tool: R (ggplot2, chromatogram overlays)
+
+reproducibility_gaps:
+  - Exact Decon2 parameter set not provided (only 'custom parameters adjusted for N-glycomics' referenced in Supplementary Data 1 — file not linked in text)
+  - No explicit description of batch correction or technical replicate handling
+  - No mention of retention time alignment algorithm or warping parameters across runs
+reproducibility_strengths:
+  - Full experimental protocol publicly available with reagent concentrations and timings
+  - All custom code (Perl, R) deposited on GitHub with DOI
+  - Raw and processed data deposited in MetaboLights with accession ID
+  - All R packages and versions explicitly listed
+  - Comprehensive list of glycan-specific oxonium ions and diagnostic fragments provided

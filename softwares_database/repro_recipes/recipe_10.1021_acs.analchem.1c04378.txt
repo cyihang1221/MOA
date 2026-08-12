@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: Structure Elucidation and Mitigation of Endogenous Interferences in LC-MS-Based Metabolic Profiling of Urine.
+source_paper: Albreht A et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.1c04378, PMID: 35026111
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Chromatographic isolation of endogenous interferences
+    tool: Offline LC
+    input: human urine samples
+    output: fractionated interfering compounds
+    confidence: medium
+  Step 2: De novo structure elucidation
+    tool: LC-MS/MS, MRMS, NMR spectroscopy
+    input: isolated fractions
+    output: unambiguous chemical structures (l,l-TMAP and l,l-DMPP), including cis/trans isomer assignments
+    confidence: high
+  Step 3: Characterization of isomer interconversion dynamics
+    tool: NMR spectroscopy
+    algorithm: analysis of coalescence behavior and kinetic modeling of cis/trans exchange
+    input: NMR spectra of isolated dipeptides in solution
+    output: evidence for slow interconversion due to intramolecular ionic interactions
+    confidence: medium
+  Step 4: Evaluation of mitigation strategies for LC-MS interference
+    tool: LC-MS method optimization
+    parameters: column_temperature=varied, mobile_phase_pH=varied
+    input: urine samples under different chromatographic conditions
+    output: reduced chromatographic footprint of l,l-TMAP and l,l-DMPP; assessment of ionization suppression effects
+    confidence: low
+  Step 5: Assessment of sample dilution and internal standardization
+    tool: Dilute-and-shoot LC-MS
+    parameters: dilution_factor=not specified, internal_standard_type=not specified
+    input: urine samples with/without dilution and internal standards
+    output: mitigated ionization suppression effects on metabolic profile
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposited in public repository
+  - No details on LC-MS instrument parameters (e.g., gradient, column type, flow rate)
+  - No specification of NMR or MRMS acquisition parameters or processing software
+  - Mitigation strategy parameters (pH values, temperatures, dilution factors) not reported
+  - No computational tools, scripts, or workflows shared for structure elucidation or data analysis
+reproducibility_strengths:
+  - Use of orthogonal analytical techniques (LC-MS/MS, MRMS, NMR) for rigorous structural validation
+  - Clear identification and naming of novel metabolites (l,l-DMPP) and known but contextually mischaracterized compound (l,l-TMAP)

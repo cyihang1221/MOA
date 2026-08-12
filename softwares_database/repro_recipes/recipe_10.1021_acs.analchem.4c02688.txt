@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: COLMAR1d: A Web Server for Automated, Quantitative One-Dimensional Nuclear Magnetic Resonance-Based Metabolomics at Arbitrary Magnetic Fields.
+source_paper: Li DW et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.4c02688, PMID: 39427262
+overall_reproducibility_score: 40/100
+
+workflow_steps: 4
+  Step 1: NMR spectral preprocessing
+    tool: COLMAR1d web server
+    algorithm: automated processing and spectral deconvolution
+    input: raw 1D NMR spectra (FID or processed .jcamp, .nmrml, or vendor formats)
+    output: preprocessed, phased, baseline-corrected, and referenced spectra
+    confidence: medium
+  Step 2: Database query and spectral matching
+    tool: COLMAR1d database
+    algorithm: GISSMO-based database querying at arbitrary magnetic fields
+    parameters: field_strength_range_hz=[334800000.0, 5030000000.0], metabolite_count=480
+    input: preprocessed 1D NMR spectra
+    output: candidate metabolite matches with chemical shift and J-coupling constraints
+    confidence: high
+  Step 3: Globally optimized mixture analysis
+    tool: COLMAR1d platform
+    algorithm: global optimization of spectral fitting using prior knowledge from GISSMO
+    parameters: fitting_method=globally optimized, constraints=['chemical shift', 'J-coupling', 'field-dependent line shapes']
+    input: preprocessed spectra + database matches
+    output: quantitative concentration estimates for identified metabolites
+    confidence: high
+  Step 4: Metabolite quantification and reporting
+    tool: COLMAR1d web server
+    algorithm: integrated peak integration and concentration calibration using internal/external standards
+    parameters: standard_type=internal or external, calibration_method=reference compound-based
+    input: fitted spectral components
+    output: absolute or relative metabolite concentrations (mM or arbitrary units)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw NMR data not deposited or referenced
+  - No description of input spectral format requirements or preprocessing parameters (e.g., zero-filling, apodization, window functions)
+  - COLMAR1d is a web server — no local installation or containerized version provided
+  - GISSMO database access details and licensing not specified
+  - No benchmarking datasets or example spectra provided for method validation
+reproducibility_strengths:
+  - Web platform publicly accessible (enables immediate use)
+  - Database covers wide field range (80 MHz–1.2 GHz), supporting reproducibility across NMR instruments
+  - Explicit mention of >480 metabolites from GISSMO enhances transparency of annotation scope

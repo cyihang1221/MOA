@@ -1,0 +1,91 @@
+========== reproducibility_recipe entry ==========
+paper_title: π-PrimeNovo: an accurate and efficient non-autoregressive deep learning model for de novo peptide sequencing.
+source_paper: Zhang X et al. (2025), Nature communications, DOI: 10.1038/s41467-024-55021-3, PMID: 39747823
+overall_reproducibility_score: 42/100
+
+workflow_steps: 5
+  Step 1: Training data acquisition and preprocessing
+    tool: MassIVE-KB v1 (v1)
+    algorithm: spectral library curation
+    parameters: precursor_count=2100000, protein_count=19610, data_volume_tb=31.0, dataset_count=227
+    input: raw MS/MS spectra (.mzML or vendor format)
+    output: curated spectral library with annotated peptide sequences
+    confidence: high
+  Step 2: Spectrum representation encoding
+    tool: Custom Transformer encoder
+    algorithm: sinusoidal positional embedding + linear intensity projection
+    parameters: embedding_dim=d, rho_min=None, rho_max=None, max_spectrum_peaks=None
+    input: spectrum S = {I, c, m}
+    output: encoded spectrum embedding R^(0)
+    confidence: medium
+  Step 3: Non-autoregressive peptide sequence generation
+    tool: Custom Transformer decoder
+    algorithm: CTC-based non-autoregressive decoding with blank token (ϵ)
+    parameters: max_generation_length=t, blank_token_id=ϵ, reduction_function=Γ(·)
+    input: encoded spectrum embedding
+    output: token probability matrix (t × |vocabulary|)
+    confidence: high
+  Step 4: Mass-constrained decoding via dynamic programming
+    tool: Custom CUDA-accelerated knapsack DP decoder
+    algorithm: knapsack-like dynamic programming with mass tolerance bounds
+    parameters: mass_tolerance_ppm=1.0, tolerance_absolute_da=0.001, decoding_precision_e=<1.0, lower_bound_L=m - tol, upper_bound_U=m + tol
+    input: token probability matrix + precursor mass m + charge c
+    output: mass-validated de novo peptide sequence A
+    confidence: medium
+  Step 5: Loss optimization
+    tool: PyTorch (implicit)
+    algorithm: Connectionist Temporal Classification (CTC) loss
+    parameters: ctc_blank_index=0, log_prob_sum=True
+    input: decoder logits + ground truth sequence A
+    output: scalar CTC loss ℒ_ctc
+    confidence: high
+
+data_availability:
+  raw_data: available (MassIVE: MassIVE-KB v1)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+  data_urls: https://massive.ucsd.edu/ProteoSAFe/static/massive-kb.jsp
+
+code_availability: not_mentioned
+
+figure_recipes: 6
+  Fig. 1: [workflow_diagram]
+    caption: Illustrates π-PrimeNovo as the first biological non-autoregressive Transformer for precise peptide sequencing.
+    produced_by_step: [2, 3, 4]
+    visualization_tool: unknown
+  Fig. 2: [bar_chart]
+    caption: Detailed performance comparison of π-PrimeNovo against prior deep learning methods on a nine-species benchmark dataset.
+    produced_by_step: [3, 4]
+    visualization_tool: unknown
+    statistical_test: mean accuracy ± std across species
+  Fig. 3: [boxplot]
+    caption: Demonstrates π-PrimeNovo's generalization to unseen spectra from diverse biological sample sources.
+    produced_by_step: [3, 4]
+    visualization_tool: unknown
+    statistical_test: interquartile range of accuracy across sources
+  Fig. 4: [heatmap]
+    caption: Error analysis and model explainability insights into π-PrimeNovo’s performance.
+    produced_by_step: [3, 4, 5]
+    visualization_tool: unknown
+  Fig. 5: [bar_chart]
+    caption: Highlights π-PrimeNovo’s advantages in metaproteomic analysis.
+    produced_by_step: [3, 4]
+    visualization_tool: unknown
+    statistical_test: throughput (spectra/sec) and accuracy gain vs baseline
+  Fig. 6: [table]
+    caption: Shows de novo sequencing results for peptides with post-translational modifications (PTMs).
+    produced_by_step: [3, 4]
+    visualization_tool: unknown
+
+reproducibility_gaps:
+  - No source code repository linked or described
+  - No trained model weights or inference checkpoint provided
+  - No specification of hyperparameters (e.g., d, t, learning rate, batch size, optimizer)
+  - No details on CUDA kernel implementation or DP table initialization thresholds
+  - No validation of ρ_min / ρ_max values or embedding dimension d
+  - Supplementary Information referenced but not accessible in provided text
+reproducibility_strengths:
+  - Training data explicitly named and publicly available (MassIVE-KB v1)
+  - Core algorithms (CTC, knapsack DP) formally defined with equations
+  - Architecture grounded in established Transformer and CTC theory
+  - Precise mass tolerance and decoding constraints mathematically specified

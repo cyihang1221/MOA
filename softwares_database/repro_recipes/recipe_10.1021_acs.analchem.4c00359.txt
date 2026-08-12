@@ -1,0 +1,49 @@
+========== reproducibility_recipe entry ==========
+paper_title: LipiDex 2 Integrates MS&lt;sup&gt;n&lt;/sup&gt; Tree-Based Fragmentation Methods and Quality Control Modules to Improve Discovery Lipidomics.
+source_paper: Anderson BJ et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.4c00359, PMID: 38640432
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: MS^n tree-based in silico spectral library generation
+    tool: LipiDex 2 (v2.0)
+    algorithm: tree-based fragmentation logic
+    input: lipid structure database (e.g., LIPID MAPS)
+    output: in silico MS^n spectral library
+    confidence: low
+  Step 2: LC-MS data processing with integrated fragmentation logic
+    tool: LipiDex 2 (v2.0)
+    algorithm: integrated MS^n tree-guided peak annotation
+    input: raw LC-MS/MS or LC-MS^n data
+    output: structurally resolved lipid identifications (e.g., sn-position, double bond location)
+    confidence: low
+  Step 3: Automated quality control checks
+    tool: LipiDex 2 (v2.0)
+    algorithm: QC module suite (unspecified metrics)
+    input: processed feature table and spectra
+    output: QC metrics dashboard (e.g., retention time stability, intensity CV, mass accuracy)
+    confidence: low
+  Step 4: Spectral matching and peak annotation
+    tool: LipiDex 2 (v2.0)
+    algorithm: spectral similarity scoring (unspecified, e.g., cosine, dot product)
+    input: experimental MS/MS or MS^n spectra + in silico library
+    output: annotated lipid features with confidence scores
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of algorithmic parameters (e.g., mass tolerance, RT window, similarity threshold)
+  - No mention of raw or processed data deposition
+  - No software repository link or installation instructions
+  - No details on QC metrics, thresholds, or dashboard implementation
+  - No validation dataset or benchmarking protocol described
+reproducibility_strengths:
+  - Explicit focus on reproducible lipid identification via MS^n tree logic
+  - Modular architecture implied by 'integrated QC modules' and 'dashboard UI'

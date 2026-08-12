@@ -1,0 +1,106 @@
+========== reproducibility_recipe entry ==========
+paper_title: Predicting glycan structure from tandem mass spectrometry via deep learning.
+source_paper: Urban J et al. (2024), Nature methods, DOI: 10.1038/s41592-024-02314-6, PMID: 38951670
+overall_reproducibility_score: 92/100
+
+workflow_steps: 9
+  Step 1: Raw data conversion to mzML
+    tool: msconvert
+    algorithm: ProteoWizard
+    input: vendor-specific raw files (.raw, .wiff, .d, etc.)
+    output: .mzML files
+    confidence: high
+  Step 2: MS/MS spectrum extraction
+    tool: pymzML (v2.5.2)
+    algorithm: custom script
+    parameters: max_fragment_peaks=1000
+    input: .mzML files
+    output: list of MS/MS spectra with precursor m/z and retention time
+    confidence: high
+  Step 3: Spectrum filtering by glycan peak proximity
+    tool: custom Python script (vCandyCrunch v.0.3.0)
+    algorithm: m/z ±0.5 Da and RT ±2 min windowing
+    parameters: mz_tolerance_da=0.5, rt_tolerance_min=2.0
+    input: extracted MS/MS spectra + literature-reported glycan peaks
+    output: curated subset of annotated and unannotated spectra
+    confidence: high
+  Step 4: Data preprocessing for model input
+    tool: CandyCrunch (custom) (vv.0.3.0)
+    algorithm: intensity normalization + m/z binning + remainder encoding
+    parameters: rt_min_threshold_min=2.0, rt_normalization_method=divide_by_max_or_30, intensity_normalization=divide_by_total_spectrum_intensity, mz_bin_count=2048, mz_min=39.714, mz_max=3000.0, remainder_encoding=True
+    input: MS/MS spectra (m/z, intensity, precursor m/z, RT)
+    output: binned spectral tensor (2048 × 2) + embedded metadata vectors
+    confidence: high
+  Step 5: Model architecture execution
+    tool: PyTorch (v2.1.0)
+    algorithm: dilated residual 1D CNN with learned embeddings and domain-aware losses
+    parameters: dilation_rates=[1, 2, 4, 8, 16, 32], conv_kernel_size=3, leaky_relu_negative_slope=0.2, max_pool_kernel_size=20, embedding_dims={'glycan_class': 24, 'ion_mode': 24, 'ion_trap': 24, 'lc_type': 24, 'modification': 24}, precursor_mz_embedding_dim=24, rt_embedding_dim=24, fc_dropout_rate=0.2, total_trainable_parameters=12375084
+    input: preprocessed spectral tensors + metadata embeddings
+    output: softmax class probabilities over 3391 glycan structures
+    confidence: high
+  Step 6: Supervised + self-supervised training
+    tool: PyTorch + ASAM + PolyLoss (vPyTorch v.2.1.0, ASAM v.1.x, PolyLoss v.1.x)
+    algorithm: ASAM-regularized AdamW with structure/composition distance losses
+    parameters: epochs=200, early_stopping_patience=12, batch_size=256, learning_rate=0.0001, lr_scheduler_factor=0.2, lr_scheduler_patience=4, weight_decay=2e-05, label_smoothing_epsilon=0.1, polyloss_epsilon=1.0, structure_distance_loss_weight=1.0, composition_distance_loss_weight=1.0, data_augmentation=['low_intensity_peak_removal', 'peak_jitter', 'new_peak_addition', 'adduct_simulation', 'precursor_mz_noise_±0.5Da', 'rt_noise_±10%']
+    input: preprocessed training spectra (489,103 labeled + self-labeled)
+    output: trained CandyCrunch model weights
+    confidence: high
+  Step 7: Inference and post-processing
+    tool: CandyCrunch package (vv.0.3.0)
+    algorithm: test-time augmentation + Platt scaling + biosynthetic confidence boosting + diagnostic ion filtering
+    parameters: top_k_predictions=25, platt_scaling_factor=1.15, tta_inferences=5, min_prediction_probability=0.01, mass_tolerance_da=0.5, biosynthetic_window_masses=['M-1', 'M-2', 'M-n'], biosynthetic_confidence_boost=0.1, cross_class_threshold=0.2
+    input: new .mzML files
+    output: curated top-5 glycan predictions per glycan entity (with GlyTouCan IDs, diagnostic ions, biosynthetic context)
+    confidence: high
+  Step 8: Retention time alignment across samples
+    tool: CandyCrunch wrap_inference_batch (vv.0.3.0)
+    algorithm: discontinuity-based m/z grouping + 0.5-min RT chunking + cross-sample RT alignment
+    parameters: rt_chunk_width_min=0.5, mz_discontinuity_threshold_da=0.5
+    input: batch of .mzML files from same experiment
+    output: aligned prediction library with cross-sample feature matching
+    confidence: high
+  Step 9: Zero-shot biosynthetic network inference
+    tool: glycowork (vv.1.1.0)
+    algorithm: subgraph_isomorphism + evolutionary pruning (for milk oligosaccharides)
+    parameters: mass_tolerance_da=0.5, network_pruning=evolutionary_if_available
+    input: unpredicted spectra with valid composition
+    output: biosynthetically plausible candidate structures
+    confidence: medium
+
+data_availability:
+  raw_data: available (Zenodo: 10.5281/zenodo.10029271)
+  processed_data: available (Zenodo: 10.5281/zenodo.10029271)
+  metadata: available
+  data_urls: https://doi.org/10.5281/zenodo.10029271
+
+code_availability: repository_linked
+  code_url: https://github.com/BojarLab/CandyCrunch
+  license: MIT
+
+figure_recipes: 4
+  Fig. 1: [workflow_diagram]
+    caption: Overview of the CandyCrunch deep learning pipeline for predicting glycan structure from LC-MS/MS data.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7]
+    visualization_tool: matplotlib, seaborn, or custom Python plotting
+  Fig. 2: [bar_chart]
+    caption: Identification of diagnostic fragment ions using CandyCrunch predictions and statistical enrichment analysis.
+    produced_by_step: [7, 9]
+    visualization_tool: matplotlib, seaborn
+  Fig. 3: [other]
+    caption: Molecular dynamics simulations revealing mechanistic basis of observed fragmentation patterns.
+    visualization_tool: VMD or PyMOL
+  Fig. 4: [network]
+    caption: Biosynthetic networks derived from CandyCrunch predictions enabling biological interpretation.
+    produced_by_step: [9]
+    visualization_tool: NetworkX + matplotlib or Cytoscape
+
+reproducibility_gaps:
+  - Molecular dynamics (Fig. 3) methodology not described in Methods section — no software, parameters, or simulation duration specified
+  - Exact implementation details of 'evolutionary pruning' for milk oligosaccharides not provided
+  - No description of how diagnostic ions (Fig. 2) were statistically enriched or thresholded
+reproducibility_strengths:
+  - Full dataset publicly available on Zenodo with DOI
+  - Entire workflow open-source on GitHub under MIT license
+  - Colab notebook provided for immediate testing
+  - All preprocessing, model architecture, training, and inference steps fully specified with hyperparameters
+  - Dependencies (pymzML, pyteomics, glycowork, PyTorch) versioned and cited

@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: Machine Learning for Enhanced Identification Probability in RPLC/HRMS Nontargeted Workflows.
+source_paper: Ngan HL et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c01873, PMID: 40791078
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Molecular fingerprint-to-RTI prediction
+    tool: Machine learning model (MF-to-RTI)
+    algorithm: Supervised regression (unspecified, e.g., RF/XGBoost/NN implied by context)
+    parameters: training_calibrants=4713
+    input: Molecular fingerprints (e.g., ECFP4) + reference RT data
+    output: Predicted retention time index (RTI)
+    confidence: medium
+  Step 2: Cumulative neutral loss-to-RTI prediction
+    tool: Machine learning model (CNL-to-RTI)
+    algorithm: Supervised regression
+    parameters: training_spectra=485577
+    input: Cumulative neutral loss (CNL) spectral descriptors
+    output: Predicted retention time index (RTI)
+    confidence: medium
+  Step 3: Binary classification of spectral matches
+    tool: Machine learning model (TP/TN classifier)
+    algorithm: Binary classification (unspecified, likely ensemble or deep learning given scale)
+    parameters: training_matches=1686319, positive_class=true positive, negative_class=semisynthetic true negative
+    input: MS/MS spectral match features + RTI error + library search scores
+    output: Class probability P(TP)
+    confidence: medium
+  Step 4: Retention time index error integration and identification probability scoring
+    tool: k-nearest neighbors algorithm
+    algorithm: k-NN with weighted voting
+    parameters: k=None, weighting_scheme=weighted, metric=Euclidean or custom distance combining spectral similarity and RTI error
+    input: Spectral match scores, RTI predictions (MF & CNL), RTI errors, library search results
+    output: Enhanced identification probability (IP) score per compound
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposited or referenced
+  - No code, model weights, or training scripts shared
+  - ML algorithms unspecified (no architecture, hyperparameters, or software framework stated)
+  - No details on k-NN implementation (k value, distance metric, weighting function)
+  - RTI calibration methodology and chromatographic conditions not described
+  - Semisynthetic TN generation procedure not disclosed
+reproducibility_strengths:
+  - Large-scale training dataset sizes explicitly reported (enabling estimation of model scope)
+  - Performance metrics fully reported (F1, MCC, recall, R²) for validation

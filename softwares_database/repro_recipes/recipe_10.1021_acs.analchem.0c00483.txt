@@ -1,0 +1,75 @@
+========== reproducibility_recipe entry ==========
+paper_title: Direct Infusion-Three-Dimensional-Mass Spectrometry Enables Rapid Chemome Comparison among Herbal Medicines.
+source_paper: Xu X et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.0c00483, PMID: 32368895
+overall_reproducibility_score: 30/100
+
+workflow_steps: 7
+  Step 1: Direct infusion MS acquisition
+    tool: Qtrap-MS
+    parameters: acquisition_mode=direct_infusion, instrument_model=Qtrap
+    input: crude herbal medicine extracts (no chromatographic separation)
+    output: raw .wiff files (vendor format)
+    confidence: high
+  Step 2: Three-dimensional data acquisition: Dimension 1 (MIM-based quantitation & alignment)
+    tool: Analyst software (AB Sciex)
+    algorithm: stepwise_multiple_ion_monitoring
+    parameters: mim_stepwise=True, mim_trigger_for_ms2=True, target_ions_list=predefined_coumarin_and_derivatives_precursors
+    input: raw .wiff files
+    output: aligned quantitative MIM data matrix
+    confidence: medium
+  Step 3: Three-dimensional data acquisition: Dimension 2 (MS² spectral acquisition)
+    tool: Qtrap-MS with Analyst
+    algorithm: information_dependent_acquisition
+    parameters: ms2_acquisition_mode=enhanced_product_ion_(EPI), trigger_condition=MIM_peak_detected, product_ion_scan_range=50–1000 m/z, collision_energy=optimized_per_precursor
+    input: MIM-triggered precursor ions
+    output: MS² spectra library per sample
+    confidence: medium
+  Step 4: Three-dimensional data acquisition: Dimension 3 (Energy-resolved MS)
+    tool: Qtrap-MS with Analyst
+    algorithm: collision_energy_scanning
+    parameters: erms_mode=online_energy_resolved_ms, ce_range=10–100 eV, ce_step=5 eV, breakdown_graph_resolution=per_MIM_precursor
+    input: MIM-selected precursors
+    output: CE₅₀ breakdown graphs and fragmentation profiles
+    confidence: medium
+  Step 5: Data library construction for annotation
+    tool: in-house library
+    algorithm: spectral_matching_and_CE50_fitting
+    parameters: reference_data_source=well-developed_LC-MS_methods, library_features_included=['MS2_spectra', 'CE50_values'], annotation_criteria=MS2_similarity_threshold_and_CE50_match
+    input: LC-MS/MS reference standards data (retention time, MS², CE₅₀)
+    output: curated DI-3D-MS reference library
+    confidence: low
+  Step 6: Metabolite identification via spectral matching
+    tool: custom_matching_algorithm
+    algorithm: MS2_and_breakdown_graph_matching
+    parameters: ms2_similarity_metric=dot_product_or_cosine, ce50_tolerance_eV=2.0, match_confidence_levels=['high', 'medium', 'low']
+    input: DI-3D-MS acquired MS² + breakdown graphs
+    output: structurally annotated metabolite list with confidence scores
+    confidence: low
+  Step 7: Chemome comparison and clustering
+    tool: unsupervised_multivariate_analysis
+    algorithm: hierarchical_clustering_and_PCA
+    parameters: distance_metric=euclidean, clustering_method=average_linkage, components=2, scaling=pareto
+    input: annotated and quantified feature table (MIM intensities)
+    output: sample clustering dendrogram and PCA score plot
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw .wiff mass spectrometry data not deposited in any public repository
+  - No access to Qtrap-specific Analyst method files (.meth) or MIM/EPI/ER-MS acquisition scripts
+  - Custom data library construction and matching algorithm not shared or described in sufficient detail
+  - No specification of MIM ion list (precursor m/z values), CE ramp parameters, or EPI settings
+  - No statistical thresholds or validation metrics reported for metabolite identification (e.g., FDR, match scores)
+  - Commercial software dependency (Analyst, Qtrap) without open alternatives or export specifications
+reproducibility_strengths:
+  - Clear conceptual framework for 3D-MS strategy (MIM + EPI + ER-MS)
+  - Biological validation via known chemotaxonomic markers (coumarins, pyranocoumarins, etc.)
+  - Explicit linkage between analytical dimensions and biological interpretation

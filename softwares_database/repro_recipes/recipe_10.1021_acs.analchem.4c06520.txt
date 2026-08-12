@@ -1,0 +1,52 @@
+========== reproducibility_recipe entry ==========
+paper_title: imzML Writer: An Easy-to-Use Python Pipeline for Conversion of Continuously Acquired Raw Mass Spectrometry Imaging Data to imzML Format.
+source_paper: Monaghan J et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.4c06520, PMID: 40084954
+overall_reproducibility_score: 85/100
+
+workflow_steps: 4
+  Step 1: Conversion of continuously acquired raw MSI data to imzML format
+    tool: imzML Writer
+    algorithm: pixel-aligned imzML serialization
+    input: vendor-specific raw MSI data (e.g., nano-DESI, DESI)
+    output: imzML file (XML + binary .ibd)
+    confidence: high
+  Step 2: Visualization and batch export of ion images from imzML files
+    tool: imzML Scout
+    algorithm: ion image rendering and format conversion
+    parameters: export_formats=['PNG', 'TIF', 'CSV']
+    input: imzML file
+    output: ion images (PNG/TIF), intensity matrices (CSV)
+    confidence: medium
+  Step 3: Downstream MSI analysis using imzML-compatible tools
+    tool: Cardinal MSI
+    algorithm: probabilistic matrix factorization (PMF), spatial segmentation
+    input: imzML file
+    output: segmented ion images, molecular co-localization maps
+    confidence: low
+  Step 4: Downstream MSI analysis using imzML-compatible tools
+    tool: METASPACE
+    algorithm: annotation-driven spatial metabolomics (MS/MS spectral matching, ontology enrichment)
+    input: imzML file
+    output: annotated ion images, metabolite ID reports, spatial enrichment scores
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/VIU-Metabolomics/imzML_Writer
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No example raw nano-DESI/DESI data provided or deposited
+  - No detailed parameters or configuration files shown for Cardinal MSI or METASPACE usage
+  - No workflow script or pipeline log demonstrating end-to-end reproducibility
+reproducibility_strengths:
+  - Tool is open-source with GUI and CLI modes
+  - Available via pip and standalone binaries (Mac/PC)
+  - Explicitly enables interoperability with widely used open MSI tools (Cardinal, METASPACE)
+  - Includes imzML Scout for immediate validation and export

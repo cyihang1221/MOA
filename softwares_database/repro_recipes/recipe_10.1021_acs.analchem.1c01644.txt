@@ -1,0 +1,55 @@
+========== reproducibility_recipe entry ==========
+paper_title: ISFrag: De Novo Recognition of In-Source Fragments for Liquid Chromatography-Mass Spectrometry Data.
+source_paper: Guo J et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.1c01644, PMID: 34270210
+overall_reproducibility_score: 72/100
+
+workflow_steps: 4
+  Step 1: ISF feature recognition using coelution pattern
+    tool: ISFrag
+    algorithm: coelution-based ISF detection
+    parameters: rt_tolerance_sec=5, mz_tolerance_ppm=10
+    input: LC-MS full-scan or DDA/DIA data (e.g., .mzML, .cdf)
+    output: list of candidate ISF features with precursor assignments
+    confidence: high
+  Step 2: ISF feature validation using MS² spectral correlation
+    tool: ISFrag
+    algorithm: MS² fragmentation pattern similarity
+    parameters: cosine_similarity_threshold=0.7, min_matched_peaks=3
+    input: MS² spectra (from DDA or DIA-MS²)
+    output: validated ISF-precursor pairs
+    confidence: high
+  Step 3: ISF pathway construction
+    tool: ISFrag
+    algorithm: precursor–fragment network graph generation
+    parameters: max_fragment_depth=2, min_edge_weight=0.5
+    input: validated ISF-precursor pairs
+    output: ISF pathway network (graph object or edge list)
+    confidence: medium
+  Step 4: MS parameter effect analysis on ISF generation
+    tool: ISFrag + custom R analysis
+    algorithm: comparative ISF abundance profiling across instrument settings
+    parameters: capillary_voltage_range_kV=[3.0, 4.5], collision_energy_range_eV=[5, 40]
+    input: LC-MS datasets acquired under varying ESI and collision energies
+    output: quantified ISF count/percentage per condition
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: https://github.com/HuanLab/ISFrag
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS datasets used for validation and parameter testing not publicly deposited
+  - No detailed description of chromatographic conditions (e.g., column, gradient, flow rate)
+  - No specification of MS instrument model or vendor-specific acquisition parameters beyond energy settings
+  - ISFrag's internal preprocessing steps (e.g., peak picking, alignment) not explicitly described
+reproducibility_strengths:
+  - ISFrag source code openly available on GitHub under MIT license
+  - Algorithm principles clearly articulated (coelution, MS² correlation, fragmentation pattern similarity)
+  - Validation performed on metabolite standards with reported performance metrics (100% level 1, >80% level 2 recognition)

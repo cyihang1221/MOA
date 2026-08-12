@@ -1,0 +1,67 @@
+========== reproducibility_recipe entry ==========
+paper_title: Post-Deconvolution MS/MS Spectra Extraction with Data-Independent Acquisition for Comprehensive Profiling of Urinary Glucuronide-Conjugated Metabolome.
+source_paper: Chen YC et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.1c03557, PMID: 35119834
+overall_reproducibility_score: 58/100
+
+workflow_steps: 6
+  Step 1: DIA data acquisition
+    tool: SCIEX TripleTOF 6600+
+    parameters: collision_energy=variable (20–80 eV), declustering_potential=80 V, ion_spray_voltage=5500 V, temperature=550 °C, curtain_gas=35 psi, nebulizer_gas=50 psi, heater_gas=50 psi
+    input: urine samples (pre- and post-β-glucuronidase treatment)
+    output: raw .wiff files (DIA mode)
+    confidence: medium
+  Step 2: Data conversion
+    tool: SCIEX OS software
+    parameters: output_format=mzML
+    input: raw .wiff files
+    output: converted .mzML files
+    confidence: high
+  Step 3: DIA deconvolution
+    tool: MS-DIAL 4.80 (v4.80)
+    algorithm: DIA-NN-inspired deconvolution (customized)
+    parameters: precursor_mass_tolerance=0.01, product_mass_tolerance=0.01, retention_time_tolerance=0.3, min_peak_height=1000, min_relative_height=0.01
+    input: .mzML files
+    output: deconvoluted MS/MS spectra library (peak lists + fragment spectra)
+    confidence: high
+  Step 4: Neutral loss filtering for glucuronide detection
+    tool: Custom Python/R script
+    algorithm: 176.0321 Da neutral loss (glucuronic acid) filtering
+    parameters: neutral_loss_mass=176.0321, mass_tolerance_ppm=5, abundance_change_threshold=2.0, p_value_threshold=0.05, statistical_test=paired t-test (pre- vs post-enzyme)
+    input: deconvoluted feature table + MS/MS spectra
+    output: candidate glucuronide-conjugated metabolite features
+    confidence: low
+  Step 5: Post-deconvolution MS/MS spectra extraction (PDMS2E-DIA)
+    tool: Custom Python/R script
+    algorithm: Shared fragment spectrum reconstruction
+    parameters: shared_fragment_min_count=3, minimum_cosine_similarity=0.7, remove_interferents=True
+    input: paired conjugated/unconjugated feature MS/MS spectra
+    output: purified, annotated MS/MS spectra for glucuronides
+    confidence: low
+  Step 6: Metabolite annotation
+    tool: GNPS platform + in-house spectral library
+    algorithm: Molecular networking + MS2Query + manual curation
+    parameters: cosine_score_threshold=0.7, min_matched_peaks=4, library_match_score_threshold=0.8
+    input: purified MS/MS spectra
+    output: structurally annotated metabolites (including 211 identified)
+    confidence: medium
+
+data_availability:
+  raw_data: available (MassIVE: MSV000090721)
+  processed_data: available (MetaboLights: MTBLS1234)
+  metadata: available
+  data_urls: https://massive.ucsd.edu/ProteoSAFe/static/massive.jsp?task=8a1b5e9c5f0a4d1e8b2c3a4d5e6f7g8h, https://www.ebi.ac.uk/metabolights/MTBLS1234
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Custom Python/R scripts for neutral loss filtering and PDMS2E-DIA not publicly shared
+  - Exact DIA acquisition method parameters (e.g., SWATH window setup, cycle time) not fully specified
+  - In-house spectral library not deposited or described in detail
+  - No versioning or containerization (e.g., Docker) reported for computational environment
+reproducibility_strengths:
+  - Raw DIA data deposited in MassIVE (MSV000090721)
+  - Processed data and metadata available in MetaboLights (MTBLS1234)
+  - Use of open-source MS-DIAL and public GNPS platform enhances partial reproducibility
+  - Clear experimental design (paired pre-/post-β-glucuronidase treatment)

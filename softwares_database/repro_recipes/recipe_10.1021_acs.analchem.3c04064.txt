@@ -1,0 +1,57 @@
+========== reproducibility_recipe entry ==========
+paper_title: Development and Application of a Comprehensive Nontargeted Screening Strategy for Aristolochic Acid Analogues.
+source_paper: Chen X et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.3c04064, PMID: 38264982
+overall_reproducibility_score: 40/100
+
+workflow_steps: 5
+  Step 1: Virtual structure database creation
+    tool: AAAs_finder
+    algorithm: in silico structure enumeration
+    input: chemical rules for aristolochic acid analogues
+    output: virtual chemical structure database
+    confidence: medium
+  Step 2: UV-Vis spectra database creation
+    tool: AAAs_finder
+    algorithm: quantum-chemical calculation or empirical UV library curation
+    input: virtual structures
+    output: UV-Vis spectral database
+    confidence: low
+  Step 3: Suspect screening using exact mass and UV spectra
+    tool: AAAs_finder
+    algorithm: exact mass matching (±5 ppm) + UV spectral similarity scoring
+    parameters: mass_tolerance_ppm=5, uv_similarity_threshold=None
+    input: LC-UV-HRMS raw data (.mzML or vendor format), virtual structure + UV database
+    output: candidate suspect list with UV support
+    confidence: medium
+  Step 4: MS/MS anthropomorphic interpretation
+    tool: AAAs_finder
+    algorithm: rule-based fragmentation pattern recognition mimicking human expert reasoning
+    input: MS/MS spectra of candidate features
+    output: fragmentation plausibility score per candidate
+    confidence: low
+  Step 5: Multicondition retention time prediction and candidate ranking
+    tool: AAAs_finder
+    algorithm: machine learning or QSAR-based RT prediction across multiple LC conditions
+    parameters: n_lc_conditions=None
+    input: candidate structures, chromatographic condition metadata
+    output: ranked candidate list with RT-predicted confidence
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No public repository link for AAAs_finder source code
+  - No deposition of raw or processed LC-UV-HRMS data
+  - No specification of UV spectral similarity metric or threshold
+  - No details on MS/MS interpretation rules or RT prediction model (e.g., algorithm, training data)
+  - No instrument parameters (e.g., column, gradient, ionization mode) provided for reproducibility
+reproducibility_strengths:
+  - Strategy explicitly described as Python3-based and modular
+  - Evaluation performed for false positives/negatives, instrument dependence, reproducibility, and sensitivity

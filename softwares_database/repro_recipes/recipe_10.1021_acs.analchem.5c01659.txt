@@ -1,0 +1,59 @@
+========== reproducibility_recipe entry ==========
+paper_title: Evaluation of Three Sample Preparation Methods for LC-HRMS Suspect Screening of Contaminants of Emerging Concern in Effluent Wastewater.
+source_paper: Orlando-Véliz D et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c01659, PMID: 41257473
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Sample preparation
+    tool: lyophilization, direct injection, online SPE
+    input: effluent wastewater samples
+    output: prepared extracts for LC-HRMS analysis
+    confidence: high
+  Step 2: LC-HRMS data acquisition
+    tool: Q-ToF mass spectrometer
+    parameters: ionization_mode=['positive', 'negative'], instrument_type=Q-ToF
+    input: prepared extracts
+    output: raw .d or .raw files (vendor format)
+    confidence: medium
+  Step 3: Suspect screening and compound identification
+    tool: NORMAN SusDat database
+    algorithm: mass accuracy-based matching
+    parameters: mass_tolerance_ppm=None, level_2a_confidence_criteria=MS1 + retention time match + spectral library or reference standard match
+    input: LC-HRMS raw data
+    output: list of identified CECs (n=119, all ≥ level 2a)
+    confidence: low
+  Step 4: Multivariate statistical analysis
+    tool: Principal component analysis (PCA)
+    algorithm: PCA
+    input: compound abundance table (semi-quantitative or peak intensity matrix)
+    output: PCA scores and loadings plots
+    confidence: medium
+  Step 5: Compound prioritization
+    tool: custom scoring framework
+    algorithm: multi-criteria prioritization (abundance, persistence, mobility, bioaccumulation potential, toxicity)
+    parameters: criteria_weights=not specified, scoring method=not detailed
+    input: identified CECs with associated physicochemical/toxicological data
+    output: ranked priority list of CECs
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-HRMS data not deposited in public repository
+  - No details on LC gradient, column, or instrument settings
+  - No specification of mass tolerance (ppm) or RT window used in suspect screening
+  - Custom prioritization algorithm not described or shared
+  - No information on software used for data processing (peak picking, alignment, normalization)
+  - NORMAN SusDat usage parameters (e.g., score thresholds, filters) not reported
+  - No access to sample metadata beyond 'effluent wastewater'
+reproducibility_strengths:
+  - Uses widely accepted confidence level framework (NORMAN level 2a)
+  - Explicit comparison of three standardized sample preparation methods
+  - Clear reporting of identified compound classes and top-priority compounds

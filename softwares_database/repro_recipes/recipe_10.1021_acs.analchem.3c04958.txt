@@ -1,0 +1,55 @@
+========== reproducibility_recipe entry ==========
+paper_title: Facile Method for Determining Lanthipeptide Stereochemistry.
+source_paper: Luo Y et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.3c04958, PMID: 38232355
+overall_reproducibility_score: 45/100
+
+workflow_steps: 5
+  Step 1: Hydrolysis of lanthipeptide
+    tool: acid hydrolysis
+    parameters: temperature_C=110, time_h=24, HCl_concentration_M=6
+    input: purified lanthipeptide
+    output: free amino acid mixture including (methyl)lanthionine derivatives
+    confidence: high
+  Step 2: Derivatization with Marfey's reagent
+    tool: Marfey's reagent (FDAA)
+    parameters: reagent_excess_fold=5, reaction_time_min=60, temperature_C=50, pH=10.5
+    input: hydrolyzed amino acid mixture
+    output: FDAA-derivatized diastereomers
+    confidence: high
+  Step 3: LC-MS analysis
+    tool: liquid chromatography coupled with mass spectrometry
+    parameters: column=C18 nonchiral column, gradient=not fully specified, flow_rate_mL/min=0.2, injection_volume_uL=5, mass_analyzer=Q-TOF or equivalent high-res MS, ionization=ESI positive mode
+    input: FDAA-derivatized sample
+    output: chromatographic peak retention times and MS spectra for (methyl)lanthionine diastereomers
+    confidence: medium
+  Step 4: Stereochemical assignment by retention time comparison
+    tool: reference standard matching
+    parameters: standard_source=synthetically prepared stereoisomers, criteria=co-elution with authentic standards under identical LC conditions
+    input: LC-MS chromatograms and peak lists
+    output: assigned stereochemistry for each (methyl)lanthionine residue
+    confidence: high
+  Step 5: Synthesis of stereochemical standards
+    tool: organic synthesis
+    parameters: targets=['three methyllanthionine stereoisomers', 'two lanthionine stereoisomers'], route=described in Supporting Information
+    input: commercial amino acid precursors
+    output: authentic diastereomeric standards
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS chromatographic and MS data not deposited in public repository
+  - Exact LC gradient method incompletely specified
+  - No code or script for data processing or peak integration mentioned
+  - Synthetic procedures for standards only in Supporting Information without full experimental details or analytical data
+reproducibility_strengths:
+  - Explicit sample amount requirement (0.05 mg) stated
+  - Use of widely accessible nonchiral C18 column and standard LC-MS instrumentation
+  - Reference to synthetically prepared authentic stereoisomer standards

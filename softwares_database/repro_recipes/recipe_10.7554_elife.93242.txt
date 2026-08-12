@@ -1,0 +1,61 @@
+========== reproducibility_recipe entry ==========
+paper_title: An antimicrobial drug recommender system using MALDI-TOF MS and dual-branch neural networks.
+source_paper: De Waele G et al. (2024), eLife, DOI: 10.7554/elife.93242, PMID: 39540875
+overall_reproducibility_score: 72/100
+
+workflow_steps: 5
+  Step 1: MALDI-TOF MS spectral acquisition
+    tool: MALDI-TOF MS instrument
+    input: microbial colonies (clinical isolates)
+    output: raw mass spectra (.d, .spt, or vendor-specific format)
+    confidence: low
+  Step 2: Spectral preprocessing
+    tool: Custom Python pipeline
+    algorithm: baseline correction, smoothing, peak alignment, intensity normalization
+    parameters: mass_range_min=2000, mass_range_max=20000, resolution=0.1
+    input: raw mass spectra
+    output: preprocessed spectra (m/z-intensity arrays)
+    confidence: medium
+  Step 3: Dual-branch neural network training
+    tool: PyTorch
+    algorithm: dual-branch CNN + fully connected network
+    parameters: learning_rate=0.001, batch_size=32, epochs=100, optimizer=Adam, loss_function=cross_entropy
+    input: preprocessed spectra + species/drug labels
+    output: trained AMR prediction model
+    confidence: high
+  Step 4: AMR profile prediction and drug recommendation
+    tool: Custom inference module
+    algorithm: multi-label classification (per-drug susceptibility/resistance prediction)
+    parameters: threshold=0.5, top_k_recommendations=3
+    input: preprocessed spectrum + species ID
+    output: ranked list of recommended antimicrobial drugs with predicted susceptibility
+    confidence: high
+  Step 5: Model fine-tuning for external lab data
+    tool: PyTorch
+    algorithm: transfer learning with few-shot adaptation
+    parameters: fine_tuning_epochs=10, learning_rate_finetune=0.0001
+    input: new site-specific MALDI-TOF spectra + limited labels
+    output: adapted AMR model
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/gdewael/maldi-nn
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw MALDI-TOF spectral data not deposited in public repository
+  - No description of spectral preprocessing parameters (e.g., baseline algorithm, smoothing kernel)
+  - Training dataset composition (species/drug coverage, sample sizes per class) not detailed
+  - No validation of spectral preprocessing reproducibility across instruments/labs
+reproducibility_strengths:
+  - Source code publicly available on GitHub and PyPI
+  - Use of open-source framework (PyTorch)
+  - Explicit description of model architecture (dual-branch CNN) and training protocol
+  - Mention of fine-tuning capability for multi-site deployment

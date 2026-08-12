@@ -218,7 +218,12 @@ def find_differential_csv(paths: dict[str, str], upload_dir: str) -> Optional[st
     )
 
 
-def summarize_session_files(paths: dict[str, str], upload_dir: str) -> list[str]:
+def summarize_session_files(
+    paths: dict[str, str],
+    upload_dir: str,
+    *,
+    meta_report: dict | None = None,
+) -> list[str]:
     """生成供 Agent 计划参考的输入/输出文件摘要。"""
     lines: list[str] = []
     upload = _path(upload_dir)
@@ -248,9 +253,15 @@ def summarize_session_files(paths: dict[str, str], upload_dir: str) -> list[str]
 
     meta = upload / "metadata.csv"
     if meta.is_file():
-        lines.append(
-            f"{normalize_display_path(meta)}: metadata.csv（Sample, Group）"
-        )
+        detail = "metadata.csv（Sample, Group）"
+        if meta_report:
+            groups = meta_report.get("groups") or []
+            if groups:
+                detail += f"；分组: {', '.join(groups)}"
+            action = meta_report.get("action")
+            if action == "regenerate":
+                detail += "；已根据文件名自动生成"
+        lines.append(f"{normalize_display_path(meta)}: {detail}")
 
     artifact_checks: list[tuple[str, str]] = [
         (str(_path(paths["peaks"]) / "feature_table.csv"), "XCMS feature_table.csv"),

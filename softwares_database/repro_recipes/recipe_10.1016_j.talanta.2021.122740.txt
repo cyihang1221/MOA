@@ -1,0 +1,66 @@
+========== reproducibility_recipe entry ==========
+paper_title: In silico prediction, LC-HRMS/MS analysis, and targeted/untargeted data-mining workflow for the profiling of phenylfentanyl in vitro metabolites.
+source_paper: Di Trana A et al. (2021), Talanta, DOI: 10.1016/j.talanta.2021.122740, PMID: 34517608
+overall_reproducibility_score: 42/100
+
+workflow_steps: 6
+  Step 1: In silico metabolic prediction
+    tool: GLORYx
+    algorithm: rule-based biotransformation prediction
+    input: chemical structure (SMILES or molfile of phenylfentanyl)
+    output: predicted metabolite structures and biotransformation pathways
+    confidence: high
+  Step 2: In vitro metabolism incubation
+    tool: human hepatocytes
+    parameters: incubation_time=3 h, matrix=human hepatocyte suspension, controls=blank hepatocytes, solvent controls
+    input: phenylfentanyl compound
+    output: biological incubation samples (metabolite-containing supernatants)
+    confidence: medium
+  Step 3: LC-HRMS/MS data acquisition
+    tool: liquid chromatography-high-resolution tandem mass spectrometry
+    parameters: instrument=Q-Exactive Orbitrap, ionization=electrospray ionization (ESI), polarity=['positive', 'negative'], resolution=70,000 FWHM (MS1), 17,500 FWHM (MS2), mass_range=m/z 50–1000, collision_energy=stepped HCD (20, 40, 60 eV)
+    input: hepatocyte incubation extracts
+    output: raw .raw files (Thermo format)
+    confidence: medium
+  Step 4: Targeted/untargeted data mining
+    tool: data-mining software
+    algorithm: custom targeted/untargeted workflow
+    parameters: initial_feature_count_threshold=90000, automated_selection_threshold=115, filtering_criteria=['mass defect filtering', 'isotopic pattern matching', 'retention time consistency', 'fragmentation similarity to parent']
+    input: LC-HRMS/MS raw files
+    output: candidate metabolite list (115 entries) → manually verified metabolite table (13 confirmed)
+    confidence: low
+  Step 5: Metabolite identification and annotation
+    tool: mzCloud and HighResNPS online libraries
+    algorithm: spectral library matching
+    parameters: match_score_threshold=≥70%, mass_tolerance_ppm=5, min_matched_peaks=3
+    input: MS/MS spectra of candidate metabolites
+    output: annotated metabolites with confidence levels (Level 1–2 per MSI guidelines)
+    confidence: high
+  Step 6: Biological marker prioritization
+    tool: manual expert curation
+    algorithm: abundance + specificity + stability assessment
+    parameters: priority_criteria=['peak intensity', 'uniqueness to phenylfentanyl pathway', 'absence in controls', 'chemical stability']
+    input: confirmed metabolite list with MS/MS and RT data
+    output: ranked biomarker candidates (e.g., phenylnorfentanyl as primary marker)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-HRMS/MS data not deposited in public repository (e.g., MetaboLights, GNPS)
+  - Custom 'targeted/untargeted data-mining workflow' not described in sufficient technical detail (no software name, version, or script parameters)
+  - No information on chromatographic conditions (column, gradient, flow rate, temperature)
+  - Human hepatocyte source and lot number not specified
+  - GLORYx version and settings (e.g., species, enzyme coverage) not reported
+  - No deposition of annotated spectral data (e.g., MSP files) to public libraries or repositories
+reproducibility_strengths:
+  - Use of publicly accessible in silico tool (GLORYx)
+  - Reference to widely used public spectral libraries (mzCloud, HighResNPS)
+  - Explicit reporting of key analytical parameters (Orbitrap resolution, HCD energies, mass range)

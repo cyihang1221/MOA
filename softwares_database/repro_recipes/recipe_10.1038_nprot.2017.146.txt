@@ -1,0 +1,97 @@
+========== reproducibility_recipe entry ==========
+paper_title: Structural prediction of protein models using distance restraints derived from cross-linking mass spectrometry data.
+source_paper: Orbán-Németh Z et al. (2018), Nature protocols, DOI: 10.1038/nprot.2017.146, PMID: 29419816
+overall_reproducibility_score: 72/100
+
+workflow_steps: 5
+  Step 1: Cross-link identification and validation
+    tool: XlinkX or pLink or XiSearch
+    algorithm: mass tolerance-based cross-link spectrum matching
+    parameters: mass_tolerance_ppm=10, fragment_tolerance_da=0.5
+    input: raw .raw or .mzML files from XL-MS experiments
+    output: validated cross-link list (residue–residue distance restraints)
+    confidence: medium
+  Step 2: Homology modeling with distance restraints
+    tool: I-TASSER
+    algorithm: iterative threading assembly simulation with restraint-guided refinement
+    parameters: restraint_file_format=custom distance restraint file, num_models=5, use_restraints=True
+    input: protein sequence + validated cross-link restraints
+    output: ensemble of comparative structural models (PDB)
+    confidence: high
+  Step 3: Model selection and scoring against XL data
+    tool: Xwalk
+    algorithm: distance-based model evaluation using cross-link violation analysis
+    parameters: max_violation_distance_angstrom=25, violation_weight=1.0
+    input: PDB models + cross-link restraints
+    output: ranked model list with violation scores
+    confidence: high
+  Step 4: Protein–protein docking with cross-link restraints
+    tool: HADDOCK
+    algorithm: data-driven docking with ambiguous interaction restraints (AIRs) derived from cross-links
+    parameters: air_lower_bound=0, air_upper_bound=35, restraint_type=distance, num_structures=1000, cluster_cutoff_angstrom=7.5
+    input: subunit PDB structures + inter-subunit cross-link restraints
+    output: docked complex models (PDB ensemble)
+    confidence: medium
+  Step 5: Docked model scoring and validation
+    tool: HADDOCK scoring function
+    algorithm: weighted sum of van der Waals energy, electrostatic energy, desolvation energy, and AIR violation penalty
+    parameters: score_weight_vdw=1.0, score_weight_elec=0.2, score_weight_desolv=1.0, score_weight_air=1.0
+    input: HADDOCK-generated docked models + AIR restraints
+    output: ranked docked complexes with HADDOCK score and Z-score
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: available (Supplementary Data ZIP files)
+  metadata: in_paper_only
+  data_urls: https://doi.org/10.1038/nprot.2017.146, https://www.nature.com/articles/nprot.2017.146#Sec29
+
+code_availability: mentioned_no_link
+
+figure_recipes: 8
+  Figure 1: [workflow_diagram]
+    caption: Overview of the structural modeling workflow using XL-MS data.
+    produced_by_step: [1, 2, 3, 4, 5]
+    visualization_tool: Adobe Illustrator or similar
+  Figure 2: [workflow_diagram]
+    caption: Cross-link data–driven modeling workflow for predicting structures of proteins and protein complexes.
+    produced_by_step: [1, 2, 3, 4, 5]
+    visualization_tool: Adobe Illustrator or similar
+  Figure 3: [protein_complex_structure]
+    caption: Chemical cross-links mapped onto the resulting comparative open protein–protein model of the HOP2–MND1 heterodimeric complex.
+    produced_by_step: [4, 5]
+    visualization_tool: PyMOL or Chimera
+  Figure 4: [protein_structure]
+    caption: Predicted protein structure of calmodulin.
+    produced_by_step: [2, 3]
+    visualization_tool: PyMOL or Chimera
+  Figure 5: [protein_complex_structure]
+    caption: Predicted structure of the plectin ABD–calmodulin complex.
+    produced_by_step: [4, 5]
+    visualization_tool: PyMOL or Chimera
+  Figure 6: [structure_comparison]
+    caption: Comparison of the predicted structure and the crystal structure of the PPP2R1A–PPP2CA complex.
+    produced_by_step: [4, 5]
+    visualization_tool: PyMOL (RMSD calculation and superposition)
+    statistical_test: RMSD (root-mean-square deviation)
+  Figure 7: [protein_structure]
+    caption: Predicted protein structure of bovine cytochrome C.
+    produced_by_step: [2, 3]
+    visualization_tool: PyMOL or Chimera
+  Figure 8: [distribution_plot]
+    caption: Simulated distribution of alpha-carbon distances between cross-linked residues in two resulting comparative models.
+    produced_by_step: [3]
+    visualization_tool: R/ggplot2 or Python/matplotlib
+    statistical_test: Kolmogorov–Smirnov test (implied by comparison of distributions)
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository (e.g., ProteomeXchange)
+  - Exact versions of I-TASSER and HADDOCK used not specified
+  - No explicit description of cross-link false discovery rate (FDR) estimation method
+  - HADDOCK restraint syntax error acknowledged in commentary (affects reproducibility of step 4)
+  - Xwalk batch script provided but no documentation on input format expectations or parameter tuning
+reproducibility_strengths:
+  - All supplementary datasets (ZIP archives) containing input files, scripts, and outputs are publicly available via Nature Protocols
+  - Workflow uses only free-for-academics or open-source tools (I-TASSER, HADDOCK, Xwalk)
+  - Step-by-step instructions and example cases (cytochrome c, HOP2, calmodulin, MND1, plectin, PPP2R1A–PPP2CA) provided
+  - Critical software parameters (e.g., distance bounds, number of models) explicitly stated in protocol text and supplementary materials

@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: Targeting unique biological signals on the fly to improve MS/MS coverage and identification efficiency in metabolomics.
+source_paper: Cho K et al. (2021), Analytica chimica acta, DOI: 10.1016/j.aca.2021.338210, PMID: 33551064
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Real-time feature filtering during acquisition
+    tool: Orbitrap ID-X instrument software
+    algorithm: on-the-fly blank subtraction, adduct/isotope pattern recognition
+    parameters: blank_subtraction_enabled=True, adduct_detection_rules=standard (e.g., [M+H]+, [M+Na]+, [M-H]-), isotope_pattern_matching=enabled
+    input: raw LC/MS data stream (centroided or profile)
+    output: reduced list of candidate features for MS/MS triggering
+    confidence: high
+  Step 2: Hidden ion-trap scan-based collision energy optimization
+    tool: Orbitrap ID-X parallel detection mode
+    algorithm: empirical CE selection via low-resolution ion-trap MS/MS scouting scans
+    parameters: scouting_scan_type=ion-trap, scanning_mode=hidden/parallel, CE_search_range_eV=[10, 50], resolution_of_CE_selection=discrete (e.g., 5 eV increments)
+    input: candidate feature list (m/z, RT, intensity)
+    output: feature-specific optimal collision energy (CE) table
+    confidence: medium
+  Step 3: Targeted high-resolution Orbitrap MS/MS acquisition
+    tool: Orbitrap ID-X instrument software
+    algorithm: data-dependent acquisition (DDA) with feature-specific CE
+    parameters: acquisition_mode=targeted DDA, ms1_resolution=60000, ms2_resolution=15000, trigger_threshold_intensity=user-defined (not specified), max_number_of_ms2_scans_per_cycle=None
+    input: candidate feature list + optimal CE table
+    output: high-res MS/MS spectra (.raw)
+    confidence: medium
+  Step 4: Metabolite annotation and credentialing
+    tool: Manual curation + credentialing analysis
+    algorithm: independent post-acquisition manual annotation using standards, retention time, MS1 accuracy, and MS/MS spectral matching
+    parameters: mass_accuracy_tolerance_ppm=5, rt_tolerance_sec=10, spectral_similarity_metric=dot product or similar (not specified)
+    input: processed .raw files (converted to .mzML or similar), standard library spectra
+    output: annotated metabolite list with confidence levels (e.g., Level 1–2)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC/MS and MS/MS data not deposited in any public repository
+  - Orbitrap ID-X real-time processing algorithms are proprietary and undocumented
+  - No details on blank subtraction implementation (e.g., thresholding, alignment method)
+  - No specification of credentialing workflow parameters (RT alignment, scoring thresholds, libraries used)
+  - Hidden ion-trap CE optimization protocol not programmatically reproducible outside Thermo ecosystem
+reproducibility_strengths:
+  - Conceptual workflow clearly described
+  - Benchmarked against 100 metabolite standards
+  - Validation via E. coli credentialing provides biological relevance context

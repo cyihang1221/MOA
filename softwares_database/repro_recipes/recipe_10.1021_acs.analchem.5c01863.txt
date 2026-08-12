@@ -1,0 +1,61 @@
+========== reproducibility_recipe entry ==========
+paper_title: Novel Equivalent Carbon Number Strategy for Large-Scale Lipidomics Data Analysis via Ultrahigh-Performance Liquid Chromatography-Orbitrap Astral Mass Spectrometry.
+source_paper: Chen Y et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c01863, PMID: 40673892
+overall_reproducibility_score: 35/100
+
+workflow_steps: 5
+  Step 1: Lipid retention behavior modeling using Equivalent Carbon Number (ECN)
+    tool: MS-DIAL
+    algorithm: ECN regression model
+    parameters: ion_mode=['positive', 'negative'], rt_prediction_accuracy_rsd_threshold=0.05
+    input: raw .raw files (Thermo) from Orbitrap Astral-MS
+    output: retention time-predicted lipid features with ECN-derived RT alignment
+    confidence: medium
+  Step 2: MS/MS spectral annotation and identification
+    tool: LipidSearch (v5.1)
+    algorithm: spectral matching against LipidSearch library
+    parameters: min_match_score=None, false_positive_reduction_enabled=True
+    input: centroided MS/MS spectra (.mgf or native format)
+    output: structurally annotated lipid identifications with confidence scores
+    confidence: medium
+  Step 3: Integration of ECN-based RT prediction and LipidSearch MS/MS annotation
+    tool: custom strategy (ECN fusion)
+    algorithm: cross-platform feature matching using ECN-aligned RT + MS/MS match score filtering
+    parameters: rt_tolerance_ecn=±5% RSD, ion_mode_specific_filtering=True
+    input: MS-DIAL feature table + LipidSearch identification results
+    output: integrated lipid annotation table with precise RT and structural confidence
+    confidence: low
+  Step 4: False-positive reduction in lipid identification
+    tool: custom post-processing (ECN-guided filtering)
+    algorithm: RT deviation-based rejection (ECN-predicted vs observed RT)
+    parameters: rt_deviation_threshold=±5% RSD, ion_mode_specific_fpr_reduction=True
+    input: LipidSearch 5.1 output before filtering
+    output: filtered lipid identification list with reduced false positives
+    confidence: low
+  Step 5: Cross-platform comparison (Astral-MS vs QE-MS)
+    tool: quantitative comparison workflow
+    algorithm: fold-change-based annotation count comparison
+    parameters: platform_comparison_factor=3–5× (LipidSearch), 2–4× (MS-DIAL)
+    input: annotated lipid counts per platform and sample type
+    output: relative annotation yield metrics per instrument platform
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in any public repository (e.g., MetaboLights, MassIVE)
+  - Custom ECN integration and false-positive filtering scripts not shared or described in sufficient detail
+  - LipidSearch 5.1 is commercial software requiring license and proprietary database — not openly reproducible
+  - No specification of MS-DIAL version, parameters (e.g., peak width, min peak height), or preprocessing settings
+  - No details on Astral-MS acquisition methods (e.g., gradient, column, flow rate, ionization settings) needed to replicate RT behavior
+reproducibility_strengths:
+  - Explicit validation using NIST SRM 1950 plasma and 34 lipid standards
+  - Quantitative performance metrics reported (e.g., ±5% RSD for RT prediction, % false positive reduction)
+  - Multi-biological-sample validation (HeLa, mouse liver, yeast, pooled sample, NIST plasma)

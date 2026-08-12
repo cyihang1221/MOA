@@ -1,0 +1,69 @@
+========== reproducibility_recipe entry ==========
+paper_title: Systematic, Modifying Group-Assisted Strategy Expanding Coverage of Metabolite Annotation in Liquid Chromatography-Mass Spectrometry-Based Nontargeted Metabolomics Studies.
+source_paper: Zheng S et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.1c01715, PMID: 34328315
+overall_reproducibility_score: 35/100
+
+workflow_steps: 6
+  Step 1: Data acquisition
+    tool: UHPLC-HRMS
+    algorithm: data-dependent acquisition (DDA)
+    parameters: acquisition_mode=DDA, resolution=high-resolution
+    input: biological samples (urine)
+    output: raw .raw or .d files (vendor format)
+    confidence: medium
+  Step 2: Feature detection and alignment
+    tool: XCMS
+    algorithm: centWave or similar peak-picking algorithm (inferred)
+    parameters: peak_width=None, mz_tolerance_ppm=None, snthresh=None
+    input: raw vendor files
+    output: feature table (m/z, RT, intensity)
+    confidence: low
+  Step 3: Neutral loss screening for modifying groups
+    tool: in-house workflow / custom script
+    algorithm: comprehensive neutral loss matching
+    parameters: neutral_losses=['176.0321 (glucuronide)', '79.9568 (sulfate)', '42.0106 (acetyl)'], mass_tolerance_ppm=5
+    input: feature table with MS/MS spectra
+    output: modified feature candidates
+    confidence: medium
+  Step 4: Database annotation
+    tool: HMDB, KEGG, METLIN, mzCloud
+    algorithm: exact mass + retention time + MS/MS spectral matching
+    parameters: mass_tolerance_ppm=5, RT_tolerance_sec=None, spectral_similarity_score_threshold=None
+    input: features and MS/MS spectra
+    output: annotated metabolites (level 1–2)
+    confidence: low
+  Step 5: Structural elucidation of novel modified metabolites
+    tool: manual interpretation + literature mining
+    algorithm: neutral loss-guided structural inference
+    parameters: modification_types_considered=['glucuronidation', 'sulfation', 'acetylation']
+    input: MS/MS spectra of unannotated modified features
+    output: structurally elucidated metabolites (level 3–4)
+    confidence: low
+  Step 6: Differential metabolite analysis
+    tool: MetaboAnalyst or similar
+    algorithm: t-test / ANOVA / fold-change + FDR correction
+    parameters: p_value_cutoff=0.05, FDR_method=Benjamini-Hochberg
+    input: normalized feature table + group metadata
+    output: differential metabolite list
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (MetaboLights)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS data not deposited in public repository
+  - No access to custom neutral loss matching scripts
+  - No specification of XCMS parameters or version
+  - No details on RT alignment or calibration method
+  - Commercial UHPLC-HRMS platform unspecified (vendor/instrument model missing)
+  - No reporting of database versions (HMDB/KEGG/METLIN) used
+reproducibility_strengths:
+  - Explicit neutral loss masses provided for major modifications
+  - Clear conceptual workflow described (DDA → neutral loss screening → database search → manual curation)
+  - Use of pooled human urine as transparent model system

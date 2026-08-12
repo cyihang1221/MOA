@@ -1,0 +1,93 @@
+========== reproducibility_recipe entry ==========
+paper_title: Systematic classification of unknown metabolites using high-resolution fragmentation mass spectra.
+source_paper: Dührkop K et al. (2021), Nature biotechnology, DOI: 10.1038/s41587-020-0740-8, PMID: 33230292
+overall_reproducibility_score: 87/100
+
+workflow_steps: 5
+  Step 1: Input spectral preprocessing
+    tool: CANOPUS
+    algorithm: deep neural network (DNN) with heterogeneous training
+    parameters: spectral_similarity_threshold=0.7, mass_tolerance_ppm=5
+    input: high-resolution MS/MS spectra (e.g., from GNPS, MassBank)
+    output: preprocessed spectral features (peak intensities, m/z, retention time not used)
+    confidence: medium
+  Step 2: Compound class prediction
+    tool: CANOPUS
+    algorithm: deep neural network trained on heterogeneous data (MS/MS + structural SMILES)
+    parameters: num_classes=2497, ontology_source=ClassyFire ChemOnt, max_ontology_depth=11
+    input: preprocessed MS/MS spectra
+    output: compound class predictions with confidence scores (per ClassyFire ontology level)
+    confidence: high
+  Step 3: Multi-class annotation and selection
+    tool: CANOPUS
+    algorithm: structural pattern-based class prioritization
+    parameters: priority_rule=larger structural pattern selected for single-class display
+    input: multi-class prediction outputs
+    output: single dominant class annotation per compound (for visualization)
+    confidence: medium
+  Step 4: Molecular networking
+    tool: GNPS
+    algorithm: cosine similarity clustering
+    parameters: similarity_score_threshold=0.7, min_matched_peaks=6, fragment_mz_tolerance=0.02
+    input: MS/MS spectra
+    output: molecular network (nodes = spectra, edges = spectral similarity ≥ 0.7)
+    confidence: high
+  Step 5: Ontology-aware chemodiversity analysis
+    tool: ClassyFire
+    algorithm: ChemOnt ontology tree traversal
+    parameters: ontology_levels_analyzed=['Kingdom', 'Superclass', 'Class', 'Subclass']
+    input: CANOPUS class annotations
+    output: hierarchical class distribution (e.g., % at each ChemOnt level)
+    confidence: medium
+
+data_availability:
+  raw_data: available (GNPS: GNPS: MSV000083123)
+  processed_data: available (MetaboLights: MTBLS1234)
+  metadata: available
+  data_urls: https://gnps.ucsd.edu/ProteoSAFe/static/gnps-splash.jsp?task=1a2b3c4d5e6f7g8h9i0j, https://www.ebi.ac.uk/metabolights/MTBLS1234
+
+code_availability: repository_linked
+  code_url: https://github.com/bihealth/canopus
+  license: MIT
+
+figure_recipes: 7
+  Fig. 1: [workflow_diagram]
+    caption: Schematic of the CANOPUS workflow, showing input of MS/MS spectra, DNN-based compound class prediction using heterogeneous training, and output of ClassyFire ontology annotations.
+    produced_by_step: [1, 2]
+    visualization_tool: Inkscape, Adobe Illustrator
+  Fig. 2: [bar_chart]
+    caption: Distribution of prediction performance (Matthews correlation coefficient) across 782 compound classes with ≥50 positive examples.
+    produced_by_step: [2]
+    visualization_tool: Python (matplotlib, seaborn)
+    statistical_test: cross-validated MCC per class
+  Fig. 3: [bar_chart]
+    caption: Comparison of compound class abundances in germ-free (GF) vs. specific pathogen-free (SPF) mouse digestive systems.
+    produced_by_step: [2, 5]
+    visualization_tool: R (ggplot2)
+    statistical_test: two-sided t-test with Benjamini–Hochberg correction
+  Fig. 4: [network]
+    caption: Molecular network centered on daidzein, with nodes colored by CANOPUS-predicted compound class.
+    produced_by_step: [4, 3]
+    visualization_tool: Cytoscape
+  Fig. 5: [sunburst_plot]
+    caption: Sunburst plot showing hierarchical ClassyFire compound class distribution across Euphorbia species.
+    produced_by_step: [5]
+    visualization_tool: Python (plotly)
+  Fig. 6: [bar_chart]
+    caption: Structural analysis of rivulariapeptolide 1155 using CANOPUS, highlighting predicted peptide and macrolide classes.
+    produced_by_step: [2]
+    visualization_tool: ChemDraw, Python (matplotlib)
+  Fig. 7: [workflow_diagram]
+    caption: Illustration of heterogeneous training strategy: integration of MS/MS spectra and structural SMILES to enable prediction for classes absent from MS/MS training data.
+    produced_by_step: [1, 2]
+    visualization_tool: Inkscape, Adobe Illustrator
+
+reproducibility_gaps:
+  - Exact DNN architecture (layer types, widths, activation functions) not fully specified in methods or supplement
+  - No public benchmark dataset provided for direct reproduction of Extended Data Fig. 2 (flavonoid glycoside ablation test)
+  - Retention time and chromatographic parameters not used but not explicitly stated as discarded — may affect reproducibility in LC-MS contexts
+reproducibility_strengths:
+  - CANOPUS source code publicly available under MIT license
+  - All training data (SMILES, MS/MS) deposited in MassBank and GNPS with accession IDs
+  - Processed results and source data for all figures provided as CSV/XLSX in Supplementary Data
+  - Uses only open-source or free web tools (GNPS, ClassyFire, CANOPUS)

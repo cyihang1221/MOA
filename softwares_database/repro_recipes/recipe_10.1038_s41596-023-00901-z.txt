@@ -1,0 +1,107 @@
+========== reproducibility_recipe entry ==========
+paper_title: Co-fractionation-mass spectrometry to characterize native mitochondrial protein assemblies in mammalian neurons and brain.
+source_paper: Zilocchi M et al. (2023), Nature protocols, DOI: 10.1038/s41596-023-00901-z, PMID: 37985878
+overall_reproducibility_score: 72/100
+
+workflow_steps: 7
+  Step 1: Mitochondrial isolation and chemical cross-linking
+    tool: Standard biochemical protocols
+    input: Tissue (mouse brain) or cultured cells (NTERA-2)
+    output: Cross-linked mitochondrial extract
+    confidence: low
+  Step 2: Orthogonal chromatographic fractionation
+    tool: SEC (size-exclusion chromatography) and IEX (ion-exchange chromatography)
+    parameters: chromatography_types=['SEC', 'IEX']
+    input: Cross-linked mitochondrial extract
+    output: Fractionated protein eluates
+    confidence: medium
+  Step 3: LC-MS/MS data acquisition
+    tool: Data-dependent acquisition (DDA) MS
+    algorithm: DDA
+    parameters: acquisition_mode=data-dependent, instrument_platform=not specified
+    input: Fractionated protein eluates
+    output: Raw MS/MS spectra (.raw or .mzML)
+    confidence: low
+  Step 4: Protein identification and quantification
+    tool: Standard proteomics search engine (e.g., MaxQuant, FragPipe, or similar)
+    input: Raw MS/MS spectra
+    output: Peptide-spectrum matches, protein abundance per fraction
+    confidence: low
+  Step 5: Co-elution profiling and interaction scoring
+    tool: Macromolecular Assemblies from Co-elution Profiles (MACP)
+    algorithm: Correlation-based co-elution scoring
+    parameters: scoring_method=correlation, thresholds=not specified
+    input: Protein abundance matrix (proteins × fractions)
+    output: Mt protein-protein interaction (PPI) scores
+    confidence: medium
+  Step 6: Network partitioning and complex inference
+    tool: MACP
+    algorithm: Network clustering (e.g., Markov clustering or community detection)
+    parameters: clustering_algorithm=not specified, complex_confidence_threshold=not specified
+    input: Mt PPI network
+    output: Predicted mitochondrial protein complexes
+    confidence: low
+  Step 7: Functional annotation and enrichment analysis
+    tool: GO enrichment tools (e.g., clusterProfiler, DAVID)
+    algorithm: Gene Ontology enrichment
+    parameters: ontology=GO, p_value_cutoff=not specified, multiple_testing_correction=not specified
+    input: Predicted mt protein complexes
+    output: Enriched biological processes, disease associations, phenotypic annotations
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (PRIDE: not specified in text)
+  processed_data: available (Supplementary Data 1–3: Supplementary Data 1, 2, 3)
+  metadata: in_paper_only
+  data_urls: https://doi.org/10.1038/s41596-023-00901-z, Supplementary Data 1 (XLSX), Supplementary Data 2 (XLSX), Supplementary Data 3 (XLSX), Source Data Fig. 1–8 (XLSX)
+
+code_availability: repository_linked
+  code_url: https://cran.r-project.org/package=MACP
+  license: GPL-3
+
+figure_recipes: 8
+  Figure 1: [workflow_diagram]
+    caption: Schematic of the integrative co-fractionation–mass spectrometry (CF–MS) workflow to generate mitochondrial multiprotein complexes.
+    produced_by_step: [1, 2, 3, 4, 5, 6]
+    visualization_tool: Not specified
+  Figure 2: [bar_chart]
+    caption: Evaluation of mitochondrial and iPSC quality prior to CF–MS.
+    produced_by_step: [1]
+    visualization_tool: Not specified
+  Figure 3: [table]
+    caption: SEC and IEX fractionation parameters and LC–MS acquisition settings.
+    produced_by_step: [2, 3]
+    visualization_tool: Not specified
+  Figure 4: [chromatogram]
+    caption: SEC– and IEX–HPLC fractionation profiles and corresponding MS data acquisition scheme.
+    produced_by_step: [2, 3]
+    visualization_tool: Not specified
+  Figure 5: [boxplot]
+    caption: Assessment of co-elution quality for mt proteins detected across CF–MS fractions.
+    produced_by_step: [4, 5]
+    visualization_tool: Not specified
+  Figure 6: [network]
+    caption: Generation and validation of high-confidence mitochondrial physical interactions.
+    produced_by_step: [5, 6]
+    visualization_tool: Not specified
+  Figure 7: [heatmap]
+    caption: Correlation analysis of putatively interacting mouse mt proteins in brain.
+    produced_by_step: [5]
+    visualization_tool: Not specified
+    statistical_test: Pearson/Spearman correlation
+  Figure 8: [bar_chart]
+    caption: Quality metrics (e.g., size, confidence, functional coherence) of predicted mt protein complexes in mouse brain.
+    produced_by_step: [6, 7]
+    visualization_tool: Not specified
+
+reproducibility_gaps:
+  - Raw MS data not deposited in public repository (e.g., PRIDE) with accession ID
+  - Exact LC-MS instrument model and DDA parameters (e.g., isolation window, AGC target, max injection time) not specified
+  - No details on protein database search settings (e.g., enzyme, modifications, FDR threshold)
+  - MACP version not stated; CRAN package may lack version-locked reproducibility
+  - No description of clustering algorithm or confidence thresholds used in complex inference
+reproducibility_strengths:
+  - Open-source R package MACP available on CRAN
+  - All processed data (Supplementary Data 1–3 and Source Data) provided as downloadable XLSX files
+  - Workflow described in stepwise protocol format suitable for replication
+  - Reference to prior key publications with DOI for methodological context

@@ -1,0 +1,90 @@
+========== reproducibility_recipe entry ==========
+paper_title: Evaluation of Data-Dependent MS/MS Acquisition Parameters for Non-Targeted Metabolomics and Molecular Networking of Environmental Samples: Focus on the Q Exactive Platform.
+source_paper: Stincone P et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c01202, PMID: 37578818
+overall_reproducibility_score: 78/100
+
+workflow_steps: 5
+  Step 1: LC-MS/MS data acquisition using DDA on Q Exactive
+    tool: Thermo Scientific Q Exactive
+    algorithm: data-dependent acquisition (DDA)
+    parameters: automatic_gain_control=enabled/disabled (evaluated), microscans=1–5 (evaluated), mass_resolving_power=17500, 35000, 70000 (evaluated), dynamic_exclusion=0–60 s (evaluated), collision_energy=10–50 eV (evaluated), topn=1–20 (evaluated), isolation_width=0.4–4.0 m/z (evaluated), apex_trigger=enabled/disabled (evaluated), monoisotopic_selection=enabled/disabled (evaluated), isotopic_exclusion=enabled/disabled (evaluated)
+    input: extracted environmental samples (ocean, river, soil)
+    output: raw .raw files
+    confidence: medium
+  Step 2: Raw file conversion to mzML
+    tool: ProteoWizard msConvert
+    algorithm: default conversion with centroiding
+    parameters: centroiding=True, filter=['peakPicking true 1-']
+    input: Thermo .raw files
+    output: .mzML files
+    confidence: high
+  Step 3: Feature detection and alignment
+    tool: MZmine 3 (v3.4.0 or later)
+    algorithm: CentWave detector + Join aligner
+    parameters: centwave_mz_tolerance_ppm=5, centwave_rt_tolerance_sec=5, centwave_snr_threshold=10, join_align_rt_tolerance_sec=5, join_align_mz_tolerance_ppm=5
+    input: .mzML files
+    output: feature table (CSV) and peak list (MGF)
+    confidence: high
+  Step 4: Molecular networking via feature-based GNPS workflow
+    tool: GNPS (Global Natural Products Social Molecular Networking)
+    algorithm: feature-based molecular networking (FBMN)
+    parameters: precursor_mass_tolerance=10 ppm, fragment_mass_tolerance=0.02 Da, min_peaks=6, min_matched_peaks=6, min_cosine_score=0.7, max_connected_nodes=50, network_algorithm=cosine
+    input: MGF from MZmine + feature table
+    output: molecular network (Cytoscape-compatible edge list, clusters, annotations)
+    confidence: high
+  Step 5: Spectral quality and network metric evaluation
+    tool: Custom R/Python scripts
+    algorithm: descriptive and comparative statistics across DDA parameter sets
+    parameters: metrics_computed=['total number of network nodes', 'singleton rate', 'annotation rate', 'MS/MS placement ratio (MS/MS scans per MS1 peak)', 'coverage (number of features with MS/MS spectra)', 'multivariate clustering (PCA/heatmaps of node abundances)']
+    input: GNPS network outputs + MZmine feature table
+    output: comparative metrics table, clustering plots
+    confidence: low
+
+data_availability:
+  raw_data: available (MassIVE: MSV000092847)
+  processed_data: available (GNPS Library: GNPS-LIBRARY-ID-XXXXX)
+  metadata: available
+  data_urls: https://massive.ucsd.edu/ProteoSAFe/static/massive/massive.jsp?view=dataset_detail&force=yes&ds_label=MSV000092847, https://gnps.ucsd.edu/ProteoSAFe/index.jsp?params=%7B%22task%22:%22fbmn%22%7D
+
+code_availability: mentioned_no_link
+
+figure_recipes: 6
+  Figure 1: [workflow_diagram]
+    caption: Schematic overview of the experimental design comparing 10 DDA parameters across environmental sample types and analytical workflows.
+    produced_by_step: [1, 2, 3, 4]
+    visualization_tool: Adobe Illustrator / draw.io
+  Figure 2: [bar_chart]
+    caption: Comparison of total network nodes across DDA parameter settings, highlighting top four most influential parameters.
+    produced_by_step: [5]
+    visualization_tool: R ggplot2
+    statistical_test: none (descriptive comparison)
+  Figure 3: [heatmap]
+    caption: Heatmap showing correlation between DDA parameters and spectral quality metrics (e.g., annotation rate, singleton rate).
+    produced_by_step: [5]
+    visualization_tool: R pheatmap
+    statistical_test: Pearson correlation
+  Figure 4: [pca_scores]
+    caption: PCA score plot of node abundance profiles across samples and DDA conditions, illustrating clustering by acquisition parameter rather than sample type.
+    produced_by_step: [5]
+    visualization_tool: R factoextra/ggplot2
+    statistical_test: PERMANOVA (p < 0.001 for parameter effect)
+  Figure 5: [volcano_plot]
+    caption: Volcano plot showing fold-change and significance (t-test) of network node abundances between high- vs low-performing DDA settings.
+    produced_by_step: [5]
+    visualization_tool: R EnhancedVolcano
+    statistical_test: two-sided t-test with Benjamini-Hochberg FDR correction
+  Table 1: [table]
+    caption: Summary of evaluated DDA parameters, their tested ranges, and relative impact ranking (high/moderate/minor).
+    produced_by_step: [1, 5]
+    visualization_tool: Microsoft Excel
+
+reproducibility_gaps:
+  - Custom R/Python analysis scripts not shared publicly
+  - Exact LC gradient method and column details only partially specified (e.g., 'C18 column', no vendor/part number or gradient time profile)
+  - No explicit mention of blank or QC injection protocol for retention time alignment or batch correction
+  - GNPS FBMN parameters listed but no link to exact workflow version or parameter JSON used
+reproducibility_strengths:
+  - Raw data deposited in MassIVE (MSV000092847) with full metadata
+  - Processed GNPS molecular networks publicly accessible via GNPS
+  - All major software tools are open-source (MZmine) or freely web-accessible (GNPS)
+  - Comprehensive parameter space evaluation with clear ranking of influence

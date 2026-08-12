@@ -1,0 +1,49 @@
+========== reproducibility_recipe entry ==========
+paper_title: HDSE-MS: Tandem Mass Spectrum Prediction for Small Molecules via Hierarchical Distance Structural Encoding.
+source_paper: Liu Z et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c04111, PMID: 41364711
+overall_reproducibility_score: 87/100
+
+workflow_steps: 3
+  Step 1: Molecular graph representation and hierarchical structural encoding
+    tool: HDSE-MS custom model
+    algorithm: Message Passing Neural Network (MPNN) + Transformer with Hierarchical Distance Structural Encoding (HDSE)
+    parameters: graph_coarsening_levels=3, distance_encoding_type=hierarchical_cluster_distance, transformer_layers=6, hidden_size=256, num_attention_heads=8, dropout_rate=0.1
+    input: SMILES strings or molecular graphs
+    output: predicted MS/MS spectra (m/z-intensity pairs)
+    confidence: high
+  Step 2: Spectrum prediction training and evaluation
+    tool: PyTorch
+    algorithm: Supervised learning with spectral similarity loss (spectral entropy similarity)
+    parameters: batch_size=32, learning_rate=0.001, optimizer=AdamW, max_epochs=100, loss_function=spectral_entropy_similarity_loss, ionization_mode=[M + H]+
+    input: Paired molecular structures and experimental MS/MS spectra
+    output: Trained HDSE-MS model weights and predicted spectra
+    confidence: medium
+  Step 3: Performance benchmarking on reference datasets
+    tool: Custom evaluation scripts
+    algorithm: Spectral entropy similarity (SES), Rank-based evaluation, Top-k accuracy
+    parameters: similarity_metric=spectral_entropy_similarity, top_k=1, evaluation_datasets=['NIST23', 'MoNA', 'MassBank', 'CASMI2022']
+    input: Predicted vs. experimental MS/MS spectra
+    output: Quantitative metrics: mean SES, Rank, Top-1 accuracy
+    confidence: high
+
+data_availability:
+  raw_data: available (NIST: NIST23)
+  processed_data: available (MoNA: MoNA)
+  metadata: available
+  data_urls: https://chem.nlm.nih.gov/chemidplus/, https://mona.fiehnlab.ucdavis.edu/, https://massbank.eu/MassBank/, https://casmi-contest.org/2022/
+
+code_availability: repository_linked
+  code_url: https://github.com/lzjforyou/HDSE-MS
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No explicit description of preprocessing steps for spectral data (e.g., peak filtering, noise removal, m/z binning)
+  - Training dataset splits (train/validation/test) not specified per benchmark dataset
+  - No details on spectral alignment or preprocessing for SES computation
+reproducibility_strengths:
+  - Source code publicly available under MIT license
+  - Interactive web service deployed for reproducible inference
+  - Evaluation performed on multiple established public benchmarks (NIST23, MoNA, MassBank, CASMI2022)
+  - Core architecture and key hyperparameters explicitly reported

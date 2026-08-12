@@ -1,0 +1,67 @@
+========== reproducibility_recipe entry ==========
+paper_title: High-Precision Automated Workflow for Urinary Untargeted Metabolomic Epidemiology.
+source_paper: Meister I et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.1c00203, PMID: 33739820
+overall_reproducibility_score: 35/100
+
+workflow_steps: 6
+  Step 1: Urine specific gravity measurement
+    tool: Refractive index detector (RID)
+    algorithm: 96-well plate-based refractometry
+    parameters: accuracy_range_percent=[85, 115], precision_percent=3.4, mean_deviation_sg_units=-0.0001, limits_of_agreement_sg_units=[-0.0014, 0.0011]
+    input: urine samples in 96-well plates
+    output: specific gravity (SG) values per sample
+    confidence: high
+  Step 2: Urine normalization
+    tool: Specific gravity (SG) normalization
+    algorithm: SG-based volume correction
+    input: raw urine samples + SG measurements
+    output: SG-normalized urine samples
+    confidence: medium
+  Step 3: LC-MS data acquisition
+    tool: HILIC chromatography with DIA-MS
+    algorithm: Data-independent acquisition at three collision energies
+    parameters: ionization_mode=['positive', 'negative'], chromatography=HILIC, acquisition_mode=DIA, collision_energies_count=3
+    input: SG-normalized urine samples
+    output: raw .raw or .d files (vendor format)
+    confidence: high
+  Step 4: Data quality monitoring
+    tool: Five technical internal standards (tISs)
+    algorithm: CV-based QC assessment
+    parameters: cv_qc_threshold_percent=5, cv_samples_threshold_percent=16, cv_qc_initial_threshold_percent=10, cv_samples_initial_threshold_percent=20
+    input: raw LC-MS data + tIS peak intensities
+    output: QC metrics (CVs), signal drift flagging
+    confidence: high
+  Step 5: Signal drift correction
+    tool: Cubic spline regression
+    algorithm: Cubic spline regression for retention time/intensity drift correction
+    input: tIS intensity trajectories across run order
+    output: drift-corrected intensity values
+    confidence: medium
+  Step 6: Metabolite feature detection and identification
+    tool: Unknown (implied platform output)
+    algorithm: Untargeted feature detection
+    parameters: metabolite_count=540
+    input: DIA-MS raw data
+    output: annotated metabolite table (>540 features)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS data not deposited in public repository
+  - No software/tools specified for feature detection, alignment, or annotation
+  - No details on DIA data processing (e.g., library-free deconvolution tool like DIA-NN, Spectronaut, or Skyline)
+  - No information on chromatographic gradient, column, or instrument parameters
+  - No code or workflow scripts shared
+  - Cubic spline implementation details (e.g., R package, knots, smoothing parameter) not provided
+reproducibility_strengths:
+  - Explicit QC performance metrics (CVs) reported for both small and large cohorts
+  - Quantitative validation of SG measurement method (Bland-Altman, accuracy, precision)
+  - Clear description of experimental design (96-well format, tIS usage, DIA parameters)

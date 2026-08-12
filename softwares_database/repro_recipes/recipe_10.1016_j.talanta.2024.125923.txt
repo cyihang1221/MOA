@@ -1,0 +1,57 @@
+========== reproducibility_recipe entry ==========
+paper_title: Formation of multiple ion types during MALDI imaging mass spectrometry analysis of Mitragyna speciosa alkaloids in dosed rat brain tissue.
+source_paper: Liang Z et al. (2024), Talanta, DOI: 10.1016/j.talanta.2024.125923, PMID: 38569366
+overall_reproducibility_score: 20/100
+
+workflow_steps: 5
+  Step 1: MALDI matrix application
+    tool: manual matrix spotting
+    parameters: matrix_solution=2,5-dihydroxybenzoic acid (DHB), solvent=50% acetonitrile/0.1% trifluoroacetic acid, application_method=sublimation or robotic sprayer (not specified)
+    input: frozen rat brain tissue sections
+    output: matrix-coated tissue slides
+    confidence: low
+  Step 2: MALDI imaging mass spectrometry acquisition
+    tool: MALDI-TOF/TOF or MALDI-Q-TOF instrument (not specified)
+    parameters: laser_frequency=None, laser_energy=adjusted for optimal ion yield, spatial_resolution=not specified, mass_range=m/z 100–1000, ionization_mode=positive mode
+    input: matrix-coated tissue slides
+    output: raw imaging .imzML and .ibd files
+    confidence: low
+  Step 3: Ion type identification and annotation
+    tool: manual interpretation + high-resolution MS data
+    algorithm: empirical formula matching
+    parameters: mass_tolerance_ppm=5, charge_state=+1, ion_types_considered=['[M+H]+', '[M-H]+', '[M-3H]+'], elemental_composition_validation=required
+    input: raw .imzML spectra
+    output: annotated ion images per alkaloid and ion type
+    confidence: medium
+  Step 4: Biodistribution mapping strategy comparison
+    tool: custom image processing (unspecified software)
+    algorithm: intensity summation / dominant ion selection / [M+H]+-only selection
+    parameters: criteria_for_dominant_ion=highest mean intensity across region-of-interest, composite_image_method=sum of intensities across all three ion types
+    input: annotated ion images
+    output: comparative ion distribution maps (single-ion vs composite)
+    confidence: low
+  Step 5: Validation of mapping accuracy
+    tool: qualitative spatial correlation with histology and/or orthogonal methods (not specified)
+    parameters: validation_approach=region-specific intensity consistency, reference_standard=not described
+    input: ion distribution maps + tissue histology
+    output: accuracy assessment per mapping strategy
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw imaging data (.imzML/.ibd) not deposited in public repository (e.g., MetaboLights, MASSive)
+  - Instrument platform and acquisition parameters (e.g., laser settings, raster size, detector gain) not specified
+  - No software or code disclosed for ion image generation or composite mapping
+  - Validation methodology (e.g., LC-MS/MS extraction from regions) not described
+  - Matrix application method (sublimation vs. spray) and parameters unspecified
+reproducibility_strengths:
+  - Ion types and adducts explicitly reported ([M+H]+, [M−H]+, [M−3H]+)
+  - Biological context (rat brain, kratom alkaloids) and analytical goal (biodistribution mapping) clearly defined

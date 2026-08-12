@@ -1,0 +1,105 @@
+========== reproducibility_recipe entry ==========
+paper_title: Exploring non-target screening variability in unsupervised multivariate time trend analysis of LC-HRMS data.
+source_paper: Armin R et al. (2026), Analytical and bioanalytical chemistry, DOI: 10.1007/s00216-025-06225-z, PMID: 41284005
+overall_reproducibility_score: 87/100
+
+workflow_steps: 8
+  Step 1: Feature extraction
+    tool: MarkerView v. 1.3.1, MZmine3 v. 3.2.8, PatRoon v.2.1.0 with OpenMS, Sirius, XCMS3
+    parameters: not_reported
+    input: LC-HRMS raw data (.wiff) from SCIEX OS v. 1.7.0
+    output: feature peak matrix (m/z, RT, intensity)
+    confidence: medium
+  Step 2: Near-zero variance filtering
+    tool: caret R package
+    algorithm: nearZeroVar
+    parameters: freqCut=95/5, uniqueCut=8
+    input: feature intensity matrix
+    output: filtered feature matrix retaining features with ≥4 consecutive non-zero values across 52 time points
+    confidence: high
+  Step 3: Data normalization
+    tool: MATLAB R2022a
+    parameters: IS-based normalization, log transformation, row-wise total abundance normalization
+    input: filtered feature matrix
+    output: normalized, log-transformed, autoscaled matrix
+    confidence: high
+  Step 4: Procrustes alignment
+    tool: MEDA toolbox (GitHub: josecamachop/MEDA-Toolbox)
+    algorithm: Procrustes analysis
+    parameters: not_reported
+    input: software-derived feature matrices vs. SCIEX OS reference [M+H]+ target matrix
+    output: Procrustes dissimilarity metric (d)
+    confidence: medium
+  Step 5: PCA
+    tool: MEDA toolbox
+    parameters: autoscaling applied, 10 PCs computed
+    input: normalized feature matrix
+    output: PCA scores, loadings, MEDA maps
+    confidence: high
+  Step 6: SPCA with Elastic Net regularization
+    tool: SpaSM MATLAB toolbox (http://www2.imm.dtu.dk/projects/spasm/)
+    algorithm: Zou's SPCA
+    parameters: L1 sparsity=70–90%, L2 penalty=0.1–100, empirically tuned per dataset and compound
+    input: autoscaled feature matrix
+    output: sparse loadings, score plots, explained variance per PC
+    confidence: high
+  Step 7: Stratified bootstrapped SPCA (SBS-SPCA)
+    tool: custom MATLAB script
+    algorithm: stratified bootstrap (500 replicates) + SPCA
+    parameters: stratification over 5-consecutive-time-point groups, L1/L2 grid search, selection frequency threshold=p<0.05
+    input: autoscaled feature matrix
+    output: robust marker list with bootstrap selection frequency and empirical p-values
+    confidence: high
+  Step 8: Feature ranking
+    tool: MATLAB R2022a
+    parameters: ranking by absolute SPCA loading value
+    input: sparse loadings
+    output: top-N ranked features per PC (e.g., top 10 for exploratory interpretation)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+  data_urls: []
+
+code_availability: supplement
+
+figure_recipes: 5
+  Figure 1: [line_plot]
+    caption: Reference intensity profiles for eight spiked targets in validation dataset I to assess trend detection
+    produced_by_step: [6]
+    visualization_tool: not_reported
+    statistical_test: not_reported
+  Figure 2: [line_plot]
+    caption: Reference intensity profiles for nine compounds spiked into validation dataset II simulating real concentration fluctuations (spill types, episodic patterns)
+    produced_by_step: [6]
+    visualization_tool: not_reported
+    statistical_test: not_reported
+  Figure 3: [scatter_plot]
+    caption: Procrustes analysis comparing each software-derived target matrix to the SCIEX OS reference
+    produced_by_step: [4]
+    visualization_tool: not_reported
+    statistical_test: not_reported
+  Figure 4: [score_plot]
+    caption: SPCA score plots from XCMS-derived data for detecting spiked targets across seven PCs under L1=90% and L2=1
+    produced_by_step: [6]
+    visualization_tool: not_reported
+    statistical_test: not_reported
+  Figure 5: [heatmap]
+    caption: Comparative SPCA results for detecting spill III (sulfamethoxazole) across five software tools, including score profiles and top-ranked features under 90% sparsity
+    produced_by_step: [7, 8]
+    visualization_tool: not_reported
+    statistical_test: 99% control limits
+
+reproducibility_gaps:
+  - Feature extraction software parameters (Tables S5–S8) referenced but not reproduced in text
+  - SCIEX OS acquisition parameters in Table S4 not quoted
+  - Procrustes and MEDA toolbox parameter details not specified
+
+reproducibility_strengths:
+  - Explicit caret nearZeroVar parameters (freqCut=95/5, uniqueCut=8)
+  - Full SPCA Elastic Net tuning grid (L1=70–90%, L2=0.1–100) with compound-specific optimization rationale
+  - Stratified bootstrap procedure fully described (500 replicates, 5-point strata, p<0.05 threshold)
+  - Public tool repositories cited (MEDA, SpaSM, GitHub links)
+  - Validation datasets with ground-truth temporal patterns explicitly defined

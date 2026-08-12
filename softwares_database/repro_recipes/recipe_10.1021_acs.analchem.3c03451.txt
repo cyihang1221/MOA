@@ -1,0 +1,74 @@
+========== reproducibility_recipe entry ==========
+paper_title: Identification of Emerging Novel Psychoactive Substances by Retrospective Analysis of Population-Scale Mass Spectrometry Data Sets.
+source_paper: Skinnider MA et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c03451, PMID: 37966487
+overall_reproducibility_score: 35/100
+
+workflow_steps: 7
+  Step 1: Suspect database curation
+    tool: Custom database
+    algorithm: Manual curation + literature mining
+    parameters: nps_count=83, ion_types=['precursor', 'diagnostic_fragment']
+    input: Literature reports, chemical structures, fragmentation knowledge
+    output: Suspect mass list (m/z values for precursors and fragments)
+    confidence: medium
+  Step 2: Retrospective suspect screening
+    tool: XCMS Online / custom workflow
+    algorithm: Exact mass matching with tolerance
+    parameters: mass_tolerance_ppm=5, retention_time_window_min=0.5, min_peak_intensity=1000
+    input: Raw .mzML files from 12,727 urine drug screens
+    output: Candidate NPS identifications (feature-level matches)
+    confidence: low
+  Step 3: Identification reliability prioritization
+    tool: Custom integrative computational strategy
+    algorithm: Multi-tier scoring (intensity, RT consistency, fragment co-detection, prevalence trend)
+    parameters: scoring_tiers=['presence_in_multiple_batches', 'co-elution_with_known_internal_standard', 'fragment_ratio_consistency']
+    input: Candidate identifications from suspect screening
+    output: Prioritized list of high-confidence NPS candidates
+    confidence: low
+  Step 4: Temporal frequency tracking
+    tool: R / Python (custom script)
+    algorithm: Time-series aggregation by month/quarter
+    parameters: time_window=3 years, start_date=2019-08, end_date=2022-08
+    input: Prioritized candidate identifications with sample metadata (collection date)
+    output: Longitudinal detection frequency trends
+    confidence: medium
+  Step 5: Reference material acquisition & assay development
+    tool: Commercial vendors (e.g., Cerilliant, LGC Standards)
+    algorithm: Not applicable
+    input: Prioritized NPS candidate list
+    output: Validated reference standards and LC-MS/MS methods
+    confidence: high
+  Step 6: Validation of retrospective identifications
+    tool: LC-MS/MS (triple quadrupole or QTOF)
+    algorithm: MRM or HRMS confirmation
+    parameters: instrument_platform=QTOF or triple quadrupole, confirmation_criteria=['retention_time_match', 'fragment_ion_ratio_match', 'signal-to-noise_threshold']
+    input: Subset of retrospectively identified samples + reference standards
+    output: Confirmed vs false-positive identification status
+    confidence: high
+  Step 7: Clinical correlation benchmarking
+    tool: Custom statistical analysis
+    algorithm: Sensitivity/specificity calculation against clinical reports
+    parameters: clinical_report_types=['toxicology interpretation', 'prescriber notes', 'adverse event documentation']
+    input: Validated identifications + matched clinical reports (n=12,727)
+    output: Performance metrics (sensitivity, specificity, PPV, NPV)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (Not specified)
+  processed_data: not_mentioned (Not specified)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository
+  - Custom computational strategies not described in sufficient detail for replication
+  - No code or scripts shared
+  - Exact LC-MS parameters (gradient, column, flow rate) not reported
+  - Suspect database structure and format not provided
+reproducibility_strengths:
+  - Clear description of study design (n=12,727 samples, 3-year timeframe)
+  - Explicit validation workflow using reference standards and clinical correlation
+  - Defined criteria for identification confidence (e.g., fragment co-detection, RT consistency)

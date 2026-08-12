@@ -1,0 +1,51 @@
+========== reproducibility_recipe entry ==========
+paper_title: Denoising of Mass Spectrometry Images via Inverse Maximum Signal Factors Analysis.
+source_paper: Tyler BJ et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.1c04564, PMID: 35107995
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Denoising of MSI images using inverse maximum signal factors analysis
+    tool: Inverse MSF denoising algorithm
+    algorithm: Inverse Maximum Signal Factors (MSF) analysis
+    parameters: signal_to_noise_ratio_threshold=0.1, minimum_sum_intensity_required=sufficient intensity in the sum of selected peaks
+    input: raw mass spectrometry imaging (MSI) data (e.g., ToF-SIMS, MALDI-2-MS)
+    output: denoised ion images (one per original m/z peak)
+    confidence: medium
+  Step 2: Optimization and validation of denoised images
+    tool: Five custom validation tests
+    algorithm: Empirical validation against ground truth (in simulations) and qualitative/quantitative assessment (in real data)
+    input: denoised ion images and corresponding ground-truth or reference images
+    output: validated denoised images; SNR improvement metrics
+    confidence: low
+  Step 3: Evaluation on simulated data
+    tool: Custom simulation framework
+    algorithm: Simulation with varying noise levels, correlated noise, number of underlying components, and nonlinear effects
+    parameters: minimum_SNR_for_high_correlation=0.1
+    input: synthetic MSI datasets
+    output: correlation metrics (true vs. denoised images)
+    confidence: medium
+  Step 4: Application to real MSI data
+    tool: Inverse MSF denoising algorithm
+    algorithm: Inverse Maximum Signal Factors (MSF) analysis
+    input: experimental ToF-SIMS and MALDI-2-MS images
+    output: denoised ion images; reported SNR improvements (up to 100× for low-intensity peaks)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No software implementation or code shared
+  - No public data deposition (raw or processed MSI datasets not referenced)
+  - Parameters for the five validation tests not specified
+  - No details on how 'sufficient intensity in the sum of selected peaks' is quantified
+  - Algorithm implementation details (e.g., factor selection, inversion procedure, convergence criteria) not provided
+reproducibility_strengths:
+  - Method evaluated on diverse data types (ToF-SIMS, MALDI-2-MS) and controlled simulations
+  - Quantitative performance benchmark reported (SNR improvement up to 100×, correlation down to SNR=0.1)

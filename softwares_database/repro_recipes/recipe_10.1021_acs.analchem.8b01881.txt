@@ -1,0 +1,73 @@
+========== reproducibility_recipe entry ==========
+paper_title: In Vivo Stable-Isotope Labeling and Mass-Spectrometry-Based Metabolic Profiling of a Potent Tobacco-Specific Carcinogen in Rats.
+source_paper: Dator R et al. (2018), Analytical chemistry, DOI: 10.1021/acs.analchem.8b01881, PMID: 30086646
+overall_reproducibility_score: 35/100
+
+workflow_steps: 7
+  Step 1: In vivo stable-isotope labeling
+    tool: custom dosing protocol
+    parameters: isotope_label=d4-NNK, dosing_route=intraperitoneal, dosing_dose=1.0 mg/kg, time_point=24 h post-dose
+    input: live rats (F344 strain)
+    output: biological samples (urine, plasma, lung tissue) containing d0- and d4-labeled NNK metabolites
+    confidence: medium
+  Step 2: Sample enrichment and preparation
+    tool: solid-phase extraction (SPE)
+    parameters: SPE_cartridge=Oasis HLB, elution_solvent=methanol/water (90:10 v/v), sample_loading_pH=3.0
+    input: urine/plasma/tissue extracts
+    output: enriched metabolite extract
+    confidence: medium
+  Step 3: LC-MS analysis
+    tool: UPLC–Q-TOF-MS
+    algorithm: high-resolution mass spectrometry
+    parameters: instrument=Waters Synapt G2-Si, ionization=ESI+, scan_range_mz=[50, 1000], resolution=≥20,000 FWHM, mass_accuracy=≤5 ppm, chromatography=Acquity UPLC BEH C18 column (2.1 × 100 mm, 1.7 μm), gradient=water/acetonitrile + 0.1% formic acid, flow_rate=0.3 mL/min, column_temperature=40 °C, injection_volume=5 μL
+    input: enriched metabolite extract
+    output: raw .raw files (Waters format)
+    confidence: high
+  Step 4: Automated d0–d4 m/z-pair peak detection
+    tool: custom R script
+    algorithm: isotopic pair matching
+    parameters: mass_shift_da=4.024, mass_tolerance_ppm=5, retention_time_window_sec=30, intensity_ratio_min=0.1, intensity_ratio_max=10
+    input: raw .raw files
+    output: candidate metabolite feature table (d0/d4 pairs)
+    confidence: low
+  Step 5: Metabolite identification via MS²
+    tool: targeted LC-MS²
+    algorithm: fragmentation pattern matching
+    parameters: collision_energy=variable (10–40 eV), precursor_ion_selection=d0- and d4-analogs, reference_standards_used=True
+    input: candidate features from step 4
+    output: structurally confirmed metabolites (with RT and MS² match to standards where available)
+    confidence: high
+  Step 6: Relative quantitation using d4-internal standards
+    tool: peak area ratio (d0/d4)
+    algorithm: isotope dilution
+    parameters: normalization_basis=d4-labeled NNK-metabolite mixture (d4-rat urine), quantitation_mode=relative abundance, metabolite_panel=['nitroso-containing NNK metabolites']
+    input: confirmed metabolite features with extracted ion chromatograms
+    output: relative abundance table (pre- vs. post-PB treatment)
+    confidence: medium
+  Step 7: Metabolic difference assessment
+    tool: comparative analysis
+    algorithm: qualitative/semi-quantitative distribution comparison
+    parameters: comparison_groups=['control rats', 'phenobarbital-treated rats'], metric=relative distribution of nitroso-metabolites
+    input: relative abundance table
+    output: differential metabolic profile (e.g., increased nitro-NK-N-oxide after PB)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository
+  - Custom R script for d0/d4 pair detection not shared or archived
+  - No details on PB treatment protocol (dose, duration, vehicle control)
+  - Gradient profile only described qualitatively ('water/acetonitrile + 0.1% formic acid')
+  - No information on data processing software versions (e.g., Waters MassLynx, Progenesis QI, or custom R environment)
+reproducibility_strengths:
+  - Explicit mass accuracy (≤5 ppm) and resolution (≥20,000) specified
+  - Clear description of isotopic mass shift (4.024 Da) and d0/d4 pairing logic
+  - Use of authentic standards for MS² confirmation where available

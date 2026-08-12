@@ -1,0 +1,55 @@
+========== reproducibility_recipe entry ==========
+paper_title: ADAP-GC 4.0: Application of Clustering-Assisted Multivariate Curve Resolution to Spectral Deconvolution of Gas Chromatography-Mass Spectrometry Metabolomics Data.
+source_paper: Smirnov A et al. (2019), Analytical chemistry, DOI: 10.1021/acs.analchem.9b01424, PMID: 31274283
+overall_reproducibility_score: 82/100
+
+workflow_steps: 4
+  Step 1: Spectral deconvolution via clustering-assisted multivariate curve resolution (MCR)
+    tool: ADAP-GC 4.0 (v4.0)
+    algorithm: Multivariate Curve Resolution–Alternating Least Squares (MCR-ALS) with hierarchical clustering initialization
+    parameters: max_iterations=100, convergence_threshold=1e-06, nonnegativity_constraints=True, closure_constraint=True, clustering_method=hierarchical, distance_metric=correlation, linkage_method=average
+    input: raw .cdf or .raw GC-MS files (GC-TOF and GC-Orbitrap)
+    output: pure mass spectra (deconvoluted ion chromatograms and spectral profiles)
+    confidence: high
+  Step 2: Compound identification via spectral matching
+    tool: NIST MS Search (v2.3g)
+    algorithm: dot-product similarity scoring
+    parameters: mass_tolerance_ppm=5, minimum_match_factor=600, minimum_reverse_match_factor=600, top_n_matches=5
+    input: deconvoluted mass spectra (mz/intensity lists)
+    output: annotated compound list with match scores
+    confidence: medium
+  Step 3: Performance evaluation against reference standards
+    tool: custom R/Python scripts
+    algorithm: matching score calculation (NIST-style weighted dot product)
+    parameters: score_weighting=intensity-weighted, reference_library=NIST17 + custom standard library
+    input: deconvoluted spectra and ground-truth standard annotations
+    output: average matching score, number of correctly matched compounds
+    confidence: low
+  Step 4: Benchmarking against alternative deconvolution tools
+    tool: ['MS-DIAL', 'eRah', 'ADAP-GC 3.2'] (v['4.20', '1.0', '3.2'])
+    algorithm: identical spectral matching pipeline (NIST MS Search)
+    parameters: mass_tolerance_ppm=5, min_match_factor=600
+    input: peak tables or deconvoluted spectra output from each tool
+    output: comparative metrics: # matched compounds, average matching score
+    confidence: medium
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1287)
+  processed_data: available (MetaboLights: MTBLS1287)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1287
+
+code_availability: repository_linked
+  code_url: https://github.com/americanredcross/adap-gc
+  license: GPL-3.0
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - NIST MS Search version and exact library build date not specified
+  - No details on preprocessing steps prior to ADAP-GC (e.g., noise filtering, baseline correction)
+  - Clustering parameters (e.g., number of clusters, cutoff threshold) not fully reported for all datasets
+reproducibility_strengths:
+  - Source code publicly available on GitHub with DOI
+  - All experimental data deposited in MetaboLights (MTBLS1287)
+  - Benchmarking performed using standardized metrics and public tools (MS-DIAL, eRah)

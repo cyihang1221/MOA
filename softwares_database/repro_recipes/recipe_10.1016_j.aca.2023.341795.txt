@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: A robust nanoscale RP HPLC-MS approach for sensitive Fc proteoform profiling of IgG allotypes.
+source_paper: Blöchl C et al. (2023), Analytica chimica acta, DOI: 10.1016/j.aca.2023.341795, PMID: 37827688
+overall_reproducibility_score: 45/100
+
+workflow_steps: 4
+  Step 1: Fc/2 subunit generation
+    tool: enzymatic digestion
+    parameters: enzyme=ideS, digestion_time_min=None, temperature_c=37
+    input: purified polyclonal IgG
+    output: intact Fc/2 subunits
+    confidence: medium
+  Step 2: nanoscale RP HPLC-MS analysis
+    tool: HPLC-MS
+    parameters: column=nanoRP C18, gradient_profile=not fully specified, flow_rate_nL/min=not numerically specified, column_temperature_c=None, mass_analyzer=high-resolution mass spectrometer (Q-TOF or Orbitrap), acquisition_mode=data-dependent acquisition (DDA)
+    input: intact Fc/2 subunits
+    output: raw .raw or .d files
+    confidence: low
+  Step 3: Targeted data extraction and peak integration
+    tool: Skyline
+    algorithm: peak detection and integration using predefined transition lists
+    parameters: transition_list=allotype- and subclass-specific Fc/2 proteoforms, mass_tolerance_ppm=10, retention_time_window_min=0.5, integration_method=smoothed area under curve
+    input: raw .raw or .d files
+    output: quantitative peak area table (proteoform-level)
+    confidence: high
+  Step 4: Post-processing and statistical analysis
+    tool: R
+    algorithm: custom R scripts
+    parameters: normalization_method=total ion current or internal standard (not specified), statistical_tests=['t-test', 'ANOVA'], clustering_method=hierarchical clustering, visualization=['PCA', 'heatmaps', 'boxplots']
+    input: Skyline output peak area table
+    output: differential proteoform abundance, clustering results, statistical summaries
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository
+  - No accession ID or repository for raw/processed data
+  - Chromatographic gradient profile and nanoLC flow rate not quantitatively specified
+  - Enzymatic digestion protocol details (time, buffer, quenching) omitted
+  - Custom R post-processing scripts not shared
+  - No Skyline document (.sky) or transition list provided
+  - Instrument method parameters (e.g., DDA settings, isolation window, collision energy) not reported
+reproducibility_strengths:
+  - Uses open-source Skyline for core quantification
+  - Explicitly states semi-automated pipeline design
+  - Describes biological rationale and validation across hundreds of runs

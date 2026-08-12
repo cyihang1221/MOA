@@ -1,0 +1,59 @@
+========== reproducibility_recipe entry ==========
+paper_title: Advanced Dimensionality Reduction for Imaging Mass Spectrometry of Human Eye Tissue through Low-Rank Modeling with Sparse and Dense Residuals.
+source_paper: Moens RAR et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.4c06368, PMID: 41081442
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: IMS data preprocessing
+    tool: Custom MATLAB/Python pipeline
+    algorithm: None specified
+    input: raw MALDI Q-TOF .imzML files
+    output: preprocessed intensity matrix (pixels × m/z bins)
+    confidence: low
+  Step 2: Dimensionality reduction via low-rank modeling
+    tool: Principal Component Pursuit (PCP)
+    algorithm: Convex optimization (nuclear norm + ℓ₁ norm minimization)
+    parameters: lambda=tuned empirically, mu=default or tuned
+    input: preprocessed intensity matrix
+    output: low-rank component matrix + sparse component matrix + dense residual matrix
+    confidence: medium
+  Step 3: Dimensionality reduction via stable PCP
+    tool: Stable Principal Component Pursuit (SPCP)
+    algorithm: Robust PCA with bounded dense noise (nuclear norm + ℓ₁ norm + ℓ₂,₁ norm)
+    parameters: lambda=tuned, tau=tuned, rho=default or tuned
+    input: preprocessed intensity matrix
+    output: low-rank component matrix + sparse component matrix + dense residual matrix
+    confidence: medium
+  Step 4: Baseline comparison with PCA
+    tool: PCA
+    algorithm: Singular value decomposition
+    parameters: number_of_components=varied for compression evaluation
+    input: preprocessed intensity matrix
+    output: low-rank approximation matrix
+    confidence: high
+  Step 5: Performance evaluation
+    tool: Custom MATLAB/Python scripts
+    algorithm: Compression ratio, reconstruction error (RMSE), signal overestimation quantification
+    parameters: compression_ratio_threshold=0.95, RMSE_metric=Frobenius norm
+    input: original matrix, low-rank approximations, sparse/dense residuals
+    output: quantitative performance metrics (compression, fidelity, bias)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (Not specified)
+  processed_data: not_mentioned (Not specified)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw IMS data (.imzML) not deposited in public repository (e.g., MetaboLights, MASSIVE)
+  - No link to code repository or implementation details for PCP/SPCP solvers
+  - No specification of tuning procedure or parameter ranges for lambda, tau, rho
+  - No description of m/z binning strategy or peak alignment across pixels
+  - No information on instrument acquisition parameters (laser settings, matrix application, spatial resolution) affecting reproducibility
+reproducibility_strengths:
+  - Explicit comparison framework (PCP vs SPCP vs PCA) defined
+  - Biological context (human cornea/retina) and rationale for sparsity assumption clearly stated

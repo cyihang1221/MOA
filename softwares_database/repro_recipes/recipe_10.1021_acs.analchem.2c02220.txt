@@ -1,0 +1,69 @@
+========== reproducibility_recipe entry ==========
+paper_title: Segment Scan Mass Spectral Acquisition for Increasing the Metabolite Detectability in Chemical Isotope Labeling Liquid Chromatography-Mass Spectrometry Metabolome Analysis.
+source_paper: Wang CF et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.2c02220, PMID: 35926115
+overall_reproducibility_score: 30/100
+
+workflow_steps: 6
+  Step 1: Segmented spectrum acquisition
+    tool: Thermo Orbitrap MS
+    algorithm: segmented scan mode
+    parameters: segment_mz_width=120, resolution=60000, number_of_segments=None, total_acquisition_time=960, automatic_gain_control_target=None, scan_range=full m/z range divided into segments
+    input: raw LC-MS data from dansyl-labeled human urine samples
+    output: segmented .raw files (multiple narrow-range spectra per LC run)
+    confidence: medium
+  Step 2: Peak pair extraction per segment
+    tool: in-house software (not named)
+    algorithm: CIL peak-pair detection algorithm
+    parameters: labeling_scheme=12C/13C dansyl labeling, mass_difference=1.00335, retention_time_tolerance=None, intensity_threshold=None, mz_tolerance_ppm=None
+    input: segmented .raw files
+    output: per-segment peak pair sublists
+    confidence: low
+  Step 3: Peak pair list merging
+    tool: in-house software (not named)
+    algorithm: list merging with RT and m/z alignment
+    parameters: rt_tolerance_sec=None, mz_tolerance_ppm=None
+    input: per-segment peak pair sublists
+    output: final merged peak pair list
+    confidence: low
+  Step 4: Metabolite identification/mass matching
+    tool: MassBank, HMDB, METLIN, or in-house database
+    algorithm: exact mass matching
+    parameters: mass_tolerance_ppm=5, database_search_mode=MS1-only, ion_mode=positive
+    input: final merged peak pair list (m/z, RT, intensity, peak ratio)
+    output: annotated metabolite list with confidence level (identified/matched)
+    confidence: medium
+  Step 5: Relative quantification assessment
+    tool: custom calculation
+    algorithm: peak ratio (13C/12C) deviation from expected 1.0
+    parameters: acceptance_window_percent=25, ratio_calculation_method=intensity-based
+    input: final merged peak pair list
+    output: quantitative accuracy metrics (e.g., % within ±25%)
+    confidence: high
+  Step 6: Precision evaluation of peak ratios
+    tool: statistical analysis (not specified)
+    algorithm: repeatability assessment across technical replicates
+    parameters: replicate_number=3, metric=coefficient of variation (CV)
+    input: peak pair lists from repeat injections
+    output: peak ratio CV distribution
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: not_mentioned (not mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw data deposition reported (no repository or accession ID)
+  - No processed data or metadata repository link provided
+  - In-house peak-pair detection and merging software not shared or described in sufficient detail
+  - Critical parameters missing: AGC target values, exact number of segments, RT/mz tolerance thresholds, ion source settings, LC gradient profile
+  - No code, scripts, or workflow documentation made available
+  - Database search parameters (e.g., adducts, charge states, filtering rules) not specified
+reproducibility_strengths:
+  - Explicit instrument parameters reported (120 m/z segment width, 60k/120k resolution, 16-min run)
+  - Clear experimental design (CIL with dansyl labeling, 12C/13C pairs)
+  - Quantitative performance metrics reported (56% and 89% gains, 95% ID rate, ±25% accuracy)

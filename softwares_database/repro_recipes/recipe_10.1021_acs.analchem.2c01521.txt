@@ -1,0 +1,56 @@
+========== reproducibility_recipe entry ==========
+paper_title: FindPFΔS: Non-Target Screening for PFAS─Comprehensive Data Mining for MS<sup>2</sup> Fragment Mass Differences.
+source_paper: Zweigle J et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.2c01521, PMID: 35866933
+overall_reproducibility_score: 87/100
+
+workflow_steps: 4
+  Step 1: MS/MS data input parsing
+    tool: FindPFΔS
+    algorithm: mass difference search in MS² spectra
+    parameters: mass_tolerance_ppm=5, intensity_threshold_relative_percent=1.0, collision_energy_range_eV=[10, 60], fragment_deltas=['Δ(CF₂)ₙ', 'ΔHF', 'ΔCₙH₃F₂ₙ₋₃', 'ΔCₙH₂F₂ₙ₋₄', 'ΔCₙHF₂ₙ₋₅', 'ΔCₙF₂ₙSO₃', 'ΔCF₃', 'ΔCF₂O']
+    input: vendor-independent .ms2 files
+    output: candidate PFAS fragment pairs and putative structures
+    confidence: high
+  Step 2: Fragment difference optimization and validation
+    tool: FindPFΔS
+    algorithm: empirical delta validation using reference standards
+    parameters: reference_standards_count=38, compound_classes_count=10, sample_types=['paper', 'soil'], acquisition_mode=iterative data-dependent acquisition (IDA)
+    input: PFAS standard mix MS² spectra
+    output: validated fragment mass differences and selectivity metrics
+    confidence: high
+  Step 3: False positive and sensitivity evaluation
+    tool: FindPFΔS
+    algorithm: systematic parameter sweep on public MS² library
+    parameters: massbank_spectra_count=20998, mass_tolerance_ppm_values=[2, 5, 10], intensity_threshold_percent_values=[0.1, 1.0, 5.0]
+    input: MassBank HR-MS² spectra (.ms2)
+    output: identification efficiency curves and false positive rates
+    confidence: high
+  Step 4: Non-target PFAS homologue identification in environmental extracts
+    tool: FindPFΔS
+    algorithm: delta-driven candidate prioritization and annotation
+    parameters: sample_matrix=paper extracts, annotation_strategy=fragment-difference-guided structural inference
+    input: unknown environmental sample MS² data (.ms2)
+    output: list of putative unknown PFAS homologues
+    confidence: medium
+
+data_availability:
+  raw_data: available (MassBank)
+  processed_data: not_mentioned
+  metadata: not_mentioned
+  data_urls: https://massbank.eu/MassBank/
+
+code_availability: repository_linked
+  code_url: https://github.com/JonZwe/FindPFAS
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw .ms2 files from paper and soil samples not deposited in public repository
+  - Exact collision energy values per compound class not fully tabulated
+  - No detailed spectral processing parameters (e.g., noise filtering, peak smoothing) specified for .ms2 input
+reproducibility_strengths:
+  - Open-source Python implementation with GUI available on GitHub and Zenodo
+  - Systematic evaluation on large public MassBank dataset (20,998 spectra)
+  - Vendor-independent .ms2 format support ensures broad instrument compatibility
+  - All eight validated fragment deltas explicitly listed with chemical notation

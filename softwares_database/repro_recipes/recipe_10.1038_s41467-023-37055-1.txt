@@ -1,0 +1,86 @@
+========== reproducibility_recipe entry ==========
+paper_title: Microbiota alters the metabolome in an age- and sex- dependent manner in mice.
+source_paper: Brown K et al. (2023), Nature communications, DOI: 10.1038/s41467-023-37055-1, PMID: 36906623
+overall_reproducibility_score: 42/100
+
+workflow_steps: 8
+  Step 1: Sample collection and preparation
+    tool: manual protocol
+    parameters: tissue_weight=50 mg, extraction_solvent_ratio_liver_spleen_intestine=5x v/w 50% methanol, extraction_solvent_ratio_serum_urine=1:1 with 100% methanol, final_dilution_liver_spleen_intestine=11:20, final_dilution_serum_urine=11:50, centrifugation_1=20817 xg, 15 min, 4°C, centrifugation_2=10000 xg, 10 min, 4°C (serum only), storage_temperature=-80°C, homogenization=2 min at 30 Hz
+    input: biological tissue/fluid samples (liver, spleen, intestinal content, serum, urine, peritoneal fluid)
+    output: extracted metabolite supernatants
+    confidence: high
+  Step 2: LC-MS data acquisition
+    tool: Thermo Fisher Q Exactive HF Hybrid Quadrupole-Orbitrap
+    algorithm: full scan MS1
+    parameters: instrument=Q Exactive HF, chromatography_system=Vanquish UHPLC, column=Syncronis HILIC (2.1 mm × 100 mm × 1.7 µm), flow_rate=600 µL/min, solvent_A=20 mM ammonium formate pH 3.0 in H₂O, solvent_B=acetonitrile + 0.1% formic acid (v/v), gradient=['0–2 min: 100% B', '2–7 min: 100→80% B', '7–10 min: 80→5% B', '10–12 min: 5% B', '12–13 min: 5→100% B', '13–15 min: 100% B'], injection_volume=2 µL, ionization_mode=negative, resolution=240000, mz_range=[50, 750], scan_mode=MS1 full scan
+    input: metabolite extracts
+    output: raw .raw files (Thermo format)
+    confidence: high
+  Step 3: Data processing and peak detection
+    tool: ms-mint (v0.1.8.3)
+    algorithm: targeted peak integration
+    parameters: min_signal_intensity=2500, blank_threshold_factor=2.0, retention_time_tolerance=None, mz_tolerance_ppm=None
+    input: raw .raw files
+    output: targeted peak table (m/z, RT, intensity)
+    confidence: medium
+  Step 4: Metabolite identification (targeted)
+    tool: MSMLS™ reference library + El-Maven (vEl-Maven v0.12.0)
+    algorithm: m/z and retention time matching
+    parameters: library_size=639, detectable_in_method=397, observed_in_samples=140, mz_matching_tolerance=None, rt_matching_tolerance=None
+    input: targeted peak table
+    output: annotated metabolite table (with confidence level: 'identified' or 'detected')
+    confidence: low
+  Step 5: Data filtering and quality control
+    tool: custom R script (described in text)
+    algorithm: intensity thresholding and blank subtraction
+    parameters: min_signal_intensity=2500, blank_cutoff_factor=2.0
+    input: peak table
+    output: filtered peak table
+    confidence: high
+  Step 6: Data normalization and scaling
+    tool: R (base)
+    algorithm: z-score normalization
+    parameters: normalization_method=z-score, formula=(x_i - μ) / σ
+    input: filtered peak table
+    output: z-score normalized metabolite abundance matrix
+    confidence: high
+  Step 7: Statistical analysis and variance partitioning
+    tool: R (rsq, vegan, tidyverse)
+    algorithm: partial R² analysis, PERMANOVA, t-test/ANOVA with Bonferroni correction
+    parameters: multiple_testing_correction=Bonferroni, sequence_depth_normalization=25000, distance_metric=Bray-Curtis (for microbiota), variance_partitioning_method=partial R²
+    input: z-score normalized metabolite matrix + metadata (age, sex, microbiota status, body site)
+    output: variance explained per factor (microbiota, age, sex), differential metabolites, p-values
+    confidence: high
+  Step 8: Visualization and plotting
+    tool: ggplot2, pheatmap
+    algorithm: statistical graphics generation
+    parameters: plot_types=['PCA', 'heatmaps', 'bar plots for variance partitioning']
+    input: normalized matrix, statistical results, metadata
+    output: publication-ready figures
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (MetaboLights)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS data not deposited in public repository (e.g., MetaboLights or PRIDE)
+  - No accession ID or repository link provided for any data
+  - ms-mint parameters (RT/mz tolerance, peak width, integration method) not specified
+  - El-Maven verification criteria (match scores, RT window) not reported
+  - No details on untargeted analysis pipeline — only targeted is described
+  - Custom R scripts for partial R² and statistical modeling not shared
+  - Gradient profile lacks precise dwell times and equilibration steps
+  - No information on batch correction or injection order randomization
+reproducibility_strengths:
+  - Explicit instrument settings (column, gradient, resolution, m/z range) provided
+  - Full sample preparation protocol with solvent ratios and centrifugation conditions
+  - Use of open-source R packages (tidyverse, vegan, rsq, ggplot2, pheatmap)
+  - Clear description of z-score normalization and fold-change formula
+  - Mention of blank subtraction and intensity filtering thresholds

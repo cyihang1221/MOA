@@ -1,0 +1,61 @@
+========== reproducibility_recipe entry ==========
+paper_title: Improved Annotation of Untargeted Metabolomics Data through Buffer Modifications That Shift Adduct Mass and Intensity.
+source_paper: Lu W et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.0c00985, PMID: 32614575
+overall_reproducibility_score: 35/100
+
+workflow_steps: 5
+  Step 1: Dual-buffer LC-MS acquisition
+    tool: LC-MS platform (unspecified)
+    parameters: buffer_A=14NH3-acetate, buffer_B=15NH3-formate, mass_shift_expected=1.00335, adduct_shift_pattern=characteristic mass and intensity changes for adduct peaks
+    input: biological sample extracts (yeast, mouse liver)
+    output: paired raw .raw or .d files (two buffer conditions per sample)
+    confidence: medium
+  Step 2: Feature detection and alignment across buffer conditions
+    tool: XCMS or similar (not explicitly named)
+    algorithm: peak picking and retention time alignment
+    parameters: alignment_method=retention time correction across runs, feature_matching_tolerance=mass tolerance not specified; implied by 15N shift (±0.005 Da?)
+    input: raw LC-MS files (.raw/.d) from both buffer conditions
+    output: aligned feature table with paired intensities per buffer condition
+    confidence: low
+  Step 3: Adduct annotation via differential mass/intensity response
+    tool: Custom algorithm (BMW logic)
+    algorithm: 15N-induced mass shift + intensity ratio analysis
+    parameters: mass_shift_threshold_da=1.00335, intensity_ratio_threshold=not numerically specified; 'characteristic' change used for classification
+    input: aligned feature table with paired intensities and m/z values
+    output: annotated feature table with adduct class assignments (e.g., [M+15NH4]+, [M+14NH4]+)
+    confidence: low
+  Step 4: Metabolite formula matching
+    tool: HMDB and KEGG databases
+    algorithm: exact mass matching (±tolerance unspecified)
+    parameters: database_sources=['HMDB', 'KEGG'], mass_accuracy_requirement=not specified
+    input: m/z values of annotated putative metabolite features (non-adduct, non-isotope)
+    output: list of features with database formula matches
+    confidence: low
+  Step 5: Accuracy validation
+    tool: Manual curation / known standards
+    algorithm: comparison to reference annotations
+    parameters: validation_set=known metabolite and known adduct peaks, accuracy_reported=0.95
+    input: annotated features + ground truth set
+    output: annotation accuracy metric (95%)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS data not deposited in public repository
+  - No specification of LC-MS instrument parameters (column, gradient, flow rate, ionization settings)
+  - No details on XCMS or alternative software parameters (e.g., centWave ppm, peak width, snthresh)
+  - Custom BMW annotation algorithm not described or shared
+  - Mass tolerance and intensity ratio thresholds for adduct classification not quantified
+  - No access to code, scripts, or workflow implementation
+reproducibility_strengths:
+  - Clear experimental design (14N vs 15N buffer switching)
+  - Reported high annotation accuracy (95%) on real biological data (mouse liver)
+  - Use of standard public databases (HMDB, KEGG) for formula matching

@@ -1,0 +1,45 @@
+========== reproducibility_recipe entry ==========
+paper_title: Cumulative Neutral Loss Model for Fragment Deconvolution in Electrospray Ionization High-Resolution Mass Spectrometry Data.
+source_paper: van Herwerden D et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c00896, PMID: 37549176
+overall_reproducibility_score: 20/100
+
+workflow_steps: 3
+  Step 1: Spectral deconvolution using cumulative neutral loss model
+    tool: CNL model (custom algorithm)
+    algorithm: Probability-based cumulative neutral loss (CNL) model
+    parameters: mass_tolerance_da=0.005, score_CNL_threshold=0.0
+    input: high-resolution mass spectra (HRMS) from data-independent acquisition or direct infusion
+    output: deconvoluted fragment spectra
+    confidence: high
+  Step 2: Performance evaluation of CNL model
+    tool: Custom evaluation framework
+    algorithm: True positive rate (TPr), false discovery rate (FDr), reduction rate calculation
+    parameters: metrics=['TPr', 'FDr', 'reduction_rate']
+    input: deconvoluted spectra and ground-truth annotations (implied)
+    output: performance metrics (TPr, FDr, reduction rate)
+    confidence: medium
+  Step 3: Comparison with alternative methods
+    tool: Retention time difference method and peak shape correlation analysis
+    algorithm: Combined correlation analysis + CNL model
+    input: HRMS spectra with retention time and peak shape information
+    output: comparative performance metrics
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposited in public repository
+  - No source code or implementation details provided for the CNL algorithm
+  - No description of ground-truth dataset used for performance evaluation
+  - No parameters or implementation details for retention time difference method or peak shape correlation analysis
+  - No information on software environment (e.g., programming language, dependencies)
+reproducibility_strengths:
+  - Explicit mass tolerance (0.005 Da) and score threshold (0.00) reported
+  - Quantitative performance metrics (TPr, FDr, reduction rate) provided for multiple test scenarios

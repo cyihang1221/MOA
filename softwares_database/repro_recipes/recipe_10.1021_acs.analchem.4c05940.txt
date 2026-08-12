@@ -1,0 +1,43 @@
+========== reproducibility_recipe entry ==========
+paper_title: OzNOxESI: A Novel Mass Spectrometry Ion Chemistry for Elucidating Lipid Double-Bond Regioisomerism in Complex Mixtures.
+source_paper: Smith RA et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.4c05940, PMID: 39817428
+overall_reproducibility_score: 30/100
+
+workflow_steps: 3
+  Step 1: Online ozone/nitrogen oxides derivatization during MS/MS fragmentation
+    tool: OzNOxESI ion chemistry
+    algorithm: gas-phase ozonolysis coupled with NOx-mediated cleavage
+    parameters: derivatization_reagents=['ozone', 'nitrogen oxides'], fragmentation_mode=tandem mass spectrometry (MS/MS), reaction_context=online, in-source or post-ionization
+    input: intact lipid ions (e.g., [M+H]+, [M-H]−) from LC-MS
+    output: characteristic C═C position-specific product ions (e.g., aldehyde, nitrooxy-carbonyl fragments)
+    confidence: medium
+  Step 2: LC-MS data acquisition of derivatized lipids
+    tool: Liquid chromatography–mass spectrometry
+    algorithm: not applicable
+    parameters: chromatography=reversed-phase LC, ionization=ESI (electrospray ionization), mass_analyzer=tandem mass spectrometer (exact type unspecified)
+    input: human plasma lipid extract
+    output: raw .raw or .d files (vendor format)
+    confidence: low
+  Step 3: Automated C═C regioisomer identification and quantification
+    tool: OzNOx Companion
+    algorithm: in-house algorithm for fragment pattern matching and double-bond localization
+    parameters: identification_criteria=characteristic m/z shifts corresponding to ozonolysis/NOx cleavage products, quantification_method=peak area integration of diagnostic ions
+    input: raw MS/MS spectra
+    output: annotated lipid C═C regioisomer table (270 glycerophospholipids + 36 fatty acids)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - OzNOxESI ion chemistry implementation details not provided (e.g., ozone concentration, NOx gas mixing ratios, reaction timing, interface design)
+  - Instrument parameters (LC gradient, column, MS settings) not specified
+  - OzNOx Companion software is in-house and not publicly available or described algorithmically
+  - No raw or processed data deposited in public repository (e.g., MetaboLights, MassIVE)
+  - No validation dataset or spectral libraries shared for method benchmarking

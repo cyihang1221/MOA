@@ -1,0 +1,88 @@
+========== reproducibility_recipe entry ==========
+paper_title: A robust multiplex-DIA workflow profiles protein turnover regulations associated with cisplatin resistance and aneuploidy.
+source_paper: Salovska B et al. (2025), Nature communications, DOI: 10.1038/s41467-025-60319-x, PMID: 40447611
+overall_reproducibility_score: 52/100
+
+workflow_steps: 7
+  Step 1: Data acquisition (DIA-MS)
+    tool: Spectronaut v19 (vv19)
+    algorithm: directDIA+
+    parameters: ms1_resolution=120000, ms1_scan_range_mz=[350, 1650], ms1_agc_target=2000000, ms1_max_injection_time_ms=100, ms2_resolution=30000, hcd_collision_energy=28, ms2_agc_target=1500000, ms2_max_injection_time_ms=50, peptide_charge_state=2, dialysis_windows=variable, dia_window_count=33, dia_platform=Orbitrap Fusion Lumos Tribrid, dia_platform_2=timsTOF Ultra (dia-PASEF, 20×3 method)
+    input: raw .raw files (Thermo) or .d files (Bruker)
+    output: quantified peptide/protein tables with channel-specific intensities
+    confidence: high
+  Step 2: Label-free DIA data analysis
+    tool: Spectronaut v19 (vv19)
+    algorithm: directDIA+
+    parameters: database=human SwissProt (N=20399, Sep 2022), cleavage_rule=Trypsin/P, max_missed_cleavages=2, fixed_modifications=['Carbamidomethyl (C)'], variable_modifications=['Acetyl (Protein N-term)', 'Oxidation (M)'], top_fragments_per_peptide=3–6, precursor_q_value=0.01, experiment_wide_protein_q_value=0.01, run_wise_protein_q_value=0.05, quantification_level=MS2, cross_run_normalization=True, peptide_quant_method=max Top 3 precursors, protein_quant_method=max Top 3 stripped peptide sequences, min_log2_precursor_quantity=3
+    input: raw DIA files
+    output: label-free peptide/protein abundance matrix
+    confidence: high
+  Step 3: Multiplex-DIA analysis (Labeled workflow)
+    tool: Spectronaut v19 (vv19)
+    algorithm: LBL (Labeled) workflow with directDIA+
+    parameters: database=human SwissProt (N=20399, Sep 2022), cleavage_rule=Trypsin/P, max_missed_cleavages=2, labeling_channels=2, channel_1_labels=[], channel_2_labels=['Arg10', 'Lys8'], fixed_modifications=['Carbamidomethyl (C)'], variable_modifications=['Acetyl (Protein N-term)', 'Oxidation (M)'], in_silico_generate_missing_channels=True, overlapping_between_channels=True, exclude_multi_channel_interferences=True, multi_channel_workflow_definition=Labeled, multi_channel_q_value_filter=Group Q-value, precursor_q_value=0.01, experiment_wide_protein_q_value=0.01, run_wise_protein_q_value=0.05, quantification_level=MS2, cross_run_normalization=True, peptide_quant_method=max Top 3 precursors, protein_quant_method=Top 3 stripped peptide sequences, min_log2_precursor_quantity=3
+    input: raw DIA files + SILAC labeling info
+    output: multiplexed peptide/protein quantification table with H/L ratios
+    confidence: high
+  Step 4: Multiplex-DIA analysis (Inverted Spike-In workflow)
+    tool: Spectronaut v19 (vv19)
+    algorithm: ISW (Inverted Spike-In) workflow
+    parameters: multi_channel_workflow_definition=Spike-In, inverted=True, reference_based_identification=True, same_parameters_as_LBL=True
+    input: raw DIA files + SILAC labeling info
+    output: alternative multiplexed quantification table (spike-in reference based)
+    confidence: medium
+  Step 5: Protein turnover modeling and degradation kinetics
+    tool: KdeggeR
+    algorithm: pSILAC degradation curve fitting
+    parameters: timepoints=[0, 1, 4, 8, 12, 24], labeling_type=pSILAC, degradation_model=exponential decay, fitting_method=nonlinear least squares
+    input: Spectronaut-generated peptide/protein intensity time-series (H/L ratios)
+    output: protein-level Kdeg (degradation rate constant), half-life estimates, degradation profiles
+    confidence: low
+  Step 6: Statistical analysis and differential turnover detection
+    tool: not specified (custom R/Python likely)
+    algorithm: t-test / ANOVA with multiple testing correction
+    parameters: statistical_test=two-sided t-test, fdr_method=Benjamini-Hochberg, significance_threshold=0.05, fold_change_threshold=1.5
+    input: KdeggeR output (Kdeg values per protein across conditions)
+    output: differentially degraded proteins (DDPs)
+    confidence: low
+  Step 7: Functional enrichment and pathway analysis
+    tool: not specified
+    algorithm: GO / KEGG / Reactome enrichment
+    parameters: enrichment_database=['GO', 'KEGG', 'Reactome'], background=human proteome, multiple_testing_correction=Benjamini-Hochberg
+    input: list of differentially degraded proteins
+    output: enriched biological pathways and processes
+    confidence: low
+
+data_availability:
+  raw_data: available (ProteomeXchange: ['PXD021922', 'PXD039578'])
+  processed_data: not_mentioned (not mentioned)
+  metadata: in_paper_only
+  data_urls: https://www.ebi.ac.uk/pride/archive/projects/PXD021922, https://www.ebi.ac.uk/pride/archive/projects/PXD039578
+
+code_availability: mentioned_no_link
+
+figure_recipes: 2
+  Fig. 2: [volcano_plot]
+    caption: Volcano plot showing differentially degraded proteins in cisplatin-resistant vs parental A2780 cells, highlighting mitochondrial respiratory complex subunits.
+    produced_by_step: [5, 6]
+    visualization_tool: not specified (likely ggplot2 or GraphPad)
+    statistical_test: t-test p<0.05, FDR<0.05
+  Supplementary Fig. 1: [boxplot]
+    caption: Comparison of quantification performance (coverage, reproducibility) between LBL and ISW workflows across datasets.
+    produced_by_step: [3, 4]
+    visualization_tool: not specified
+    statistical_test: not specified
+
+reproducibility_gaps:
+  - KdeggeR tool not publicly available (no repository link or DOI)
+  - Spectronaut v19 is commercial software requiring license and paid subscription
+  - Custom statistical and visualization code not shared
+  - Exact LC gradient profiles for timsTOF Ultra (52-min ACN gradient) lack solvent composition details
+  - No processed data deposition (e.g., Kdeg tables, turnover heatmaps)
+  - Supplementary Data 5 contains reagents/instruments but no executable pipeline parameters
+reproducibility_strengths:
+  - Raw mass spectrometry data deposited in ProteomeXchange (PXD021922, PXD039578)
+  - Detailed Spectronaut v19 parameter settings provided for both LBL and ISW workflows
+  - Explicit database version (SwissProt, Sep 2022) and search settings documented
+  - Sample preparation protocols fully described including cell culture, labeling duration, lysis, digestion methods

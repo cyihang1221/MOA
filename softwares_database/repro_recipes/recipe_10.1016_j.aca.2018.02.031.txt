@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: Towards enhanced metabolomic data analysis of mass spectrometry image: Multivariate Curve Resolution and Machine Learning.
+source_paper: Tian X et al. (2018), Analytica chimica acta, DOI: 10.1016/j.aca.2018.02.031, PMID: 30292295
+overall_reproducibility_score: 20/100
+
+workflow_steps: 4
+  Step 1: Multivariate Curve Resolution-Alternating Least Squares (MCR-ALS)
+    tool: MCR-ALS
+    algorithm: Alternating Least Squares
+    input: raw mass spectrometry imaging (MSI) data cubes (m/z × x × y)
+    output: resolved spatial distribution maps and corresponding spectral profiles (metabolite groups with shared spatial patterns)
+    confidence: low
+  Step 2: Supervised machine learning classification
+    tool: Random Forest
+    algorithm: Random Forest
+    parameters: n_trees=None, mtry=None, ntree=None
+    input: feature matrix derived from MCR-ALS-resolved spatial patterns (e.g., resolved component intensities per pixel or region)
+    output: classification model and spatial class prediction maps
+    confidence: low
+  Step 3: Unsupervised spatial clustering
+    tool: DBSCAN
+    algorithm: Density-based Spatial Clustering of Applications with Noise
+    parameters: eps=None, min_samples=None
+    input: MSI data (intensity matrix per m/z or MCR-ALS component intensities)
+    output: spatial cluster labels and noise identification
+    confidence: low
+  Step 4: Unsupervised spatial clustering
+    tool: CLARA
+    algorithm: Clustering Large Applications
+    parameters: k=None, samples=None
+    input: MSI data (intensity matrix per m/z or MCR-ALS component intensities)
+    output: spatial cluster labels
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed MSI data deposited or referenced
+  - No software versions specified for MCR-ALS, Random Forest, DBSCAN, or CLARA
+  - No parameter values reported for any algorithm (e.g., eps/min_samples for DBSCAN, k for CLARA, tree count/mtry for Random Forest)
+  - No description of preprocessing steps (e.g., denoising, normalization, m/z binning, peak alignment)
+  - No information on MCR-ALS constraints (e.g., non-negativity, closure, sparsity), number of components, or convergence criteria
+  - No code repository or implementation details provided
+reproducibility_strengths:
+  - Explicit naming of core algorithms (MCR-ALS, Random Forest, DBSCAN, CLARA)
+  - Clear conceptual workflow linking MCR-ALS output to ML input

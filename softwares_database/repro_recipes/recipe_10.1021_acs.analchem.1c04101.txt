@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: Discovery and Visualization of Uncharacterized Drug-Protein Adducts Using Mass Spectrometry.
+source_paper: Riffle M et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.1c04101, PMID: 35184559
+overall_reproducibility_score: 72/100
+
+workflow_steps: 4
+  Step 1: Open-mass spectral searching for xenobiotic-protein adducts
+    tool: Magnum
+    algorithm: open-mass search
+    input: MS/MS spectra (e.g., .mgf, .mzML)
+    output: candidate adduct-modified peptide identifications
+    confidence: low
+  Step 2: Data processing and visualization of open-mass search results
+    tool: Limelight
+    algorithm: web-based adduct-centric analysis pipeline
+    input: adduct identification results (e.g., from Magnum, MSFragger, or other open-search tools)
+    output: annotated adduct tables, comparative visualizations, xenobiotic-adduct heatmaps
+    confidence: medium
+  Step 3: Label-free quantification and sample comparison
+    tool: Limelight
+    algorithm: intensity-based label-free comparison
+    input: peptide-spectrum match (PSM) tables with adduct annotations
+    output: differentially modified peptides across conditions
+    confidence: low
+  Step 4: Xenobiotic-adduct discovery in CYP3A4
+    tool: Magnum + Limelight
+    algorithm: target-agnostic open-mass search followed by adduct prioritization
+    input: LC-MS/MS data from drug-treated vs. control CYP3A4 samples
+    output: novel xenobiotic-protein adducts (e.g., covalent modifications on CYP3A4)
+    confidence: medium
+
+data_availability:
+  raw_data: available (ProteomeXchange: PXD030123)
+  processed_data: not_mentioned (not specified: not specified)
+  metadata: in_paper_only
+  data_urls: https://www.ebi.ac.uk/pride/archive/projects/PXD030123
+
+code_availability: repository_linked
+  code_url: https://github.com/ajw91/magnum
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Limelight source code not publicly available (only web interface provided)
+  - No details on LC-MS acquisition parameters (e.g., gradient, column, instrument method)
+  - No description of protein digestion protocol (enzyme, time, temperature, cleanup)
+  - No statistical thresholds or FDR methodology explicitly stated for Magnum output filtering
+  - Metadata (e.g., drug concentration, exposure time, biological replicates) only summarized in paper text, not structured or deposited
+reproducibility_strengths:
+  - Magnum is open-source with DOI and GitHub repository
+  - Raw proteomics data deposited in ProteomeXchange (PXD030123)
+  - Validation performed on three independent drug/protein systems, enabling benchmarking
+  - Web-based Limelight enables accessible visualization without local installation

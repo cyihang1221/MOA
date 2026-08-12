@@ -305,11 +305,14 @@
 
           <h2 data-i18n="files.title">会话文件</h2>
 
-          <button id="refreshFilesBtn" type="button" class="secondary-btn small-btn" data-i18n="files.refresh">
-
-            刷新
-
-          </button>
+          <div class="files-panel-actions">
+            <button id="editMetadataBtn" type="button" class="secondary-btn small-btn" data-i18n="metadata.edit">
+              编辑 metadata
+            </button>
+            <button id="refreshFilesBtn" type="button" class="secondary-btn small-btn" data-i18n="files.refresh">
+              刷新
+            </button>
+          </div>
 
         </div>
 
@@ -696,6 +699,39 @@
     </div>
 
 
+    <div id="metadataEditor" class="plot-agent-editor hidden" role="dialog" aria-modal="true" aria-hidden="true">
+      <div class="plot-agent-editor-backdrop" id="metadataEditorBackdrop"></div>
+      <div class="plot-agent-editor-panel metadata-editor-panel">
+        <header class="plot-agent-editor-header">
+          <span id="metadataEditorTitle" class="plot-agent-editor-title" data-i18n="metadata.title">样本 metadata</span>
+          <button id="metadataEditorClose" type="button" class="icon-btn" aria-label="Close">×</button>
+        </header>
+        <div class="plot-agent-editor-body">
+          <p id="metadataEditorHint" class="plot-agent-editor-hint muted" data-i18n="metadata.hint">
+            编辑 metadata.csv：至少包含 Sample（样本名）与 Group（分组）。保存后将在 PCA、mixOmics 等分析中用于着色与分组比较。
+          </p>
+          <p id="metadataEditorMeta" class="metadata-editor-meta muted"></p>
+          <div class="metadata-editor-toolbar">
+            <button id="metadataAddRowBtn" type="button" class="secondary-btn small-btn" data-i18n="metadata.addRow">添加样本</button>
+            <button id="metadataAddColBtn" type="button" class="secondary-btn small-btn" data-i18n="metadata.addCol">添加列</button>
+            <button id="metadataInferBtn" type="button" class="secondary-btn small-btn" data-i18n="metadata.infer">从文件推断</button>
+          </div>
+          <div id="metadataTableWrap" class="metadata-table-wrap">
+            <table id="metadataTable" class="metadata-table">
+              <thead id="metadataTableHead"></thead>
+              <tbody id="metadataTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <footer class="plot-agent-editor-footer">
+          <button id="metadataEditorCancel" type="button" class="secondary-btn" data-i18n="msg.cancel">取消</button>
+          <button id="metadataEditorSave" type="button" data-i18n="metadata.save">保存 metadata</button>
+        </footer>
+        <p id="metadataEditorStatus" class="plot-agent-editor-status"></p>
+      </div>
+    </div>
+
+
     <div id="plotAgentEditor" class="plot-agent-editor hidden" role="dialog" aria-modal="true" aria-hidden="true">
       <div class="plot-agent-editor-backdrop" id="plotAgentEditorBackdrop"></div>
       <div class="plot-agent-editor-panel">
@@ -711,6 +747,11 @@
             <span data-i18n="image.plotAgentInstruction">改图要求</span>
             <textarea id="plotAgentInstruction" rows="4" class="plot-agent-instruction" data-i18n-placeholder="image.plotAgentPlaceholder" placeholder="例如：把标题改成 PCA Score Plot，A 组红色 #E64B35"></textarea>
           </label>
+          <div id="plotAgentLiteratureHints" class="plot-agent-literature hidden">
+            <p class="plot-agent-literature-title" data-i18n="image.plotLiteratureTitle">文献作图参考</p>
+            <p id="plotAgentLiteratureMeta" class="plot-agent-literature-meta muted"></p>
+            <div id="plotAgentLiteratureList" class="plot-agent-literature-list"></div>
+          </div>
           <div id="plotAgentPreviewWrap" class="plot-agent-preview-wrap hidden">
             <div id="plotAgentEcharts" class="plot-agent-echarts"></div>
             <img id="plotAgentPreviewImg" class="plot-agent-preview-img hidden" alt="" />

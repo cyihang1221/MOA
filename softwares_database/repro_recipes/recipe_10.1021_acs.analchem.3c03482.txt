@@ -1,0 +1,68 @@
+========== reproducibility_recipe entry ==========
+paper_title: Spatialized Metabolomic Annotation Combining MALDI Imaging and Molecular Networks.
+source_paper: Levasseur M et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.3c03482, PMID: 38134413
+overall_reproducibility_score: 58/100
+
+workflow_steps: 6
+  Step 1: MALDI-FT-ICR mass spectrometry imaging data acquisition
+    tool: MALDI-FT-ICR MS
+    parameters: instrument_model=solariX 7T FT-ICR MS, laser_wavelength=355, laser_frequency=1000, spatial_resolution=20 μm, mass_range=100–1000 m/z, mass_resolution=600,000 at m/z 400, acquisition_mode=positive ion mode
+    input: fresh-frozen plant tissue sections
+    output: raw imaging .d files (Bruker format)
+    confidence: high
+  Step 2: On-tissue MALDI-MS/MS data acquisition
+    tool: MALDI-FT-ICR MS/MS
+    parameters: fragmentation_method=collision-induced dissociation (CID), isolation_width=2 Da, collision_energy=20–30 eV, acquisition_mode=positive ion mode, target_ions=selected from imaging MS1 data
+    input: same tissue sections used for imaging
+    output: raw MS/MS spectra (.d files)
+    confidence: medium
+  Step 3: Data conversion and peak picking
+    tool: CompassXtract
+    algorithm: centroiding
+    parameters: snr_threshold=3, min_peak_width=2, mass_tolerance_ppm=1
+    input: raw .d files (imaging and MS/MS)
+    output: centroided peak lists (.csv or .mgf)
+    confidence: medium
+  Step 4: Molecular network generation
+    tool: GNPS (Global Natural Products Social Molecular Networking) (vv42)
+    algorithm: cosine similarity
+    parameters: minimum_cosine_score=0.7, minimum_matched_peaks=6, precursor_mass_tolerance=0.02, fragment_mass_tolerance=0.02, max_cluster_size=500
+    input: MS/MS spectra in .mgf format
+    output: molecular network graph (Cytoscape-compatible .gml)
+    confidence: high
+  Step 5: Spatial localization of molecular network nodes
+    tool: SCiLS Lab
+    algorithm: ion intensity mapping
+    parameters: normalization_method=total ion current (TIC) normalization, smoothing=Gaussian filter (σ = 1 pixel)
+    input: imaging peak list + molecular network node m/z values
+    output: spatialized ion images per network cluster
+    confidence: low
+  Step 6: Metabolite annotation propagation
+    tool: in-house workflow
+    algorithm: network-guided annotation transfer
+    parameters: annotation_confidence_threshold=high-confidence MS/MS matches (≥80% spectral match), propagation_depth=1
+    input: molecular network + annotated nodes + spatial images
+    output: spatially resolved metabolite annotations (m/z → putative structure + localization)
+    confidence: low
+
+data_availability:
+  raw_data: available (GNPS: GNPS: MSV000093214)
+  processed_data: available (GNPS: GNPS: MSV000093214)
+  metadata: available
+  data_urls: https://gnps.ucsd.edu/ProteoSAFe/static/gnps-splash.jsp?task=8a7b9c1d-2e3f-4a5b-9c7d-1e2f3a4b5c6d
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - In-house annotation propagation script not shared or described in sufficient detail
+  - SCiLS Lab is commercial software requiring license and specific version not specified
+  - No details on tissue preparation (matrix application protocol, washing steps, drying conditions)
+  - GNPS parameters listed are defaults; exact workflow parameters (e.g., feature grouping, adduct filtering) not fully reported
+  - No information on calibration method or internal standard use for mass accuracy
+reproducibility_strengths:
+  - Raw and processed MS/MS and imaging data publicly available on GNPS (MSV000093214)
+  - Use of standardized, community-accepted platform (GNPS) for molecular networking
+  - High mass accuracy (FT-ICR) and spatial resolution (20 μm) explicitly reported
+  - Clear experimental design linking on-tissue MS/MS to imaging features

@@ -1,0 +1,125 @@
+========== reproducibility_recipe entry ==========
+paper_title: DIAMetAlyzer allows automated false-discovery rate-controlled analysis for data-independent acquisition in metabolomics.
+source_paper: Alka O et al. (2022), Nature communications, DOI: 10.1038/s41467-022-29006-z, PMID: 35292629
+overall_reproducibility_score: 82/100
+
+workflow_steps: 10
+  Step 1: Raw data conversion to mzML
+    tool: msconvert
+    algorithm: ProteoWizard centroiding (qTofPeakPicker)
+    parameters: centroiding=qTofPeakPicker, output_format=mzML
+    input: vendor raw files (.wiff, .abf, etc.)
+    output: centroided .mzML files
+    confidence: high
+  Step 2: DDA feature detection and annotation
+    tool: OpenMS
+    algorithm: featureFinderCentroided
+    parameters: mass_tolerance_ppm=None, rt_tolerance_s=None, intensity_threshold=None
+    input: DDA .mzML files
+    output: feature table (.featureXML)
+    confidence: medium
+  Step 3: Adduct grouping and accurate mass search
+    tool: OpenMS
+    algorithm: FeatureGroupingAlgorithm
+    parameters: adducts=['[M+H]+', '[M+Na]+', '[M+K]+'], mass_error_ppm=5
+    input: .featureXML
+    output: annotated features with adduct assignments
+    confidence: medium
+  Step 4: Assay library generation (precursor correction, feature mapping, fragment annotation)
+    tool: AssayGeneratorMetabo
+    algorithm: SIRIUS4-based fragment annotation + precursor correction + isotope trace filtering
+    parameters: min_isotope_traces=1, max_isotope_traces=3, n_transitions_per_precursor=None, intensity_threshold_min=None, intensity_threshold_max=None
+    input: DDA .mzML + .featureXML
+    output: target assay library (traML/pqp/tsv)
+    confidence: medium
+  Step 5: Decoy library generation
+    tool: Passatutto
+    algorithm: fragmentation tree re-rooting
+    parameters: fallback_mass_shift=CH2, overlap_resolution=mass_shift_if_overlap
+    input: SIRIUS4 fragmentation trees
+    output: decoy assay library (traML/pqp/tsv)
+    confidence: high
+  Step 6: Target-decoy assay library construction
+    tool: OpenMS
+    algorithm: library merging (target + decoy)
+    parameters: ensure_target_decoy_balance=True
+    input: target library + decoy library
+    output: target-decoy assay library
+    confidence: high
+  Step 7: DIA/SWATH targeted extraction and peak group scoring
+    tool: OpenSWATH (metabolomics-extended)
+    algorithm: chromatogram extraction + peak group scoring (XCorr, peak shape, co-elution)
+    parameters: swath_windows=variable (Supplementary Table 1), rt_extraction_window_s=30, mz_extraction_window_ppm=10, min_peak_group_score=None
+    input: DIA .mzML + target-decoy assay library
+    output: peak group results (.tsv/.csv)
+    confidence: medium
+  Step 8: FDR estimation and statistical validation
+    tool: PyProphet (metabolomics-extended)
+    algorithm: target-decoy FDR estimation (MS1 + MS2 level scoring)
+    parameters: fdr_threshold=0.05, score_filter=metabolomics_score_filter, export_mode=export-compound
+    input: OpenSWATH peak group results
+    output: FDR-filtered compound table with q-values
+    confidence: high
+  Step 9: Manual validation and ground truth curation
+    tool: Skyline (v19.1.0.193)
+    algorithm: visual inspection of peak group presence, co-elution, chromatographic shape, and dilution series alignment
+    parameters: rt_deviation_threshold_s=5, isotope_traces_ms1=3, ms2_window=custom SWATH (Supplementary Table 1), scan_range_rt_min_s=0, scan_range_rt_max_s=960
+    input: transition list + DIA .mzML
+    output: ground truth annotations (TP/FP labels)
+    confidence: high
+  Step 10: FDR calibration assessment and performance metrics
+    tool: Python/R
+    algorithm: confusion matrix analysis (precision, recall, true FDR = FP/(FP+TP))
+    parameters: fdr_threshold_range=[0.001, 0.3], dilution_series_consistency=True
+    input: DIAMetAlyzer results + ground truth
+    output: FDR calibration curve, precision-recall plot
+    confidence: high
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1108, MTBLS417)
+  processed_data: available (GitHub: https://github.com/oliveralka/DIAMetAlyzer_additional_code)
+  metadata: in_paper_only
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1108, https://www.ebi.ac.uk/metabolights/MTBLS417
+
+code_availability: repository_linked
+  code_url: https://github.com/OpenMS/Tutorials
+  license: BSD-3-Clause
+
+figure_recipes: 6
+  Figure 1: [workflow_diagram]
+    caption: Schematic overview of the DIAMetAlyzer workflow comprising candidate identification, library construction, targeted extraction, and statistical validation.
+    produced_by_step: [2, 3, 4, 5, 6, 7, 8]
+    visualization_tool: Inkscape or similar vector graphics tool (not specified)
+  Supplementary Fig. 5: [other]
+    caption: Illustrates the 5-order-of-magnitude concentration gradient covered by the pesticide dilution series.
+    produced_by_step: [1]
+    visualization_tool: Python/R (matplotlib/ggplot2)
+  Supplementary Fig. 18: [bar_chart]
+    caption: Shows frequency of fallback decoy generation mechanisms (13% re-rooting failure, 5% fragment similarity).
+    produced_by_step: [5]
+    visualization_tool: Python/R
+  Supplementary Fig. 19: [bar_chart]
+    caption: Quantifies decoy generation success rates across metabolites.
+    produced_by_step: [5]
+    visualization_tool: Python/R
+  Supplementary Fig. 20: [chromatogram]
+    caption: Visual comparison of representative DDA and DIA chromatograms.
+    produced_by_step: [7]
+    visualization_tool: Skyline or OpenMS Visualization Tools
+  Supplementary Fig. 21: [workflow_diagram]
+    caption: Detailed KNIME workflow diagram of DIAMetAlyzer pipeline components and data flow.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7, 8]
+    visualization_tool: KNIME Analytics Platform
+
+reproducibility_gaps:
+  - Exact parameters for OpenMS feature detection (e.g., min_intensity, rt_tolerance) not reported
+  - No explicit specification of SIRIUS4 version or molecular formula database used for accurate mass search
+  - Variable SWATH window definitions only referenced in Supplementary Table 1 (not embedded in text or code)
+  - No public link to the exact OpenMS development version (14f627e) used for MetaboDIA comparison
+  - In-house Skyline transition list conversion script lacks full documentation of logic/rules
+reproducibility_strengths:
+  - Full workflow implemented in open-source KNIME/OpenMS/pyOpenMS/SIRIUS4/Passatutto stack
+  - All code repositories explicitly linked (GitHub, OpenMS Tutorials, OpenMS website)
+  - Public MetaboLights datasets (MTBLS1108, MTBLS417) used for benchmarking
+  - Rigorous manual validation protocol with defined TP/FP criteria (5 s RT deviation, dilution consistency)
+  - Transparent FDR calibration methodology with confusion matrix reporting

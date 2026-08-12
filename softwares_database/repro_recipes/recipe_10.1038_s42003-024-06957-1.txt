@@ -1,0 +1,59 @@
+========== reproducibility_recipe entry ==========
+paper_title: The cAMP receptor protein from Gardnerella vaginalis is not regulated by ligands.
+source_paper: Dong H et al. (2024), Communications biology, DOI: 10.1038/s42003-024-06957-1, PMID: 39354127
+overall_reproducibility_score: 30/100
+
+workflow_steps: 0
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 10
+  Table 1: [table]
+    caption: Data-collection and refinement statistics for the CRP_Gv crystal structure.
+    visualization_tool: PyMOL
+  Fig. 1: [workflow_diagram]
+    caption: Structural characterization of CRP_Gv, including overall fold, domain organization, and ligand-binding pocket occlusion by N-terminal insertion.
+    visualization_tool: PyMOL
+  Fig. 2: [electrophoresis_gel]
+    caption: EMSA showing DNA binding ability of CRP_Gv to TGTGA-N6-TCACA promoter sequences, with and without cAMP.
+    visualization_tool: Typhoon Scanner + ImageQuant
+  Fig. 3: [sequence_logo]
+    caption: Conservation analysis of amino acids in the cAMP binding pocket across CRP homologs, highlighting unique steric occlusion in CRP_Gv.
+    visualization_tool: ESPript 3.0
+  Fig. 4: [structural_alignment]
+    caption: Structural superposition comparing CRP_Gv with homologous CRPs (e.g., CRP_Ec, CRP_Cg), emphasizing conformational differences and N-terminal insertion.
+    visualization_tool: PyMOL
+  Fig. 5: [dsc_curve]
+    caption: Differential scanning calorimetry (DSC) thermograms showing thermal stability of CRP_Gv ± cAMP, demonstrating no stabilization effect.
+    visualization_tool: MicroCal VP-DSC analysis software
+  Fig. 6: [itc_binding_curve]
+    caption: Isothermal titration calorimetry (ITC) data showing absence of heat change upon cAMP titration into CRP_Gv, indicating no binding.
+    visualization_tool: Origin 8.0
+  Fig. 7: [cd_spectrum]
+    caption: Circular dichroism (CD) spectra comparing secondary structure of CRP_Gv ± various ligands (cAMP, cGMP, GSH, etc.), showing no conformational change.
+    visualization_tool: JASCO J-810 software
+  Fig. 8: [structural_alignment]
+    caption: Structural comparison of CRP_Gv bound (in silico) to alternative ligands (cGMP, c-di-GMP, etc.) via docking, showing poor fit in occluded pocket.
+    visualization_tool: PyMOL
+  Fig. 9: [molecular_docking_and_md]
+    caption: Molecular docking pose and MD simulation trajectory of cAMP docked into CRP_Gv-33-end, revealing instability and lack of stable binding.
+    visualization_tool: Autodock Vina, Desmond 2.0, PyMOL
+
+reproducibility_gaps:
+  - No raw X-ray diffraction data deposited in PDB or SBGrid
+  - No MS raw files (.wiff, .abf) or processed metabolomics tables shared
+  - No sequence alignment files (FASTA/CLUSTAL), phylogenetic tree files (Newick), or EMSA gel quantification data provided
+  - No ITC/DSC/CD raw instrument output files or parameter scripts
+  - No Autodock Vina/Desmond input files (PDBQT, topology, simulation parameters) shared
+  - CRP_Gv mutant constructs and promoter DNA sequences only referenced in supplementary table (S1 Table) but not provided
+  - HPLC-MS/MS method lacks critical LC gradient details (exact %B over time), ionization source parameters, and MS acquisition settings (e.g., TOF resolution, accumulation time)
+reproducibility_strengths:
+  - Crystallographic data collection parameters fully specified (wavelength, distance, oscillation, exposure)
+  - Protein purification and crystallization protocols described in detail
+  - All major biophysical assays (ITC, DSC, CD, EMSA, SPR) list buffer compositions and key instrument settings
+  - Software tools explicitly named (Phenix, Coot, HKL-3000, PyMOL, ESPript, MS-DIAL, Autodock Vina, Desmond)

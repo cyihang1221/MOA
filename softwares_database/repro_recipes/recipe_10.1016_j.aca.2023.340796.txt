@@ -1,0 +1,57 @@
+========== reproducibility_recipe entry ==========
+paper_title: Mobility-resolved broadband dissociation and parallel reaction monitoring for laser desorption/ionization-mass spectrometry - Tattoo pigment identification supported by trapped ion mobility spectrometry.
+source_paper: Wolf C et al. (2023), Analytica chimica acta, DOI: 10.1016/j.aca.2023.340796, PMID: 36657890
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Ion mobility separation
+    tool: trapped ion mobility spectrometry (TIMS)
+    algorithm: ion mobility drift time separation
+    input: LDI-generated ions
+    output: mobility-resolved ion packets
+    confidence: medium
+  Step 2: Broadband CID fragmentation
+    tool: bbCID
+    algorithm: data-independent broadband collision-induced dissociation
+    input: mobility-resolved ion packets
+    output: MS² spectra (TIMS-bbCID)
+    confidence: low
+  Step 3: Targeted mobility-resolved fragmentation (prm-PASEF)
+    tool: prm-PASEF (vprototypic version)
+    algorithm: parallel reaction monitoring–parallel accumulation serial fragmentation
+    input: mobility-resolved ion packets + prior mobility reference list
+    output: targeted MS² spectra
+    confidence: low
+  Step 4: Reference mobility list generation
+    tool: not specified
+    algorithm: empirical mobility calibration
+    parameters: n_pigments=14
+    input: pure pigment standards via LDI-TIMS-MS
+    output: mobility reference list for tattoo pigments
+    confidence: medium
+  Step 5: Compound annotation using mobility + MS²
+    tool: not specified
+    algorithm: orthogonal identification using drift time and fragmentation pattern
+    input: TIMS-bbCID or prm-PASEF MS² spectra + mobility data
+    output: annotated tattoo pigments with increased confidence
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposition stated
+  - prm-PASEF implementation is prototypic and not publicly available
+  - No software parameters (e.g., collision energy, mobility calibration settings) reported
+  - No details on LDI experimental setup (laser fluence, substrate, acquisition settings)
+  - No information on spectral processing, database search, or annotation criteria
+reproducibility_strengths:
+  - Conceptual workflow clearly described (TIMS-bbCID vs. prm-PASEF)
+  - Mobility as orthogonal identification parameter explicitly highlighted
+  - Reference list of 14 pigments defined

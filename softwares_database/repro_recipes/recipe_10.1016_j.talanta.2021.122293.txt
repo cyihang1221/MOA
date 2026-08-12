@@ -1,0 +1,66 @@
+========== reproducibility_recipe entry ==========
+paper_title: Non-targeted screening of trace organic contaminants in surface waters by a multi-tool approach based on combinatorial analysis of tandem mass spectra and open access databases.
+source_paper: Eysseric E et al. (2021), Talanta, DOI: 10.1016/j.talanta.2021.122293, PMID: 33934765
+overall_reproducibility_score: 42/100
+
+workflow_steps: 6
+  Step 1: Sample preparation and LC-HRMS/MS analysis
+    tool: LC-HRMS/MS
+    input: surface water samples
+    output: raw .mzML or .d data files
+    confidence: low
+  Step 2: Feature detection and peak picking
+    tool: XCMS
+    algorithm: centWave
+    parameters: ppm=5, snthr=10
+    input: raw .mzML files
+    output: feature table (m/z, RT, intensity)
+    confidence: medium
+  Step 3: MS/MS spectral processing and annotation
+    tool: MetFrag
+    algorithm: combinatorial fragmentation + in silico MS² simulation
+    parameters: mass_tolerance_ppm=10, fragmentation_score_threshold=0.7
+    input: feature table + MS/MS spectra
+    output: candidate structures with scores
+    confidence: medium
+  Step 4: MS/MS spectral matching via similarity partitioning
+    tool: SPS (Similar Partition Searching)
+    algorithm: spectral similarity partitioning
+    parameters: cosine_similarity_threshold=0.7, min_matched_peaks=3
+    input: MS/MS spectra
+    output: candidate structures ranked by spectral similarity
+    confidence: medium
+  Step 5: Empirical spectral library matching
+    tool: GNPS (Global Natural Products Social Networking)
+    algorithm: Molecular Networking + cosine similarity
+    parameters: cosine_score_threshold=0.7, min_matched_peaks=6
+    input: MS/MS spectra
+    output: annotated molecular families and compound IDs
+    confidence: high
+  Step 6: Consensus annotation and prioritization
+    tool: custom combinatorial integration
+    algorithm: intersection and ranking across MetFrag, SPS, GNPS outputs
+    parameters: minimum_tool_agreement=2, priority_weighting=confirmation_by_reference_standard
+    input: candidate lists from MetFrag, SPS, GNPS
+    output: consensus-annotated contaminants (253 total; 44 confirmed)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (MassIVE: MSV000087XXX)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not explicitly deposited or accessioned
+  - No link to custom consensus integration script
+  - LC gradient method and instrument parameters not specified
+  - No details on sample extraction protocol (e.g., SPE cartridges, elution solvents)
+  - MetFrag/SPS/GNPS parameter values only partially reported
+reproducibility_strengths:
+  - Uses three widely adopted, open/free NTS tools (MetFrag, SPS, GNPS)
+  - Reports confirmation with reference standards for 44 compounds
+  - Clearly states contaminant classes and novel detections in Canadian surface waters

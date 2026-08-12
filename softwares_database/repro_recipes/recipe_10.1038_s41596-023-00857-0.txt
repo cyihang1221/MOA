@@ -1,0 +1,96 @@
+========== reproducibility_recipe entry ==========
+paper_title: A systems-level mass spectrometry-based technique for accurate and sensitive quantification of the RNA cap epitranscriptome.
+source_paper: Wang J et al. (2023), Nature protocols, DOI: 10.1038/s41596-023-00857-0, PMID: 37567932
+overall_reproducibility_score: 30/100
+
+workflow_steps: 6
+  Step 1: Stable isotope-labeled cap nucleotide (CN) spike-in
+    tool: custom chemical synthesis
+    input: biological RNA sample
+    output: isotopically labeled RNA mixture
+    confidence: low
+  Step 2: Enzymatic hydrolysis of RNA to release cap nucleotides
+    tool: RNase T1 + alkaline phosphatase
+    parameters: temperature=37°C, incubation_time=2 h
+    input: RNA sample (spiked)
+    output: cap nucleotide (CN) mixture in solution
+    confidence: medium
+  Step 3: Off-line ion-pairing HPLC enrichment of cap nucleotides
+    tool: high-pressure liquid chromatography
+    parameters: column=C18, ion-pairing_reagent=triethylammonium acetate, gradient_profile=not fully specified, flow_rate=not specified, temperature=not specified
+    input: CN mixture
+    output: enriched CN fraction
+    confidence: low
+  Step 4: Chromatography-coupled tandem quadrupole mass spectrometry analysis
+    tool: triple quadrupole mass spectrometer (e.g., Sciex QTRAP or similar)
+    algorithm: multiple reaction monitoring (MRM)
+    parameters: chromatography_time=17 min, transition_list=Table 4, dwell_time=not specified, collision_energy=not specified, declustering_potential=not specified
+    input: enriched CN fraction
+    output: quantified CN abundance table (peak area ratios of endogenous vs. isotopically labeled)
+    confidence: medium
+  Step 5: Data processing and quantification
+    tool: Sciex MultiQuant or analogous vendor software
+    algorithm: isotope dilution quantification
+    parameters: integration_method=peak area, calibration_curve=linear or quadratic (not specified), LOD_LOQ_calculation=not described
+    input: MRM raw data (.wiff or .abf)
+    output: absolute or relative quantification table of 26 CNs
+    confidence: low
+  Step 6: Transcription start site (TSS) cross-validation
+    tool: Galaxy server
+    algorithm: bioinformatic mapping of cap-derived 5′ ends to reference genome
+    parameters: reference_genome=not specified, alignment_tool=not specified, filtering_criteria=not specified
+    input: CN quantification + RNA-seq or CAGE-like data
+    output: TSS distribution map
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: not_mentioned (not mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 8
+  Fig. 1: [chemical_structure]
+    caption: Shows representative chemical structures of RNA caps analyzed by CapQuant.
+    produced_by_step: [1]
+    visualization_tool: ChemDraw or equivalent
+  Fig. 2: [workflow_diagram]
+    caption: Depicts the end-to-end CapQuant workflow for quantitative analysis of 5′ cap structures.
+    produced_by_step: [1, 2, 3, 4, 5]
+    visualization_tool: Adobe Illustrator or equivalent
+  Fig. 3: [chromatogram]
+    caption: Shows off-line HPLC chromatogram of enzymatically digested RNA, demonstrating separation of cap nucleotides.
+    produced_by_step: [3]
+    visualization_tool: HPLC system software (e.g., Shimadzu LabSolutions or Agilent ChemStation)
+  Fig. 4: [chromatogram]
+    caption: Displays selected ion chromatograms (SICs) of MRM transitions for two cap nucleotides across two samples.
+    produced_by_step: [4]
+    visualization_tool: Sciex Analyst or MultiQuant
+  Fig. 5: [electropherogram]
+    caption: Shows Bioanalyzer QC trace for total RNA integrity.
+    visualization_tool: Agilent Bioanalyzer software
+  Fig. 6: [electropherogram]
+    caption: Shows Bioanalyzer QC trace for poly(A)-tailed RNA integrity.
+    visualization_tool: Agilent Bioanalyzer software
+  Fig. 7: [bar_chart]
+    caption: Presents LC–MS quantification results of CNs in mRNA from human CCRF-SB cells.
+    produced_by_step: [4, 5]
+    visualization_tool: GraphPad Prism or similar
+  Fig. 8: [workflow_diagram]
+    caption: Illustrates TSS cross-validation workflow using Galaxy server.
+    produced_by_step: [6]
+    visualization_tool: Galaxy interface + diagramming tool
+
+reproducibility_gaps:
+  - Raw LC–MS data not deposited in public repository (e.g., MetaboLights, PRIDE, or MassIVE)
+  - Exact HPLC gradient profile, column specifications, and MS parameters (collision energy, dwell time) not provided
+  - No access to custom stable isotope-labeled cap nucleotide standards (synthesis not described)
+  - Vendor-specific software (MultiQuant, Analyst) required; no open-source alternative workflow provided
+  - Galaxy workflow details (tools, versions, parameters) not specified or shared
+  - No code, scripts, or parameter files for data processing or TSS mapping made available
+reproducibility_strengths:
+  - Protocol published in Nature Protocols with step-by-step experimental instructions
+  - Reference to prior key publication (NAR 2019) with supplementary methods
+  - Use of stable isotope dilution enables absolute quantification
+  - Explicit list of 26 quantifiable cap nucleotides provided (Table 4)

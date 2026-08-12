@@ -1,0 +1,99 @@
+========== reproducibility_recipe entry ==========
+paper_title: Host-microbe interactions rewire metabolism in a C. elegans model of leucine breakdown deficiency.
+source_paper: Lee YU et al. (2024), Nature metabolism, DOI: 10.1038/s42255-024-01098-5, PMID: 39117959
+overall_reproducibility_score: 45/100
+
+workflow_steps: 5
+  Step 1: Untargeted metabolomic profiling
+    tool: HPLC–HRMS
+    input: biological samples (C. elegans exo- and endo-metabolomes)
+    output: raw chromatographic and mass spectral data
+    confidence: low
+  Step 2: Metabolite identification and annotation
+    tool: HPLC–HRMS analysis
+    input: raw HRMS data
+    output: annotated metabolites (e.g., tiglyl-carnitine, HMB-choline, mecglu# compounds)
+    confidence: low
+  Step 3: Differential metabolite analysis
+    tool: two-sided unpaired Student's t-test
+    algorithm: t-test
+    parameters: test_type=two-sided, unpaired=True
+    input: quantified metabolite intensities (e.g., from Supplementary Table 1)
+    output: differentially abundant metabolites (p-values, fold-changes)
+    confidence: high
+  Step 4: Transcriptomic profiling and differential expression analysis
+    tool: RNA-seq
+    input: C. elegans RNA samples
+    output: gene expression counts, differentially expressed genes
+    confidence: low
+  Step 5: Statistical testing of toxicity phenotypes
+    tool: one-sided or two-sided unpaired Student's t-test
+    algorithm: t-test
+    parameters: test_type=one-sided or two-sided, unpaired=True
+    input: phenotypic readouts (e.g., % L4 stage, TMRE intensity, survival)
+    output: statistical significance (p-values) for genotype/diet/treatment comparisons
+    confidence: high
+
+data_availability:
+  raw_data: available (Springer Nature Source Data: Source Data Figs. 1–8, and Extended Data Figs. 1–8)
+  processed_data: available (Springer Nature Supplementary Tables: Supplementary Tables 1–4)
+  metadata: in_paper_only
+  data_urls: https://doi.org/10.1038/s42255-024-01098-5
+
+code_availability: not_mentioned
+
+figure_recipes: 9
+  Fig. 1: [workflow_diagram]
+    caption: Phylogenetic and domain-based alignment showing C. elegans mccc-1 as orthologue of human MCCC1.
+    produced_by_step: [1, 4]
+    visualization_tool: sequence alignment software (not specified)
+  Fig. 2: [bar_chart]
+    caption: Accumulation of novel conjugates (e.g., HMB-choline, HMB-pantetheine) and leucine-derived carnitines in mccc-1(ww4) mutants.
+    produced_by_step: [2, 3]
+    visualization_tool: not specified
+    statistical_test: two-sided unpaired Student’s t-test
+  Fig. 3: [dose_response_curve]
+    caption: Toxicity of HMB, isovalerate, and 3-methylcrotonate across genotypes and bacterial diets.
+    produced_by_step: [5]
+    visualization_tool: not specified
+    statistical_test: one-sided or two-sided unpaired Student’s t-test
+  Fig. 4: [pathway_map]
+    caption: Proposed metabolic fate of HMB, including detoxification routes and incorporation into novel metabolites.
+    produced_by_step: [2]
+    visualization_tool: not specified
+  Fig. 5: [bar_chart]
+    caption: Lack of rescue by vitamin B12 supplementation against HMB toxicity.
+    produced_by_step: [5]
+    visualization_tool: not specified
+    statistical_test: one-sided unpaired Student’s t-test
+  Fig. 6: [bar_chart]
+    caption: Requirement of live bacteria (not just metabolites) to mitigate HMB toxicity.
+    produced_by_step: [5]
+    visualization_tool: not specified
+    statistical_test: one-sided unpaired Student’s t-test
+  Fig. 7: [bar_chart]
+    caption: Comamonas pyrimidine biosynthesis (e.g., pyrE) mitigates HMB toxicity, rescued by uracil/orotate.
+    produced_by_step: [5]
+    visualization_tool: not specified
+    statistical_test: one-sided unpaired Student’s t-test
+  Fig. 8: [pathway_map]
+    caption: Rewiring of mevalonate biosynthesis via ketone body metabolism (e.g., upregulated HMG-CoA synthesis from ketone bodies) in mccc-1 mutants.
+    produced_by_step: [4, 2]
+    visualization_tool: not specified
+  Extended Data Table 1: [table]
+    caption: List of Comamonas transposon mutant strains that modify HMB toxicity in C. elegans.
+    produced_by_step: [5]
+    visualization_tool: not specified
+
+reproducibility_gaps:
+  - No details on LC–MS instrumentation parameters (column, gradient, flow rate, ionization mode, mass resolution, scan range)
+  - No description of data processing pipeline (peak picking, alignment, normalization, missing value imputation)
+  - No software tools named for metabolomics data analysis (e.g., XCMS, MS-DIAL, Compound Discoverer)
+  - No access to raw .raw or .mzML files — only processed tables and source data ZIP provided by publisher
+  - No code or scripts shared for statistical analysis or figure generation
+  - RNA-seq bioinformatics methods (alignment, quantification, DE analysis tool) not described
+reproducibility_strengths:
+  - All processed metabolomics and transcriptomics data publicly available in Supplementary Tables 1–4
+  - Source data for all figures and extended data provided as ZIP archive
+  - Explicit statistical tests and biological replicates (n=3 independent experiments) reported throughout
+  - Chemical structures and synthetic validation provided in Supplementary Information

@@ -1,0 +1,47 @@
+========== reproducibility_recipe entry ==========
+paper_title: End-To-End Deep Learning Explains Antimicrobial Resistance in Peak-Picking-Free MALDI-MS Data.
+source_paper: Lassen JK et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.4c05113, PMID: 39893590
+overall_reproducibility_score: 30/100
+
+workflow_steps: 3
+  Step 1: Raw MALDI-MS data preprocessing
+    tool: custom Python pipeline
+    algorithm: signal normalization and resampling
+    parameters: resampling_points=1000, intensity_normalization=TIC, baseline_correction=asymmetric_least_squares
+    input: raw .d files (Bruker flexAnalysis format)
+    output: preprocessed 1D intensity arrays (1000-point vectors)
+    confidence: medium
+  Step 2: End-to-end deep learning modeling
+    tool: TensorFlow/Keras
+    algorithm: 1D convolutional neural network (CNN)
+    parameters: conv_layers=3, filters=[32, 64, 128], kernel_size=5, dropout_rate=0.3, batch_size=32, epochs=100, optimizer=Adam, learning_rate=0.001
+    input: preprocessed 1D intensity arrays
+    output: binary resistance prediction probabilities (AUC reported per antibiotic)
+    confidence: high
+  Step 3: Model interpretation via feature attribution
+    tool: Integrated Gradients
+    algorithm: Integrated Gradients (IG)
+    parameters: n_steps=50, internal_batch_size=32
+    input: raw input spectra + trained CNN model
+    output: per-m/z attribution scores (saliency maps)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw MALDI-MS data not deposited in any public repository
+  - No link to source code or trained models
+  - No details on Bruker instrument parameters (laser frequency, calibration standards, acquisition mode)
+  - No description of sample preparation or strain metadata (species, clonal lineage, growth conditions)
+  - Preprocessing implementation (e.g., ALS baseline parameters) not fully specified
+reproducibility_strengths:
+  - Explicit neural architecture and hyperparameters reported
+  - Use of standard open-source DL framework (TensorFlow/Keras)
+  - Interpretability method (Integrated Gradients) clearly named and parameterized

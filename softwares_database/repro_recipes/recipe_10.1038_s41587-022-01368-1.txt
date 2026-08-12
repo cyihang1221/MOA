@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: Enhancing untargeted metabolomics using metadata-based source annotation.
+source_paper: Gauglitz JM et al. (2022), Nature biotechnology, DOI: 10.1038/s41587-022-01368-1, PMID: 35798960
+overall_reproducibility_score: 45/100
+
+workflow_steps: 3
+  Step 1: MS/MS spectral matching against metadata-annotated source data
+    tool: RDD (Reference-Data-Driven) analysis
+    algorithm: metadata-based source annotation
+    input: untargeted metabolomics MS/MS spectra
+    output: metabolite annotations with source-level metadata (e.g., food origin)
+    confidence: low
+  Step 2: Comparison to conventional structural MS/MS library matching
+    tool: GNPS (Global Natural Products Social Molecular Networking)
+    algorithm: spectral similarity scoring (cosine score)
+    parameters: min_cosine_score=0.7, min_matched_peaks=6
+    input: MS/MS spectra
+    output: structural identifications via spectral library match
+    confidence: medium
+  Step 3: Empirical assessment of dietary patterns
+    tool: custom statistical analysis
+    algorithm: enrichment analysis of food-source annotations
+    input: source-annotated feature table
+    output: dietary pattern scores / enrichment metrics
+    confidence: low
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1842)
+  processed_data: in_paper_only (Supplementary Table 1)
+  metadata: in_paper_only
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1842, https://static-content.springer.com/esm/art%3A10.1038%2Fs41587-022-01368-1/MediaObjects/41587_2022_1368_MOESM1_ESM.xlsx
+
+code_availability: not_mentioned
+
+figure_recipes: 2
+  Figure 1: [workflow_diagram]
+    caption: Illustrates the concept of reference-data-driven (RDD) analysis workflow for enhancing untargeted metabolomics annotation using metadata-annotated source data.
+    produced_by_step: [1]
+    visualization_tool: not specified
+  Figure 2: [other]
+    caption: Shows RDD applied with food reference data, demonstrating increased MS/MS spectral usage and source-level annotation.
+    produced_by_step: [1, 2, 3]
+    visualization_tool: not specified
+
+reproducibility_gaps:
+  - RDD method lacks publicly available software implementation or code
+  - No specification of how food metadata was structured or curated for matching
+  - No details on retention time alignment or feature detection pipeline used prior to MS/MS matching
+  - Supplementary Table 1 contains metadata but no machine-readable schema or ontology mapping
+reproducibility_strengths:
+  - Raw data deposited in MetaboLights (MTBLS1842)
+  - Supplementary Table 1 provides foodomics metadata table
+  - GNPS parameters partially specified for benchmarking

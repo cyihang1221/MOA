@@ -1,0 +1,43 @@
+========== reproducibility_recipe entry ==========
+paper_title: Application of a Target-Guided Data Processing Approach in Saturated Peak Correction of GC×GC Analysis.
+source_paper: Zhang P et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.1c02719, PMID: 35050571
+overall_reproducibility_score: 20/100
+
+workflow_steps: 3
+  Step 1: Targeted peak identification and annotation using spectral library
+    tool: unknown
+    algorithm: retention time and MS matching
+    parameters: match_tolerance_rt=not specified, match_tolerance_mz=not specified, library_source=in-house or commercial spectral library
+    input: GC×GC-MS raw data (.cdf or vendor format)
+    output: annotated list of saturated target peaks
+    confidence: low
+  Step 2: Saturated peak signal correction (two-stage cleaning)
+    tool: custom implementation
+    algorithm: target-guided data processing
+    parameters: correction_method=subtraction of nonperfected saturation signals, coelution_handling=improved post-correction annotation
+    input: raw GC×GC-MS data + annotated saturated peaks
+    output: cleaned chromatogram with corrected saturated peaks
+    confidence: low
+  Step 3: Untargeted peak detection and integration on corrected data
+    tool: unknown
+    algorithm: standard untargeted analysis
+    parameters: peak_detection_method=not specified, integration_algorithm=not specified
+    input: corrected GC×GC-MS chromatograms
+    output: feature table (m/z, RT₁, RT₂, intensity)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No software/tool names disclosed for any step
+  - No algorithmic or parameter details provided (e.g., RT/mz tolerances, correction model, peak picking settings)
+  - No data deposition information
+  - No code or script sharing
+  - No description of spectral library used (e.g., NIST, Fiehn, in-house)

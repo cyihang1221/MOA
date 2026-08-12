@@ -1,0 +1,61 @@
+========== reproducibility_recipe entry ==========
+paper_title: Ion-to-Image, i2i, a Mass Spectrometry Imaging Data Analysis Platform for Continuous Ionization Techniques.
+source_paper: Lillja J et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c01615, PMID: 37505508
+overall_reproducibility_score: 78/100
+
+workflow_steps: 5
+  Step 1: MSI data import and format conversion
+    tool: i2i
+    algorithm: custom MATLAB parser
+    input: raw vendor files (e.g., Thermo .raw, .mzML for continuous ionization MSI)
+    output: structured pixel-by-m/z matrix
+    confidence: medium
+  Step 2: Pixel dimension calibration accounting for AGC and duty cycle
+    tool: i2i
+    algorithm: AGC-aware spatial resampling
+    parameters: use_agc_correction=True
+    input: structured pixel-by-m/z matrix with scan timing and AGC metadata
+    output: spatially calibrated ion image stack
+    confidence: high
+  Step 3: Ion image generation (targeted and nontargeted)
+    tool: i2i
+    algorithm: m/z window extraction (targeted) or full-scan binning (nontargeted)
+    parameters: mz_tolerance_ppm=5, bin_width_ppm=10
+    input: spatially calibrated ion image stack
+    output: 2D ion images (per m/z or m/z bin)
+    confidence: high
+  Step 4: Quantitative processing and normalization
+    tool: i2i
+    algorithm: total ion current (TIC) normalization and internal standard correction (if provided)
+    parameters: normalization_method=TIC, internal_standard_mz=None
+    input: 2D ion images
+    output: quantified ion images
+    confidence: medium
+  Step 5: Export and visualization of processed MSI data
+    tool: i2i
+    algorithm: MATLAB-based rendering and export
+    parameters: export_formats=['TIFF', 'PNG', 'MAT', 'CSV']
+    input: quantified ion images
+    output: exported images and matrices
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/LanekoffLab/i2i
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw MSI datasets not deposited or referenced
+  - No example dataset or tutorial data provided in repository
+  - Vendor-specific parsing details (e.g., Thermo .raw structure handling) not fully documented
+  - No specification of MATLAB version or required toolboxes beyond 'MATLAB-based'
+reproducibility_strengths:
+  - Source code publicly available on GitHub under MIT license
+  - Compiled installer provided for accessibility
+  - Explicit support for AGC-aware spatial calibration — a key methodological innovation

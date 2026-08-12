@@ -1,0 +1,58 @@
+========== reproducibility_recipe entry ==========
+paper_title: Shiny GATOM: omics-based identification of regulated metabolic modules in atom transition networks.
+source_paper: Emelianova M et al. (2022), Nucleic acids research, DOI: 10.1093/nar/gkac427, PMID: 35639928
+overall_reproducibility_score: 75/100
+
+workflow_steps: 5
+  Step 1: Input data ingestion
+    tool: Shiny GATOM
+    input: transcriptomic data (e.g., gene expression matrix) and/or metabolomic data (e.g., metabolite abundance table)
+    output: preprocessed omics data aligned to metabolic network nodes
+    confidence: medium
+  Step 2: Metabolic network construction
+    tool: KEGG and Rhea databases
+    algorithm: atom transition network topology
+    parameters: database_sources=['KEGG', 'Rhea'], lipidomics_support=True
+    input: reaction databases (KEGG, Rhea)
+    output: atom transition-based metabolic network (graph)
+    confidence: high
+  Step 3: Regulation scoring of network nodes
+    tool: gatom R package
+    algorithm: omics-derived node weights (e.g., log2 fold-change, p-value weighting)
+    parameters: weighting_scheme=fold-change and significance combined, multiple_testing_correction=BH
+    input: omics data + network mapping
+    output: weighted metabolic network graph
+    confidence: medium
+  Step 4: Optimal regulated subnetwork identification
+    tool: mwcsr R package
+    algorithm: exact solver for maximum weight connected subgraph (MWCS) problem
+    parameters: optimality_guarantee=exact, connectivity_constraint=True
+    input: weighted metabolic network graph
+    output: regulated metabolic module (connected subgraph with maximal total weight)
+    confidence: high
+  Step 5: Visualization and interpretation
+    tool: Shiny GATOM web interface
+    parameters: layout_algorithm=force-directed, highlighting=regulation direction and significance
+    input: regulated subnetwork + omics data
+    output: interactive network visualization, pathway enrichment report
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/ctlab/gatom
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No example datasets or benchmark data provided in paper or supplementary materials
+  - No specification of input file formats (e.g., column headers, ID types, normalization requirements)
+  - No details on how transcriptomic and metabolomic features are mapped to network nodes (e.g., EC numbers, ChEBI IDs, KEGG IDs)
+reproducibility_strengths:
+  - Open-source R packages (gatom, mwcsr) publicly available on GitHub
+  - Web-service accessible without registration
+  - Exact algorithm implementation enables reproducible subnetwork identification

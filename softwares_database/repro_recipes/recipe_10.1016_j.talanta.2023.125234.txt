@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: A high-throughput platform enables in situ screening of fatty acid-producing strains using laser ablation electrospray ionization mass spectrometry and a Python package.
+source_paper: Liu H et al. (2024), Talanta, DOI: 10.1016/j.talanta.2023.125234, PMID: 37839326
+overall_reproducibility_score: 42/100
+
+workflow_steps: 4
+  Step 1: In situ LAESI-MS data acquisition
+    tool: LAESI-MS
+    parameters: acquisition_rate_per_point=2.0, rsd_max_percent=13.69
+    input: intact microbial colonies on agar plates
+    output: raw mass spectra (.raw or vendor format)
+    confidence: medium
+  Step 2: Triacylglycerol identification via MS/MS
+    tool: LAESI-MS with MS/MS capability
+    algorithm: fragmentation pattern analysis
+    parameters: fragmentation_mode=collision-induced dissociation, target_ions=['diacylglycerol fragment ions', 'fatty acyl carboxylate anions']
+    input: raw MS/MS spectra of triacylglycerols
+    output: annotated triacylglycerol species (e.g., TAG 50:1, TAG 52:2)
+    confidence: low
+  Step 3: Fatty acid content quantification from TAG intensities
+    tool: TAFA-LEMS
+    algorithm: intensity-based stoichiometric back-calculation
+    parameters: tag_to_fa_stoichiometry=1.0, normalization_method=internal standard not specified, ionization_efficiency_assumption=equal for all fatty acyl chains
+    input: peak intensities of identified triacylglycerols
+    output: relative fatty acid contents (e.g., % C16:0, % C22:6)
+    confidence: medium
+  Step 4: High-throughput MS data processing
+    tool: TAFA-LEMS
+    algorithm: automated peak detection, alignment, and integration
+    parameters: mass_tolerance_ppm=None, min_peak_intensity=None, retention_time_window=None, batch_processing_enabled=True
+    input: raw mass spectra (.raw files)
+    output: quantified fatty acid profile matrix (strain × fatty acid)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LAESI-MS data not deposited in public repository
+  - TAFA-LEMS source code not publicly accessible (no URL or repository link provided)
+  - No details on LAESI instrument parameters (laser wavelength, ablation spot size, spray voltage, capillary temperature)
+  - No description of MS/MS acquisition settings (collision energy, isolation window)
+  - Quantification relies on unstated assumptions about ionization efficiency and lacks internal standards
+  - No information on spectral preprocessing (baseline correction, noise filtering, centroiding)
+reproducibility_strengths:
+  - Platform validated across three microbial species (Aurantiochytrium sp., P. tricornutum, Y. lipolytica)
+  - Reported analytical precision (≤13.69% RSD) supports method robustness
+  - Explicit workflow logic described: LAESI → TAG detection → MS/MS ID → FA back-calculation

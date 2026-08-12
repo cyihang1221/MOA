@@ -1,0 +1,65 @@
+========== reproducibility_recipe entry ==========
+paper_title: Parallel metabolomics and lipidomics enables the comprehensive study of mouse brain regional metabolite and lipid patterns.
+source_paper: Yu H et al. (2020), Analytica chimica acta, DOI: 10.1016/j.aca.2020.09.051, PMID: 33081941
+overall_reproducibility_score: 30/100
+
+workflow_steps: 6
+  Step 1: Tissue homogenization
+    tool: sonication
+    parameters: power=not_specified, duration=not_specified, temperature_control=ice-cold conditions
+    input: mouse brain sub-regional tissue (≤0.2 mg protein)
+    output: homogenized tissue lysate
+    confidence: low
+  Step 2: Parallel metabolite and lipid extraction
+    tool: methanol/chloroform/water-based biphasic extraction
+    parameters: solvent_ratio=not_specified, phase_separation_protocol=not_specified, replicates=not_specified
+    input: homogenized tissue lysate
+    output: hydrophilic (metabolite) and hydrophobic (lipid) fractions
+    confidence: low
+  Step 3: Sample normalization
+    tool: BCA assay
+    parameters: normalization_basis=protein content
+    input: extracted fractions
+    output: protein-normalized extracts
+    confidence: medium
+  Step 4: Multimodal UHPLC-MS profiling
+    tool: ultrahigh performance liquid chromatography-mass spectrometry
+    parameters: instrument_platform=not_specified, polarity_modes=['positive', 'negative'], chromatography=not_specified, mass_resolution=not_specified, scan_range=not_specified, MS2_acquisition=data-dependent acquisition (DDA)
+    input: protein-normalized extracts
+    output: raw .raw or .d files (vendor format)
+    confidence: low
+  Step 5: Streamlined data processing
+    tool: XCMS or analogous platform
+    algorithm: not explicitly named but implies feature detection, alignment, and annotation
+    parameters: features_detected=5000+ metabolites, 6000+ lipids, MS2_matching=automated spectral matching for confirmation
+    input: raw MS data
+    output: feature table with metabolite/lipid annotations
+    confidence: low
+  Step 6: Chord plot-based data visualization
+    tool: custom R or Python implementation
+    algorithm: chord diagram
+    parameters: visualization_focus=functional relationships among metabolic and lipid subclasses
+    input: annotated feature table
+    output: chord plots
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository
+  - No instrument parameters (gradient, column, flow rate, ionization settings) specified
+  - Extraction solvent ratios and protocols not detailed
+  - Data processing software and version not named
+  - No code or scripts shared for chord plot generation or data integration
+  - MS2 spectral matching tool (e.g., GNPS, LipidBlast, MS-DIAL) not identified
+reproducibility_strengths:
+  - Pipeline described as 'streamlined' and 'multimodal'
+  - Use of BCA for protein-based normalization improves quantitative rigor
+  - Clear biological application to four defined brain regions

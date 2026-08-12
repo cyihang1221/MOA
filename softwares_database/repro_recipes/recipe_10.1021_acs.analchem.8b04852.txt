@@ -1,0 +1,68 @@
+========== reproducibility_recipe entry ==========
+paper_title: Isotope Corrected Chiral and Achiral Nontargeted Metabolomics: An Approach for High Accuracy and Precision Metabolomics Based on Derivatization and Its Application to Cerebrospinal Fluid of Patients with Alzheimer's Disease.
+source_paper: Takayama T et al. (2019), Analytical chemistry, DOI: 10.1021/acs.analchem.8b04852, PMID: 30831026
+overall_reproducibility_score: 35/100
+
+workflow_steps: 6
+  Step 1: Chemical derivatization with isotope-coded reagents
+    tool: iDMT-(S)-A and iDMT-(S)-PO
+    parameters: derivatization_reagents=['iDMT-(S)-A', 'iDMT-(S)-PO'], isotope_labeling=13C-coded vs non-coded parallel derivatization, purpose=isotope correction for accurate chiral/achiral quantification
+    input: raw cerebrospinal fluid (CSF) samples
+    output: derivatized CSF extracts
+    confidence: high
+  Step 2: Data-dependent MS/MS acquisition
+    tool: Q-TOFMS
+    algorithm: DDA (data-dependent acquisition)
+    parameters: instrument=quadrupole-time-of-flight mass spectrometry, resolution=high-resolution, mass_accuracy=high-accuracy, scan_mode=MS and MS/MS
+    input: derivatized CSF extracts
+    output: raw .d files (Agilent format)
+    confidence: medium
+  Step 3: Peak detection, alignment, and deconvolution
+    tool: MSDIAL
+    algorithm: chromatogram builder + peak deconvolution
+    parameters: peak_detection_method=chromatogram builder, alignment_tolerance=retention time and m/z tolerance unspecified, deconvolution=MS/MS-based
+    input: raw .d files
+    output: feature table (m/z, RT, intensity, MS/MS spectra)
+    confidence: low
+  Step 4: Isotope-coded derivatization discrimination and correction
+    tool: DINA (ICD discrimination program)
+    algorithm: ICD-specific pattern matching and ratio correction
+    parameters: correction_target=d-/l-isomer ratios, detection_sensitivity=0.5–2.0% isomer variation, discrimination_rule=parallel 13C-coded vs non-coded derivative pairs
+    input: MSDIAL feature table + MS/MS spectra
+    output: isotope-corrected chiral/achiral feature table with d/l ratios
+    confidence: low
+  Step 5: Metabolite identification
+    tool: MSDIAL + DINA
+    algorithm: MS/MS spectral matching + ICD-enabled annotation
+    parameters: identification_level=putative (Level 2), spectral_library=in-house or public (unspecified), criteria=high-resolution MS/MS match + ICD pair consistency
+    input: isotope-corrected feature table + MS/MS spectra
+    output: annotated metabolite list (including 8 chiral biomarkers)
+    confidence: low
+  Step 6: Biomarker candidate selection
+    tool: statistical analysis in MSDIAL/DINA (unspecified)
+    algorithm: semiquantitative comparison
+    parameters: comparison_groups=['AD patients vs controls (implied)'], statistical_threshold=unspecified, fold_change_cutoff=unspecified, significance_metric=not described
+    input: isotope-corrected feature table
+    output: 24 biomarker candidates (8 chiral)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in any public repository
+  - DINA software not publicly available; no link, DOI, or license provided
+  - No details on statistical methods or thresholds used for biomarker selection
+  - MSDIAL parameters (e.g., m/z tolerance, RT window, minimum peak height) not reported
+  - Chromatographic conditions (column, gradient, flow rate) not fully specified
+  - CSF sample preparation protocol (protein removal, extraction method) only briefly described
+reproducibility_strengths:
+  - Use of standardized open platform MSDIAL for core processing
+  - Clear conceptual framework for isotope correction via parallel derivatization
+  - Explicit reporting of analytical performance (0.5–2.0% d/l detection capability)

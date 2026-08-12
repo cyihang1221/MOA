@@ -1,0 +1,74 @@
+========== reproducibility_recipe entry ==========
+paper_title: Spatial multimodal analysis of transcriptomes and metabolomes in tissues.
+source_paper: Vicari M et al. (2024), Nature biotechnology, DOI: 10.1038/s41587-023-01937-y, PMID: 37667091
+overall_reproducibility_score: 42/100
+
+workflow_steps: 6
+  Step 1: Tissue sectioning and slide mounting
+    tool: Leica CM1900 UV cryostat-microtome
+    parameters: section_thickness_mouse=12, section_thickness_human=10, temperature=-20, storage_temperature=-80
+    input: frozen brain tissue
+    output: tissue sections on Visium or ITO-coated slides
+    confidence: high
+  Step 2: On-tissue chemical derivatization
+    tool: HTX TM-Sprayer
+    parameters: FMP-10={'concentration_mM': 4.4, 'solvent': '70% acetonitrile', 'temperature_C': 90, 'passes': 20, 'flow_rate_ul_min': 80, 'velocity_mm_min': 1100, 'track_spacing_mm': 2.0, 'pressure_psi': 6}, 9-AA={'concentration_mg_ml': 5, 'solvent': '80% methanol', 'temperature_C': 75, 'passes': 6, 'flow_rate_ul_min': 70, 'velocity_mm_min': 1100, 'track_spacing_mm': 2.0}, DHB={'concentration_mg_ml': 35, 'solvent': '50% acetonitrile + 0.2% TFA', 'temperature_C': 95, 'passes': 6, 'flow_rate_ul_min': 70, 'velocity_mm_min': 1100, 'track_spacing_mm': 2.0}, norharmane={'concentration_mg_ml': 7.5, 'solvent': '80% MeOH', 'temperature_C': 60, 'passes': 16, 'flow_rate_ul_min': 70, 'velocity_mm_min': 1200, 'track_spacing_mm': 2.0, 'pressure_psi': 6}
+    input: tissue sections on slides
+    output: derivatized tissue sections
+    confidence: high
+  Step 3: MALDI-MSI data acquisition
+    tool: Bruker solariX XR-2Ω (7T FT-ICR)
+    parameters: resolution=100 µm lateral, laser=Smartbeam II 2 kHz Nd:YAG, shots_per_pixel=100, calibration=spotted red phosphorus (external), lock mass internal calibration, ionization_mode={'FMP-10': 'positive', 'DHB': 'positive', '9-AA': 'negative', 'norharmane': ['positive', 'negative']}, mass_ranges={'FMP-10': [150, 1050], 'DHB': [129, 1000], '9-AA': [107.5, 1000], 'norharmane_positive': [150, 1200], 'norharmane_negative': [150, 2000]}, quadrupole_isolation_mz={'FMP-10': 379, 'DHB': 150, '9-AA': 120, 'norharmane_positive': 250, 'norharmane_negative': 220}, lock_masses={'FMP-10': 555.2231, 'DHB': 273.0394, '9-AA': 193.0771, 'norharmane_positive': 798.540963, 'norharmane_negative': 885.549853}
+    input: derivatized tissue sections
+    output: raw MSI spectra (.d directory)
+    confidence: high
+  Step 4: MSI data preprocessing and ion image generation
+    tool: SCiLS Lab Pro and SCiLS Lab API (v2023b (Pro), 6.0 (API))
+    algorithm: reference peak list-based m/z calibration
+    parameters: mz_calibration_strategy=per-derivative reference peak list, correlation_method=Pearson’s correlation of mean spectra
+    input: raw MSI spectra (.d)
+    output: calibrated ion images and m/z-aligned feature tables
+    confidence: high
+  Step 5: Metabolite identification
+    tool: Bruker flexImaging and ftmsControl (vv 5.0 and v 2.3.0)
+    algorithm: accurate mass matching (<1 ppm) + MS/MS spectral matching
+    parameters: mass_accuracy_ppm=1, reference_databases=['PubChem', 'LIPID MAPS'], validation_strategy=colocalization + orthogonal derivatization for DOPAL
+    input: MSI spectra + MS/MS spectra
+    output: annotated metabolite list with spatial localization
+    confidence: high
+  Step 6: Spatial transcriptomics library preparation and sequencing
+    tool: 10X Genomics Visium platform (vVisium Spatial Gene Expression Reagent Kits (Rev F, Jan 2022); Tissue Optimization Kit (Rev E, Feb 2022); Methanol Fixation/H&E Staining Protocol (Rev C))
+    parameters: read1_length_bp=28, read2_length_bp=150, sequencing_platform=Illumina NextSeq2000
+    input: tissue sections on Visium slides
+    output: FASTQ files
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 2
+  Fig. 1: [workflow_diagram]
+    caption: Schematic overview of the multimodal spatial omics approach integrating histology, MALDI-MSI, and Visium spatial transcriptomics.
+    produced_by_step: [1, 2, 3, 6]
+    visualization_tool: not_mentioned
+  Fig. 2: [spatial_overlay]
+    caption: Spatial multimodal analysis showing metabolite and gene expression patterns in mouse PD model and human PD postmortem brain.
+    produced_by_step: [4, 5, 6]
+    visualization_tool: not_mentioned
+
+reproducibility_gaps:
+  - Raw MSI and sequencing data not deposited in public repositories (e.g., MetaboLights, GEO, PRIDE)
+  - No code or scripts shared for SCiLS Lab API-based processing or cross-modal integration
+  - Exact gradient profiles, chromatographic conditions, and LC parameters not applicable but missing for any LC-MS component — however, this is pure MALDI-MSI, so no LC; gap remains for lack of full instrument method files (e.g., .xml/.method files)
+  - No access provided to proprietary SCiLS Lab Pro v2023b or ftmsControl v2.3.0 configuration files or processing pipelines
+  - Derivatization validation data 'provided upon request' — not openly available
+  - Human sample neuropathological report and full metadata (e.g., PMI, cause of death, medication history) only partially reported
+reproducibility_strengths:
+  - Detailed derivatization spray parameters and MSI acquisition settings fully reported
+  - Clear experimental design with independent replicates and section labeling scheme
+  - Use of standard commercial platforms (Visium, Bruker FT-ICR) with versioned protocols
+  - Explicit m/z calibration strategy and lock mass values provided

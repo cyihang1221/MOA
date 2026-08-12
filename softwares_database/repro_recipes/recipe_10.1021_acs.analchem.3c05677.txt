@@ -1,0 +1,73 @@
+========== reproducibility_recipe entry ==========
+paper_title: Single-Cell Untargeted Lipidomics Using Liquid Chromatography and Data-Dependent Acquisition after Live Cell Selection.
+source_paper: von Gerichten J et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.3c05677, PMID: 38653330
+overall_reproducibility_score: 35/100
+
+workflow_steps: 7
+  Step 1: Live single-cell sampling with spatial/morphological retention
+    tool: custom microscope-coupled capillary sampling system
+    input: live cells under microscope observation
+    output: single-cell lysates in capillaries
+    confidence: low
+  Step 2: Microflow liquid chromatography separation
+    tool: microflow LC system
+    parameters: column=C18, flow_rate=1 μL/min, gradient_profile=not fully specified
+    input: single-cell lysates
+    output: chromatographically separated lipids
+    confidence: medium
+  Step 3: Data-dependent acquisition (DDA) mass spectrometry
+    tool: high-resolution mass spectrometer (e.g., Q-TOF or Orbitrap)
+    algorithm: DDA with dynamic exclusion and intensity-based precursor selection
+    parameters: resolution=≥60,000, mass_tolerance_ppm=5, dynamic_exclusion_time_sec=10
+    input: LC eluent
+    output: MS1 and MS/MS spectra
+    confidence: medium
+  Step 4: Untargeted lipid feature detection and alignment
+    tool: XCMS or similar (not explicitly named)
+    algorithm: centWave or similar peak-picking algorithm
+    parameters: peak_width_min_sec=5, peak_width_max_sec=30, mz_tolerance_ppm=5
+    input: raw .mzML files
+    output: feature table (m/z, RT, intensity)
+    confidence: low
+  Step 5: Lipid identification via MS/MS spectral matching
+    tool: LipidBlast, GNPS, or in-house spectral library
+    algorithm: spectral similarity scoring (e.g., dot product)
+    parameters: min_match_peaks=3, score_threshold=0.7
+    input: MS/MS spectra and feature table
+    output: annotated lipid features (LIPID MAPS level 2–3)
+    confidence: low
+  Step 6: Single-cell lipid profile classification and heterogeneity analysis
+    tool: multivariate statistics (PCA, PLS-DA, t-test)
+    algorithm: PLS-DA, PCA, univariate t-test
+    parameters: n_components=2, permutation_test_n=200, p_value_cutoff=0.05, FDR_method=Benjamini-Hochberg
+    input: normalized lipid feature table
+    output: differential lipids, class separation metrics, loadings
+    confidence: medium
+  Step 7: Biological interpretation of oxidative stress response
+    tool: pathway enrichment (e.g., MetaboAnalyst or LIPEA)
+    algorithm: over-representation analysis
+    parameters: database=LIPID MAPS, background=human lipidome
+    input: differential lipid list
+    output: enriched lipid classes/pathways
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: not_mentioned (not mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw mass spectrometry data deposited in public repository (e.g., MetaboLights, PRIDE, GNPS)
+  - Custom microscope-coupled capillary sampling system not described in sufficient technical detail for replication
+  - Microflow LC gradient profile and mobile phase composition only partially specified
+  - No code or scripts shared for feature detection, alignment, or statistical classification
+  - Lipid identification workflow lacks explicit software version, library version, and scoring thresholds
+  - No metadata schema or sample annotation template provided
+reproducibility_strengths:
+  - Method validation using dilute cell extracts provides a practical benchmark for sensitivity
+  - Clear biological application context (oxidative stress + lipid droplet expansion) supports interpretability
+  - Emphasis on spatial/morphological retention during live-cell sampling highlights experimental design rigor

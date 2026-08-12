@@ -1,0 +1,58 @@
+========== reproducibility_recipe entry ==========
+paper_title: Improving Regions of Interest Multivariate Curve Resolution: Development of an Empirical Metric System through the Study of Passive Sampling Extracts of Wastewater in Antarctica.
+source_paper: Benedetti B et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c00777, PMID: 40512036
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: LC-DIA-HRMS/MS data acquisition
+    tool: liquid chromatography-high-resolution mass spectrometry
+    input: POCIS extracts from Antarctic wastewater treatment facility
+    output: raw DIA .raw files (Thermo) or equivalent
+    confidence: low
+  Step 2: Regions of Interest Multivariate Curve Resolution (ROIMCR)
+    tool: ROIMCR
+    algorithm: multivariate curve resolution alternating least squares (MCR-ALS)
+    parameters: number_of_models=6, regions_of_interest_defined_by_chromatographic_elution_windows=True
+    input: preprocessed DIA data (likely peak-aligned, background-corrected, and binned)
+    output: 770 resolved MCR components (chromatographic profiles + spectral profiles)
+    confidence: medium
+  Step 3: MCR component quality classification
+    tool: empirical metric system (custom classification)
+    algorithm: three-tiered qualitative assessment (Levels A/B/C)
+    parameters: level_A_criteria=['single chromatographic peak', 'mass spectrum with reasonable precursor/product ion appearance'], level_B_criteria=['flaws in chromatographic profile OR spectral profile'], level_C_criteria=['unacceptable features in both profiles']
+    input: MCR-resolved chromatographic and spectral profiles
+    output: classified components (A/B/C), with reported percentages per model
+    confidence: high
+  Step 4: Tentative identification of resolved components
+    tool: MSident
+    algorithm: spectral matching against MS/MS libraries
+    input: MCR-resolved spectral profiles (product ion spectra)
+    output: ≈100 tentatively identified compounds (pharmaceuticals, natural substances)
+    confidence: medium
+  Step 5: Chemical meaningfulness validation and rationalization
+    tool: manual expert curation
+    algorithm: domain-knowledge-based interpretation
+    input: MCR components + identifications + classification labels
+    output: 7-class chemical classification system linked to A/B/C quality levels
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-DIA-HRMS/MS data not deposited in any public repository (e.g., MetaboLights, MassIVE)
+  - ROIMCR implementation details unspecified (software package, version, preprocessing steps, ROI definition method, convergence criteria, constraints applied)
+  - Empirical classification system lacks quantitative metrics — relies on subjective 'reasonable appearance' and 'unacceptable features'
+  - MSident usage details missing (library sources, scoring thresholds, false discovery control)
+  - No code, scripts, or workflow documentation shared for ROIMCR modeling or classification automation
+  - POCIS extraction protocol, LC gradient, and instrument parameters only implied, not fully reported
+reproducibility_strengths:
+  - Clear reporting of outcome metrics (770 components, 6 models, 100 identifications, A/B/C distribution ranges)
+  - Explicit linkage between MCR component quality (Level A) and successful annotation success rate
+  - Novel conceptual framework for MCR quality assessment in non-target DIA workflows

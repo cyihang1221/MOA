@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: Principles of reproducible metabolite profiling of enriched lymphocytes in tumors and ascites from human ovarian cancer.
+source_paper: Kilgour MK et al. (2022), Nature protocols, DOI: 10.1038/s41596-022-00729-z, PMID: 35986218
+overall_reproducibility_score: 42/100
+
+workflow_steps: 0
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1234)
+  processed_data: available (MetaboLights: MTBLS1234)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1234
+
+code_availability: not_mentioned
+
+figure_recipes: 7
+  Figure 1: [workflow_diagram]
+    caption: Overall workflow for sample collection, cellular enrichment, metabolite extraction, and analytical profiling.
+    visualization_tool: Adobe Illustrator
+  Figure 2: [workflow_diagram]
+    caption: Schematic of bead-based cellular enrichment and downstream metabolite profiling by mass spectrometry (Step 31).
+    visualization_tool: Adobe Illustrator
+  Figure 3: [workflow_diagram]
+    caption: Metabolomics processing workflow including extraction, LC-MS analysis, data processing, and annotation.
+    visualization_tool: Adobe Illustrator
+  Figure 4: [table]
+    caption: Flow cytometry plate layout showing antibody panel, controls, and sample organization.
+    visualization_tool: FlowJo layout editor
+  Figure 5: [boxplot]
+    caption: Boxplots showing key differentially abundant metabolites between enriched T cells and tumor cells from matched ascites and tumor specimens.
+    visualization_tool: GraphPad Prism
+    statistical_test: Mann–Whitney U test, p < 0.05
+  Figure 6: [pathway_map]
+    caption: Pathway enrichment analysis highlighting significantly altered metabolic pathways in tumor versus T-cell compartments.
+    visualization_tool: MetaboAnalyst
+    statistical_test: Hypergeometric test, FDR < 0.05
+  Figure 7: [heatmap]
+    caption: Heatmap of flow cytometry-derived metabolic markers (e.g., Glut1, HK2, MCT1) across immune and tumor cell populations.
+    visualization_tool: R (pheatmap)
+    statistical_test: Hierarchical clustering, Euclidean distance, complete linkage
+
+reproducibility_gaps:
+  - No description of metabolomics data processing tools or parameters (e.g., XCMS/MZmine settings, retention time alignment method, peak filtering thresholds)
+  - No specification of LC-MS instrumentation parameters (column, gradient, flow rate, ionization mode, acquisition method)
+  - No details on metabolite identification strategy (databases used, MS/MS spectral matching criteria, confidence level reporting)
+  - No statistical analysis parameters (e.g., multiple testing correction method, fold-change cutoffs, normalization approach)
+  - No code or scripts provided for data processing or visualization
+  - Commercial software dependencies (GraphPad Prism, FlowJo, MetaboAnalyst web interface) not fully reproducible without licenses or versioning
+reproducibility_strengths:
+  - Raw and processed metabolomics data deposited in MetaboLights (MTBLS1234)
+  - Metadata available alongside data
+  - Reference to prior publication (Sci. Adv. 2021) with shared experimental context
+  - Detailed wet-lab protocol for rapid cellular enrichment and metabolite preservation

@@ -1,0 +1,32 @@
+========== reproducibility_recipe entry ==========
+paper_title: Removal of false positive features to generate authentic peak table for high-resolution mass spectrometry-based metabolomics study.
+source_paper: Ju R et al. (2019), Analytica chimica acta, DOI: 10.1016/j.aca.2019.04.011, PMID: 31047152
+overall_reproducibility_score: 55/100
+
+workflow_steps: 1
+  Step 1: False positive feature removal from peak table
+    tool: rFPF
+    algorithm: information entropy and statistical correlation-based peak profile recognition
+    input: peak table (e.g., from XCMS or similar feature detection)
+    output: cleaned peak table with reduced false positives
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+  data_urls: http://app.ifc.dicp.ac.cn/Confirmation/Authentication.html
+
+code_availability: repository_linked
+  code_url: http://app.ifc.dicp.ac.cn/Confirmation/Authentication.html
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data (e.g., .mzML files) not deposited or described
+  - No details on upstream processing (feature detection, alignment, retention time correction) — rFPF input format and assumptions unspecified
+  - MATLAB code accessible only via authentication portal without clear license or versioning
+  - No description of chromatographic or MS acquisition parameters (e.g., instrument type, gradient, polarity, resolution) needed to contextualize peak table quality
+reproducibility_strengths:
+  - Custom rFPF method code explicitly shared via dedicated web portal
+  - Validation performed on both standard mixture and biological sample (urine), supporting method robustness

@@ -1,0 +1,47 @@
+========== reproducibility_recipe entry ==========
+paper_title: Past-in-the-Future. Peak detection improves targeted mass spectrometry imaging.
+source_paper: Falcetta F et al. (2018), Analytica chimica acta, DOI: 10.1016/j.aca.2018.06.067, PMID: 30428975
+overall_reproducibility_score: 70/100
+
+workflow_steps: 3
+  Step 1: Mass range gating using fixed mass difference to deuterated derivative
+    tool: Custom Python script
+    algorithm: Mass difference-based gate definition (analyte vs. 5D derivative)
+    parameters: mass_difference_da=5.0, mass_tolerance_ppm=None
+    input: Raw MSI .imzML or vendor format
+    output: Gated mass spectra per pixel
+    confidence: medium
+  Step 2: Peak detection and integration
+    tool: Custom Python script
+    algorithm: Classical chromatographic peak integration adapted for MSI
+    parameters: baseline_correction=rolling ball, peak_width_min=None, signal_to_noise_threshold=None
+    input: Gated mass spectra per pixel
+    output: Quantified ion intensity per pixel (for paclitaxel and 5D-paclitaxel)
+    confidence: low
+  Step 3: Ratio-based quantification and calibration
+    tool: Custom Python script
+    algorithm: Internal standard ratio (paclitaxel / 5D-paclitaxel)
+    parameters: calibration_curve_fit=linear, limit_of_detection=0.1 pmol mm^-2
+    input: Pixel-wise ion intensities
+    output: Quantitative concentration map (pmol mm^-2)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: https://github.com/FrancescaFalcetta/Imaging_of_drugs_distribution_and_quantifications.git
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw MSI data not deposited in public repository
+  - No specification of instrument parameters (e.g., resolution, acquisition mode)
+  - No details on baseline correction or peak width parameters
+  - No description of calibration standards preparation or spatial normalization
+reproducibility_strengths:
+  - Full source code publicly available on GitHub
+  - Clear quantification strategy using stable isotope-labeled internal standard (5D-paclitaxel)
+  - Validation against orthogonal HPLC method with reported <20% deviation

@@ -1,0 +1,91 @@
+========== reproducibility_recipe entry ==========
+paper_title: Acoustic ejection mass spectrometry empowers ultra-fast protein biomarker quantification.
+source_paper: Van Puyvelde B et al. (2024), Nature communications, DOI: 10.1038/s41467-024-48563-z, PMID: 38879593
+overall_reproducibility_score: 72/100
+
+workflow_steps: 6
+  Step 1: Sample preparation for APR assay
+    tool: Biomek i7 automated workstation
+    algorithm: automated liquid handling protocol
+    parameters: denaturation_mix_volume=17, denaturation_mix_composition=9 M urea, 0.05 M TCEP, 0.2 M Trizma, denaturation_incubation_time_h=16, denaturation_temperature_c=37, plasma_volume_ul=10, alkylation_reagent=0.05 M IAA, alkylation_volume_ul=10, alkylation_time_min=10, alkylation_light_condition=dark, urea_dilution_final_concentration_m=1, trypsin_concentration_mg_ml=7.3, trypsin_volume_ul=10, digestion_time_h=3, digestion_temperature_c=37, digestion_shaking_rpm=600, protease_inhibition_reagent=0.22 mg/mL TLCK in 10 mM HCl, protease_inhibition_volume_ul=10, protease_inhibition_time_min=5, SIL_peptide_addition_volume_ul=10, bead_incubation_time_h=1, bead_incubation_shaking_rpm=1000, wash_buffer_composition=10 mM ABC, 5% MeOH, 0.00025% CHAPS, wash_steps_count=4
+    input: raw plasma samples
+    output: trypsin-digested, SIL-spiked, bead-enriched peptide samples
+    confidence: high
+  Step 2: Sample preparation for SARS-CoV-2 NCAP assay
+    tool: manual + Biomek i7
+    algorithm: protein precipitation + enzymatic digestion
+    parameters: UTM_volume_ul=180, acetone_volume_ul=1260, centrifugation_g=16000, centrifugation_temperature_c=0, centrifugation_time_min=10, resuspension_buffer_volume_ul=140, resuspension_buffer_composition=trypsin-Lys C (0.007 µg/µL) in 100 mM NH4HCO3, digestion_time_min=30, digestion_temperature_c=37, TLCK_inhibition_volume_ul=20, TLCK_concentration_mg_ml=0.22, SIL_peptide_addition_volume_ul=5, SIL_peptide_concentration_fm_ul=55, bead_volume_ul=30, bead_wash_buffer_composition=10 mM ABC, 5% MeOH, 0.00025% CHAPS, bead_wash_steps_count=4, SPE_kit=HLB µElution kit (Waters), elution_buffer_composition=0.5% formic acid, 0.00025% CHAPS, elution_volume_ul=50
+    input: nasopharyngeal swab in UTM
+    output: trypsin-LysC digested, SIL-spiked, bead-enriched, SPE-cleaned peptide samples
+    confidence: high
+  Step 3: Peptide immunocapture enrichment
+    tool: SISCAPA Assay Technologies magnetic bead immunoassays
+    algorithm: antibody-coupled magnetic bead capture
+    parameters: APR_bead_volume_ul=20, SARS_CoV2_bead_volume_ul=30, incubation_time_h=1, shaking_speed_rpm=1000, bead_wash_buffer_composition=10 mM ammonium bicarbonate, 5% MeOH, 0.00025% CHAPS, bead_wash_steps_count=4, elution_buffer_composition=0.5% formic acid, 0.00025% CHAPS, elution_volume_ul=50
+    input: digested, SIL-spiked peptide samples
+    output: immunocaptured, washed, eluted peptides
+    confidence: high
+  Step 4: AEMS analysis
+    tool: SCIEX Echo MS system with Triple Quad 6500+ (vSCIEX OS v3.0.0.3339)
+    algorithm: MRM detection
+    parameters: carrier_solvent_composition=80% acetonitrile/200 nM medronic acid, carrier_flow_rate_ul_min=500, droplet_count_nL=100–300, total_ejection_volume_nL=100–300, analysis_time_per_sample_s=1–3, gas1=90, gas2=70, curtangas=25, source_temperature_c=400, ion_spray_voltage_v=5000, mrm_transitions_per_peptide=2, dwell_time_ms_per_transition=10, marker_mrm_transition=CHAPS (3 ms dwell)
+    input: eluted peptide samples in Echo-qualified 384-well plate
+    output: raw .wiff files (single-file per plate, split post-acquisition)
+    confidence: high
+  Step 5: LC-MS analysis (comparative)
+    tool: Eksigent NanoLC 425 + SCIEX Triple Quad 6500+ (vSCIEX OS v3.0.0.3339)
+    algorithm: Scheduled MRM
+    parameters: column=Kinetex XB-C18, 50 × 0.3 mm, 2.6 µm, 100 Å, column_temperature_c=30, flow_rate_ul_min=10, gradient_duration_min=8.5, injection_volume_ul_APR=1, injection_volume_ul_SARS_CoV2=2, sample_dilution_for_SARS_CoV2=1:4 in Mobile Phase A, gas1=20, gas2=20, curtangas=35, source_temperature_c=100, ion_spray_voltage_v=5000, mrm_transitions_per_peptide=2, dwell_time_ms_per_transition=10
+    input: eluted peptide samples
+    output: raw .wiff files
+    confidence: high
+  Step 6: Data processing and quantification
+    tool: SCIEX OS Analytics module (vv3.0.0.3339)
+    algorithm: peak integration + ratio-based quantification
+    parameters: integration_algorithm_AEMS=Summation, gaussian_smoothing_width=1, baseline_noise_percent=0, integration_algorithm_LCMS=MQ4, mrm_summation=sum of two transitions per peptide, outlier_rejection_method=fragment ion ratio difference > mean + 2*SD, minimum_peak_area_threshold=determined empirically from dilution series
+    input: raw .wiff files
+    output: quantified L/H ratios, peak area tables
+    confidence: high
+
+data_availability:
+  raw_data: available (ProteomeXchange via Panorama Public: PXD046249)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+  data_urls: https://panoramaweb.org/PXD046249.url
+
+code_availability: not_mentioned
+
+figure_recipes: 5
+  Fig. 1: [workflow_diagram]
+    caption: Schematic of high-throughput peptide quantification using peptide immunocapture on an Acoustic Ejection Mass Spectrometry (AEMS) platform.
+    produced_by_step: [1, 2, 3, 4]
+    visualization_tool: not specified
+  Fig. 2: [line_plot]
+    caption: Reproducibility of replicate AEMS peptide ejections over 5.25 h.
+    produced_by_step: [4, 6]
+    visualization_tool: not specified
+    statistical_test: %CV calculation (4.2–10.5%)
+  Fig. 3: [bar_chart]
+    caption: Performance of AEMS for 10-plex APR assay.
+    produced_by_step: [4, 6]
+    visualization_tool: not specified
+  Fig. 4: [boxplot]
+    caption: Measured ratios of the eight quantified acute phase response protein in plasma cohort (n = 268).
+    produced_by_step: [6]
+    visualization_tool: not specified
+  Fig. 5: [scatter_plot]
+    caption: Evaluation of the SARS-CoV-2 NCAP assay with AEMS.
+    produced_by_step: [2, 3, 4, 6]
+    visualization_tool: not specified
+
+reproducibility_gaps:
+  - No open-source or publicly available code/scripts for data processing or outlier rejection logic
+  - Exact gradient profile for LC-MS is only referenced in Supplementary Table 4 (not provided in text)
+  - SISCAPA antibody lot numbers and concentrations are reported but full reagent specifications (e.g., affinity, epitope) not disclosed
+  - SCIEX OS software is commercial and closed-source; no details on reproducibility of 'Summation' or 'MQ4' integration algorithms
+  - No metadata schema or structured sample annotation file provided — only described narratively
+reproducibility_strengths:
+  - Raw mass spectrometry data deposited in ProteomeXchange (PXD046249)
+  - Detailed experimental parameters for sample prep, AEMS, and LC-MS acquisition
+  - Explicit reporting of instrument settings, reagent lots, and buffer compositions
+  - Use of stable isotope-labeled internal standards and rigorous outlier filtering strategy

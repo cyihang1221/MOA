@@ -1,0 +1,88 @@
+========== reproducibility_recipe entry ==========
+paper_title: Standardized workflow for multiplexed charge detection mass spectrometry on orbitrap analyzers.
+source_paper: Su P et al. (2025), Nature protocols, DOI: 10.1038/s41596-024-01091-y, PMID: 39747675
+overall_reproducibility_score: 35/100
+
+workflow_steps: 4
+  Step 1: Protein sample preparation
+    tool: standard biochemical protocols
+    input: protein samples (native/denatured)
+    output: prepared protein solutions for ESI-MS
+    confidence: low
+  Step 2: Ion signal attenuation to isolate individual ions
+    tool: instrumental tuning and source parameter optimization
+    parameters: ion_source_pressure=reduced, capillary_temperature=optimized, spray_voltage=lowered
+    input: prepared protein solutions
+    output: sparse ion population suitable for charge detection
+    confidence: medium
+  Step 3: Charge calibration curve generation
+    tool: STORIboard
+    algorithm: linear regression of m/z vs. 1/z using standard proteins with known charge states
+    parameters: standards=['carbonic anhydrase', 'SILu antibody', 'pyruvate kinase', 'β-galactosidase']
+    input: raw I²MS data from standard proteins
+    output: charge calibration model (m/z ↔ z mapping)
+    confidence: high
+  Step 4: Mass spectral output generation
+    tool: STORIboard
+    algorithm: STORI (Stochastic Trajectory Orbitrap Reconstruction Imaging) algorithm
+    parameters: resolution_setting=12500, mass_domain_conversion=True
+    input: raw I²MS data + charge calibration model
+    output: mass distribution profile (mass domain spectrum)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 9
+  Extended Data Fig. 1: [chromatogram]
+    caption: m/z spectrum of native carbonic anhydrase in ensemble mode, zoomed regions showing isotopic resolution for 10+ and 9+ charge states.
+    produced_by_step: [4]
+    visualization_tool: STORIboard
+  Extended Data Fig. 2: [chromatogram]
+    caption: Low-resolution m/z spectra of multiple protein standards at MS resolution 12,500; includes comparison of glycoform separation under optimized vs. poor electrospray conditions.
+    produced_by_step: [4]
+    visualization_tool: STORIboard
+  Extended Data Fig. 4: [workflow_diagram]
+    caption: Stepwise instructions for charge calibration using STORIboard.
+    produced_by_step: [3]
+    visualization_tool: STORIboard GUI
+  Extended Data Fig. 5: [workflow_diagram]
+    caption: Stepwise instructions for generating a processing template using STORIboard.
+    produced_by_step: [4]
+    visualization_tool: STORIboard GUI
+  Extended Data Fig. 6: [workflow_diagram]
+    caption: Stepwise instructions for data processing using STORIboard.
+    produced_by_step: [4]
+    visualization_tool: STORIboard GUI
+  Extended Data Fig. 7: [other]
+    caption: Screenshot of STORIboard's 'Spectrum' tab and 'Compare-Mirror Plot' window.
+    produced_by_step: [4]
+    visualization_tool: STORIboard
+  Extended Data Fig. 8: [heatmap]
+    caption: Screenshot of STORIboard's 'Heatmap' tab.
+    produced_by_step: [4]
+    visualization_tool: STORIboard
+  Extended Data Fig. 9: [other]
+    caption: Screenshot of STORIboard's 'Calibration' tab.
+    produced_by_step: [3]
+    visualization_tool: STORIboard
+  Extended Data Fig. 10: [other]
+    caption: Screenshot of STORIboard's 'Summary' tab.
+    produced_by_step: [4]
+    visualization_tool: STORIboard
+
+reproducibility_gaps:
+  - Raw I²MS data not deposited in any public repository
+  - STORIboard is commercial software with no open-source alternative or documented API
+  - Instrumental parameters (e.g., exact C-trap fill time, AGC target, transient length) not specified
+  - No description of data format or structure expected by STORIboard
+  - Supplementary Code 1 and 2 are tune files but no metadata or usage instructions provided
+  - No validation of STORIboard’s internal algorithms or reproducibility across instrument platforms
+reproducibility_strengths:
+  - Detailed stepwise GUI instructions provided in Extended Data Figures
+  - Use of well-characterized protein standards for calibration
+  - Explicit reporting of MS resolution (12,500) and acquisition mode (ensemble vs. single-ion)

@@ -1,0 +1,65 @@
+========== reproducibility_recipe entry ==========
+paper_title: AntDAS-DDA: A New Platform for Data-Dependent Acquisition Mode-Based Untargeted Metabolomic Profiling Analysis with Advantage of Recognizing Insource Fragment Ions to Improve Compound Identification.
+source_paper: Wang XC et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.2c01795, PMID: 36599407
+overall_reproducibility_score: 40/100
+
+workflow_steps: 6
+  Step 1: Extracted ion chromatogram (EIC) extraction
+    tool: AntDAS-DDA
+    algorithm: custom EIC extraction algorithm
+    input: raw .raw files (Thermo)
+    output: EICs
+    confidence: low
+  Step 2: Feature extraction
+    tool: AntDAS-DDA
+    algorithm: custom feature detection algorithm
+    input: EICs
+    output: feature table (m/z, RT, intensity)
+    confidence: low
+  Step 3: MS/MS spectrum construction
+    tool: AntDAS-DDA
+    algorithm: custom MS/MS assembly algorithm aggregating fragment ions across samples
+    input: DDA MS/MS scans and aligned features
+    output: constructed MS/MS spectra
+    confidence: low
+  Step 4: In-source fragment ion identification
+    tool: AntDAS-DDA
+    algorithm: rule-based in-source fragment recognition
+    input: MS1 and MS/MS data
+    output: annotated in-source fragments
+    confidence: low
+  Step 5: MS1 spectrum construction
+    tool: AntDAS-DDA
+    algorithm: custom MS1 reconstruction using DDA-triggered MS/MS context
+    input: MS1 scans + associated MS/MS triggers
+    output: enhanced MS1 spectra with improved signal-to-noise and adduct/fragment context
+    confidence: low
+  Step 6: Compound identification enhancement
+    tool: AntDAS-DDA
+    algorithm: integrated MS1 + MS/MS + in-source fragment matching
+    parameters: identification_improvement_rate=20
+    input: constructed MS1 and MS/MS spectra, annotated fragments
+    output: compound identifications (level 1–2 confidence)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: http://www.pmdb.org.cn/antdasdda
+  license: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposition reported
+  - No metadata description provided
+  - No algorithmic parameters (e.g., m/z tolerance, RT window, S/N threshold) specified for any step
+  - AntDAS-DDA is web-based but no versioning or source code repository (e.g., GitHub) disclosed
+  - Vendor-specific (.raw) input assumed without conversion details (e.g., msconvert settings)
+reproducibility_strengths:
+  - Platform freely accessible via public web interface
+  - Explicit claim of ~20% compound ID improvement enables benchmarking
+  - Clear problem focus: leveraging DDA MS/MS across samples and recognizing in-source fragments

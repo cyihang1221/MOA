@@ -1,0 +1,94 @@
+========== reproducibility_recipe entry ==========
+paper_title: Spatial probabilistic mapping of metabolite ensembles in mass spectrometry imaging.
+source_paper: Abu Sammour D et al. (2023), Nature communications, DOI: 10.1038/s41467-023-37394-z, PMID: 37005414
+overall_reproducibility_score: 72/100
+
+workflow_steps: 6
+  Step 1: MALDI-MSI data acquisition
+    tool: Bruker Compass ftmsControl & flexImaging (v2.2 and 5.0)
+    algorithm: FTICR, timsTOF, TOF acquisition modes
+    parameters: lateral_resolution_μm=[50, 20], mass_range_mz=[[100, 1200], [100, 3000], [600, 1800]], ion_mode=['negative', 'positive'], resolving_power_at_mz={'400': 85000, '314': 98000, '249': 123000}, transient_size=1000000, fids_s=0.4893, laser_shots_per_pixel=[10, 500, 400], laser_frequency_hz=[1000, 10000, 10000], q1_mass_mz=[120, 600], tof_ms=[0.9, 1.0], plate_offset_v=100, deflector_plate_v=200, data_reduction_factor_percent=97, snr_threshold_for_centroiding=3, centroiding_method=Apex
+    input: raw .d directory (Bruker format)
+    output: centroided SQLite peaks list + reduced profile spectra
+    confidence: high
+  Step 2: Spectral preprocessing and peak binning
+    tool: MALDIquant
+    algorithm: LOESS-based FWHM estimation + iterative bisecting peak binning
+    parameters: min_pixel_occurrence_fraction=0.01, mass_tolerance_ppm=12, fwhm_estimation_reference_mz=400, fwhm_at_mz_400_da=0.004
+    input: centroided SQLite peaks list
+    output: binned feature table (m/z × pixel matrix)
+    confidence: high
+  Step 3: Data format conversion
+    tool: SCiLS Lab + MALDIquantForeign (v2016a)
+    algorithm: imzML export + R-based sparse import
+    input: Bruker .d → centroided SQLite → imzML
+    output: sparse matrix representation in R (Matrix package)
+    confidence: medium
+  Step 4: Spatial point pattern (SPP) transformation
+    tool: moleculaR
+    algorithm: data-dependent Gaussian-weighting of ion intensities
+    parameters: weighting_scheme=Gaussian, sigma_scaling=FWHM-derived per m/z, spatial_resolution_adaptation=True
+    input: binned feature table + spatial coordinates
+    output: spatial point pattern (SPP) representation per metabolite-of-interest (MOI)
+    confidence: high
+  Step 5: Probabilistic molecular mapping (MPM)
+    tool: moleculaR
+    algorithm: nonparametric spatial significance testing (Monte Carlo permutation)
+    parameters: n_permutations=1000, significance_threshold_alpha=0.05, multiple_testing_correction=FDR, hotspot_coldspot_contour_level=0.95
+    input: SPP representation
+    output: molecular probabilistic map (MPM) — probability surface per MOI
+    confidence: medium
+  Step 6: Collective-projection probabilistic mapping (CPPM)
+    tool: moleculaR
+    algorithm: ensemble-level spatial aggregation + joint significance evaluation
+    parameters: ensemble_definition=['adenylate_energy_charge', 'lysoGPL_remodeling', 'ion_milieu_scores'], projection_method=weighted probabilistic summation, significance_evaluation=permutation-based ensemble null distribution
+    input: multiple MPMs (metabolite ensemble)
+    output: collective-projection probabilistic map (CPPM)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: https://github.com/CeMOS-Mannheim/moleculaR
+  license: MIT
+
+figure_recipes: 5
+  Fig. 1: [workflow_diagram]
+    caption: Illustrates data-dependent Gaussian-weighting of ion intensities and transformation into a spatial point pattern (SPP) representation for a metabolite-of-interest.
+    produced_by_step: [4]
+    visualization_tool: R (ggplot2 or custom plotting)
+  Fig. 2: [workflow_diagram]
+    caption: Shows the full computational MPM workflow and validation using simulated ground-truth datasets.
+    produced_by_step: [4, 5]
+    visualization_tool: R + custom visualization
+    statistical_test: Monte Carlo permutation test
+  Fig. 3: [heatmap]
+    caption: Displays molecular probabilistic maps (MPMs) highlighting hotspots and coldspots of relative spatial abundance for specific metabolites in glioblastoma and mouse brain tissue.
+    produced_by_step: [5]
+    visualization_tool: R (pheatmap or image() + contour)
+    statistical_test: FDR-corrected Monte Carlo p < 0.05
+  Fig. 4: [boxplot]
+    caption: Demonstrates robustness of MPMs against artificially added noise (e.g., spectral, spatial, intensity noise).
+    produced_by_step: [5]
+    visualization_tool: R (ggplot2)
+    statistical_test: Wilcoxon rank-sum test across noise levels
+  Fig. 5: [pathway_map]
+    caption: Presents collective-projection probabilistic maps (CPPMs) for biologically interpretable scores: adenylate energy charge, (lyso-)glycerophospholipid remodeling, and ion milieu.
+    produced_by_step: [6]
+    visualization_tool: R + custom spatial overlay
+    statistical_test: Ensemble-level permutation test
+
+reproducibility_gaps:
+  - Raw MSI imaging data not deposited in public repository (e.g., MetaboLights, MassIVE)
+  - Exact LOESS smoothing parameters (span, degree) for FWHM vs m/z curve not specified
+  - No details on Monte Carlo permutation implementation (e.g., spatial null model construction, distance metrics)
+  - No description of how 'adenylate energy charge' or 'GPL remodeling scores' are mathematically defined/computed from metabolite MPMs
+  - Bruker SCiLS Lab 2016a is commercial and no longer actively supported; exact export settings for imzML not detailed
+reproducibility_strengths:
+  - moleculaR source code publicly available on GitHub under MIT license
+  - All major preprocessing steps (peak binning, FWHM modeling, SPP transformation) algorithmically described
+  - Full instrument parameters reported for all MSI platforms (FTICR, timsTOF, TOF)
+  - Use of open-source R packages (MALDIquant, MALDIquantForeign, Matrix) for core computation

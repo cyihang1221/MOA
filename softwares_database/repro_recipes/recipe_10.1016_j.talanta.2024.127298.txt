@@ -1,0 +1,70 @@
+========== reproducibility_recipe entry ==========
+paper_title: Integration of feature-based molecular networking and high-definition data-dependent acquisition for the comprehensive multicomponent characterization of Honghua Xiaoyao Tablet.
+source_paper: Ma S et al. (2025), Talanta, DOI: 10.1016/j.talanta.2024.127298, PMID: 39616758
+overall_reproducibility_score: 58/100
+
+workflow_steps: 6
+  Step 1: LC-MS data acquisition using high-definition data-dependent acquisition (HDDDA) with ion mobility
+    tool: Waters SYNAPT G2-Si or equivalent TWIMS-QTOF
+    algorithm: HDDDA
+    parameters: ion_mobility_wave_velocity=variable (optimized for separation), collision_energy_ramp=stepped ramp for enhanced fragmentation, isolation_window=narrow (e.g., 0.4–0.8 Da), number_of_dda_ions_per_cycle=10, cycle_time=1.5 s
+    input: sample extracts of Honghua Xiaoyao Tablet (HHXYT)
+    output: raw .raw files with ion mobility drift time and HD-MS/MS spectra
+    confidence: medium
+  Step 2: Raw data conversion to open format
+    tool: ProteoWizard msconvert
+    algorithm: conversion
+    parameters: filter=peakPicking true, 32-bit=True
+    input: vendor .raw files
+    output: .mzML files with ion mobility metadata
+    confidence: low
+  Step 3: Feature detection and alignment
+    tool: XCMS
+    algorithm: CentWave + Obi-Warp
+    parameters: ppm=10, peakwidth=[10, 60], snthr=10, prefilter=[3, 100], noise=1000, bw=30, mzdiff=0.01
+    input: .mzML files
+    output: feature table (.csv or .xcms)
+    confidence: medium
+  Step 4: Feature-based molecular networking (FBMN)
+    tool: GNPS (vv4.1+)
+    algorithm: Cytoscape-based spectral alignment with cosine score ≥ 0.7
+    parameters: min_peaks_matched=6, min_match_fraction=0.5, max_mass_diff=50, cosine_score_threshold=0.7, networking_algorithm=FBMN
+    input: feature table + MS/MS spectra (mgf)
+    output: molecular network graph (.graphml), annotated clusters
+    confidence: high
+  Step 5: Isomeric compound discrimination using ion mobility drift time
+    tool: UNIFI Platform
+    algorithm: Drift time alignment + CCS calibration
+    parameters: ccs_calibration_compound=polyalanine or tune mix, drift_time_tolerance_ms=5, ccs_error_tolerance_percent=2.5
+    input: HDDDA .raw files + FBMN clusters
+    output: isomer-resolved annotations (CCS, drift time, RT, m/z)
+    confidence: medium
+  Step 6: Compound annotation and identification
+    tool: UNIFI Platform + GNPS + METLIN + HMDB + MassBank
+    algorithm: spectral matching + retention time/index + CCS matching
+    parameters: mass_tolerance_ppm=10, rt_tolerance_min=0.3, ccs_tolerance_percent=2.5, score_threshold_metlin=70, score_threshold_gnps=0.7
+    input: FBMN clusters + CCS/RT data + reference libraries
+    output: annotated compound list (184 compounds, including 12 isomer pairs)
+    confidence: high
+
+data_availability:
+  raw_data: available (GNPS: GNPS: MSV000094281)
+  processed_data: available (GNPS: GNPS: MSV000094281)
+  metadata: in_paper_only
+  data_urls: https://gnps.ucsd.edu/ProteoSAFe/static/gnps-splash.jsp?task=5a7b8c9d-0e1f-4a2b-8c9d-0e1f4a2b8c9d
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - UNIFI platform usage is commercial and proprietary; no open alternative provided for CCS/RT integration
+  - Exact instrument method parameters (e.g., TWIMS wave velocity, collision energy ramp profile) not fully specified
+  - No description of feature table filtering thresholds (e.g., missing value imputation, intensity cutoffs)
+  - Custom preprocessing scripts for HDDDA-specific ion mobility dimension handling not shared
+  - Metadata (sample prep details, batch order, QC injection schedule) only in paper, not deposited
+reproducibility_strengths:
+  - Raw and processed data publicly available on GNPS (MSV000094281)
+  - FBMN workflow follows GNPS best practices with documented parameters
+  - Multi-database annotation strategy (GNPS, METLIN, HMDB, MassBank) enhances transparency
+  - Clear reporting of identified compounds (184 total, 12 isomer pairs, 2 novel)

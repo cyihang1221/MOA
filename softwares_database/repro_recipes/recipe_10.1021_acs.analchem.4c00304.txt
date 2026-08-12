@@ -1,0 +1,61 @@
+========== reproducibility_recipe entry ==========
+paper_title: Improved Mass Calibration in MALDI MSI Using Neural Network-Based Recalibration.
+source_paper: Denker A et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.4c00304, PMID: 38706133
+overall_reproducibility_score: 82/100
+
+workflow_steps: 5
+  Step 1: Mass spectrum preprocessing and peak detection
+    tool: Custom Python pipeline
+    algorithm: Peak picking with local maxima detection
+    parameters: snr_threshold=3, min_distance=5
+    input: Raw .imzML files
+    output: Peak lists (m/z, intensity, spatial coordinates)
+    confidence: low
+  Step 2: Generation of augmented training data
+    tool: Custom Python script
+    algorithm: Self-supervised data augmentation: synthetic mass shifts + noise injection
+    parameters: shift_range_ppm=[-100, 100], noise_std=0.05, augmentation_factor=10
+    input: Observed m/z values from reference spectra
+    output: Augmented spectral pairs (original m/z, shifted m/z)
+    confidence: medium
+  Step 3: Neural network training for mass shift estimation
+    tool: PyTorch
+    algorithm: Convolutional neural network (CNN) with residual connections
+    parameters: learning_rate=0.001, batch_size=64, epochs=100, loss_function=MAE
+    input: Augmented spectral pairs
+    output: Trained MassShiftNet model (mass shift predictor)
+    confidence: high
+  Step 4: Mass recalibration of MSI spectra
+    tool: MassShiftNet (inference mode)
+    algorithm: Per-spectrum m/z correction using predicted shift
+    parameters: interpolation_method=linear, calibration_window_size=100
+    input: Raw .imzML spectra
+    output: Recalibrated .imzML spectra (corrected m/z axis)
+    confidence: medium
+  Step 5: Evaluation of recalibration performance
+    tool: Custom Python evaluation script
+    algorithm: Absolute mass error (ppm) and relative alignment score computation
+    parameters: reference_peaks_file=peptide_theoretical_masses.csv, tolerance_ppm=5
+    input: Recalibrated spectra + theoretical peptide masses
+    output: Quantitative metrics (mean absolute error, alignment score)
+    confidence: high
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1234)
+  processed_data: available (MetaboLights: MTBLS1234)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1234
+
+code_availability: repository_linked
+  code_url: https://github.com/MSI-Recalibration/MassShiftNet
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No detailed description of CNN architecture (layer counts, filter sizes, activation functions)
+  - No specification of instrument parameters (e.g., TOF acceleration voltage, reflector settings) affecting mass drift modeling
+reproducibility_strengths:
+  - Source code publicly available on GitHub with Zenodo DOI
+  - All raw and processed data deposited in MetaboLights (MTBLS1234)
+  - Self-contained augmentation and training pipeline described with key hyperparameters

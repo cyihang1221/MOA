@@ -1,0 +1,90 @@
+========== reproducibility_recipe entry ==========
+paper_title: Integrative single-cell metabolomics and phenotypic profiling reveals metabolic heterogeneity of cellular oxidation and senescence.
+source_paper: Wang Z et al. (2025), Nature communications, DOI: 10.1038/s41467-025-57992-3, PMID: 40113759
+overall_reproducibility_score: 32/100
+
+workflow_steps: 9
+  Step 1: Single-cell live imaging and oxidative stress quantification
+    tool: Leica fluorescent microscope + ImageJ (vImageJ 1.54g)
+    algorithm: thresholding + integrated density normalization
+    parameters: DCFDA_concentration=10, incubation_time_min=25, temperature_C=37, CO2_percent=5, field_count=5, staining_duration_hours=16
+    input: live-cell fluorescent images (DCFDA, DHE, TMRE)
+    output: single-cell oxidative stress level (normalized integrated density per cell/area)
+    confidence: high
+  Step 2: Single-cell cytoplasmic extraction via nanoESI patch-clamp
+    tool: Custom SCLIMS platform (patch-clamp + nanoESI capillary)
+    algorithm: manual cell selection + high-resistance seal (>1 GΩ) + pressure-induced lysis + nanoelectrospray
+    parameters: bath_solution_composition=['140 mM NaCl', '5 mM KCl', '2 mM CaCl2', '1 mM MgCl2', '10 mM HEPES', 'pH 7.4', '320 mosmol sucrose'], pipette_solution=88 mM NH4HCO3, spray_voltage_kV=4, frequency_Hz=500, tip_to_orifice_distance_mm=5, ion_mode=negative
+    input: live HEK293T or MEF cells with DCFDA fluorescence
+    output: raw mass spectra per single cell (Thermo .raw files)
+    confidence: medium
+  Step 3: Raw data conversion to mzML
+    tool: ProteoWizard (v3.0.9870)
+    algorithm: msconvert
+    input: Thermo .raw files (per cell)
+    output: mzML files (per cell)
+    confidence: high
+  Step 4: Feature detection and alignment
+    tool: XCMS (v3.9.1)
+    algorithm: centWave
+    parameters: sn_threshold=3, mass_resolution=70000, peak_width_seconds=None, ppm_tolerance=None, retention_time_tolerance_seconds=None
+    input: mzML files (per cell)
+    output: feature table (m/z, RT, intensity matrix across cells)
+    confidence: medium
+  Step 5: Quality control and filtering
+    tool: XCMS (v3.9.1)
+    algorithm: missing value filtering + retention time correction
+    parameters: min_fraction=0.5, max_missing=0.5
+    input: XCMS feature table
+    output: filtered & aligned feature table
+    confidence: medium
+  Step 6: Metabolite annotation (MS1-level)
+    tool: XCMS + in-house matching (v3.9.1)
+    algorithm: accurate mass matching (±5 ppm?)
+    parameters: mass_tolerance_ppm=5, database=['HMDB', 'METLIN', 'LipidMaps']
+    input: filtered feature table (m/z, RT, intensity)
+    output: putatively annotated feature table
+    confidence: low
+  Step 7: MS/MS acquisition and spectral matching
+    tool: Thermo Exactive Tune (v2.9.0.2926)
+    algorithm: HCD fragmentation
+    parameters: collision_energy=30, isolation_window_da=1.0, resolution_ms2=17500
+    input: selected m/z features from step 4–5
+    output: MS/MS spectra per feature
+    confidence: high
+  Step 8: Integration of metabolomic and oxidative phenotypic data
+    tool: Custom R script
+    algorithm: pairwise matching by cell ID / spatial coordinates
+    input: XCMS feature table + single-cell oxidative stress values
+    output: integrated single-cell metabolome–phenotype matrix
+    confidence: low
+  Step 9: Heterogeneity analysis and fate prediction modeling
+    tool: Unspecified multivariate statistics
+    algorithm: unsupervised clustering + supervised classification (e.g., random forest?)
+    input: integrated single-cell metabolome–phenotype matrix
+    output: cell subpopulations + predictive model for oxidative fate
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw .raw or mzML data not deposited in public repository (e.g., MetaboLights, MassIVE)
+  - No access to SCLIMS hardware configuration or custom microfluidic/pipette control software
+  - XCMS parameters for peak width, RT tolerance, and ppm tolerance not specified
+  - No details on MS/MS spectral library matching (e.g., NIST, GNPS, or in-house library)
+  - No description of statistical modeling methods (clustering, classification, validation)
+  - Custom R scripts for integration and prediction not shared or cited
+  - No metadata schema or sample annotation file provided
+  - Instrument method files (.meth) and tune settings beyond basic parameters not disclosed
+reproducibility_strengths:
+  - Open-source tools used for core processing (ProteoWizard, XCMS, ImageJ)
+  - Explicit instrument parameters reported (Q Exactive Plus, nanoESI, negative mode, HCD 30)
+  - Full chemical reagent sourcing and cell culture protocols detailed
+  - Quantitative image analysis pipeline described with ImageJ plugins (IHC Toolbox, wrMTrck)

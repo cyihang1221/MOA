@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: Skylite: Skyline-Based Lipid Isomer Retention Time Evaluation for Lipidomics in Metabolic Dysfunction-Associated Steatohepatitis.
+source_paper: Menzel JP et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.4c06503, PMID: 40226872
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: LC-MS data acquisition
+    tool: Liquid chromatography-mass spectrometry
+    parameters: instrumentation=conventional LC-MS, chromatography=reversed-phase LC, derivatization=fixed-charge derivatization of fatty acids, fragmentation_method=ozone-induced dissociation (OzID), ms_ms_mode=LC-MS/MS of epoxidized hydrolyzed fatty acids
+    input: biological tissue extracts (mouse liver)
+    output: raw .raw or .wiff files (vendor format)
+    confidence: medium
+  Step 2: Retention time alignment and isomer evaluation
+    tool: Skyline
+    algorithm: retention time trend correlation with NIST 1950 reference standard
+    parameters: reference_standard=NIST SRM 1950 (human plasma), target_lipids=isomeric phosphatidylcholines, correlation_basis=retention time trends vs. fixed-charge derivatized FA behavior
+    input: raw LC-MS files + NIST 1950 reference run
+    output: isomer-resolved retention time annotations for PC sum compositions
+    confidence: high
+  Step 3: MS/MS spectral interpretation for double bond localization
+    tool: LC-MS/MS with epoxidation
+    algorithm: diagnostic fragment analysis of epoxidized hydrolyzed fatty acids
+    parameters: chemical_derivatization=epoxidation of hydrolyzed fatty acids, fragment_interpretation_rule=double bond diagnostic fragments
+    input: hydrolyzed and epoxidized fatty acid derivatives
+    output: double bond position assignments for FA moieties in PCs
+    confidence: medium
+  Step 4: Lipid feature quantification and differential analysis
+    tool: Skyline
+    parameters: quantification_method=peak area integration, statistical_comparison=comparison between CCl4-induced and MC4R-KO+WD mouse models, lipid_classes_analyzed=['phosphatidylcholines'], sum_compositions_screened=37, features_identified=123
+    input: Skyline transition lists + aligned RTs + MS/MS annotations
+    output: quantified lipid isomer features with statistical significance (e.g., mead acid, n-7 PUFA, branched-chain FA enrichment)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS data not deposited in public repository (e.g., MetaboLights, PRIDE, MassIVE)
+  - No access to Skyline document (.sky) or transition list files used for isomer evaluation
+  - No specification of LC gradient method, column type, or temperature — critical for RT reproducibility
+  - NIST 1950 usage described qualitatively but no details on how many injections, batch order, or RT correction model applied
+  - Epoxidation protocol and MS/MS acquisition parameters (e.g., collision energy, isolation window) not provided
+  - Statistical testing methods (e.g., t-test, FDR correction) not specified
+reproducibility_strengths:
+  - Uses widely accessible open tool Skyline (freely available, well-documented)
+  - Reference standard (NIST 1950) is publicly available and traceable
+  - Biological interpretation grounded in orthogonal structural validation (OzID + epoxidation/MS/MS)

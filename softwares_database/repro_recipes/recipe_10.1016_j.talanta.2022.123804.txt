@@ -1,0 +1,73 @@
+========== reproducibility_recipe entry ==========
+paper_title: Effects of sulfamethoxazole exposure on mussels (Mytilus galloprovincialis) metabolome using retrospective non-target high-resolution mass spectrometry and chemometric tools.
+source_paper: Pérez-López C et al. (2023), Talanta, DOI: 10.1016/j.talanta.2022.123804, PMID: 35998445
+overall_reproducibility_score: 35/100
+
+workflow_steps: 7
+  Step 1: Data filtering and preprocessing via Regions of Interest (ROI)
+    tool: ROIMCR
+    algorithm: ROI-based data compression and filtering
+    input: raw HPLC-HRMS data
+    output: preprocessed ROI-compressed data matrix
+    confidence: low
+  Step 2: Chemical profile resolution using Multivariate Curve Resolution
+    tool: MCR-ALS
+    algorithm: Alternating Least Squares
+    parameters: n_components=None, constraints=['non-negativity', 'unimodality']
+    input: ROI-compressed data matrix
+    output: resolved elution profiles and spectral fingerprints
+    confidence: medium
+  Step 3: Quantification of resolved constituents
+    tool: custom implementation
+    algorithm: peak area integration of resolved elution profiles
+    input: resolved elution profiles
+    output: metabolite peak area table
+    confidence: low
+  Step 4: Unsupervised multivariate clustering
+    tool: PCA
+    algorithm: Principal Component Analysis
+    parameters: scaling=pareto, n_components=2
+    input: metabolite peak area table
+    output: PCA scores and loadings
+    confidence: medium
+  Step 5: Factorial multivariate analysis of experimental design effects
+    tool: ASCA
+    algorithm: ANOVA Simultaneous Component Analysis
+    parameters: factors=['season', 'SMX_exposure', 'interaction'], scaling=pareto
+    input: metabolite peak area table
+    output: ASCA model with effect scores and residuals
+    confidence: medium
+  Step 6: Univariate statistical validation of individual metabolites
+    tool: Wilcoxon test
+    algorithm: non-parametric Wilcoxon rank-sum test
+    parameters: alpha=0.05, correction=Benjamini-Hochberg
+    input: metabolite peak area table grouped by season/SMX
+    output: list of significantly altered metabolites
+    confidence: high
+  Step 7: Biological pathway interpretation
+    tool: manual curation / pathway mapping
+    algorithm: literature-based pathway assignment
+    parameters: pathway_database=KEGG, organism=Mytilus galloprovincialis (inferred)
+    input: list of significantly altered metabolites
+    output: affected biological pathways
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (MetaboLights)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - ROIMCR method not publicly implemented or documented
+  - No raw HRMS data deposition reported
+  - No code or scripts shared for ROI preprocessing or MCR-ALS implementation
+  - No details on chromatographic gradient, ionization mode, or instrument parameters
+  - Pathway analysis lacks automated tooling or database versioning
+reproducibility_strengths:
+  - Uses established open-source chemometric methods (MCR-ALS, PCA, ASCA, Wilcoxon)
+  - Clear experimental design with factorial structure enabling ASCA
+  - Metabolite identification reported for 16 endogenous compounds

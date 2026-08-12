@@ -1,0 +1,51 @@
+========== reproducibility_recipe entry ==========
+paper_title: Tailored SONAR-MSI: Converting SONAR-MS Data into Pseudoimages for Deep-Learning-Based Natural Products Analysis.
+source_paper: Jin Z et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c03682, PMID: 41025910
+overall_reproducibility_score: 25/100
+
+workflow_steps: 4
+  Step 1: SONAR-MS data acquisition
+    tool: Waters SYNAPT G2-Si or similar Q-TOF
+    algorithm: synchronized selected ion acquisition (SONAR)
+    parameters: sonar_cycle_time_ms=None, ion_isolation_window_da=None, collision_energy_ev=None, low_energy_and_high_energy_scan_mode=simultaneous, mz_range_low=None, mz_range_high=None
+    input: raw .raw files (Waters format)
+    output: SONAR-MS raw data with synchronized low/high energy scans
+    confidence: low
+  Step 2: Conversion to pseudo-MSI images
+    tool: custom Python pipeline
+    algorithm: grid-based binning of RT–m/z–intensity into 2D pixel arrays
+    parameters: rt_bin_width_seconds=None, mz_bin_width_ppm=None, image_height_pixels=None, image_width_pixels=None, intensity_scaling=log10 or z-score, channel_encoding=dual-channel (low-energy + high-energy)
+    input: SONAR-MS raw data (.raw)
+    output: pseudo-MSI image tensors (N × H × W × C)
+    confidence: low
+  Step 3: Deep learning model training
+    tool: TensorFlow or PyTorch
+    algorithm: convolutional neural network (CNN)
+    parameters: architecture=custom CNN (details not specified), optimizer=Adam, learning_rate=None, batch_size=None, epochs=None, validation_split=0.2, data_augmentation=enabled (type unspecified)
+    input: pseudo-MSI image tensors
+    output: trained CNN classifier and class activation maps (CAMs)
+    confidence: low
+  Step 4: Metabolite localization and annotation
+    tool: pixel-wise intensity mapping + database matching
+    algorithm: CAM-guided region-of-interest extraction → m/z & RT alignment → spectral library matching (e.g., GNPS, MassBank)
+    parameters: mass_tolerance_ppm=None, rt_tolerance_seconds=None, min_match_score=None
+    input: CAM outputs + pseudo-MSI tensors + MS2 spectra
+    output: spatially resolved metabolite annotations
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposited in public repository
+  - No code or custom scripts shared or linked
+  - Critical parameters for SONAR acquisition (e.g., cycle time, isolation width) not reported
+  - Pseudoimage conversion parameters (RT/mz binning, dimensions, scaling) unspecified
+  - CNN architecture, hyperparameters, and training details omitted
+  - No information on software versions or computing environment

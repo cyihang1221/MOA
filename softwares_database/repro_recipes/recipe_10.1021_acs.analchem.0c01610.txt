@@ -1,0 +1,110 @@
+========== reproducibility_recipe entry ==========
+paper_title: Effects of Freeze-Thaw Cycles of Blood Samples on High-Coverage Quantitative Metabolomics.
+source_paper: Chen D et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.0c01610, PMID: 32469506
+overall_reproducibility_score: 42/100
+
+workflow_steps: 9
+  Step 1: Sample preparation and freeze-thaw cycling
+    tool: manual protocol
+    parameters: n_cycles=5, freezing_temperature_c=-80, thawing_condition=room temperature, cycle_duration=not specified
+    input: human serum samples (n=99)
+    output: serum samples subjected to 1–5 freeze-thaw cycles
+    confidence: medium
+  Step 2: Chemical isotope labeling (CIL)
+    tool: dansylation derivatization
+    parameters: labeling_reagents=['12C-dansyl chloride', '13C-dansyl chloride'], labeling_ratio=1:1 sample pairing, reaction_conditions=60°C, 30 min, pH 9–10
+    input: serum samples post-FTC
+    output: 12C-/13C-labeled metabolite derivatives
+    confidence: high
+  Step 3: LC-MS analysis
+    tool: LC-MS platform
+    parameters: instrument=Agilent 1290 Infinity II LC / 6545 Q-TOF MS, column=Agilent Poroshell 120 EC-C18 (2.7 μm, 2.1 × 100 mm), gradient=not fully specified, flow_rate_ml_min=0.3, column_temperature_c=40, injection_volume_ul=2, ionization_mode=ESI positive, mass_range_mz=[50, 1000], acquisition_mode=full-scan MS
+    input: 12C-/13C-labeled derivatives
+    output: raw .d files (Agilent format)
+    confidence: medium
+  Step 4: Data processing and peak pair detection
+    tool: in-house software
+    algorithm: isotope-labeled peak pair detection
+    parameters: mass_tolerance_ppm=5, retention_time_tolerance_min=0.2, intensity_threshold=not specified, pairing_rule=12C/13C peak pairs with same RT and ±1 Da mass difference
+    input: raw .d files
+    output: quantified peak pair table (2790 features)
+    confidence: low
+  Step 5: Metabolite identification
+    tool: database search + MS/MS validation
+    algorithm: mass matching + spectral library matching
+    parameters: database=['HMDB', 'Metlin'], mass_tolerance_ppm=5, MS_MS_similarity_threshold=not specified, confidence_levels=['positive identification', 'high-confident putative', 'mass-matched']
+    input: peak pair table + MS/MS spectra
+    output: annotated metabolite table (150 confirmed, 235 high-confident putative, 1949 mass-matched)
+    confidence: medium
+  Step 6: Relative quantification
+    tool: in-house script
+    algorithm: 13C/12C peak area ratio
+    parameters: normalization_method=internal standard not specified, ratio_calculation=13C peak area / 12C peak area
+    input: peak pair table
+    output: relative abundance matrix (495 comparisons × 2790 features)
+    confidence: low
+  Step 7: Multivariate statistical analysis
+    tool: SIMCA-P+
+    algorithm: PCA, PLS-DA
+    parameters: n_components=2, scaling=UV, cross_validation=7-fold, model_validation=permutation test (200 permutations)
+    input: relative abundance matrix
+    output: scores plots, model metrics (R2, Q2), variable importance (VIP)
+    confidence: high
+  Step 8: Univariate statistical testing
+    tool: in-house R script or SIMCA-P+
+    algorithm: t-test / ANOVA
+    parameters: test_type=paired or unpaired t-test depending on comparison, p_value_threshold=0.05, correction=FDR (Benjamini-Hochberg)
+    input: relative abundance matrix
+    output: list of significantly different metabolites
+    confidence: medium
+  Step 9: FTC effect detection method
+    tool: reanalysis protocol
+    algorithm: additional FTC + re-measurement
+    parameters: additional_cycle=1, reference_comparison=original vs. +1 FTC
+    input: original serum samples
+    output: FTC-effect diagnostic metric (e.g., % changed features, PCA drift)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: not_mentioned (not mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 5
+  Figure 1: [workflow_diagram]
+    caption: Schematic illustration of the experimental design including sample grouping, freeze-thaw cycles, dansylation labeling, LC-MS analysis, and data processing.
+    produced_by_step: [1, 2, 3, 4]
+    visualization_tool: Adobe Illustrator or similar
+  Figure 2: [pca_scores]
+    caption: PCA scores plot showing clustering of FTC3–FTC5 samples distinct from FTC1–FTC2, indicating attenuated metabolome changes after third cycle.
+    produced_by_step: [7]
+    visualization_tool: SIMCA-P+
+  Figure 3: [pls_da_scores]
+    caption: PLS-DA scores plot demonstrating separation between male and female samples within same FTC group.
+    produced_by_step: [7]
+    visualization_tool: SIMCA-P+
+  Figure 4: [volcano_plot]
+    caption: Volcano plot comparing male vs. female samples across mixed FTC conditions, showing dramatic increase in significant metabolites (false positives) due to FTC confounding.
+    produced_by_step: [8]
+    visualization_tool: SIMCA-P+ or custom R/ggplot2
+    statistical_test: t-test with FDR correction (p<0.05)
+  Figure 5: [bar_chart]
+    caption: Bar chart showing number of significantly altered metabolites in male–female comparisons under matched vs. mismatched FTC conditions.
+    produced_by_step: [8]
+    visualization_tool: GraphPad Prism or similar
+    statistical_test: t-test with FDR correction
+
+reproducibility_gaps:
+  - Raw LC-MS data (.d files) not deposited in any public repository
+  - In-house data processing software and R scripts not shared or described in sufficient detail
+  - SIMCA-P+ is commercial software requiring license and is not open-source
+  - LC gradient profile and exact column lot information not provided
+  - No metadata schema or sample annotation file provided beyond sex and FTC count
+  - Internal standard(s) used for quantification not specified
+reproducibility_strengths:
+  - Clear experimental design with defined FTC iterations (n=5) and biological replication (n=99)
+  - Use of chemical isotope labeling enables robust relative quantification
+  - Three-tier metabolite identification confidence levels explicitly reported
+  - Multivariate and univariate statistical approaches clearly described

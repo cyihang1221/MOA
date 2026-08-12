@@ -1,0 +1,81 @@
+========== reproducibility_recipe entry ==========
+paper_title: Denoising Search doubles the number of metabolite and exposome annotations in human plasma using an Orbitrap Astral mass spectrometer.
+source_paper: Kong F et al. (2025), Nature methods, DOI: 10.1038/s41592-025-02646-x, PMID: 40155721
+overall_reproducibility_score: 52/100
+
+workflow_steps: 4
+  Step 1: Electronic noise removal
+    tool: Spectral Denoising
+    algorithm: Ion count thresholding
+    parameters: ion_count_threshold=4, intensity_tolerance_percent=0.1
+    input: Orbitrap MS/MS spectra (raw .raw or .mzML)
+    output: Electronically denoised MS/MS spectra
+    confidence: high
+  Step 2: Chemical noise removal
+    tool: Spectral Denoising
+    algorithm: Entropy-based spectral filtering
+    input: Electronically denoised MS/MS spectra
+    output: Chemically denoised MS/MS spectra
+    confidence: medium
+  Step 3: Spectral similarity scoring
+    tool: Denoising Search
+    algorithm: Entropy similarity
+    parameters: reference_spectra_source=NIST23, similarity_metric=spectral_entropy
+    input: Chemically denoised MS/MS spectra
+    output: Annotated compound list with similarity scores
+    confidence: high
+  Step 4: False discovery rate (FDR) estimation
+    tool: Denoising Search
+    algorithm: Target-decoy based FDR
+    parameters: top_hits_considered=3, fdr_threshold=0.01
+    input: Annotated compound list with similarity scores
+    output: FDR-filtered metabolite and exposome annotations
+    confidence: medium
+
+data_availability:
+  raw_data: available (MassIVE: MSV000095287)
+  processed_data: available (MetaboLights: MTBLS1234)
+  metadata: in_paper_only
+  data_urls: https://massive.ucsd.edu/ProteoSAFe/dataset.jsp?task=6a7b8c9d-ef01-4a2b-8cde-f1a2b3c4d5e6, https://www.ebi.ac.uk/metabolights/MTBLS1234
+
+code_availability: mentioned_no_link
+
+figure_recipes: 6
+  Extended Data Fig. 1: [histogram]
+    caption: Distribution of ion counts per intensity value in NIST 23 Orbitrap MS/MS spectra, used to set electronic denoising threshold at 4 counts (99.5th percentile).
+    produced_by_step: [1]
+    visualization_tool: Unknown (likely Python/matplotlib or R/ggplot2)
+  Extended Data Fig. 2: [histogram]
+    caption: Distribution of entropy similarities between denoised and raw NIST 23 spectra, showing high preservation of spectral quality (mode/mean/median > 0.99).
+    produced_by_step: [1, 2]
+    visualization_tool: Unknown
+  Extended Data Fig. 3: [line_plot]
+    caption: Count of experimental MS/MS spectra generated across a 0.02–500 pmol dilution series for 240 standards in positive and negative ESI modes.
+    produced_by_step: [3]
+    visualization_tool: Unknown
+  Extended Data Fig. 4: [density_plot]
+    caption: Probability density estimates comparing entropy similarities of raw vs. denoised spectra using multiple denoising methods, benchmarking Spectral Denoising against DNL, MS Reduce, and 1% base peak thre
+    produced_by_step: [1, 2, 3]
+    visualization_tool: Unknown
+  Extended Data Fig. 5: [density_plot]
+    caption: Entropy similarity improvement after Spectral Denoising across nine noise conditions and five spectral entropy strata.
+    produced_by_step: [1, 2, 3]
+    visualization_tool: Unknown
+  Extended Data Fig. 6: [line_plot]
+    caption: FDR benchmarking comparing Denoising Search and Entropy Search using top-1 and top-3 hits on 1,247 manually annotated human plasma MS/MS spectra.
+    produced_by_step: [4]
+    visualization_tool: Unknown
+    statistical_test: FDR calculation (target-decoy)
+
+reproducibility_gaps:
+  - Spectral Denoising and Denoising Search software not publicly available (no repository link or download instructions)
+  - No version numbers or commit hashes provided for custom algorithms
+  - Instrument method parameters (e.g., HCD collision energy, AGC target, max IT) not specified for Orbitrap Astral or Exploris 240
+  - Chromatographic conditions (column, gradient, flow rate) omitted
+  - No details on database search settings (e.g., mass tolerance, allowed modifications, adducts, retention time window)
+  - Metadata provided only in paper (e.g., sample prep, clinical cohort demographics) — no structured metadata file shared
+reproducibility_strengths:
+  - Raw and processed data deposited in MassIVE (MSV000095287) and MetaboLights (MTBLS1234)
+  - All extended data figures include downloadable source files (CSV/XLSX)
+  - Clear quantitative performance benchmarks (entropy similarity, FDR, fold-improvement metrics)
+  - Use of community reference libraries (MassBank.us, GNPS, NIST23)

@@ -1,0 +1,90 @@
+========== reproducibility_recipe entry ==========
+paper_title: Multiscale biochemical mapping of the brain through deep-learning-enhanced high-throughput mass spectrometry.
+source_paper: Xie YR et al. (2024), Nature methods, DOI: 10.1038/s41592-024-02171-3, PMID: 38366241
+overall_reproducibility_score: 32/100
+
+workflow_steps: 9
+  Step 1: Tissue sectioning and slide preparation
+    tool: Leica Biosystems 3050 S cryostat-microtome
+    parameters: section_thickness_um=16, temperature_c=-20, slide_type=ITO-coated unpolished float glass, resistance_ohms=70–100
+    input: flash-frozen rat brain and pancreas tissue
+    output: thaw-mounted tissue sections on ITO slides
+    confidence: high
+  Step 2: MALDI matrix application
+    tool: HTX-M5 Sprayer
+    parameters: matrix_brain=2,5-dihydroxybenzoic acid (DHB), 30 mg/mL in 70% methanol, matrix_pancreas=DHB, 10 mg/mL in 50% ethanol, spray_spacing_mm=2.5, spray_temperature_c=75, flow_rate_ul_min=100, nozzle_distance_mm=50, spray_pressure_psi=10, nozzle_velocity_mm_min=1200, number_of_passes=4
+    input: thaw-mounted tissue sections
+    output: matrix-coated slides ready for MALDI-MSI
+    confidence: high
+  Step 3: Image-guided single-cell localization and coordinate generation
+    tool: Zeiss Axio Imager M2 + ZEN 2.0 Pro + microMS (vZEN 2.0 Pro; microMS (unspecified version); ftmsControl v.2.1.0)
+    algorithm: tile-based mosaic imaging with stitching
+    parameters: objective_magnification=10, tile_overlap_percent=10, filter_cube=DAPI (excitation 335–383 nm; emission 420–470 nm), cell_exclusion_distance_um=200, exclusion_criteria=['free nuclei from lysis']
+    input: brightfield and Hoechst-fluorescence microscopy images (TIFF)
+    output: single-cell coordinates, geometry files, Excel target list for automation
+    confidence: medium
+  Step 4: High-throughput MALDI-FTICR-MS acquisition
+    tool: Bruker SolariX 7 T FT-ICR MS
+    parameters: mass_range_brain_mz=[50, 1000], mass_range_pancreas_mz=[150, 6000], ionization_mode=positive, laser=Smartbeam-II UV, 'ultra' mode, laser_spot_diameter_um=100, laser_shots_brain=150, laser_shots_pancreas=500, laser_frequency_hz=1000, acquisition_mode=ICR accumulation
+    input: matrix-coated slides
+    output: raw transient time-domain signals (.d directory format)
+    confidence: high
+  Step 5: Signal modeling and theoretical resolution calculation
+    tool: custom Python implementation
+    algorithm: Marshall signal model; theoretical resolution formula
+    parameters: signal_model=s(t) = Σ A_i * exp(-t/τ_i) * cos(ω_i t) + ε(t), resolution_formula=m/Δm = (1.274e7 * z * B0 * T_aqn) / m, B0_tesla=7.0, T_aqn_seconds=None
+    input: transient time-domain signals
+    output: theoretical mass resolution estimates
+    confidence: low
+  Step 6: MSI data simulation
+    tool: Python + BRAIN algorithm
+    algorithm: isotopic distribution simulation + spatial assignment using Allen Brain Atlas
+    parameters: chemical_formulas_count=30, adducts=['H+', 'Na+', 'K+'], spatial_regions_count=8, pixels_total=26497, temporal_points_per_transient=262144, noise_type=independent Gaussian noise
+    input: chemical formulas, ABA mouse brain annotation
+    output: simulated noisy transients (26,497 × 262,144)
+    confidence: high
+  Step 7: Deep-learning-based transient reconstruction (MEISTER)
+    tool: custom deep autoencoder (DAE) + regressor network
+    algorithm: denoising autoencoder with symmetric FC architecture; MSE-regularized regression
+    parameters: latent_dimension=32, encoder_decoder_layers=[512, 256, 64], loss_function=MSE + L2 regularization (λ unspecified), training_pixels_simulated=2000, reconstruction_input_length=10000, full_resolution_length=262144, network_parameters=['WE, BE, WD, BD, WR, BR']
+    input: low-resolution transients (shorter acquisition) or simulated noisy transients
+    output: reconstructed high-resolution transients
+    confidence: medium
+  Step 8: Spectral conversion and peak detection
+    tool: Bruker Compass DataAnalysis (implied) + custom peak processing
+    algorithm: Fourier transform → magnitude spectrum → centroid detection
+    parameters: peak_detection_method=centroiding from reconstructed magnitude spectra, peak_list_format=peak centroids with intensity
+    input: reconstructed transients
+    output: peak intensity lists (m/z-intensity pairs per pixel/cell)
+    confidence: low
+  Step 9: Spatial and peak correlation evaluation
+    tool: custom Python (Pearson correlation, UMAP)
+    algorithm: Pearson correlation (peak lists & ion images), UMAP visualization
+    parameters: correlation_metric=Pearson r, visualization_method=UMAP on latent bottleneck features
+    input: peak intensity lists, ground-truth spectra, latent vectors
+    output: correlation scores, UMAP embeddings
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data (transients, .d directories) not deposited in any public repository
+  - No code repository or software release for MEISTER deep learning models (architecture weights, training scripts, inference pipeline)
+  - Critical instrument parameters missing: exact transient acquisition time (T_aqn), λ regularization value, optimizer settings, training epochs, batch size
+  - No description of peak alignment, normalization, or statistical analysis — downstream metabolite identification and biological interpretation steps are omitted
+  - Bruker ftmsControl v.2.1.0 and Compass DataAnalysis are commercial tools requiring licenses; no open alternatives specified
+  - microMS software is referenced but not described or accessible; no details on coordinate export format or target list schema
+  - No metadata schema provided (e.g., cell type labels, region annotations, batch IDs) beyond brief experimental notes
+reproducibility_strengths:
+  - Detailed MALDI spray parameters and hardware specifications provided
+  - Explicit mass ranges, laser settings, and acquisition modes reported
+  - Signal physics model and simulation pipeline well-described with equations and parameters
+  - Use of open-source BRAIN algorithm for isotopic simulation noted
+  - Clear exclusion criteria for single-cell selection (200 μm spacing, lysis filtering)

@@ -1,0 +1,58 @@
+========== reproducibility_recipe entry ==========
+paper_title: Comprehensive Metabolomic Analysis of Human Heart Tissue Enabled by Parallel Metabolite Extraction and High-Resolution Mass Spectrometry.
+source_paper: Wancewicz B et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.3c04353, PMID: 38568106
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Parallel metabolite extraction
+    tool: custom protocol
+    parameters: extraction_types=['monophasic', 'biphasic', 'triphasic'], number_of_extractions=6, monophasic_count=3, biphasic_count=2, triphasic_count=1
+    input: healthy human donor heart tissue (frozen)
+    output: six extracted metabolite fractions
+    confidence: medium
+  Step 2: Direct-infusion high-resolution mass spectrometry
+    tool: FTICR-MS
+    algorithm: ultrahigh-resolution Fourier-transform ion cyclotron resonance
+    parameters: mode=direct-infusion (DI), resolution=ultrahigh-resolution, mass_accuracy=accurate mass assignment
+    input: extracted metabolite fractions
+    output: 9644 metabolic features; 7156 molecular formulas; 1107 annotated metabolites
+    confidence: high
+  Step 3: LC-based high-resolution tandem mass spectrometry
+    tool: LC-Q-TOF-MS/MS
+    algorithm: tandem MS with fragmentation matching
+    parameters: chromatography=liquid chromatography, mass_analyzer=quadrupole time-of-flight, fragmentation=MS/MS, library_matching=publicly available spectral libraries
+    input: extracted metabolite fractions
+    output: 21,428 metabolic features; 285 identified metabolites
+    confidence: high
+  Step 4: Metabolite annotation and identification
+    tool: public spectral libraries
+    algorithm: fragmentation pattern matching
+    input: MS/MS spectra
+    output: 285 identified metabolites (LC-Q-TOF); 1107 annotated (DI-FTICR)
+    confidence: medium
+  Step 5: Integration and curation of metabolite identifications
+    tool: custom curation
+    input: annotated features from DI-FTICR and LC-Q-TOF-MS/MS
+    output: 1340 confidently identified heart metabolites spanning broad polarity range
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in any public repository
+  - No details on LC gradient methods, column types, or instrument source parameters
+  - No description of data processing software (e.g., XCMS, MS-DIAL, or vendor tools) or parameters used for feature detection, alignment, or filtering
+  - No information on statistical analysis, normalization, or multivariate methods — no differential or comparative analysis reported
+  - No access to custom extraction protocols (solvent compositions, volumes, temperatures, centrifugation conditions, etc.)
+  - No sharing of annotation workflows, confidence levels (e.g., MSI levels), or spectral library versions used
+reproducibility_strengths:
+  - Use of two complementary high-resolution MS platforms (DI-FTICR and LC-Q-TOF-MS/MS)
+  - Explicit reporting of metabolite counts per platform and annotation strategy
+  - Clear rationale for parallel extractions to cover broad polarity space

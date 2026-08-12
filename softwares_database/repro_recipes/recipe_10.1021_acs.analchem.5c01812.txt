@@ -1,0 +1,49 @@
+========== reproducibility_recipe entry ==========
+paper_title: A New Approach to Large Multiomics Data Integration.
+source_paper: Dexter A et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c01812, PMID: 40934376
+overall_reproducibility_score: 20/100
+
+workflow_steps: 4
+  Step 1: Nonlinear dimensionality reduction
+    tool: t-SNE
+    algorithm: t-distributed stochastic neighbor embedding
+    input: high-dimensional omics data (e.g., MSI, Hi-C, metabolomics, transcriptomics)
+    output: low-dimensional embeddings (2D/3D)
+    confidence: low
+  Step 2: Nonlinear dimensionality reduction
+    tool: UMAP
+    algorithm: uniform manifold approximation and projection
+    input: high-dimensional omics data (e.g., MSI, Hi-C, metabolomics, transcriptomics)
+    output: low-dimensional embeddings (2D/3D)
+    confidence: low
+  Step 3: Subsampling-based feature extraction
+    tool: deep learning model
+    algorithm: custom deep neural network applied to subsampled t-SNE/UMAP embeddings
+    parameters: subsample_strategy=not specified, network_architecture=not specified, training_objective=embedding fusion
+    input: t-SNE and UMAP embeddings from multiple omics layers
+    output: integrated low-dimensional representations (cross-omics embeddings)
+    confidence: low
+  Step 4: Cross-omics projection
+    tool: deep learning model
+    algorithm: learned embedding mapping
+    parameters: source_omics=metabolomics, target_omics=transcriptomics, projection_direction=metabolomics → transcriptomics space
+    input: metabolomics data + trained multiomics embedding model
+    output: metabolomics projected into transcriptomics latent space
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of preprocessing steps for raw omics data (e.g., peak picking, normalization, batch correction)
+  - No parameters or hyperparameters reported for t-SNE or UMAP (e.g., perplexity, learning_rate, n_neighbors, min_dist)
+  - No architecture, training protocol, or optimization details for the deep learning models
+  - No data or code made available
+  - No validation strategy or performance metrics reported
+  - No information on software environment (e.g., Python version, library versions)

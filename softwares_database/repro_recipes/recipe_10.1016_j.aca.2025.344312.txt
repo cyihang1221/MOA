@@ -1,0 +1,48 @@
+========== reproducibility_recipe entry ==========
+paper_title: Accelerating biotherapeutics discovery: Blueprint for a universal LC-MALDI-MS offline approach.
+source_paper: Bayne EF et al. (2025), Analytica chimica acta, DOI: 10.1016/j.aca.2025.344312, PMID: 40669996
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: LC fraction collection
+    tool: LC-fraction collector
+    input: chromatographic eluent (e.g., SEC, HIC, RPLC)
+    output: collected fractions in MALDI target plate
+    confidence: medium
+  Step 2: MALDI sample preparation
+    tool: automated liquid handling
+    parameters: sample_volume=minimal, matrix_addition=standard
+    input: LC fractions
+    output: dried MALDI spots on target plate
+    confidence: low
+  Step 3: MALDI-TOF-MS acquisition
+    tool: MALDI-TOF-MS
+    parameters: ionization_mode=linear or reflector, laser_frequency=typical for TOF, mass_range=appropriate for proteins/peptides
+    input: MALDI target plate
+    output: raw mass spectra (.raw or .txt)
+    confidence: low
+  Step 4: Peak identification
+    tool: proprietary or vendor software (e.g., Bruker flexAnalysis, Waters MassLynx)
+    input: raw MALDI-TOF spectra
+    output: identified peaks (m/z, intensity, assignment)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw MS data deposition reported
+  - No details on MALDI matrix, spotting protocol, or instrument parameters
+  - No description of peak identification workflow (e.g., database search settings, calibration method, mass tolerance)
+  - LC gradient profiles and column specifications not provided
+  - Automated liquid handling script/software not disclosed
+  - Vendor-specific software usage implies commercial dependency with no open alternatives specified
+reproducibility_strengths:
+  - Workflow described as automated and universally applicable across multiple chromatographic modes
+  - Explicit mention of compatibility with SEC, HIC, RPLC, and analytes including mAbs, bispecifics, fusion proteins, and peptides

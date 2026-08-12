@@ -1,0 +1,70 @@
+========== reproducibility_recipe entry ==========
+paper_title: MassCube improves accuracy for metabolomics data processing from raw files to phenotype classifiers.
+source_paper: Yu H et al. (2025), Nature communications, DOI: 10.1038/s41467-025-60640-5, PMID: 40593600
+overall_reproducibility_score: 72/100
+
+workflow_steps: 6
+  Step 1: Raw data parsing and metadata management
+    tool: MassCube
+    algorithm: MSData object construction
+    parameters: mzml_mzxml_supported=True, timestamp_recording=True
+    input: raw .mzML or .mzXML files
+    output: MSData object with Scan objects and metadata dictionary
+    confidence: high
+  Step 2: Feature detection via mass trace clustering and Gaussian-filter assisted edge detection
+    tool: MassCube
+    algorithm: ROI-based signal clustering + Gaussian smoothing + prominence-based peak segmentation
+    parameters: mz_tolerance_da=0.01, max_gap_scans=30, gaussian_sigma=None, prominence_ratio=None, baseline_threshold_percent=10
+    input: MSData object
+    output: feature table (peak list) with RT, m/z, intensity
+    confidence: medium
+  Step 3: Feature grouping (isotopes, in-source fragments, adducts)
+    tool: MassCube
+    algorithm: sequential correlation- and m/z–based annotation
+    parameters: pearson_correlation_threshold=0.7, min_common_scans_for_correlation=5, rt_tolerance_min=0.05, charge_states_considered=['1+', '2+'], positive_mode_adducts=['[M+H]+', '[M+H-H2O]+', '[M+Na]+', '[M+K]+', '[M+NH4]+', '[2M+H]+', '[3M+H]+', '[M+2H]2+'], negative_mode_adducts=['[M-H]-', '[M-H-H2O]-', '[M+Cl]-', '[M+CH3OO]-', '[M+HCOO]-', '[2M-H]-', '[3M-H]-', '[M-2H]2-']
+    input: feature table
+    output: grouped feature table with annotations (isotope/adduct/ISF labels)
+    confidence: high
+  Step 4: Feature evaluation and quality control
+    tool: MassCube
+    algorithm: chromatographic peak shape metrics calculation
+    parameters: asymmetry_factor_baseline_percent=10, gaussian_similarity_metric=cosine, noise_score_definition=turning_point_ratio
+    input: feature table
+    output: QC-annotated feature table with asymmetry factor, Gaussian similarity, noise score
+    confidence: high
+  Step 5: Standard-free retention time correction
+    tool: MassCube
+    algorithm: QC-driven anchor selection + linear interpolation
+    parameters: mz_tolerance_for_anchors_da=0.01, noise_score_threshold_for_anchors=0.3, top_n_anchors=50, outlier_removal_enabled=True
+    input: QC sample feature tables
+    output: RT-corrected feature table
+    confidence: high
+  Step 6: Feature alignment and gap filling
+    tool: MassCube
+    algorithm: not fully described (truncated in text)
+    input: RT-corrected feature tables across samples
+    output: aligned feature table with imputed missing values
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: https://github.com/huaxuyu/masscube
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw MS data not deposited in public repository (e.g., MetaboLights, PRIDE, GNPS)
+  - Feature alignment and gap-filling algorithm not described (text truncated)
+  - Exact values for Gaussian sigma and prominence ratio not specified (only conceptual description provided)
+  - No benchmark dataset accession IDs or download instructions provided
+  - No details on statistical analysis methods used for phenotype classification (e.g., classifier type, cross-validation, feature selection)
+reproducibility_strengths:
+  - MassCube is open-source and publicly available on GitHub
+  - Comprehensive documentation hosted at https://huaxuyu.github.io/masscubedocs
+  - All core algorithms (ROI detection, Gaussian segmentation, adduct/isotope/ISF grouping, RT correction) are explicitly parameterized and mathematically defined
+  - Metadata recording with timestamps and dependency versions enables traceable/repeatable analysis
+  - Support for standard formats (mzML/mzXML) ensures interoperability

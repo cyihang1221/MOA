@@ -1,0 +1,58 @@
+========== reproducibility_recipe entry ==========
+paper_title: Combining Experimental with Computational Infrared and Mass Spectra for High-Throughput Nontargeted Chemical Structure Identification.
+source_paper: Karunaratne E et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c00937, PMID: 37540774
+overall_reproducibility_score: 42/100
+
+workflow_steps: 5
+  Step 1: Acquisition of experimental reference spectra
+    tool: NIST
+    input: chemical standards
+    output: experimental MS/MS and gas-phase IR spectra
+    confidence: high
+  Step 2: Candidate structure retrieval
+    tool: PubChem
+    parameters: mean_candidates_per_compound=4444
+    input: molecular formula or exact mass (implied)
+    output: list of candidate chemical structures
+    confidence: medium
+  Step 3: MS/MS-based candidate scoring and initial ranking
+    tool: CSI:FingerID
+    algorithm: fingerprints + machine learning (deep fingerprinting)
+    parameters: top_k_candidates_retained=1000
+    input: experimental MS/MS spectra + candidate structures
+    output: ranked list of top 1000 candidates (CSI:FingerID scores)
+    confidence: high
+  Step 4: Computational IR spectral prediction and scoring
+    tool: DFT-IR
+    algorithm: density functional theory
+    parameters: functional=B3LYP, basis_set=6-31G*, solvent=gas_phase, scaling_factor=0.967
+    input: candidate structures (top 1000 from CSI:FingerID)
+    output: predicted IR spectra + DFT-IR similarity scores
+    confidence: low
+  Step 5: Composite ranking
+    tool: custom workflow
+    algorithm: average rank fusion
+    parameters: fusion_method=arithmetic mean of ranks
+    input: CSI:FingerID ranks + DFT-IR ranks
+    output: final ranked list of candidate structures
+    confidence: medium
+
+data_availability:
+  raw_data: in_paper_only (NIST: not specified)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Experimental IR and MS/MS data not deposited in public repository with accession IDs
+  - No link to code or scripts implementing composite ranking or DFT-IR pipeline
+  - DFT computational parameters (e.g., functional, basis set, conformational sampling protocol) only partially specified
+  - No details on how IR spectra were preprocessed or similarity scored (e.g., correlation, spectral alignment)
+  - PubChem query strategy (e.g., exact mass tolerance, charge state, ionization mode) not described
+reproducibility_strengths:
+  - Uses publicly available tools (CSI:FingerID, PubChem)
+  - Clear performance metrics reported (59% top-1, 87% top-20)
+  - Well-defined evaluation framework using NIST reference compounds

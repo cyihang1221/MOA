@@ -1,0 +1,90 @@
+========== reproducibility_recipe entry ==========
+paper_title: TidyMass an object-oriented reproducible analysis framework for LC-MS data.
+source_paper: Shen X et al. (2022), Nature communications, DOI: 10.1038/s41467-022-32155-w, PMID: 35902589
+overall_reproducibility_score: 82/100
+
+workflow_steps: 10
+  Step 1: Raw data conversion to standardized format
+    tool: massConverter
+    algorithm: msconvert-based conversion
+    input: vendor raw files (.raw, .wiff, .d, etc.)
+    output: standardized format (e.g., mzML, mzXML)
+    confidence: medium
+  Step 2: Data structure initialization
+    tool: massDataset
+    algorithm: S4 object instantiation
+    input: processed feature table + metadata + MS2 spectra (mgf)
+    output: mass_dataset object
+    confidence: high
+  Step 3: Feature detection and peak picking
+    tool: massProcesser
+    algorithm: not explicitly specified (relies on underlying tools like XCMS3 or CAMERA)
+    input: raw chromatographic data (BPC/TIC) via massProcesser
+    output: peak table (expression_data in mass_dataset)
+    confidence: low
+  Step 4: Quality control
+    tool: massQC
+    algorithm: QC sample-based metrics (e.g., CV, correlation, PCA)
+    input: mass_dataset object
+    output: QC report + flagged samples/features
+    confidence: medium
+  Step 5: Data cleaning and filtering
+    tool: massCleaner
+    algorithm: missing value imputation, feature/sample filtering
+    input: mass_dataset object
+    output: cleaned mass_dataset object
+    confidence: medium
+  Step 6: Normalization and scaling
+    tool: massNormalization
+    algorithm: not explicitly specified (supports multiple methods including PQN, TIC, CV-based)
+    input: mass_dataset object
+    output: normalized mass_dataset object
+    confidence: low
+  Step 7: Statistical analysis and biomarker discovery
+    tool: massStat
+    algorithm: t-test, ANOVA, multivariate modeling (PCA, PLS-DA, OPLS-DA)
+    input: mass_dataset object
+    output: differential features list, model objects, VIP scores
+    confidence: medium
+  Step 8: Metabolite annotation
+    tool: massAnnotation
+    algorithm: m/z & RT matching to spectral libraries (e.g., GNPS, MassBank), MS2 spectrum matching
+    parameters: tolerance_ppm=5, rt_tolerance_sec=30
+    input: mass_dataset with ms2_data
+    output: annotation_table in mass_dataset
+    confidence: high
+  Step 9: Pathway and functional enrichment analysis
+    tool: massFunctional
+    algorithm: over-representation analysis (ORA), pathway topology analysis
+    input: annotated mass_dataset
+    output: enriched pathways, functional modules
+    confidence: medium
+  Step 10: Visualization and reporting
+    tool: ggplot_mass_dataset
+    algorithm: grammar-of-graphics based plotting
+    input: mass_dataset object
+    output: publication-quality figures (ggplot2 objects)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: not_mentioned (not mentioned)
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: https://github.com/tidymass
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No specific raw dataset or case study used to demonstrate the full pipeline is described or linked
+  - Underlying algorithms for peak picking (e.g., centWave vs. matchedFilter) and normalization methods are not specified per step
+  - No benchmarking against gold-standard workflows (e.g., XCMS Online, MZmine) with identical parameters provided
+  - MS2 spectral matching parameters (e.g., cosine score threshold, minimum fragment matches) only partially specified
+reproducibility_strengths:
+  - Fully open-source R ecosystem with consistent object-oriented design (mass_dataset)
+  - All packages deployed across GitHub, GitLab, and Gitee for redundancy and accessibility
+  - Comprehensive documentation (pkgdown websites), tutorials, and function-level help
+  - Automatic parameter logging via tidymass_parameter class enables full traceability
+  - Interoperability with tidyverse ensures reproducibility through pipelined, readable code

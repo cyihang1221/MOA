@@ -1,0 +1,89 @@
+========== reproducibility_recipe entry ==========
+paper_title: Dynamic single-cell metabolomics reveals cell-cell interaction between tumor cells and macrophages.
+source_paper: Zhang Y et al. (2025), Nature communications, DOI: 10.1038/s41467-025-59878-w, PMID: 40379657
+overall_reproducibility_score: 42/100
+
+workflow_steps: 9
+  Step 1: Raw data conversion to mzML
+    tool: MSConvert
+    algorithm: ProteoWizard default conversion
+    input: raw .raw files from Q Exactive Plus
+    output: .mzML files
+    confidence: high
+  Step 2: Single-cell pulse peak extraction
+    tool: Custom Python script
+    algorithm: Cell marker–based event detection
+    parameters: cell_marker_negative_mode_mz=306.076, intensity_cutoff_negative_mode=5000000, cell_pulse_spectra_count_negative_mode=4, cell_marker_positive_mode_mz=760.5844, cell_pulse_spectra_count_positive_mode=4, pulse_overlap_filtering=True
+    input: mzML files
+    output: list of single-cell pulse events (each = 4 spectra)
+    confidence: high
+  Step 3: Single-cell characteristic peak determination
+    tool: Custom Python script
+    algorithm: Signal-to-background ratio (SBR) filtering
+    parameters: minimum_intensity_threshold=10000, minimum_occurrence_frequency_all_cells=0.1, sbr_threshold=3, minimum_occurrence_frequency_characteristic_peaks=0.2, isotopologue_occurrence_frequency_threshold=0.15
+    input: single-cell pulse events
+    output: characteristic peak table per cell (m/z, intensity, SBR)
+    confidence: high
+  Step 4: Metabolite annotation
+    tool: HMDB + local database + MS/MS reference library
+    algorithm: accurate mass matching (±5 ppm tolerance implied)
+    parameters: mass_tolerance_ppm=5, mz_upper_limit_for_isotope_tracing=663
+    input: characteristic peaks (m/z, intensity)
+    output: annotated metabolite table with confidence levels
+    confidence: medium
+  Step 5: Isotopologue library construction
+    tool: Custom Python script
+    algorithm: theoretical isotopologue calculation based on carbon count
+    parameters: carbon_number_dependent=True
+    input: annotated metabolites
+    output: theoretical isotopologue m/z list per metabolite
+    confidence: high
+  Step 6: Labeled peaks extraction and labeled metabolite identification
+    tool: Custom Python script
+    algorithm: labeled vs unlabeled sample comparison
+    parameters: labeled_only_peak_detection=True
+    input: characteristic peaks + isotopologue library
+    output: labeled metabolites with isotopologue forms
+    confidence: high
+  Step 7: Natural isotope abundance correction
+    tool: AccuCor (v0.2.4)
+    algorithm: natural isotope correction for 13C tracing
+    input: isotopologue intensities per single cell
+    output: corrected isotopologue intensities per single cell
+    confidence: high
+  Step 8: Labeling efficiency (LE) calculation and kinetic fitting
+    tool: Custom Python/R script
+    algorithm: exponential decay fitting: LE = a × e^(−kt) − a (a < 0)
+    parameters: fitting_function=LE = a * exp(-k * t) - a, constraint_a_negative=True
+    input: corrected isotopologue intensities across time points
+    output: per-metabolite k (rate constant), LE distributions, time-course plots
+    confidence: medium
+  Step 9: Statistical analysis of labeling dynamics
+    tool: Custom Python/R script
+    algorithm: box plots, mean ± SD, comparative analysis across cell types
+    input: LE values per labeled form per cell
+    output: differential labeling patterns, statistical summaries
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: mentioned_no_link
+  code_url: https://github.com/XiaoyangSu/AccuCor
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository
+  - All custom Python scripts for pulse extraction, peak filtering, isotopologue assignment, and kinetic fitting are not shared or archived
+  - No details on HMDB/local database version or MS/MS reference library curation protocol
+  - No specification of chromatographic method for LC-MS validation (gradient, column, flow rate)
+  - No description of neural network model architecture, training data, or code for macrophage polarization classification
+  - Missing exact parameters for Orbitrap ddMS2 acquisition (e.g., precursor selection criteria, dynamic exclusion settings beyond duration)
+reproducibility_strengths:
+  - AccuCor v0.2.4 explicitly cited and publicly available on GitHub
+  - Detailed MS instrument parameters (capillary temp, resolution, AGC, collision energy) provided
+  - Clear cell labeling protocols ([U-13C]-glucose/glutamine/lactate concentrations and timing)
+  - Explicit cell marker m/z values and pulse extraction logic described

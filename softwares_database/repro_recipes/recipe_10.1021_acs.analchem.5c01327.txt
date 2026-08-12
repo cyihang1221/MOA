@@ -1,0 +1,71 @@
+========== reproducibility_recipe entry ==========
+paper_title: MAMSI: Integration of Multiassay Liquid Chromatography-Mass Spectrometry Metabolomics Data Using Multiview Machine Learning.
+source_paper: Kopecky L et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c01327, PMID: 40635393
+overall_reproducibility_score: 35/100
+
+workflow_steps: 7
+  Step 1: Multiassay LC-MS data acquisition
+    tool: Liquid chromatography-mass spectrometry
+    input: biological samples (e.g., plasma, serum)
+    output: raw .raw or .d files (vendor-specific)
+    confidence: low
+  Step 2: Data preprocessing and feature table generation
+    tool: XCMS or equivalent peak-picking software
+    algorithm: centWave or matchedFilter
+    parameters: polarity=positive/negative, ppm=5
+    input: raw vendor files
+    output: feature table (m/z, RT, intensity)
+    confidence: medium
+  Step 3: Multiassay data integration
+    tool: MB-PLS (multiblock partial least squares)
+    algorithm: multiblock PLS regression/classification
+    parameters: n_components=2, scaling=block-wise autoscaling
+    input: multiple preprocessed feature tables (one per assay)
+    output: integrated model, predicted outcomes, block weights
+    confidence: high
+  Step 4: Variable importance estimation
+    tool: MB-VIP (multiblock variable importance in projection)
+    algorithm: multiblock VIP score calculation
+    parameters: threshold=1.0
+    input: MB-PLS model output
+    output: ranked list of cross-assay features with VIP scores
+    confidence: high
+  Step 5: Feature clustering and structural interpretation
+    tool: custom R/Python clustering
+    algorithm: hierarchical clustering or k-means
+    parameters: distance_metric=Euclidean, linkage=ward.D2
+    input: VIP-selected features (m/z, RT)
+    output: clusters of co-varying features grouped by m/z/RT patterns
+    confidence: low
+  Step 6: Putative metabolite annotation
+    tool: MetaboAnalyst, HMDB, mzCloud, or GNPS
+    algorithm: MS1-based annotation + retention time alignment
+    parameters: mass_tolerance_ppm=5, rt_tolerance_sec=10
+    input: VIP-selected features with m/z and RT
+    output: annotated metabolite list with confidence levels (Level 2–3)
+    confidence: medium
+  Step 7: Biological interpretation and literature validation
+    tool: manual curation + literature search
+    input: annotated biomarker candidates
+    output: biologically validated cross-assay biomarkers with directionality
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS data not deposited in public repository
+  - No link to code or implementation of MB-PLS/MV-VIP workflow
+  - No specification of chromatographic conditions (gradient, column, flow rate)
+  - No details on sample preparation or QC protocols
+  - Custom clustering and annotation pipeline not described or shared
+reproducibility_strengths:
+  - Clear description of MB-PLS and MB-VIP conceptual framework
+  - Use of standard open-source tools implied (XCMS, MetaboAnalyst)
+  - Validation against literature-reported associations supports biological plausibility

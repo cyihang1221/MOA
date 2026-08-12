@@ -1,0 +1,62 @@
+========== reproducibility_recipe entry ==========
+paper_title: Image classification combined with faster R-CNN for the peak detection of complex components and their metabolites in untargeted LC-HRMS data.
+source_paper: Zeng J et al. (2023), Analytica chimica acta, DOI: 10.1016/j.aca.2022.340189, PMID: 36464431
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: LC-HRMS data preprocessing to chromatogram images
+    tool: Custom Python pipeline
+    algorithm: Image conversion from EIC matrices
+    parameters: image_resolution=256x256, EIC_window_mz=0.01, EIC_window_rt=1.0
+    input: raw .mzML or .cdf files
+    output: chromatogram image dataset (RGB or grayscale)
+    confidence: low
+  Step 2: Target peak classification via CNN
+    tool: Convolutional Neural Network (CNN)
+    algorithm: Image classification (binary: peak vs non-peak)
+    parameters: architecture=ResNet-18, epochs=50, batch_size=32, learning_rate=0.001, optimizer=Adam, loss_function=binary_crossentropy
+    input: chromatogram image dataset
+    output: peak probability scores per image patch
+    confidence: medium
+  Step 3: Peak localization and bounding box regression
+    tool: Faster R-CNN
+    algorithm: Region-based convolutional neural network with RPN
+    parameters: backbone=ResNet-18, anchor_scales=[8, 16, 32], anchor_ratios=[0.5, 1.0, 2.0], nms_threshold=0.3, score_threshold=0.5
+    input: chromatogram image dataset
+    output: detected peak coordinates (rt, mz, intensity), bounding boxes, class labels
+    confidence: medium
+  Step 4: Peak merging and post-processing
+    tool: Custom Python script
+    algorithm: Spatial-temporal clustering of bounding boxes into single peaks
+    parameters: rt_tolerance_sec=2.0, mz_tolerance_ppm=5.0, intensity_threshold_relative=0.01
+    input: Faster R-CNN bounding box outputs
+    output: feature table (m/z, RT, intensity, peak width)
+    confidence: low
+  Step 5: Evaluation against ground truth
+    tool: Custom evaluation metrics
+    algorithm: Precision, recall, F1-score, accuracy
+    parameters: ground_truth_definition=manually annotated peaks in evaluation dataset, matching_criteria=mz within 5 ppm & RT within 2 sec
+    input: detected features + ground truth annotations
+    output: performance metrics (precision, recall, F1, accuracy)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw LC-HRMS data deposited or accession provided
+  - No training/validation/test datasets shared
+  - No source code repository or link provided
+  - No model weights or checkpoint files shared
+  - Image conversion parameters (e.g., EIC binning strategy, colormap, normalization) insufficiently specified
+  - Custom post-processing logic not described in detail
+reproducibility_strengths:
+  - Explicit performance metrics reported (recall >90%, F1 >90%)
+  - Comparative evaluation against MZmine2 (ADAP) and Peakonly provided
+  - Application demonstrated on real herbal metabolomics data (Glycyrrhiza uralensis)

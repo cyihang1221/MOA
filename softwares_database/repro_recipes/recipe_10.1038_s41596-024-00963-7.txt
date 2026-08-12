@@ -1,0 +1,97 @@
+========== reproducibility_recipe entry ==========
+paper_title: GlYcoLISA: antigen-specific and subclass-specific IgG Fc glycosylation analysis based on an immunosorbent assay with an LC-MS readout.
+source_paper: Falck D et al. (2024), Nature protocols, DOI: 10.1038/s41596-024-00963-7, PMID: 38383719
+overall_reproducibility_score: 35/100
+
+workflow_steps: 6
+  Step 1: Antigen-specific IgG capture
+    tool: Immunosorbent assay
+    parameters: plate_format=96-well, antigen_immobilization=standard ELISA-like coating
+    input: biological sample (e.g., serum, plasma)
+    output: antigen-specific IgG enriched eluate
+    confidence: medium
+  Step 2: IgG subclass separation and enzymatic deglycosylation control
+    tool: Proteolytic cleavage (trypsin + IdeS)
+    parameters: enzyme_combination=['trypsin', 'IdeS'], cleavage_target=Fc region, glycopeptide_generation=yes
+    input: antigen-specific IgG enriched eluate
+    output: Fc glycopeptides
+    confidence: high
+  Step 3: LC-MS analysis
+    tool: Liquid chromatography-mass spectrometry
+    parameters: chromatography=reversed-phase, mass_analyzer=high-resolution MS (e.g., Q-TOF or Orbitrap), acquisition_mode=data-dependent acquisition (DDA) or data-independent acquisition (DIA)
+    input: Fc glycopeptides
+    output: raw .raw or .d files
+    confidence: low
+  Step 4: Glycopeptide identification and quantification
+    tool: Custom or commercial glycoproteomics software
+    parameters: glycan_database=user-defined or GlyConnect/GlyGen, fragmentation_rule=Y-ion dominated for Fc glycopeptides, quantification_method=peak area integration
+    input: raw LC-MS files
+    output: glycopeptide abundance table (glycan + peptide + subclass + site)
+    confidence: low
+  Step 5: Data processing and normalization
+    tool: Partially automated data processing
+    parameters: normalization_strategy=internal standard or total ion current, filtering=minimum intensity threshold, retention time alignment
+    input: glycopeptide abundance table
+    output: normalized glycosylation trait matrix (e.g., %G0, %G1, %Sia, %Gal)
+    confidence: medium
+  Step 6: Statistical analysis and visualization
+    tool: Not specified
+    input: normalized glycosylation trait matrix
+    output: statistical summaries, plots (e.g., Fig. 5–7)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 8
+  Fig. 1: [workflow_diagram]
+    caption: Schematic of IgG structure highlighting Fc N-glycosylation site and common glycoforms.
+    produced_by_step: [1, 2]
+    visualization_tool: not specified
+  Fig. 2: [workflow_diagram]
+    caption: Overview of the GlYcoLISA protocol from antigen capture to LC-MS readout.
+    produced_by_step: [1, 2, 3, 4, 5]
+    visualization_tool: not specified
+  Fig. 3: [chromatogram]
+    caption: Representative mass spectra showing glycopeptide signals with characteristic fragment ions.
+    produced_by_step: [3, 4]
+    visualization_tool: not specified
+  Fig. 4: [workflow_diagram]
+    caption: Illustration of data structure and processing pipeline from raw files to glycosylation traits.
+    produced_by_step: [4, 5]
+    visualization_tool: not specified
+  Fig. 5: [bar_chart]
+    caption: Intermediate precision assessment showing CV% across replicates and days.
+    produced_by_step: [5, 6]
+    visualization_tool: not specified
+    statistical_test: CV% calculation
+  Fig. 6: [line_plot]
+    caption: Longitudinal changes in anti-S IgG Fc glycosylation traits during SARS-CoV-2 infection.
+    produced_by_step: [5, 6]
+    visualization_tool: not specified
+    statistical_test: not specified
+  Fig. 7: [boxplot]
+    caption: Association between high anti-HLA IgG galactosylation/sialylation and platelet destruction in chemotherapy-induced thrombocytopenia.
+    produced_by_step: [5, 6]
+    visualization_tool: not specified
+    statistical_test: not specified
+  Extended Data Table 1: [table]
+    caption: Compositions, nomenclature and structural diagrams of Fc glycans analyzed in GlYcoLISA.
+    produced_by_step: [2, 4]
+    visualization_tool: not specified
+
+reproducibility_gaps:
+  - Raw LC-MS data not deposited in public repository
+  - No specification of LC gradient, column, or MS instrument parameters
+  - No details on glycopeptide search engine (e.g., Byonic, pGlyco, MSFragger-Glyco), database, or scoring thresholds
+  - No code or scripts for 'partially automated data processing' shared or referenced
+  - Commercial LC-MS software (e.g., Analyst, Skyline, BioConfirm) not named — licensing barrier implied
+  - No statistical methods explicitly described for Fig. 5–7 (e.g., ANOVA, mixed-effects models, correction for multiple testing)
+reproducibility_strengths:
+  - Protocol published in Nature Protocols with step-by-step experimental instructions
+  - Reference to prior method development papers (Larsen et al. Science 2021; Nat Commun 2021)
+  - 96-well format and timeline provided (~5 d for 160 samples)

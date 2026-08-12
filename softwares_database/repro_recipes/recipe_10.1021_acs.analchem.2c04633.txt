@@ -1,0 +1,51 @@
+========== reproducibility_recipe entry ==========
+paper_title: Improved Structural Characterization of Glycerophospholipids and Sphingomyelins with Real-Time Library Searching.
+source_paper: Brademan DR et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.2c04633, PMID: 37172325
+overall_reproducibility_score: 25/100
+
+workflow_steps: 4
+  Step 1: Chromatographic separation and MS1 acquisition
+    tool: UHPLC-Orbitrap Tribrid platform
+    parameters: ionization_mode=positive, chromatography_type=reversed-phase, gradient_profile=not fully specified, column=not specified, flow_rate=not specified, temperature=not specified
+    input: lipid extract
+    output: raw .raw files (Thermo)
+    confidence: low
+  Step 2: Real-time library searching (RTLS) for lipid class identification
+    tool: Thermo BioPharma Module / Real-Time Search functionality on Orbitrap Tribrid
+    algorithm: real-time spectral matching against in-house lipid library
+    parameters: library_composition=lipid class-specific (PC, PE, PI, PG, PS, SM), mass_tolerance_ppm=5, retention_time_window_seconds=None, score_threshold=not specified, dynamic_exclusion=enabled, trigger_condition=class-based (not ion/neutral loss based)
+    input: real-time MS1 spectra
+    output: real-time lipid class assignments
+    confidence: medium
+  Step 3: Class-targeted MS^n acquisition
+    tool: Orbitrap Tribrid mass spectrometer
+    algorithm: data-dependent acquisition (DDA) with class-triggered MS2/MS3
+    parameters: trigger_rule=lipid class from RTLS, MS_level=MS2 or MS3 depending on class, collision_energy=not specified, isolation_window_da=None, activation_type=HCD or CID (not specified)
+    input: real-time class assignments + MS1
+    output: class-targeted MS^n spectra (.raw)
+    confidence: low
+  Step 4: Post-acquisition spectral processing and annotation
+    tool: Compound Discoverer / Thermo Proteome Discoverer (implied)
+    algorithm: library matching (MS1 + MS^n), neutral loss filtering, fragment ion validation
+    parameters: MS1_mass_tolerance_ppm=5, MSn_mass_tolerance_ppm=10, minimum_fragment_count=None, scoring_method=not specified
+    input: .raw files (MS1 + MS^n)
+    output: structurally annotated lipid identifications (e.g., sn-position, double bond location if inferred)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: not_mentioned (not mentioned)
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository
+  - No details on chromatographic conditions (gradient, column, temperature, flow rate)
+  - RTLS implementation details proprietary and not algorithmically disclosed
+  - No specification of lipid library content, version, or format
+  - No parameters for MS^n acquisition (collision energy, isolation width, activation type)
+  - No description of post-acquisition software workflow or custom scripts
+  - Commercial Thermo software stack (Real-Time Search, Compound Discoverer) requires license and is not open-source

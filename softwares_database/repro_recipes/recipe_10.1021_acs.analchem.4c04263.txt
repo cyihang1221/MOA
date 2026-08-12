@@ -1,0 +1,96 @@
+========== reproducibility_recipe entry ==========
+paper_title: Single-Cell Mass Spectrometry Studies of Secondary Drug Resistance of Tumor Cells.
+source_paper: Zhu G et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.4c04263, PMID: 39706799
+overall_reproducibility_score: 30/100
+
+workflow_steps: 7
+  Step 1: Single-cell metabolite ionization and detection
+    tool: Intact living-cell electrolaunching ionization mass spectrometry
+    input: intact living single cells (PC9 and PC9GR)
+    output: raw mass spectra per cell
+    confidence: low
+  Step 2: Metabolic feature extraction and peak alignment
+    tool: not specified
+    input: raw mass spectra per cell
+    output: feature table (m/z–intensity per cell)
+    confidence: low
+  Step 3: Dimensionality reduction and visualization
+    tool: t-SNE
+    algorithm: t-distributed stochastic neighbor embedding
+    input: feature table
+    output: 2D/3D t-SNE embedding coordinates
+    confidence: medium
+  Step 4: Differential metabolic analysis
+    tool: volcano plot analysis
+    algorithm: t-test or similar univariate statistical test
+    parameters: p_value_threshold=0.05, fold_change_threshold=None
+    input: feature table with group labels (PC9 vs. PC9GR, or resistance levels)
+    output: differentially abundant metabolite features
+    confidence: low
+  Step 5: Variance-based marker selection
+    tool: variance analysis
+    algorithm: feature variance ranking across samples/cells
+    parameters: top_n_markers=19
+    input: feature table
+    output: 19 high-variance metabolic markers
+    confidence: medium
+  Step 6: Metabolic pathway analysis
+    tool: metabolic pathway analysis
+    algorithm: overrepresentation or impact analysis
+    parameters: pathway_database=KEGG or HMDB, significance_method=Fisher’s exact test or similar
+    input: list of significant metabolites (e.g., 19 markers)
+    output: enriched pathways (e.g., glycerophospholipid metabolism)
+    confidence: low
+  Step 7: Heterogeneity quantification
+    tool: not specified
+    algorithm: cell-level metabolic variability assessment
+    input: feature table per cell
+    output: heterogeneity metrics (e.g., CV per feature, Shannon index, or clustering entropy)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 6
+  Figure 1: [workflow_diagram]
+    caption: Schematic illustration of the sSRTC-scM platform for studying secondary drug resistance via single-cell metabolomics.
+    produced_by_step: [1]
+    visualization_tool: not specified
+  Figure 2: [t_sne_scores]
+    caption: t-SNE plots showing metabolic separation between parental PC9 and gefitinib-resistant PC9GR cells at different resistance levels.
+    produced_by_step: [3]
+    visualization_tool: not specified
+  Figure 3: [volcano_plot]
+    caption: Volcano plot highlighting significantly altered metabolites between PC9 and PC9GR cells.
+    produced_by_step: [4]
+    visualization_tool: not specified
+    statistical_test: t-test p < 0.05
+  Figure 4: [heatmap]
+    caption: Heatmap of top differentially abundant metabolites across single cells, clustered by resistance level.
+    produced_by_step: [4, 5]
+    visualization_tool: not specified
+  Figure 5: [pathway_map]
+    caption: Glycerophospholipid metabolic pathway map highlighting significantly altered metabolites in PC9GR cells.
+    produced_by_step: [6]
+    visualization_tool: not specified
+  Figure 6: [bar_chart]
+    caption: Bar chart showing increasing metabolic heterogeneity with escalating drug resistance levels.
+    produced_by_step: [7]
+    visualization_tool: not specified
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository
+  - No details on electrolaunching ionization parameters (voltage, solvent, geometry)
+  - No software or pipeline description for spectral processing (peak picking, alignment, normalization)
+  - No specification of statistical thresholds (e.g., exact p-value cutoff, FDR method) or multivariate modeling details
+  - No code, scripts, or workflow documentation shared
+  - Commercial or custom MS instrument control software not identified
+  - Metabolite identification strategy (MS/MS, standards, databases) not described
+reproducibility_strengths:
+  - Clear biological model (PC9 → PC9GR stepwise resistance)
+  - Explicit reporting of 19 metabolic markers and glycerophospholipid pathway involvement
+  - Use of established visualization methods (t-SNE, volcano, heatmap) enabling methodological alignment

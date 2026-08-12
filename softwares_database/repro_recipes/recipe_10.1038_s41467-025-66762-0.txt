@@ -1,0 +1,92 @@
+========== reproducibility_recipe entry ==========
+paper_title: Acceleration, simplification and potential parallelization of digital polymers sequencing by coupling tandem mass spectrometry with ion mobility.
+source_paper: Sergent I et al. (2025), Nature communications, DOI: 10.1038/s41467-025-66762-0, PMID: 41298490
+overall_reproducibility_score: 30/100
+
+workflow_steps: 7
+  Step 1: Sample preparation for ESI
+    tool: manual_protocol
+    parameters: solvent_composition=H2O/ACN (50/50, v/v) + 0.1% formic acid, dilution_factor=0.1, additive_concentration=3.0 mM ammonium acetate in MeOH
+    input: solid b-PPDE
+    output: ESI-ready solution
+    confidence: high
+  Step 2: Sample preparation for MALDI
+    tool: manual_protocol
+    parameters: matrix_solution=saturated CHCA in ACN, sample_volume=1.5 μL, matrix_volume=1 μL, substrate=stainless steel MALDI plate
+    input: solid b-PPDE
+    output: MALDI-ready dried droplet
+    confidence: high
+  Step 3: High-resolution mass spectrometry acquisition
+    tool: Waters Synapt G2 HDMS (vnot specified)
+    algorithm: oa-TOF
+    parameters: ion_mode=negative, capillary_voltage_kV=-2.27, sampling_cone_voltage_V=-20, extraction_cone_voltage_V=-6, desolvation_gas_flow_Lh=100, desolvation_temperature_C=35, flow_rate_μLmin=10, calibrant=poly-DL-alanine, mz_range=50–1500 (for ESI-MS-(CID)-IMS-(CID)-MS), 300–3000 (for MALDI-IMS-(CID)-MS)
+    input: ESI-ready solution or MALDI-ready sample
+    output: raw .raw files (Waters format)
+    confidence: high
+  Step 4: Ion mobility separation (TWIM)
+    tool: Waters Synapt G2 HDMS (vnot specified)
+    algorithm: traveling wave ion mobility spectrometry (TWIM)
+    parameters: gas=N2, pressure_mbar=3.0, wave_height_V_doubly_charged=30, wave_velocity_ms_doubly_charged=550, wave_height_V_singly_charged=25, wave_velocity_ms_singly_charged=130, cooling_cell_gas=He, cooling_cell_flow_mLmin=180
+    input: mass-selected precursor ions
+    output: drift time-resolved ion mobility spectra
+    confidence: high
+  Step 5: Tandem MS activation (CID)
+    tool: Waters Synapt G2 HDMS (vnot specified)
+    algorithm: collision-induced dissociation (CID)
+    parameters: collision_gas=argon, activation_energy_eV_lab_frame_first_CID=26, activation_energy_eV_lab_frame_second_CID=34, MALDI_MS_E_collision_energy_low_eV=55, MALDI_MS_E_collision_energy_high_eV=120, MALDI_MS_E_scan_duration_s=1.0, MALDI_MS_E_scans_per_energy=150, MALDI_MS_E_interscan_delay_s=0.02
+    input: TWIM-separated ions
+    output: fragment ion spectra
+    confidence: high
+  Step 6: Data acquisition and instrument control
+    tool: MassLynx (v4.1)
+    input: raw instrument signals
+    output: processed .raw data files
+    confidence: high
+  Step 7: 3D data visualization (drift time vs m/z vs intensity)
+    tool: DriftScope (v2.1)
+    input: .raw files
+    output: 3D plots (tD vs m/z vs intensity)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: not_mentioned (not mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 6
+  Fig. 1: [workflow_diagram]
+    caption: Illustrates instrumental configurations for sequencing of b-PPDEs using triblock chains.
+    produced_by_step: [3, 4, 5]
+    visualization_tool: DriftScope 2.1 and/or custom schematic generation (not specified)
+  Fig. 2: [other]
+    caption: Depicts structural features in digital b-PPDEs.
+    visualization_tool: not specified (likely cheminformatics drawing tool)
+  Fig. 3: [scatter_plot]
+    caption: Shows variation of arrival time (tA) of blocks as a function of their 0x1y comonomeric composition.
+    produced_by_step: [4, 7]
+    visualization_tool: DriftScope 2.1 or custom plotting (not specified)
+  Fig. 4: [other]
+    caption: Illustrates selection of tags for the PPDE triblock coding for 'ICR'.
+    visualization_tool: not specified
+  Fig. 5: [other]
+    caption: Illustrates selection of tags for the PPDE pentablock coding for 'PHew!'.
+    visualization_tool: not specified
+  Fig. 6: [other]
+    caption: Shows serial block sequencing after MALDI.
+    produced_by_step: [2, 3, 4, 5]
+    visualization_tool: DriftScope 2.1 or custom interpretation diagram
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in any public repository
+  - No processed data or peak tables shared
+  - No metadata schema or sample annotation table provided
+  - Waters MassLynx 4.1 and DriftScope 2.1 are commercial software requiring licenses
+  - No code, scripts, or computational pipelines shared for data processing or tag assignment logic
+  - No details on how 'block arrival time vs composition' calibration curve was fitted (algorithm, R², error bars)
+  - No information on data filtering, peak picking, or feature alignment parameters
+reproducibility_strengths:
+  - Detailed instrument parameters (voltages, gas flows, energies, TWIM settings) provided
+  - Explicit solvent compositions, dilutions, and matrix protocols given
+  - Clear distinction between ESI and MALDI workflows with energy regimes and timing

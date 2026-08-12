@@ -1,0 +1,90 @@
+========== reproducibility_recipe entry ==========
+paper_title: Enhancing tandem mass spectrometry-based metabolite annotation with online chemical labeling.
+source_paper: Vitale GA et al. (2025), Nature communications, DOI: 10.1038/s41467-025-61240-z, PMID: 40715063
+overall_reproducibility_score: 58/100
+
+workflow_steps: 9
+  Step 1: LC-MS/MS data acquisition with post-column derivatization
+    tool: Bruker Impact II QTOF
+    algorithm: data-dependent analysis (DDA)
+    parameters: ion_mode=positive, capillary_voltage_kV=4.5, nebulizer_gas_pressure_bar=2.2, dry_gas_flow_L_min=10, drying_temperature_C=220, mass_range_mz=[150, 2000], resolution=50000, precursor_selection_count=3, collision_energy_eV=[20, 50], dynamic_exclusion_time_min=0.3
+    input: raw .d files (Bruker)
+    output: raw MS and MS/MS spectra
+    confidence: high
+  Step 2: LC-MS/MS data acquisition with post-column derivatization (Reaction B)
+    tool: Thermo Q Exactive HF
+    algorithm: data-dependent analysis (DDA)
+    parameters: ion_mode=positive, capillary_voltage_kV=3.5, auxiliary_gas_temperature_C=400, auxiliary_gas_flow_AU=12, sweep_gas_flow_L_min=1, sheath_gas_flow_AU=50, drying_temperature_C=250, mass_range_mz=[220, 2000], resolution_ms1=120000, resolution_ms2=15000, precursor_selection_count=5, normalized_collision_energy=[25, 35, 45], isolation_window_mz=1.0
+    input: raw .raw files (Thermo)
+    output: raw MS and MS/MS spectra
+    confidence: high
+  Step 3: Data conversion to mzML
+    tool: msConvert (ProteoWizard) (vnot specified)
+    algorithm: file format conversion
+    input: vendor raw files (.d, .raw)
+    output: .mzML files
+    confidence: high
+  Step 4: Feature detection, alignment, and cleanup
+    tool: MZmine (v4.1.0)
+    algorithm: feature-based molecular networking (FBMN) workflow
+    parameters: mass_tolerance_ppm=None, retention_time_tolerance_sec=None, min_peak_duration_min=None, noise_threshold=None
+    input: .mzML files
+    output: aligned feature table, peak list
+    confidence: medium
+  Step 5: Reactive metabolite annotation via Online Reactivity module
+    tool: MZmine Online Reactivity module (v4.1.0)
+    algorithm: mass shift-based derivatization annotation
+    parameters: delta_mass_da_reaction_A=121.0197, delta_mass_da_reaction_B=170.0481, delta_mass_da_reaction_C=15.0109, conversion_yield_threshold_percent=5.0
+    input: feature table + derivatization reaction parameters
+    output: reactive metabolite annotations, SMARTS substructure table
+    confidence: high
+  Step 6: Export for FBMN and SIRIUS
+    tool: MZmine FBMN module & SIRIUS exporting module (v4.1.0)
+    algorithm: feature table and spectrum export
+    input: processed feature table and MS/MS spectra
+    output: .mgf (MS/MS), .csv (quant table), .csv (edges), .mgf (MS)
+    confidence: high
+  Step 7: Metabolite annotation using CSI:FingerID and CANOPUS
+    tool: SIRIUS 6 (v6)
+    algorithm: CSI:FingerID fingerprint prediction + CANOPUS compound class prediction
+    parameters: cross_validation_folds=5, similarity_metric=myopic Maximum Common Edge Subgraph distance, spectral_library_sources=['GNPS', 'MoNA', 'MassBank']
+    input: .mgf files (MS/MS)
+    output: compound identifications, molecular fingerprints, compound class predictions
+    confidence: high
+  Step 8: Analog library search with functional group-aware ranking
+    tool: GNPS2 (vnot specified)
+    algorithm: analog library search with modified cosine + FG-aware re-ranking
+    parameters: minimum_cosine=0.5, minimum_matched_peaks=4, fragment_ion_tolerance_da=0.5, precursor_ion_tolerance_da=2.0, fingerprint_tool=RDKit default, similarity_metric=Tanimoto
+    input: .mgf files (MS/MS)
+    output: ranked analog list with FG annotation
+    confidence: high
+  Step 9: Genome mining for biosynthetic gene clusters
+    tool: antiSMASH (v7.0)
+    algorithm: BGC detection and synteny analysis
+    parameters: organism=Streptomyces platensis DSM 41230, synteny_tool=clinker
+    input: genome assembly (FASTA)
+    output: BGC predictions, synteny plots
+    confidence: high
+
+data_availability:
+  raw_data: in_paper_only (GNPS: not specified in text)
+  processed_data: in_paper_only (Supplementary Data 1, 2)
+  metadata: in_paper_only
+  data_urls: https://gnps2.org/homepage, https://mona.fiehnlab.ucdavis.edu
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository (only referenced as 'Supplementary Data' and GNPS without accession IDs)
+  - MZmine batch files are mentioned as publicly accessible but no repository or URL provided
+  - Custom Python script for SMARTS validation is described but not shared
+  - No access details for the Tü NP Library (327 NPs) beyond 'in-house'
+  - No deposition of genome sequence of DSM 41230 or antiSMASH output
+  - Instrument-specific acquisition parameters (e.g., exact gradient profile timing, dwell times) lack full specification for full method replication
+reproducibility_strengths:
+  - Detailed instrument parameters for three LC-MS/MS platforms provided
+  - All derivatization reagents, concentrations, flow rates, and expected Δm/z values explicitly reported
+  - Open-source tools used throughout (MZmine, SIRIUS, antiSMASH, RDKit, GNPS2 web platform)
+  - Public spectral libraries (GNPS, MoNA, MassBank) leveraged with clear provenance

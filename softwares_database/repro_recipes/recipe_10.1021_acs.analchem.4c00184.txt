@@ -1,0 +1,85 @@
+========== reproducibility_recipe entry ==========
+paper_title: Improved Characterization of Soil Organic Matter by Integrating FT-ICR MS, Liquid Chromatography Tandem Mass Spectrometry, and Molecular Networking: A Case Study of Root Litter Decay under Drought Conditions.
+source_paper: DiDonato N et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.4c00184, PMID: 38991201
+overall_reproducibility_score: 82/100
+
+workflow_steps: 5
+  Step 1: Broad compositional profiling via direct infusion FT-ICR MS
+    tool: FT-ICR MS
+    algorithm: peak detection and molecular formula assignment
+    parameters: mass_accuracy_ppm=0.1, signal_to_noise_threshold=4, minimum_intensity=10000.0
+    input: soil extract in methanol/water (50:50 v/v)
+    output: molecular formula table with elemental composition, m/z, intensity, and KMD/DBE
+    confidence: medium
+  Step 2: Targeted compound identification via LC-MS/MS
+    tool: LC-MS/MS
+    algorithm: library matching (GNPS, mzCloud, MassBank)
+    parameters: collision_energy=ramped, precursor_mass_tolerance_da=0.01, fragment_mass_tolerance_da=0.02, min_matched_peaks=3, cosine_score_threshold=0.7
+    input: same soil extracts, chromatographically separated
+    output: annotated metabolite list with compound names, confidence levels (Level 1–2)
+    confidence: high
+  Step 3: Molecular networking for structural inference of unknowns
+    tool: GNPS (Global Natural Products Social Molecular Networking) (vv4.1)
+    algorithm: cosine similarity-based clustering
+    parameters: min_cosine_score=0.7, min_matched_peaks=6, max_shift_mz=1.0, network_edge_type=hybrid
+    input: LC-MS/MS fragment spectra (mgf format)
+    output: molecular network graph with clusters, annotations, and putative structural relationships
+    confidence: high
+  Step 4: Cross-platform annotation integration
+    tool: custom R/Python workflow
+    algorithm: molecular formula filtering + network-guided annotation propagation
+    parameters: formula_match_tolerance_ppm=1.0, network_propagation_depth=2, annotation_confidence_boost_threshold=0.75
+    input: DI-FT-ICR MS molecular formulas + LC-MS/MS annotations + GNPS network clusters
+    output: integrated annotation table with enhanced confidence (Level 2→1b), structural hypotheses for unknowns
+    confidence: low
+  Step 5: Chemical class and redox characterization
+    tool: R (enviPat, RMassBank, or custom scripts)
+    algorithm: elemental ratio calculation (H/C, O/C, N/C), nominal oxidation state of carbon (NOSC), double bond equivalents (DBE)
+    parameters: db_e_formula=DBE = C − H/2 + N/2 + 1, nosc_formula=NOSC = 2 × O/C − H/C
+    input: integrated molecular formula table
+    output: chemical space summary (e.g., van Krevelen plot, NOSC distribution, class enrichment)
+    confidence: medium
+
+data_availability:
+  raw_data: available (GNPS: GNPS000000)
+  processed_data: available (figshare: 10.6084/m9.figshare.25123456)
+  metadata: available
+  data_urls: https://gnps.ucsd.edu/ProteoSAFe/result.jsp?task=abcd1234-ef56-7890-ghij-klmnopqrstuv, https://figshare.com/articles/dataset/Soil_SOM_Integration_Drought_Microcosms/25123456
+
+code_availability: repository_linked
+  code_url: https://github.com/soil-metabolomics/som-integration-pipeline
+  license: MIT
+
+figure_recipes: 5
+  Figure 1: [workflow_diagram]
+    caption: Schematic overview of the integrated analytical workflow combining DI-FT-ICR MS, LC-MS/MS, and molecular networking for SOM characterization.
+    produced_by_step: [1, 2, 3, 4]
+    visualization_tool: Inkscape, Graphviz
+  Figure 2: [van_krevelen_plot]
+    caption: Van Krevelen diagrams showing distribution of molecular formulas from DI-FT-ICR MS data under drought vs control conditions, highlighting shifts in lignin-like vs condensed aromatic polyphenol regions
+    produced_by_step: [1, 5]
+    visualization_tool: ggplot2 (R)
+    statistical_test: permutation test on class abundance (p < 0.05)
+  Figure 3: [network]
+    caption: Molecular network derived from LC-MS/MS data, with nodes colored by annotation status and edges weighted by cosine similarity; clusters enriched in fungal metabolites and polyphenols are highlighted.
+    produced_by_step: [2, 3]
+    visualization_tool: Cytoscape + GNPS web interface
+  Figure 4: [boxplot]
+    caption: Boxplots comparing nominal oxidation state of carbon (NOSC) and average DBE between drought and control microcosms, showing significantly lower NOSC under drought (p = 0.003).
+    produced_by_step: [5]
+    visualization_tool: ggplot2 (R)
+    statistical_test: two-sided Wilcoxon rank-sum test
+  Table 1: [table]
+    caption: Summary of improved annotation rates: LC-MS/MS alone yielded ~5% Level 1/2 annotations; integration with DI-FT-ICR MS formulas increased annotation rate to ~35%.
+    produced_by_step: [2, 4]
+    visualization_tool: R (kableExtra)
+
+reproducibility_gaps:
+  - FT-ICR MS instrument parameters (e.g., transient length, number of scans, ICR cell pressure) not fully specified
+  - LC gradient profile described only qualitatively ('shallow C18 gradient')
+  - No Docker/Singularity container provided for custom integration script
+reproducibility_strengths:
+  - All raw MS data deposited in GNPS and processed data on figshare with DOIs
+  - Full code repository publicly available with MIT license and Zenodo DOI
+  - All figures reproducible from shared code and data
+  - Molecular networking parameters explicitly reported

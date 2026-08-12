@@ -1,0 +1,49 @@
+========== reproducibility_recipe entry ==========
+paper_title: Intensity-dependent mass search for improving metabolite database matches in chemical isotope labeling LC-QTOF-MS-based metabolomics.
+source_paper: Li Y et al. (2023), Analytica chimica acta, DOI: 10.1016/j.aca.2023.341467, PMID: 37355326
+overall_reproducibility_score: 45/100
+
+workflow_steps: 3
+  Step 1: Mass calibration with sodium formate standards
+    tool: Instrument vendor software (Agilent/SCIEX/Waters QTOF platform)
+    algorithm: Linear or polynomial curve fitting
+    parameters: calibrant=sodium formate, acquisition_mode=standard operating procedure (SOP) calibration
+    input: Raw LC-QTOF-MS data with sodium formate calibrant injections
+    output: Intensity–mass error relationship curve
+    confidence: medium
+  Step 2: Modeling intensity-dependent mass error
+    tool: Custom implementation in MCID
+    algorithm: Empirical curve fitting (e.g., power-law or exponential decay model)
+    parameters: mz_range=<1000, intensity_range=observed dynamic range, error_unit=ppm
+    input: Calibrant peak intensities and measured mass errors
+    output: Intensity-to-mass-tolerance mapping function
+    confidence: low
+  Step 3: Intensity-dependent mass search (IDMS)
+    tool: MCID database (www.mycompoundid.org)
+    algorithm: Dynamic mass tolerance window assignment per feature based on peak intensity
+    parameters: mass_tolerance_ppm=intensity-dependent, database=8021 known human endogenous metabolites + predicted products (375,809 from one reaction; 10,583,901 from two reactions)
+    input: LC-QTOF-MS feature table (m/z, RT, intensity)
+    output: Annotated metabolite matches with confidence-ranked candidates
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: https://www.mycompoundid.org
+  license: freely available (no license specified)
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-QTOF-MS calibration data not deposited
+  - No description of curve-fitting algorithm or parameters used
+  - No access to source code for IDMS implementation in MCID
+  - Vendor-specific instrument control and calibration details omitted
+  - No example input/output files or test datasets provided
+reproducibility_strengths:
+  - MCID web interface freely accessible
+  - Method validated on dansyl-labeled standards and human urine
+  - Explicit database size and scope disclosed (8021 core metabolites + predicted derivatives)

@@ -1,0 +1,42 @@
+========== reproducibility_recipe entry ==========
+paper_title: CE-MS metabolic profiling of volume-restricted plasma samples from an acute mouse model for epileptic seizures to discover potentially involved metabolomic features.
+source_paper: Segers K et al. (2020), Talanta, DOI: 10.1016/j.talanta.2020.121107, PMID: 32498853
+overall_reproducibility_score: 30/100
+
+workflow_steps: 3
+  Step 1: Sample preparation
+    tool: liquid-liquid extraction
+    parameters: sample_volume=10, sample_volume_unit=μL, extraction_method=liquid-liquid extraction
+    input: volume-restricted plasma samples (10 μL)
+    output: extracted metabolite samples
+    confidence: medium
+  Step 2: CE-MS analysis
+    tool: capillary electrophoresis coupled to mass spectrometry (CE-MS)
+    parameters: separation_condition=low-pH, sample_type=plasma, analyte_class=polar and charged compounds
+    input: extracted metabolite samples
+    output: raw CE-MS data
+    confidence: high
+  Step 3: Data analysis and biomarker identification
+    tool: not specified
+    input: raw CE-MS data
+    output: differential metabolites list (e.g., methionine, lysine, glycine, etc.)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw CE-MS data not deposited in public repository
+  - No details on data analysis software or parameters (e.g., peak detection, alignment, statistical thresholds)
+  - No description of metadata structure or experimental design variables (e.g., batch, time points, animal IDs)
+  - CE-MS instrument method details missing (e.g., capillary dimensions, voltage, sheath liquid composition, MS acquisition settings)
+reproducibility_strengths:
+  - Clear biological model and sampling strategy described (6Hz acute corneal seizure mouse model, capillary microsampling)
+  - Explicit sample volume (10 μL) and extraction method reported
+  - Metabolite-level findings consistently reported with biological interpretation

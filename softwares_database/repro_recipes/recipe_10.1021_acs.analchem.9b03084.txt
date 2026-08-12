@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: VOCCluster: Untargeted Metabolomics Feature Clustering Approach for Clinical Breath Gas Chromatography/Mass Spectrometry Data.
+source_paper: Alkhalifah Y et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.9b03084, PMID: 31791122
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Feature extraction and deconvolution
+    tool: unknown
+    algorithm: deconvolution
+    input: raw GC/MS chromatograms
+    output: deconvolved features (m/z, retention time, intensity)
+    confidence: low
+  Step 2: Retention index calculation and alignment
+    tool: VOCCluster
+    algorithm: heuristic ontology-based clustering
+    parameters: similarity_metrics=['mass_spectral_similarity', 'retention_index_profile_similarity']
+    input: deconvolved features with mass spectra and retention times
+    output: VOC clusters (groups of co-eluting, spectrally similar features)
+    confidence: medium
+  Step 3: Clustering evaluation against ground truth
+    tool: custom Python implementation
+    algorithm: accuracy assessment
+    parameters: confidence_interval=0.95, accuracy_metric=proportion_correctly_clustered
+    input: VOCCluster output + ground truth compound panel
+    output: clustering accuracy (96% ± 0.04)
+    confidence: high
+  Step 4: Benchmarking against alternative clustering methods
+    tool: DBSCAN, OPTICS
+    algorithm: density-based clustering
+    input: same deconvolved feature set
+    output: alternative cluster assignments for comparison
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw GC/MS data not deposited or referenced
+  - No public repository link for VOCCluster code
+  - No specification of deconvolution software or parameters
+  - Ground truth compound panel not described or shared
+  - Retention index calibration method not detailed
+  - No details on mass spectral similarity metric (e.g., cosine, dot product, threshold)
+reproducibility_strengths:
+  - Clustering algorithm described as heuristic ontology-based and implemented in Python
+  - Explicit benchmarking against DBSCAN and OPTICS
+  - Quantitative accuracy metric with confidence interval reported

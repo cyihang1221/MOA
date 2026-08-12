@@ -1,0 +1,45 @@
+========== reproducibility_recipe entry ==========
+paper_title: Four-Dimensional Lipidomic Analysis Using Comprehensive Online UHPLC × UHPSFC/Tandem Mass Spectrometry.
+source_paper: Lásko Z et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.4c03946, PMID: 39602178
+overall_reproducibility_score: 30/100
+
+workflow_steps: 3
+  Step 1: Multidimensional chromatographic separation
+    tool: Custom online UHPLC × UHPSFC system
+    parameters: first_dimension_column=150 mm C18, sub-2 μm particles, second_dimension_column=10 mm silica, sub-2 μm particles, sampling_time_per_cycle=0.55, gradient_elution_second_dim=True, ionization_mode=['positive', 'negative'], mass_accuracy_ppm=5
+    input: total lipid extract from human plasma
+    output: chromatographic peak data with MS and MS/MS spectra
+    confidence: medium
+  Step 2: Mass spectrometric detection and acquisition
+    tool: QTOF mass analyzer with ESI
+    parameters: acquisition_modes=['full-scan MS', 'MS/MS', 'MS^E', 'fast data-dependent acquisition'], polarity_switching=True
+    input: chromatographic effluent
+    output: raw .d (Waters) or vendor-specific raw files
+    confidence: high
+  Step 3: Lipid identification
+    tool: Vendor software (likely Waters UNIFI or similar) + manual curation
+    algorithm: characteristic ion filtering, MS^E fragmentation pattern matching, mass accuracy filtering
+    parameters: mass_tolerance_ppm=5, lipid_subclass_filtering=True, polarity_complementarity=True
+    input: raw MS and MS/MS spectra
+    output: confidently identified lipid species (n = 298, 16 subclasses)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in any public repository
+  - No details on data processing software (e.g., Waters UNIFI version, parameters for peak picking, alignment, or database search)
+  - No description of lipid identification workflow beyond high-level criteria (e.g., no database name, version, scoring method, or false discovery rate control)
+  - Custom online 4D-UHPLC × UHPSFC hardware configuration not fully specified (e.g., modulation interface, flow rates, trapping, valve timing)
+  - No access to method files (.meth), processing templates, or calibration protocols
+reproducibility_strengths:
+  - High-resolution QTOF platform and tight mass accuracy (<5 ppm) specified
+  - Clear chromatographic dimensions and column specifications provided
+  - Explicit reporting of lipid count (298) and subclass coverage (16) enables benchmarking

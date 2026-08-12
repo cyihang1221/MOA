@@ -1,0 +1,101 @@
+========== reproducibility_recipe entry ==========
+paper_title: Characterization of interactions of dietary cholesterol with the murine and human gut microbiome.
+source_paper: Le HH et al. (2022), Nature microbiology, DOI: 10.1038/s41564-022-01195-9, PMID: 35982311
+overall_reproducibility_score: 42/100
+
+workflow_steps: 8
+  Step 1: Raw data acquisition (LC-MS)
+    tool: not specified
+    input: biological samples (caecal contents, bacterial pellets)
+    output: raw .raw or .d files (vendor format)
+    confidence: low
+  Step 2: Data conversion to mzML
+    tool: not specified
+    input: raw vendor files
+    output: .mzML files
+    confidence: low
+  Step 3: Untargeted metabolomics feature detection and alignment
+    tool: not specified
+    input: .mzML files
+    output: feature table (m/z, RT, intensity)
+    confidence: low
+  Step 4: Metabolite identification (MS1/MS2)
+    tool: not specified
+    input: feature table + MS/MS spectra
+    output: annotated metabolites (e.g., cholesterol sulfate)
+    confidence: low
+  Step 5: Statistical analysis of differential metabolites
+    tool: not specified
+    input: normalized feature table
+    output: differentially abundant metabolites
+    confidence: low
+  Step 6: Volcano plot generation for differential taxa
+    tool: DESeq2 (vv1.28.0 (approx., based on QIIME 2 v2020.2 context))
+    algorithm: negative binomial Wald test
+    parameters: alpha=0.05, padj_cutoff=0.05
+    input: 16S ASV table with metadata
+    output: volcano plot of differentially abundant ASVs
+    confidence: high
+  Step 7: Taxonomic assignment and phylogenetic analysis
+    tool: QIIME 2 (vv2020.2)
+    algorithm: DADA2 denoising, SILVA 132 classifier
+    parameters: trunc_len_f=250, trunc_len_r=250, p_trunc_q=0.9, p_max_ee_f=2.0, p_max_ee_r=2.0
+    input: Illumina MiSeq V4 2×250 bp FASTQ
+    output: ASV table, taxonomy assignments, phylogeny
+    confidence: high
+  Step 8: Fold-enrichment analysis of sorted populations
+    tool: custom R implementation (Ronda et al.)
+    algorithm: fold-enrichment ratio = (ASV abundance in Alk+ / total reads in Alk+) / (ASV abundance in unsorted / total reads in unsorted)
+    input: ASV count tables (Alk+, Alk−, unsorted)
+    output: fold-enrichment scores per ASV
+    confidence: medium
+
+data_availability:
+  raw_data: available (NCBI SRA: PRJNA718322)
+  processed_data: not_mentioned (not specified)
+  metadata: in_paper_only
+  data_urls: https://www.ncbi.nlm.nih.gov/bioproject/PRJNA718322
+
+code_availability: not_mentioned
+
+figure_recipes: 6
+  Figure 1: [workflow_diagram]
+    caption: Schematic of BOSSS workflow: oral gavage with alkyne-cholesterol, caecal sampling, microbial isolation, click chemistry labelling, FACS sorting, and downstream analysis.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7, 8]
+    visualization_tool: Adobe Illustrator or similar (not specified)
+  Figure 2: [bar_chart]
+    caption: Relative abundance and fold-enrichment of cholesterol-interacting microbes (Bacteroides, Bifidobacterium, Enterococcus, Parabacteroides) identified via 16S amplicon sequencing of FACS-sorted fractions
+    produced_by_step: [6, 7, 8]
+    visualization_tool: R (phyloseq, ggplot2 implied)
+    statistical_test: DESeq2 Wald test (FDR-adjusted p < 0.05)
+  Figure 3: [boxplot]
+    caption: Cholesterol sulfate levels across treatment groups (+cholesterol, +Chol Alk, vehicle) in caecal content, showing microbiome-dependent conversion.
+    produced_by_step: [3, 4, 5]
+    visualization_tool: not specified
+    statistical_test: not specified (likely ANOVA or t-test)
+  Figure 4: [pathway_map]
+    caption: Genomic locus in Bacteroides containing BT_0416 (sulfotransferase) and flanking genes; functional validation via heterologous expression and metabolomics.
+    produced_by_step: [4]
+    visualization_tool: not specified
+  Figure 5: [bar_chart]
+    caption: Host cholesterol and cholesterol sulfate levels in gnotobiotic mice monocolonized with wild-type vs. Δbt_0416 B. thetaiotaomicron.
+    produced_by_step: [3, 4, 5]
+    visualization_tool: not specified
+    statistical_test: not specified (likely two-tailed t-test)
+  Figure 6: [bar_chart]
+    caption: Cholesterol sulfate quantification in hepatic portal vein blood from gnotobiotic mice colonized with WT or Δbt_0416 B. thetaiotaomicron.
+    produced_by_step: [3, 4, 5]
+    visualization_tool: not specified
+    statistical_test: not specified
+
+reproducibility_gaps:
+  - Untargeted metabolomics LC-MS platform parameters (column, gradient, instrument settings) not reported
+  - No details on metabolomics software (XCMS, MS-DIAL, Compound Discoverer), algorithms, or parameters
+  - No raw metabolomics data deposited (no MetaboLights or GNPS accession)
+  - No code or scripts shared for DESeq2 analysis, fold-enrichment, or metabolite annotation
+  - No description of internal standards, QC samples, or batch correction methods for metabolomics
+  - No MS/MS spectral libraries or database search parameters (e.g., mass tolerance, score thresholds) provided
+reproducibility_strengths:
+  - 16S rRNA sequencing data publicly available in NCBI SRA (PRJNA718322)
+  - Use of standard open-source tools (QIIME 2 v2020.2, DADA2, SILVA 132, DESeq2, phyloseq)
+  - Detailed experimental protocols for FACS, click chemistry, and bacterial culturing

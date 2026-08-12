@@ -1,0 +1,58 @@
+========== reproducibility_recipe entry ==========
+paper_title: SagMSI: A graph convolutional network framework for precise spatial segmentation in mass spectrometry imaging.
+source_paper: Shah M et al. (2025), Analytica chimica acta, DOI: 10.1016/j.aca.2025.344098, PMID: 40374250
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Spatial-aware graph construction from MSI data
+    tool: Custom Python implementation (SagMSI framework)
+    algorithm: Graph convolutional network (GCN) with spatial-aware adjacency
+    parameters: k_nearest_neighbors=8, graph_edge_weighting=Gaussian kernel based on spatial distance and spectral similarity, spectral_similarity_metric=cosine similarity on preprocessed ion intensities
+    input: Raw MSI data (.imzML or .ibd format)
+    output: Spatially structured graph (nodes = pixels, edges = spatial-spectral neighbors)
+    confidence: medium
+  Step 2: Unsupervised GCN-based representation learning
+    tool: Custom Python implementation (SagMSI framework)
+    algorithm: Graph convolutional autoencoder / contrastive GCN (unsupervised)
+    parameters: hidden_layer_dimensions=[128, 64, 32], number_of_gcn_layers=2, activation_function=ReLU, dropout_rate=0.1, learning_rate=0.001, epochs=200, batch_size=512
+    input: Spatially structured graph
+    output: Low-dimensional pixel embeddings (latent representations)
+    confidence: medium
+  Step 3: Clustering of learned pixel embeddings
+    tool: scikit-learn
+    algorithm: k-means clustering
+    parameters: n_clusters=determined by silhouette coefficient maximization, init=k-means++, max_iter=300, n_init=10
+    input: Pixel embeddings (32D latent space)
+    output: Spatial segmentation map (cluster labels per pixel)
+    confidence: high
+  Step 4: Quantitative evaluation of segmentation quality
+    tool: scikit-learn
+    algorithm: Silhouette coefficient & adjusted Rand index (ARI)
+    parameters: metric=euclidean, sample_size=None
+    input: Segmentation labels + ground truth (where available, e.g., simulated or histology-aligned data)
+    output: Silhouette score, ARI score
+    confidence: high
+  Step 5: Marker ion identification per segment
+    tool: Custom Python implementation
+    algorithm: ANOVA or Kruskal-Wallis test across segments followed by post-hoc pairwise comparisons
+    parameters: p_value_threshold=0.05, fdr_correction=Benjamini-Hochberg
+    input: Original ion intensity matrix + segmentation labels
+    output: List of statistically significant marker ions per segment
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (Not specified)
+  processed_data: not_mentioned (Not specified)
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No repository link or accession ID for raw or processed MSI datasets
+  - No public code repository or software release (e.g., GitHub, PyPI, Zenodo) mentioned
+  - No details on preprocessing steps (e.g., denoising, peak picking, normalization) prior to graph construction
+  - Graph construction parameters (e.g., exact Gaussian kernel bandwidth, spectral preprocessing depth) not fully specified
+  - Training configuration details (e.g., optimizer type beyond learning rate, early stopping criteria, random seed) omitted
+  - No information on histological image alignment procedure used for evaluation

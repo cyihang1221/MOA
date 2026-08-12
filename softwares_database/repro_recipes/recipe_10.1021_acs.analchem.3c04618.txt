@@ -1,0 +1,55 @@
+========== reproducibility_recipe entry ==========
+paper_title: Predicting Retention Time in Unified-Hydrophilic-Interaction/Anion-Exchange Liquid Chromatography High-Resolution Tandem Mass Spectrometry (Unified-HILIC/AEX/HRMS/MS) for Comprehensive Structural Annotation of Polar Metabolome.
+source_paper: Torigoe T et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.3c04618, PMID: 38186224
+overall_reproducibility_score: 45/100
+
+workflow_steps: 4
+  Step 1: Retention time prediction model development
+    tool: Random Forest
+    algorithm: Random Forest regression
+    parameters: n_trees=500, mtry=sqrt(p), nodesize=5
+    input: Molecular descriptors (12,420 MDs) and measured retention times for 203 polar metabolites
+    output: RT prediction model with 26 selected molecular descriptors
+    confidence: medium
+  Step 2: Feature importance ranking and descriptor selection
+    tool: Random Forest
+    algorithm: Permutation-based feature importance
+    parameters: importance_type=permutation
+    input: 12,420 molecular descriptors + RT values (training set)
+    output: Ranked list of MDs; top 26 selected descriptors
+    confidence: medium
+  Step 3: RT model evaluation
+    tool: Custom Python/R script
+    algorithm: Mean absolute error (MAE), ΔRT distribution analysis
+    parameters: rt_tolerance_window=1.5, metric=['MAE', 'percentage_within_±1.5_min']
+    input: Predicted vs measured RTs for 51 test metabolites
+    output: Model performance metrics (MAE = 0.80 min; 86.3% within ±1.50 min)
+    confidence: high
+  Step 4: Structural annotation integration
+    tool: In silico MS/MS prediction
+    algorithm: Not specified (e.g., CFM-ID, MetFrag, or SIRIUS likely implied)
+    parameters: rt_tolerance=1.5, ms_ms_similarity_threshold=None
+    input: Untargeted LC/HRMS/MS data (NIST SRM 1950), RT predictions, MS/MS spectra
+    output: Structurally annotated polar metabolites (216 estimated + 62 standard-confirmed)
+    confidence: low
+
+data_availability:
+  raw_data: available (NIST: SRM 1950)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+  data_urls: https://www.nist.gov/srm
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No public deposition of raw LC/HRMS/MS data (e.g., .mzML files) from NIST SRM 1950 analysis
+  - No code repository or scripts shared for RT modeling or integration
+  - In silico MS/MS tool and parameters not specified
+  - Exact molecular descriptor calculation method (software, version, settings) not reported
+  - Chromatographic method details (gradient, column lot, temperature) insufficient for full method transfer
+reproducibility_strengths:
+  - Use of publicly available reference material (NIST SRM 1950)
+  - Transparent performance metrics (MAE, % within tolerance)
+  - Explicit count of training/test compounds (203/51) and selected descriptors (26)

@@ -1,0 +1,51 @@
+========== reproducibility_recipe entry ==========
+paper_title: A feature extraction free approach for protein interactome inference from co-elution data.
+source_paper: Chen YH et al. (2023), Briefings in bioinformatics, DOI: 10.1093/bib/bbad229, PMID: 37328692
+overall_reproducibility_score: 70/100
+
+workflow_steps: 4
+  Step 1: Raw CF-MS data input
+    tool: SPIFFED
+    algorithm: end-to-end convolutional neural network
+    input: raw co-elution chromatographic profiles (fraction-wise protein abundance matrices)
+    output: probabilistic protein-protein interaction scores
+    confidence: medium
+  Step 2: Balanced training data construction
+    tool: SPIFFED
+    algorithm: data balancing (e.g., undersampling non-interacting pairs or oversampling interacting pairs)
+    input: labeled PPI training set with severe class imbalance
+    output: balanced PPI training dataset
+    confidence: low
+  Step 3: PPI prediction with ensemble voting
+    tool: SPIFFED
+    algorithm: ensemble of CNN models with multiple voting schemes
+    input: multiple CF-MS datasets (e.g., replicate or orthogonal fractionation experiments)
+    output: integrated probabilistic PPI network
+    confidence: medium
+  Step 4: Protein complex inference
+    tool: ClusterONE
+    algorithm: clique percolation-based clustering
+    input: probabilistic PPI network (weighted edges)
+    output: predicted protein complexes
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/bio-it-station/SPIFFED
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of CF-MS data preprocessing (e.g., normalization, missing value imputation)
+  - No specification of CNN architecture (layer types, filter sizes, dropout rates)
+  - No details on how balanced sampling was performed (e.g., random undersampling vs. SMOTE)
+  - No public access to training labels or benchmark CF-MS datasets used for evaluation
+reproducibility_strengths:
+  - Source code publicly available on GitHub under MIT license
+  - Explicit use of open-source clustering tool ClusterONE
+  - Clear end-to-end design avoids handcrafted feature bias

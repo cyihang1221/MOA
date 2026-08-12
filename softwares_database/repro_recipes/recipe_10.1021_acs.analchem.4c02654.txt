@@ -1,0 +1,64 @@
+========== reproducibility_recipe entry ==========
+paper_title: Evaluation of a Liquid Chromatography-Tandem Mass Spectrometry Method for the Analysis of Glucosylceramide and Galactosylceramide Isoforms in Cerebrospinal Fluid of Parkinson's Disease Patients.
+source_paper: Castillo-Ribelles L et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.4c02654, PMID: 39047057
+overall_reproducibility_score: 30/100
+
+workflow_steps: 6
+  Step 1: Sample pretreatment
+    tool: manual extraction protocol
+    input: raw CSF samples
+    output: extracted lipid fractions
+    confidence: low
+  Step 2: Chromatographic separation
+    tool: HPLC
+    parameters: column=C8 reversed-phase column, gradient_profile=not fully specified, flow_rate=not specified, temperature=not specified, injection_volume=not specified
+    input: extracted lipid fractions
+    output: chromatographically separated analytes
+    confidence: low
+  Step 3: Tandem mass spectrometry detection
+    tool: MS/MS
+    parameters: ionization_mode=electrospray ionization (ESI), polarity=positive mode, transition_monitoring=multiple reaction monitoring (MRM), mass_tolerance_ppm=None, collision_energy=optimized but not reported numerically
+    input: chromatographically separated analytes
+    output: quantified GluCer/GalCer isoforms
+    confidence: medium
+  Step 4: Calibration and quantification
+    tool: internal standard-based calibration
+    algorithm: linear regression
+    parameters: calibration_curves=4, points_per_curve=7, linearity_range_nM=[2.5, 200], r_squared_threshold=0.995
+    input: MS/MS peak areas + internal standards
+    output: concentration values (nM)
+    confidence: high
+  Step 5: Method validation
+    tool: CLSI and EMA guidelines
+    parameters: precision_max_cv_percent=12.5, accuracy_max_bias_percent=9, loq_nM=5
+    input: calibrated concentration data
+    output: validated assay performance metrics
+    confidence: high
+  Step 6: Group comparison and ratio analysis
+    tool: descriptive statistics and nonparametric testing
+    algorithm: median calculation, group-wise comparison
+    parameters: groups=['HC', 'iPD', 'PD-GBA'], sample_sizes={'HC': 6, 'iPD': 22, 'PD-GBA': 5}, metric=GluCer/GalCer median ratios
+    input: quantified isoform concentrations
+    output: group-level GluCer/GalCer ratios and trends
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw MS/MS data not deposited in public repository (e.g., MassIVE, MetaboLights)
+  - No access to HPLC gradient profile, flow rate, column temperature, or injection volume
+  - No details on MRM transitions, dwell times, or collision energy values
+  - No statistical software or script used for group comparisons disclosed
+  - No raw chromatograms or spectral data provided for method verification
+  - Internal standard identities and concentrations not specified
+reproducibility_strengths:
+  - Quantitative method validated per CLSI and EMA regulatory guidelines
+  - Explicit linearity range (2.5–200 nM), LOQ (5 nM), precision (≤12.5% CV), and accuracy (±9%) reported
+  - Clear cohort description with sample sizes per group (HC=6, iPD=22, PD-GBA=5)

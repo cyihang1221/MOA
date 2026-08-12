@@ -1,0 +1,59 @@
+========== reproducibility_recipe entry ==========
+paper_title: Heterogeneous multimeric metabolite ion species observed in LC-MS based metabolomics data sets.
+source_paper: El Abiead Y et al. (2022), Analytica chimica acta, DOI: 10.1016/j.aca.2022.340352, PMID: 36156231
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: LC-MS data acquisition using 13C-labeled and unlabeled Pichia pastoris extracts
+    tool: LC-MS platform (unspecified)
+    input: biological extracts (Pichia pastoris)
+    output: raw LC-MS data files (.raw or equivalent)
+    confidence: low
+  Step 2: Heteromultimer detection via isotopic pattern analysis
+    tool: custom workflow
+    algorithm: 13C-labeling-based heteromer recognition
+    parameters: labeling_ratio=13C-labeled vs unlabeled, mass_shift_tolerance=1.00335 Da per 13C atom
+    input: raw LC-MS data
+    output: list of putative heterogeneous multimers
+    confidence: medium
+  Step 3: Annotation of heteromultimers using monomeric partner matching
+    tool: custom annotation logic
+    algorithm: mass difference matching to known monomers
+    parameters: mass_error_tolerance=5 ppm, elemental composition constraints=C, H, N, O, P, S
+    input: putative heteromultimers + monomer database
+    output: annotated heterodimers with monomeric partners
+    confidence: medium
+  Step 4: Construction of heteromultimer MS/MS spectral library
+    tool: GNPS-compatible library format
+    algorithm: spectral clustering and curation
+    parameters: min_cluster_size=2, cosine_threshold=0.7
+    input: MS/MS spectra of confirmed heteromers
+    output: curated heteromultimer MS/MS library
+    confidence: high
+  Step 5: Cross-dataset validation of heteromers in public repositories
+    tool: Metabolights, Metabolomics Workbench, GNPS/MassIVE
+    algorithm: mass and retention time matching
+    parameters: mz_tolerance_ppm=5, RT_tolerance_min=0.5, dataset_filter=['Triticum aestivum', 'Fusarium graminearum', 'Trichoderma reesei']
+    input: heteromultimer library + public LC-MS datasets
+    output: validated heteromer occurrences across datasets
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (Metabolights)
+  processed_data: not_mentioned (Metabolights)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw data accession ID provided
+  - No link to custom workflow code or scripts
+  - LC-MS instrument parameters (e.g., gradient, column, ionization) not specified
+  - No details on software used for peak picking, alignment, or feature table generation
+  - Heteromer detection algorithm not implemented in publicly available tool
+reproducibility_strengths:
+  - Use of stable isotope labeling (13C) for confident heteromer identification
+  - Public repository search strategy explicitly named (Metabolights, Metabolomics WB, GNPS/MassIVE)
+  - Quantitative prevalence estimates reported across multiple species

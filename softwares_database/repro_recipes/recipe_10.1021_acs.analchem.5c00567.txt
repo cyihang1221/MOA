@@ -1,0 +1,47 @@
+========== reproducibility_recipe entry ==========
+paper_title: Automated Integration and Quality Assessment of Chromatographic Peaks in LC-MS-Based Metabolomics and Lipidomics Using TARDIS.
+source_paper: Vangeenderhuysen P et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c00567, PMID: 40296498
+overall_reproducibility_score: 72/100
+
+workflow_steps: 3
+  Step 1: Targeted peak integration
+    tool: TARDIS
+    algorithm: custom signal-to-noise ratio and bell-curve similarity
+    parameters: quality_metrics=['area_under_curve', 'maximum_intensity', 'points_over_peak', 'signal_to_noise_ratio', 'bell_curve_similarity']
+    input: vendor-specific raw LC-MS data (e.g., .raw, .d)
+    output: quantified peak table with quality metrics
+    confidence: high
+  Step 2: Peak quality assessment
+    tool: TARDIS
+    algorithm: composite quality scoring using established and novel metrics
+    input: integrated peak table with quality metrics
+    output: quality-assessed peak table with pass/fail flags
+    confidence: medium
+  Step 3: Quantitative validation against vendor software
+    tool: Vendor software (not specified: e.g., Thermo TraceFinder, Sciex OS, Agilent MassHunter)
+    algorithm: comparative quantification (e.g., %RSD, correlation, Bland-Altman)
+    parameters: sample_size=1786, biofluids=['stool', 'saliva', 'urine'], instruments=2
+    input: TARDIS output vs. vendor software output
+    output: validation report (accuracy, precision, robustness metrics)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/UGent-LIMET/TARDIS
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS data not deposited in public repository
+  - Specific vendor software used for benchmarking not named
+  - Exact chromatographic and MS acquisition parameters (e.g., gradient, ionization mode, scan range) not provided
+  - No details on preprocessing steps prior to TARDIS (e.g., file conversion, calibration, retention time alignment)
+reproducibility_strengths:
+  - TARDIS is open-source with publicly available code on GitHub
+  - Validation performed across large sample size (n=1786) and multiple biofluids/instruments
+  - Inclusion of both established and novel peak quality metrics enhances transparency of evaluation criteria

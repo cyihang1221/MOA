@@ -1,0 +1,52 @@
+========== reproducibility_recipe entry ==========
+paper_title: MetNet: Metabolite Network Prediction from High-Resolution Mass Spectrometry Data in R Aiding Metabolite Annotation.
+source_paper: Naake T et al. (2019), Analytical chemistry, DOI: 10.1021/acs.analchem.8b04096, PMID: 30500168
+overall_reproducibility_score: 85/100
+
+workflow_steps: 4
+  Step 1: Feature detection and annotation preprocessing
+    tool: XCMS
+    algorithm: centWave or matchedFilter
+    input: raw .cdf or .mzML files
+    output: feature table (m/z, RT, intensity)
+    confidence: low
+  Step 2: Adduct and artifact annotation
+    tool: CAMERA
+    algorithm: correlation-based peak grouping, adduct/fragment annotation
+    input: XCMS feature table
+    output: annotated feature groups (putative adducts, isotopes, fragments)
+    confidence: medium
+  Step 3: Metabolite network inference
+    tool: MetNet
+    algorithm: network propagation using structural similarity (Tanimoto) and quantitative correlation (Spearman)
+    parameters: correlation_method=spearman, similarity_metric=tanimoto, min_correlation=0.7, min_similarity=0.4
+    input: CAMERA-annotated feature table with MS/MS or in silico fragmentation support
+    output: metabolite association network (graph with nodes = features, edges = structural/quantitative links)
+    confidence: high
+  Step 4: Network-guided metabolite annotation
+    tool: MetNet
+    algorithm: label propagation from known standards to unknown features via network topology
+    parameters: propagation_depth=2, confidence_threshold=0.6
+    input: metabolite association network + reference standard annotations
+    output: putatively annotated features (compound class, probable identity)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://bioconductor.org/packages/release/bioc/html/MetNet.html
+  license: Artistic-2.0
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposited or referenced
+  - No specific dataset or sample metadata described in methods
+  - No details on MS acquisition parameters (e.g., instrument type, gradient, ionization mode)
+reproducibility_strengths:
+  - Fully open-source R/Bioconductor package with DOI
+  - Explicit compatibility with XCMS/CAMERA workflow
+  - Well-documented algorithmic parameters for network inference and annotation propagation

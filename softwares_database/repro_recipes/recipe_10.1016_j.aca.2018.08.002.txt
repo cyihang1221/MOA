@@ -1,0 +1,62 @@
+========== reproducibility_recipe entry ==========
+paper_title: statTarget: A streamlined tool for signal drift correction and interpretations of quantitative mass spectrometry-based omics data.
+source_paper: Luan H et al. (2018), Analytica chimica acta, DOI: 10.1016/j.aca.2018.08.002, PMID: 30253838
+overall_reproducibility_score: 30/100
+
+workflow_steps: 6
+  Step 1: Signal drift and batch effect correction
+    tool: statTarget
+    algorithm: quality control-based random forest signal correction
+    input: feature intensity table (e.g., peak area/height matrix) with QC samples
+    output: corrected feature intensity table
+    confidence: medium
+  Step 2: Data imputation
+    tool: statTarget
+    algorithm: not specified
+    input: corrected feature intensity table
+    output: imputed feature intensity table
+    confidence: low
+  Step 3: Data normalization
+    tool: statTarget
+    algorithm: not specified
+    input: imputed feature intensity table
+    output: normalized feature intensity table
+    confidence: low
+  Step 4: Univariate statistical analysis
+    tool: statTarget
+    algorithm: not specified (likely t-test or ANOVA)
+    input: normalized feature intensity table
+    output: list of differentially abundant features with p-values and fold-changes
+    confidence: low
+  Step 5: Multivariate statistical analysis
+    tool: statTarget
+    algorithm: not specified (likely PCA, PLS-DA, or OPLS-DA)
+    input: normalized feature intensity table
+    output: multivariate model outputs (scores, loadings, VIP scores)
+    confidence: low
+  Step 6: Feature selection
+    tool: statTarget
+    algorithm: not specified (likely VIP-based or univariate + multivariate integration)
+    input: multivariate model outputs and univariate results
+    output: ranked list of discriminative features
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposition reported
+  - No code repository or download link provided
+  - No version number or release date for statTarget
+  - Critical algorithm details missing (e.g., RF hyperparameters, QC sampling strategy, normalization method)
+  - No description of input file format or metadata requirements
+  - No benchmark datasets or parameter settings disclosed
+reproducibility_strengths:
+  - Tool name and core algorithm (QC-based random forest) explicitly named
+  - Workflow stages conceptually outlined (imputation, normalization, uni/multivariate analysis)

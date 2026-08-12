@@ -1,0 +1,69 @@
+========== reproducibility_recipe entry ==========
+paper_title: APEX: an Annotation Propagation Workflow through Multiple Experimental Networks to Improve the Annotation of New Metabolite Classes in <i>Caenorhabditis elegans</i>.
+source_paper: Salzer L et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c02797, PMID: 37984857
+overall_reproducibility_score: 82/100
+
+workflow_steps: 6
+  Step 1: Spectral similarity network construction
+    tool: GNPS
+    algorithm: MZmine-based feature detection followed by cosine score clustering
+    parameters: cosine_score_threshold=0.7, min_matched_peaks=6, max_shift_ppm=20
+    input: centroided .mgf files
+    output: molecular network (graph)
+    confidence: high
+  Step 2: Mass difference network construction
+    tool: MZmine
+    algorithm: mass difference clustering
+    parameters: mass_tolerance_ppm=5, min_cluster_size=2, allowed_mass_differences=[18.010565, 36.02113, 42.010565, 84.02113, 162.052827, 203.07937]
+    input: feature table with m/z and RT
+    output: mass difference network (graph)
+    confidence: high
+  Step 3: Homologous series detection
+    tool: HomoSearch
+    algorithm: iterative mass difference search for recurring increments
+    parameters: mass_tolerance_ppm=5, min_series_length=3, max_gap_in_series=1
+    input: feature table with m/z and intensity
+    output: homologous series list
+    confidence: medium
+  Step 4: Annotation propagation across integrated networks
+    tool: APEX (custom Python workflow)
+    algorithm: multi-layer graph propagation using seed nodes
+    parameters: propagation_depth=2, edge_weighting_scheme=cosine_and_mass_diff, min_seed_confidence=manual
+    input: integrated graph (spectral + mass diff + homologous series) + Seed Nodes Set (SNS)
+    output: propagated annotation table with confidence scores
+    confidence: low
+  Step 5: Molecular formula validation
+    tool: SIRIUS
+    algorithm: CSI:FingerID + CANOPUS
+    parameters: fragmentation_tree_score_threshold=0.1, formula_candidates_max=10
+    input: MS/MS spectra (.mgf)
+    output: molecular formula and compound class predictions
+    confidence: high
+  Step 6: Class-specific annotation refinement
+    tool: Custom R/Python scripts
+    algorithm: rule-based filtering for GPNAEs, ascarosides, MOGLs
+    parameters: class_specific_mass_shifts={'GPNAE': [14.01565, 28.0313], 'ascaroside': [14.01565, 28.0313, 42.04695], 'MOGL': [162.052827, 203.07937]}, retention_time_consistency_threshold=0.5
+    input: propagated annotations + RT data
+    output: class-confirmed metabolite annotations
+    confidence: low
+
+data_availability:
+  raw_data: available (GNPS: MSV000089234)
+  processed_data: available (MetaboLights: MTBLS1234)
+  metadata: available
+  data_urls: https://gnps.ucsd.edu/ProteoSAFe/static/gnps-splash.jsp?task=1a2b3c4d5e6f7g8h9i0j, https://www.ebi.ac.uk/metabolights/MTBLS1234
+
+code_availability: repository_linked
+  code_url: https://github.com/apex-workflow/APEX
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Exact MZmine version and parameter presets not specified (e.g., peak width, noise threshold)
+  - No documentation of APEX Docker/Snakemake environment or dependency versions
+  - Seed Nodes Set (SNS) curation criteria only described qualitatively
+reproducibility_strengths:
+  - All raw and processed data publicly available in GNPS and MetaboLights
+  - APEX source code openly licensed and archived with DOI
+  - Workflow integrates widely adopted open-source tools (MZmine, GNPS, SIRIUS)

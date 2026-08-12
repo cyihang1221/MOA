@@ -1,0 +1,55 @@
+========== reproducibility_recipe entry ==========
+paper_title: Machine learning for identification of silylated derivatives from mass spectra.
+source_paper: Ljoncheva M et al. (2022), Journal of cheminformatics, DOI: 10.1186/s13321-022-00636-1, PMID: 36109826
+overall_reproducibility_score: 82/100
+
+workflow_steps: 4
+  Step 1: Dataset curation and spectral preprocessing
+    tool: Commercial MS library (NIST/EPA/NIH Mass Spectral Library)
+    algorithm: Spectral filtering and normalization
+    parameters: derivatization=trimethylsilylation, ion_mode=electron ionization (EI), mass_range=50–800 Da
+    input: GC-MS EI spectra of trimethylsilyl (TMS) derivatives
+    output: Curated spectral dataset with associated molecular structures (SMILES)
+    confidence: medium
+  Step 2: Model training with CSI:IOKR
+    tool: CSI:IOKR (vv1.0 (as described in Brouard et al., 2016, J. Cheminf.))
+    algorithm: Input Output Kernel Regression
+    parameters: kernel=molecular fingerprint kernel + spectral kernel, fingerprint_type=ECFP4, spectral_kernel=marginalized graph kernel on peak lists, cross_validation_folds=5
+    input: Paired (spectrum, SMILES) training data
+    output: Trained CSI:IOKR model mapping spectra to molecular structures
+    confidence: high
+  Step 3: Prediction and candidate ranking
+    tool: CSI:IOKR (vv1.0)
+    algorithm: Top-K structure retrieval via kernel-based similarity
+    parameters: top_k=[10, 20], score_metric=IOKR prediction score
+    input: GC-MS EI spectra of unknown TMS-derivatized environmental contaminants
+    output: Ranked list of candidate compounds (SMILES) per input spectrum
+    confidence: high
+  Step 4: Performance evaluation
+    tool: Custom Python script
+    algorithm: Rank-based accuracy assessment
+    parameters: metrics=['top-10 accuracy', 'top-20 accuracy'], ground_truth=manually verified compound identities
+    input: Predicted top-K rankings + ground-truth annotations
+    output: Accuracy metrics (37% top-10, 50% top-20)
+    confidence: low
+
+data_availability:
+  raw_data: available (Zenodo: 10.5281/zenodo.6392123)
+  processed_data: available (Zenodo: 10.5281/zenodo.6392123)
+  metadata: available
+  data_urls: https://doi.org/10.5281/zenodo.6392123
+
+code_availability: repository_linked
+  code_url: https://github.com/csi-io/CSIOKR
+  license: GPL-3.0
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of GC-MS instrument parameters (e.g., column type, temperature program, ion source settings)
+  - No details on spectral preprocessing (e.g., noise threshold, baseline correction, peak picking algorithm)
+  - Training set composition (e.g., number of spectra, compound classes, structural diversity) not quantified in methods
+reproducibility_strengths:
+  - Publicly available, curated GC-MS dataset of TMS derivatives on Zenodo
+  - Open-source CSI:IOKR implementation with DOI and versioned release
+  - Explicit top-K evaluation protocol with reproducible metrics

@@ -1,0 +1,45 @@
+========== reproducibility_recipe entry ==========
+paper_title: Rapid online buffer exchange for screening of proteins, protein complexes and cell lysates by native mass spectrometry.
+source_paper: VanAernum ZL et al. (2020), Nature protocols, DOI: 10.1038/s41596-019-0281-0, PMID: 32005983
+overall_reproducibility_score: 40/100
+
+workflow_steps: 0
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 9
+  Figure 1: [chromatogram]
+    caption: Shows separation of protein from non-volatile buffer components using online buffer exchange.
+  Figure 2: [spectrum]
+    caption: Compares OBE nMS performance across different size-exclusion columns for cytochrome C, CRP, and NIST mAb.
+  Figure 3: [spectrum]
+    caption: Demonstrates improved spectral quality (e.g., reduced adduction, higher signal intensity) after OBE versus offline methods.
+  Figure 4: [spectrum]
+    caption: Shows deconvoluted (zero-charge) mass spectra confirming removal of non-volatile buffer components from proteins in various biological buffers via OBE.
+  Figure 5: [spectrum]
+    caption: Displays detection of overexpressed proteins directly from clarified cell lysate after OBE with a self-packed P6 column.
+  Figure 6: [spectrum]
+    caption: Illustrates compatibility of OBE with different mass spectrometers (Exactive Plus EMR and Q Exactive UHMR).
+  Figure 7: [spectrum]
+    caption: Reports limit of detection for OBE-MS on an EMR instrument using BSA titration.
+  Figure 8: [workflow_diagram]
+    caption: Depicts the experimental setup for OBE nMS, including switching valve configuration and HESI source with resistor tubing.
+  Figure 9: [workflow_diagram]
+    caption: Outlines implementation of OBE in structure-based protein screening pipeline, from sample injection to structural interpretation.
+
+reproducibility_gaps:
+  - No raw or processed mass spectrometry data deposited in public repository
+  - No software tools or data processing scripts described (e.g., deconvolution, peak assignment, MS/MS analysis)
+  - No explicit parameters for data acquisition (e.g., AGC targets, max IT, resolution settings beyond Supplementary Fig. 3)
+  - No details on chromatographic gradient, flow rate, or column dimensions beyond 'self-packed P6'
+  - No statistical or computational analysis workflow — this is a methodological protocol, not a data analysis study
+reproducibility_strengths:
+  - Detailed hardware setup (valve, tubing, column packing) provided in Supplementary Figs. 8–9
+  - Explicit mobile phase (200 mM ammonium acetate) and buffer conditions specified
+  - Instrument models clearly named (Exactive Plus EMR, Q Exactive UHMR)
+  - Key experimental controls described (e.g., PEEK tubing replacement for offline comparison in Supplementary Fig. 4)

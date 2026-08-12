@@ -1,0 +1,63 @@
+========== reproducibility_recipe entry ==========
+paper_title: MAW: the reproducible Metabolome Annotation Workflow for untargeted tandem mass spectrometry.
+source_paper: Zulfiqar M et al. (2023), Journal of cheminformatics, DOI: 10.1186/s13321-023-00695-y, PMID: 36871033
+overall_reproducibility_score: 85/100
+
+workflow_steps: 5
+  Step 1: LC-MS² spectra pre-processing
+    tool: Spectra
+    algorithm: spectral preprocessing (filtering, alignment, merging)
+    input: raw LC-MS² spectra (e.g., .mzML, .mgf)
+    output: pre-processed spectral objects (Spectra R class)
+    confidence: medium
+  Step 2: Spectral and compound database matching
+    tool: SIRIUS
+    algorithm: CSI:FingerID + CANOPUS
+    parameters: mass_tolerance_ppm=10, fragmentation_model=default
+    input: pre-processed spectral objects
+    output: candidate molecular formulas, structure annotations, compound classes
+    confidence: high
+  Step 3: Integration of spectral and compound databases
+    tool: Spectra
+    algorithm: database joining (e.g., GNPS, MassBank, HMDB, MoNA)
+    parameters: databases=['GNPS', 'MassBank', 'HMDB', 'MoNA']
+    input: SIRIUS output + external spectral/compound databases
+    output: integrated candidate list with spectral matches and metadata
+    confidence: medium
+  Step 4: Chemical structure-based candidate ranking and filtering
+    tool: RDKit
+    algorithm: chemical similarity scoring (Tanimoto on Morgan fingerprints), substructure filtering
+    parameters: fp_radius=2, fp_length=2048, similarity_threshold=0.6
+    input: candidate structures (SMILES) from SIRIUS + database matches
+    output: ranked, filtered list of putative metabolite annotations with confidence scores
+    confidence: high
+  Step 5: Chemical structure similarity network construction
+    tool: RDKit + igraph (or equivalent)
+    algorithm: pairwise Tanimoto similarity → graph network
+    parameters: similarity_threshold_network=0.5
+    input: ranked SMILES list
+    output: structure similarity network (graph object)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/zmahnoor14/MAW
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No explicit mention of raw or processed data deposition (e.g., MetaboLights, GNPS)
+  - Case study datasets not described or linked
+  - Docker image tags/versions not specified (e.g., maw-r:v1.2)
+  - No details on LC-MS instrument parameters or chromatographic methods
+reproducibility_strengths:
+  - Fully open-source workflow (R + Python)
+  - Docker containers provided for environment reproducibility
+  - FAIR-compliant design explicitly stated
+  - Source code, documentation, and GitHub repository publicly available
+  - Uses established, versioned tools: Spectra, SIRIUS, RDKit

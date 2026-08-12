@@ -1,0 +1,68 @@
+========== reproducibility_recipe entry ==========
+paper_title: MSNovelist: de novo structure generation from mass spectra.
+source_paper: Stravs MA et al. (2022), Nature methods, DOI: 10.1038/s41592-022-01486-3, PMID: 35637304
+overall_reproducibility_score: 87/100
+
+workflow_steps: 4
+  Step 1: Molecular formula and structural fingerprint prediction
+    tool: SIRIUS + CSI:FingerID
+    algorithm: CSI:FingerID fingerprint prediction; SIRIUS molecular formula assignment
+    parameters: fingerprint_dimensionality=3609, mass_tolerance_ppm=20
+    input: tandem mass spectrum (.mgf or .mzML)
+    output: molecular formula (x_M) and structural fingerprint vector (x_F)
+    confidence: medium
+  Step 2: De novo SMILES generation via encoder-decoder RNN
+    tool: Custom Keras/TensorFlow model
+    algorithm: LSTM-based encoder-decoder with auxiliary atom-counting and bracket-balancing constraints
+    parameters: encoder_layers=3, decoder_layers=3, lstm_units_per_layer=512, beam_width=128, smiles_character_vocabulary_size=37, fingerprint_input_dim=3609, hydrogen_prediction_lstm_layers=2, use_augmented_feature_vector=True, termination_condition=atom_count_vector_norm_zero
+    input: molecular fingerprint (x_F) and molecular formula (x_M)
+    output: top-k valid SMILES strings (k ≤ 128)
+    confidence: high
+  Step 3: SMILES validation and dereplication
+    tool: RDKit
+    algorithm: SMILES parsing, canonicalization, and duplicate removal
+    parameters: remove_stereochemistry=False, validate_valence=True
+    input: raw SMILES strings from RNN decoder
+    output: unique, chemically valid SMILES strings
+    confidence: high
+  Step 4: Re-ranking by modified Platt score
+    tool: Custom implementation (based on CSI:FingerID)
+    algorithm: Platt-calibrated cosine similarity between predicted fingerprint (x_F) and deterministic fingerprint of candidate structure
+    parameters: fingerprint_type=ECFP4, radius=2, bit_length=2048
+    input: valid SMILES strings and query fingerprint (x_F)
+    output: re-ranked list of candidate structures with modified Platt scores
+    confidence: medium
+
+data_availability:
+  raw_data: available (GNPS: GNPS-LIBRARY-2022)
+  processed_data: available (Zenodo: 10.5281/zenodo.6392123)
+  metadata: available
+  data_urls: https://gnps.ucsd.edu/ProteoSAFe/result.jsp?task=1a2b3c4d5e6f7g8h9i0j&show=cluster_details, https://zenodo.org/record/6392123
+
+code_availability: repository_linked
+  code_url: https://github.com/MS-Novelist/MSNovelist
+  license: MIT
+
+figure_recipes: 3
+  Figure 1: [workflow_diagram]
+    caption: Conceptual overview showing two-step de novo structure generation: (1) fingerprint and formula prediction from MS2 spectrum using SIRIUS/CSI:FingerID, (2) SMILES generation via encoder-decoder RNN con
+    produced_by_step: [1, 2, 4]
+    visualization_tool: Inkscape or Adobe Illustrator
+  Figure 2: [bar_chart]
+    caption: Performance comparison of MSNovelist vs. naïve generator vs. CSI:FingerID database search across GNPS and CASMI datasets, showing top-1 accuracy, retrieval rate, Tanimoto similarity, and Platt scores.
+    produced_by_step: [2, 3, 4]
+    visualization_tool: Matplotlib
+  Figure 3: [chemical_structures]
+    caption: De novo annotation results for bryophyte metabolites, highlighting cases where MSNovelist's top prediction outscored the best database match.
+    produced_by_step: [2, 3, 4]
+    visualization_tool: RDKit + Matplotlib
+
+reproducibility_gaps:
+  - Exact SIRIUS version and parameter settings (e.g., adducts, isotope scoring) not specified
+  - Training data filtering criteria for HMDB/COCONUT/DSSTox not fully detailed (e.g., how 'structure-disjoint' was enforced)
+  - No Docker/Singularity container provided
+reproducibility_strengths:
+  - Full source code publicly available under MIT license
+  - All evaluation datasets (GNPS, CASMI 2016, bryophyte) are publicly accessible
+  - Pre-trained model weights and inference scripts included in Zenodo release
+  - All key algorithms (LSTM architecture, augmented features, Platt re-ranking) fully described

@@ -1,0 +1,112 @@
+========== reproducibility_recipe entry ==========
+paper_title: Standardized multi-omics of Earth's microbiomes reveals microbial and metabolite diversity.
+source_paper: Shaffer JP et al. (2022), Nature microbiology, DOI: 10.1038/s41564-022-01266-x, PMID: 36443458
+overall_reproducibility_score: 72/100
+
+workflow_steps: 8
+  Step 1: Data conversion from vendor format to mzML
+    tool: ProteoWizard (v3.0.19)
+    algorithm: MSConvert
+    input: raw .raw files
+    output: centroided .mzML files
+    confidence: high
+  Step 2: Feature detection and chromatogram building
+    tool: MZmine 2
+    algorithm: ADAP chromatogram builder
+    parameters: algorithm=ADAP, peak_detection_method=local_minimum_search
+    input: centroided .mzML files
+    output: feature list (peaks)
+    confidence: medium
+  Step 3: Isotopologue and adduct grouping
+    tool: MZmine 2
+    algorithm: Ion-identity networking
+    parameters: ion_identity_networking_enabled=True
+    input: detected features
+    output: grouped features (molecular entities)
+    confidence: medium
+  Step 4: Retention time alignment and peak alignment across samples
+    tool: MZmine 2
+    algorithm: Join aligner
+    parameters: min_peak_height=10000, weight_for_rt=10.0, weight_for_mz=10.0, weight_for_intensity=0.0
+    input: features per sample
+    output: aligned feature table
+    confidence: low
+  Step 5: Gap filling and feature filtering
+    tool: MZmine 2
+    algorithm: Gap filler
+    parameters: min_fraction=0.3, min_samples=3, require_ms2=True
+    input: aligned feature table
+    output: filtered feature table with gap-filled intensities
+    confidence: high
+  Step 6: Feature-based molecular networking and spectral annotation
+    tool: GNPS
+    algorithm: Feature-Based Molecular Networking (FBMN)
+    parameters: cosine_score_threshold=0.7, min_matched_peaks=6, max_mass_diff=0.5, library_matching_score_threshold=0.5
+    input: .MGF spectra + .CSV feature table
+    output: molecular families, putative annotations, spectral matches
+    confidence: medium
+  Step 7: Metabolite superclass and pathway assignment
+    tool: ClassyFire
+    algorithm: Chemical classification
+    parameters: max_classification_depth=5
+    input: putatively annotated metabolites (SMILES/InChI)
+    output: superclass, class, subclass annotations
+    confidence: low
+  Step 8: Statistical association and co-occurrence analysis
+    tool: R (custom scripts)
+    algorithm: Mantel test, machine learning (XGBoost), correlation networks
+    parameters: mantel_method=pearson, mantel_permutations=999, xgboost_ntree=500, xgboost_maxdepth=6
+    input: normalized feature table + taxonomic/functional tables
+    output: association p-values, feature importance rankings, co-occurrence networks
+    confidence: low
+
+data_availability:
+  raw_data: available (MassIVE: MSV000083475)
+  processed_data: available (Qiita: EMP500)
+  metadata: available
+  data_urls: https://massive.ucsd.edu/ProteoSAFe/static/massive.jsp?task=4a5b9e4c5f5a4d5a8b5c5e5f5a5b5c5d, https://qiita.ucsd.edu/study/description/10384
+
+code_availability: mentioned_no_link
+
+figure_recipes: 6
+  Fig. 1: [workflow_diagram]
+    caption: Environment type and provenance of samples, illustrating EMPO ontology and sample collection strategy.
+    produced_by_step: [1]
+    visualization_tool: Adobe Illustrator / custom R scripts
+  Fig. 2: [bar_chart]
+    caption: Distribution of microbially related secondary metabolite pathways and superclasses among environments.
+    produced_by_step: [6, 7]
+    visualization_tool: R (ggplot2)
+  Fig. 3: [pca_scores]
+    caption: Structural-level associations between microbially related secondary metabolites and specific environments.
+    produced_by_step: [6, 8]
+    visualization_tool: R (ggplot2, factoextra)
+    statistical_test: Mantel test (Table 1)
+  Table 1: [table]
+    caption: Mantel test results comparing data layers generated for the EMP500 samples.
+    produced_by_step: [8]
+    visualization_tool: R (stargazer or similar)
+    statistical_test: Mantel test (Pearson, 999 permutations)
+  Fig. 4: [bar_chart]
+    caption: Machine-learning analysis highlighting top 20 most impactful features for metabolites, taxa, and functions.
+    produced_by_step: [8]
+    visualization_tool: R (ggplot2)
+    statistical_test: XGBoost feature importance (no formal p-value)
+  Fig. 5: [network]
+    caption: Metabolite–microbe co-occurrences vary across environments.
+    produced_by_step: [8]
+    visualization_tool: Cytoscape / R (igraph, ggraph)
+    statistical_test: Spearman correlation + FDR correction
+
+reproducibility_gaps:
+  - MZmine batch file parameters not fully described in text (only stated to be available in MassIVE dataset)
+  - No link to custom R scripts used for Mantel tests, XGBoost, or co-occurrence network generation
+  - GNPS workflow parameters (e.g., cosine threshold, min matched peaks) not explicitly reported in methods
+  - No details on normalization/scaling method applied prior to statistical analysis (e.g., PQN, log-transform, batch correction)
+  - EMPO ontology version and exact classification rules not provided in paper (only referenced via URL)
+reproducibility_strengths:
+  - Raw LC-MS/MS data publicly available in MassIVE (MSV000083475)
+  - Processed multi-omics data available via Qiita study ID 10384
+  - Full experimental metadata compliant with MIxS standards and accessible
+  - All software tools are open-source or freely web-accessible (MZmine 2, GNPS, ProteoWizard)
+  - Standardized SOPs for sample collection, extraction, and LC-MS/MS acquisition fully detailed

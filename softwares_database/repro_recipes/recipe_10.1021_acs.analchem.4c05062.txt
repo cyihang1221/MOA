@@ -1,0 +1,57 @@
+========== reproducibility_recipe entry ==========
+paper_title: RapidMass: A Graphical Data Processing Application for Automated Species Authentication in High-Throughput Mass Spectrometry.
+source_paper: Liu C et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.4c05062, PMID: 40214074
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Raw data import and format conversion
+    tool: RapidMass
+    algorithm: instrument-agnostic parser
+    input: raw instrument files (e.g., .raw, .d, .qgd, .lcd)
+    output: internal standardized spectral format
+    confidence: low
+  Step 2: Peak detection and feature extraction
+    tool: RapidMass
+    algorithm: three specialized scoring algorithms (unspecified names)
+    parameters: processing_time_per_sample_s=[12, 20]
+    input: standardized spectral format
+    output: feature table with peak intensities and m/z values
+    confidence: low
+  Step 3: Spectral scoring and species authentication
+    tool: RapidMass
+    algorithm: three specialized algorithms for scoring unknown samples
+    parameters: accuracy_range_percent=[97, 100]
+    input: feature table + reference database
+    output: species-level classification scores and confidence metrics
+    confidence: low
+  Step 4: Peak annotation review and MS1/MS2 visualization
+    tool: RapidMass
+    algorithm: interactive annotation interface
+    input: feature table + spectral data
+    output: annotated peak list with MS1/MS2 spectra
+    confidence: medium
+  Step 5: Personal database management and expansion
+    tool: RapidMass
+    algorithm: expandable local database engine
+    input: user-provided reference spectra or metadata
+    output: customized reference database
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of algorithmic details (e.g., scoring functions, peak detection parameters, mass tolerance, RT alignment)
+  - No public data deposition (raw or processed) reported
+  - No code repository, DOI, or license information provided
+  - Instrument-specific acquisition parameters (e.g., resolution, ionization mode settings, calibration standards) not specified
+  - Nine validation datasets not described or accessible
+reproducibility_strengths:
+  - Software is stated to be freely available (‘freely available’, ‘user-friendly interface’)
+  - Explicit performance metrics reported (processing time, accuracy range)

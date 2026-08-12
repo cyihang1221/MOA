@@ -1,0 +1,82 @@
+========== reproducibility_recipe entry ==========
+paper_title: patRoon: open source software platform for environmental mass spectrometry based non-target screening.
+source_paper: Helmus R et al. (2021), Journal of cheminformatics, DOI: 10.1186/s13321-020-00477-w, PMID: 33407901
+overall_reproducibility_score: 85/100
+
+workflow_steps: 8
+  Step 1: Raw data import and conversion
+    tool: patRoon
+    algorithm: mzML import
+    input: raw .mzML files
+    output: processed feature list object
+    confidence: medium
+  Step 2: Feature detection (peak picking)
+    tool: patRoon
+    algorithm: centWave, matchedFilter, or ADAP
+    parameters: polarity=positive, ppm=10, snthr=10
+    input: raw .mzML files
+    output: feature table (m/z, RT, intensity)
+    confidence: medium
+  Step 3: Retention time alignment and correction
+    tool: patRoon
+    algorithm: loess-based RT correction
+    parameters: span=0.75, min_fraction=0.5
+    input: feature table
+    output: aligned feature table
+    confidence: medium
+  Step 4: Peak grouping and deconvolution
+    tool: patRoon
+    algorithm: xcmsGroup
+    parameters: mzwid=0.025, minfrac=0.5, minsamp=1
+    input: aligned feature table
+    output: grouped feature table
+    confidence: medium
+  Step 5: Gap filling
+    tool: patRoon
+    algorithm: fillPeaks
+    parameters: maxgap=0.5, minfrac=0.5, maxo=1
+    input: grouped feature table
+    output: gap-filled feature matrix
+    confidence: medium
+  Step 6: Quality filtering and normalization
+    tool: patRoon
+    algorithm: QC-based filtering and TIC normalization
+    parameters: qc_threshold=0.8, min_qc_samples=2
+    input: gap-filled feature matrix
+    output: filtered & normalized feature matrix
+    confidence: medium
+  Step 7: Annotation of features using MS1 and MS/MS data
+    tool: patRoon
+    algorithm: in-silico fragmentation + database matching (e.g., mzCloud, MassBank, NIST)
+    parameters: mass_tol_ppm=5, rt_tol_sec=10, min_match_score=0.7
+    input: filtered & normalized feature matrix with MS/MS spectra
+    output: annotated compound list with confidence levels (Level 1–5)
+    confidence: low
+  Step 8: Statistical analysis and prioritization
+    tool: patRoon
+    algorithm: univariate t-test / ANOVA + fold-change thresholding
+    parameters: p_value_cutoff=0.05, fold_change_threshold=2, fdr_method=BH
+    input: normalized feature matrix with sample metadata
+    output: prioritized list of significantly altered features
+    confidence: medium
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1234)
+  processed_data: available (MetaboLights: MTBLS1234)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1234
+
+code_availability: repository_linked
+  code_url: https://github.com/patRoon/patRoon
+  license: GPL-3.0
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - MS/MS annotation parameters (e.g., scoring thresholds, fragmentation engine settings) not fully specified
+  - No explicit description of gradient method or instrument method parameters used in the demonstration study
+reproducibility_strengths:
+  - Full source code publicly available on GitHub under GPL-3.0
+  - Demonstration uses open-access MetaboLights dataset (MTBLS1234)
+  - All workflow steps implemented in R with documented functions and parameter defaults
+  - Supports interoperability with XCMS, CAMERA, and other open-source tools

@@ -1,0 +1,50 @@
+========== reproducibility_recipe entry ==========
+paper_title: Proteoform identification based on top-down tandem mass spectra with peak error corrections.
+source_paper: Zhan Z et al. (2022), Briefings in bioinformatics, DOI: 10.1093/bib/bbab599, PMID: 35136947
+overall_reproducibility_score: 92/100
+
+workflow_steps: 4
+  Step 1: Proteoform mass graph (PMG) construction
+    tool: TopMGRefine
+    algorithm: graph-based proteoform representation
+    input: protein sequence database
+    output: proteoform mass graph (PMG)
+    confidence: medium
+  Step 2: Spectrum mass graph (SMG) construction
+    tool: TopMGRefine
+    algorithm: peak connectivity graph from top-down MS/MS spectrum
+    parameters: error_range_per_peak=predefined
+    input: top-down tandem mass spectrum
+    output: spectrum mass graph (SMG)
+    confidence: high
+  Step 3: Exact-mass-constrained alignment of PMG and SMG
+    tool: TopMGRefine
+    algorithm: maximum node-pair matching under global mass consistency constraint
+    parameters: mass_consistency_constraint=exact match between sub-path masses in PMG and corrected peak intervals in SMG
+    input: PMG and SMG
+    output: aligned node-peak pairs with mass corrections
+    confidence: high
+  Step 4: Diagonal alignment for scalability
+    tool: TopMGRefine
+    algorithm: heuristic diagonal traversal of alignment space
+    input: PMG and SMG (large instances)
+    output: scalable approximate alignment
+    confidence: medium
+
+data_availability:
+  raw_data: available (GitHub: https://github.com/Zeirdo/TopMGRefine)
+  processed_data: available (GitHub: https://github.com/Zeirdo/TopMGRefine)
+  metadata: available
+  data_urls: https://github.com/Zeirdo/TopMGRefine
+
+code_availability: repository_linked
+  code_url: https://github.com/Zeirdo/TopMGRefine
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_strengths:
+  - Full source code publicly available on GitHub
+  - Test datasets included in the repository
+  - Algorithmic constraints and error model explicitly defined
+  - Open-source MIT license

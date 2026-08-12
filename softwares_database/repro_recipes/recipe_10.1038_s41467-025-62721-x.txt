@@ -1,0 +1,78 @@
+========== reproducibility_recipe entry ==========
+paper_title: SLC45A4 encodes a peroxisomal putrescine transporter that promotes GABA de novo synthesis.
+source_paper: Colson C et al. (2025), Nature communications, DOI: 10.1038/s41467-025-62721-x, PMID: 41266324
+overall_reproducibility_score: 42/100
+
+workflow_steps: 7
+  Step 1: Metabolomic-transcriptomic association analysis
+    tool: Linear regression
+    algorithm: Linear regression model
+    parameters: n_samples=898
+    input: CCLE metabolomics and transcriptomics profiles (898 cancer cell lines)
+    output: Gene-metabolite association table with t-statistics and p-values
+    confidence: medium
+  Step 2: Stable isotope tracing experiment design
+    tool: Custom experimental protocol
+    algorithm: Isotope labeling (U-¹³C, ²H₆, ¹³C₄ tracers)
+    parameters: tracer_compounds=['U-¹³C-glutamine', 'U-¹³C-arginine', '²H₆-ornithine', '¹³C₄-putrescine', '¹³C₄-GABA'], tracer_concentrations={'²H₆-ornithine': 0.0002, '¹³C₄-putrescine': [5e-06, 2e-05], 'GABA': 2e-05}, labeling_duration=24, labeling_duration_unit=hours, media=SILAC RPMI 1640 Flex Media, FBS_substitution=dialyzed FBS or iFBS
+    input: Cell culture (A549, H1299, HepG2, HEK293T)
+    output: Isotope-labeled metabolite extracts (cell lysate and conditioned media)
+    confidence: high
+  Step 3: Metabolite extraction
+    tool: Organic solvent extraction
+    algorithm: Cold organic quenching and neutralization
+    parameters: solvent_composition=40:40:20 methanol:acetonitrile:water, additive=0.5% formic acid, neutralization_reagent=15% NH4HCO3, cell_density=500000.0, volume=0.5, temperature=-20, incubation_time=10, centrifugation_g=16000, centrifugation_time=10, centrifugation_temp=4
+    input: Cell pellets or conditioned media
+    output: Metabolite extracts in aqueous/organic phase
+    confidence: high
+  Step 4: LC-MS analysis (HILIC)
+    tool: Thermo Fisher Vanquish Horizon UHPLC + Q Exactive PLUS
+    algorithm: High-resolution full-scan MS
+    parameters: column=Waters XBridge BEH Amide, 150 mm × 2.1 mm, 2.5 μm, mobile_phase_A=95:5 H2O:acetonitrile + 20 mM acetic acid + 40 mM ammonium hydroxide, pH 9.4, mobile_phase_B=20:80 H2O:acetonitrile + 20 mM acetic acid + 40 mM ammonium hydroxide, pH 9.4, gradient=[[0, 100], [3, 100], [3.2, 90], [6.2, 90], [6.5, 80], [10.5, 80], [10.7, 70], [13.5, 70], [13.7, 45], [16, 45], [16.5, 100], [22, 100]], flow_rate=300, injection_volume=5, column_temperature=25, autosampler_temperature=4, ion_mode=['positive', 'negative'], resolution=70000, resolution_at_mz=200, AGC_target=3000000.0, scan_range_mz=[72, 1000]
+    input: Metabolite extracts
+    output: Raw .raw files (Thermo format)
+    confidence: high
+  Step 5: Metabolite feature detection and quantification
+    tool: El-MAVEN
+    algorithm: Peak integration with mass accuracy window
+    parameters: mass_accuracy_ppm=5
+    input: Raw .raw files
+    output: Quantified peak area table (metabolite features)
+    confidence: high
+  Step 6: Isotopic correction
+    tool: AccuCor
+    algorithm: Natural abundance correction for isotopologues
+    input: El-MAVEN peak table with isotopic patterns
+    output: Corrected isotopologue distribution table (M+0, M+1, ..., M+n)
+    confidence: high
+  Step 7: Functional validation via proteoliposome transport assay
+    tool: TRPS + ³H uptake assay
+    algorithm: Radiolabeled substrate uptake + nanoparticle sizing
+    parameters: proteoliposome_size_filter=[400, 200], nanopore_size=[85, 500], calibration_standard=195 nm CPC200 particles, dilution_factor=2000, scintillation_cocktail=EcoLite, counting_method=Liquid scintillation counting, normalization_basis=proteoliposome particle number
+    input: In vitro synthesized SLC45A4 proteoliposomes
+    output: Putrescine transport rate (CPM per particle)
+    confidence: high
+
+data_availability:
+  raw_data: available (CCLE: https://portals.broadinstitute.org/ccle)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+  data_urls: https://portals.broadinstitute.org/ccle
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS data (.raw files) not deposited in public repository (e.g., MetaboLights, GNPS)
+  - No code/scripts shared for El-MAVEN processing, AccuCor correction, or association statistics
+  - No detailed parameters for El-MAVEN peak picking (e.g., SN threshold, min peak width, retention time tolerance)
+  - No description of metabolite identification workflow (MS/MS, database matching, confidence levels)
+  - No statistical thresholds reported for metabolite association (e.g., FDR cutoff, effect size filtering)
+  - Proteoliposome TRPS and scintillation data processing scripts not provided
+reproducibility_strengths:
+  - Public CCLE data used for discovery (898 cell lines)
+  - Full experimental details for isotope tracers, concentrations, and timing
+  - Explicit LC gradient, column, and MS acquisition parameters
+  - Clear metabolite extraction protocol with volumes, temperatures, and reagents
+  - Use of established open-source tools (AccuCor) and widely adopted commercial platforms (Thermo)

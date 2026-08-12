@@ -1,0 +1,32 @@
+========== reproducibility_recipe entry ==========
+paper_title: Integrated Probabilistic Annotation: A Bayesian-Based Annotation Method for Metabolomic Profiles Integrating Biochemical Connections, Isotope Patterns, and Adduct Relationships.
+source_paper: Del Carratore F et al. (2019), Analytical chemistry, DOI: 10.1021/acs.analchem.9b02354, PMID: 31509381
+overall_reproducibility_score: 75/100
+
+workflow_steps: 1
+  Step 1: Probabilistic metabolite annotation
+    tool: IPA
+    algorithm: Bayesian inference
+    input: feature table with m/z, RT, intensity, and MS/MS spectra (if available)
+    output: annotated metabolite list with posterior probabilities
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/francescodc87/IPA
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No experimental data or case study datasets provided or referenced
+  - No details on input data format requirements (e.g., mzML vs. .csv, required columns)
+  - No specification of prior distributions or background knowledge sources used in Bayesian model
+  - No description of integration of biochemical connections (e.g., KEGG/Reactome mapping method or version)
+reproducibility_strengths:
+  - Source code publicly available on GitHub
+  - Extensive documentation mentioned
+  - Method grounded in Bayesian framework enabling transparent uncertainty quantification

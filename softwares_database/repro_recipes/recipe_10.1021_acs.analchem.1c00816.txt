@@ -1,0 +1,78 @@
+========== reproducibility_recipe entry ==========
+paper_title: Systematic Feature Filtering in Exploratory Metabolomics: Application toward Biomarker Discovery.
+source_paper: Gadara D et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.1c00816, PMID: 34156818
+overall_reproducibility_score: 48/100
+
+workflow_steps: 7
+  Step 1: Feature detection and preprocessing
+    tool: XCMS Online
+    algorithm: centWave (inferred default for XCMS Online LC-MS)
+    input: raw .mzML or vendor files (not specified)
+    output: feature table (peak list with m/z, RT, intensity)
+    confidence: medium
+  Step 2: Blank subtraction
+    tool: XCMS Online
+    algorithm: blank subtraction module (XCMS Online)
+    parameters: blank_threshold=default or unspecified
+    input: feature table + blank sample files
+    output: blank-subtracted feature table
+    confidence: low
+  Step 3: Reproducibility assessment
+    tool: XCMS Online
+    algorithm: reproducibility filter (e.g., % presence across QC/replicates)
+    parameters: min_reproducibility_across_samples=unspecified, QC_criteria=unspecified
+    input: blank-subtracted feature table + sample metadata
+    output: reproducible feature subset
+    confidence: low
+  Step 4: Metabolite annotation (tentative identification)
+    tool: Metabolomics databases via XCMS Online
+    algorithm: m/z matching against HMDB, METLIN, MassBank (inferred)
+    parameters: mass_tolerance_ppm=None, database_score_threshold=unspecified
+    input: reproducible feature table (m/z, RT, intensity)
+    output: tentatively identified metabolite list with putative IDs
+    confidence: medium
+  Step 5: Retention time-based physicochemical filtering
+    tool: Custom linear regression model
+    algorithm: Linear regression of experimental RT vs. cLogP
+    parameters: n_retention_indices=42, cLogP_range_min=-6, cLogP_range_max=11
+    input: tentatively identified metabolite list + predicted cLogP + experimental RT
+    output: RT-filtered tentative identifications
+    confidence: high
+  Step 6: Statistical analysis
+    tool: Not explicitly named (implied in XCMS Online or downstream)
+    algorithm: Unspecified (likely t-test or ANOVA for case/control)
+    parameters: p_value_threshold=unspecified, FDR_method=unspecified
+    input: RT-filtered tentative identifications table
+    output: differentially abundant metabolites
+    confidence: low
+  Step 7: MS/MS validation
+    tool: LC-MS/MS platform (vendor unspecified)
+    algorithm: Fragmentation pattern matching
+    parameters: collision_energy=unspecified, spectral_matching_score=unspecified
+    input: differentially abundant metabolites (target list)
+    output: Confirmed structural identifications
+    confidence: low
+
+data_availability:
+  raw_data: available (Metabolomics Workbench: not specified in text)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+  data_urls: https://www.metabolomicsworkbench.org
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No accession ID provided for Metabolomics Workbench dataset(s) used in CVID study
+  - XCMS Online parameters (e.g., ppm tolerance, peak width, SN threshold) not reported
+  - No details on blank subtraction method (e.g., subtraction algorithm, blank sample type/number)
+  - Reproducibility criteria (e.g., % samples/QCs required for retention) unspecified
+  - Statistical testing method and thresholds (p, FDR) not stated
+  - Custom RT–cLogP regression model implementation not shared (no code, no coefficients, no validation metrics)
+  - MS/MS acquisition and spectral matching parameters omitted
+  - No raw data deposition link or identifier for the CVID cohort
+reproducibility_strengths:
+  - Workflow applied to publicly accessible Metabolomics Workbench data
+  - Use of widely adopted web platform (XCMS Online) enhances accessibility
+  - Explicit reporting of filtering impact (88% reduction: 6940 → 839 features)

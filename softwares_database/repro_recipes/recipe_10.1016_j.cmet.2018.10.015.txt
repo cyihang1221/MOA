@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: Hepatocyte-Macrophage Acetoacetate Shuttle Protects against Tissue Fibrosis.
+source_paper: Puchalska P et al. (2019), Cell metabolism, DOI: 10.1016/j.cmet.2018.10.015, PMID: 30449686
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Stable isotope tracing with [13C]acetoacetate and [13C]glucose
+    tool: custom metabolic labeling protocol
+    parameters: tracer_concentration=not specified, incubation_time=not specified, cell_type=classically and alternatively polarized macrophages, controls=unlabeled AcAc competition, SCOT-knockout macrophages
+    input: cultured macrophages (in vitro) and mouse liver tissue (in vivo)
+    output: isotope-labeled metabolite features
+    confidence: low
+  Step 2: Untargeted metabolomics profiling
+    tool: mass spectrometry
+    parameters: instrument_platform=not specified, ionization_mode=not specified, polarity=not specified, chromatography=not specified, acquisition_mode=full-scan MS and MS/MS
+    input: cell/tissue extracts
+    output: raw mass spectrometry files (.raw or vendor format)
+    confidence: low
+  Step 3: Metabolite feature detection and isotopic labeling analysis
+    tool: custom or commercial software (not named)
+    algorithm: isotope pattern-based feature detection
+    parameters: labeling_threshold=~200 features labeled by [13C]AcAc, ~500 by [13C]glucose, competition_fraction=15% overlap with unlabeled AcAc, SCOT-dependence_criteria=loss of labeling in SCOT-deficient macrophages
+    input: raw MS data
+    output: labeled metabolite feature table (m/z, RT, intensity, isotopologue distribution)
+    confidence: medium
+  Step 4: Pathway mapping and biological interpretation
+    tool: manual curation and pathway databases (e.g., KEGG, HMDB)
+    algorithm: chemical annotation based on m/z, retention time, MS/MS, and isotopic labeling patterns
+    parameters: pathway_focus=cytoplasmic glycosaminoglycan pathway, key_enzyme=succinyl-CoA:3-oxoacid CoA-transferase (SCOT)
+    input: labeled feature table + MS/MS spectra
+    output: annotated metabolites linked to fibrogenesis pathways
+    confidence: medium
+  Step 5: In vivo functional validation
+    tool: mouse models (SCOT myeloid-specific KO, diet-induced fibrosis)
+    parameters: model=C57BL/6 mice, high-fat/choline-deficient diet, intervention=exogenous AcAc vs. D-βOHB administration, endpoint=hepatic fibrosis (histology, collagen quantification)
+    input: biological samples (liver tissue)
+    output: fibrosis severity scores, histopathology, collagen content
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: not_mentioned (not mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No mass spectrometry raw data deposited in public repository (e.g., MetaboLights, PRIDE)
+  - No details on LC-MS platform, acquisition parameters, or chromatographic methods
+  - No software tools named for feature detection, alignment, or isotopic analysis
+  - No code, scripts, or parameter settings shared for data processing or statistical analysis
+  - No metadata schema or sample annotation table provided beyond brief experimental groups

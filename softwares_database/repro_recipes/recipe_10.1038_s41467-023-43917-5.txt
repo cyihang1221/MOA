@@ -1,0 +1,106 @@
+========== reproducibility_recipe entry ==========
+paper_title: Single-cell spatial metabolomics with cell-type specific protein profiling for tissue systems biology.
+source_paper: Hu T et al. (2023), Nature communications, DOI: 10.1038/s41467-023-43917-5, PMID: 38086839
+overall_reproducibility_score: 32/100
+
+workflow_steps: 11
+  Step 1: Tissue preparation and isotope-conjugated antibody labeling
+    tool: Standard BioTools / Agilent Dako protocols
+    algorithm: Heat-induced epitope retrieval (pH 9), protein blocking, overnight metal-tagged antibody incubation, Intercalator-191Ir/193Ir nuclear staining
+    parameters: baking_temperature_celsius=60, baking_duration_hours=2, antigen_retrieval_pH=9, antigen_retrieval_duration_minutes=15, antibody_incubation_temperature_celsius=4, antibody_incubation_duration_hours=16, nuclear_stain_duration_minutes=30, nuclear_stain_reagent=Intercalator-191Ir/193Ir
+    input: FFPE tissue sections (5–7 µm thickness)
+    output: Metal-labeled tissue slides ready for IMC
+    confidence: high
+  Step 2: IMC imaging and data acquisition
+    tool: Fluidigm Hyperion Imaging System (vMCD Viewer v1.0.560.2)
+    algorithm: Laser ablation-based mass cytometry
+    parameters: roi_size_micrometer=[1500, 1500], laser_power_optimization=empirical testing across tissue heterogeneity, file_format=MCD
+    input: Metal-labeled tissue slides
+    output: MCD files containing single-cell metal ion intensities per pixel
+    confidence: medium
+  Step 3: TOF-SIMS imaging
+    tool: IONTOF 5 GmbH TOF-SIMS
+    algorithm: Bismuth cluster ion sputtering (Bi3++ mode), depth profiling with Cs+ sputtering
+    parameters: primary_ion_mode=Bi3++, primary_ion_energy_kv=50, imaging_area_micrometer=[300, 400], pixel_resolution=[512, 512], depth_profiling_slices=30, ablation_time_per_slice_seconds=10, cs_sputtering_energy_kv=2, polarity_mode=negative
+    input: Same FFPE tissue sections (co-registered with IMC)
+    output: 3D spatial mass spectra (m/z × x × y × depth)
+    confidence: high
+  Step 4: SIMS data preprocessing and metabolite channel selection
+    tool: IONTOF SurfaceLab (vv6)
+    algorithm: Peak selection, ASCII export, mean ion count normalization
+    parameters: selected_peaks_count=200, normalization_method=mean ion count, normalization_formula=Y_i = X_i / sum_j(x_ij) * P
+    input: Raw TOF-SIMS .raw or .tdf files
+    output: Normalized spatial ion intensity maps (ASCII text files)
+    confidence: high
+  Step 5: Pixel-level clustering for spatial metabolite domains
+    tool: Leiden algorithm (via Scanpy or custom Python)
+    algorithm: Leiden graph-based clustering on downsampled pixel features
+    parameters: downsampling_factor=20, feature_normalization=z-score (mean=0, std=1), k_nearest_neighbors=30, distance_metric=euclidean
+    input: Normalized SIMS ion intensity matrix (pixels × m/z channels)
+    output: Pixel cluster labels (spatial metabolite domains)
+    confidence: medium
+  Step 6: Cross-modality image registration (SIMS–IMC–H&E)
+    tool: Custom Python pipeline (FFT + DoG + RANSAC)
+    algorithm: Two-step registration: (1) FFT-based translation, (2) polar-FFT rotation + DoG feature detection + RANSAC affine alignment
+    parameters: interpolation_method=bi-quadratic, anti_aliasing=False, feature_detection_threshold=user-selected, max_correlation_coefficient_location=used for translation offset
+    input: Registered H&E, IMC protein channel images, SIMS ion maps
+    output: Spatially aligned multi-modal image stacks (same pixel grid)
+    confidence: low
+  Step 7: Single-cell segmentation (nuclei + cytosol)
+    tool: ['Cellpose', 'DeepCell Mesmer']
+    algorithm: Deep learning-based nuclei segmentation + morphological expansion / marker fusion + cytosol subtraction
+    parameters: nuclei_markers_lung=['Histone H3'], nuclei_markers_tonsil=['Histone H3', 'DNA1', 'DNA2', 'Ki67', 'PD1'], nuclei_markers_endometrium=['DNA1', 'DNA2'], cytosol_markers_tonsil=['CD38', 'Vimentin', 'CD21', 'BCL6', 'ICOS1', 'CD11b', 'CD86', 'CXCR4', 'CD11c', 'FoxP3', 'CD4', 'CD138', 'CXCR5', 'CD20', 'CD8', 'C-Myc', 'PD1', 'CD83', 'Ki67', 'COL1', 'CD3', 'CD27', 'EZH2'], nuclei_expansion_pixels=2, segmentation_comparison=IMC > 3D-SMF in nuclei area capture
+    input: Registered IMC protein channel images
+    output: Cell masks (nuclei + cytosol) per single cell
+    confidence: high
+  Step 8: Single-cell metabolite quantification
+    tool: Custom Python/R pipeline
+    algorithm: Extraction of mean ion intensity per m/z channel within each segmented cell mask
+    parameters: extraction_method=mean intensity over all pixels in cell mask, cell_mask_overlap_handling=exclusive cytosol (nucleus subtracted)
+    input: Aligned SIMS ion maps + cell masks
+    output: Single-cell metabolite feature table (cells × m/z channels)
+    confidence: medium
+  Step 9: Cell-type clustering and batch correction
+    tool: ['Scanorama', 'Leiden algorithm']
+    algorithm: Z-score normalization → Scanorama batch correction → neighborhood graph construction → Leiden community detection
+    parameters: normalization=z-score per marker, batch_correction_tool=Scanorama, graph_construction_method=k-nearest neighbors, leiden_resolution_parameter=None
+    input: Single-cell protein expression matrix (cells × markers)
+    output: Cell phenotype cluster assignments (e.g., CD4+ T, B, tumor, macrophage)
+    confidence: medium
+  Step 10: Spatial neighboring network construction
+    tool: Custom Python (e.g., scipy.spatial, networkx)
+    algorithm: Centroid distance thresholding + mask adjacency
+    parameters: lung_distance_threshold_micrometer=20, tonsil_adjacency_rule=touching cell masks, centroid_extraction=from segmented masks
+    input: Cell centroids + cluster labels + masks
+    output: Spatial proximity graph (nodes = cells, edges = spatial neighbors)
+    confidence: high
+  Step 11: Joint protein-metabolite embedding and trajectory inference
+    tool: Deep learning model (unspecified architecture), Monocle3 or Slingshot
+    algorithm: Deep learning-based joint embedding; trajectory inference along differentiation paths
+    parameters: embedding_method=deep learning-based joint embedding (not specified), trajectory_inference_tool=Monocle3 or Slingshot (implied, not named)
+    input: Integrated protein + metabolite feature matrices per cell
+    output: Low-dimensional joint embedding, pseudotime trajectories
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (Not specified)
+  processed_data: not_mentioned (Not specified)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw IMC (.MCD) and TOF-SIMS (.raw/.tdf) data not deposited in public repository (e.g., Mendeley Data, MetaboLights, or Zenodo)
+  - No code repository or scripts provided for image registration, pixel/cell-level quantification, or joint embedding
+  - Deep learning model architecture and training details for joint embedding are unspecified
+  - Leiden resolution parameter, Scanorama hyperparameters, and trajectory inference tool not named or configured
+  - SIMS peak annotation relies on 'published work' (Supplementary Data 2 & 3) but no accession or versioning provided
+  - No description of statistical thresholds for differential metabolite analysis or significance testing
+  - Commercial software dependencies (IONTOF SurfaceLab v6, Fluidigm MCD Viewer, Hyperion system) lack version-controlled configuration or export settings
+reproducibility_strengths:
+  - Detailed wet-lab protocols (antibody panel, antigen retrieval, staining conditions)
+  - Explicit instrument parameters (Bi3++ mode, Cs+ sputtering settings, ROI sizes, pixel counts)
+  - Use of established open-source tools (Cellpose, DeepCell Mesmer, Scanorama, Leiden)
+  - Clear description of spatial neighbor definition (20-µm threshold, touching masks)

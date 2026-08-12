@@ -1,0 +1,78 @@
+========== reproducibility_recipe entry ==========
+paper_title: Metabolomics strategy for diagnosing urinary tract infections.
+source_paper: Chan CCY et al. (2025), Nature communications, DOI: 10.1038/s41467-025-57765-y, PMID: 40102424
+overall_reproducibility_score: 42/100
+
+workflow_steps: 7
+  Step 1: Untargeted LC-MS data acquisition
+    tool: Q Exactive HF Hybrid Quadrupole-Orbitrap
+    algorithm: full scan MS
+    parameters: resolution=240000, mass_range_mz=[50, 750], ionization_mode=['positive', 'negative'], gradient_duration_min=15, gradient_profile=[{'time_min': 0, 'B_percent': 100}, {'time_min': 2, 'B_percent': 100}, {'time_min': 7, 'B_percent': 80}, {'time_min': 10, 'B_percent': 5}, {'time_min': 12, 'B_percent': 5}, {'time_min': 13, 'B_percent': 100}, {'time_min': 15, 'B_percent': 100}], flow_rate_uL_min=600, column=Syncronis HILIC (2.1 mm × 100 mm × 1.7 µm), solvent_A=20 mM ammonium formate pH 3.0 in H2O, solvent_B=acetonitrile + 0.1% formic acid (v/v), mass_tolerance_ppm=10
+    input: raw urine samples (77 culture-positive, 33 culture-negative)
+    output: raw .raw files
+    confidence: high
+  Step 2: Feature detection and alignment
+    tool: El-MAVEN (v12.0)
+    algorithm: peak picking, retention time alignment, library matching
+    parameters: mass_tolerance_ppm=10, retention_time_tolerance_sec=None, library=MSMLS (Sigma-Aldrich)
+    input: raw .raw files
+    output: annotated feature table (m/z, RT, intensity)
+    confidence: medium
+  Step 3: Metabolite identification via MS/MS
+    tool: Q Exactive HF
+    algorithm: fragmentation spectrum matching, co-elution with standards
+    parameters: collision_energy_eV=None, fragmentation_mode=HCD
+    input: features of interest from El-MAVEN output
+    output: putatively identified metabolites (agmatine, N6-methyladenine)
+    confidence: high
+  Step 4: Targeted quantification (agmatine) using isotope dilution
+    tool: TSQ Quantum Access MAX
+    algorithm: SRM (selected reaction monitoring)
+    parameters: transitions=[{'analyte': 'agmatine', 'precursor_mz': 131.2, 'product_mz': 72.4, 'polarity': 'positive', 'CE_eV': 15}, {'analyte': '[U-13C]agmatine', 'precursor_mz': 136.2, 'product_mz': 76.4, 'polarity': 'positive', 'CE_eV': 15}], gradient_duration_min=6, gradient_profile=[{'time_min': 0, 'B_percent': 100}, {'time_min': 0.5, 'B_percent': 100}, {'time_min': 2, 'B_percent': 5}, {'time_min': 3.5, 'B_percent': 0}, {'time_min': 4.5, 'B_percent': 0}, {'time_min': 5, 'B_percent': 100}, {'time_min': 6, 'B_percent': 100}], flow_rate_uL_min=600, column=Syncronis HILIC (2.1 mm × 100 mm × 1.7 µm), sample_preparation=SPE purification (HyperSep Silica), ion_source_voltage_V=3000, capillary_temp_C=275, aux_gas_temp_C=325, sheath_gas_arb=25, aux_gas_arb=10, sweep_gas_arb=0
+    input: SPE-purified urine samples (n = 519)
+    output: quantified agmatine concentrations (ng/mL or µM)
+    confidence: high
+  Step 5: Targeted quantification (N6-methyladenine & creatinine) — dilute-and-shoot
+    tool: TSQ Altis
+    algorithm: SRM
+    parameters: transitions=[{'analyte': 'agmatine', 'precursor_mz': 131.0, 'product_mz': 97.1, 'polarity': 'positive', 'CE_eV': 16}, {'analyte': 'N6-methyladenine', 'precursor_mz': 150.0, 'product_mz': 122.9, 'polarity': 'positive', 'CE_eV': 23}, {'analyte': 'creatinine', 'precursor_mz': 114.1, 'product_mz': 86.1, 'polarity': 'positive', 'CE_eV': 13}], gradient_duration_min=3.2, gradient_profile=[{'time_min': 0, 'B_percent': 95}, {'time_min': 0.5, 'B_percent': 95}, {'time_min': 1.75, 'B_percent': 30}, {'time_min': 1.8, 'B_percent': 5}, {'time_min': 2.3, 'B_percent': 5}, {'time_min': 2.4, 'B_percent': 95}, {'time_min': 3.2, 'B_percent': 95}], flow_rate_uL_min=1000, column=Syncronis HILIC (50 × 2.1 mm, 1.7 µm), injection_volume_uL=2, sample_dilution=1:200 in 50% methanol, ion_source_voltage_V=3000, vaporizer_temp_C=250, capillary_temp_C=275, sheath_gas_arb=35, aux_gas_arb=15, sweep_gas_arb=2
+    input: diluted raw urine (n = 1042)
+    output: quantified agmatine, N6-methyladenine, creatinine concentrations
+    confidence: high
+  Step 6: Statistical evaluation and biomarker performance assessment
+    tool: unknown (custom or standard statistical software)
+    algorithm: ROC analysis, AUC calculation, threshold optimization
+    parameters: classification_groups=['culture-positive (≥10^7 CFU/L)', 'culture-negative (<10^7 CFU/L)'], performance_metrics=['AUC', 'sensitivity', 'specificity', 'PPV', 'NPV'], cohort_sizes={'cohort_1': 587, 'cohort_2': 1042}, blinded_evaluation=True
+    input: quantified metabolite concentrations + culture status
+    output: AUC values, optimal thresholds, classification accuracy metrics
+    confidence: low
+  Step 7: Microbial origin validation
+    tool: TSQ Quantum Access MAX / TSQ Altis
+    algorithm: time-course SRM tracking of labeled precursors and products
+    parameters: tracer=[15N2]arginine → [15N2]agmatine, incubation_time_h=5, microbial_strains=['E. coli MG1655, ATCC 25922, ESBL ATCC BAA-196', 'S. aureus ATCC 25923, ATCC 43300'], matrix=sterilized urine, inhibition_test=boric acid treatment
+    input: LC-MS/MS time-series data from spiked microbial cultures
+    output: evidence of microbial biosynthesis (label incorporation, kinetics)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository (e.g., MetaboLights, PRIDE, GNPS)
+  - No code or scripts shared for data processing, statistical analysis, or ROC modeling
+  - El-MAVEN v12.0 parameters (e.g., peak width, noise threshold, alignment settings) not specified
+  - No details on how creatinine normalization was performed (e.g., ratio, regression, correction model)
+  - No description of statistical software (R/Python packages, SAS, GraphPad) or version used for AUC/threshold analysis
+  - Commercial instruments (Q Exactive HF, TSQ series) require proprietary vendor software (Xcalibur, TraceFinder) not described or accessible
+  - SPE protocol lacks elution volume, drying method, reconstitution solvent/volume — critical for quantitative reproducibility
+reproducibility_strengths:
+  - Detailed LC gradients, column specs, and MS parameters provided for all platforms
+  - Explicit m/z transitions, collision energies, and ion source conditions reported
+  - Clear cohort sizes, clinical definitions (CFU/L thresholds), and blinding strategy stated
+  - Use of stable isotope-labeled internal standard ([U-13C]agmatine) with full biosynthesis description

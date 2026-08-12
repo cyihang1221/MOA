@@ -868,6 +868,80 @@ body:has(.shared-banner:not(.hidden)) {
   font-size: 16px;
 }
 
+.files-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.metadata-editor-panel {
+  width: min(920px, 96vw);
+  max-height: 90vh;
+}
+
+.metadata-editor-meta {
+  margin: 0 0 0.5rem;
+  font-size: 12px;
+}
+
+.metadata-editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 0.5rem;
+}
+
+.metadata-table-wrap {
+  overflow: auto;
+  max-height: min(52vh, 480px);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.metadata-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.metadata-table th,
+.metadata-table td {
+  border-bottom: 1px solid var(--border);
+  padding: 4px 6px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.metadata-table th {
+  position: sticky;
+  top: 0;
+  background: var(--panel-bg, #fff);
+  z-index: 1;
+  text-align: left;
+  font-weight: 600;
+}
+
+.metadata-table input {
+  width: 100%;
+  min-width: 88px;
+  box-sizing: border-box;
+  font-size: 12px;
+  padding: 4px 6px;
+}
+
+.metadata-table .metadata-row-actions {
+  width: 36px;
+  text-align: center;
+}
+
+.metadata-table .metadata-delete-row {
+  padding: 2px 6px;
+  font-size: 14px;
+  line-height: 1;
+}
+
 .small-btn {
   padding: 4px 10px;
   font-size: 12px;
@@ -1716,6 +1790,78 @@ body:has(.shared-banner:not(.hidden)) {
 
 .plot-agent-editor-status.error {
   color: #dc2626;
+}
+
+.plot-agent-editor-status.ok {
+  color: #059669;
+}
+
+.plot-agent-literature {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.plot-agent-literature.hidden {
+  display: none;
+}
+
+.plot-agent-literature-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.plot-agent-literature-meta {
+  margin: 0 0 0.5rem;
+  font-size: 0.78rem;
+}
+
+.plot-agent-literature-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.plot-literature-hint-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 0.55rem 0.65rem;
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+  color: inherit;
+  cursor: pointer;
+}
+
+.plot-literature-hint-card:hover {
+  border-color: var(--accent);
+}
+
+.plot-literature-hint-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.plot-literature-hint-doi {
+  font-size: 0.72rem;
+}
+
+.plot-literature-hint-summary {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
+.plot-literature-hint-apply {
+  font-size: 0.72rem;
+  color: var(--accent);
 }
 
 .llm-settings-panel {

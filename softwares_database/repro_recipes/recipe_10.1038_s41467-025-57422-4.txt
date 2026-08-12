@@ -1,0 +1,81 @@
+========== reproducibility_recipe entry ==========
+paper_title: FIORA: Local neighborhood-based prediction of compound mass spectra from single fragmentation events.
+source_paper: Nowatzky Y et al. (2025), Nature communications, DOI: 10.1038/s41467-025-57422-4, PMID: 40055306
+overall_reproducibility_score: 87/100
+
+workflow_steps: 7
+  Step 1: Molecular graph construction
+    tool: RDKit
+    algorithm: SMILES → molecular graph
+    parameters: smiles_input=True, neutral_structure=True, atom_features=['element_type', 'hydrogen_count', 'ring_type'], bond_features=['bond_type', 'ring_type'], embedding_dim=300
+    input: SMILES string or MOL file
+    output: molecular graph G with atom/bond features
+    confidence: high
+  Step 2: Fragment ion space generation
+    tool: Custom Python implementation
+    algorithm: Single-edge cleavage + hydrogen loss enumeration
+    parameters: max_h_losses=4, ion_modes=['[F+H]+', '[F]+', '[F-H]+', '[F-2H]+', '[F-3H]+'], mass_tolerance_ppm=50
+    input: molecular graph G
+    output: fragment ion space ℱ(G)
+    confidence: high
+  Step 3: Graph neural network prediction
+    tool: PyTorch Geometric
+    algorithm: Relational Graph Convolutional Network (RGCN)
+    parameters: num_layers=6, activation=ELU, message_passing=True, aggregation=mean_pooling, edge_map_enabled=True, covariates=['molecular_weight', 'precursor_ion_mode', 'collision_energy_eV', 'instrument_type']
+    input: molecular graph G + covariates
+    output: precursor stability σ and fragment abundance logits θ_f
+    confidence: high
+  Step 4: Probability calibration & spectrum reconstruction
+    tool: Custom Python implementation
+    algorithm: Softmax over precursor + fragment logits
+    parameters: softmax_denominator=exp(σ) + sum(exp(θ_f)), peak_merging=sum probabilities for same m/z within tolerance
+    input: σ and θ_f logits
+    output: predicted MS/MS spectrum (m/z-intensity pairs)
+    confidence: high
+  Step 5: Retention time and collision cross-section prediction
+    tool: Custom PyTorch model
+    algorithm: Mean-pooled graph embedding → dense regression
+    parameters: loss_function=MSE, frozen_backbone=True, training_phase=post-fragmentation
+    input: mean-pooled graph embedding + covariates
+    output: predicted RT and CCS values
+    confidence: medium
+  Step 6: Training data preparation and spectral library integration
+    tool: Custom scripts + RDKit + lib2nist
+    algorithm: Library parsing, metadata alignment, filtering
+    parameters: libraries=["NIST'17", 'MS-DIAL', 'MSnLib v1.0'], collision_energy_conversion=NCE → eV via Proteomicsnews formula, mass_tolerance_ppm={"NIST'17": 50, 'MSnLib': 10}, filters=['SMILES-MOL-InChiKey consistency', 'ionization_mode ∈ {[M+H]+, [M-H]-, [M]+, [M]-}', 'MW ≤ 1000 Da', 'CE ≤ 100 eV']
+    input: Raw .msp/.mzML/.mol files from spectral libraries
+    output: aligned, filtered, covariate-augmented training dataset
+    confidence: high
+  Step 7: Model training
+    tool: PyTorch
+    algorithm: Weighted MSE loss + ADAM optimizer
+    parameters: loss_weighting=1 / number_of_spectra_per_compound, optimizer=ADAM, learning_rate=None, batch_size=None, epochs=None
+    input: Aligned training dataset with peak-to-fragment assignments
+    output: Trained FIORA model weights
+    confidence: medium
+
+data_availability:
+  raw_data: available (Zenodo: 10.5281/zenodo.11163381)
+  processed_data: available (GitHub: BAMeScience/fiora)
+  metadata: available
+  data_urls: https://doi.org/10.5281/zenodo.11163381, https://github.com/BAMeScience/fiora
+
+code_availability: repository_linked
+  code_url: https://github.com/BAMeScience/fiora
+  license: MIT
+
+figure_recipes: 1
+  Figure 8: [workflow_diagram]
+    caption: Illustration of FIORA’s fragmentation algorithm showing single bond cleavage, hydrogen loss modeling, local neighborhood learning via graph convolutions, and fragment probability computation.
+    produced_by_step: [2, 3, 4]
+    visualization_tool: Custom Python (Matplotlib/NetworkX)
+
+reproducibility_gaps:
+  - NIST'17 library requires commercial license and is not redistributable
+  - Exact ADAM hyperparameters (lr, batch size, epochs) not reported
+  - No validation of RT/CCS prediction performance metrics in methods text
+reproducibility_strengths:
+  - Fully open-source code on GitHub under MIT license
+  - Public training data (MSnLib v1.0) deposited on Zenodo with DOI
+  - Detailed preprocessing notebooks provided (e.g., nist_library_loader.ipynb)
+  - All core algorithms and mathematical formulations explicitly defined

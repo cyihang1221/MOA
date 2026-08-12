@@ -1,0 +1,61 @@
+========== reproducibility_recipe entry ==========
+paper_title: A new platform for untargeted UHPLC-HRMS data analysis to address the time-shift problem.
+source_paper: Zhao JJ et al. (2022), Analytica chimica acta, DOI: 10.1016/j.aca.2021.339393, PMID: 35058006
+overall_reproducibility_score: 40/100
+
+workflow_steps: 5
+  Step 1: Coarse time-shift correction using pseudo-mass spectra
+    tool: ANTDAS2TSC
+    algorithm: landmark-based coarse alignment
+    parameters: landmark_selection_criterion=metabolites producing multiple fragment ions
+    input: raw UHPLC-HRMS data (.raw or vendor format)
+    output: coarse-aligned feature matrix
+    confidence: medium
+  Step 2: Refined peak alignment via moving window-based multiple-peak alignment
+    tool: ANTDAS2TSC
+    algorithm: moving window-based multiple-peak alignment on extracted ion chromatograms (EICs)
+    parameters: window_size=None, alignment_metric=None, peak_matching_tolerance=None
+    input: extracted ion chromatograms (EICs) from coarse-aligned data
+    output: refined-aligned feature table
+    confidence: low
+  Step 3: Automatic feature extraction and registration
+    tool: ANTDAS2TSC
+    algorithm: feature detection and retention time registration
+    parameters: min_peak_width=None, snr_threshold=None, intensity_threshold=None
+    input: refined-aligned EICs
+    output: feature table with RT-m/z-intensity
+    confidence: low
+  Step 4: Fragment ion vs. metabolite distinction
+    tool: ANTDAS2TSC
+    algorithm: in-source fragmentation filtering
+    parameters: fragment_ion_criteria=co-eluting adducts/fragments with shared precursor relationships
+    input: feature table
+    output: chemometric-ready metabolite-level feature table
+    confidence: medium
+  Step 5: Chemometric analysis
+    tool: ANTDAS2TSC
+    algorithm: unsupervised/supervised multivariate analysis (e.g., PCA, PLS-DA)
+    parameters: n_components=None, scaling_method=None, cross_validation=None
+    input: metabolite-level feature table
+    output: statistical scores, loadings, biomarker lists
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: http://www.pmdb.org.cn/antdas2tsc
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed datasets deposited or referenced
+  - No metadata description or availability stated
+  - Critical alignment parameters (window size, tolerance, SNR thresholds) not specified
+  - No details on chemometric algorithms or validation procedures
+  - ANTDAS2TSC is a custom web platform with no source code or version control link provided
+reproducibility_strengths:
+  - Platform publicly accessible via web interface
+  - Explicit comparison to established tools (XCMS Online, MS-DIAL, Mzmine2, Progenesis QI)

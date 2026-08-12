@@ -1,0 +1,60 @@
+========== reproducibility_recipe entry ==========
+paper_title: Longitudinal Fragment Profiles Based on Multi-Collision Energy Tandem Mass Spectra Improve the Accuracy of Metabolite Identification in Untargeted Metabolomics.
+source_paper: Fu X et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c01414, PMID: 40592760
+overall_reproducibility_score: 25/100
+
+workflow_steps: 5
+  Step 1: Multi-collision energy (MCE) MS/MS data acquisition
+    tool: LC-MS/MS instrument
+    parameters: collision_energies=multiple (exact values not specified), acquisition_mode=data-dependent acquisition (DDA), fragmentation_method=collision-induced dissociation (CID)
+    input: chromatographic eluates from biological samples (e.g., human plasma)
+    output: multi-energy MS/MS spectra (.raw or .mzML)
+    confidence: low
+  Step 2: Longitudinal fragment profile construction
+    tool: in-house software
+    algorithm: longitudinal profiling (novel method)
+    parameters: profile_definition=intensity trajectories of individual fragment ions across collision energies, ion_selection=all fragment ions detected across MCE steps
+    input: multi-energy MS/MS spectra
+    output: longitudinal fragment profiles (matrix: fragments × collision energies)
+    confidence: low
+  Step 3: Jaccard similarity optimization for longitudinal profiles
+    tool: custom implementation
+    algorithm: optimized Jaccard similarity
+    parameters: similarity_metric=Jaccard index, binary_thresholding=intensity-based binarization (threshold not specified), profile_comparison=pairwise fragment-profile overlap across energies
+    input: longitudinal fragment profiles (experimental and reference)
+    output: similarity scores per metabolite candidate
+    confidence: low
+  Step 4: Metabolite identification using in-house spectral database
+    tool: in-house database
+    algorithm: spectral matching with longitudinal profiling criteria
+    parameters: database_size=180000, database_content=MCE MS/MS spectra of authentic standards, identification_criteria=optimized score thresholds (not numerically specified)
+    input: similarity scores + experimental longitudinal profiles
+    output: confidently annotated metabolites (with confidence metrics)
+    confidence: medium
+  Step 5: Validation against cross-sectional profiling
+    tool: entropy-based cross-sectional algorithm (reference method)
+    algorithm: entropy-weighted spectral similarity
+    parameters: comparison_baseline=conventional single-energy or multi-energy cross-sectional profiling
+    input: same MCE MS/MS data
+    output: benchmark identification results (accuracy, FDR)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposited or referenced
+  - In-house spectral database (180,000 spectra) not publicly accessible
+  - Custom longitudinal profiling software not shared or described in sufficient detail
+  - No specification of collision energy values, instrument parameters, or binarization thresholds
+  - Identification criteria (score cutoffs, confidence rules) not quantitatively defined
+  - No code, scripts, or workflow documentation provided
+reproducibility_strengths:
+  - Method conceptually well-described (longitudinal vs. cross-sectional profiling)
+  - Validation performed on multiple sample types (spiked standards, human plasma, inter-instrument datasets)

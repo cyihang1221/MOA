@@ -1,0 +1,49 @@
+========== reproducibility_recipe entry ==========
+paper_title: UniChromCD for Demultiplexing Time-Resolved Charge Detection-Mass Spectrometry Data.
+source_paper: Sanders JD et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.4c03250, PMID: 39225436
+overall_reproducibility_score: 70/100
+
+workflow_steps: 4
+  Step 1: Multiplexed CD-MS data acquisition
+    tool: Charge detection mass spectrometer
+    input: raw time-domain ion signal data from CD-MS
+    output: multiplexed time-resolved CD-MS raw data
+    confidence: low
+  Step 2: Demultiplexing of multiplexed CD-MS data
+    tool: UniChromCD
+    algorithm: Hadamard transform or Fourier transform inversion
+    parameters: transform_type=Hadamard or Fourier
+    input: multiplexed time-resolved CD-MS raw data
+    output: demultiplexed time-resolved CD-MS data (deconvolved retention/drift time profiles)
+    confidence: medium
+  Step 3: CD-MS time-domain data processing
+    tool: UniChromCD (within UniDec)
+    algorithm: Charge detection signal processing (e.g., charge state deconvolution, m/z calibration, ion counting)
+    input: demultiplexed time-resolved CD-MS data
+    output: processed ionograms, charge-state-resolved chromatograms/mobility profiles
+    confidence: medium
+  Step 4: Analysis and visualization of time-resolved CD-MS data
+    tool: UniChromCD
+    input: processed ionograms and time-resolved profiles
+    output: plots: chromatograms, mobility plots, mass spectra, charge-state distributions
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/UCSD-MS-Proteomics/UniDec
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw CD-MS datasets not deposited in public repository
+  - No explicit details on instrument parameters (e.g., scan rate, detector settings, chromatographic gradient, IM drift voltage)
+  - No reported parameter values for demultiplexing (e.g., Hadamard order, Fourier sampling density)
+reproducibility_strengths:
+  - UniChromCD is open-source and integrated into UniDec (MIT licensed)
+  - Algorithm described in detail in paper
+  - Demonstrated on two distinct multiplexed workflows (Hadamard-SEC, FT-IM)

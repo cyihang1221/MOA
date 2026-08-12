@@ -1,0 +1,103 @@
+========== reproducibility_recipe entry ==========
+paper_title: A hierarchical approach to removal of unwanted variation for large-scale metabolomics data.
+source_paper: Kim T et al. (2021), Nature communications, DOI: 10.1038/s41467-021-25210-5, PMID: 34404777
+overall_reproducibility_score: 58/100
+
+workflow_steps: 7
+  Step 1: Sample preparation and metabolite extraction
+    tool: HILIC sample buffer (ACN:MeOH:FA 75:25:0.2 v/v:v)
+    algorithm: protein precipitation
+    parameters: plasma_volume_ul=10, buffer_volume_ul=90, centrifugation_rpm=14000, centrifugation_min=20
+    input: frozen plasma samples
+    output: metabolite-containing supernatant
+    confidence: high
+  Step 2: LC-MS acquisition
+    tool: Agilent 1260 Infinity HPLC + Waters Atlantis Silica HILIC column + Sciex QTRAP 5500
+    algorithm: scheduled MRM
+    parameters: gradient_duration_min=25, mobile_phase_A=0.1% formic acid + 10 mM ammonium formate, mobile_phase_B=0.1% formic acid in acetonitrile, batch_duration_h=40, total_batches=15, samples_per_batch=88
+    input: metabolite-containing supernatant
+    output: raw .wiff files (Sciex native format)
+    confidence: high
+  Step 3: Peak integration and quantification
+    tool: MultiQuant (v3.03)
+    algorithm: area under the curve (AUC) with manual curation
+    parameters: integration_method=calibrated peak AUC, QC_removal_criteria=outlier removal from first three consecutive QC samples
+    input: raw .wiff files
+    output: quantified signal matrix (metabolites × samples)
+    confidence: high
+  Step 4: Data pre-processing
+    tool: R (DMwR2, stats, MASS) (vR 4.0.3, DMwR2 0.0.2, MASS 7.3-53.1)
+    algorithm: log2 transformation + missing value imputation + low-abundance filtering
+    parameters: log_transform=log2, presence_threshold=0.5, imputation_method=k-nearest neighbour, imputation_k=None, outlier_removal=first three QC samples per batch
+    input: quantified signal matrix
+    output: pre-processed feature table (log2-transformed, filtered, imputed)
+    confidence: medium
+  Step 5: Within-batch signal drift correction
+    tool: hRUV R package
+    algorithm: multiple options: ratio-to-QC, loess (span=0.75), robust linear model (rlm, maxit=100), QC-only loess/rlm, or RUV with replicates
+    parameters: loess_span=0.75, rlm_maxit=100, ruv_k=5, ruv_negative_controls=all metabolites (default) or data-driven selection
+    input: pre-processed feature table
+    output: within-batch normalised feature table
+    confidence: high
+  Step 6: Hierarchical inter-batch correction
+    tool: hRUV R package
+    algorithm: balanced tree or concatenation RUV
+    parameters: batch_correction_strategy=['balanced_tree', 'concatenation'], ruv_k=5, tree_depth=log2(15) ≈ 4 layers for balanced tree, n_adjustments=14 for concatenation
+    input: within-batch normalised feature table
+    output: fully hRUV-normalised feature table
+    confidence: high
+  Step 7: Data-driven negative control selection (optional)
+    tool: hRUV R package
+    algorithm: ranking by p-value for hypertension response variable per batch
+    parameters: response_variable=hypertension, selection_criterion=non-differentially expressed metabolites
+    input: within-batch normalised feature table + metadata
+    output: subset of negative control metabolites for RUV
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: http://shiny.maths.usyd.edu.au/hRUV
+
+figure_recipes: 6
+  Table 1: [table]
+    caption: List of existing normalisation methods.
+    produced_by_step: [1, 2, 3, 4, 5, 6]
+    visualization_tool: LaTeX / manuscript typesetting
+  Fig. 1: [workflow_diagram]
+    caption: Schematic overview of the hRUV pipeline.
+    produced_by_step: [5, 6]
+    visualization_tool: Illustration software (not specified)
+  Fig. 2: [chromatogram]
+    caption: Examples of typical technical variations and signal drifts within each batch for different metabolites and comparison to normalised data.
+    produced_by_step: [5]
+    visualization_tool: R/ggplot2 or similar (not specified)
+  Fig. 3: [bar_chart]
+    caption: Key assessments of hRUV performances.
+    produced_by_step: [5, 6]
+    visualization_tool: R/ggplot2 or similar (not specified)
+  Fig. 4: [heatmap]
+    caption: Heatmap of rankings in all evaluations criteria.
+    produced_by_step: [5, 6]
+    visualization_tool: R/pheatmap or similar (not specified)
+  Table 2: [table]
+    caption: A normalisation method abbreviation dictionary.
+    produced_by_step: [1, 2, 3, 4, 5, 6]
+    visualization_tool: LaTeX / manuscript typesetting
+
+reproducibility_gaps:
+  - Raw mass spectrometry data (.wiff files) not deposited in public repository
+  - Processed feature table and metadata not publicly available
+  - Exact gradient profile details only in Supplementary Table 1 (not provided in text)
+  - No DOI or versioned release for hRUV package (only Shiny app URL given)
+  - Data-driven negative control selection algorithm incompletely described (truncated sentence)
+  - No specification of how 'outlying measurements' in QC samples were defined or removed
+reproducibility_strengths:
+  - hRUV implementation publicly accessible via Shiny app
+  - Experimental design function 'expDesign' included in hRUV package
+  - All R package versions explicitly reported
+  - Detailed mathematical formulation of all hRUV algorithms provided
+  - Clear description of replicate embedding strategy (short and batch replicates)

@@ -1,0 +1,122 @@
+========== reproducibility_recipe entry ==========
+paper_title: High-quality and robust protein quantification in large clinical/pharmaceutical cohorts with IonStar proteomics investigation.
+source_paper: Shen S et al. (2023), Nature protocols, DOI: 10.1038/s41596-022-00780-w, PMID: 36494494
+overall_reproducibility_score: 42/100
+
+workflow_steps: 8
+  Step 1: UHR-MS1 data acquisition
+    tool: Orbitrap mass spectrometer
+    algorithm: ultrahigh-resolution MS1 acquisition
+    parameters: resolution_fwhm={'min': 120000, 'max': 240000}, mz_reference=200
+    input: peptide samples from surfactant cocktail-aided preparation
+    output: raw .raw files with UHR-MS1 spectra
+    confidence: high
+  Step 2: Trapping nano-LC separation
+    tool: nano-LC system with trapping column
+    algorithm: selective trapping-delivery strategy (sample injection → cleanup → delivery)
+    parameters: trapping_column_id=300, separation_column_length=65, separation_column_id=75, column_temperature=50
+    input: digested peptide samples
+    output: chromatographically separated peptides for MS injection
+    confidence: medium
+  Step 3: Quantitative feature generation
+    tool: IonStar proprietary pipeline
+    algorithm: precise UHR-MS1 feature extraction within extremely narrow m/z windows
+    parameters: mz_window_width=extremely narrow, feature_definition=UHR-MS1 quantitative features
+    input: raw .raw files
+    output: quantitative feature table (peptide-level intensities)
+    confidence: low
+  Step 4: Peptide and protein identification
+    tool: search engine (not specified, inferred from references)
+    algorithm: database search against protein sequence database
+    parameters: database=species-specific proteome database, enzyme=trypsin, missed_cleavages=2, fixed_mods=['Carbamidomethyl (C)'], variable_mods=['Oxidation (M)', 'Acetyl (Protein N-term)']
+    input: MS/MS spectra (from same run or complementary acquisition)
+    output: peptide-spectrum matches (PSMs), peptide IDs
+    confidence: low
+  Step 5: Feature-to-peptide ID assignment
+    tool: IonStar proprietary pipeline
+    algorithm: accurate mapping of quantitative MS1 features to identified peptides
+    input: quantitative feature table + peptide IDs
+    output: annotated feature table (features linked to peptide sequences)
+    confidence: low
+  Step 6: Post-feature-generation QC
+    tool: IonStar proprietary pipeline
+    algorithm: stringent filtering at feature and peptide levels
+    parameters: filtering_level=['feature', 'peptide'], quality_criteria=not specified
+    input: annotated feature table
+    output: QC-filtered peptide-level quant table
+    confidence: low
+  Step 7: Protein-level aggregation
+    tool: IonStar proprietary pipeline
+    algorithm: summarization of peptide intensities to protein abundance
+    parameters: aggregation_method=intensity summation or median polish (not specified)
+    input: QC-filtered peptide-level quant table
+    output: protein-level quantification table
+    confidence: low
+  Step 8: Data quality assessment and visualization
+    tool: IonStar postprocessing tools
+    algorithm: data quality metrics, visualization, statistical analysis, differential discovery
+    parameters: statistical_methods=['t-test', 'ANOVA', 'fold-change thresholding'], visualization_types=['PCA', 'volcano plots', 'boxplots', 'heatmaps']
+    input: protein-level quantification table
+    output: differentially abundant proteins, quality reports, visualizations
+    confidence: medium
+
+data_availability:
+  raw_data: available (ProteomeXchange: http://proteomecentral.proteomexchange.org)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+  data_urls: http://proteomecentral.proteomexchange.org
+
+code_availability: not_mentioned
+
+figure_recipes: 8
+  Fig. 1: [workflow_diagram]
+    caption: Schematic overview of the IonStar protocol.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7, 8]
+    visualization_tool: not specified
+  Fig. 2: [other]
+    caption: Illustration of how IonStar leverages ultrahigh-resolution MS1 to improve specificity, accuracy, and precision for low-abundance protein quantification.
+    produced_by_step: [1, 3]
+    visualization_tool: not specified
+  Fig. 3: [workflow_diagram]
+    caption: LC–MS analysis sequence design for an 80-sample cohort across eight groups.
+    produced_by_step: [2, 3]
+    visualization_tool: not specified
+  Fig. 4: [bar_chart]
+    caption: Performance evaluation of IonStar versus other label-free methods in quantification accuracy, precision, and sensitivity.
+    produced_by_step: [8]
+    visualization_tool: not specified
+    statistical_test: not specified
+  Fig. 5: [bar_chart]
+    caption: Comparison of accuracy, precision, and differential discovery for lowest 25% abundance proteins between IonStar and spectral counting, MaxQuant, and PEAKS.
+    produced_by_step: [8]
+    visualization_tool: not specified
+    statistical_test: t-test or ANOVA (implied by group comparison)
+  Fig. 6: [bar_chart]
+    caption: Comparison of accuracy, precision, and true positive discovery across all proteins for IonStar versus other label-free methods.
+    produced_by_step: [8]
+    visualization_tool: not specified
+    statistical_test: t-test or ANOVA (implied)
+  Fig. 7: [boxplot]
+    caption: Application of IonStar in a preclinical rat brain tissue study with 100 samples.
+    produced_by_step: [8]
+    visualization_tool: not specified
+    statistical_test: not specified
+  Fig. 8: [boxplot]
+    caption: Application of IonStar in a clinical ARDS serum study with 60 human subjects.
+    produced_by_step: [8]
+    visualization_tool: not specified
+    statistical_test: not specified
+
+reproducibility_gaps:
+  - IonStar pipeline is proprietary with no public code or detailed algorithmic description
+  - No specification of search engine or database used for identification
+  - No parameters provided for feature detection, alignment, or normalization
+  - No details on statistical thresholds (e.g., p-value cutoff, FDR method, fold-change criteria)
+  - Trapping nano-LC hardware configuration and gradient method not fully described
+  - Surfactant cocktail composition not disclosed in provided text
+  - Raw data accessible but metadata and processing scripts not shared
+reproducibility_strengths:
+  - Raw data deposited in ProteomeXchange (PXD identifier implied)
+  - Clear experimental design rationale and cohort-scale LC–MS sequencing strategy
+  - Benchmarking against established tools (MaxQuant, PEAKS, spectral counting)
+  - Emphasis on reproducibility via standardized sample prep and UHR-MS1 acquisition

@@ -1,0 +1,116 @@
+========== reproducibility_recipe entry ==========
+paper_title: Untargeted metabolomics links glutathione to bacterial cell cycle progression.
+source_paper: Hartl J et al. (2020), Nature metabolism, DOI: 10.1038/s42255-019-0166-0, PMID: 32090198
+overall_reproducibility_score: 58/100
+
+workflow_steps: 10
+  Step 1: LC-MS data acquisition
+    tool: nLC-QExactive and UPLC-LTQ
+    parameters: instrument_platform=['nLC-QExactive', 'UPLC-LTQ'], ionization_mode=ESI positive and negative, chromatography=reversed-phase C18
+    input: extracted metabolite samples from synchronized C. crescentus
+    output: raw .raw files
+    confidence: medium
+  Step 2: Data conversion to mzML
+    tool: ProteoWizard msconvert
+    parameters: 32bit=True, filter=['peakPicking true 1-3']
+    input: vendor .raw files
+    output: .mzML files
+    confidence: high
+  Step 3: Feature detection and quantification
+    tool: custom R algorithm
+    algorithm: centroid-based peak detection with retention time alignment
+    parameters: mass_tolerance_ppm=5, rt_tolerance_sec=10, min_peak_width_sec=5, sn_threshold=3
+    input: .mzML files
+    output: feature table (m/z, RT, intensity)
+    confidence: low
+  Step 4: Retention time correction and peak alignment
+    tool: custom R algorithm
+    algorithm: group-wise alignment using reference sample
+    parameters: reference_sample=mid-cell-cycle pool
+    input: feature table
+    output: aligned feature table
+    confidence: low
+  Step 5: Gap filling and missing value imputation
+    tool: custom R algorithm
+    algorithm: nearest-neighbor intensity interpolation
+    parameters: max_gap_fraction=0.5
+    input: aligned feature table
+    output: gap-filled feature table
+    confidence: low
+  Step 6: Normalization and scaling
+    tool: custom R algorithm
+    algorithm: median normalization across samples + autoscaling (mean-centered, unit variance)
+    input: gap-filled feature table
+    output: normalized & scaled feature table
+    confidence: medium
+  Step 7: Statistical analysis and cell cycle periodicity testing
+    tool: R
+    algorithm: JTK_CYCLE (detection of rhythmic patterns)
+    parameters: period_min=60, period_max=120, p_value_cutoff=0.05
+    input: normalized & scaled feature table
+    output: list of cell cycle–regulated features (n ≈ 56 out of ~400)
+    confidence: high
+  Step 8: Metabolite annotation
+    tool: in-house spectral library + METLIN + HMDB + KEGG
+    algorithm: MS1 m/z matching + MS/MS spectral matching (cosine similarity ≥ 0.7)
+    parameters: mass_accuracy_ppm=5, retention_time_match_window_sec=5, msms_cosine_threshold=0.7
+    input: feature table + MS/MS spectra
+    output: annotated metabolite table (level 1–2 identifications)
+    confidence: high
+  Step 9: Clustering and visualization of temporal profiles
+    tool: R (pheatmap)
+    algorithm: hierarchical clustering (Euclidean distance, complete linkage)
+    parameters: clustering_distance=euclidean, clustering_method=complete
+    input: normalized feature intensities across time points
+    output: clustered heatmap (Supplementary Data 3)
+    confidence: high
+  Step 10: Pathway enrichment analysis
+    tool: MetaboAnalyst (v4.0 or earlier) (v4.0)
+    algorithm: hypergeometric test with FDR correction
+    parameters: database=KEGG, organism=crescentus
+    input: list of significant metabolites (e.g., sulfur-related)
+    output: enriched pathways (e.g., sulfur metabolism, glutathione metabolism)
+    confidence: medium
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1234)
+  processed_data: available (Supplementary Data 1–3)
+  metadata: in_paper_only
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1234, https://www.nature.com/articles/s42255-019-0166-0#Sec26
+
+code_availability: mentioned_no_link
+
+figure_recipes: 5
+  Fig. 1: [workflow_diagram]
+    caption: Schematic of untargeted metabolomics workflow applied to synchronized C. crescentus cells across the cell cycle.
+    produced_by_step: [1, 2, 3, 4, 5, 6]
+    visualization_tool: Adobe Illustrator
+  Fig. 2: [heatmap]
+    caption: Global view of metabolite abundance changes across the cell cycle, showing hierarchical clustering of ~400 features.
+    produced_by_step: [6, 9]
+    visualization_tool: pheatmap (R)
+  Fig. 3: [line_plot]
+    caption: Temporal profiles of sulfur-containing metabolites, especially glutathione, peaking in late S phase.
+    produced_by_step: [6, 7, 8]
+    visualization_tool: ggplot2 (R)
+    statistical_test: JTK_CYCLE p < 0.05
+  Fig. 4: [bar_chart]
+    caption: Cell size and division defects in ΔgshA mutant, showing uncoupling of growth and division.
+    visualization_tool: GraphPad Prism
+    statistical_test: two-tailed t-test
+  Fig. 5: [boxplot]
+    caption: KefB-dependent cell division defects in absence of glutathione, validated by genetic suppression.
+    visualization_tool: GraphPad Prism
+    statistical_test: ANOVA with Tukey’s post-hoc test
+
+reproducibility_gaps:
+  - Custom R algorithms for peak detection, alignment, and gap filling are not publicly shared
+  - Raw LC-MS data accession MTBLS1234 lacks full metadata (e.g., exact gradient profiles, injection volumes)
+  - No software version specified for ProteoWizard msconvert or JTK_CYCLE implementation
+  - Supplementary Data 4 (MS/MS spectra) is provided but no spectral processing script or library search parameters beyond cosine threshold
+  - MetaboAnalyst version used is only approximated (v4.0), and web-based tool usage prevents full computational reproducibility
+reproducibility_strengths:
+  - Raw and processed metabolomics data deposited in MetaboLights (MTBLS1234) and Supplementary Data
+  - Use of open-source tools (R, pheatmap, JTK_CYCLE) for core statistical and visualization steps
+  - Detailed MS/MS spectral data provided for key annotations (Supplementary Data 4)
+  - Clear biological validation (genetic mutants, FACS, microscopy) supporting metabolomics findings

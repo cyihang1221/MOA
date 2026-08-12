@@ -1,0 +1,91 @@
+========== reproducibility_recipe entry ==========
+paper_title: Orbitrap noise structure and method for noise unbiased multivariate analysis.
+source_paper: Keenan MR et al. (2025), Nature communications, DOI: 10.1038/s41467-025-61542-2, PMID: 40640123
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Orbitrap noise characterization
+    tool: Custom generative modeling framework
+    algorithm: Three-regime noise model (detector-limited, counting-noise-dominated, measurement-variation-dominated)
+    parameters: mass_resolution=240000, mass_range_low=100, mass_range_high=1500, injection_time_ms=[511, 2961, 512], AGC_enabled=False, collision_pressure_mbar=[0.12, 0.043, 0.042], surface_potential_V=[57.5, 6.1, -30], beam_energy_keV=[30, 20, 20], primary_ion_beam=['Bi n+', 'Ar 3500+', 'Ar 2500+'], beam_current_pA=[50, 100, 200, 12, 1.44]
+    input: raw OrbiSIMS .raw files (IONTOF format)
+    output: noise parameter estimates (sigma_det, lambda_count, sigma_meas)
+    confidence: medium
+  Step 2: WSoR scaling application
+    tool: Custom WSoR (Weighted Scaling on Residuals) method
+    algorithm: Noise-aware variance stabilization scaling based on generative noise model
+    parameters: model_regimes=3, residual_weighting_scheme=inverse-variance, scaling_target=homoscedastic feature space
+    input: peak-intensity matrices (m/z × pixel)
+    output: WSoR-scaled intensity matrix
+    confidence: high
+  Step 3: Multivariate analysis comparison
+    tool: PCA and supervised classification (e.g., PLS-DA or SVM)
+    algorithm: Principal Component Analysis (PCA), likely with cross-validated classification
+    parameters: n_components=20, scaling_methods_compared=['none', 'autoscale', 'Pareto', 'WSoR']
+    input: scaled intensity matrices (WSoR and baselines)
+    output: scores plots, classification accuracy metrics, discrimination quality scores
+    confidence: low
+  Step 4: Model validation against silver reference
+    tool: Custom probabilistic model fitting
+    algorithm: Maximum likelihood estimation against stable Ag signal
+    parameters: reference_material=silver, beam_currents_tested=[50, 100, 200], scans_per_condition=1000
+    input: OrbiSIMS depth profiles of Ag
+    output: goodness-of-fit metrics (e.g., residual sum of squares, Q-Q plots)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (Not specified)
+  processed_data: not_mentioned (Not specified)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 9
+  Fig. 1: [other]
+    caption: Measurement of noise in an Orbitrap mass spectrometer.
+    produced_by_step: [1]
+    visualization_tool: Unknown
+  Fig. 2: [other]
+    caption: Determination of model parameters.
+    produced_by_step: [1, 4]
+    visualization_tool: Unknown
+  Table 1: [table]
+    caption: All estimated noise parameters for the data acquired with different primary ion beam currents.
+    produced_by_step: [1, 4]
+    visualization_tool: Unknown
+  Fig. 3: [other]
+    caption: Comparison of probabilistic model with experimental silver data.
+    produced_by_step: [4]
+    visualization_tool: Unknown
+  Table 2: [table]
+    caption: Comparison of discussed methods for addressing heteroscedastic noise.
+    produced_by_step: [2, 3]
+    visualization_tool: Unknown
+  Fig. 4: [pca_scores]
+    caption: Effect of scaling bias on multivariate analysis of an OrbiSIMS drosophila CNS image.
+    produced_by_step: [2, 3]
+    visualization_tool: Unknown
+  Fig. 5: [pca_scores]
+    caption: Effect of scaling bias on multivariate analysis of an OrbiSIMS mouse testis image.
+    produced_by_step: [2, 3]
+    visualization_tool: Unknown
+  Fig. 6: [pca_scores]
+    caption: Effect of scaling bias on multivariate analysis of an Orbitrap-DESI rat liver section image.
+    produced_by_step: [2, 3]
+    visualization_tool: Unknown
+  Fig. 7: [other]
+    caption: Comparison of the WSoR models from the three instruments used in this study.
+    produced_by_step: [1, 2]
+    visualization_tool: Unknown
+
+reproducibility_gaps:
+  - Raw OrbiSIMS data not deposited in any public repository
+  - Custom WSoR algorithm implementation not shared (no code, pseudocode, or mathematical specification provided)
+  - No details on multivariate analysis software (e.g., MATLAB, Python scikit-learn, SIMCA), version, or exact settings
+  - No description of how 'discrimination quality' was quantified or validated statistically
+  - IONTOF .raw file format is proprietary; no conversion tool or open parser mentioned
+  - Supplementary Information referenced but not accessible in provided text
+reproducibility_strengths:
+  - Detailed instrument parameters reported (mass resolution, injection time, pressures, voltages, beam specs)
+  - Three distinct biological imaging datasets described with acquisition metadata
+  - Explicit comparison across multiple scaling methods and biological systems

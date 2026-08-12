@@ -1,0 +1,83 @@
+========== reproducibility_recipe entry ==========
+paper_title: Exposomic Biomonitoring of Polyphenols by Non-Targeted Analysis and Suspect Screening.
+source_paper: Oesterle I et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c01393, PMID: 37409760
+overall_reproducibility_score: 35/100
+
+workflow_steps: 8
+  Step 1: Data acquisition via data-dependent acquisition (DDA)
+    tool: High-resolution mass spectrometry (HRMS)
+    algorithm: DDA
+    input: real-life urine samples
+    output: raw .raw or .wiff files (inferred)
+    confidence: medium
+  Step 2: Feature annotation using spectral libraries
+    tool: Spectral libraries (e.g., GNPS, MassBank, mzCloud)
+    algorithm: MS/MS spectral matching
+    parameters: match_threshold=not specified, cosine_score_cutoff=not specified
+    input: MS/MS spectra from DDA
+    output: 27 annotated features
+    confidence: low
+  Step 3: In silico fragmentation-based annotation
+    tool: in silico fragmentation tools (e.g., CFM-ID, MetFrag, SIRIUS)
+    algorithm: in silico fragmentation and scoring
+    parameters: mass_tolerance_ppm=not specified, fragmentation_energy=not specified
+    input: MS/MS spectra and molecular formula candidates
+    output: 88 annotated features
+    confidence: low
+  Step 4: MS1-based annotation against PhytoHub
+    tool: PhytoHub
+    algorithm: accurate mass (MS1) matching
+    parameters: mass_tolerance_ppm=not specified, retention_time_window=not specified
+    input: feature table (m/z, RT, intensity)
+    output: 113 annotated features
+    confidence: low
+  Step 5: Exposome-wide suspect screening using Exposome-Explorer
+    tool: Exposome-Explorer
+    algorithm: MS1 matching against exposomic compound library
+    parameters: mass_tolerance_ppm=not specified
+    input: feature table
+    output: 144 annotated features
+    confidence: low
+  Step 6: Neutral loss screening for phase II metabolites
+    tool: MassQL
+    algorithm: neutral loss query (e.g., −176 Da glucuronide, −80 Da sulfate)
+    parameters: neutral_losses=['-176.0321', '-79.9568'], mass_tolerance_ppm=not specified
+    input: MS/MS spectra
+    output: polyphenol-related features (glucuronides/sulfates)
+    confidence: medium
+  Step 7: Statistical analysis and biomarker discovery
+    tool: MetaboAnalyst
+    algorithm: univariate (t-test, fold-change) and multivariate (PCA, PLS-DA) analysis
+    parameters: p_value_cutoff=0.05, fc_threshold=2.0, scaling_method=autoscaling, missing_value_replacement=half-minimum
+    input: normalized feature table with sample metadata
+    output: differential features, score/plots, pathway enrichment results
+    confidence: medium
+  Step 8: Sensitivity comparison between HRMS and LRMS
+    tool: HRMS vs. LRMS instrumentation (e.g., Q-TOF vs. triple quadrupole)
+    algorithm: spike-recovery LOD determination
+    parameters: spike_levels=multiple concentrations, matrix=['urine', 'serum', 'plasma'], LOD_definition=signal-to-noise ≥ 3
+    input: spiked human matrices
+    output: median LODs (ng/mL) per instrument
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw HRMS/LRMS data not deposited in public repository
+  - No accession ID or repository mentioned for any data
+  - Instrument parameters (chromatography, MS settings) not detailed
+  - No version numbers for software/tools (XCMS, MetaboAnalyst, MassQL, PhytoHub, Exposome-Explorer)
+  - No code/scripts shared for data processing or annotation pipelines
+  - Retention time alignment method not described
+  - No details on peak picking, alignment, or normalization steps prior to annotation/statistics
+reproducibility_strengths:
+  - Uses widely adopted open-source and web-based resources (MetaboAnalyst, PhytoHub, Exposome-Explorer, MassQL)
+  - Explicitly reports LOD values across multiple biological matrices
+  - Clear separation of annotation strategies (spectral, in silico, MS1, suspect screening)

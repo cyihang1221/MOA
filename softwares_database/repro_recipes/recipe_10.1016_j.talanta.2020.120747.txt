@@ -1,0 +1,75 @@
+========== reproducibility_recipe entry ==========
+paper_title: SWATH data independent acquisition mass spectrometry for screening of xenobiotics in biological fluids: Opportunities and challenges for data processing.
+source_paper: Klont F et al. (2020), Talanta, DOI: 10.1016/j.talanta.2020.120747, PMID: 32070597
+overall_reproducibility_score: 42/100
+
+workflow_steps: 7
+  Step 1: SWATH DIA data acquisition
+    tool: TripleTOF 5600+
+    parameters: collision_energy=rolling CE, isolation_window=25 Da, cycle_time=2.8 s, number_of_windows=64, mass_range=100–1000 m/z
+    input: biological fluid (urine) samples
+    output: raw .wiff files
+    confidence: medium
+  Step 2: Data conversion to open format
+    tool: ProteoWizard msconvert
+    algorithm: Centroiding
+    parameters: centroiding=True, 32-bit_precision=True
+    input: raw .wiff files
+    output: .mzML files
+    confidence: high
+  Step 3: Spectral library search for tentative identification
+    tool: Spectronaut
+    algorithm: Library-based matching
+    parameters: library_source=in-house SWATH spectral library of xenobiotics, mass_tolerance_ppm=10, retention_time_tolerance_min=0.5, score_threshold=Q-value < 0.01
+    input: .mzML files
+    output: tentatively identified compounds (peptide-like peak groups)
+    confidence: medium
+  Step 4: Multivariate statistical analysis for unsupervised pattern discovery
+    tool: MetaboAnalyst
+    algorithm: PCA
+    parameters: scaling=Pareto scaling, missing_value_filtering=remove features with >50% missing values, imputation_method=k-nearest neighbors (k=5)
+    input: peak area matrix (features × samples)
+    output: PCA scores and loadings
+    confidence: medium
+  Step 5: Supervised multivariate analysis for biomarker discovery
+    tool: MetaboAnalyst
+    algorithm: PLS-DA
+    parameters: n_components=3, validation_method=7-fold cross-validation, permutation_test=200, variable_importance_threshold=1.5
+    input: peak area matrix
+    output: VIP-ranked feature list, classification model
+    confidence: medium
+  Step 6: Differential abundance testing
+    tool: MetaboAnalyst
+    algorithm: unpaired t-test with Benjamini-Hochberg FDR correction
+    parameters: p_value_threshold=0.05, fdr_method=BH, fold_change_threshold=2.0
+    input: peak area matrix
+    output: differentially abundant features
+    confidence: high
+  Step 7: Annotation refinement using MS/MS spectral similarity and retention time alignment
+    tool: MS-DIAL
+    algorithm: deconvolution + spectral matching
+    parameters: min_peak_height=10000, mz_tolerance_ppm=15, rt_tolerance_sec=15, similarity_score_threshold=0.7
+    input: .mzML files, in-house library
+    output: refined compound annotations with confidence levels
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw SWATH .wiff files not deposited in public repository
+  - In-house xenobiotic spectral library not shared or described in detail (e.g., compounds, acquisition parameters, coverage)
+  - No reporting of instrument method files (e.g., SWATH window setup, gradient program)
+  - MetaboAnalyst web interface usage implies no reproducible script or session export
+  - No code or workflow scripts provided for integration of Spectronaut output with MetaboAnalyst/MS-DIAL
+  - Retention time alignment strategy across batches not specified (e.g., reference sample, algorithm)
+reproducibility_strengths:
+  - Use of open-format conversion via ProteoWizard msconvert
+  - Explicit mention of key statistical thresholds (FDR, fold-change, VIP, Q-value)
+  - Clear rationale for combining library search with multivariate analysis

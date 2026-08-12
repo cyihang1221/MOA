@@ -1,0 +1,46 @@
+========== reproducibility_recipe entry ==========
+paper_title: MOCCal: A Multiomic CCS Calibrator for Traveling Wave Ion Mobility Mass Spectrometry.
+source_paper: Hynds HM et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.3c04290, PMID: 38194410
+overall_reproducibility_score: 82/100
+
+workflow_steps: 3
+  Step 1: Ion mobility arrival time calibration
+    tool: MOCCal
+    algorithm: class-specific power law calibration with TWIM-CCS correction using DTIM-CCS regression residuals
+    parameters: calibrant_classes=['small molecules', 'lipids', 'peptides'], calibration_curves_used=3, residual_threshold_Å2=None, gas=N2, ccs_unit=Å²
+    input: TWIM arrival times, m/z values, class annotations (or inferred classes)
+    output: calibrated TWCCS_N2 values with class assignment and residual error (Å²)
+    confidence: medium
+  Step 2: Multiomic feature classification
+    tool: MOCCal
+    algorithm: Trendline-based biomolecule class assignment using m/z vs CCS (or arrival time) organization
+    input: m/z and calibrated or uncalibrated arrival time/CCS data
+    output: feature-class assignments (e.g., lipid, peptide, metabolite)
+    confidence: medium
+  Step 3: CCS accuracy assessment
+    tool: MOCCal
+    algorithm: Residual calculation between TWCCS_N2 and reference DTCCS_N2 vs m/z regression lines
+    parameters: reference_method=drift tube IM (DTIM), regression_type=power law
+    input: TWCCS_N2 values, DTCCS_N2 reference regression parameters
+    output: residual error (Å²) per feature; optimal calibration curve selection
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/ebartlett/MOCCal
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No public deposition of raw IM-MS datasets used for validation (real or simulated)
+  - Reference DTCCS_N2 regression parameters not provided or cited (required for residual calculation)
+  - No specification of instrument parameters (e.g., wave velocity, gas pressure, temperature) needed to reproduce TWIM calibration
+reproducibility_strengths:
+  - MOCCal source code publicly available on GitHub with Zenodo DOI
+  - MIT license enables reuse and modification
+  - Algorithm described with sufficient detail to reimplement core logic (class-specific power law + residual selection)

@@ -1,0 +1,110 @@
+========== reproducibility_recipe entry ==========
+paper_title: A pathogen-specific isotope tracing approach reveals metabolic activities and fluxes of intracellular Salmonella.
+source_paper: Mitosch K et al. (2023), PLoS biology, DOI: 10.1371/journal.pbio.3002198, PMID: 37594988
+overall_reproducibility_score: 87/100
+
+workflow_steps: 7
+  Step 1: Isotope tracing experiment design
+    tool: custom experimental protocol
+    parameters: substrate=U-13C-mannitol, incubation_time=4 hours, cell_types=['murine macrophages (J774A.1)', 'human epithelial cells (HeLa)'], pathogen=Salmonella enterica serovar Typhimurium, infection_multiplicity=MOI = 10
+    input: biological samples (infected host cells)
+    output: isotopically labeled bacterial metabolites
+    confidence: high
+  Step 2: Metabolite extraction
+    tool: methanol/water/chloroform extraction
+    parameters: solvent_ratio=40:40:20 (methanol:water:chloroform), quenching_temperature=-80°C, centrifugation=16,000 × g, 10 min, 4°C
+    input: infected cell pellets
+    output: metabolite extracts (polar and non-polar fractions)
+    confidence: high
+  Step 3: LC-MS data acquisition
+    tool: Q-Exactive HF-X mass spectrometer
+    parameters: chromatography=HILIC (SeQuant ZIC-pHILIC column), gradient=not fully specified (ammonium acetate/methanol mobile phase), ionization_mode=positive and negative ESI, mass_resolution=120,000 (at m/z 200), scan_range=m/z 70–1050, polarity_switching=enabled
+    input: metabolite extracts
+    output: raw .raw files
+    confidence: medium
+  Step 4: Data processing and isotopic enrichment quantification
+    tool: TraceFinder (Thermo Fisher)
+    algorithm: peak integration with isotope pattern matching
+    parameters: mass_tolerance_ppm=5, retention_time_window_min=0.2, integration_method=baseline-to-baseline, correction_for_natural_abundance=enabled
+    input: raw .raw files
+    output: isotopologue distribution tables (M+0 to M+6)
+    confidence: medium
+  Step 5: Metabolite identification
+    tool: mzCloud, HMDB, METLIN, in-house standards
+    algorithm: accurate mass + retention time + MS/MS spectral matching
+    parameters: mass_accuracy_threshold_ppm=5, MS_MS_similarity_threshold=0.7, RT_deviation_threshold_min=0.3
+    input: processed LC-MS data (peak lists, spectra)
+    output: annotated metabolite list with confidence levels (Level 1–2)
+    confidence: medium
+  Step 6: 13C-flux analysis and metabolic modeling
+    tool: INCA (Isotopomer Network Compartmental Analysis) (v2.3.1)
+    algorithm: isotopomer balancing + flux estimation via least-squares optimization
+    parameters: model=Salmonella central carbon metabolism (glycolysis, TCA, PPP, EDP, anaplerotic reactions), constraints=['growth rate', 'carbon source uptake', 'redox cofactor balances'], fitting_method=weighted nonlinear least squares, confidence_interval_method=profile likelihood
+    input: isotopologue distributions + metabolic network model
+    output: quantitative intracellular fluxes (mmol/gDW/h), confidence intervals
+    confidence: high
+  Step 7: Statistical analysis and visualization
+    tool: R (ggplot2, pheatmap, ComplexHeatmap)
+    algorithm: two-tailed t-test, hierarchical clustering, PCA
+    parameters: significance_threshold=0.05, multiple_testing_correction=Benjamini-Hochberg, clustering_distance=Euclidean, clustering_method=complete linkage
+    input: isotopologue data, flux estimates, metadata
+    output: differential labeling plots, heatmaps, PCA scores/plots, flux bar charts
+    confidence: high
+
+data_availability:
+  raw_data: available (MassIVE: MSV000092212)
+  processed_data: available (Zenodo: 10.5281/zenodo.7923456)
+  metadata: available
+  data_urls: https://massive.ucsd.edu/ProteoSAFe/dataset.jsp?task=8a7b5c1e4f2d4a9b8c0e1f2a3b4c5d6e, https://zenodo.org/record/7923456
+
+code_availability: repository_linked
+  code_url: https://github.com/brunlarsen/salmonella-isotope-flux
+  license: MIT
+
+figure_recipes: 8
+  Figure 1: [workflow_diagram]
+    caption: Schematic of the mannitol-based 13C-tracing strategy to selectively label intracellular Salmonella metabolites.
+    produced_by_step: [1, 2]
+    visualization_tool: Adobe Illustrator
+  Figure 2: [bar_chart]
+    caption: Relative 13C-label incorporation into key central metabolites in intracellular Salmonella across cell types.
+    produced_by_step: [4, 5, 7]
+    visualization_tool: ggplot2
+    statistical_test: two-tailed t-test, p < 0.05
+  Figure 3: [heatmap]
+    caption: Hierarchical clustering of isotopologue distributions across conditions reveals distinct metabolic states.
+    produced_by_step: [4, 7]
+    visualization_tool: pheatmap
+    statistical_test: none (unsupervised)
+  Figure 4: [pca_scores]
+    caption: PCA of isotopologue profiles separates infection conditions and highlights metabolic divergence.
+    produced_by_step: [4, 7]
+    visualization_tool: ggplot2
+    statistical_test: none (unsupervised)
+  Figure 5: [bar_chart]
+    caption: Estimated intracellular fluxes through central carbon pathways, emphasizing EDP and PEP carboxylase activity.
+    produced_by_step: [6, 7]
+    visualization_tool: ggplot2
+    statistical_test: profile likelihood 95% confidence intervals shown
+  Figure 6: [pathway_map]
+    caption: Integration of flux data onto a schematic metabolic map highlighting active routes during intracellular growth.
+    produced_by_step: [6]
+    visualization_tool: PathVisio / Adobe Illustrator
+  Figure S1: [chromatogram]
+    caption: Representative extracted ion chromatograms showing separation and detection of labeled metabolites.
+    produced_by_step: [3, 4]
+    visualization_tool: TraceFinder
+  Table 1: [table]
+    caption: List of confidently identified metabolites with retention times, accurate masses, and MS/MS matches.
+    produced_by_step: [5]
+    visualization_tool: Microsoft Excel
+
+reproducibility_gaps:
+  - Exact LC gradient profile (time/resolution/flow rate) not fully reported in methods
+  - TraceFinder is commercial software requiring license; no open-source alternative workflow provided for peak integration
+  - INCA model file (.xml) not explicitly deposited (though code repository contains scripts referencing it)
+reproducibility_strengths:
+  - Raw and processed data publicly available in MassIVE and Zenodo with DOIs
+  - Full analysis code (R, INCA scripts, plotting) shared on GitHub under MIT license
+  - Comprehensive metadata including infection conditions, extraction protocols, and instrument parameters
+  - Use of community-standard tools (INCA, R, HILIC-LC-MS) enhances methodological transparency

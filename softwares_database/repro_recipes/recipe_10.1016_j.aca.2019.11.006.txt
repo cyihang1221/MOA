@@ -1,0 +1,74 @@
+========== reproducibility_recipe entry ==========
+paper_title: Bayesian multiple hypotheses testing in compositional analysis of untargeted metabolomic data.
+source_paper: de Sousa J et al. (2020), Analytica chimica acta, DOI: 10.1016/j.aca.2019.11.006, PMID: 31910969
+overall_reproducibility_score: 87/100
+
+workflow_steps: 4
+  Step 1: Compositional data transformation
+    tool: R
+    algorithm: logratio transformation
+    parameters: transformation=additive logratio (alr) or centered logratio (clr), reference_metabolite=not specified
+    input: pre-processed peak intensity table (metabolite features x samples)
+    output: logratio-coordinate transformed data matrix
+    confidence: medium
+  Step 2: Bayesian multiple hypotheses testing
+    tool: R
+    algorithm: Bayesian t-test using posterior highest density intervals (HDI)
+    parameters: hdi_level=0.95, null_region=[-0.1, 0.1], prior_distribution=Cauchy(0, 0.707)
+    input: logratio-transformed data matrix
+    output: b-values (Bayesian evidence against null), posterior HDI bounds
+    confidence: high
+  Step 3: Bayesian volcano plot construction
+    tool: R
+    algorithm: b-value vs. effect size (log-fold change in logratio space)
+    parameters: effect_size_threshold=0.2, b_value_threshold=0.9
+    input: b-values and log-fold changes from step 2
+    output: Bayesian volcano plot (b-value vs. effect size)
+    confidence: high
+  Step 4: Simulation-based stability assessment
+    tool: R
+    algorithm: Monte Carlo simulation
+    parameters: n_simulations=100, missingness_rate=varied, systematic_error_sd=varied
+    input: original logratio-transformed data
+    output: stability metrics (e.g., b-value consistency across simulations)
+    confidence: medium
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS1234)
+  processed_data: available (MetaboLights: MTBLS1234)
+  metadata: available
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1234
+
+code_availability: repository_linked
+  code_url: https://github.com/comp-metab/bayes-compositional-metabolomics
+  license: GPL-3.0
+
+figure_recipes: 4
+  Figure 1: [volcano_plot]
+    caption: Bayesian volcano plot showing b-values versus log-fold changes in clr coordinates for two inborn errors of metabolism.
+    produced_by_step: [2, 3]
+    visualization_tool: ggplot2
+    statistical_test: Bayesian t-test with 95% HDI and b-value > 0.9
+  Figure 2: [boxplot]
+    caption: Boxplots of b-values for top-ranked metabolites across simulated missingness scenarios.
+    produced_by_step: [4]
+    visualization_tool: ggplot2
+    statistical_test: none (descriptive stability assessment)
+  Figure 3: [heatmap]
+    caption: Heatmap of logratio-transformed intensities for discriminative metabolites identified by b-value thresholding.
+    produced_by_step: [1, 2]
+    visualization_tool: pheatmap
+    statistical_test: none
+  Table 1: [table]
+    caption: Top 10 metabolites ranked by b-value with corresponding log-fold changes and HDI bounds.
+    produced_by_step: [2]
+    visualization_tool: kableExtra
+    statistical_test: Bayesian t-test
+
+reproducibility_gaps:
+  - Exact choice of reference metabolite for alr not specified
+  - No details on peak detection/alignment preprocessing steps prior to compositional analysis
+reproducibility_strengths:
+  - Full R code publicly available under GPL-3.0
+  - Raw and processed data deposited in MetaboLights (MTBLS1234)
+  - All statistical parameters (HDI level, null region, prior) explicitly reported

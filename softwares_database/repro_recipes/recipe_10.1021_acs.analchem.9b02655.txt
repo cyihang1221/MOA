@@ -1,0 +1,50 @@
+========== reproducibility_recipe entry ==========
+paper_title: DecoMetDIA: Deconvolution of Multiplexed MS/MS Spectra for Metabolite Identification in SWATH-MS-Based Untargeted Metabolomics.
+source_paper: Yin Y et al. (2019), Analytical chemistry, DOI: 10.1021/acs.analchem.9b02655, PMID: 31436405
+overall_reproducibility_score: 50/100
+
+workflow_steps: 4
+  Step 1: Multiplexed MS/MS spectrum deconvolution
+    tool: DecoMetDIA
+    algorithm: Linear combination of multiple model peaks to reconstruct coeluted fragment ion chromatograms
+    input: SWATH-MS raw data (e.g., .wiff, .d, or vendor-specific formats)
+    output: Deconvolved, metabolite-specific MS2 spectra
+    confidence: medium
+  Step 2: Metabolite identification using deconvolved MS2 spectra
+    tool: MetDNA and Sirius
+    algorithm: Spectral library matching (MetDNA) and molecular formula annotation via fragmentation tree analysis (Sirius)
+    input: Deconvolved MS2 spectra from DecoMetDIA
+    output: Annotated metabolites (with confidence scores, structural candidates)
+    confidence: low
+  Step 3: Performance validation against DDA-MS2
+    tool: Experimental DDA-MS2 spectra
+    algorithm: Spectral similarity comparison (e.g., cosine score or spectral angle)
+    input: DecoMetDIA-deconvolved MS2 spectra and matched experimental DDA-MS2 spectra
+    output: Spectral accuracy metrics (e.g., % match, similarity score distribution)
+    confidence: low
+  Step 4: Benchmarking against alternative deconvolution tools
+    tool: MS-DIAL
+    algorithm: Comparative deconvolution performance assessment on small polar metabolites
+    input: Same SWATH-MS raw data processed by DecoMetDIA and MS-DIAL
+    output: Comparative metrics (e.g., number of annotated spectra, coverage, accuracy)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/ZhuMSLab/DecoMetDIA
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw SWATH-MS data not deposited in public repository
+  - No details on MS instrument parameters (e.g., isolation window, cycle time, collision energy)
+  - No specification of DecoMetDIA parameters (e.g., model peak selection criteria, number of components, retention time alignment method)
+  - No description of MetDNA/Sirius version, settings, or databases used for annotation
+  - No access to benchmark datasets used for DDA comparison or MS-DIAL benchmarking
+reproducibility_strengths:
+  - DecoMetDIA source code publicly available on GitHub
+  - Explicit mention of integration with established open-source tools (MetDNA, Sirius)

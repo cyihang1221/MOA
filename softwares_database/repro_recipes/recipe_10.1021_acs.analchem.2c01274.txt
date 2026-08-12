@@ -1,0 +1,59 @@
+========== reproducibility_recipe entry ==========
+paper_title: Structural Characterization and Quantitation of Ether-Linked Glycerophospholipids in Peroxisome Biogenesis Disorder Tissue by Ultraviolet Photodissociation Mass Spectrometry.
+source_paper: Blevins MS et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.2c01274, PMID: 36070546
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Sample preparation and lipid extraction
+    tool: Folch method
+    parameters: chloroform:methanol_ratio=2:1, internal_standards=['PC 14:0/14:0', 'PE 14:0/14:0']
+    input: mouse brain tissue (normal and Pex7-deficient)
+    output: lipid extract in chloroform/methanol
+    confidence: medium
+  Step 2: Chromatographic separation
+    tool: Reversed-phase liquid chromatography (RPLC)
+    parameters: column=C18, gradient=not fully specified, flow_rate=300 nL/min, column_temperature=50 °C
+    input: lipid extract
+    output: LC-separated analytes
+    confidence: low
+  Step 3: Mass spectrometry analysis
+    tool: UVPD-MS
+    algorithm: 213 nm ultraviolet photodissociation
+    parameters: wavelength=213, laser_energy=optimized for lipid ionization/dissociation, activation_time=not specified
+    input: LC-eluted lipids
+    output: MS1 and UVPD-MS/MS spectra
+    confidence: medium
+  Step 4: Structural characterization of ether lipids
+    tool: Manual spectral interpretation + diagnostic fragment analysis
+    algorithm: UVPD-specific fragment patterns for plasmanyl vs plasmenyl PE/PC
+    parameters: key_fragments=['m/z 196.039 (phosphoethanolamine)', 'm/z 184.073 (phosphocholine)', 'sn-1 alkyl/vinyl cleavage ions'], differentiation_criterion=presence/absence and intensity ratios of sn-1 side-chain fragments
+    input: UVPD-MS/MS spectra
+    output: Structural assignments (plasmanyl-PE, plasmenyl-PE, plasmanyl-PC, plasmenyl-PC)
+    confidence: high
+  Step 5: Relative quantitation
+    tool: Peak area integration (likely vendor software)
+    algorithm: Internal standard normalization
+    parameters: normalization_reference=PC 14:0/14:0 and PE 14:0/14:0, peak_integration_method=manual or extracted ion chromatogram (XIC) based
+    input: MS1 chromatograms (XICs for target lipids)
+    output: Relative abundance values (disease vs control)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: not_mentioned (not mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw UVPD-MS data not deposited in public repository
+  - No details on LC gradient profile or dwell times
+  - No software or script for peak integration or spectral interpretation shared
+  - UVPD instrumentation requires specialized laser setup not widely available
+  - No validation of quantitation linearity, LOD/LOQ, or inter-run precision reported
+reproducibility_strengths:
+  - Clear description of UVPD spectral signatures enabling plasmanyl/plasmenyl differentiation
+  - Use of defined internal standards for relative quantitation
+  - Biological context (Pex7-KO mouse model) well described

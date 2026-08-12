@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: Mobile phase and column chemistry selection for high sensitivity non-targeted LC/ESI/HRMS screening of water.
+source_paper: Souihi A et al. (2023), Analytica chimica acta, DOI: 10.1016/j.aca.2023.341573, PMID: 37455083
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: LC/MS method optimization
+    tool: LC system with ESI-HRMS
+    parameters: mobile_phases_tested=20, columns_tested=4, analytes=78, logP_range=[-1.46, 5.48], pH_conditions=['acidic', 'basic'], additives=['0.1% formic acid', '0.1% ammonia', '5.0 mM ammonium fluoride'], organic_modifiers=['methanol', 'acetonitrile', 'others'], gradient_profile=not fully specified
+    input: standard solutions of 78 reference compounds
+    output: analyte response factors (sensitivity metrics)
+    confidence: medium
+  Step 2: Non-targeted LC/ESI/HRMS analysis of environmental samples
+    tool: LC/ESI/HRMS
+    parameters: sample_matrix=['wastewater treatment plant influent', 'wastewater treatment plant effluent'], acquisition_mode=data-dependent MS², dynamic_exclusion=True, mobile_phase_final_selection=['0.1% formic acid', '0.1% ammonia', '5.0 mM ammonium fluoride']
+    input: real environmental water samples
+    output: raw .mzML or vendor files (implied)
+    confidence: low
+  Step 3: Feature detection and MS² triggering analysis
+    tool: MS-DIAL (vnot specified)
+    algorithm: peak detection, deconvolution, MS² matching
+    parameters: feature_detection_method=not detailed, MS²_triggering_criteria=intensity-based, dynamic exclusion enabled
+    input: raw LC/MS data
+    output: feature table with MS¹ and MS² counts
+    confidence: low
+  Step 4: Alternative feature detection and MS² triggering analysis
+    tool: patRoon 2.1 (v2.1)
+    algorithm: not specified
+    parameters: feature_detection_method=not detailed, MS²_triggering_criteria=intensity-based, dynamic exclusion enabled
+    input: raw LC/MS data
+    output: feature table with MS¹ and MS² counts
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository
+  - No details on LC gradient profiles, flow rate, column temperature, or instrument parameters
+  - MS-DIAL and patRoon parameters (e.g., peak width, m/z tolerance, retention time alignment settings) not reported
+  - No description of feature filtering, alignment, or normalization steps
+  - No statistical or multivariate analysis performed — only descriptive feature counts reported
+  - No metabolite identification or annotation workflow described
+  - patRoon 2.1 is commercial software requiring license; no open alternative provided
+reproducibility_strengths:
+  - Systematic comparison of mobile phases and columns using diverse reference standards
+  - Use of two independent, widely adopted data processing tools (MS-DIAL, patRoon)
+  - Clear reporting of key experimental variables: pH, additives, organic modifiers, sample types

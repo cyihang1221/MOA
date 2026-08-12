@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: CsoDIAq Software for Direct Infusion Shotgun Proteome Analysis.
+source_paper: Cranney CW et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.1c02021, PMID: 34469131
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Spectrum preprocessing and fragment mass tolerance correction
+    tool: CsoDIAq
+    algorithm: fragment mass tolerance correction
+    input: raw .mzML or vendor files
+    output: corrected fragment spectra
+    confidence: low
+  Step 2: Spectra pooling for reduced search complexity
+    tool: CsoDIAq
+    algorithm: spectra pooling
+    input: corrected fragment spectra
+    output: pooled spectra
+    confidence: low
+  Step 3: Spectrum-spectrum matching with Match Count and Cosine score
+    tool: CsoDIAq
+    algorithm: match count and cosine scoring
+    input: pooled spectra and spectral library
+    output: peptide-spectrum matches (PSMs)
+    confidence: low
+  Step 4: Target-decoy analysis for FDR estimation
+    tool: CsoDIAq
+    algorithm: target-decoy analysis
+    parameters: fdr_threshold=0.01
+    input: PSMs
+    output: FDR-filtered PSMs and peptide identifications
+    confidence: medium
+  Step 5: Peptide and protein quantification
+    tool: CsoDIAq
+    algorithm: intensity-based quantification
+    input: FDR-filtered PSMs
+    output: peptide and protein abundance table
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No information on raw data deposition
+  - No software version or public repository link provided
+  - No algorithmic parameters (e.g., mass tolerances, pooling window size, cosine threshold) specified
+  - No details on spectral library format or source
+  - No description of quantification method (e.g., sum vs. top-N intensity)

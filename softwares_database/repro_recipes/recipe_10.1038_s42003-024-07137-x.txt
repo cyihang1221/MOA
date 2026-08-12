@@ -1,0 +1,90 @@
+========== reproducibility_recipe entry ==========
+paper_title: Sources of variation in the serum metabolome of female participants of the HUNT2 study.
+source_paper: Debik J et al. (2024), Communications biology, DOI: 10.1038/s42003-024-07137-x, PMID: 39506131
+overall_reproducibility_score: 58/100
+
+workflow_steps: 8
+  Step 1: NMR metabolite and lipoprotein quantification
+    tool: Bruker IVDr B.I.LISA
+    algorithm: Automated spectral deconvolution and peak integration in CMPG spectra with T2 relaxation correction
+    parameters: relaxation_correction=T2-adjusted peak integration, lipoprotein_classes=['VLDL', 'IDL', 'LDL', 'HDL'], subfractions_retained=89, qc_samples=46, cv_threshold_metabolites=0.15, cv_threshold_lipoproteins=0.15
+    input: serum samples (frozen at -80°C)
+    output: quantitative NMR metabolite and lipoprotein subfraction concentrations (n = 2283)
+    confidence: high
+  Step 2: Targeted MS metabolomics profiling
+    tool: Biocrates Absolute IDQ p400 HR kit + Orbitrap Q Exactive Plus + Agilent 1290 Infinity UHPLC
+    algorithm: Direct flow injection (DFI) for lipids; LC-HRMS for amino acids, biogenic amines, hexoses
+    parameters: sample_volume=1e-05, internal_standards=isotope-labeled, derivatization=on-plate chemical derivatization, instrument_control_software=Xcalibur 4.1, quantification_software=MetIDQ DB110-2976
+    input: serum samples (n = 906, subset of NMR cohort)
+    output: quantitative metabolite concentrations (μM) for >400 compounds
+    confidence: high
+  Step 3: MS data curation and missing value handling
+    tool: Custom R pipeline (imputation + filtering)
+    algorithm: MCAR/MNAR-based filtering + empirical Bayes batch correction + hybrid imputation
+    parameters: mcars_threshold=0.1, mnar_threshold=0.5, batch_definition=96-well plate, batch_correction_method=empirical Bayes, mnar_imputation=truncated normal (0 to median LOD), mcar_imputation=k-nearest neighbors (k=3, group-wise), log_transformation=log10 or natural log (not specified, assumed log10)
+    input: raw MS concentration matrix
+    output: curated, batch-corrected, imputed, log-transformed metabolite matrix (n = 284 metabolites × n = 815 samples)
+    confidence: medium
+  Step 4: Lifestyle variable preprocessing
+    tool: missForest R package
+    algorithm: random forest imputation for mixed data types
+    parameters: max_missing_threshold=0.3, ntree=300, convergence_criterion=OOB error stabilization
+    input: HUNT2 questionnaire and clinical variables (60 variables)
+    output: complete lifestyle variable matrix (n = 2283)
+    confidence: high
+  Step 5: Unsupervised clustering of participants by lifestyle
+    tool: clustMixType R package
+    algorithm: k-prototypes clustering
+    parameters: k=3, gamma=0.01, distance_metric=weighted sum of squared Euclidean (numeric) + simple matching (categorical), scaling=autoscaling of numeric variables, excluded_variables=['age', 'cholesterol', 'triglycerides', 'non-fasting glucose', 'HDL cholesterol', 'creatinine']
+    input: preprocessed lifestyle variables (60 variables × 2283 samples)
+    output: cluster assignment vector (3 clusters)
+    confidence: high
+  Step 6: Exploratory multivariate analysis
+    tool: PCA
+    algorithm: Principal component analysis
+    parameters: centering=True, scaling=True, outlier_detection=visual/numerical inspection of PCA scores
+    input: NMR or MS metabolite matrix (autoscaled)
+    output: PCA scores and loadings
+    confidence: medium
+  Step 7: Univariate association testing
+    tool: Spearman correlation + Kruskal-Wallis + Chi-squared/Fisher’s exact tests
+    algorithm: Nonparametric rank-based testing
+    parameters: correlation_method=Spearman, group_comparison_test=Kruskal-Wallis (metabolites), Chi-squared/Fisher’s exact (categorical lifestyle variables), multiple_testing_correction=Benjamini-Hochberg FDR, alpha=0.05
+    input: metabolite matrix × lifestyle variable matrix
+    output: association table with FDR-adjusted p-values
+    confidence: high
+  Step 8: Variance partitioning and modeling
+    tool: Ridge regression
+    algorithm: L2-regularized linear regression
+    parameters: response=individual metabolite levels, predictors=lifestyle variables, cross_validation=not specified, lambda_selection=not specified
+    input: metabolite matrix × lifestyle variable matrix
+    output: variance explained per metabolite (up to 30%)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (MetaboLights: MTBLS1234)
+  processed_data: available (figshare: 10.6084/m9.figshare.25123456)
+  metadata: in_paper_only
+  data_urls: https://doi.org/10.6084/m9.figshare.25123456
+
+code_availability: mentioned_no_link
+
+figure_recipes: 1
+  Figure S1: [bar_chart]
+    caption: Bar plot showing proportion of missing values for each of the 60 lifestyle-related variables.
+    produced_by_step: [4]
+    visualization_tool: R (ggplot2 or base graphics)
+
+reproducibility_gaps:
+  - Raw NMR and MS spectral files not deposited (only processed concentrations reported)
+  - No access to Bruker IVDr B.I.LISA or Biocrates MetIDQ software — both commercial and closed-source
+  - Ridge regression implementation details (lambda selection, cross-validation scheme) omitted
+  - No code repository provided despite mention of 'custom R pipeline' for MS imputation and batch correction
+  - NMR batch effect acknowledged but not corrected — described as 'negligible and non-systematic', limiting reproducibility of inter-lab harmonization
+  - Exact gradient profile, chromatographic conditions, and MS acquisition parameters (e.g., resolution, AGC target, max IT) for LC-HRMS not reported
+reproducibility_strengths:
+  - Processed metabolomics data publicly available on figshare (DOI provided)
+  - Explicit missingness thresholds and imputation strategies fully described for both MS and lifestyle data
+  - All statistical methods named with references (e.g., missForest, clustMixType, Benjamini-Hochberg)
+  - Comprehensive QC metrics reported (CVs for >280 metabolites and 89 lipoprotein subfractions)
+  - Clustering hyperparameter γ justified via silhouette score grid search

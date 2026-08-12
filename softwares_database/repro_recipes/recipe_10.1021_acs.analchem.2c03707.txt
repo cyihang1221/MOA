@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: Quantitative Bottom-Up Glycomic Analysis of Polysaccharides in Food Matrices Using Liquid Chromatography-Tandem Mass Spectrometry.
+source_paper: Bacalzo NP et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.2c03707, PMID: 36542787
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Chemical depolymerization of polysaccharides
+    tool: nonenzymatic chemical digestion
+    input: intact polysaccharides in food matrices
+    output: oligosaccharide fragments
+    confidence: low
+  Step 2: Oligosaccharide separation and detection
+    tool: HPLC-QTOF-MS
+    input: oligosaccharide fragments
+    output: raw MS and MS/MS spectra
+    confidence: medium
+  Step 3: Label-free relative quantitation
+    tool: peak abundance integration
+    input: raw MS spectra
+    output: relative oligosaccharide abundances
+    confidence: low
+  Step 4: Absolute quantitation
+    tool: external calibration curve
+    parameters: calibration_type=external, analytes=['starch', 'cellulose', 'β-glucan', 'mannan', 'galactan', 'arabinan', 'xylan', 'xyloglucan', 'chitin']
+    input: oligosaccharide peak areas
+    output: absolute polysaccharide concentrations (e.g., μg/g)
+    confidence: high
+  Step 5: Method validation
+    tool: recovery and precision assessment
+    parameters: recovery_bias_range_pct=[5, 25], cv_range_pct=[2, 15]
+    input: polysaccharide standards and SRM 1843 (breakfast cereal)
+    output: accuracy (bias %) and precision (CV %) metrics
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw HPLC-QTOF-MS data not deposited in public repository
+  - No details on chemical depolymerization protocol (reagents, temperature, time, pH)
+  - No software or scripts described for peak integration or calibration curve fitting
+  - No MS/MS spectral libraries or annotation rules provided for oligosaccharide identification
+  - Instrument method parameters (gradient, column, flow rate, ionization settings) not specified
+reproducibility_strengths:
+  - Explicit reporting of accuracy (5–25% bias) and precision (2–15% CV) metrics
+  - Use of NIST SRM 1843 for validation adds credibility
+  - Nine well-defined target polysaccharides with clear analytical objectives

@@ -1,0 +1,101 @@
+========== reproducibility_recipe entry ==========
+paper_title: Octadecanoids as emerging lipid mediators in cnidarian-dinoflagellate symbiosis.
+source_paper: Botana MT et al. (2025), Communications biology, DOI: 10.1038/s42003-025-09104-6, PMID: 41188575
+overall_reproducibility_score: 58/100
+
+workflow_steps: 10
+  Step 1: Sample preparation and extraction
+    tool: Extrahera automated sample preparation system
+    algorithm: Solid-phase extraction (SPE) with Oasis HLB cartridges
+    parameters: extraction_solvent=methanol, internal_standard_volume=10, sonication_time_min=30, centrifugation_g=15000, centrifugation_temp_c=4, centrifugation_time_min=10, SPE_cartridge=Waters Oasis HLB, 3 mL / 60 mg, wash_steps=4, wash_volumes_mL=[3, 3, 3, 3], elution_volume_mL=2.5, reconstitution_volume_uL=80, filter_pore_size_um=0.1
+    input: freeze-dried biomass
+    output: SPE-purified octadecanoid extracts in methanol
+    confidence: high
+  Step 2: Chiral chromatographic separation
+    tool: Waters UPC2 SFC system
+    algorithm: Supercritical fluid chromatography with chiral stationary phase
+    parameters: column=Waters Trefoil AMY1, 3.0 × 150 mm, 2.5 μm, column_temperature_c=35, injection_volume_uL=2, mobile_phase_A=supercritical CO2, mobile_phase_B=MeOH:EtOH (8:2 v/v) + 0.1% CH3COOH, gradient_start_B_pct=5, gradient_hold_min=1, gradient_ramp1_B_pct=25, gradient_ramp1_time_min=11, gradient_ramp2_B_pct=30, gradient_ramp2_time_min=12.3, wash_B_pct=50, wash_duration_min=3, re_equilibration_time_min=2.2, flow_rate_during_separation_mL_min=2.0, flow_rate_during_wash_mL_min=1.5, backpressure_psi=2000, makeup_solvent=MeOH + 5 mM CH3COONH4, makeup_flow_start_mL_min=0.2, makeup_flow_end_mL_min=0, makeup_flow_ramp_min=6
+    input: SPE-purified octadecanoid extracts
+    output: chromatographically separated enantiomeric octadecanoids
+    confidence: high
+  Step 3: Tandem mass spectrometry detection and quantification
+    tool: Waters Xevo TQ-XS
+    algorithm: Multiple reaction monitoring (MRM) in negative-ion ESI mode
+    parameters: ionization_mode=negative ESI, capillary_voltage_kV=1.9, source_temperature_c=150, desolvation_temperature_c=600, source_offset_V=30.0, cone_gas_flow_L_h=150, desolvation_gas_flow_L_h=1000, nebulizer_pressure_bar=7.0, transitions_per_analyte=1, calibration_model=11-point linear, weighting=1/x, normalization_basis=dry biomass, concentration_unit=ng/g
+    input: chromatographically separated octadecanoids
+    output: quantified octadecanoid concentrations (ng/g dry weight)
+    confidence: high
+  Step 4: Data acquisition and processing
+    tool: MassLynx v4.2 and TargetLynx (v4.2)
+    algorithm: MRM peak integration and calibration curve fitting
+    parameters: peak_integration_method=TargetLynx auto-integration with manual review, calibration_fit=1/x weighted least-squares regression
+    input: raw MRM chromatograms
+    output: quantitative octadecanoid table (ng/g)
+    confidence: high
+  Step 5: Stereochemical analysis
+    tool: enantiomeric excess (ee) calculation
+    algorithm: Enantiomeric excess quantification from chiral SFC peak areas
+    parameters: ee_formula=(% major enantiomer) - (% minor enantiomer), reference=IUPAC Compendium of Chemical Terminology
+    input: chiral peak area ratios (R/S) from TargetLynx
+    output: enantiomeric excess (%) per regioisomer
+    confidence: high
+  Step 6: RNA-Seq preprocessing and quality control
+    tool: Fastp
+    algorithm: Adapter trimming and quality filtering
+    parameters: phred_threshold=30, low_quality_base_threshold_pct=30, max_N_bases=5, min_read_length_after_trimming=50
+    input: raw paired-end RNA-Seq reads
+    output: trimmed and filtered FASTQ files
+    confidence: high
+  Step 7: Host read depletion and symbiont-specific alignment
+    tool: STAR v2.7.10b (v2.7.10b)
+    algorithm: Splice-aware alignment to host genome followed by unmapped read realignment to symbiont genomes
+    parameters: host_genome=Aiptasia v1.1 (GCF_001417965.1), symbiont_genomes=['Breviolum minutum Mf 1.05b.01 (GCA_000507305.1)', 'Durusdinium trenchii CCMP2556 (GCA_963970005.1)'], alignment_mode=unguided splice-aware
+    input: trimmed FASTQ files
+    output: mapped BAM files (host-depleted + symbiont-aligned)
+    confidence: high
+  Step 8: Transcriptome assembly
+    tool: StringTie2 v2.0.3 (v2.0.3)
+    algorithm: Reference-guided transcript assembly from aligned reads
+    parameters: minimum_transcript_coverage=1, assembly_strategy=splice-junction aware
+    input: BAM files from STAR alignment
+    output: sample-level GTF transcriptomes
+    confidence: high
+  Step 9: Transcriptome merging and ORF prediction
+    tool: TransDecoder v5.7 (v5.7)
+    algorithm: ORF prediction and coding potential assessment
+    parameters: min_orf_length_aa=100, blastp_evalue_threshold=1e-05, hmmer_hmmsearch_database=Pfam, coding_potential_training=species-specific Markov model
+    input: merged GTF transcriptomes
+    output: annotated protein-coding transcript models with ORFs
+    confidence: medium
+  Step 10: Differential expression quantification
+    tool: featureCounts (implied via 'un-normalized read counts summarized at the gene level')
+    algorithm: Gene-level read counting
+    parameters: summarization_level=gene (meta-feature), normalization=not applied at this step, counting_mode=union
+    input: BAM files and transcript annotations
+    output: un-normalized gene-level count matrix
+    confidence: medium
+
+data_availability:
+  raw_data: available (NCBI SRA: ['PRJNA544863', 'PRJNA508937'])
+  processed_data: in_paper_only (Supplementary Data 6–9)
+  metadata: in_paper_only
+  data_urls: https://www.ncbi.nlm.nih.gov/bioproject/PRJNA544863, https://www.ncbi.nlm.nih.gov/bioproject/PRJNA508937
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data (mzML/raw files) not deposited in public repository (e.g., MetaboLights or MassIVE)
+  - Custom synthesized octadecanoid standards not publicly available or catalogued
+  - No code/scripts shared for TargetLynx processing, ee calculation, or statistical analysis of metabolite data
+  - No details on statistical methods used for metabolite differential abundance testing (e.g., ANOVA, FDR correction, fold-change thresholds)
+  - No information on multivariate or univariate statistical software (e.g., R packages, GraphPad settings) used for figures
+  - SFC-MS/MS method parameters lack full gradient reproducibility (e.g., exact dwell times, retention time windows, peak width settings)
+  - Transcriptomic differential expression analysis pipeline lacks specification of statistical test (e.g., DESeq2, edgeR), dispersion estimation, or significance thresholds
+reproducibility_strengths:
+  - Publicly available RNA-Seq raw data under NCBI BioProjects PRJNA544863 and PRJNA508937
+  - Detailed SFC-MS/MS instrumentation and acquisition parameters provided
+  - Explicit description of SPE protocol, internal standards, and calibration model
+  - Use of standard open-source bioinformatics tools (Fastp, STAR, StringTie2, TransDecoder)
+  - Clear metadata on culture conditions, symbiont strains, and anemone lineages

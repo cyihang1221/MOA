@@ -1,0 +1,41 @@
+========== reproducibility_recipe entry ==========
+paper_title: SingleFrag: a deep learning tool for MS/MS fragment and spectral prediction and metabolite annotation.
+source_paper: Pérez-Ribera M et al. (2025), Briefings in bioinformatics, DOI: 10.1093/bib/bbaf333, PMID: 40641047
+overall_reproducibility_score: 30/100
+
+workflow_steps: 3
+  Step 1: MS/MS spectral prediction
+    tool: SingleFrag
+    algorithm: deep learning (fragment-level prediction)
+    input: chemical structure (SMILES or InChI)
+    output: predicted fragment ions and intensities
+    confidence: low
+  Step 2: Metabolite annotation via spectral matching
+    tool: SingleFrag
+    algorithm: spectral similarity scoring (e.g., cosine, dot product)
+    parameters: similarity_threshold=None, mass_tolerance_da=None
+    input: experimental MS/MS spectrum + candidate compound structure
+    output: annotated metabolite with confidence score
+    confidence: low
+  Step 3: Validation of novel annotations
+    tool: manual curation + literature cross-check
+    algorithm: expert interpretation
+    input: annotated candidates + biological context
+    output: confirmed metabolite identifications
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No mention of raw or processed MS/MS data deposition
+  - No software repository link or version specified
+  - No algorithmic or hyperparameter details for the deep learning model (e.g., architecture, training data, loss function)
+  - No spectral matching parameters (tolerance, scoring method) reported
+  - No validation dataset or benchmarking protocol described

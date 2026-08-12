@@ -85,6 +85,7 @@ def _build_prompt(
     current_config: dict[str, Any],
     instruction: str,
     metadata_columns: list[str] | None = None,
+    literature_context: str | None = None,
 ) -> str:
     spec = get_plot_spec(plot_type)
     plot_label = spec.default_title if spec else plot_type
@@ -100,8 +101,14 @@ def _build_prompt(
 若用户要求「按某列/时间/Batch/聚类着色」，必须设置 color_by 或 cluster，禁止只改 palette 假装换了着色维度。
 按聚类着色示例：{{"cluster": {{"method": "kmeans", "n": 3}}}}
 """
+    lit_hint = ""
+    if (literature_context or "").strip():
+        lit_hint = f"""
+文献作图参考（来自已匹配 Skill，优先级低于用户明确要求；不得编造文献未提及的数据列或阈值）：
+{(literature_context or "").strip()}
+"""
     return f"""你是代谢组学作图助手。用户要修改一张「{plot_label}」图（类型: {plot_type}）。
-
+{lit_hint}
 当前配置：
 {json.dumps(current_config, ensure_ascii=False, indent=2)}
 
@@ -124,6 +131,7 @@ def _build_prompt(
 - 不要编造不存在的颜色键、metadata 列或文件路径
 - 不要输出「已保存」「已改好」等完成声明
 - 不要输出 markdown 或解释文字
+- 若文献参考与用户指令冲突，以用户指令为准
 """
 
 
@@ -208,6 +216,7 @@ def parse_plot_edit_instruction(
     current_config: dict[str, Any],
     model: str | None = None,
     metadata_columns: list[str] | None = None,
+    literature_context: str | None = None,
 ) -> dict[str, Any]:
     if not instruction.strip():
         raise ValueError("改图说明不能为空")
@@ -236,6 +245,7 @@ def parse_plot_edit_instruction(
         current_config=current_config,
         instruction=instruction,
         metadata_columns=metadata_columns,
+        literature_context=literature_context,
     )
     raw = llm.think_complete(
         messages_with_system(PLOT_EDIT_SYSTEM_GUARD, prompt),

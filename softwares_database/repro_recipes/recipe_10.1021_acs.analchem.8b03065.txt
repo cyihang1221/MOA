@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: MetaboGroup S: A Group Entropy-Based Web Platform for Evaluating Normalization Methods in Blood Metabolomics Data from Maintenance Hemodialysis Patients.
+source_paper: Wang S et al. (2018), Analytical chemistry, DOI: 10.1021/acs.analchem.8b03065, PMID: 30118600
+overall_reproducibility_score: 45/100
+
+workflow_steps: 4
+  Step 1: Metabolite peak extraction
+    tool: XCMS
+    algorithm: centWave
+    parameters: ppm=5, snthr=10, prefilter=[5, 100], peakwidth=[10, 60], nSlidingWin=50, integrate=1
+    input: raw .mzML files
+    output: feature table (11,027 peaks)
+    confidence: medium
+  Step 2: Normalization method evaluation
+    tool: MetaboGroup S
+    algorithm: group entropy-based ranking
+    parameters: intragroup_entropy_weight=1, intergroup_entropy_weight=1, entropy_metric=Shannon
+    input: feature table with sample group labels
+    output: ranked list of 7 normalization methods + optimal recommendation
+    confidence: high
+  Step 3: Normalization application and comparative assessment
+    tool: MetaboGroup S
+    algorithm: seven built-in methods: PQN, CV, TIC, RS, QC-RSC, Probabilistic Quotient Normalization, Linear Regression on QC samples
+    input: feature table
+    output: seven normalized feature tables + entropy metrics per method
+    confidence: medium
+  Step 4: Cross-platform validation
+    tool: MetaboGroup S
+    algorithm: group entropy evaluation
+    input: NMR data matrix
+    output: entropy-ranked normalization recommendations for NMR data
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: https://omicstools.shinyapps.io/MetaboGroupSapp/
+  license: not mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS data not deposited in public repository (e.g., MetaboLights or GNPS)
+  - No access to underlying R/Shiny source code for MetaboGroup S
+  - Exact XCMS parameters only partially specified (e.g., retention time alignment settings omitted)
+  - No description of preprocessing steps prior to XCMS (e.g., conversion from vendor format, blank subtraction)
+reproducibility_strengths:
+  - Web platform freely accessible and functional at time of publication
+  - Explicit listing of seven evaluated normalization methods
+  - Use of objective, information-theoretic metric (group entropy) for method selection

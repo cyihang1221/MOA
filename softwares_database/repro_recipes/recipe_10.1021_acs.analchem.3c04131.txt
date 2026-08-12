@@ -1,0 +1,61 @@
+========== reproducibility_recipe entry ==========
+paper_title: FNICM: A New Methodology To Identify Core Metabolites Based on Significantly Perturbed Metabolic Subnetworks.
+source_paper: Li Q et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.3c04131, PMID: 38363654
+overall_reproducibility_score: 20/100
+
+workflow_steps: 6
+  Step 1: Seed metabolite selection
+    tool: prior biological knowledge + targeted metabolomics
+    algorithm: knowledge-driven curation
+    input: targeted metabolomics data + literature/domain knowledge
+    output: list of seed metabolites
+    confidence: low
+  Step 2: Perturbation propagation through metabolic network
+    tool: network topology-based propagation
+    algorithm: network diffusion or influence propagation (not specified)
+    input: seed metabolites + metabolic interaction network
+    output: perturbation scores for all network metabolites
+    confidence: low
+  Step 3: Core metabolite identification via controllability analysis
+    tool: controllability analysis
+    algorithm: structural controllability theory (e.g., minimum dominating set or driver node identification)
+    parameters: core_metabolite_count=35
+    input: perturbation-scored metabolic network
+    output: 35 core metabolites with hierarchical confidence levels
+    confidence: medium
+  Step 4: Hierarchical classification of core metabolites
+    tool: confidence-level stratification
+    algorithm: multi-tier ranking based on confidence and significance
+    parameters: hierarchy_levels=6
+    input: core metabolite list with perturbation/controllability metrics
+    output: core metabolites ranked in six confidence levels
+    confidence: medium
+  Step 5: Validation using external clinical datasets
+    tool: cross-dataset validation
+    algorithm: diagnostic performance evaluation (AUC, sensitivity, specificity)
+    parameters: disease_contexts=['ulcerative colitis', 'inflammatory bowel disease', 'colorectal cancer', 'acute coronary syndrome']
+    input: core metabolite signatures + independent cohort metabolomics data
+    output: validation metrics (e.g., AUC, accuracy)
+    confidence: medium
+  Step 6: Therapeutic effect correlation analysis
+    tool: treatment-response metabolite association
+    algorithm: correlation between core metabolites and therapeutic intervention (Clematis saponins)
+    input: core metabolites + treatment-response metabolomics data
+    output: therapy-correlated core metabolites
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of computational tools, algorithms, or software used for network propagation or controllability analysis
+  - No access to raw or processed metabolomics data
+  - No code repository or implementation details provided
+  - Metabolic network source and version not specified
+  - No parameter values (e.g., diffusion kernel, controllability threshold) reported

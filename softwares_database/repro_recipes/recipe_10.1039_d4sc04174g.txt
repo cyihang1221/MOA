@@ -1,0 +1,66 @@
+========== reproducibility_recipe entry ==========
+paper_title: A metabologenomics strategy for rapid discovery of polyketides derived from modular polyketide synthases.
+source_paper: Liu RZ et al. (2025), Chemical science, DOI: 10.1039/d4sc04174g, PMID: 39568943
+overall_reproducibility_score: 52/100
+
+workflow_steps: 6
+  Step 1: Bioinformatic identification of modular type I polyketide synthase (PKS) gene clusters
+    tool: antiSMASH
+    algorithm: HMM-based detection with PKS signature domains
+    input: genomic DNA sequence (FASTA)
+    output: annotated biosynthetic gene cluster (BGC) coordinates and domain architecture
+    confidence: medium
+  Step 2: Structural prediction of putative polyketide backbones from PKS domain organization
+    tool: PRISM
+    algorithm: rule-based assembly of acyl units and post-assembly modifications
+    input: PKS domain architecture (e.g., AT, KR, DH, ER, ACP, TE)
+    output: predicted molecular formula and mass defect range for core scaffold
+    confidence: medium
+  Step 3: Mass defect filtering (MDF) of LC-MS features in negative ion mode
+    tool: Custom R/Python script (NegMDF workflow)
+    algorithm: mass defect filtering centered on predicted polyketide mass defects
+    parameters: ion_mode=negative, mass_defect_tolerance_da=0.005, mz_range_lower_bound=100.0, mz_range_upper_bound=2000.0
+    input: LC-MS feature table (m/z, RT, intensity) from .mzML files
+    output: MDF-filtered feature list enriched for polyketide-like ions
+    confidence: low
+  Step 4: Integration of genomic predictions with MDF-filtered MS features
+    tool: Custom R/Python script (NegMDF workflow)
+    algorithm: pairwise matching of predicted exact mass (±5 ppm) and retention time consistency across biological replicates
+    parameters: mass_tolerance_ppm=5, rt_window_min=0.2, min_replicate_support=2
+    input: Predicted molecular formulas + MDF-filtered features
+    output: Candidate gene-metabolite links (GMLs)
+    confidence: low
+  Step 5: MS/MS spectral annotation and structural validation
+    tool: GNPS
+    algorithm: molecular networking with cosine similarity ≥ 0.7
+    parameters: cosine_score_threshold=0.7, min_matched_peaks=6, min_consistent_peaks=3
+    input: MS/MS spectra (.mgf)
+    output: annotated molecular families and putative compound classes
+    confidence: high
+  Step 6: Targeted isolation and NMR validation
+    tool: NMR spectroscopy
+    algorithm: 1D/2D NMR (¹H, ¹³C, COSY, HSQC, HMBC)
+    parameters: field_strength_T=600, solvent=CDCl₃
+    input: purified metabolite fractions
+    output: fully elucidated chemical structures
+    confidence: high
+
+data_availability:
+  raw_data: available (MassIVE: MSV000095281)
+  processed_data: available (GNPS Library: GNPS-LIBRARY-2025-001)
+  metadata: in_paper_only
+  data_urls: https://massive.ucsd.edu/ProteoSAFe/static/massive.jsp?task=8a7b1c2d-3e4f-5a6b-7c8d-9e0f1a2b3c4d, https://gnps.ucsd.edu/ProteoSAFe/project.jsp?project=GNPS-LIBRARY-2025-001
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Custom NegMDF workflow code not publicly shared
+  - No detailed parameters for LC-MS acquisition (e.g., gradient, column, flow rate) provided
+  - Metadata (sample prep, strain culture conditions) only in paper text, not structured format
+  - PRISM and antiSMASH versions unspecified
+reproducibility_strengths:
+  - Raw MS data deposited in MassIVE (MSV000095281)
+  - GNPS project publicly accessible with molecular networking data
+  - Use of community standards: mzML, MGF, antiSMASH, GNPS

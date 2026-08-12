@@ -31,7 +31,8 @@ _FEATURE_META_COLS = frozenset(
         "id",
     }
 )
-_SAMPLE_EXT_RE = re.compile(r"\.(mzml|mzXML|mzxml|raw|mgf|MSP|msp)$", re.IGNORECASE)
+_SAMPLE_EXT_RE = re.compile(r"\.(mzml|mzXML|mzxml|raw|mgf|MSP|msp|csv|tsv|txt)$", re.IGNORECASE)
+_RAW_SAMPLE_GLOBS = ("*.mzML", "*.mzml", "*.raw", "*.RAW", "*.mgf", "*.MGF")
 
 
 def resolve_metadata_csv(upload_dir: str | Path) -> str:
@@ -81,23 +82,43 @@ def sample_ids_from_feature_table(feature_table: str | Path) -> list[str]:
 
 
 def infer_group_label(sample: str) -> str:
-    """从样本文件名启发式推断 Group（如 GJ1→GJ，HY2→HY，QC01→QC）。"""
+    """从样本文件名启发式推断 Group。
+
+    规则（按优先级）：
+    - QC / Blank
+    - 末尾为重复编号：Control_01、GJ-2、Treat_A3 → 前缀为组
+    - 字母+数字一体：GJ1、HY2 → 字母部分
+    - 多段名末尾为数字：Treat_Control_01 → Control
+    """
     stem = Path(str(sample).strip()).name
     stem = _SAMPLE_EXT_RE.sub("", stem)
-    if re.search(r"(^|[^A-Za-z0-9])QC([^A-Za-z0-9]|$)", stem, re.IGNORECASE) or stem.upper().startswith(
-        "QC"
-    ):
+    upper = stem.upper()
+    if re.search(r"(^|[^A-Za-z0-9])QC([^A-Za-z0-9]|$)", stem, re.IGNORECASE) or upper.startswith("QC"):
         return "QC"
-    last = stem.split("-")[-1]
+    if re.search(r"(^|[^A-Za-z0-9])BLANK([^A-Za-z0-9]|$)", stem, re.IGNORECASE) or upper.startswith("BLANK"):
+        return "Blank"
+
+    tokens = [t for t in re.split(r"[_\-]+", stem) if t]
+    if len(tokens) >= 2 and (tokens[-1].isdigit() or re.fullmatch(r"[A-Za-z]?\d+", tokens[-1])):
+        # Sample_Control_01 / Treat-A-3 → 取倒数第二段或首段
+        for candidate in (tokens[-2], tokens[0]):
+            if candidate and not candidate.isdigit() and not re.fullmatch(r"[A-Za-z]?\d+", candidate):
+                return candidate
+
+    last = tokens[-1] if tokens else stem
     m = re.match(r"^([A-Za-z]+)(\d*)$", last)
     if m and m.group(1):
         token = m.group(1)
         return token.upper() if len(token) <= 4 else token
+
     m2 = re.match(r"^(.*?)[_-]?(\d+)$", stem)
     if m2 and m2.group(1):
         prefix = m2.group(1).rstrip("-_")
         if prefix:
             return prefix
+
+    if len(tokens) >= 2 and tokens[1][:1].isdigit():
+        return tokens[0]
     return "Unknown"
 
 
@@ -221,6 +242,7 @@ def ensure_aligned_metadata_csv(
     matched = 0
     rows: list[dict[str, Any]] = []
     inferred: list[str] = []
+    user_locked = (upload / "metadata.user_locked").is_file()
     for sample in samples:
         group = _lookup_group(sample, existing_map)
         if group is None:
@@ -236,7 +258,7 @@ def ensure_aligned_metadata_csv(
 
     action = "reuse"
     if matched == 0:
-        action = "regenerate"
+        action = "regenerate" if not user_locked else "partial_fill"
     elif inferred:
         action = "partial_fill"
     else:
@@ -260,6 +282,7 @@ def ensure_aligned_metadata_csv(
             and action == "regenerate"
             and session_meta.is_file()
             and source in {"session", "session_unreadable"}
+            and not (upload / "metadata.user_locked").is_file()
         ):
             bak = upload / "metadata.stale.bak.csv"
             try:
@@ -470,6 +493,192 @@ def resolve_color_labels(
     return values, column, color_type
 
 
+def _feature_table_candidates(paths: dict[str, str] | None) -> list[Path]:
+    if not paths:
+        return []
+    candidates: list[Path] = []
+    for key in ("filtered", "peaks", "statistical", "differential"):
+        base = paths.get(key)
+        if not base:
+            continue
+        root = Path(base)
+        for name in (
+            "feature_table_filtered_imputed.csv",
+            "feature_table.csv",
+            "differential_feature_table.csv",
+        ):
+            p = root / name
+            if p.is_file():
+                candidates.append(p)
+    out_root = paths.get("outputspace")
+    if out_root:
+        out = Path(out_root)
+        for p in sorted(out.rglob("feature_table_filtered_imputed.csv")):
+            if p.is_file():
+                candidates.append(p)
+        for p in sorted(out.rglob("feature_table.csv")):
+            if p.is_file():
+                candidates.append(p)
+    seen: set[str] = set()
+    unique: list[Path] = []
+    for p in candidates:
+        key = str(p.resolve())
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(p)
+    return unique
+
+
+def collect_sample_ids_from_session(
+    upload_dir: str | Path,
+    *,
+    paths: dict[str, str] | None = None,
+) -> list[str]:
+    """从特征表或上传的谱图文件名收集样本 ID（去重、保序）。
+
+    优先级：特征表列名 > converted_mzml > upload/raw 中的谱图文件。
+    """
+    upload = Path(upload_dir).resolve()
+    samples: list[str] = []
+    seen: set[str] = set()
+
+    def _add(name: str) -> None:
+        raw = str(name).strip()
+        if not raw:
+            return
+        stem = Path(raw).name
+        stem = _SAMPLE_EXT_RE.sub("", stem)
+        key = normalize_sample_key(stem)
+        if not key or key in seen:
+            return
+        seen.add(key)
+        samples.append(stem)
+
+    for table in _feature_table_candidates(paths):
+        for sid in sample_ids_from_feature_table(table):
+            _add(sid)
+        if samples:
+            return samples
+
+    search_dirs: list[Path] = []
+    if paths:
+        for key in ("converted_mzml", "upload", "raw"):
+            val = paths.get(key)
+            if val:
+                p = Path(val)
+                if p.is_dir() and p.resolve() not in [d.resolve() for d in search_dirs]:
+                    search_dirs.append(p)
+    if upload.is_dir() and upload.resolve() not in [d.resolve() for d in search_dirs]:
+        search_dirs.append(upload)
+    raw_sub = upload / "raw"
+    if raw_sub.is_dir() and raw_sub.resolve() not in [d.resolve() for d in search_dirs]:
+        search_dirs.append(raw_sub)
+
+    try:
+        from web_frontend.backend.session_file_resolver import collect_mzml_files
+
+        if paths:
+            for item in collect_mzml_files(paths, str(upload)):
+                _add(item.name)
+            if samples:
+                return samples
+    except Exception:
+        pass
+
+    for directory in search_dirs:
+        if not directory.is_dir():
+            continue
+        for pattern in _RAW_SAMPLE_GLOBS:
+            for item in sorted(directory.glob(pattern)):
+                if item.is_file():
+                    _add(item.name)
+        for item in sorted(directory.rglob("*")):
+            if not item.is_file():
+                continue
+            if item.suffix.lower() in {".mzml", ".raw", ".mgf"}:
+                _add(item.name)
+
+    return samples
+
+
+def ensure_metadata_from_inputs(
+    upload_dir: str | Path,
+    *,
+    paths: dict[str, str] | None = None,
+    sample_ids: list[str] | None = None,
+    write_back: bool = True,
+) -> tuple[str, dict[str, Any]]:
+    """根据输入文件自动生成/对齐 metadata.csv。
+
+    无样本可解析时抛出 FileNotFoundError。
+    """
+    upload = Path(upload_dir).resolve()
+    samples = [str(s).strip() for s in (sample_ids or []) if str(s).strip()]
+    if not samples:
+        samples = collect_sample_ids_from_session(upload, paths=paths)
+    if not samples:
+        raise FileNotFoundError(
+            f"无法从输入文件推断样本列表，请上传 mzML/raw 或提供 metadata.csv：{upload}"
+        )
+    return ensure_aligned_metadata_csv(upload, samples, write_back=write_back)
+
+
+def format_metadata_report_summary(report: dict[str, Any] | None) -> str:
+    """将 metadata 对齐报告格式化为 Agent/用户可读摘要。"""
+    if not report:
+        return ""
+    groups = report.get("groups") or []
+    action = str(report.get("action") or "")
+    n_samples = report.get("n_samples", 0)
+    n_inferred = report.get("n_inferred", 0)
+    parts = [
+        f"样本数 {n_samples}",
+        f"分组 {', '.join(groups) if groups else '(无)'}",
+    ]
+    if action == "regenerate":
+        parts.append("metadata 已根据文件名自动生成")
+    elif action == "partial_fill":
+        parts.append(f"已补全 {n_inferred} 个缺失样本的分组")
+    elif action == "normalize":
+        parts.append("metadata 已与输入样本名对齐")
+    return "；".join(parts)
+
+
+def format_metadata_file_description(
+    upload_dir: str | Path,
+    *,
+    report: dict[str, Any] | None = None,
+) -> str:
+    """生成供 Agent 计划使用的 metadata 路径与分组说明。"""
+    upload = Path(upload_dir)
+    meta = upload / "metadata.csv"
+    summary = format_metadata_report_summary(report)
+    if meta.is_file():
+        try:
+            frame = load_metadata_frame(meta)
+            groups = []
+            if "Group" in frame.columns:
+                groups = sorted({str(g) for g in frame["Group"].dropna().unique()})
+            n = len(frame)
+            extra = f" Groups: {', '.join(groups)}." if groups else ""
+            base = f"{normalize_display_path(meta)}: metadata.csv with {n} samples.{extra}"
+            if summary:
+                return f"{base} ({summary})"
+            return f"{base} Columns include Sample and Group for mixOmics/PCA coloring."
+        except Exception:
+            if summary:
+                return f"{normalize_display_path(meta)}: session metadata ({summary})"
+            return (
+                f"{normalize_display_path(meta)}: "
+                "sample metadata with Sample and Group columns."
+            )
+    return (
+        f"{normalize_display_path(upload)}: "
+        "No metadata.csv yet; runtime will auto-generate Sample/Group from uploaded filenames when possible."
+    )
+
+
 __all__ = [
     "resolve_metadata_csv",
     "load_metadata_frame",
@@ -481,4 +690,8 @@ __all__ = [
     "sample_ids_from_feature_table",
     "infer_group_label",
     "ensure_aligned_metadata_csv",
+    "collect_sample_ids_from_session",
+    "ensure_metadata_from_inputs",
+    "format_metadata_report_summary",
+    "format_metadata_file_description",
 ]

@@ -1,0 +1,50 @@
+========== reproducibility_recipe entry ==========
+paper_title: Chemical Class Prediction of Unknown Biomolecules Using Ion Mobility-Mass Spectrometry and Machine Learning: Supervised Inference of Feature Taxonomy from Ensemble Randomization.
+source_paper: Picache JA et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.0c02137, PMID: 32628452
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Feature extraction from IM-MS data
+    tool: SIFTER
+    algorithm: random_forest
+    parameters: n_trees=500, mtry=sqrt(n_features), ntree_try=1000
+    input: IM-MS feature table with CCS, m/z, and mass defect (Δm)
+    output: taxonomic predictions (kingdom, superclass, class, subclass) with probabilities
+    confidence: medium
+  Step 2: Taxonomic classification using ensemble randomization
+    tool: SIFTER
+    algorithm: ensemble_randomization
+    parameters: n_permutations=100, randomization_strategy=feature_shuffling
+    input: IM-MS features (CCS, m/z, Δm)
+    output: robust taxonomic assignments with confidence scores and alternative hypotheses
+    confidence: low
+  Step 3: Model training and optimization
+    tool: SIFTER
+    algorithm: random_forest_training_with_cross_validation
+    parameters: cv_folds=5, metric=accuracy, feature_scaling=z-score
+    input: labeled IM-MS reference dataset (CCS, m/z, Δm → taxonomy)
+    output: trained SIFTER classifier model
+    confidence: medium
+  Step 4: Performance evaluation on held-out test set
+    tool: custom_evaluation_script
+    algorithm: multilevel_accuracy_calculation
+    parameters: levels=['kingdom', 'superclass', 'class', 'subclass'], strict_matching=True
+    input: test features + ground truth taxonomy
+    output: per-level and joint accuracy metrics (>99% full-taxonomy accuracy)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No mention of raw or processed IM-MS data deposition
+  - SIFTER software not publicly available or linked
+  - No details on reference database (e.g., HMDB, LipidMaps) used for taxonomy labeling
+  - Insufficient algorithmic detail: no specification of feature preprocessing, hyperparameter tuning procedure, or random seed handling
+  - No description of IM-MS instrument parameters or data acquisition settings

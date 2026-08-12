@@ -1,0 +1,52 @@
+========== reproducibility_recipe entry ==========
+paper_title: Activity-based RNA-modifying enzyme probing reveals DUS3L-mediated dihydrouridylation.
+source_paper: Dai W et al. (2021), Nature chemical biology, DOI: 10.1038/s41589-021-00874-8, PMID: 34556860
+overall_reproducibility_score: 58/100
+
+workflow_steps: 0
+
+data_availability:
+  raw_data: available (PRIDE: PXD021542)
+  processed_data: available (Supplementary Data 1, 2)
+  metadata: in_paper_only
+  data_urls: https://www.ebi.ac.uk/pride/archive/projects/PXD021542
+
+code_availability: not_mentioned
+
+figure_recipes: 6
+  Figure 1: [workflow_diagram]
+    caption: Schematic overview of the RNABPP strategy for chemoproteomic profiling of RNA-modifying enzymes.
+    visualization_tool: Adobe Illustrator
+  Figure 2: [table]
+    caption: LC–MS/MS proteomics data identifying 5-FCyd-reactive proteins enriched on mRNA via RNABPP.
+    visualization_tool: Excel, Perseus
+    statistical_test: t-test (p < 0.05), Benjamini–Hochberg FDR correction
+  Figure 3: [bar_chart]
+    caption: Validation of NSUN2 and TRMT2A as major m⁵C and m⁵U methyltransferases using siRNA knockdown and LC-MS/MS quantification of modified nucleosides.
+    visualization_tool: GraphPad Prism
+    statistical_test: two-tailed unpaired t-test
+  Figure 4: [boxplot]
+    caption: Quantitative nucleoside LC-MS/MS showing DHU accumulation dependent on DUS3L expression and 5-FUrd treatment.
+    visualization_tool: GraphPad Prism
+    statistical_test: two-way ANOVA with Tukey’s multiple comparisons test
+  Figure 5: [heatmap]
+    caption: 5-FUrd-iCLIP sequencing reveals transcriptome-wide DUS3L binding and DHU modification sites, enriched in tRNA and rRNA.
+    visualization_tool: deepTools, R (pheatmap)
+    statistical_test: binomial test for motif enrichment
+  Figure 6: [bar_chart]
+    caption: DUS3L-KO impairs protein synthesis (SUnSET assay) and reduces cellular proliferation (cell counting and colony formation).
+    visualization_tool: GraphPad Prism
+    statistical_test: two-tailed unpaired t-test
+
+reproducibility_gaps:
+  - No description of LC-MS/MS acquisition parameters (e.g., gradient, instrument settings, fragmentation method)
+  - No details on RNABPP experimental protocol: exact 5-FCyd/5-FUrd concentrations, incubation times, cell lysis conditions, mRNA capture efficiency validation
+  - No bioinformatic pipeline details for iCLIP data: alignment tools, peak-calling algorithm, DHU site inference methodology
+  - No software versions reported for Perseus, GraphPad Prism, or deepTools
+  - Custom scripts for iCLIP analysis or DHU site calling not shared or deposited
+  - No metadata schema or sample annotation table provided beyond Supplementary Tables
+reproducibility_strengths:
+  - Proteomics raw data deposited in PRIDE (PXD021542)
+  - Processed proteomics (Suppl. Data 1) and iCLIP peak data (Suppl. Data 2) provided as Excel files
+  - All key reagents (siRNAs, antibodies, cell lines) described with catalog IDs or sources
+  - Statistical tests explicitly named and significance thresholds reported

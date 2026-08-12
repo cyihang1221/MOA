@@ -1,0 +1,44 @@
+========== reproducibility_recipe entry ==========
+paper_title: Novel Real-Time Library Search Driven Data Acquisition Strategy for Identification and Characterization of Metabolites.
+source_paper: Bills B et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.1c04336, PMID: 35188738
+overall_reproducibility_score: 20/100
+
+workflow_steps: 3
+  Step 1: Real-time spectral library matching during LC/MS acquisition
+    tool: Met-IQ
+    algorithm: real-time spectral similarity scoring
+    parameters: similarity_threshold=None, library_source=reference spectral library, dissociation_mode=not specified
+    input: real-time MS2 spectra
+    output: decision to trigger MS3 or continue MS2 acquisition
+    confidence: low
+  Step 2: Targeted MS3 acquisition triggered by spectral match
+    tool: Met-IQ
+    algorithm: decision-dependent event triggering
+    parameters: ms3_trigger_condition=MS2 spectrum matches reference library entry, fragment_selection_rule=higher mass fragments prioritized
+    input: MS2 spectra passing similarity threshold
+    output: MS3 spectra
+    confidence: medium
+  Step 3: Comparative metabolite detection and identification
+    tool: not specified
+    algorithm: intensity-based data-dependent acquisition (DDA) for comparison
+    parameters: ddas_method=intensity-triggered MSn, comparison_metric=number of unique potential metabolites, fold_increase_ms2=2.0
+    input: LC/MS data from Amprenavir + human liver microsomes incubation
+    output: list of potential metabolites (14–34% more than DDA)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Met-IQ is a novel, instrument-integrated strategy with no public implementation or source code
+  - No details on spectral similarity algorithm (e.g., dot product, cosine, MSPepSearch parameters)
+  - No specification of reference spectral library (e.g., MassBank, GNPS, in-house; size, format, version)
+  - No instrument method files, gradient profile, or chromatographic conditions provided
+  - No raw data deposition or accession identifiers reported
+  - No software version, vendor platform (e.g., Thermo Orbitrap, SCIEX TripleTOF), or firmware requirements stated

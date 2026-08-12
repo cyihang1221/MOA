@@ -1,0 +1,103 @@
+========== reproducibility_recipe entry ==========
+paper_title: Spatially resolved metabolomics and isotope tracing reveal dynamic metabolic responses of dentate granule neurons with acute stimulation.
+source_paper: Miller A et al. (2023), Nature metabolism, DOI: 10.1038/s42255-023-00890-z, PMID: 37798473
+overall_reproducibility_score: 35/100
+
+workflow_steps: 7
+  Step 1: Thermal preservation of acute brain slices
+    tool: custom thermal control assembly
+    algorithm: flash-heating (heat-freezing)
+    parameters: duration=sub-second, temperature=≥100°C
+    input: fresh murine acute hippocampal brain slices
+    output: metabolically arrested tissue sections
+    confidence: medium
+  Step 2: Matrix-assisted laser desorption/ionization mass spectrometry imaging (MALDI–MSI)
+    tool: MALDI–MSI platform
+    algorithm: not specified
+    parameters: laser spot size=not specified, spatial resolution=not specified, mass range=not specified, polarity=negative mode ([M-H]−), m/z tolerance=not quantified
+    input: heat-frozen brain slice sections with MALDI matrix application
+    output: spatially resolved ion images and raw spectral data (.imzML or vendor format)
+    confidence: low
+  Step 3: Ion image generation and metabolite annotation
+    tool: not explicitly named
+    algorithm: manual and database-assisted m/z assignment
+    parameters: m/z tolerance=not specified, database=Supplementary Table 1 (compound-specific m/z assignments)
+    input: raw MALDI–MSI spectra
+    output: annotated ion images (e.g., Ino, Cr, PCr, GAP, 6PG, PentoseP, S7P, E4P)
+    confidence: low
+  Step 4: Isotope tracing data acquisition and isotopologue quantification
+    tool: not explicitly named
+    algorithm: isotopologue intensity integration (e.g., M+0 to M+5 for ¹³C₆-glucose; M+0 to M+5 for ¹³C₅-inosine)
+    parameters: correction=natural isotope abundance correction applied, labeling time=['10 min', '35 min'], stimulation duration=5 min KCl
+    input: ¹³C-labeled MALDI–MSI datasets
+    output: atom% labeling, isotopologue distributions (e.g., %M+1 to %M+5), carbon contribution maps
+    confidence: medium
+  Step 5: Region-of-interest (ROI) extraction and quantification
+    tool: not explicitly named
+    algorithm: DGC layer segmentation using NeuN/GFAP/DAPI immunofluorescence co-registration
+    parameters: ROI definition=dentate granule cell layer based on anatomical landmarks and antibody staining
+    input: co-registered ion images + immunofluorescence images
+    output: quantified metabolite intensities per ROI (e.g., DGC layer vs. other regions)
+    confidence: medium
+  Step 6: Statistical analysis of metabolite changes
+    tool: not specified (likely custom R/Python or GraphPad)
+    algorithm: two-tailed Student’s t-test (unpaired or paired), two-stage linear step-up procedure (Benjamini–Krieger–Yekutieli) for multiple comparisons with Q = 1%
+    parameters: significance threshold=0.05, multiple testing correction=Q = 0.01, test type=['unpaired', 'paired']
+    input: quantified metabolite intensities or atom% values per condition
+    output: p-values, significance annotations (*, **, ***), differentially abundant metabolites/isotopologues
+    confidence: high
+  Step 7: Pathway interpretation and schematic modeling
+    tool: manual curation
+    algorithm: biochemical pathway mapping (PPP, glycolysis, purine metabolism)
+    parameters: sources=['KEGG', 'MetaCyc', 'domain knowledge'], validation=inhibitor experiments (forodesine, G6PDi, cpd3, pentostatin, 8MDP, DIPY, NBMPR)
+    input: statistical results + isotopic labeling patterns + pharmacological perturbation data
+    output: mechanistic models (e.g., PNP-mediated inosine → R1P → PPP flux)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (Not stated)
+  processed_data: not_mentioned (Not stated)
+  metadata: in_paper_only
+  data_urls: https://doi.org/10.1038/s42255-023-00890-z, Source Data Fig. 2–5 and Extended Data Figs. 1–5 (XLSX files available via journal supplementary materials)
+
+code_availability: not_mentioned
+
+figure_recipes: 5
+  Fig. 1: [workflow_diagram]
+    caption: Schematic of experimental workflow: acute brain slice preparation, thermal preservation, MALDI–MSI acquisition, and data analysis.
+    produced_by_step: [1, 2, 3, 4, 5]
+    visualization_tool: not specified
+  Fig. 2: [ion_image_panel]
+    caption: Dynamic metabolic adaptation in the DGC layer showing stimulation-induced changes in key metabolites (Ino, Cr, PCr, GAP, BPG, PEP, 6PG, PentoseP).
+    produced_by_step: [2, 3, 5]
+    visualization_tool: not specified
+    statistical_test: two-tailed unpaired t-test (p = 0.039, 0.022 for ATP:AMP and PCr:Cr ratios)
+  Fig. 3: [isotope_tracing_plot]
+    caption: ¹³C₆-glucose tracing shows increased glycolytic and PPP flux upon KCl stimulation, including elevated 6PG and pentose phosphates.
+    produced_by_step: [4, 5, 6]
+    visualization_tool: not specified
+    statistical_test: two-tailed paired t-tests (p = 0.028–0.004)
+  Fig. 4: [isotope_tracing_plot]
+    caption: ¹³C₅-inosine tracing demonstrates intracellular inosine metabolism feeding non-oxidative PPP and lower glycolysis in DGCs.
+    produced_by_step: [4, 5, 6, 7]
+    visualization_tool: not specified
+    statistical_test: two-tailed paired t-tests with Q = 1% correction (p = 0.010, <0.001, 0.014)
+  Fig. 5: [bar_chart]
+    caption: PNP inhibition impairs energy recovery (PCr, ATP, AMP) post-stimulation, linking PNP activity to neuronal energetic resilience.
+    produced_by_step: [5, 6, 7]
+    visualization_tool: not specified
+    statistical_test: two-tailed t-test with Q = 1% correction (p < 0.001, 0.049, etc.)
+
+reproducibility_gaps:
+  - Raw MALDI–MSI imaging data (e.g., .imzML files) not deposited in public repository (e.g., MetaboLights, MassIVE)
+  - No description of MSI data processing software (peak picking, normalization, alignment, denoising)
+  - No details on MALDI instrument parameters (laser settings, matrix, spatial resolution, mass accuracy/tolerance)
+  - No code or scripts provided for isotopologue quantification, natural abundance correction, or ROI co-registration
+  - Custom thermal preservation hardware not fully documented (only schematic reference in Extended Data Fig. 1a)
+  - Metabolite annotation relies on Supplementary Table 1 but no validation method (e.g., standards, MS/MS) described
+  - Statistical analyses lack software specification (e.g., GraphPad Prism version, R packages)
+reproducibility_strengths:
+  - All source data (XLSX) for figures and extended data are publicly available via journal supplementary materials
+  - Comprehensive pharmacological and genetic perturbation data support mechanistic claims
+  - Clear experimental design with appropriate controls (sham, unlabeled, inhibitor-treated, time courses)
+  - Co-registration with immunofluorescence (NeuN/GFAP/DAPI) enables anatomically precise DGC-layer quantification

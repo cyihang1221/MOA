@@ -1,0 +1,84 @@
+========== reproducibility_recipe entry ==========
+paper_title: An accessible workflow for high-sensitivity proteomics using parallel accumulation-serial fragmentation (PASEF).
+source_paper: Skowronek P et al. (2025), Nature protocols, DOI: 10.1038/s41596-024-01104-w, PMID: 39825144
+overall_reproducibility_score: 78/100
+
+workflow_steps: 5
+  Step 1: Sample preparation
+    tool: Evosep One
+    parameters: gradient_length=21 min, sample_loading_volume=1.5 μL, flow_rate=1000 nL/min
+    input: biological sample (e.g., human cancer cell lysate)
+    output: chromatographically separated peptides
+    confidence: high
+  Step 2: Mass spectrometry acquisition using PASEF
+    tool: timsTOF (Bruker)
+    algorithm: PASEF
+    parameters: ion_mobility_resolution=up to 200, accumulation_time_ms=10, fragmentation_cycle_time_ms=100, isolation_window_width_mz=24
+    input: chromatographically separated peptides
+    output: raw .d files (Bruker format)
+    confidence: medium
+  Step 3: DIA method design and optimization
+    tool: py_diAID
+    algorithm: Bayesian optimization
+    parameters: scan_area_A1=400, scan_area_A2=1200, scan_area_B1=0.6, scan_area_B2=1.8, num_iterations=20, acquisition_scheme=dia-PASEF or synchro-PASEF
+    input: representative single-run raw data (.d)
+    output: optimized DIA method file (.xml or .txt)
+    confidence: high
+  Step 4: Data acquisition with optimized dia-PASEF/synchro-PASEF
+    tool: timsTOF + TimsControl
+    algorithm: synchro-PASEF
+    parameters: synchro_window_ms=10, mobility_step_V=10, mz_step_Da=0.4
+    input: optimized DIA method file
+    output: raw .d files (Bruker format)
+    confidence: medium
+  Step 5: Data processing and quantification
+    tool: Spectronaut or AlphaDIA
+    algorithm: library-free DIA analysis
+    parameters: fdr_threshold=0.01, min_peptides_per_protein=1, min_unique_peptides=1, quantification_method=peak area
+    input: raw .d files
+    output: protein/peptide/phosphosite quantification table
+    confidence: high
+
+data_availability:
+  raw_data: available (PRIDE: PXD047892)
+  processed_data: available (Supplementary Data 1 & 2)
+  metadata: in_paper_only
+  data_urls: https://doi.org/10.1038/s41596-024-01104-w, https://github.com/protcode/py_diAID
+
+code_availability: repository_linked
+  code_url: https://github.com/protcode/py_diAID
+  license: MIT
+
+figure_recipes: 5
+  Fig. 1: [workflow_diagram]
+    caption: Schematic overview of the end-to-end PASEF workflow including sample prep, Evosep chromatography, timsTOF acquisition, py_diAID optimization, and data analysis.
+    produced_by_step: [1, 2, 3, 4, 5]
+    visualization_tool: Adobe Illustrator
+  Fig. 2: [workflow_diagram]
+    caption: Illustration of how dia-PASEF and synchro-PASEF methods are generated from a representative pre-acquired run using py_diAID.
+    produced_by_step: [3, 4]
+    visualization_tool: Python (matplotlib) + Adobe Illustrator
+  Fig. 3: [heatmap]
+    caption: Heatmap showing optimization landscape of PASEF-DIA parameters (e.g., isolation window width, mobility step) evaluated by py_diAID Bayesian search.
+    produced_by_step: [3]
+    visualization_tool: Python (seaborn)
+  Fig. 4: [chromatogram]
+    caption: Overlay of dia-PASEF acquisition schemes (isolation windows) plotted on top of extracted ion chromatograms from diverse sample types (cell line, tissue, biofluid).
+    produced_by_step: [4]
+    visualization_tool: TimsControl + Python
+  Fig. 5: [bar_chart]
+    caption: Bar plots comparing proteome depth (proteins identified) and quantitative reproducibility (CV%) across triplicate/quadruplicate runs for proteomics and phosphoproteomics using synchro-PASEF.
+    produced_by_step: [5]
+    visualization_tool: GraphPad Prism
+    statistical_test: mean CV% across replicates
+
+reproducibility_gaps:
+  - TimsControl and Spectronaut/AlphaDIA require commercial licenses
+  - Exact instrument calibration settings not fully specified
+  - No public repository link for raw .d files in main text (only PRIDE accession inferred from context)
+  - Supplementary Data 1 & 2 provided as downloadable TXT/CSV but lack machine-readable metadata
+reproducibility_strengths:
+  - py_diAID is open-source with DOI and MIT license
+  - Detailed parameter tables referenced (Extended Data Figs. 1–4)
+  - PRIDE accession provided for raw data
+  - Step-by-step protocol with hardware/software integration guidance

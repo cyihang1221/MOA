@@ -1,0 +1,72 @@
+========== reproducibility_recipe entry ==========
+paper_title: MSFragger-DDA+ enhances peptide identification sensitivity with full isolation window search.
+source_paper: Yu F et al. (2025), Nature communications, DOI: 10.1038/s41467-025-58728-z, PMID: 40199897
+overall_reproducibility_score: 72/100
+
+workflow_steps: 6
+  Step 1: Database search with full isolation window matching
+    tool: MSFragger-DDA+ (v4.1)
+    algorithm: Hyperscore-based spectrum-peptide matching
+    parameters: max_missed_cleavages=1, variable_modifications=['Acetyl (Protein N-term)', 'Oxidation (M)'], fixed_modifications=['Carbamidomethyl (C)'], mass_tolerance_ppm=None, isolation_window_search=True
+    input: tandem mass spectra (.mzML or vendor raw)
+    output: PSMs (peptide-spectrum matches) before rescoring
+    confidence: medium
+  Step 2: Precursor XIC extraction and quality filtering
+    tool: MSFragger-DDA+ (v4.1)
+    algorithm: Isotopic XIC extraction + Kullback-Leibler divergence comparison to theoretical isotopic distribution
+    parameters: xic_extraction_method=fragment indexing accelerated, kl_divergence_threshold=None
+    input: PSMs from step 1
+    output: Filtered PSMs with high-quality XICs
+    confidence: low
+  Step 3: PSM rescoring and FDR control
+    tool: FragPipe (v22.0)
+    algorithm: Greedy rescoring (Yu et al.), MSBooster deep learning, Percolator re-ranking, Philosopher FDR filtering
+    parameters: fdr_threshold=0.01, psm_fdr_level=peptide, protein_fdr_level=protein, workflow=Default, decoy_generation=reversed
+    input: Filtered PSMs from step 2
+    output: FDR-filtered peptide and protein identifications (peptide.tsv, combined_protein.tsv)
+    confidence: high
+  Step 4: Label-free quantification with/without MBR
+    tool: IonQuant
+    algorithm: MaxLFQ intensity estimation
+    parameters: mb_enabled=[True, False], mb_top_runs=100, max_missed_cleavages=2
+    input: FDR-filtered PSMs and feature tables
+    output: Protein-level intensity matrix (MaxLFQ Intensity)
+    confidence: medium
+  Step 5: Phosphosite localization and filtering
+    tool: PTMProphet + FragPipe 'LFQ-phospho' workflow (v22.0)
+    algorithm: Localization probability scoring
+    parameters: localization_probability_threshold=0.75, fdr_level=global PSM and protein, fdr_threshold=0.01
+    input: Phosphorylation-enriched PSMs
+    output: Localized phosphosites and phosphosequences
+    confidence: high
+  Step 6: False discovery rate evaluation using entrapment database
+    tool: Custom entrapment database generator + MSFragger-DDA+ (v4.1)
+    algorithm: Random shuffling of target proteins (C-terminus fixed)
+    parameters: entrapment_protein_shuffling=C-terminal fixed, fdr_evaluation_metric=false discovery proportion (FDP)
+    input: Raw spectra + entrapment FASTA database
+    output: FDP estimates per tool
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (PRIDE)
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: mentioned_no_link
+  code_url: https://github.com/Nesvilab/MSFragger
+  license: Apache-2.0
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data accession IDs not provided (no PRIDE/ProteomeXchange IDs stated)
+  - Exact mass tolerance (ppm) and other critical MSFragger-DDA+ search parameters (e.g., fragment ion tolerance, min fragment count) not specified
+  - KL divergence threshold for XIC quality filtering not reported
+  - No link to code repository or scripts for entrapment database generation or figure generation (only 'as described in Data availability' — but no details given)
+  - FragPipe 'WWA' and 'LFQ-phospho' workflow parameter adjustments are mentioned but not enumerated
+reproducibility_strengths:
+  - All software tools are open-source (MSFragger, FragPipe, IonQuant, MetaMorpheus, MSBooster, Percolator, PTMProphet, Philosopher)
+  - Detailed version numbers provided for all major tools (MSFragger 4.1, FragPipe 22.0, MaxQuant 2.4.13, MetaMorpheus 1.0.5)
+  - Consistent FDR filtering strategy (1% peptide- and protein-level) explicitly defined
+  - Comprehensive description of variable/fixed modifications and enzymatic cleavage rules
+  - Hardware configuration (CPU/RAM) reported for runtime benchmarking

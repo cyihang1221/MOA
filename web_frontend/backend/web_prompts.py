@@ -1,4 +1,4 @@
-"""Web 端提示词：不依赖 RAG / PromptGenerator，避免 DashScope 嵌入与重型导入。"""
+"""Web 端提示词：轻量计划/工具匹配；可选注入 literature_rag 检索到的文献上下文。"""
 from __future__ import annotations
 
 import json
@@ -66,9 +66,13 @@ def build_plan_prompt(
     existing_outputs: list[str] | None = None,
     user_message: str = "",
     mandatory_first_step: str | None = None,
+    literature_context: str | None = None,
+    skill_context: str | None = None,
 ) -> dict:
     tools = _compact_tools(tools_info)
     tool_names = [t["name"] for t in tools]
+    has_literature = bool((literature_context or "").strip())
+    has_skills = bool((skill_context or "").strip())
     rules = [
         "Respond ONLY with one JSON object in the required format.",
         "Each plan step must start with: Use <exact_tool_name> to ...",
@@ -79,6 +83,14 @@ def build_plan_prompt(
         "Keep each step concise (one line); use absolute paths from input/output below.",
         "Output at most 12 plan steps so the JSON fits in one response.",
         "PRIORITY: follow the CURRENT user request in global_goal; do not ignore what the user just asked.",
+        "Conflict resolution: USER instruction > skill_context (parameter consensus) > literature_context > default pipeline preferences.",
+        "If skill_context is present, treat its Pipeline/Parameter Consensus as high-priority methodological evidence "
+        "(software parameters like XCMS ppm/peakwidth, GNPS thresholds); map only onto available_tools.",
+        "If literature_context is present, prefer published workflow tool choices/order/parameters that map onto available_tools; "
+        "do not invent tools or file paths that appear only in literature.",
+        "If literature_context or skill_context is present and the user did not truncate scope, briefly reflect evidence-backed stage choices "
+        "in plan step wording (tool + why), still one executable line per step.",
+        "Never fabricate paper citations; only mention sources that appear inside literature_context or skill_context.",
         "If existing_outputs lists artifacts already on disk, SKIP those pipeline steps unless the user explicitly asks to re-run.",
         "If mandatory_first_step is set, plan[0] MUST be that step (or equivalent wording with the same tool and paths).",
         "If user uploaded .mzML to inputspace, data_preprocessing_xcms (or an alternative preprocessing tool if requested) may run without raw conversion; mzML is auto-synced to converted_mzml.",
@@ -103,7 +115,8 @@ def build_plan_prompt(
         "When merging, honor user label case (ABCD vs abcd) and label font size (e.g. 150/350) exactly.",
         "plot_edit / image_merge / merge_edit write real files under edited_plots/ or merged_figures/; never invent file paths.",
         "After analysis that generates plots, remind that figures are editable in the web gallery (Agent 改图 / semantic editor) or via chat with plot_edit.",
-        "Use ONLY exact tool names from available_tools. Default pipeline prefers XCMS + GNPS; choose OpenMS/MZmine/KPIC/PeakOnly/FBMN/library_match_* when the user asks for those methods.",
+        "Use ONLY exact tool names from available_tools. Default pipeline prefers XCMS + GNPS; choose OpenMS/MZmine/KPIC/PeakOnly/FBMN/library_match_* when the user asks for those methods "
+        "(or when literature_context clearly recommends them and the tool is available).",
         "For raw conversion: input_dir is the session raw/ folder (or upload root if .raw are there); output_dir is converted_mzml under outputspace.",
         "Linux: prefer convert_raw_to_mzml_ThermoRawFileParser when listed in available_tools; Windows: use convert_raw_to_mzml_msconvert only.",
         "Never use converted_mzml as raw conversion input_dir.",
@@ -129,7 +142,7 @@ def build_plan_prompt(
         "peak_detection_* / align_* / group_peaks_* / fill_missing_* / filter_redundant_* / redundant_feature_filtering_*: use for step-by-step pipelines when user does not want end-to-end data_preprocessing_*.",
         *PLAN_ANTI_HALLUCINATION_RULES,
     ]
-    return {
+    payload = {
         "role": "Act as a Metabolomics Expert. Follow all rules strictly. You only emit a JSON plan; runtime executes tools.",
         "rules": rules,
         "current_user_message": user_message.strip(),
@@ -146,6 +159,22 @@ def build_plan_prompt(
             ]
         },
     }
+    if has_literature:
+        payload["literature_context"] = literature_context.strip()
+        payload["literature_note"] = (
+            "Retrieved from softwares_database / softwares_database_RAG. "
+            "Use as methodological evidence within available_tools; user instruction still wins."
+        )
+    if has_skills:
+        sk = skill_context.strip()
+        if len(sk) > 10000:
+            sk = sk[:9980] + "\n...(truncated)"
+        payload["skill_context"] = sk
+        payload["skill_note"] = (
+            "Extracted from high-reproducibility paper recipes (phase2_output). "
+            "Prefer explicit software parameters; still only call available_tools."
+        )
+    return payload
 
 
 def build_tool_match_prompt(
@@ -155,6 +184,8 @@ def build_tool_match_prompt(
     outputspace: str,
     tools_info: list[Any],
     history_summary=None,
+    literature_context: str | None = None,
+    skill_context: str | None = None,
 ) -> dict:
     tools = _compact_tools(tools_info)
     hinted = None
@@ -163,18 +194,23 @@ def build_tool_match_prompt(
             hinted = t["name"]
             break
 
-    return {
+    rules = [
+        "Respond ONLY with JSON: {\"tool_call\": {\"name\": \"...\", \"arguments\": {...}}}",
+        "arguments keys MUST match exactly the \"parameters\" object for the chosen tool (e.g. input_dir, output_dir).",
+        "Never use input_csv, input_feature_table, output_csv, input_msp as argument names unless listed in parameters.",
+        "Use directory paths for input_dir/output_dir, not single output file paths.",
+        "Do not invent tools outside available_tools.",
+        "When skill_context is present, prefer its explicit software parameters over vague defaults.",
+        "When literature_context is present, prefer parameter values and tool choices supported by that evidence, "
+        "but only if the tool exists in available_tools and argument names match the schema.",
+        "Do not invent citation strings; do not copy inaccessible literature-only file paths.",
+        "For plot_edit / image_merge / merge_edit: arguments must include instruction (natural language); optional source_rel or target_rel for specific files.",
+        "Never claim a file was written unless the tool result lists a real path.",
+        *TOOL_MATCH_ANTI_HALLUCINATION_RULES,
+    ]
+    payload = {
         "role": "Tool selection assistant. Pick the tool for the current sub-task. Emit JSON only.",
-        "rules": [
-            "Respond ONLY with JSON: {\"tool_call\": {\"name\": \"...\", \"arguments\": {...}}}",
-            "arguments keys MUST match exactly the \"parameters\" object for the chosen tool (e.g. input_dir, output_dir).",
-            "Never use input_csv, input_feature_table, output_csv, input_msp as argument names unless listed in parameters.",
-            "Use directory paths for input_dir/output_dir, not single output file paths.",
-            "Do not invent tools outside available_tools.",
-            "For plot_edit / image_merge / merge_edit: arguments must include instruction (natural language); optional source_rel or target_rel for specific files.",
-            "Never claim a file was written unless the tool result lists a real path.",
-            *TOOL_MATCH_ANTI_HALLUCINATION_RULES,
-        ],
+        "rules": rules,
         "global_goal": goal_description,
         "current_sub_task": task,
         "suggested_tool": hinted,
@@ -185,3 +221,15 @@ def build_tool_match_prompt(
             "tool_call": {"name": "tool name", "arguments": {"param": "value"}}
         },
     }
+    if (literature_context or "").strip():
+        # 工具匹配阶段控制长度，避免挤掉 schema
+        lit = literature_context.strip()
+        if len(lit) > 4500:
+            lit = lit[:4480] + "\n...(truncated)"
+        payload["literature_context"] = lit
+    if (skill_context or "").strip():
+        sk = skill_context.strip()
+        if len(sk) > 4500:
+            sk = sk[:4480] + "\n...(truncated)"
+        payload["skill_context"] = sk
+    return payload

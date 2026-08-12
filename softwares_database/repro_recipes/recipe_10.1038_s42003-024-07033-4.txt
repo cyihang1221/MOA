@@ -1,0 +1,90 @@
+========== reproducibility_recipe entry ==========
+paper_title: Decoding sex-specific metabolomic biomarkers in the loggerhead sea turtle (Caretta caretta).
+source_paper: Marín-García PJ et al. (2024), Communications biology, DOI: 10.1038/s42003-024-07033-4, PMID: 39406821
+overall_reproducibility_score: 52/100
+
+workflow_steps: 8
+  Step 1: Sample preparation and deproteinization
+    tool: manual protocol
+    parameters: sample_volume=150, acetonitrile_volume=450, internal_standards=['glycocholic acid (glycine-1-13C)', 'p-chlorophenylalanine'], internal_standard_concentration_mg_per_ml=0.01, incubation_temperature_c=4, incubation_time_min=10, centrifugation_g=2250, centrifugation_time_min=25, centrifugation_temperature_c=4
+    input: plasma samples
+    output: deproteinized supernatant
+    confidence: high
+  Step 2: LC-MS data acquisition
+    tool: Shimadzu LabSolutions (v5.114)
+    algorithm: DIA (data-independent acquisition)
+    parameters: instrument=Nexera X2 LC + LCMS-9030 Q-TOF MS, ionization_mode=['ESI+', 'ESI-'], column=Acquity HSS T3, 1.7 µm, 100 × 2.1 mm, column_temperature_c=40, autosampler_temperature_c=10, injection_volume_ul=3, flow_rate_ml_per_min=0.4, gradient_solvent_a=water + 0.1% formic acid, gradient_solvent_b=acetonitrile + 0.1% formic acid, gradient_profile=5% B → 100% B over 12 min, hold 1 min, re-equilibrate 3 min, total_run_time_min=16, ms_scan_range_mz=[50, 900], ms_ms_scan_range_mz=[40, 900], ms_ms_precursor_isolation_width_da=25.2, collision_energy_v_range=[10, 30], cycle_time_s=0.9, ion_source_temperature_c=300, heated_capillary_temperature_c=250, heating_block_temperature_c=400, espray_voltage_kv={'ESI+': 4.5, 'ESI-': -3.5}, nebulizer_gas_flow_l_per_min=3, drying_gas_flow_l_per_min=10, detector_voltage_kv=2.02, mass_calibration_reference=sodium iodide (400 ppm in methanol), m/z 50–1000
+    input: deproteinized supernatant
+    output: raw .lcd/.qgd files (Shimadzu native format)
+    confidence: high
+  Step 3: Peak detection, alignment, and gap filling
+    tool: MS-DIAL (v71)
+    algorithm: Centroid-based peak picking with retention time alignment and gap filling
+    parameters: mass_tolerance_ppm=None, retention_time_tolerance_sec=None, min_peak_height=None, min_peak_area=None, gap_filling_method=interpolation or nearest neighbor (not specified), mz_range_max=700, retention_time_truncation=yes (to chromatographic peak region only)
+    input: raw .lcd/.qgd files
+    output: feature table (peak matrix)
+    confidence: medium
+  Step 4: Data filtering and QC-based preprocessing
+    tool: manual + Excel
+    algorithm: blank subtraction and RT truncation
+    parameters: blank_removal=True, rt_truncation=True, mz_max=700
+    input: MS-DIAL feature table
+    output: filtered feature table
+    confidence: high
+  Step 5: Outlier detection and data quality assessment
+    tool: LatentiX (v2.12)
+    algorithm: PCA
+    parameters: components=2
+    input: filtered feature table
+    output: PCA scores plot, outlier identification
+    confidence: medium
+  Step 6: Multivariate statistical modeling (PLS-DA)
+    tool: LatentiX (v2.12)
+    algorithm: Partial Least Squares Discriminant Analysis
+    parameters: max_components=5, cross_validation_method=five-fold CV, validation_method=repeated random subsampling, model_evaluation_metrics=['R2', 'Q2', 'actual_vs_predicted_plot', 'explained_variation_in_Y']
+    input: filtered feature table
+    output: PLS-DA model, VIP scores, discriminant metabolites
+    confidence: high
+  Step 7: Univariate statistical testing
+    tool: SAS GLM
+    algorithm: General Linear Model with sex, life-stage class, and interaction term
+    parameters: model_factors=['sex', 'life_stage_class', 'sex*life_stage_class'], post_hoc_test=least-squares means t-test, distribution_assumption=normal
+    input: filtered feature table
+    output: p-values, fold-changes, significant metabolites
+    confidence: high
+  Step 8: Metabolite identification
+    tool: ['HMDB', 'LabSolutions', 'Sirius']
+    algorithm: accurate mass matching + MS/MS spectral interpretation
+    parameters: mass_accuracy_source=Q-TOF, database_query=HMDB (hmdb.ca), identification_level=Level 2 (putatively annotated compound)
+    input: feature table with m/z and RT + MS/MS spectra
+    output: annotated metabolite list (e.g., C22H32O6, pantothenic acid)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (MetaboLights)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 1
+  Figure 7: [workflow_diagram]
+    caption: Schematic of the experimental design showing sampling of 100 loggerhead sea turtles across two life-stage classes (post-hatchlings and juveniles) and two sexes, with plasma chemistry (n=100) and untar
+    produced_by_step: [1, 2]
+    visualization_tool: BioRender.com
+
+reproducibility_gaps:
+  - Raw LC-MS data not deposited in public repository (e.g., MetaboLights or MassIVE)
+  - MS-DIAL version number not explicitly stated (only citation '71' given)
+  - No details on MS-DIAL parameters (e.g., mass/RT tolerance, peak width, min intensity)
+  - LatentiX 2.12 is commercial software requiring license; no open alternative specified
+  - SAS GLM code or script not shared; proprietary statistical environment
+  - No description of batch correction or normalization method applied prior to PLS-DA/GLM
+  - Internal standard concentrations used for quantification not reported (only for sample prep)
+  - No information on whether data were log-transformed or scaled before multivariate analysis
+reproducibility_strengths:
+  - Detailed LC-MS acquisition parameters (gradient, column, temperatures, DIA settings) provided
+  - Explicit description of sample prep including volumes, temperatures, centrifugation conditions
+  - Use of pooled QCs and blanks for quality monitoring described
+  - Clear experimental design with balanced group sizes (n=12 per group for metabolomics)
+  - Public metabolite database (HMDB) used for annotation

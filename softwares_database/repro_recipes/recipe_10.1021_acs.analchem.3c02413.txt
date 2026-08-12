@@ -1,0 +1,45 @@
+========== reproducibility_recipe entry ==========
+paper_title: Deep Learning-Enabled MS/MS Spectrum Prediction Facilitates Automated Identification Of Novel Psychoactive Substances.
+source_paper: Wang F et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c02413, PMID: 38048435
+overall_reproducibility_score: 40/100
+
+workflow_steps: 3
+  Step 1: MS/MS spectrum prediction from chemical structure
+    tool: NPS-MS
+    algorithm: deep learning with transfer learning
+    input: chemical structure (SMILES or InChI)
+    output: predicted ESI-QToF-MS/MS spectrum
+    confidence: medium
+  Step 2: Spectral matching for NPS identification
+    tool: NPS-MS web server
+    algorithm: spectral similarity scoring (not specified; likely cosine or dot-product based)
+    parameters: database_size_compounds=8700000, database_size_spectra=24500000
+    input: experimental MS/MS spectrum
+    output: ranked list of candidate NPS compounds with similarity scores
+    confidence: low
+  Step 3: Novel NPS identification without reference standards
+    tool: NPS-MS web server
+    algorithm: structure-based spectral prediction + database search
+    input: unknown powder LC-ESI-QToF-MS/MS data
+    output: identified novel phencyclidine derivative
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://nps-ms.ca/
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed MS/MS data deposited in public repository (e.g., MassIVE, GNPS, MetaboLights)
+  - No details on spectral similarity metric or scoring threshold used
+  - No description of training data provenance, size, or preprocessing for NPS-MS model
+  - No access to model weights, architecture, or training code — only web interface provided
+  - No benchmarking parameters (e.g., mass tolerance, fragment m/z window, score cutoff) reported
+reproducibility_strengths:
+  - Web service publicly accessible at https://nps-ms.ca/
+  - Large-scale predicted NPS spectral database disclosed (8.7M compounds, 24.5M spectra)

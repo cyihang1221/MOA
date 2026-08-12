@@ -1,0 +1,65 @@
+========== reproducibility_recipe entry ==========
+paper_title: Unified mass imaging maps the lipidome of vertebrate development.
+source_paper: Schede HH et al. (2025), Nature methods, DOI: 10.1038/s41592-025-02771-7, PMID: 40903641
+overall_reproducibility_score: 42/100
+
+workflow_steps: 5
+  Step 1: MSI peak calling (image generation)
+    tool: uMAIA
+    algorithm: Watershed-inspired two-step binning: (1) seeding via histogram maxima (Algorithm 1), (2) boundary expansion by local monotonicity (Algorithm 2)
+    parameters: mz_bin_size=0.0001, gaussian_kernel_bandwidth=0.001, mass_tolerance_ppm=2, mz_range_min=400, mz_range_max=1200
+    input: raw MALDI-MSI spectra (.imzML or vendor format)
+    output: normalized ion images (.h5ad) and peak interval mapping (.csv)
+    confidence: high
+  Step 2: Peak matching across MSI datasets
+    tool: uMAIA
+    algorithm: Network flow-based optimization for unified feature space construction
+    parameters: matching_constraint=closer m/z peaks preferred, no_external_reference_required=True
+    input: peak lists with m/z intervals and intensities from multiple MSI acquisitions
+    output: unified feature table (aligned m/z features across all samples)
+    confidence: medium
+  Step 3: Intensity normalization and batch effect removal
+    tool: uMAIA
+    algorithm: Total ion current (TIC) normalization per pixel + batch correction
+    parameters: normalization_method=TIC per pixel, batch_correction_strategy=unspecified (described as 'intensity normalization for batch effect removal')
+    input: unified feature table
+    output: batch-corrected, normalized feature intensity matrix
+    confidence: low
+  Step 4: Lipid quantification (bulk LC-MS/MS)
+    tool: TraceFinder (v4.1)
+    algorithm: Stable isotope dilution quantification in timed SRM mode
+    parameters: ionization_modes=['positive', 'negative'], adducts_positive=['[M+H]+', '[M+NH4]+'], adducts_negative=['[M+AcO]-', '[M-2H]-', '[M-H]-'], lipid_classes_quantified=['glycerolipids', 'glycerophospholipids', 'cholesterol esters', 'sphingolipids', 'free FAs'], number_of_lipids_quantified=1166, internal_standards_count=75, extraction_solvent=isopropanol prespiked with IS mixture
+    input: raw LC-MS/MS .raw files
+    output: concentration-estimated lipid abundance table
+    confidence: high
+  Step 5: Spatial transcriptomics processing (HybISS)
+    tool: Spotiflow
+    algorithm: Pretrained HybISS model for spot detection; starfish-inspired nearest-neighbor decoding
+    parameters: spot_detection_model=pretrained HybISS, decoding_algorithm=starfish nearest-neighbor variant, z_projection_method=wavelet-based extended depth of field, tile_stitching_tool=ASHLAR, intercycle_registration_tool=wsireg (wraps elastix)
+    input: multicycle fluorescence microscopy TIFF stacks
+    output: decoded gene expression spatial maps
+    confidence: high
+
+data_availability:
+  raw_data: available (METASPACE: ['2024-06-06_19h26m13s', '2024-06-06_19h22m09s', '2024-06-06_19h16m21s', '2024-06-06_19h08m24s', '2024-06-06_19h03m38s', '2024-06-06_18h57m58s', '2024-06-06_18h45m39s', '2024-06-06_18h40m58s', '2024-06-11_18h30m14s', '2024-06-11_18h28m14s', '2024-06-11_18h35m41s', '2024-06-11_18h26m59s', '2024-06-11_18h43m25s'])
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+  data_urls: https://metaspace2020.eu/
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - uMAIA source code not publicly released or linked
+  - No repository accession or DOI provided for zebrafish MSI data (only METASPACE IDs listed without persistent links)
+  - No details on batch correction algorithm parameters (e.g., method, reference dataset, or software used)
+  - No specification of MALDI laser fluence, detector gain, or Orbitrap resolution settings beyond scan range and mass error
+  - HybISS padlock probe sequences and gene panel not provided
+  - No deposition of bulk lipidomics raw data (.raw files) or processed tables
+reproducibility_strengths:
+  - Public METASPACE IDs provided for human kidney and baboon lung MSI datasets
+  - Full experimental parameters for MALDI acquisition (laser focus, pixel rate, resolution, m/z range, instrument model)
+  - Explicit description of uMAIA algorithms (Algorithms 1 & 2) with pseudocode
+  - TraceFinder version explicitly stated
+  - Open-source tools named for spatial transcriptomics (Spotiflow, ASHLAR, wsireg, elastix, starfish)

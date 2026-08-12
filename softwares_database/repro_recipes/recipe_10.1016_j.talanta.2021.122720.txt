@@ -1,0 +1,54 @@
+========== reproducibility_recipe entry ==========
+paper_title: Using random forest to detect multiple inherited metabolic diseases simultaneously based on GC-MS urinary metabolomics.
+source_paper: Chen N et al. (2021), Talanta, DOI: 10.1016/j.talanta.2021.122720, PMID: 34517588
+overall_reproducibility_score: 20/100
+
+workflow_steps: 5
+  Step 1: GC-MS data acquisition
+    tool: GC-MS
+    input: clinical urine samples
+    output: raw GC-MS chromatographic data (.cdf or vendor format)
+    confidence: low
+  Step 2: Metabolite peak detection and alignment
+    tool: unknown
+    input: raw GC-MS data
+    output: feature table (m/z–retention time–intensity)
+    confidence: low
+  Step 3: Data preprocessing
+    tool: unknown
+    parameters: missing_value_imputation=not specified, normalization=not specified, scaling=not specified
+    input: feature table
+    output: preprocessed feature matrix (samples × features)
+    confidence: low
+  Step 4: Multi-class classification modeling
+    tool: Random Forest
+    algorithm: random forest
+    parameters: n_trees=not specified, mtry=not specified, max_depth=not specified, class_weight=not specified
+    input: preprocessed feature matrix
+    output: trained multi-class RF classifier
+    confidence: low
+  Step 5: Model evaluation
+    tool: custom evaluation script
+    algorithm: performance metrics calculation
+    parameters: metrics=['specificity', 'sensitivity', 'precision', 'accuracy', 'Matthews correlation coefficient']
+    input: RF predictions vs. true labels
+    output: performance summary per class and overall
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of GC-MS instrument parameters (e.g., column, temperature program, ionization mode)
+  - No details on metabolite identification (NIST library? retention index?)
+  - No information on peak picking, alignment, or deconvolution software or parameters
+  - No specification of data preprocessing steps (imputation, normalization, scaling)
+  - No hyperparameter settings or cross-validation strategy for Random Forest
+  - Raw and processed data not deposited or referenced
+  - Code for RF modeling and evaluation not shared or linked

@@ -1,0 +1,55 @@
+========== reproducibility_recipe entry ==========
+paper_title: Predicting the Diagnostic Information of Tandem Mass Spectra of Environmentally Relevant Compounds Using Machine Learning.
+source_paper: Codrean S et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c03470, PMID: 37812582
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: MS2 spectrum acquisition
+    tool: LC-HRMS
+    parameters: ionization=electrospray ionization, collision_energies=multiple, instrument_resolution=high-resolution
+    input: environmentally relevant compounds (n=204)
+    output: raw MS2 spectra (n≈1400)
+    confidence: medium
+  Step 2: Manual spectral labeling
+    tool: expert annotation
+    parameters: labeling_criteria=['number of fragments', 'intensity of fragments', 'mass range of fragments', 'molecular ion intensity', 'noise levels'], classes=['good', 'poor']
+    input: raw MS2 spectra
+    output: labeled MS2 spectra (binary labels)
+    confidence: high
+  Step 3: Feature engineering from MS2 spectra
+    tool: custom feature extraction
+    input: raw MS2 spectra
+    output: engineered feature vectors
+    confidence: low
+  Step 4: Feature selection
+    tool: feature selection method
+    input: engineered feature vectors
+    output: optimized feature subset
+    confidence: low
+  Step 5: Model training and evaluation
+    tool: random forest classifier
+    algorithm: random forest
+    parameters: accuracy=0.84, precision=0.88, recall=0.75
+    input: optimized feature subset + labels
+    output: trained binary classifier
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw MS2 spectra not deposited in public repository
+  - No description of feature engineering procedure (e.g., how fragment counts, intensities, or noise metrics were computed)
+  - No specification of feature selection method (e.g., recursive feature elimination, permutation importance)
+  - No details on random forest hyperparameters (e.g., number of trees, max depth, class weights)
+  - No code or software implementation shared
+  - No validation/test set split ratios or cross-validation strategy specified
+reproducibility_strengths:
+  - Clear definition of labeling criteria for 'good' vs 'poor' diagnostic information
+  - Use of widely interpretable machine learning model (random forest)

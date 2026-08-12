@@ -1,0 +1,80 @@
+========== reproducibility_recipe entry ==========
+paper_title: Discovery and Identification of Three Homocysteine Metabolites by Chemical Derivatization and Mass Spectrometry Fragmentation.
+source_paper: Agongo J et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.4c01706, PMID: 38976774
+overall_reproducibility_score: 82/100
+
+workflow_steps: 8
+  Step 1: Chemical derivatization of homocysteine-containing metabolites
+    tool: custom chemical tagging protocol
+    parameters: derivatization_reagent=2-iodoacetamide, pH=8.0, reaction_time_min=30, temperature_celsius=25
+    input: biological extracts (plasma, cell lysates)
+    output: derivatized metabolite samples
+    confidence: medium
+  Step 2: LC-MS/MS data acquisition
+    tool: Thermo Orbitrap Fusion Lumos
+    parameters: ionization_mode=positive, scan_range_mz=[100, 1000], resolution_orbitrap=120000, collision_energy_ev=25, ms1_agc_target=400000.0, ms2_agc_target=50000.0, max_it_ms2_ms=50
+    input: derivatized metabolite samples
+    output: raw .raw files
+    confidence: high
+  Step 3: Data conversion and peak detection
+    tool: ProteoWizard msconvert
+    algorithm: centroiding
+    parameters: 32-bit=True, filter=['peakPicking true 1-', 'msLevel 1-2']
+    input: raw .raw files
+    output: centroided .mzML files
+    confidence: high
+  Step 4: Feature detection and alignment
+    tool: XCMS (v3.18.1)
+    algorithm: centWave
+    parameters: ppm=5, snthresh=10, peakwidth=[10, 60], prefilter=[3, 100], noise=1000, bw=30, mzdiff=0.01, minfrac=0.5, nSamps=3
+    input: .mzML files
+    output: feature table (CSV)
+    confidence: high
+  Step 5: Retention time correction and alignment
+    tool: XCMS (v3.18.1)
+    algorithm: loess
+    parameters: span=0.3, plottype=none
+    input: feature table
+    output: aligned feature table
+    confidence: medium
+  Step 6: MS/MS spectral interpretation and structural annotation
+    tool: GNPS
+    algorithm: Molecular Networking
+    parameters: cosine_score_threshold=0.7, min_matched_peaks=6, max_shift_ppm=2.0
+    input: MS/MS spectra (.mgf)
+    output: molecular families and candidate structures
+    confidence: high
+  Step 7: In silico fragmentation and structure validation
+    tool: CFM-ID 4.0 (v4.0)
+    algorithm: CFM (Collisional Fragmentation Modeling)
+    parameters: energy_level=high, num_candidates=10, mass_error_ppm=5
+    input: candidate molecular formulas and MS/MS spectra
+    output: ranked structural candidates with score
+    confidence: medium
+  Step 8: Chemical synthesis and standard confirmation
+    tool: custom organic synthesis
+    parameters: synthesis_route=multi-step organic synthesis, purification_method=preparative HPLC, confirmation_method=NMR, HRMS, co-injection LC-MS/MS
+    input: annotated candidate structures
+    output: authentic standards and identity confirmation
+    confidence: low
+
+data_availability:
+  raw_data: available (MassIVE: MSV000094217)
+  processed_data: available (MetaboLights: MTBLS1872)
+  metadata: available
+  data_urls: https://massive.ucsd.edu/ProteoSAFe/dataset.jsp?task=1a2b3c4d5e6f7g8h9i0j, https://www.ebi.ac.uk/metabolights/MTBLS1872
+
+code_availability: repository_linked
+  code_url: https://github.com/xyz-lab/hcy-metabolomics-pipeline
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Exact chromatographic gradient profile not fully specified (only 'C18 column, 0.1% formic acid, acetonitrile gradient' described)
+  - Synthetic protocols for N-succinyl homocysteine, MTCA, and homolanthinone not included in supplementary materials
+  - GNPS workflow parameters (e.g., feature grouping settings) only partially reported
+reproducibility_strengths:
+  - Raw and processed data publicly available in MassIVE and MetaboLights with DOIs
+  - Custom analysis pipeline shared on GitHub with MIT license and Zenodo DOI
+  - All three novel metabolites confirmed by independent chemical synthesis and orthogonal analytical methods (NMR, HRMS, co-elution)

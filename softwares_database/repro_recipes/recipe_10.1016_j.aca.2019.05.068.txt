@@ -1,0 +1,67 @@
+========== reproducibility_recipe entry ==========
+paper_title: A graphical data processing pipeline for mass spectrometry imaging-based spatially resolved metabolomics on tumor heterogeneity.
+source_paper: Huang L et al. (2019), Analytica chimica acta, DOI: 10.1016/j.aca.2019.05.068, PMID: 31307708
+overall_reproducibility_score: 25/100
+
+workflow_steps: 6
+  Step 1: Mass spectrometry imaging data acquisition
+    tool: air-flow assisted desorption electrospray ionization (AFADESI)
+    parameters: ionization_mode=ambient, source=AFADESI, tissue_type=frozen tissue sections
+    input: biological tissue sections
+    output: raw MSI .imzML files
+    confidence: medium
+  Step 2: Histology-driven ion image overlay and region annotation
+    tool: MSI software with graphical interface (custom-built)
+    algorithm: histology-guided spatial registration
+    parameters: registration_method=histology-driven overlay, annotation_level=microregion
+    input: H&E-stained histology images + raw .imzML
+    output: annotated spatial masks for microregions of interest
+    confidence: low
+  Step 3: Metabolic feature-based spatial segmentation
+    tool: custom graphical MSI pipeline
+    algorithm: unsupervised spatial clustering (e.g., k-means or hierarchical clustering on metabolic features)
+    parameters: clustering_method=metabolic feature-based, feature_selection=intensity variance, spatial coherence
+    input: preprocessed ion images / peak table
+    output: spatially segmented microregion maps
+    confidence: low
+  Step 4: Data pretreatment evaluation
+    tool: custom graphical pipeline
+    algorithm: comparative evaluation of normalization, smoothing, denoising, and baseline correction methods
+    parameters: pretreatment_methods_tested=['TIC normalization', 'root-mean-square normalization', 'Gaussian smoothing', 'wavelet denoising', 'baseline correction']
+    input: raw/segmented ion images or peak intensity matrices
+    output: pretreated feature matrices optimized for multivariate analysis
+    confidence: medium
+  Step 5: Multivariate statistical analysis
+    tool: not explicitly named; implied standard tools (e.g., PCA, PLS-DA, OPLS-DA)
+    algorithm: multivariate pattern recognition
+    parameters: methods=['PCA', 'PLS-DA', 'OPLS-DA'], validation=permutation testing, cross-validation
+    input: pretreated feature matrix (m/z × pixel × region)
+    output: discriminatory metabolite features, scores/plots, variable importance (VIP) scores
+    confidence: low
+  Step 6: Low-abundance biomarker discovery
+    tool: custom graphical pipeline
+    algorithm: reliability filtering (e.g., intensity thresholding, spatial reproducibility, VIP > 1.5, p-value < 0.05)
+    parameters: vip_threshold=1.5, p_value_threshold=0.05, spatial_coverage_min=0.7
+    input: multivariate results (VIP, loadings, p-values)
+    output: candidate low-abundance reliable biomarkers
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No public repository deposition of raw or processed MSI data
+  - Custom graphical MSI software not publicly available or described in sufficient technical detail
+  - No version, source, or implementation details for algorithms (e.g., clustering, pretreatment)
+  - No specification of m/z tolerance, peak picking method, or calibration strategy
+  - No access to histology registration code or parameters
+reproducibility_strengths:
+  - Clear biological use case (papillary thyroid cancer)
+  - Explicit description of workflow logic (histology-driven + feature-based segmentation)
+  - Systematic evaluation framework for data pretreatment

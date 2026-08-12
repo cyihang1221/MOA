@@ -1,0 +1,107 @@
+========== reproducibility_recipe entry ==========
+paper_title: A resource to empirically establish drug exposure records directly from untargeted metabolomics data.
+source_paper: Zhao HN et al. (2025), Nature communications, DOI: 10.1038/s41467-025-65993-5, PMID: 41366203
+overall_reproducibility_score: 87/100
+
+workflow_steps: 11
+  Step 1: Reference spectra collection and curation
+    tool: GNPS spectral library
+    algorithm: ChEMBL structure pipeline
+    parameters: salt_removal=True, standardization_method=canonical SMILES, isomeric SMILES, InChI, InChIKey, database_search_keys=['InChIKey', 'first_part_of_InChIKey'], databases_queried=['Broad Institute Drug Repurposing Hub', 'DrugBank', 'DrugCentral', 'ChEMBL'], search_date_range=['July 2022', 'August 2022', 'October 2022', 'March 2023']
+    input: MS/MS spectral records with chemical structures
+    output: Curated reference spectra of drugs and metabolites (n=103,209)
+    confidence: high
+  Step 2: Drug analog discovery via molecular networking
+    tool: GNPS/Molecular Networking
+    algorithm: cosine similarity-based clustering
+    parameters: cosine_similarity_threshold=0.8, minimum_matching_ions=6, network_type=repository-scale
+    input: Public MS/MS repositories (GNPS/MassIVE, MetaboLights, Metabolomics Workbench)
+    output: Tentative drug analog spectra linked to annotated drugs/metabolites
+    confidence: high
+  Step 3: Drug analog discovery via fastMASST
+    tool: fastMASST
+    algorithm: mass spectral similarity search
+    parameters: cosine_score_threshold=0.8, minimum_matching_ions=6, precursor_mass_window_da=200, fragment_mz_tolerance_da=0.02, precursor_mz_tolerance_da=0.02, search_date=March 2025, api_used=Fast Search tool API
+    input: 103,209 reference drug/metabolite spectra
+    output: Metabolomics Universal Spectrum Identifiers (USIs) of analog matches
+    confidence: high
+  Step 4: Analog filtering (Step One)
+    tool: Custom R scripts
+    algorithm: Metadata-based exclusion
+    parameters: exclusion_criteria=endogenous or dietary source (manually curated metadata)
+    input: USI-listed analog candidates
+    output: Filtered analog list excluding endogenous/dietary matches
+    confidence: medium
+  Step 5: Analog filtering (Step Two)
+    tool: Custom R scripts
+    algorithm: Mass offset filtering using curated delta masses
+    parameters: allowed_mass_offsets_da=[14.02, 176.03, 17.03], sources_of_offsets=['UNIMOD', 'community-curated list (Supplementary Data 1)', 'Host Gut Microbiota Metabolism Xenobiotics Databases'], total_offsets_included=156
+    input: USI-listed analog candidates
+    output: Mass-offset-filtered analog list
+    confidence: high
+  Step 6: Analog filtering (Step Three)
+    tool: Falcon spectrum clustering + GNPS Library Search
+    algorithm: Spectral clustering (eps=0.05) followed by library matching
+    parameters: clustering_eps=0.05, library_search_cosine_threshold=0.7, library_search_minimum_matching_peaks=5, exclusion_rule=remove matches to full GNPS Library
+    input: USIs from Step Two
+    output: Clustered analog spectra not matching GNPS Library
+    confidence: high
+  Step 7: Analog filtering (Step Four)
+    tool: GNPS Library Search workflow
+    algorithm: Cross-dataset frequency filtering
+    parameters: test_datasets_count=20, test_datasets_types=['human fecal', 'human breast milk', 'human plasma', 'human skin', 'human brain', 'mouse tissues'], test_datasets_ids=['MSV000080673', 'MSV000095418', 'MSV000094515', 'MSV000092833', 'MSV000082493', 'MSV000091520', 'MSV000090877', 'MSV000094395', 'MSV000085944', 'MSV000084008', 'MSV000090877', 'MSV000086415', 'MSV000091363', 'MSV000096035', 'MSV000096036', 'MSV000096037', 'MSV000096038', 'MSV000096039', 'MSV000093230', 'MSV000093168'], library_search_cosine_threshold=0.7, library_search_minimum_matching_peaks=5
+    input: Clustered analog spectra
+    output: Final GNPS Drug Analogs library (empirically validated analogs)
+    confidence: high
+  Step 8: Structural hypothesis generation for analogs
+    tool: ModiFinder
+    algorithm: MS/MS fragment shift analysis for modification localization
+    parameters: mass_tolerance_ppm=40, fragmentation_depth=2, confidence_threshold_for_location=0.6, coverage_rate=0.32, high_confidence_coverage_rate=0.6
+    input: Final GNPS Drug Analogs library
+    output: Structural hypotheses with partial modification location predictions
+    confidence: high
+  Step 9: Analytical artifact vs. biological derivative classification
+    tool: fastMASST + XIC correlation + MS/MS fragment logic
+    algorithm: Pearson correlation of extracted ion chromatograms + adduct/in-source fragment rules
+    parameters: precursor_and_fragment_mz_tolerance_da=0.02, cosine_similarity_threshold_for_cooccurrence=0.9, minimum_matching_peaks_for_cooccurrence=6, xic_window_scans=10, correlation_threshold_r2=0.9, isotope_mass_offsets_da=[1.0, 2.0], adduct_mass_offsets_da=[21.98, 37.95, 37.96], intensity_filtering_applied=False
+    input: Analog–parent drug pairs
+    output: Classified analogs: analytical artifacts, biological derivatives, or in-source fragments/adducts
+    confidence: high
+  Step 10: Ontology-based metadata curation
+    tool: ChemFOnt, PubChem, Broad Institute Drug Repurposing Hub, FDA documents, ATC Classification, NIH, EMA, DrugBank
+    algorithm: Multi-source ontology mapping + expert manual curation
+    parameters: metadata_fields_curated=['exposure_sources', 'therapeutic_areas', 'pharmacologic_classes', 'therapeutic_indications', 'mechanisms_of_action'], curation_experts=3, coverage_before_curation=3,894 drugs (86,364 spectra); 900 drugs (22,935 spectra), coverage_after_curation=4,560 drugs (90,325 spectra), sources_for_pharmacologic_class=WHO ATC codes
+    input: Drug identifiers (InChIKey, DrugBank ID, etc.)
+    output: Standardized, ontology-aligned metadata for all GNPS Drug Library entries
+    confidence: high
+  Step 11: Empirical validation using pharmacokinetic datasets
+    tool: GNPS Library Search workflow
+    algorithm: Targeted MS/MS library matching
+    parameters: datasets_validated=['MSV000085944', 'MSV000084008', 'MSV000082493'], drugs_tested=['diphenhydramine', 'caffeine', 'midazolam', 'omeprazole'], sample_types=['plasma', 'skin swabs', 'fecal'], time_series_resolution=multiple timepoints (e.g., 0–24 h post-dose), library_search_cosine_threshold=0.7, library_search_minimum_matching_peaks=5
+    input: Public untargeted metabolomics datasets with known drug administration
+    output: Empirically confirmed drug exposure records (temporal detection profiles)
+    confidence: high
+
+data_availability:
+  raw_data: available (GNPS/MassIVE, MetaboLights, Metabolomics Workbench: ['MSV000080673', 'MSV000095418', 'MSV000094515', 'MSV000092833', 'MSV000082493', 'MSV000091520', 'MSV000090877', 'MSV000094395', 'MSV000085944', 'MSV000084008', 'MSV000090877', 'MSV000086415', 'MSV000091363', 'MSV000096035', 'MSV000096036', 'MSV000096037', 'MSV000096038', 'MSV000096039', 'MSV000093230', 'MSV000093168'])
+  processed_data: available (GNPS: GNPS Drug Library (publicly accessible via GNPS platform))
+  metadata: available (GNPS: GNPS Drug Library metadata (ontology-aligned))
+  data_urls: https://gnps.ucsd.edu/ProteoSAFe/static/gnpslibrary/DrugLibrary/, https://github.com/robinschmid/microbe_masst
+
+code_availability: repository_linked
+  code_url: https://github.com/robinschmid/microbe_masst
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No explicit description of raw data preprocessing (e.g., conversion to mzML, peak picking, retention time alignment) prior to GNPS library search
+  - No details on instrument parameters (e.g., HPLC gradient, column, ionization mode, collision energy) used for reference spectra acquisition
+  - Supplementary Text 1 and Supplementary Data 1/2 are referenced but not included in provided text — critical curation rules and delta mass lists are inaccessible
+  - No versioning information for GNPS platform components (e.g., Library Search workflow version, Falcon version, fastMASST API version)
+reproducibility_strengths:
+  - All 20 validation datasets explicitly accessioned and publicly available
+  - Full code for fastMASST batch search publicly shared on GitHub under MIT license
+  - GNPS Drug Library is openly accessible via GNPS web interface with standardized USI links
+  - Comprehensive, multi-layered filtering and curation steps fully described with quantitative thresholds
+  - Ontology-based metadata curation grounded in authoritative sources (ATC, FDA, DrugBank, EMA) and expert-reviewed

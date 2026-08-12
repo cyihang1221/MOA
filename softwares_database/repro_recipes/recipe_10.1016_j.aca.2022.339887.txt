@@ -1,0 +1,39 @@
+========== reproducibility_recipe entry ==========
+paper_title: A novel UHPLC-ESI-MS/MS method and automatic calculation software for regiospecific analysis of triacylglycerols in natural fats and oils.
+source_paper: Sazzad MAA et al. (2022), Analytica chimica acta, DOI: 10.1016/j.aca.2022.339887, PMID: 35595364
+overall_reproducibility_score: 30/100
+
+workflow_steps: 2
+  Step 1: UHPLC-ESI-MS/MS data acquisition
+    tool: UHPLC-ESI-MS/MS platform
+    parameters: ionization_mode=electrospray ionization (ESI), scan_mode=tandem mass spectrometry (MS/MS), fragment_ions_monitored=['[M+NH4-RCO2H-NH3]+', '[RCO]+'], adduct_formed=ammonium adduct [M+NH4]+
+    input: triacylglycerol (TAG) samples in natural fats/oils
+    output: raw MS/MS product ion spectra
+    confidence: medium
+  Step 2: Regiospecific TAG quantification via spectral deconvolution
+    tool: TAG Analyzer
+    algorithm: synthetic spectrum matching
+    parameters: objective=minimize difference between measured and synthetic fragment ion spectra, fitting_target=optimal concentrations of regioisomeric TAGs, constraints=non-negativity, mass balance for shared fragments
+    input: raw MS/MS product ion spectra (chromatographically resolved or overlapping)
+    output: regioisomeric composition (molar % of sn-1,2 vs sn-1,3 TAG isomers)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw UHPLC-MS/MS data not deposited in any public repository
+  - TAG Analyzer software not publicly available (no URL, repository, or download link provided)
+  - No source code, algorithm pseudocode, or mathematical formulation of synthetic spectrum construction disclosed
+  - No details on instrument parameters (e.g., collision energy, dwell time, chromatographic gradient, column type, temperature) sufficient for method replication
+  - Validation reference mixtures described only as 'regiopure TAG reference compounds' — no catalog numbers, sources, or purity information
+reproducibility_strengths:
+  - Clear conceptual workflow: UHPLC-ESI-MS/MS → fragment ion monitoring → synthetic spectrum fitting
+  - Defined diagnostic ions ([M+NH4-RCO2H-NH3]+ and [RCO]+) explicitly named
+  - Application demonstrated on three sample types (reference mixtures, olive oil, human milk), supporting generalizability

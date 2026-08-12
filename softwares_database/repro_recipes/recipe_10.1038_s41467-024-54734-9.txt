@@ -1,0 +1,106 @@
+========== reproducibility_recipe entry ==========
+paper_title: Machine learning-enhanced immunopeptidomics applied to T-cell epitope discovery for COVID-19 vaccines.
+source_paper: Kovalchik KA et al. (2024), Nature communications, DOI: 10.1038/s41467-024-54734-9, PMID: 39609459
+overall_reproducibility_score: 58/100
+
+workflow_steps: 6
+  Step 1: Raw MS data conversion to mzML
+    tool: ThermoRawFileParser (v1.3.4)
+    algorithm: vendor file parsing
+    input: Thermo .raw files
+    output: .mzML files
+    confidence: high
+  Step 2: Database search for peptide identification
+    tool: Comet (v2021 rev 0)
+    algorithm: sequest-style spectral matching
+    parameters: precursor_mass_tolerance_ppm=10, fragment_bin_size_da=0.02, peptide_length_min=8, peptide_length_max=15, digest_enzyme=non-specific, charge_state_min=1, charge_state_max=4, output_format=PIN
+    input: .mzML files
+    output: PSM-level search results (PIN format)
+    confidence: high
+  Step 3: False discovery rate validation using Percolator
+    tool: Percolator (v3.05.0)
+    algorithm: semi-supervised learning (SVM-based)
+    parameters: test_fdr=0.01, train_fdr=0.01, Cpos=None, Cneg=None
+    input: PIN format search results
+    output: FDR-calibrated PSMs (target/decoy validated)
+    confidence: high
+  Step 4: Deep learning–enhanced PSM rescoring
+    tool: DeepRescore
+    algorithm: deep neural network (retention time + spectrum prediction integrated with Percolator features)
+    parameters: fdr_cutoff=0.01, netmhcpaln_affinity_threshold_nM=2.0
+    input: .pepxml output from Comet + .MGF files (converted via msConvert)
+    output: rescored, FDR-filtered peptides with NetMHCpan4.1 binding affinity
+    confidence: medium
+  Step 5: MHC-I epitope confidence assessment and prioritization
+    tool: MHCvalidator
+    algorithm: ensemble neural network (MLP + CNN) integrating MS search scores, NetMHCpan/MHCflurry antigen presentation predictions, and peptide sequence encoding
+    parameters: peptide_encoding=BLOSUM62 with X-padding to length 15, cnn_filters=12, cnn_kernel_size=4, cnn_stride=3, cnn_pooling_size=2, mlp_hidden_layers=2, mlp_width_factor=5, dropout_rate=0.5, netmhcpaln_min_affinity_nM=1e-07, netmhcpaln_log_transform=True, max_variable_modifications_per_peptide=3
+    input: PIN or PEPXML search results + FASTA proteome(s)
+    output: MHC-I ligand candidates ranked by MHCvalidator score, annotated with binding/presentation scores
+    confidence: medium
+  Step 6: Population-level variant tracking of vaccine epitopes
+    tool: EpiTrack
+    algorithm: epitope mutation frequency analysis across global SARS-CoV-2 proteomes
+    parameters: epitope_binding_affinity_threshold_nM=2.0, hla_allele=B7 supertype (e.g., A*01:01), proteome_dataset_size=100512
+    input: MHCvalidator-identified epitopes + global SARS-CoV-2 proteome database
+    output: mutation frequency table per epitope across variants (Delta, Omicron, etc.)
+    confidence: low
+
+data_availability:
+  raw_data: available (ProteomeXchange: PXD025499)
+  processed_data: not_mentioned (not specified)
+  metadata: in_paper_only
+  data_urls: http://www.proteowizard.org/download.html, https://www.ebi.ac.uk/pride/archive/projects/PXD025499
+
+code_availability: mentioned_no_link
+
+figure_recipes: 8
+  Figure 1: [workflow_diagram]
+    caption: Schematic of the end-to-end computational framework integrating immunopeptidomics, MHCvalidator, and EpiTrack for T-cell vaccine design.
+    produced_by_step: [1, 2, 3, 4, 5, 6]
+    visualization_tool: not specified
+  Figure 2: [workflow_diagram]
+    caption: Detailed architecture of MHCvalidator showing NN-validator, PE (peptide encoder), and APP (antigen processing/presentation predictor) modules.
+    produced_by_step: [5]
+    visualization_tool: not specified
+  Figure 3: [bar_chart]
+    caption: Comparative analysis of PSM confidence assessment between MHCvalidator and Percolator.
+    produced_by_step: [3, 5]
+    visualization_tool: not specified
+    statistical_test: not specified
+  Figure 4: [roc_curve]
+    caption: Sensitivity and specificity performance of MHCvalidator evaluated against ground truth or orthogonal validation.
+    produced_by_step: [5]
+    visualization_tool: not specified
+    statistical_test: ROC analysis
+  Figure 5: [table]
+    caption: List and characterization of SARS-CoV-2 HLA-I peptides discovered by MHCvalidator.
+    produced_by_step: [5]
+    visualization_tool: not specified
+  Figure 6: [pathway_map]
+    caption: Generation of a B7-associated frameshifted Spike peptide arising from a +1 ribosomal frameshift.
+    produced_by_step: [5, 6]
+    visualization_tool: not specified
+  Figure 7: [bar_chart]
+    caption: Immunogenicity assessment of MHCvalidator-identified SARS-CoV-2 HLA-I peptides.
+    produced_by_step: [5]
+    visualization_tool: not specified
+    statistical_test: not specified
+  Figure 8: [line_chart]
+    caption: Evolutionary dynamics of MHCvalidator-identified CD8+ epitopes tracked across SARS-CoV-2 variants using EpiTrack.
+    produced_by_step: [6]
+    visualization_tool: not specified
+    statistical_test: mutation frequency analysis
+
+reproducibility_gaps:
+  - MHCvalidator and EpiTrack source code not publicly linked or archived (no GitHub/DOI provided)
+  - No details on training data or model weights for MHCvalidator's neural networks
+  - NetMHCpan installation path and version unspecified (critical for reproducible binding predictions)
+  - DeepRescore parameters beyond defaults not reported (e.g., RT/spectrum model versions)
+  - No description of how 'immunogenicity' in Fig. 7 was quantified or tested experimentally
+  - EpiTrack implementation is proprietary or unpublished — no algorithmic or parameter details provided
+reproducibility_strengths:
+  - Raw mass spectrometry data deposited in ProteomeXchange (PXD025499)
+  - All major open-source tools explicitly named and versioned (ThermoRawFileParser 1.3.4, Comet 2021 rev 0, Percolator 3.05.0)
+  - Detailed LC-MS/MS acquisition parameters (gradient, flow rate, resolution, AGC, injection times)
+  - Search parameters fully specified (mass tolerances, enzyme, modifications, FDR thresholds)

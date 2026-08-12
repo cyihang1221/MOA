@@ -1,0 +1,50 @@
+========== reproducibility_recipe entry ==========
+paper_title: Hybrid Search: A Method for Identifying Metabolites Absent from Tandem Mass Spectrometry Libraries.
+source_paper: Cooper BT et al. (2019), Analytical chemistry, DOI: 10.1021/acs.analchem.9b03415, PMID: 31600070
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Tandem mass spectrum acquisition
+    tool: LC-MS/MS
+    input: biological samples (e.g., human plasma, E. coli extracts)
+    output: raw MS/MS spectra
+    confidence: low
+  Step 2: Conventional spectral library search
+    tool: NIST MS Search
+    algorithm: dot-product similarity scoring
+    parameters: min_score_threshold=700, mass_tolerance_da=0.5
+    input: query MS/MS spectra
+    output: top-N library matches with scores
+    confidence: medium
+  Step 3: Hybrid search execution
+    tool: custom Python implementation
+    algorithm: cognate-based neutral-loss–equivalent matching
+    parameters: max_neutral_loss_mass_error_da=0.3, min_fragment_overlap_count=3, min_cognate_similarity_score=0.6
+    input: query MS/MS spectrum + candidate cognate spectra from library
+    output: hybrid match candidates with structural rationale
+    confidence: low
+  Step 4: Cognate validation and structural plausibility assessment
+    tool: manual curation + chemical reasoning
+    algorithm: rule-based structural consistency check
+    parameters: allowed_modifications=['oxidation', 'dehydrogenation', 'methylation'], region_restriction=True
+    input: hybrid match candidates + chemical structures
+    output: plausible metabolite identifications with structural hypotheses
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: not_mentioned (not mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposited in public repository
+  - Custom hybrid search code not shared
+  - No details on cognate selection criteria or training set for method evaluation
+  - NIST MS Search parameters insufficiently specified (e.g., weighting, peak filtering)
+reproducibility_strengths:
+  - Method conceptually well-defined with clear chemical rationale
+  - Validation performed on real biological samples (human plasma, E. coli)

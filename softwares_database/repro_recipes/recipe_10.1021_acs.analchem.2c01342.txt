@@ -1,0 +1,45 @@
+========== reproducibility_recipe entry ==========
+paper_title: Development of an Internal Calibration Algorithm for Ultrahigh-Resolution Mass Spectra of Dissolved Organic Matter.
+source_paper: Fu QL et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.2c01342, PMID: 35862549
+overall_reproducibility_score: 40/100
+
+workflow_steps: 3
+  Step 1: Internal calibration of FTICR-MS spectra
+    tool: FTMSCalibrate
+    algorithm: piecewise calibration algorithm
+    input: raw FTICR-MS spectra (positive and negative ion modes)
+    output: calibrated spectra with reduced mass error
+    confidence: medium
+  Step 2: Molecular formula assignment
+    tool: FTMSCalibrate
+    algorithm: internal formula assignment using calibrated m/z
+    input: calibrated FTICR-MS spectra
+    output: assigned molecular formulas (C, H, O, N, S, P)
+    confidence: medium
+  Step 3: Performance evaluation against reference methods
+    tool: ['DataAnalysis (Bruker)', 'Formularity', 'MFAssignR']
+    algorithm: true positive ratio (TPR) calculation
+    parameters: metric=true positive ratio, reported_value=91.7% ± 4.4%
+    input: molecular formula assignments from FTMSCalibrate and benchmark tools
+    output: accuracy comparison (TPR, mass error distribution)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposition reported
+  - FTMSCalibrate source code not linked or archived
+  - No details on DOM sample preparation or acquisition parameters (e.g., laser power, accumulation time, ICR cell conditions)
+  - No specification of calibration compound lists or internal standard selection criteria
+  - No parameter settings for FTMSCalibrate (e.g., mass tolerance windows, piecewise segment boundaries, charge state handling)
+reproducibility_strengths:
+  - Explicit benchmarking against established tools (DataAnalysis, Formularity, MFAssignR)
+  - Quantitative performance metric (true positive ratio with SD) provided
+  - Clear ion-mode compatibility stated (positive/negative; protonated, deprotonated, Na/K-adducts)

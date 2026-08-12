@@ -1,0 +1,53 @@
+========== reproducibility_recipe entry ==========
+paper_title: Improving the Detection of Analyte Degeneracies in Untargeted Liquid Chromatography-Tandem Mass Spectrometry Data.
+source_paper: Cain CN et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.5c03704, PMID: 41269015
+overall_reproducibility_score: 30/100
+
+workflow_steps: 4
+  Step 1: Feature detection via tile-based Fisher ratio analysis
+    tool: Custom MATLAB implementation
+    algorithm: Tile-based F-ratio analysis
+    parameters: tile_size=not specified, F-ratio_threshold=not numerically specified
+    input: raw LC-MS/MS data (vendor format)
+    output: feature list (m/z, RT, intensity)
+    confidence: low
+  Step 2: Degeneracy detection using lack-of-fit (LOF) metric
+    tool: Custom MATLAB implementation
+    algorithm: Lack-of-fit (LOF) peak shape consistency metric
+    parameters: LOF_threshold=0.2, time_window=not numerically specified
+    input: feature list with chromatographic peak shapes
+    output: degeneracy clusters (grouped features per analyte)
+    confidence: medium
+  Step 3: Comparison to existing degeneracy methods
+    tool: Not specified (implied custom or standard correlation-based clustering)
+    algorithm: Correlation-based clustering (baseline)
+    parameters: correlation_threshold=not specified
+    input: feature list
+    output: degeneracy clusters
+    confidence: low
+  Step 4: Feature reduction and metabolite summarization
+    tool: Custom MATLAB implementation
+    algorithm: LOF-guided feature collapsing
+    parameters: reduction_rate=79–86%, retained_metabolites_count=583
+    input: LOF-clustered features
+    output: curated metabolite-level table (unique m/z–RT pairs mapped to putative analytes)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw or processed data deposited in public repository
+  - Custom MATLAB code not shared or archived
+  - Critical parameters (tile size, time window, correlation threshold) not specified
+  - Vendor file format and conversion method not described
+  - No details on chromatographic conditions (gradient profile, column, flow rate) beyond 'mobile phase gradient lengths'
+reproducibility_strengths:
+  - Clear quantitative performance metrics reported (LOF <20%, 90% accuracy, 79–86% reduction)
+  - Controlled spike-in experiment design described (21 analytes in brain dialysate)

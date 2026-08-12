@@ -1,0 +1,85 @@
+========== reproducibility_recipe entry ==========
+paper_title: MARS: A Multipurpose Software for Untargeted LC-MS-Based Metabolomics and Exposomics.
+source_paper: Goracci L et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.3c03620, PMID: 38236168
+overall_reproducibility_score: 20/100
+
+workflow_steps: 10
+  Step 1: Data conversion (vendor format to mzML)
+    tool: MARS
+    algorithm: vendor-agnostic conversion
+    input: raw vendor files (.raw, .d, .wiff, etc.)
+    output: mzML files
+    confidence: low
+  Step 2: Feature detection and peak picking
+    tool: MARS
+    algorithm: not specified
+    input: mzML files
+    output: feature table (m/z, RT, intensity)
+    confidence: low
+  Step 3: Retention time alignment and correction
+    tool: MARS
+    algorithm: not specified
+    input: feature table
+    output: aligned feature table
+    confidence: low
+  Step 4: Gap filling and missing value imputation
+    tool: MARS
+    algorithm: not specified
+    input: aligned feature table
+    output: gap-filled feature table
+    confidence: low
+  Step 5: Filtering (e.g., adducts, in-source fragments, isotopes)
+    tool: MARS
+    algorithm: multiple adducts and in-source fragmentation detection
+    input: gap-filled feature table
+    output: curated feature table
+    confidence: medium
+  Step 6: MS/MS spectral validation and annotation support
+    tool: MARS
+    algorithm: MS/MS validator
+    input: MS/MS spectra + curated features
+    output: annotated metabolite candidates
+    confidence: medium
+  Step 7: In-house reference database building
+    tool: MARS
+    algorithm: custom database construction
+    input: user-provided MS/MS spectra and metadata
+    output: proprietary reference database
+    confidence: medium
+  Step 8: Statistical analysis and differential feature selection
+    tool: MARS
+    algorithm: not specified
+    input: curated feature table
+    output: differentially abundant features
+    confidence: low
+  Step 9: Quantification (semi-quantitative or relative)
+    tool: MARS
+    algorithm: not specified
+    input: curated feature table
+    output: quantified metabolite table
+    confidence: low
+  Step 10: Preliminary biological interpretation (e.g., pathway mapping)
+    tool: MARS
+    algorithm: not specified
+    input: annotated and quantified metabolite table
+    output: biological interpretation summary
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No description of specific algorithms, parameters, or thresholds used in any analytical step
+  - No mention of raw or processed data deposition
+  - No software version, license, or code repository provided
+  - Tool is described as 'graphical user interface-based' but no technical implementation details (e.g., underlying R/Python libraries) disclosed
+  - All analytical steps are named but none are concretely specified — e.g., no mass tolerance, RT window, SNR threshold, or statistical test type given
+reproducibility_strengths:
+  - Vendor-agnostic design implies broad instrument compatibility
+  - Highlights annotation-enhancing features (e.g., MS/MS validator, in-house DB building), suggesting extensibility

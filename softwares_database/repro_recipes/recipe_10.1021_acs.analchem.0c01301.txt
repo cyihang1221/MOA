@@ -1,0 +1,72 @@
+========== reproducibility_recipe entry ==========
+paper_title: In-Depth Cannabis Multiclass Metabolite Profiling Using Sorptive Extraction and Multidimensional Gas Chromatography with Low- and High-Resolution Mass Spectrometry.
+source_paper: Franchina FA et al. (2020), Analytical chemistry, DOI: 10.1021/acs.analchem.0c01301, PMID: 32602704
+overall_reproducibility_score: 30/100
+
+workflow_steps: 7
+  Step 1: Sample preconcentration via stir bar sorptive extraction (SBSE)
+    tool: SBSE
+    parameters: extraction_time=optimized (not numerically specified), extraction_temperature=optimized (not numerically specified), solvent=optimized (not numerically specified), salt_addition=optimized (not numerically specified), analyte_classes_targeted=['monoterpenes', 'sesquiterpenes', 'hydrocarbons', 'cannabinoids', 'other_terpenoids', 'fatty_acids']
+    input: cannabis inflorescence samples
+    output: SBSE-enriched extract
+    confidence: low
+  Step 2: Thermal desorption and comprehensive two-dimensional gas chromatography (GC × GC)
+    tool: GC × GC system
+    parameters: chromatographic_regions=class-specific 2D regions defined for each analyte class, separation_goal=robust separation for untargeted analysis
+    input: SBSE-enriched extract
+    output: 2D chromatographic data with mass spectral acquisition
+    confidence: medium
+  Step 3: Mass spectrometry detection with low- and high-resolution MS
+    tool: mass spectrometer (low- and high-resolution modes)
+    parameters: acquisition_mode=['low-resolution MS', 'high-resolution MS'], purpose_of_high_res_ms=high-confidence identification and post-targeted analysis
+    input: GC × GC effluent
+    output: raw MS data (.cdf or vendor format, unspecified)
+    confidence: medium
+  Step 4: Untargeted and unsupervised data processing
+    tool: not specified
+    algorithm: unsupervised approach
+    input: raw MS data
+    output: feature table (metabolite peak list)
+    confidence: low
+  Step 5: Principal component analysis (PCA)
+    tool: not specified
+    algorithm: PCA
+    parameters: input=all detected metabolites
+    input: feature table
+    output: PCA scores and loadings
+    confidence: low
+  Step 6: Targeted quantification of three cannabinoids
+    tool: not specified
+    algorithm: targeted calibration
+    parameters: analytes=['Δ9-tetrahydrocannabinol', 'cannabidiol', 'cannabinol'], validation_metrics={'correlation_factor_threshold': 0.98, 'reproducibility_rsd_threshold': 20}
+    input: feature table / extracted ion chromatograms
+    output: quantified concentrations
+    confidence: medium
+  Step 7: High-confidence metabolite identification and post-targeted analysis
+    tool: not specified
+    algorithm: high-resolution MS-based identification
+    parameters: identified_compounds=['two pesticides', 'one plasticizer', 'one cannabidiol degradation product']
+    input: high-resolution MS spectra
+    output: annotated metabolite list with confidence levels
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No software tools specified for data processing, peak detection, alignment, or statistical analysis
+  - No parameters reported for GC × GC temperature programs, modulation period, or column configurations
+  - No details on data processing workflow (e.g., peak picking algorithm, deconvolution method, retention time correction)
+  - Raw or processed data not deposited in any public repository
+  - No code, scripts, or workflow documentation shared
+  - SBSE optimization parameters (time, temp, solvent, salt) reported as 'optimized' but no values provided
+reproducibility_strengths:
+  - Use of high-resolution MS for confident identification
+  - Explicit reporting of validation metrics (R² > 0.98, RSD < 20%) for targeted analysis
+  - Clear definition of analyte classes used for method development

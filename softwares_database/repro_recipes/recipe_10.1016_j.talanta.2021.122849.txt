@@ -1,0 +1,65 @@
+========== reproducibility_recipe entry ==========
+paper_title: Comparison of one-phase and two-phase extraction methods for porcine tissue lipidomics applying a fast and reliable tentative annotation workflow.
+source_paper: Bögl T et al. (2022), Talanta, DOI: 10.1016/j.talanta.2021.122849, PMID: 34635239
+overall_reproducibility_score: 35/100
+
+workflow_steps: 6
+  Step 1: Lipid extraction
+    tool: manual extraction protocol
+    parameters: extraction_methods=['MTBE (two-phase)', 'MMC (one-phase)', 'IPA90 (one-phase)', 'IMC (one-phase)', 'modified Folch', 'additional two unspecified'], reconstitution_solvents=4, tissues_analyzed=10, biological_replicates=None
+    input: porcine tissue samples
+    output: lipid extracts in solvent
+    confidence: medium
+  Step 2: LC-MS data acquisition
+    tool: liquid chromatography–mass spectrometry
+    parameters: instrument_platform=not specified, ionization_mode=not specified, chromatographic_column=not specified, gradient_profile=not fully specified, mass_accuracy_requirement=5 ppm (implied by 'collision cross section prediction' and annotation workflow)
+    input: lipid extracts
+    output: raw .raw or .d files
+    confidence: low
+  Step 3: Tentative lipid annotation
+    tool: machine learning-based annotation workflow
+    algorithm: collision cross section (CCS) prediction
+    parameters: annotation_strategy=fast and reliable tentative annotation, supporting_features=['MS1 m/z', 'retention time', 'predicted CCS', 'MS/MS spectral similarity (implied)']
+    input: LC-MS raw data
+    output: tentatively annotated lipid features
+    confidence: low
+  Step 4: Unsupervised multivariate analysis
+    tool: principal component analysis (PCA)
+    algorithm: PCA
+    input: feature abundance table (lipids × samples)
+    output: PCA scores and loadings plots
+    confidence: high
+  Step 5: Supervised multivariate analysis
+    tool: partial least squares–discriminant analysis (PLS-DA)
+    algorithm: PLS-DA
+    input: feature abundance table (lipids × samples)
+    output: PLS-DA scores, loadings, and classification performance
+    confidence: high
+  Step 6: Extraction method performance evaluation
+    tool: comparative feature counting
+    algorithm: feature count per extraction method per tissue
+    parameters: metric=number of annotated features, top_performing_method=MTBE (two-phase), benchmark_lipids=16
+    input: tentatively annotated lipid features
+    output: ranked extraction method performance matrix
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS data not deposited in public repository
+  - No details on LC-MS instrumentation, gradient, or acquisition parameters
+  - Machine learning annotation workflow not described (no tool names, training data, or code)
+  - No information on software used for PCA/PLS-DA (e.g., R, SIMCA, Python)
+  - Extraction protocols lack volumes, ratios, centrifugation conditions, and temperature details
+  - No metadata schema or sample annotation table provided beyond tissue type
+reproducibility_strengths:
+  - Clear comparative experimental design (6 extraction methods × 4 reconstitution solvents × 10 tissues)
+  - Explicit reporting of top-performing methods (MTBE, MMC, IPA90, IMC, modified Folch)
+  - Quantitative performance metric reported (e.g., 428 annotated features in lung with MTBE)

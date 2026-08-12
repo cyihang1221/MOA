@@ -1,0 +1,111 @@
+========== reproducibility_recipe entry ==========
+paper_title: Bacteria from the Amycolatopsis genus associated with a toxic bird secrete protective secondary metabolites.
+source_paper: Seibel E et al. (2024), Nature communications, DOI: 10.1038/s41467-024-52316-3, PMID: 39358325
+overall_reproducibility_score: 58/100
+
+workflow_steps: 8
+  Step 1: Raw data conversion to mzML
+    tool: MS-Convert
+    algorithm: ProteoWizard MSConvert
+    parameters: ionization_mode=ESI, centroiding=True
+    input: Thermo .RAW files
+    output: .mzML files
+    confidence: high
+  Step 2: Molecular networking
+    tool: GNPS (vData Analysis workflow version release 30)
+    algorithm: Cosine similarity network clustering
+    parameters: precursor_mass_tolerance_da=0.02, fragment_mass_tolerance_da=0.02, min_matched_peaks=6, min_cluster_size=2, cosine_score_threshold=0.8, library_match_score_threshold=0.7, min_library_matched_peaks=6
+    input: .mzML files
+    output: MS/MS molecular network (graph)
+    confidence: high
+  Step 3: Network visualization
+    tool: Cytoscape (v3.8.0)
+    algorithm: Force-directed layout
+    input: GNPS network output (edges/nodes tables)
+    output: Interactive network graph
+    confidence: medium
+  Step 4: HR-UPLC-ESI-MS/MS acquisition
+    tool: Dionex Ultimate3000 + Q-Exactive Plus
+    algorithm: Full-scan MS and data-dependent MS2
+    parameters: column=Luna Omega C18 (100 × 2.1 mm, 1.6 μm), gradient=[{'time_min': 0, 'percent_B': 5}, {'time_min': 1, 'percent_B': 5}, {'time_min': 7, 'percent_B': 97}, {'time_min': 9, 'percent_B': 97}, {'time_min': 10, 'percent_B': 5}, {'time_min': 13, 'percent_B': 5}], flow_rate_ml_min=0.3, injection_volume_ul=5, eluent_A=H2O + 0.1% formic acid, eluent_B=acetonitrile + 0.1% formic acid, washing_blanks=every ≤5 samples
+    input: methanolic extracts
+    output: raw .RAW files
+    confidence: high
+  Step 5: MS/MS spectral prediction & annotation
+    tool: CFM-ID 4.0 (v4.0)
+    algorithm: Fragmentation tree prediction
+    parameters: mass_tolerance_ppm=None, ionization_mode=positive
+    input: m/z and retention time of features
+    output: putative structural annotations
+    confidence: medium
+  Step 6: MS/MS spectral prediction & annotation (alternative)
+    tool: MassFrontier 8.0 (v8.0)
+    algorithm: Rule-based fragmentation
+    input: m/z and retention time of features
+    output: putative structural annotations
+    confidence: low
+  Step 7: Metabolite quantification (semi-quantitative)
+    tool: Thermo Xcalibur or custom script
+    algorithm: Extracted ion chromatogram (EIC) peak area integration
+    parameters: normalization=peak_area_per_mg_wet_weight_of_agar, technical_replicates=1
+    input: HR-UPLC-MS raw data
+    output: relative abundance table (metabolite × sample)
+    confidence: medium
+  Step 8: MALDI-IMS sample preparation and acquisition
+    tool: Bruker UltrafleXtreme MALDI TOF/TOF
+    algorithm: Imaging MS with raster scanning
+    parameters: matrix=1:1 DHB:CHCA (20 mg/mL in ACN:MeOH:H2O 70:25:5), spraying_cycles=60, drying_time_per_cycle_s=30, incubation_time_per_cycle_s=10, spray_time_per_cycle_s=1, rotation=180° after 30 cycles
+    input: ITO-coated microbial cultures on agar
+    output: 2D ion intensity maps (.imzML)
+    confidence: high
+
+data_availability:
+  raw_data: available (GNPS)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+  data_urls: http://gnps.ucsd.edu
+
+code_availability: not_mentioned
+
+figure_recipes: 7
+  Fig. 1: [workflow_diagram]
+    caption: Overview of microbiome study and analysis of the UG isolate Amycolatopsis sp. PS_44_ISF1.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7]
+    visualization_tool: Cytoscape, custom figures
+  Fig. 2: [chemical_structure]
+    caption: Structure elucidation of pachycephalamides A-F using NMR and HR-MS/MS.
+    produced_by_step: [5, 6, 8]
+    visualization_tool: ChemDraw, MestReNova, CFM-ID/MassFrontier outputs
+  Fig. 3: [chemical_structure]
+    caption: Structure elucidation of demiguisin (7), a new hexapeptide.
+    produced_by_step: [5, 6, 8]
+    visualization_tool: ChemDraw, MestReNova, CFM-ID/MassFrontier outputs
+  Fig. 4: [other]
+    caption: Transcriptomic studies and knock-out experiments verifying biosynthetic gene clusters for pachycephalamides and demiguisins.
+    visualization_tool: IGV, custom plots
+  Fig. 5: [pathway_map]
+    caption: Maps of biosynthetic pathways involved in pachycephalamides biosynthesis.
+    visualization_tool: BioRender or equivalent
+  Fig. 6: [pathway_map]
+    caption: Biosynthesis pathway of demiguisin (7).
+    visualization_tool: BioRender or equivalent
+  Fig. 7: [bar_chart]
+    caption: Bioactivity and ecological relevance of compounds, showing antimicrobial activity against keratinolytic microbes and presence in feather extracts.
+    produced_by_step: [7, 4]
+    visualization_tool: GraphPad Prism or R ggplot2
+    statistical_test: ANOVA with Tukey’s HSD (implied by bar + error bars and significance annotations)
+
+reproducibility_gaps:
+  - Raw HR-UPLC-MS/MS data not deposited in public repository beyond GNPS (no accession ID provided)
+  - No code or scripts shared for EIC quantification, network filtering, or statistical analysis
+  - MALDI-IMS raw data (.imzML) not stated as publicly available
+  - Exact MS acquisition parameters (e.g., AGC target, max injection time, resolution settings) omitted for Q-Exactive Plus
+  - No details on HR-UPLC column temperature, autosampler temperature, or post-run equilibration
+  - CFM-ID 4.0 and MassFrontier 8.0 usage lacks version-specific parameter settings (e.g., energy, adducts, instrument model)
+  - No metadata schema or sample annotation file provided for GNPS submission
+reproducibility_strengths:
+  - GNPS platform used with fully specified network parameters (cosine threshold, min matched peaks, etc.)
+  - Detailed UPLC gradient and mobile phase composition reported
+  - MALDI matrix preparation and spraying protocol explicitly described
+  - Use of open-source tools (MS-Convert, Cytoscape, QIIME2, DADA2, phyloseq, vegan) for microbiome and networking steps
+  - Public web platform (GNPS) enables re-analysis of molecular networks

@@ -1,0 +1,80 @@
+========== reproducibility_recipe entry ==========
+paper_title: Evaluation of significant features discovered from different data acquisition modes in mass spectrometry-based untargeted metabolomics.
+source_paper: Guo J et al. (2020), Analytica chimica acta, DOI: 10.1016/j.aca.2020.08.065, PMID: 33153607
+overall_reproducibility_score: 35/100
+
+workflow_steps: 8
+  Step 1: Data acquisition using three LC-MS modes
+    tool: LC-MS instrument (not specified)
+    parameters: acquisition_modes=['full-scan', 'data-dependent acquisition (DDA)', 'data-independent acquisition (DIA)'], sample_type=human plasma, biological_comparison=leukemia patients before vs. after one-month chemotherapy
+    input: biological samples (plasma)
+    output: raw .raw or vendor-specific files (not specified)
+    confidence: low
+  Step 2: Data processing and feature extraction
+    tool: XCMS
+    algorithm: centWave
+    parameters: peak_detection_method=centWave, mass_tolerance_ppm=None, sn_threshold=None, peak_width_sec=None, prefilter=None, noise=None, bw=None, mzdiff=None, ppm=None
+    input: raw LC-MS files
+    output: feature table (m/z, RT, intensity)
+    confidence: medium
+  Step 3: Retention time alignment and correction
+    tool: XCMS
+    algorithm: obiwarp
+    parameters: alignment_method=obiwarp
+    input: feature list per sample
+    output: aligned feature table
+    confidence: medium
+  Step 4: Gap filling and missing value imputation
+    tool: XCMS
+    algorithm: fillPeaks
+    parameters: fill_method=fillPeaks
+    input: aligned feature table
+    output: complete feature table with imputed values
+    confidence: medium
+  Step 5: Statistical analysis of differential features
+    tool: R (stats package)
+    algorithm: t-test
+    parameters: test=two-sided t-test, p_value_threshold=0.05, multiple_testing_correction=Benjamini-Hochberg FDR
+    input: normalized feature table
+    output: list of statistically significant features (p < 0.05, FDR-corrected)
+    confidence: high
+  Step 6: Performance evaluation of significant features
+    tool: custom R scripts
+    algorithm: Pearson correlation, ROC analysis
+    parameters: correlation_method=Pearson, roc_metric=AUC
+    input: lists of significant features per acquisition mode
+    output: correlation coefficients, AUC values, comparative feature overlap metrics
+    confidence: medium
+  Step 7: Manual curation and categorization of uniquely discovered features
+    tool: manual inspection
+    parameters: features_inspected=>2000 per mode, categories=['four major types (not specified in abstract)']
+    input: significant feature lists (m/z, RT, intensity, annotation status)
+    output: categorized unique features
+    confidence: low
+  Step 8: Bioinformatic rescue of missing DDA features
+    tool: custom bioinformatic solution
+    parameters: rescue_strategy=reprocessing of raw DDA data to recover missed features, validation=reproducibility and accuracy assessment (not detailed)
+    input: raw DDA files
+    output: rescued significant features
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository
+  - No details on LC-MS instrument model, gradient method, or acquisition parameters (e.g., collision energy, isolation window for DDA/DIA)
+  - XCMS parameter values (e.g., ppm tolerance, peak width, sn threshold) not reported
+  - Custom R scripts and bioinformatic rescue method not shared or described algorithmically
+  - Four feature categories not defined or exemplified in abstract/text provided
+  - No mention of metabolite identification/annotation workflow (MS/MS matching, databases used, confidence levels)
+reproducibility_strengths:
+  - Use of standard open-source tool XCMS for core processing
+  - Explicit biological design (paired pre/post chemotherapy plasma samples)
+  - Multi-modal comparison framework (full-scan/DDA/DIA) with statistical validation (Pearson, ROC)

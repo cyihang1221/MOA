@@ -1,0 +1,57 @@
+========== reproducibility_recipe entry ==========
+paper_title: Defining the Ceramide Composition of Bovine and Human Milk Gangliosides by Direct Infusion ESI-CID Tandem Mass Spectrometry of Native and Permethylated Molecular Species.
+source_paper: Liyanage OT et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c00737, PMID: 37877731
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Sample preparation and derivatization
+    tool: chemical derivatization
+    parameters: derivatization_method=permethylation, reaction_conditions=sodium hydride in DMF, methyl iodide
+    input: native ganglioside extracts from bovine and human milk
+    output: native and permethylated ganglioside samples
+    confidence: medium
+  Step 2: Direct infusion electrospray ionization mass spectrometry
+    tool: ESI-MS
+    parameters: ionization_mode=negative mode, source_temperature=250, capillary_voltage=-3.5
+    input: native and permethylated ganglioside samples
+    output: full-scan MS spectra (m/z 500–2500)
+    confidence: low
+  Step 3: Low-energy CID tandem MS for glycan characterization
+    tool: CID-MS/MS
+    parameters: collision_energy=low, target_mz=precursor ions of gangliosides, fragmentation_pattern_focus=glycosidic cleavages
+    input: selected precursor ions from full-scan MS
+    output: glycan sequence assignments
+    confidence: medium
+  Step 4: Stepped higher-energy CID tandem MS for ceramide structural characterization
+    tool: stepped-CID MS/MS
+    parameters: collision_energy_steps=[20, 30, 40, 50], fragmentation_pattern_focus=ceramide-specific fragments (LCB and FA ions), key_ions_monitored=['m/z 264.2 (d18:1 LCB fragment)', 'm/z 278.2 (d18:2 LCB fragment)', 'FA carboxylate anions']
+    input: same precursors as step 3
+    output: LCB and FA composition assignments, including isomeric differentiation (e.g., d18:1 vs t18:1, FA chain length/unsaturation)
+    confidence: high
+  Step 5: Structural interpretation and assignment of intact molecular species
+    tool: manual spectral interpretation
+    algorithm: fragment ion mapping and diagnostic ion matching
+    parameters: diagnostic_ions_used=['Ceramide fragment ions', 'sialyl-glycan cross-ring fragments', 'permethylation-induced mass shifts'], isomer_discrimination_criteria=relative intensities of LCB-specific fragments and FA anions
+    input: low- and high-energy CID spectra (native and permethylated)
+    output: annotated ganglioside molecular species with defined LCB and FA structures
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw MS and MS/MS spectra not deposited in public repository (e.g., MassIVE, GNPS, or MetaboLights)
+  - No instrument method files or acquisition parameters (e.g., dwell time, resolution, AGC target) provided
+  - No software or scripts for automated spectral interpretation or annotation shared
+  - Manual interpretation criteria lack quantitative scoring or validation metrics
+  - No reference standards or synthetic controls used or reported for ceramide isomer verification
+reproducibility_strengths:
+  - Explicit description of permethylation chemistry and CID energy ramping strategy
+  - Clear reporting of diagnostic fragment ions for LCB and FA differentiation
+  - Side-by-side comparison of native vs permethylated spectra to support assignments

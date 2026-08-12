@@ -1,0 +1,67 @@
+========== reproducibility_recipe entry ==========
+paper_title: A Direct Infusion Probe for Rapid Metabolomics of Low-Volume Samples.
+source_paper: Marques C et al. (2022), Analytical chemistry, DOI: 10.1021/acs.analchem.2c02918, PMID: 36070505
+overall_reproducibility_score: 35/100
+
+workflow_steps: 6
+  Step 1: Sample infusion via direct infusion probe (DIP)
+    tool: DIP (custom-built direct infusion probe)
+    parameters: flow_rate_μL_min=1.0, sample_volume_μL=5.0, ionization=pneumatically assisted electrospray ionization, acquisition_profile=square wave
+    input: chemically complex biological extracts (e.g., INS-1 cell lysates)
+    output: raw mass spectrometry data (.raw or vendor format)
+    confidence: high
+  Step 2: Data acquisition and preprocessing
+    tool: Thermo Fisher Scientific mass spectrometer (unspecified model)
+    parameters: instrument_mode=full-scan MS, mass_range_mz=[50, 1200], resolution=not specified, polarity=positive and negative mode (implied by metabolite/lipid coverage)
+    input: liquid sample (5 μL)
+    output: raw .raw files
+    confidence: low
+  Step 3: Untargeted metabolite and lipid feature detection
+    tool: XCMS
+    algorithm: centWave
+    parameters: peak_width_sec=[10, 60], ppm=10, snthr=10
+    input: raw .raw files
+    output: feature table (m/z, RT, intensity)
+    confidence: medium
+  Step 4: Retention time alignment and peak matching
+    tool: XCMS
+    algorithm: obiwarp
+    parameters: method=obiwarp, profiling=ms1
+    input: XCMS feature list
+    output: aligned feature table with matched peaks across samples
+    confidence: medium
+  Step 5: Statistical analysis and differential feature detection
+    tool: R (stats package)
+    algorithm: two-tailed t-test
+    parameters: alpha=0.05, correction_method=Benjamini-Hochberg
+    input: normalized feature table
+    output: list of significantly altered features (p < 0.05, FDR-corrected)
+    confidence: high
+  Step 6: Metabolite and lipid annotation
+    tool: METLIN
+    algorithm: accurate mass matching
+    parameters: mass_tolerance_ppm=10, database=METLIN Public, adducts=['[M+H]+', '[M+Na]+', '[M-H]-']
+    input: significantly altered m/z features
+    output: putatively annotated metabolites/lipids
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: not_mentioned (not mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in any public repository
+  - No description of DIP fabrication schematics or CAD files
+  - No details on LC-MS instrument model, acquisition method file parameters, or calibration protocol
+  - No information on XCMS version or R environment (e.g., Bioconductor version)
+  - No access to custom scripts for data processing or statistical analysis
+  - METLIN queries performed via web interface — no programmatic query parameters or session logs provided
+reproducibility_strengths:
+  - Explicit experimental parameters reported: 1 μL/min flow rate, 5 μL sample volume, square wave acquisition profile
+  - Clear biological context and treatment conditions (INS-1 cells, 20 mM glucose, 15 min exposure)
+  - Use of standard open-source tools (XCMS, R) for core data processing

@@ -1,0 +1,71 @@
+========== reproducibility_recipe entry ==========
+paper_title: Omic-Scale High-Throughput Quantitative LC-MS/MS Approach for Circulatory Lipid Phenotyping in Clinical Research.
+source_paper: Medina J et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.2c02598, PMID: 36716250
+overall_reproducibility_score: 40/100
+
+workflow_steps: 7
+  Step 1: Lipid extraction
+    tool: automated single-step extraction
+    parameters: solvent=2-propanol
+    input: human plasma or serum samples
+    output: extracted lipid samples
+    confidence: high
+  Step 2: Chromatographic separation
+    tool: hydrophilic interaction liquid chromatography (HILIC)
+    parameters: column_setup=dual-column, run_time_min=12
+    input: extracted lipid samples
+    output: chromatographically separated lipids
+    confidence: medium
+  Step 3: Mass spectrometric detection
+    tool: tandem mass spectrometry (MS/MS)
+    algorithm: timed-selective reaction monitoring (t-SRM)
+    parameters: acquisition_mode=t-SRM
+    input: chromatographically separated lipids
+    output: raw MS/MS data (.raw or equivalent)
+    confidence: high
+  Step 4: Initial lipid screening
+    tool: in-house or vendor software (e.g., Skyline, MultiQuant, or similar)
+    parameters: screened_species_count=1903
+    input: raw MS/MS data
+    output: list of robustly detected lipid species
+    confidence: low
+  Step 5: Quantification
+    tool: single-point calibration with isotopically labeled standards
+    parameters: number_of_standards=75, standard_type=isotopically labeled, coverage=diverse acyl/alkyl chain lengths and unsaturation degrees
+    input: robustly detected lipid species peak areas
+    output: quantified lipid concentrations (e.g., pmol/mL)
+    confidence: high
+  Step 6: Precision assessment
+    tool: statistical analysis
+    algorithm: intra-day and inter-day CV calculation
+    parameters: intra_day_cv_median_percent=8.5, inter_day_cv_median_percent=10.9, batch_definition=single vs multiple batches
+    input: quantified lipid concentrations across replicates and batches
+    output: precision metrics (CV%)
+    confidence: high
+  Step 7: Statistical comparison of lipidomes
+    tool: statistical analysis
+    algorithm: sex-stratified comparison (implied t-test or ANOVA)
+    parameters: comparison_groups=['male', 'female'], sample_size=81
+    input: quantified lipid concentrations from clinically healthy elderly sera
+    output: statistically significant sex-specific lipid differences
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw LC-MS/MS data not deposited in public repository
+  - No description of data processing software or version (e.g., Skyline, MultiQuant, or custom scripts)
+  - No access to calibration standard concentrations or response curves
+  - Dual-column HILIC method parameters (gradient, flow rate, temperature) not specified
+  - Statistical methods for sex differences not named (e.g., adjusted p-value threshold, multiple testing correction)
+reproducibility_strengths:
+  - Explicit reporting of intra- and inter-day precision metrics
+  - Use of NIST reference materials for benchmarking and validation
+  - Clear description of extraction solvent (2-propanol) and acquisition mode (t-SRM)

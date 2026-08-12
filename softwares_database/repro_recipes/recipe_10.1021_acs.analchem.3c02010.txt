@@ -1,0 +1,52 @@
+========== reproducibility_recipe entry ==========
+paper_title: UniDec Processing Pipeline for Rapid Analysis of Biotherapeutic Mass Spectrometry Data.
+source_paper: Phung W et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c02010, PMID: 37478487
+overall_reproducibility_score: 75/100
+
+workflow_steps: 4
+  Step 1: Batched data ingestion via spreadsheet configuration
+    tool: UniDec
+    algorithm: configuration-driven batch processing
+    input: raw .raw or .mzML files (implied by UniDec compatibility)
+    output: deconvoluted mass spectra and peak lists per sample
+    confidence: medium
+  Step 2: Automated deconvolution
+    tool: UniDec
+    algorithm: maximum entropy deconvolution
+    parameters: charge_state_range=user-specified in spreadsheet, mass_range=user-specified, resolution=user-specified
+    input: raw MS data
+    output: deconvoluted zero-charge mass spectrum
+    confidence: medium
+  Step 3: Peak detection and quantitation
+    tool: UniDec
+    algorithm: centroid-based peak detection with intensity integration
+    parameters: peak_width=user-specified, signal_to_noise_threshold=user-specified, mass_tolerance_da=user-specified
+    input: deconvoluted mass spectrum
+    output: quantified peak table (mass, intensity, charge, assignment)
+    confidence: medium
+  Step 4: Batch-level result aggregation and reporting
+    tool: UniDec
+    algorithm: spreadsheet-based summarization and HTML report generation
+    input: per-file peak tables and metadata spreadsheet
+    output: consolidated results spreadsheet + HTML reports
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: https://github.com/abrahamfazlani/UniDec
+  license: MIT
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No raw MS data deposition reported
+  - No example configuration spreadsheet provided in paper or supplement
+  - Specific parameter values for bispecific antibody or ADC case studies not listed (e.g., mass tolerance, S/N threshold, charge range)
+reproducibility_strengths:
+  - UniDec is open-source with public GitHub repository and DOI
+  - Workflow is explicitly spreadsheet-driven and thus inherently reproducible if config is shared
+  - HTML reporting enables traceable visualization of deconvolution and peak assignments
