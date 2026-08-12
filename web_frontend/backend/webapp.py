@@ -516,6 +516,18 @@ class ImageMergeEditRequest(BaseModel):
     llm_base_url: Optional[str] = None
 
 
+class MetadataSaveRequest(BaseModel):
+    rows: list[dict]
+    align_to_inputs: bool = True
+
+
+def _session_metadata_paths(session_id: str) -> dict[str, str]:
+    from web_frontend.backend.agent_runner import build_session_paths
+
+    slug = resolve_storage_slug(session_id)
+    return build_session_paths(session_id, PROJECT_ROOT, storage_slug=slug)
+
+
 def parse_models_from_env() -> List[str]:
     configured = os.getenv("LLM_MODEL_CANDIDATES", "")
     values = [item.strip() for item in configured.split(",") if item.strip()]
@@ -890,9 +902,29 @@ async def upload_session_files(
     if not saved:
         raise HTTPException(status_code=400, detail="no valid files uploaded")
 
+    metadata_info: dict | None = None
+    try:
+        from web_frontend.backend.agent_runner import build_session_paths
+        from web_frontend.backend.session_metadata import (
+            ensure_metadata_from_inputs,
+            format_metadata_report_summary,
+        )
+
+        slug = resolve_storage_slug(session_id)
+        paths = build_session_paths(session_id, PROJECT_ROOT, storage_slug=slug)
+        _, metadata_info = ensure_metadata_from_inputs(folder, paths=paths)
+        metadata_info = {
+            **metadata_info,
+            "summary": format_metadata_report_summary(metadata_info),
+        }
+    except FileNotFoundError:
+        metadata_info = None
+    except Exception:
+        metadata_info = None
+
     # 会话标题仅由用户首条聊天内容决定（见 chat/stream 中的 derive_title_from_message）
 
-    return {"files": saved}
+    return {"files": saved, "metadata": metadata_info}
 
 
 @app.get("/api/sessions/{session_id}/workspace-files")
@@ -1175,6 +1207,7 @@ def preview_semantic_plot(session_id: str, req: SemanticPlotSaveRequest):
 def agent_plot_edit(session_id: str, req: PlotEditAgentRequest):
     """Agent 解析自然语言改图要求，并导出语义一致的 Vega-Lite/SVG/PNG。"""
     from web_frontend.backend.plot_edit_service import PlotEditError, agent_apply_plot_edit
+    from web_frontend.backend.literature_plot_knowledge import session_goal_text
 
     sess = db_get_session(session_id)
     if not sess:
@@ -1184,6 +1217,7 @@ def agent_plot_edit(session_id: str, req: PlotEditAgentRequest):
 
     slug = resolve_storage_slug(session_id)
     model = (req.model or "").strip() or (sess.get("model") or "").strip() or None
+    goal = session_goal_text(sess, db_get_messages(session_id))
     from web_frontend.backend.web_llm import llm_override_context
 
     try:
@@ -1200,6 +1234,7 @@ def agent_plot_edit(session_id: str, req: PlotEditAgentRequest):
                 instruction=req.instruction.strip(),
                 model=model,
                 filename=req.filename,
+                goal_text=goal,
             )
     except PlotEditError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -1210,6 +1245,31 @@ def agent_plot_edit(session_id: str, req: PlotEditAgentRequest):
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"plot edit failed: {exc}") from exc
     return result
+
+
+@app.get("/api/sessions/{session_id}/plot-literature-hints")
+def plot_literature_hints(session_id: str, source_rel: str = ""):
+    """返回与当前图型匹配的文献作图建议（MassOmics skills + phase2_output）。"""
+    from web_frontend.backend.literature_plot_knowledge import match_plot_literature, session_goal_text
+
+    sess = db_get_session(session_id)
+    if not sess:
+        raise HTTPException(status_code=404, detail="session not found")
+    if not source_rel.strip():
+        raise HTTPException(status_code=400, detail="source_rel is required")
+
+    goal = session_goal_text(sess, db_get_messages(session_id))
+    payload = match_plot_literature(
+        goal_text=goal,
+        source_rel=source_rel.strip(),
+        project_root=PROJECT_ROOT,
+    )
+    return {
+        "goal_text": goal,
+        "matched": payload.get("matched") or [],
+        "hints": payload.get("hints") or [],
+        "context_preview": (payload.get("text") or "")[:800],
+    }
 
 
 @app.post("/api/sessions/{session_id}/image-merge/edit")
@@ -1240,6 +1300,85 @@ def agent_image_merge_edit(session_id: str, req: ImageMergeEditRequest):
         raise HTTPException(status_code=502, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"merge edit failed: {exc}") from exc
+    return result
+
+
+@app.get("/api/sessions/{session_id}/metadata")
+def get_session_metadata(session_id: str):
+    sess = db_get_session(session_id)
+    if not sess:
+        raise HTTPException(status_code=404, detail="session not found")
+    from web_frontend.backend.metadata_editor import get_metadata_editor_state
+
+    slug = resolve_storage_slug(session_id)
+    try:
+        paths = _session_metadata_paths(session_id)
+    except Exception:
+        paths = None
+    try:
+        state = get_metadata_editor_state(
+            project_root=PROJECT_ROOT,
+            storage_slug=slug,
+            paths=paths,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+    return state
+
+
+@app.put("/api/sessions/{session_id}/metadata")
+def put_session_metadata(session_id: str, req: MetadataSaveRequest):
+    sess = db_get_session(session_id)
+    if not sess:
+        raise HTTPException(status_code=404, detail="session not found")
+    from web_frontend.backend.metadata_editor import MetadataEditorError, save_metadata_rows
+
+    slug = resolve_storage_slug(session_id)
+    try:
+        paths = _session_metadata_paths(session_id)
+    except Exception:
+        paths = None
+    try:
+        result = save_metadata_rows(
+            project_root=PROJECT_ROOT,
+            storage_slug=slug,
+            rows=req.rows,
+            paths=paths,
+            align_to_inputs=req.align_to_inputs,
+            user_locked=True,
+        )
+    except MetadataEditorError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+    return result
+
+
+@app.post("/api/sessions/{session_id}/metadata/infer")
+def infer_session_metadata(session_id: str):
+    sess = db_get_session(session_id)
+    if not sess:
+        raise HTTPException(status_code=404, detail="session not found")
+    from web_frontend.backend.metadata_editor import MetadataEditorError, infer_metadata_from_inputs
+
+    slug = resolve_storage_slug(session_id)
+    try:
+        paths = _session_metadata_paths(session_id)
+    except Exception:
+        paths = None
+    try:
+        result = infer_metadata_from_inputs(
+            project_root=PROJECT_ROOT,
+            storage_slug=slug,
+            paths=paths,
+            preserve_user_locked=True,
+        )
+    except MetadataEditorError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
     return result
 
 

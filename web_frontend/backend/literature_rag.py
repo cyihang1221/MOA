@@ -47,6 +47,10 @@ _TOOL_HINTS = {
 _MAX_CONTEXT_CHARS = 10000
 _MAX_FALLBACK_FILES = 4
 _MAX_FILE_CHARS = 2800
+# DashScope text-embedding-v2: input length [1, 2048] tokens — keep query short (chars << tokens for CJK)
+_EMBED_QUERY_MAX_CHARS = int(os.getenv("WEB_LITERATURE_QUERY_MAX_CHARS", "1200") or 1200)
+_EMBED_USER_MAX_CHARS = int(os.getenv("WEB_LITERATURE_USER_MAX_CHARS", "600") or 600)
+_EMBED_GOAL_MAX_CHARS = int(os.getenv("WEB_LITERATURE_GOAL_MAX_CHARS", "400") or 400)
 
 _retriever_lock = threading.Lock()
 _retriever_cache: dict[str, Any] = {}
@@ -93,6 +97,77 @@ def enhance_query(query: str) -> str:
     return text
 
 
+def clamp_embedding_query(query: str, *, max_chars: int | None = None) -> str:
+    """硬截断文献检索查询，确保不超过 DashScope embedding 输入上限。"""
+    limit = max_chars if max_chars is not None else _EMBED_QUERY_MAX_CHARS
+    text = (query or "").strip()
+    if not text:
+        return "metabolomics analysis workflow"
+    if len(text) <= limit:
+        return text
+    return text[: max(80, limit - 24)].rstrip() + "\n...(truncated)"
+
+
+def compact_literature_goal(goal_description: str, *, max_chars: int | None = None) -> str:
+    """从冗长的 Agent goal prompt 提取短摘要，供向量 embedding 使用。"""
+    budget = max_chars if max_chars is not None else _EMBED_GOAL_MAX_CHARS
+    text = (goal_description or "").strip()
+    if not text:
+        return ""
+
+    # build_web_goal_description 中的用户意图块
+    m = re.search(
+        r"CURRENT user request[^\n]*\n(.*?)(?:\n\nRecent conversation|\Z)",
+        text,
+        re.S | re.I,
+    )
+    if m and m.group(1).strip():
+        text = m.group(1).strip()
+    else:
+        # 回退：取前若干非空行，跳过明显是系统提示的长段落
+        kept: list[str] = []
+        for ln in text.splitlines():
+            s = ln.strip()
+            if not s:
+                continue
+            if s.startswith(
+                (
+                    "Allowed tools",
+                    "Default recommended",
+                    "Alternatives (",
+                    "CRITICAL path",
+                    "Path roots:",
+                    "Platform:",
+                    "ANTI-HALLUCINATION",
+                    "You MUST call tools",
+                )
+            ):
+                break
+            if re.match(r"^\d+\.\s", s) and len(s) > 100:
+                continue
+            kept.append(s)
+            if sum(len(x) for x in kept) >= budget * 2:
+                break
+        if kept:
+            text = " ".join(kept)
+
+    text = re.sub(r"\s+", " ", text).strip()
+    if len(text) > budget:
+        text = text[: max(40, budget - 3)].rstrip() + "..."
+    return text
+
+
+def _normalize_user_message_for_literature(user_message: str) -> str:
+    user = (user_message or "").strip()
+    for marker in ("[已上传附件]", "[Attachments uploaded]"):
+        if marker in user:
+            user = user.split(marker)[0].strip()
+    user = re.sub(r"\s+", " ", user)
+    if len(user) > _EMBED_USER_MAX_CHARS:
+        user = user[: max(40, _EMBED_USER_MAX_CHARS - 3)].rstrip() + "..."
+    return user
+
+
 def _truncate(text: str, limit: int = _MAX_CONTEXT_CHARS) -> str:
     text = (text or "").strip()
     if len(text) <= limit:
@@ -133,7 +208,8 @@ def _vector_retrieve(query: str, persist_dir: str, source_dir: str, top_k: int) 
         from src.build_RAG_private import retrive
 
         retriever = _get_vector_retriever(persist_dir, source_dir, top_k)
-        text = retrive(retriever, retriever_prompt=enhance_query(query))
+        safe_prompt = clamp_embedding_query(enhance_query(query))
+        text = retrive(retriever, retriever_prompt=safe_prompt)
         if text == "Retrieval error" or (text or "").startswith("Retrieval error"):
             raise RuntimeError("Retrieval error from embedding backend")
         if not text or text in {
@@ -357,29 +433,41 @@ def warmup_literature_rag(
     )
 
 
-def build_plan_literature_query(*, user_message: str, goal_description: str) -> str:
-    return (
-        f"User request: {user_message.strip()}\n"
-        f"Global goal: {goal_description.strip()}\n"
-        "For this metabolomics study, what published analysis methods and pipelines "
-        "are recommended? Which tools, parameters, expected outputs, and quality checks "
-        "appear in matching literature workflows? Prefer end-to-end workflows that match "
-        "the research question and data type."
+def build_plan_literature_query(*, user_message: str, goal_description: str = "") -> str:
+    """构建供向量/关键词检索的短查询（勿传入完整 Agent system goal）。"""
+    user = _normalize_user_message_for_literature(user_message)
+    short_goal = compact_literature_goal(goal_description)
+    parts = [f"User request: {user}"]
+    if short_goal and short_goal.lower() != user.lower():
+        parts.append(f"Study goal: {short_goal}")
+    parts.append(
+        "Metabolomics: recommend published analysis pipelines, software tools, "
+        "parameters, quality checks, and expected outputs for this study."
     )
+    return clamp_embedding_query("\n".join(parts))
 
 
 def build_tool_literature_query(*, goal_description: str, task: str) -> str:
-    return (
-        f"Global goal: {goal_description.strip()}\n"
-        f"Current sub-task: {task.strip()}\n"
+    short_goal = compact_literature_goal(goal_description, max_chars=300)
+    task_text = re.sub(r"\s+", " ", (task or "").strip())
+    if len(task_text) > 500:
+        task_text = task_text[:497].rstrip() + "..."
+    parts = []
+    if short_goal:
+        parts.append(f"Study goal: {short_goal}")
+    parts.append(f"Current step: {task_text}")
+    parts.append(
         "What tool and parameters do published metabolomics studies recommend for this step?"
     )
+    return clamp_embedding_query("\n".join(parts))
 
 
 __all__ = [
     "retrieve_literature",
     "warmup_literature_rag",
     "enhance_query",
+    "clamp_embedding_query",
+    "compact_literature_goal",
     "build_plan_literature_query",
     "build_tool_literature_query",
 ]

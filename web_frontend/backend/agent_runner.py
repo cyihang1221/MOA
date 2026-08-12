@@ -150,22 +150,14 @@ def _prune_remaining_differential_tasks(
     return kept, reason
 
 
-def build_data_list(upload_dir: str, paths: dict[str, str]) -> str:
-    return "\n".join(summarize_session_files(paths, upload_dir))
+def build_data_list(upload_dir: str, paths: dict[str, str], *, meta_report: dict | None = None) -> str:
+    return "\n".join(summarize_session_files(paths, upload_dir, meta_report=meta_report))
 
 
-def build_metadata_csv(upload_dir: str) -> str:
-    upload = Path(upload_dir)
-    meta = upload / "metadata.csv"
-    if meta.is_file():
-        return (
-            f"{normalize_display_path(meta)}: "
-            "This CSV file contains sample metadata, including columns for sample ID and experimental group."
-        )
-    return (
-        f"{normalize_display_path(upload)}: "
-        "Place metadata.csv in this session input folder when sample metadata is required."
-    )
+def build_metadata_csv(upload_dir: str, *, report: dict | None = None) -> str:
+    from web_frontend.backend.session_metadata import format_metadata_file_description
+
+    return format_metadata_file_description(upload_dir, report=report)
 
 
 def _scan_existing_outputs(paths: dict[str, str]) -> list[str]:
@@ -402,8 +394,21 @@ async def stream_agent_pipeline(
     recent_messages: Optional[list[dict]] = None,
 ) -> AsyncIterator[dict]:
     paths = build_session_paths(session_id, project_root, storage_slug=storage_slug)
-    data_list = build_data_list(paths["upload"], paths)
-    metadata_csv = build_metadata_csv(paths["upload"])
+    meta_report: dict | None = None
+    try:
+        from web_frontend.backend.session_metadata import (
+            ensure_metadata_from_inputs,
+            format_metadata_report_summary,
+        )
+
+        _, meta_report = ensure_metadata_from_inputs(paths["upload"], paths=paths)
+    except FileNotFoundError:
+        meta_report = None
+    except Exception:
+        meta_report = None
+
+    data_list = build_data_list(paths["upload"], paths, meta_report=meta_report)
+    metadata_csv = build_metadata_csv(paths["upload"], report=meta_report)
     existing_outputs = _scan_existing_outputs(paths)
     goal = build_web_goal_description(
         user_message,
@@ -458,6 +463,17 @@ async def stream_agent_pipeline(
                     raise
 
     yield {"delta": "🔧 **Agent 模式**：正在加载工具列表并生成执行计划…\n\n"}
+    if meta_report:
+        from web_frontend.backend.session_metadata import format_metadata_report_summary
+
+        summary = format_metadata_report_summary(meta_report)
+        if summary:
+            yield {
+                "delta": (
+                    f"ℹ️ **样本分组**：{summary}"
+                    "（metadata.csv 已写入会话 inputspace，mixOmics/PCA 将使用此分组）\n\n"
+                )
+            }
 
     try:
         tools_info = await _load_allowed_tools()
@@ -677,10 +693,12 @@ async def stream_agent_pipeline(
     tasks = inject_visual_standalone_tasks(tasks, user_message, tool_names)
     try:
         from web_frontend.backend.session_metadata import (
+            ensure_metadata_from_inputs,
             list_metadata_columns,
             resolve_metadata_csv,
         )
 
+        _, _ = ensure_metadata_from_inputs(paths["upload"], paths=paths)
         meta_for_intent = resolve_metadata_csv(paths["upload"])
         meta_cols = [str(c["name"]) for c in list_metadata_columns(meta_for_intent)]
     except Exception:

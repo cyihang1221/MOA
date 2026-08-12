@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from pathlib import Path
 from typing import Any
 
@@ -15,6 +16,53 @@ def _project_root() -> Path:
 def _registry_path(project_root: Path | None = None) -> Path:
     root = project_root or _project_root()
     return root / "phase2_output" / "skill_registry.json"
+
+
+def _massomics_skills_root(project_root: Path | None = None) -> Path:
+    root = project_root or _project_root()
+    return root / "MassOmics-Agent" / "MassOmics-Agent" / "skills"
+
+
+def _load_massomics_skill_hits(goal_lower: str, project_root: Path | None = None) -> list[tuple[dict, str, list[str], int]]:
+    """从 MassOmics-Agent/skills 目录关键词匹配文献流程 Skill。"""
+    skills_root = _massomics_skills_root(project_root)
+    if not skills_root.is_dir():
+        return []
+    hits: list[tuple[dict, str, list[str], int]] = []
+    for skill_md in sorted(skills_root.rglob("SKILL.md")):
+        try:
+            content = skill_md.read_text(encoding="utf-8")
+        except Exception:
+            continue
+        if not content.strip():
+            continue
+        # 从 YAML description 提取触发词
+        desc = ""
+        m = re.search(r"description:\s*>\s*\n(.*?)\n---", content, re.S)
+        if m:
+            desc = m.group(1)
+        else:
+            m2 = re.search(r"description:\s*(.+)$", content, re.M)
+            if m2:
+                desc = m2.group(1)
+        keywords = [k.strip() for k in re.split(r"[，,。、；;\n]+", desc) if len(k.strip()) >= 2]
+        matched_kw = [kw for kw in keywords if str(kw).lower() in goal_lower]
+        name = skill_md.parent.name
+        blob = f"{name} {desc} {content[:400]}".lower()
+        extra = [kw for kw in ("xcms", "gnps", "fbmn", "mzmine", "metaboanalyst", "pca", "volcano")
+                 if kw in goal_lower and kw in blob]
+        matched_kw = list(dict.fromkeys(matched_kw + extra))
+        if not matched_kw:
+            continue
+        skill = {
+            "skill_name": name,
+            "functional_domain": skill_md.parent.parent.name,
+            "file": str(skill_md),
+            "skill_type": "massomics_literature",
+        }
+        priority = min(len(matched_kw), 8) + 5  # 手工文献卡略加权
+        hits.append((skill, content, matched_kw, priority))
+    return hits
 
 
 def match_skills(
@@ -36,44 +84,46 @@ def match_skills(
         }
     """
     path = _registry_path(project_root)
-    if not path.is_file():
-        return {"text": "", "matched": [], "error": f"missing:{path}"}
-
-    try:
-        registry = json.loads(path.read_text(encoding="utf-8"))
-    except Exception as exc:
-        return {"text": "", "matched": [], "error": str(exc)}
-
     goal_lower = (goal_text or "").lower()
     if not goal_lower.strip():
         return {"text": "", "matched": [], "error": None}
 
     hits: list[tuple[dict, str, list[str], int]] = []
-    for skill in registry.get("skills", []) or []:
-        keywords = skill.get("trigger_keywords") or []
-        matched_kw = [kw for kw in keywords if str(kw).lower() in goal_lower]
-        if not matched_kw:
-            continue
-        rel = skill.get("file") or ""
-        skill_file = path.parent / rel
-        if not skill_file.is_file():
-            continue
+    registry_error = None
+    if path.is_file():
         try:
-            content = skill_file.read_text(encoding="utf-8")
-        except Exception:
-            continue
-        # 优先级：共识 > 参数步数/分数 > 命中词数
-        stype = skill.get("skill_type") or ""
-        priority = 0
-        if prefer_consensus and stype == "multi_paper_consensus":
-            priority += 100
-        priority += min(len(matched_kw), 8)
-        priority += int(skill.get("reproducibility_score") or 0) // 20
-        priority += min(int(skill.get("n_param_steps") or 0), 10)
-        hits.append((skill, content, matched_kw, priority))
+            registry = json.loads(path.read_text(encoding="utf-8"))
+        except Exception as exc:
+            registry = {"skills": []}
+            registry_error = str(exc)
+        for skill in registry.get("skills", []) or []:
+            keywords = skill.get("trigger_keywords") or []
+            matched_kw = [kw for kw in keywords if str(kw).lower() in goal_lower]
+            if not matched_kw:
+                continue
+            rel = skill.get("file") or ""
+            skill_file = path.parent / rel
+            if not skill_file.is_file():
+                continue
+            try:
+                content = skill_file.read_text(encoding="utf-8")
+            except Exception:
+                continue
+            stype = skill.get("skill_type") or ""
+            priority = 0
+            if prefer_consensus and stype == "multi_paper_consensus":
+                priority += 100
+            priority += min(len(matched_kw), 8)
+            priority += int(skill.get("reproducibility_score") or 0) // 20
+            priority += min(int(skill.get("n_param_steps") or 0), 10)
+            hits.append((skill, content, matched_kw, priority))
+    else:
+        registry_error = f"missing:{path}"
+
+    hits.extend(_load_massomics_skill_hits(goal_lower, project_root))
 
     if not hits:
-        return {"text": "", "matched": [], "error": None}
+        return {"text": "", "matched": [], "error": registry_error}
 
     hits.sort(key=lambda x: x[3], reverse=True)
     # 按 functional_domain 去重，保证「预处理 + 统计」等组合都能注入
@@ -118,7 +168,7 @@ def match_skills(
         if budget <= 0:
             break
 
-    return {"text": "\n".join(parts).strip(), "matched": names, "error": None}
+    return {"text": "\n".join(parts).strip(), "matched": names, "error": registry_error if not names else None}
 
 
 def env_enabled() -> bool:
