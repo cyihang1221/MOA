@@ -75,6 +75,9 @@ DEFAULT_COLORS = {
     "spectrum_color": "#4c72b0",
 }
 
+# 与 mixOmics / Agent B 统计默认一致（p<0.05, |log2FC|>=1）
+DEFAULT_VOLCANO_THRESHOLDS: dict[str, float] = {"p": 0.05, "log2fc": 1.0}
+
 _HEX_COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}(?:[0-9a-fA-F]{2})?$")
 
 
@@ -96,6 +99,39 @@ def scores_filename(plot_type: str) -> str:
 def default_title(plot_type: str) -> str:
     spec = get_plot_spec(plot_type)
     return spec.default_title if spec else plot_type
+
+
+def resolve_volcano_thresholds(plot_config: dict[str, Any] | None) -> dict[str, float]:
+    """火山图阈值：优先 plot_config，否则用 mixOmics 默认。"""
+    cfg = plot_config or {}
+    thr_in = cfg.get("thresholds") if isinstance(cfg.get("thresholds"), dict) else {}
+    out: dict[str, float] = {}
+    if isinstance(thr_in, dict):
+        for key in ("p", "log2fc", "padj"):
+            val = thr_in.get(key)
+            if isinstance(val, (int, float)):
+                out[key] = float(val)
+    if "p" not in out and "padj" not in out:
+        out["p"] = DEFAULT_VOLCANO_THRESHOLDS["p"]
+    if "log2fc" not in out:
+        out["log2fc"] = DEFAULT_VOLCANO_THRESHOLDS["log2fc"]
+    return out
+
+
+def sanitize_volcano_plot_patch(patch: dict[str, Any] | None) -> dict[str, Any]:
+    """火山图 patch：禁止 metadata color_by；保留 thresholds。"""
+    out = dict(patch or {})
+    for key in ("color_by", "color_type", "cluster", "palette", "color_channel", "facet", "size_by"):
+        out.pop(key, None)
+    colors = out.get("colors")
+    if isinstance(colors, dict):
+        if "significant" in colors and "upregulated" not in colors:
+            colors["upregulated"] = colors["significant"]
+        if "significant" in colors and "downregulated" not in colors:
+            colors.setdefault("downregulated", DEFAULT_COLORS["downregulated"])
+    if out.get("thresholds") is None:
+        out.pop("thresholds", None)
+    return out
 
 
 def plot_config_path_for_png(png_path: str) -> str:
@@ -247,9 +283,16 @@ def normalize_plot_config(
                 thr[key] = float(val)
         thresholds = thr or None
 
-    color_channel = None
-    if isinstance(raw, dict) and isinstance(raw.get("color_channel"), str) and raw["color_channel"].strip():
-        color_channel = raw["color_channel"].strip()
+    if plot_type == "volcano":
+        thresholds = resolve_volcano_thresholds({"thresholds": thresholds})
+        color_by = ""
+        color_type = "nominal"
+        cluster = None
+        color_channel = None
+    else:
+        color_channel = None
+        if isinstance(raw, dict) and isinstance(raw.get("color_channel"), str) and raw["color_channel"].strip():
+            color_channel = raw["color_channel"].strip()
 
     # marks.top_n 等扩展字段
     if isinstance(marks_in, dict):

@@ -33,6 +33,7 @@ const stopButton = document.getElementById("stopButton");
 const newSessionBtn = document.getElementById("newSessionBtn");
 const clearSessionBtn = document.getElementById("clearSessionBtn");
 const sessionListEl = document.getElementById("sessionList");
+const workflowStatusEl = document.getElementById("workflowStatus");
 const statusText = document.getElementById("statusText");
 const fileInput = document.getElementById("fileInput");
 const attachBtn = document.getElementById("attachBtn");
@@ -191,6 +192,15 @@ const plotAgentLiteratureHints = document.getElementById("plotAgentLiteratureHin
 const plotAgentLiteratureMeta = document.getElementById("plotAgentLiteratureMeta");
 const plotAgentLiteratureList = document.getElementById("plotAgentLiteratureList");
 const mergeAgentEditor = document.getElementById("mergeAgentEditor");
+const openAgentCReportBtn = document.getElementById("openAgentCReportBtn");
+const agentCReportViewer = document.getElementById("agentCReportViewer");
+const agentCReportBackdrop = document.getElementById("agentCReportBackdrop");
+const agentCReportClose = document.getElementById("agentCReportClose");
+const agentCReportCloseBtn = document.getElementById("agentCReportCloseBtn");
+const agentCReportSummary = document.getElementById("agentCReportSummary");
+const agentCReportBody = document.getElementById("agentCReportBody");
+const agentCReportPdfLink = document.getElementById("agentCReportPdfLink");
+const agentCReportRegenPdfBtn = document.getElementById("agentCReportRegenPdfBtn");
 const mergeAgentEditorBackdrop = document.getElementById("mergeAgentEditorBackdrop");
 const mergeAgentEditorClose = document.getElementById("mergeAgentEditorClose");
 const mergeAgentEditorTitle = document.getElementById("mergeAgentEditorTitle");
@@ -267,9 +277,21 @@ function isImagePath(path) {
 }
 
 /** 图库同名图优先：edited_plots > merged_figures > 更新时间更晚 > 更短路径 */
+function outputGalleryPriorityScore(name) {
+  let score = 0;
+  if (name.startsWith("edited_plots/") || /_intent(_[a-f0-9]+)?\./i.test(name)) score += 100;
+  if (name.includes("statistical_results/")) score += 50;
+  if (name.startsWith("agent_c_output/figures/")) score += 10;
+  if (!name.includes("/")) score += 8;
+  return score;
+}
+
 function preferOutputGalleryImage(a, b) {
   const aName = String(a?.name || "");
   const bName = String(b?.name || "");
+  const aScore = outputGalleryPriorityScore(aName);
+  const bScore = outputGalleryPriorityScore(bName);
+  if (aScore !== bScore) return aScore > bScore ? a : b;
   const aEdited = aName.startsWith("edited_plots/") || /_intent(_[a-f0-9]+)?\./i.test(aName);
   const bEdited = bName.startsWith("edited_plots/") || /_intent(_[a-f0-9]+)?\./i.test(bName);
   if (aEdited !== bEdited) return aEdited ? a : b;
@@ -301,13 +323,26 @@ function outputGalleryBaseKey(rel) {
 }
 
 /**
- * 右侧图库去重键：保留文件名完整 stem（含 _intent/_edited），
- * 避免 pca_plot.png 被 pca_plot_intent.png 顶掉后无法在图库中找到。
- * 跨目录同名（如根目录扁平副本）仍去重。
+ * 右侧图库去重键：按语义图型合并（pca_plot / vip_scores / Figure_1__pca 等），
+ * intent 改图单独保留 stem。
  */
 function outputGalleryDedupeKey(rel) {
   const name = String(rel || "").split("/").pop() || String(rel || "");
-  return name.replace(/\.(png|jpe?g|gif|webp|svg)$/i, "").toLowerCase();
+  const stem = name.replace(/\.(png|jpe?g|gif|webp|svg)$/i, "").toLowerCase();
+  if (stem.includes("_intent") || stem.includes("_edited")) return stem;
+  const aliases = [
+    ["pca_plot", "pca"],
+    ["plsda_plot", "plsda"],
+    ["volcano_plot", "volcano"],
+    ["vip_scores", "vip"],
+    ["heatmap_top_vip", "heatmap_vip"],
+  ];
+  for (const [prefix, key] of aliases) {
+    if (stem === prefix || stem.endsWith(`__${prefix}`) || stem.includes(prefix)) {
+      return key;
+    }
+  }
+  return stem;
 }
 
 /**
@@ -349,6 +384,272 @@ function workspaceFileUrl(sessionId, relOrAbs) {
     : relOrAbs;
   if (!rel || rel.includes("..")) return null;
   return `/api/sessions/${sessionId}/workspace-file?rel=${encodeURIComponent(rel)}`;
+}
+
+const agentCFigureCardByRel = new Map();
+
+function escapeHtml(text) {
+  return String(text ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function cacheAgentCFigureCards(cards) {
+  agentCFigureCardByRel.clear();
+  (cards || []).forEach((fig) => {
+    const rel = String(fig?.rel || "").trim();
+    if (rel) agentCFigureCardByRel.set(rel, fig);
+  });
+}
+
+function lookupAgentCFigureCard(rel) {
+  const key = String(rel || "").trim();
+  if (!key) return null;
+  if (agentCFigureCardByRel.has(key)) return agentCFigureCardByRel.get(key);
+  const base = key.split("/").pop() || key;
+  for (const [k, v] of agentCFigureCardByRel.entries()) {
+    if (k === key || k.endsWith(`/${base}`) || k.split("/").pop() === base) return v;
+  }
+  return null;
+}
+
+async function prefetchAgentCFigureCards(sessionId) {
+  if (!sessionId) return null;
+  try {
+    const res = await fetch(`/api/sessions/${sessionId}/agent-c/report`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    cacheAgentCFigureCards(data.figure_cards);
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+function buildFigureEcbBlockElements(blocks, { compact = false } = {}) {
+  const container = document.createElement("div");
+  container.className = compact ? "report-figure-ecb-grid report-figure-ecb-grid-compact" : "report-figure-ecb-grid";
+  ["e", "c", "b"].forEach((key) => {
+    const block = blocks?.[key];
+    if (!block) return;
+    const section = document.createElement("div");
+    const isPlaceholder = block.status === "placeholder";
+    const isPlanFallback = block.status === "plan_fallback";
+    section.className = compact
+      ? `figure-ecb-block figure-ecb-block-compact${isPlaceholder ? " figure-ecb-block-placeholder" : ""}${isPlanFallback ? " figure-ecb-block-plan" : ""}`
+      : `figure-ecb-block${isPlaceholder ? " figure-ecb-block-placeholder" : ""}${isPlanFallback ? " figure-ecb-block-plan" : ""}`;
+    section.dataset.block = key;
+    const head = document.createElement("div");
+    head.className = "figure-ecb-block-title";
+    head.textContent =
+      block.title ||
+      (key === "e" ? t("report.blockE") : key === "c" ? t("report.blockC") : t("report.blockB"));
+    section.appendChild(head);
+    const body = document.createElement("div");
+    body.className = "figure-ecb-block-body";
+    if (isPlaceholder && block.placeholder_reason) {
+      const p = document.createElement("p");
+      p.className = "figure-ecb-placeholder-text";
+      p.textContent = block.placeholder_reason;
+      body.appendChild(p);
+    } else if (key === "e" && block.bullets?.length) {
+      const ul = document.createElement("ul");
+      block.bullets.slice(0, compact ? 2 : 20).forEach((item) => {
+        const li = document.createElement("li");
+        li.textContent = item;
+        ul.appendChild(li);
+      });
+      body.appendChild(ul);
+    } else if (key === "c") {
+      const lines = [];
+      (block.patterns || []).slice(0, compact ? 2 : 10).forEach((p) => lines.push(p));
+      if (!compact && block.group_separation && block.group_separation.toUpperCase() !== "N/A") {
+        lines.push(block.group_separation);
+      }
+      if (lines.length) {
+        const ul = document.createElement("ul");
+        lines.forEach((line) => {
+          const li = document.createElement("li");
+          li.textContent = line;
+          ul.appendChild(li);
+        });
+        body.appendChild(ul);
+      }
+    } else if (key === "b") {
+      const parts = [];
+      if (block.what_it_shows) parts.push(block.what_it_shows);
+      if (block.link_to_objective) parts.push(block.link_to_objective);
+      if (!compact && block.caveats) parts.push(block.caveats);
+      parts.slice(0, compact ? 1 : 5).forEach((line) => {
+        const p = document.createElement("p");
+        p.textContent = line;
+        body.appendChild(p);
+      });
+    }
+    if (!body.childNodes.length && block.markdown) {
+      const p = document.createElement("p");
+      p.className = "figure-ecb-placeholder-text";
+      p.textContent = String(block.markdown).replace(/^#+\s*/gm, "").trim().slice(0, 400);
+      body.appendChild(p);
+    }
+    if (body.childNodes.length) {
+      section.appendChild(body);
+      container.appendChild(section);
+    }
+  });
+  return container;
+}
+
+function renderReportFigureCard(sessionId, fig) {
+  const card = document.createElement("article");
+  card.className = "report-figure-card";
+  const fid = fig.figure_id || "Figure";
+  card.id = `report-fig-${String(fid).replace(/\s+/g, "-")}`;
+
+  const head = document.createElement("div");
+  head.className = "report-figure-card-head";
+  const idEl = document.createElement("div");
+  idEl.className = "report-figure-card-id";
+  idEl.textContent = fid;
+  head.appendChild(idEl);
+  if (fig.plot_type) {
+    const meta = document.createElement("div");
+    meta.className = "report-figure-card-meta";
+    meta.textContent = fig.plot_type;
+    head.appendChild(meta);
+  }
+  card.appendChild(head);
+
+  const imgUrl = fig.image_url || workspaceFileUrl(sessionId, fig.rel);
+  if (imgUrl) {
+    const imgWrap = document.createElement("div");
+    imgWrap.className = "report-figure-card-image-wrap";
+    const img = document.createElement("img");
+    img.loading = "lazy";
+    img.alt = fid;
+    img.src = imgUrl;
+    img.addEventListener("click", () => openImageLightbox({ url: imgUrl, title: fid }));
+    imgWrap.appendChild(img);
+    card.appendChild(imgWrap);
+  }
+
+  if (fig.caption) {
+    const cap = document.createElement("div");
+    cap.className = "report-figure-card-caption";
+    cap.innerHTML = fig.caption.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+    card.appendChild(cap);
+  }
+
+  if (fig.blocks && Object.keys(fig.blocks).length) {
+    card.appendChild(buildFigureEcbBlockElements(fig.blocks));
+  }
+  return card;
+}
+
+function renderAgentCReportBody(sessionId, data) {
+  const wrap = document.createElement("div");
+  wrap.className = "agent-c-report-layout";
+  const useFigureFirst =
+    data.layout === "figure_first" && Array.isArray(data.figure_cards) && data.figure_cards.length;
+
+  if (useFigureFirst) {
+    const title = document.createElement("h2");
+    title.className = "report-figure-first-section-title";
+    title.textContent = t("report.figureFirstTitle");
+    wrap.appendChild(title);
+
+    const grid = document.createElement("div");
+    grid.className = "report-figure-first-grid";
+    data.figure_cards.forEach((fig) => grid.appendChild(renderReportFigureCard(sessionId, fig)));
+    wrap.appendChild(grid);
+
+    const proseHtml = data.prose_html || data.html;
+    if (proseHtml) {
+      const proseTitle = document.createElement("h2");
+      proseTitle.className = "report-figure-first-section-title";
+      proseTitle.textContent = t("report.proseSection");
+      wrap.appendChild(proseTitle);
+      const prose = document.createElement("div");
+      prose.className = "report-prose markdown-body agent-c-report-body";
+      prose.innerHTML = proseHtml;
+      wrap.appendChild(prose);
+    }
+  } else {
+    const fallback = document.createElement("div");
+    fallback.className = "agent-c-report-body";
+    fallback.innerHTML = data.html || `<pre>${escapeHtml(data.markdown || "")}</pre>`;
+    wrap.appendChild(fallback);
+  }
+  return wrap;
+}
+
+async function syncAgentCReportButton(sessionId) {
+  if (!openAgentCReportBtn || !sessionId || isSharedView) {
+    openAgentCReportBtn?.classList.add("hidden");
+    return;
+  }
+  try {
+    const res = await fetch(`/api/sessions/${sessionId}/agent-c/report`);
+    openAgentCReportBtn.classList.toggle("hidden", !res.ok);
+    if (res.ok) {
+      prefetchAgentCFigureCards(sessionId);
+    }
+  } catch {
+    openAgentCReportBtn.classList.add("hidden");
+  }
+}
+
+function attachAgentCReportButton(messageEl, sessionId) {
+  if (!messageEl?.div || !sessionId) return;
+  if (messageEl.div.querySelector(".agent-c-report-open-btn")) return;
+  const wrap = document.createElement("div");
+  wrap.className = "agent-c-report-actions";
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "agent-c-report-open-btn";
+  btn.textContent = t("report.open");
+  btn.addEventListener("click", () => openAgentCReportViewer(sessionId));
+  wrap.appendChild(btn);
+  messageEl.div.appendChild(wrap);
+}
+
+async function openAgentCReportViewer(sessionId) {
+  if (!agentCReportViewer || !sessionId) return;
+  agentCReportBody.innerHTML = `<p class="muted">${t("report.loading")}</p>`;
+  agentCReportSummary.textContent = "";
+  agentCReportPdfLink.classList.add("hidden");
+  agentCReportRegenPdfBtn?.classList.add("hidden");
+  agentCReportViewer.classList.remove("hidden");
+  agentCReportViewer.setAttribute("aria-hidden", "false");
+  try {
+    const res = await fetch(`/api/sessions/${sessionId}/agent-c/report`);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.detail || res.statusText);
+    cacheAgentCFigureCards(data.figure_cards);
+    const summaryParts = [];
+    if (data.insights_summary) summaryParts.push(data.insights_summary);
+    const nFig = data.figure_cards?.length || (data.figures?.length || 0) + (data.existing_figures?.length || 0);
+    if (nFig) summaryParts.push(t("report.figureCount", { n: nFig }));
+    agentCReportSummary.textContent = summaryParts.join(" · ");
+    agentCReportBody.innerHTML = "";
+    agentCReportBody.appendChild(renderAgentCReportBody(sessionId, data));
+    agentCReportRegenPdfBtn?.classList.remove("hidden");
+    agentCReportRegenPdfBtn?.setAttribute("data-session-id", sessionId);
+    if (data.pdf_rel) {
+      agentCReportPdfLink.href = workspaceFileUrl(sessionId, data.pdf_rel);
+      agentCReportPdfLink.classList.remove("hidden");
+    }
+  } catch (err) {
+    agentCReportBody.innerHTML = `<p class="status-error">${t("report.loadFailed")}: ${err.message || err}</p>`;
+  }
+}
+
+function closeAgentCReportViewer() {
+  if (!agentCReportViewer) return;
+  agentCReportViewer.classList.add("hidden");
+  agentCReportViewer.setAttribute("aria-hidden", "true");
 }
 
 let sessions = [];
@@ -1086,9 +1387,11 @@ function updateBrowserUrl(sessionId, shared = false) {
 }
 
 function formatSize(bytes) {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  const n = Number(bytes) || 0;
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 ** 2) return `${(n / 1024).toFixed(1)} KB`;
+  if (n < 1024 ** 3) return `${(n / 1024 ** 2).toFixed(1)} MB`;
+  return `${(n / 1024 ** 3).toFixed(2)} GB`;
 }
 
 function nowString() {
@@ -1255,6 +1558,29 @@ function renderOutputImageGallery(files, sessionId) {
 
     side.appendChild(title);
     side.appendChild(meta);
+
+    const figMeta = lookupAgentCFigureCard(file.name);
+    if (figMeta?.figure_id) {
+      title.textContent = `${figMeta.figure_id} · ${baseName}`;
+      title.title = `${figMeta.figure_id}\n${file.name}`;
+    }
+    if (figMeta?.figure_id) {
+      const reportLink = document.createElement("div");
+      reportLink.className = "output-image-report-link";
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = t("report.viewInReport");
+      btn.addEventListener("click", async () => {
+        await openAgentCReportViewer(sessionId);
+        const anchor = document.getElementById(
+          `report-fig-${String(figMeta.figure_id).replace(/\s+/g, "-")}`
+        );
+        anchor?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+      reportLink.appendChild(btn);
+      side.appendChild(reportLink);
+    }
+
     side.appendChild(
       buildOutputImageActionsMenu({
         sessionId,
@@ -1420,6 +1746,7 @@ async function loadWorkspaceFiles(sessionId) {
       sessionId,
       excludeImages: true,
     });
+    await syncAgentCReportButton(sessionId);
   } catch (err) {
     filesPanelHint.textContent = t("files.loadFail", { msg: err.message });
   }
@@ -1620,7 +1947,9 @@ function ensureChatImageGallery(messageDiv) {
 
 function syncChatImageGalleryCollapse(galleryEl) {
   if (!galleryEl) return;
-  const cards = Array.from(galleryEl.querySelectorAll(".chat-image-card"));
+  const cards = Array.from(
+    galleryEl.querySelectorAll(".chat-image-card-wrap, .chat-image-card:not(.chat-image-card-wrap *)")
+  );
   let moreBtn = galleryEl.querySelector(".chat-image-more-btn");
   const expanded = galleryEl.getAttribute("data-chat-images-expanded") === "1";
   const overflow = cards.length > CHAT_IMAGE_PREVIEW_LIMIT;
@@ -1682,10 +2011,13 @@ function appendChatImage(galleryEl, sessionId, rel) {
   const url = workspaceFileUrl(sessionId, fileRel);
   if (!url) return;
 
+  const wrap = document.createElement("div");
+  wrap.className = "chat-image-card-wrap";
+  wrap.setAttribute("data-chat-image-rel", fileRel);
+
   const card = document.createElement("button");
   card.type = "button";
   card.className = "chat-image-card";
-  card.setAttribute("data-chat-image-rel", fileRel);
   card.title = fileRel;
 
   const img = document.createElement("img");
@@ -1695,16 +2027,19 @@ function appendChatImage(galleryEl, sessionId, rel) {
 
   const caption = document.createElement("span");
   caption.className = "chat-image-caption";
-  caption.textContent = fileRel.split("/").pop() || fileRel;
+  const figMeta = lookupAgentCFigureCard(fileRel);
+  caption.textContent = figMeta?.figure_id || fileRel.split("/").pop() || fileRel;
 
   card.appendChild(img);
   card.appendChild(caption);
   card.addEventListener("click", () => {
     openImageLightbox({ url, title: fileRel.split("/").pop() || fileRel });
   });
+  wrap.appendChild(card);
+
   const moreBtn = galleryEl.querySelector(".chat-image-more-btn");
-  if (moreBtn) galleryEl.insertBefore(card, moreBtn);
-  else galleryEl.appendChild(card);
+  if (moreBtn) galleryEl.insertBefore(wrap, moreBtn);
+  else galleryEl.appendChild(wrap);
   galleryEl.classList.remove("hidden");
   syncChatImageGalleryCollapse(galleryEl);
 }
@@ -4916,16 +5251,24 @@ async function uploadPendingFiles(sessionId) {
   return saved;
 }
 
-/** 与 web_frontend/backend/agent_intent.py 语义一致：分析/改图/拼图均走统一 Agent */
+function intentText(message) {
+  let text = (message || "").trim();
+  ["[已上传附件]", "[Attachments uploaded]"].forEach((marker) => {
+    const idx = text.indexOf(marker);
+    if (idx >= 0) text = text.slice(0, idx).trim();
+  });
+  return text;
+}
+
+/** 与 backend/agent_intent.py 对齐：C 出图/改图/报告或向 B 交接；上传本身不进 Agent */
 function shouldUseAgent(message, hasNewUpload = false) {
-  const text = (message || "").trim();
+  const text = intentText(message);
   if (!text) return false;
   if (shouldUsePlotEdit(text)) return true;
   if (shouldUseImageMerge(text)) return true;
   if (shouldUseMergeFigureEdit(text)) return true;
-  if (hasNewUpload) return true;
-  if (/\[已上传附件\]|\[Attachments uploaded\]/.test(text)) return true;
-  return /继续|重新(?:运行|进行|分析|做)|执行分析|跑一遍|开始分析|运行工具|统计(?:分析)?|做统计|跑统计|统计作图|mixOmics|mixomics|火山图|volcano\s*plot|volcano|PLS-?DA|差异分析|显著性分析|组间对比|两组对比|(?:Treatment|Control|Group).{0,20}(?:vs|VS|对比|比较)|Treatment\s*vs\.?\s*Control|Control\s*vs\.?\s*Treatment|分子网(?:络|格)|molecular\s*network|GNPS|DeepMASS|deepmass|XCMS|峰检测|差异代谢|谱库注释|富集分析|converted_mzml|spectra\.mgf|\.mzML|\.mgf|continue|re-?run|run analysis|start agent|execute pipeline/i.test(
+  void hasNewUpload;
+  return /确认计划|批准执行|按此执行|confirm(?:\s+the)?\s+plan|开始分析|执行分析|进行分析|做分析|跑一遍|运行工具|execute pipeline|run analysis|start agent|重新(?:运行|进行|分析)|峰检测|预处理|gap[\s-]?fill|补峰|XCMS|OpenMS|MZmine|MS-?DIAL|KPIC|PeakOnly|PITracer|TracMass|convert(?:ed)?_mzml|ThermoRaw|msconvert|\.raw\b|DeepMASS|deepmass|谱库注释|谱库匹配|feature[_\s-]?filter|缺失值|molecular_networking_|data_preprocessing_|写(?:一份|篇)?报告|生成报告|分析报告|final_report|按方案出图|出图|可视化|科研图表|figure\s*list|interpretation|图注|caption|统计(?:分析|作图)?|做统计|跑统计|mixOmics|mixomics|火山图|volcano|PLS-?DA|做\s*PCA|跑\s*PCA|(?<![a-z])pca(?![a-z])|主成分|组间对比|两组对比|显著性分析|差异分析|分子网(?:络|格)|molecular\s*network|GNPS|FBMN|富集分析|KEGG|Treatment\s*vs\.?\s*Control|Control\s*vs\.?\s*Treatment|(?:Treatment|Control|Group).{0,20}(?:vs|VS|对比|比较)/i.test(
     text
   );
 }
@@ -4943,8 +5286,9 @@ function buildUserMessage(text, uploadedFiles) {
 
   const base = trimmed || t("upload.defaultPrompt");
   const marker = t("upload.marker");
-
-  return `${base}\n\n${marker}\n${fileLines}\n\n${t("upload.suffix")}`;
+  const suffix = (t("upload.suffix") || "").trim();
+  const body = `${base}\n\n${marker}\n${fileLines}`;
+  return suffix ? `${body}\n\n${suffix}` : body;
 }
 
 function renderSessionList() {
@@ -5033,9 +5377,24 @@ async function loadMessages(sessionId) {
   msgs.forEach((m) => createMessageEl(m.role, m.content, m.time || "", m.id));
 }
 
+function updateWorkflowStatus(status) {
+  if (!workflowStatusEl) return;
+  const key = `workflow.status.${status || "WAITING_INPUT"}`;
+  const label = t(key);
+  workflowStatusEl.textContent =
+    label && label !== key ? label : t("workflow.statusWaiting");
+}
+
 async function loadSessionView(sessionId) {
   await loadMessages(sessionId);
   await loadWorkspaceFiles(sessionId);
+  try {
+    const res = await fetch(`/api/sessions/${sessionId}`);
+    const data = await res.json();
+    updateWorkflowStatus(data.session?.workflow_status);
+  } catch {
+    updateWorkflowStatus("WAITING_INPUT");
+  }
 }
 
 async function loadSharedMessages(sessionId) {
@@ -5242,6 +5601,13 @@ async function runAssistantStream({
         }
         scrollMessagesIfPinned();
         applyCompletionStatus(payload);
+        if (payload?.agent_c_report?.view_url) {
+          attachAgentCReportButton(assistantEl, currentSessionId);
+          syncAgentCReportButton(currentSessionId);
+        }
+        if (payload?.workflow_status) {
+          updateWorkflowStatus(payload.workflow_status);
+        }
       },
       onError: (msg) => {
         assistantEl.contentEl.textContent = msg;
@@ -5564,6 +5930,38 @@ if (metadataEditorBackdrop) metadataEditorBackdrop.addEventListener("click", clo
 if (metadataAddRowBtn) metadataAddRowBtn.addEventListener("click", addMetadataRow);
 if (metadataAddColBtn) metadataAddColBtn.addEventListener("click", addMetadataColumn);
 if (metadataInferBtn) metadataInferBtn.addEventListener("click", inferMetadataFromFiles);
+if (openAgentCReportBtn) {
+  openAgentCReportBtn.addEventListener("click", () => {
+    if (currentSessionId) openAgentCReportViewer(currentSessionId);
+  });
+}
+if (agentCReportRegenPdfBtn) {
+  agentCReportRegenPdfBtn.addEventListener("click", async () => {
+    const sessionId = agentCReportRegenPdfBtn.getAttribute("data-session-id") || currentSessionId;
+    if (!sessionId) return;
+    agentCReportRegenPdfBtn.disabled = true;
+    try {
+      const res = await fetch(`/api/sessions/${sessionId}/agent-c/regenerate-pdf`, { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.detail || res.statusText);
+      if (data.pdf_rel) {
+        agentCReportPdfLink.href = workspaceFileUrl(sessionId, data.pdf_rel);
+        agentCReportPdfLink.classList.remove("hidden");
+      }
+      const prev = agentCReportSummary.textContent;
+      agentCReportSummary.textContent = prev
+        ? `${prev} · ${t("report.regenPdfOk")}`
+        : t("report.regenPdfOk");
+    } catch (err) {
+      alert(`${t("report.loadFailed")}: ${err.message || err}`);
+    } finally {
+      agentCReportRegenPdfBtn.disabled = false;
+    }
+  });
+}
+if (agentCReportClose) agentCReportClose.addEventListener("click", closeAgentCReportViewer);
+if (agentCReportCloseBtn) agentCReportCloseBtn.addEventListener("click", closeAgentCReportViewer);
+if (agentCReportBackdrop) agentCReportBackdrop.addEventListener("click", closeAgentCReportViewer);
 
 shareBtn.addEventListener("click", async () => {
   if (!currentSessionId || isSharedView) return;
@@ -5957,6 +6355,10 @@ if (mergeAgentEditorCancel) mergeAgentEditorCancel.addEventListener("click", clo
 if (mergeAgentEditorClose) mergeAgentEditorClose.addEventListener("click", closeMergeAgentEditor);
 if (mergeAgentEditorBackdrop) mergeAgentEditorBackdrop.addEventListener("click", closeMergeAgentEditor);
 document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && agentCReportViewer && !agentCReportViewer.classList.contains("hidden")) {
+    closeAgentCReportViewer();
+    return;
+  }
   if (event.key === "Escape" && llmSettingsModal && !llmSettingsModal.classList.contains("hidden")) {
     closeLlmSettingsModal();
     return;

@@ -14,7 +14,7 @@
 
     <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
 
-    <link rel="stylesheet" href="/static/styles.css?v=20260731-chat-expand" />
+    <link rel="stylesheet" href="/static/styles.css?v=20260821-report-view" />
 
   </head>
 
@@ -44,7 +44,7 @@
 
             <h1>MassAgent</h1>
 
-            <p class="brand-sub" data-i18n="brand.sub">质谱数据分析 Agent</p>
+            <p class="brand-sub" data-i18n="brand.sub">科研数据分析智能体</p>
 
           </div>
 
@@ -68,13 +68,15 @@
 
           <h2 data-i18n="workflow.title">使用方式</h2>
 
+          <p id="workflowStatus" class="muted workflow-status">当前：等待输入</p>
+
           <ol class="workflow-list">
 
-            <li data-i18n="workflow.step1">在发送按钮左侧上传一个或多个文件</li>
+            <li data-i18n="workflow.step1">上传数据并用自然语言描述分析目标</li>
 
-            <li data-i18n="workflow.step2">用自然语言描述分析目标</li>
+            <li data-i18n="workflow.step2">审阅计划，回复「确认计划」或提出修改意见</li>
 
-            <li data-i18n="workflow.step3">Agent 自动选择合适工具执行</li>
+            <li data-i18n="workflow.step3">确认后自动执行、出图并写报告；之后可改图/拼图</li>
 
           </ol>
 
@@ -209,7 +211,7 @@
                 <textarea
                   id="promptInput"
                   data-i18n-placeholder="composer.placeholder"
-                  placeholder="描述分析需求；上传 .raw 等文件后将自动调用 MCP 工具执行（Enter 发送）"
+                  placeholder="描述分析目标；审阅计划后回复「确认计划」。完成后可改图或写报告（Enter 发送）"
                 ></textarea>
                 <button
                   id="chatColorBtn"
@@ -306,6 +308,9 @@
           <h2 data-i18n="files.title">会话文件</h2>
 
           <div class="files-panel-actions">
+            <button id="openAgentCReportBtn" type="button" class="secondary-btn small-btn hidden" data-i18n="report.open">
+              查看分析报告
+            </button>
             <button id="editMetadataBtn" type="button" class="secondary-btn small-btn" data-i18n="metadata.edit">
               编辑 metadata
             </button>
@@ -882,6 +887,23 @@
       </div>
     </div>
 
+    <div id="agentCReportViewer" class="plot-agent-editor hidden" role="dialog" aria-modal="true" aria-hidden="true">
+      <div class="plot-agent-editor-backdrop" id="agentCReportBackdrop"></div>
+      <div class="plot-agent-editor-panel agent-c-report-panel">
+        <header class="plot-agent-editor-header">
+          <h2 data-i18n="report.viewTitle">分析报告</h2>
+          <button id="agentCReportClose" type="button" class="icon-btn" aria-label="Close">×</button>
+        </header>
+        <div id="agentCReportSummary" class="agent-c-report-summary muted"></div>
+        <div id="agentCReportBody" class="agent-c-report-body"></div>
+        <footer class="plot-agent-editor-footer">
+          <a id="agentCReportPdfLink" class="secondary-btn hidden" href="#" target="_blank" rel="noopener" data-i18n="report.openPdf">打开 PDF</a>
+          <button id="agentCReportRegenPdfBtn" type="button" class="secondary-btn hidden" data-i18n="report.regenPdf">重新生成 PDF</button>
+          <button id="agentCReportCloseBtn" type="button" class="secondary-btn" data-i18n="msg.cancel">关闭</button>
+        </footer>
+      </div>
+    </div>
+
 
     <script src="https://cdn.plot.ly/plotly-2.35.3.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
@@ -890,8 +912,8 @@
     <script src="https://cdn.jsdelivr.net/npm/vega-lite@5"></script>
     <script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
 
-    <script src="/static/i18n.js?v=20260731-chat-expand"></script>
-    <script src="/static/app.js?v=20260731-chat-expand"></script>
+    <script src="/static/i18n.js?v=20260821-report-view"></script>
+    <script src="/static/app.js?v=20260821-report-view"></script>
 
   </body>
 

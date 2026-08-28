@@ -21,9 +21,40 @@ from web_frontend.backend.image_merge_registry import (
     resolve_merged_figure_target,
 )
 from web_frontend.backend.plot_fonts import _resolve_cjk_font_files
+from web_frontend.backend.plot_edit_registry import plot_type_from_stem
 from web_frontend.backend.session_storage import merged_figures_dir, session_work_dir
 
 MERGE_CANVAS_BG = (255, 255, 255)
+
+
+def _plot_type_from_rel(rel: str) -> str:
+    return plot_type_from_stem(Path(rel).stem) or ""
+
+
+def _merge_evidence_cards(
+    *,
+    sources: list[str],
+    message: str,
+    project_root: Path,
+) -> list[dict[str, Any]]:
+    from web_frontend.backend.literature_evidence import collect_evidence_cards
+
+    seen: set[str] = set()
+    cards: list[dict[str, Any]] = []
+    for rel in sources:
+        pt = _plot_type_from_rel(rel)
+        if not pt or pt in seen:
+            continue
+        seen.add(pt)
+        cards.extend(
+            collect_evidence_cards(
+                plot_type=pt,
+                instruction=message,
+                project_root=project_root,
+                max_cards=3,
+            )
+        )
+    return cards[:6]
 
 
 class ImageMergeError(Exception):
@@ -223,6 +254,24 @@ def agent_merge_images(
         )
 
     opts = apply_merge_options(DEFAULT_MERGE_OPTIONS, parse_merge_options(message))
+    from web_frontend.backend.visual_edit_journal import append_journal_event
+    from web_frontend.backend.visual_ir import attach_evidence, merge_ir_from_meta
+    from web_frontend.backend.visual_validation import validate_merge_options
+
+    validation = validate_merge_options(options=opts, sources=rels)
+    if validation.get("errors"):
+        raise ImageMergeError("；".join(validation["errors"]))
+    opts = validation.get("accepted_options") or opts
+    visual_warnings = list(validation.get("warnings") or [])
+    evidence_cards = _merge_evidence_cards(
+        sources=rels,
+        message=message,
+        project_root=project_root,
+    )
+    merge_ir = attach_evidence(
+        merge_ir_from_meta(sources=rels, options=opts, goal_text=message),
+        evidence_cards,
+    )
     paths: list[Path] = []
     for rel in rels:
         path = (output_root / rel).resolve()
@@ -248,12 +297,25 @@ def agent_merge_images(
         "sources": rels,
         "options": opts,
         "instruction": message,
+        "evidence_refs": merge_ir.get("evidence_refs") or [],
+        "panel_intent": merge_ir.get("panels") or [],
     }
     meta_path = target_png.with_suffix(".merge.json")
     meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
 
     stat = target_png.stat()
     rel_png = target_png.relative_to(output_root).as_posix()
+    journal_path = append_journal_event(
+        output_root=output_root,
+        subdir="merged_figures",
+        event_type="merge_create",
+        before={},
+        after=opts,
+        user_instruction=message,
+        evidence_refs=meta.get("evidence_refs") or [],
+        validation={"warnings": visual_warnings},
+        output_files=[rel_png],
+    )
     return {
         "file": {
             "name": rel_png,
@@ -267,6 +329,10 @@ def agent_merge_images(
         "sources": rels,
         "options": opts,
         "cols_used": cols_used,
+        "visual_ir": merge_ir,
+        "evidence_refs": meta.get("evidence_refs") or [],
+        "visual_warnings": visual_warnings,
+        "journal": str(journal_path.relative_to(output_root)),
     }
 
 
@@ -311,6 +377,25 @@ def agent_edit_merged_figure(
     opts = apply_merge_options(current_opts, rule_patch)
     opts = apply_merge_options(opts, llm_patch)
 
+    from web_frontend.backend.visual_edit_journal import append_journal_event
+    from web_frontend.backend.visual_ir import attach_evidence, merge_ir_from_meta
+    from web_frontend.backend.visual_validation import validate_merge_options
+
+    validation = validate_merge_options(options=opts, sources=sources)
+    if validation.get("errors"):
+        raise ImageMergeError("；".join(validation["errors"]))
+    opts = validation.get("accepted_options") or opts
+    visual_warnings = list(validation.get("warnings") or [])
+    evidence_cards = _merge_evidence_cards(
+        sources=sources,
+        message=message,
+        project_root=project_root,
+    )
+    merge_ir = attach_evidence(
+        merge_ir_from_meta(sources=sources, options=opts, goal_text=message),
+        evidence_cards,
+    )
+
     merged = _render_merged_figure(output_root=output_root, sources=sources, options=opts)
     merged.save(png_path, format="PNG", optimize=True)
 
@@ -322,12 +407,25 @@ def agent_edit_merged_figure(
             "options": opts,
             "last_instruction": message,
             "edit_history": history[-10:],
+            "evidence_refs": merge_ir.get("evidence_refs") or meta.get("evidence_refs") or [],
+            "panel_intent": merge_ir.get("panels") or meta.get("panel_intent") or [],
         }
     )
     meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
 
     stat = png_path.stat()
     rel_png = png_path.relative_to(output_root).as_posix()
+    journal_path = append_journal_event(
+        output_root=output_root,
+        subdir="merged_figures",
+        event_type="merge_edit",
+        before=current_opts,
+        after=opts,
+        user_instruction=message,
+        evidence_refs=meta.get("evidence_refs") or [],
+        validation={"warnings": visual_warnings},
+        output_files=[rel_png],
+    )
     return {
         "file": {
             "name": rel_png,
@@ -343,6 +441,10 @@ def agent_edit_merged_figure(
         "cols_used": compute_cols(len(sources), opts.get("cols")),
         "agent_patch": {**rule_patch, **llm_patch},
         "edited": True,
+        "visual_ir": merge_ir,
+        "evidence_refs": meta.get("evidence_refs") or [],
+        "visual_warnings": visual_warnings,
+        "journal": str(journal_path.relative_to(output_root)),
     }
 
 

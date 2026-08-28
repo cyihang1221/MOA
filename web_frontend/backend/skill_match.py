@@ -49,18 +49,53 @@ def _load_massomics_skill_hits(goal_lower: str, project_root: Path | None = None
         matched_kw = [kw for kw in keywords if str(kw).lower() in goal_lower]
         name = skill_md.parent.name
         blob = f"{name} {desc} {content[:400]}".lower()
-        extra = [kw for kw in ("xcms", "gnps", "fbmn", "mzmine", "metaboanalyst", "pca", "volcano")
-                 if kw in goal_lower and kw in blob]
+        extra = [
+            kw
+            for kw in (
+                "xcms",
+                "gnps",
+                "fbmn",
+                "mzmine",
+                "ms-dial",
+                "msdial",
+                "openms",
+                "metaboanalyst",
+                "pca",
+                "volcano",
+            )
+            if kw in goal_lower and kw in blob
+        ]
         matched_kw = list(dict.fromkeys(matched_kw + extra))
         if not matched_kw:
             continue
+        try:
+            rel_parts = skill_md.relative_to(skills_root).parts
+        except ValueError:
+            rel_parts = skill_md.parts
+        # software-params/<software-id>/<paper-slug>/SKILL.md
+        is_software_params = len(rel_parts) >= 4 and rel_parts[0] == "software-params"
+        software_id = rel_parts[1] if is_software_params else ""
+        parent_kind = rel_parts[0] if len(rel_parts) >= 2 else skill_md.parent.parent.name
+        if is_software_params:
+            aliases = {
+                "xcms": ("xcms",),
+                "ms-dial": ("ms-dial", "msdial", "ms_dial"),
+                "mzmine": ("mzmine",),
+                "openms": ("openms",),
+            }
+            needles = aliases.get(software_id, (software_id.replace("-", ""), software_id))
+            if not any(n in goal_lower for n in needles):
+                continue
         skill = {
             "skill_name": name,
-            "functional_domain": skill_md.parent.parent.name,
+            "functional_domain": software_id if is_software_params else parent_kind,
             "file": str(skill_md),
-            "skill_type": "massomics_literature",
+            "skill_type": "software_params" if is_software_params else "massomics_literature",
         }
-        priority = min(len(matched_kw), 8) + 5  # 手工文献卡略加权
+        priority = min(len(matched_kw), 8) + 5  # 手工卡略加权
+        if is_software_params:
+            # 点名软件时优先注入参数卡，避免被冗长共识挤出 3 卡名额
+            priority += 110
         hits.append((skill, content, matched_kw, priority))
     return hits
 

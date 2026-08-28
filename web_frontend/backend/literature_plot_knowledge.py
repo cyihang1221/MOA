@@ -7,23 +7,87 @@ import re
 from pathlib import Path
 from typing import Any
 
-from web_frontend.backend.plot_edit_registry import plot_type_from_stem
+from web_frontend.backend.plot_edit_registry import PLOT_SPECS, plot_type_from_stem
 
-# plot_type → 在出图清单/正文中检索用的关键词
-PLOT_TYPE_TERMS: dict[str, tuple[str, ...]] = {
-    "pca": ("pca", "score", "得分", "主成分", "3d pca", "pca score"),
-    "plsda": ("pls-da", "plsda", "opls", "opls-da", "偏最小", "s-plot"),
-    "volcano": ("volcano", "火山", "volcano plot"),
-    "vip_bar": ("vip", "vip bar", "vip 排名", "vip score"),
-    "heatmap_vip": ("heatmap", "热图", "heat map"),
-    "family_size": ("family size", "分子家族", "家族大小", "molecular family"),
-    "degree_hist": ("degree", "度数", "node degree"),
-    "cosine_hist": ("cosine", "余弦", "similarity"),
-    "network_topology": ("network", "网络", "topology", "拓扑", "cytoscape"),
-    "precursor_mass_diff": ("precursor", "mass difference", "质量差"),
+# plot_type → 在出图清单/正文中检索用的关键词（由 registry 扩展 + 手工补充）
+_PLOT_TYPE_TERMS_EXTRA: dict[str, tuple[str, ...]] = {
+    "pca": ("3d pca", "pca score", "得分图", "score plot"),
+    "plsda": ("s-plot", "偏最小二乘", "opls-da"),
+    "volcano": ("火山图", "log2fc", "差异代谢"),
+    "vip_bar": ("vip 排名", "variable importance"),
+    "heatmap_vip": ("heat map", "top vip"),
     "motif_match": ("motif", "碎片", "fragment"),
-    "kegg_bubble": ("kegg", "enrichment", "富集", "pathway", "bubble"),
+    "kegg_bubble": ("bubble", "气泡", "富集气泡"),
+    "kegg_dotplot": ("dotplot", "点图"),
+    "kegg_barplot": ("barplot", "条形", "kegg bar"),
+    "fbmn_group_intensity": ("fbmn", "group intensity", "组强度"),
+    "annotation_propagation": ("annotation propagation", "注释传播"),
+    "mass2motif_network": ("mass2motif network", "motif network"),
+    "pearson_hist": ("pearson", "皮尔逊", "correlation distribution"),
+    "plsda_permutation": ("permutation", "置换检验"),
+    "constituent_bar": ("tpc", "tfc", "constituent"),
+    "relative_abundance_heatmap": ("relative abundance", "相对丰度"),
+    "hca_heatmap": ("hca", "层次聚类"),
+    "correlation_heatmap": ("correlation heatmap", "相关热图"),
+    "bioactivity_bar": ("bioactivity", "生物活性"),
+    "sensory_scores": ("sensory", "感官"),
 }
+
+
+def _build_plot_type_terms() -> dict[str, tuple[str, ...]]:
+    out: dict[str, tuple[str, ...]] = {}
+    for spec in PLOT_SPECS:
+        parts = {
+            spec.plot_type,
+            spec.plot_type.replace("_", " "),
+            spec.stem_prefix,
+            spec.stem_prefix.replace("_", " "),
+            spec.default_title.lower(),
+        }
+        for token in re.split(r"[\s/\-–]+", spec.default_title.lower()):
+            if len(token) >= 3:
+                parts.add(token)
+        extra = _PLOT_TYPE_TERMS_EXTRA.get(spec.plot_type, ())
+        out[spec.plot_type] = tuple(sorted({p.lower() for p in parts if p} | {e.lower() for e in extra}))
+    return out
+
+
+PLOT_TYPE_TERMS: dict[str, tuple[str, ...]] = _build_plot_type_terms()
+
+# 图型族 → 可匹配的上游 Skill 主题词（跨 plot_type 关联 GNPS/KEGG 等）
+_PLOT_FAMILY_SKILL_HINTS: dict[str, frozenset[str]] = {
+    "network": frozenset(
+        {
+            "cosine_hist",
+            "degree_hist",
+            "network_topology",
+            "family_size",
+            "precursor_mass_diff",
+            "pearson_hist",
+            "annotation_propagation",
+            "fbmn_group_intensity",
+        }
+    ),
+    "kegg": frozenset({"kegg_bubble", "kegg_dotplot", "kegg_barplot"}),
+    "ms2lda": frozenset(
+        {
+            "mass2motif_overview",
+            "mass2motif_fragments",
+            "motif_spectrum_heatmap",
+            "mass2motif_network",
+            "motif_match",
+        }
+    ),
+}
+
+_FAMILY_BLOB_HINTS: dict[str, tuple[str, ...]] = {
+    "network": ("gnps", "fbmn", "molecular network", "分子网络", "cytoscape", "cosine", "topology"),
+    "kegg": ("kegg", "pathway", "富集", "enrichment", "mummichog"),
+    "ms2lda": ("ms2lda", "mass2motif", "motif", "碎片"),
+}
+
+_SKILL_POOL_SOFTWARE_PARAMS = "software_params"
+_SKILL_POOL_LITERATURE = "literature_workflow"
 
 _VISUAL_SECTION_MARKERS = (
     "出图清单",
@@ -45,6 +109,80 @@ def _project_root() -> Path:
 def env_enabled() -> bool:
     v = (os.environ.get("WEB_LITERATURE_PLOT") or os.environ.get("WEB_SKILL_MATCH") or "1").strip().lower()
     return v not in {"0", "false", "off", "no"}
+
+
+def plot_rag_enabled() -> bool:
+    """改图是否追加 softwares_database(_RAG) 检索片段。"""
+    v = (os.environ.get("WEB_LITERATURE_PLOT_RAG") or "1").strip().lower()
+    return env_enabled() and v not in {"0", "false", "off", "no"}
+
+
+def _rag_database_paths(project_root: Path | None = None) -> tuple[str, str]:
+    root = project_root or _project_root()
+    return str(root / "softwares_database_RAG"), str(root / "softwares_database")
+
+
+def build_plot_literature_query(
+    *,
+    plot_type: str,
+    goal_text: str = "",
+    instruction: str = "",
+) -> str:
+    from web_frontend.backend.literature_rag import build_tool_literature_query
+
+    terms = ", ".join(PLOT_TYPE_TERMS.get(plot_type, (plot_type.replace("_", " "),))[:8])
+    task_bits = [f"Publication-style figure styling for plot type `{plot_type}`"]
+    if terms:
+        task_bits.append(f"Related terms: {terms}")
+    if instruction.strip():
+        task_bits.append(f"User edit request: {instruction.strip()[:200]}")
+    task_bits.append(
+        "Focus on chart purpose, title wording, axis labels, color semantics, legend layout, "
+        "and panel arrangement from published metabolomics papers."
+    )
+    return build_tool_literature_query(goal_description=goal_text, task=" ".join(task_bits))
+
+
+def supplement_plot_literature_rag(
+    *,
+    plot_type: str,
+    goal_text: str = "",
+    instruction: str = "",
+    project_root: Path | None = None,
+    top_k: int = 3,
+    max_chars: int = 1500,
+) -> dict[str, Any]:
+    """向量/关键词 RAG 补充作图语境（与 Skill 检索并行，不替代 rank）。"""
+    if not plot_rag_enabled() or not plot_type:
+        return {"text": "", "mode": "disabled", "sources": [], "error": None}
+    persist_dir, source_dir = _rag_database_paths(project_root)
+    if not Path(source_dir).is_dir():
+        return {"text": "", "mode": "empty", "sources": [], "error": "missing source_dir"}
+    try:
+        from web_frontend.backend.literature_rag import retrieve_literature
+
+        query = build_plot_literature_query(
+            plot_type=plot_type,
+            goal_text=goal_text,
+            instruction=instruction,
+        )
+        payload = retrieve_literature(
+            query,
+            persist_dir=persist_dir,
+            source_dir=source_dir,
+            top_k=top_k,
+        )
+        text = str(payload.get("text") or "").strip()
+        if len(text) > max_chars:
+            text = text[: max(0, max_chars - 20)].rstrip() + "\n…[truncated]"
+        return {
+            "text": text,
+            "mode": payload.get("mode") or "empty",
+            "sources": list(payload.get("sources") or []),
+            "error": payload.get("error"),
+        }
+    except Exception as exc:
+        return {"text": "", "mode": "empty", "sources": [], "error": str(exc)}
 
 
 def _massomics_skills_root(project_root: Path | None = None) -> Path:
@@ -147,10 +285,32 @@ def _extract_visual_block(body: str, max_chars: int = 1200) -> str:
     return text
 
 
+def _dir_signature(root: Path, pattern: str = "SKILL.md") -> tuple:
+    """目录内匹配文件的 (路径, mtime, size) 指纹，用于缓存失效判断。"""
+    try:
+        return tuple(
+            sorted(
+                (p.as_posix(), int(st.st_mtime), st.st_size)
+                for p in root.rglob(pattern)
+                if (st := p.stat()) is not None
+            )
+        )
+    except OSError:
+        return ()
+
+
+_SKILL_CACHE: dict[str, tuple[tuple, list[dict[str, Any]]]] = {}
+
+
 def _load_massomics_skills(project_root: Path | None = None) -> list[dict[str, Any]]:
     root = _massomics_skills_root(project_root)
     if not root.is_dir():
         return []
+    cache_key = f"massomics:{root.as_posix()}"
+    signature = _dir_signature(root)
+    cached = _SKILL_CACHE.get(cache_key)
+    if cached and cached[0] == signature:
+        return cached[1]
     skills: list[dict[str, Any]] = []
     for skill_md in sorted(root.rglob("SKILL.md")):
         try:
@@ -162,20 +322,23 @@ def _load_massomics_skills(project_root: Path | None = None) -> list[dict[str, A
         name, desc, keywords = _parse_skill_frontmatter(text)
         rel = skill_md.relative_to(root).as_posix()
         branch = skill_md.parent.parent.name if skill_md.parent.parent != root else ""
+        skill_pool = _SKILL_POOL_SOFTWARE_PARAMS if "/software-params/" in rel.replace("\\", "/") else _SKILL_POOL_LITERATURE
         skills.append(
             {
                 "source": "massomics",
                 "skill_id": skill_md.parent.name,
+                "skill_pool": skill_pool,
                 "name": name,
                 "description": desc,
                 "keywords": keywords,
                 "file": str(skill_md),
                 "branch": branch,
                 "doi": _extract_doi(text),
-                "visual_block": _extract_visual_block(text),
+                "visual_block": _extract_visual_block(text) or _extract_figure_mentions(text),
                 "body": text,
             }
         )
+    _SKILL_CACHE[cache_key] = (signature, skills)
     return skills
 
 
@@ -183,6 +346,15 @@ def _load_phase2_skills(project_root: Path | None = None) -> list[dict[str, Any]
     reg_path = _phase2_registry_path(project_root)
     if not reg_path.is_file():
         return []
+    cache_key = f"phase2:{reg_path.as_posix()}"
+    try:
+        reg_stat = reg_path.stat()
+        signature = ((reg_path.as_posix(), int(reg_stat.st_mtime), reg_stat.st_size),)
+    except OSError:
+        signature = ()
+    cached = _SKILL_CACHE.get(cache_key)
+    if cached and cached[0] == signature:
+        return cached[1]
     try:
         registry = json.loads(reg_path.read_text(encoding="utf-8"))
     except Exception:
@@ -203,6 +375,7 @@ def _load_phase2_skills(project_root: Path | None = None) -> list[dict[str, Any]
             {
                 "source": "phase2",
                 "skill_id": name,
+                "skill_pool": _SKILL_POOL_LITERATURE,
                 "name": name,
                 "description": item.get("source_paper") or "",
                 "keywords": keywords,
@@ -214,6 +387,7 @@ def _load_phase2_skills(project_root: Path | None = None) -> list[dict[str, Any]
                 "skill_type": item.get("skill_type"),
             }
         )
+    _SKILL_CACHE[cache_key] = (signature, skills)
     return skills
 
 
@@ -230,23 +404,99 @@ def _tokenize(text: str) -> list[str]:
     return [t for t in re.split(r"[\s,，。、/;；()（）\-]+", (text or "").lower()) if len(t) >= 2]
 
 
+def _plot_terms_for_type(plot_type: str) -> tuple[str, ...]:
+    if not plot_type:
+        return ()
+    return PLOT_TYPE_TERMS.get(plot_type, (plot_type.replace("_", " "), plot_type))
+
+
+def _skill_blob(skill: dict[str, Any]) -> str:
+    return " ".join(
+        [
+            str(skill.get("name") or ""),
+            str(skill.get("description") or ""),
+            str(skill.get("branch") or ""),
+            str(skill.get("visual_block") or ""),
+            str(skill.get("skill_id") or ""),
+            " ".join(str(k) for k in (skill.get("keywords") or [])),
+        ]
+    ).lower()
+
+
+def _plot_family_for_type(plot_type: str) -> str | None:
+    for family, members in _PLOT_FAMILY_SKILL_HINTS.items():
+        if plot_type in members:
+            return family
+    return None
+
+
+def skill_plot_relevance(skill: dict[str, Any], plot_type: str) -> int:
+    """硬筛：Skill 与图型的相关度（0=不应进入改图样式池）。"""
+    if not plot_type:
+        return 1
+    if skill.get("skill_pool") == _SKILL_POOL_SOFTWARE_PARAMS:
+        return 0
+    blob = _skill_blob(skill)
+    visual = (skill.get("visual_block") or "").lower()
+    terms = _plot_terms_for_type(plot_type)
+    hits = sum(1 for t in terms if t and (t in visual or t in blob))
+    if hits:
+        return hits
+    family = _plot_family_for_type(plot_type)
+    if family:
+        fam_hints = _FAMILY_BLOB_HINTS.get(family, ())
+        if any(h in blob or h in visual for h in fam_hints):
+            return 2
+    return 0
+
+
+def load_sticky_literature_skills(results_dir: str | Path) -> list[str]:
+    """从 Agent C manifest / 已出图 metadata 读取本会话已匹配的文献 Skill。"""
+    root = Path(results_dir)
+    sticky: list[str] = []
+    manifest_path = root / "agent_c_output" / "agent_c_manifest.json"
+    if manifest_path.is_file():
+        try:
+            data = json.loads(manifest_path.read_text(encoding="utf-8"))
+            lit = data.get("literature_style") or {}
+            sticky.extend(str(s) for s in (lit.get("matched_skills") or []) if s)
+            for fig in data.get("report_figures") or data.get("figures") or []:
+                if not isinstance(fig, dict):
+                    continue
+                style = fig.get("literature_style")
+                if isinstance(style, dict):
+                    sticky.extend(str(s) for s in (style.get("matched") or []) if s)
+        except Exception:
+            pass
+    # 去重保序
+    return list(dict.fromkeys(sticky))
+
+
 def _score_skill(
     skill: dict[str, Any],
     *,
     goal_tokens: list[str],
     plot_terms: tuple[str, ...],
     instruction: str,
+    plot_type: str = "",
+    sticky_skill_ids: list[str] | None = None,
 ) -> int:
     score = 0
-    blob = " ".join(
-        [
-            skill.get("name", ""),
-            skill.get("description", ""),
-            skill.get("branch", ""),
-            skill.get("visual_block", ""),
-            " ".join(skill.get("keywords") or []),
-        ]
-    ).lower()
+    blob = _skill_blob(skill)
+    visual = (skill.get("visual_block") or "").lower()
+    sid = str(skill.get("skill_id") or "").lower()
+
+    rel = skill_plot_relevance(skill, plot_type) if plot_type else 1
+    if plot_type and rel <= 0:
+        return 0
+    score += rel * 5
+
+    sticky = {str(s).lower() for s in (sticky_skill_ids or []) if s}
+    if sid and sid in sticky:
+        score += 120
+    for st in sticky:
+        if st and (st in sid or sid in st):
+            score += 80
 
     for t in goal_tokens:
         if t in blob:
@@ -257,10 +507,11 @@ def _score_skill(
         if len(k) >= 2 and any(k in g or g in k for g in goal_tokens):
             score += 3
 
-    visual = (skill.get("visual_block") or "").lower()
     for term in plot_terms:
-        if term in visual or term in blob:
-            score += 4
+        if term in visual:
+            score += 6
+        elif term in blob:
+            score += 3
 
     if instruction:
         inst = instruction.lower()
@@ -268,21 +519,61 @@ def _score_skill(
             if term in inst and term in visual:
                 score += 2
 
-    if skill.get("source") == "massomics":
-        score += 8
-        sid = str(skill.get("skill_id") or "").lower()
+    if skill.get("source") == "massomics" and skill.get("skill_pool") == _SKILL_POOL_LITERATURE:
+        score += 4
         for term in plot_terms:
             if term in visual and term in sid:
-                score += 6
-        for t in goal_tokens:
-            if t in sid:
-                score += 4
+                score += 8
+
+    if (skill.get("visual_block") or "").strip():
+        score += 3
 
     return score
 
 
-def _plot_terms_for_type(plot_type: str) -> tuple[str, ...]:
-    return PLOT_TYPE_TERMS.get(plot_type, (plot_type.replace("_", " "),))
+def rank_skills_for_plot(
+    *,
+    plot_type: str = "",
+    goal_text: str = "",
+    instruction: str = "",
+    project_root: Path | None = None,
+    sticky_skill_ids: list[str] | None = None,
+    max_skills: int = 3,
+    include_software_params: bool = False,
+) -> list[dict[str, Any]]:
+    """统一检索排序：图型硬筛 + 目标词 + 会话 sticky Skill。"""
+    goal_tokens = _tokenize(goal_text)
+    plot_terms = _plot_terms_for_type(plot_type) if plot_type else ()
+    all_skills = _load_massomics_skills(project_root) + _load_phase2_skills(project_root)
+    if not all_skills:
+        return []
+
+    pool = all_skills
+    if not include_software_params:
+        pool = [sk for sk in pool if sk.get("skill_pool") != _SKILL_POOL_SOFTWARE_PARAMS]
+
+    scored: list[tuple[int, dict[str, Any]]] = []
+    for sk in pool:
+        s = _score_skill(
+            sk,
+            goal_tokens=goal_tokens,
+            plot_terms=plot_terms,
+            instruction=instruction,
+            plot_type=plot_type,
+            sticky_skill_ids=sticky_skill_ids,
+        )
+        if s > 0:
+            scored.append((s, sk))
+    scored.sort(key=lambda x: x[0], reverse=True)
+
+    if not scored and plot_type:
+        for sk in pool:
+            rel = skill_plot_relevance(sk, plot_type)
+            if rel > 0:
+                scored.append((rel, sk))
+        scored.sort(key=lambda x: x[0], reverse=True)
+
+    return [sk for _, sk in scored[: max(1, max_skills)]]
 
 
 def _suggest_instruction(plot_type: str, skill: dict[str, Any], visual: str) -> str:
@@ -342,6 +633,7 @@ def match_plot_literature(
     instruction: str = "",
     source_rel: str = "",
     project_root: Path | None = None,
+    sticky_skill_ids: list[str] | None = None,
     max_skills: int = 2,
     max_chars: int = 4000,
 ) -> dict[str, Any]:
@@ -359,31 +651,14 @@ def match_plot_literature(
         stem = Path(source_rel).stem
         plot_type = plot_type_from_stem(stem) or ""
 
-    goal_tokens = _tokenize(goal_text)
-    plot_terms = _plot_terms_for_type(plot_type) if plot_type else ()
-
-    all_skills = _load_massomics_skills(project_root) + _load_phase2_skills(project_root)
-    if not all_skills:
-        return {"text": "", "matched": [], "hints": [], "error": "no_skills_loaded"}
-
-    scored: list[tuple[int, dict[str, Any]]] = []
-    for sk in all_skills:
-        s = _score_skill(sk, goal_tokens=goal_tokens, plot_terms=plot_terms, instruction=instruction)
-        if s > 0:
-            scored.append((s, sk))
-    scored.sort(key=lambda x: x[0], reverse=True)
-
-    if not scored and plot_type:
-        # 仅按图型关键词兜底
-        for sk in all_skills:
-            visual = (sk.get("visual_block") or "").lower()
-            if any(t in visual for t in plot_terms):
-                scored.append((1, sk))
-        scored.sort(key=lambda x: x[0], reverse=True)
-
-    selected = [sk for _, sk in scored[: max(1, max_skills)]]
-    if not selected:
-        return {"text": "", "matched": [], "hints": [], "error": None}
+    selected = rank_skills_for_plot(
+        plot_type=plot_type,
+        goal_text=goal_text,
+        instruction=instruction,
+        project_root=project_root,
+        sticky_skill_ids=sticky_skill_ids,
+        max_skills=max_skills,
+    )
 
     parts = [
         "## Literature figure guidance (from curated skills)",
@@ -398,7 +673,10 @@ def match_plot_literature(
 
     for sk in selected:
         sid = str(sk.get("skill_id") or "")
-        visual = sk.get("visual_block") or ""
+        visual = (sk.get("visual_block") or "").strip()
+        if not visual:
+            body = str(sk.get("body") or "")
+            visual = _extract_figure_mentions(body) or str(sk.get("description") or "")[:400]
         if not visual.strip():
             continue
         doi = sk.get("doi") or ""
@@ -425,8 +703,34 @@ def match_plot_literature(
             }
         )
 
-    text = "\n".join(parts).strip() if matched else ""
-    return {"text": text, "matched": matched, "hints": hints, "error": None}
+    rag_mode = ""
+    rag_budget = min(1500, max(0, budget))
+    if rag_budget > 200 and plot_type:
+        rag = supplement_plot_literature_rag(
+            plot_type=plot_type,
+            goal_text=goal_text,
+            instruction=instruction,
+            project_root=project_root,
+            max_chars=rag_budget,
+        )
+        rag_text = str(rag.get("text") or "").strip()
+        rag_mode = str(rag.get("mode") or "")
+        if rag_text:
+            rag_section = (
+                "## Supplementary literature (softwares_database_RAG)\n"
+                "Use for stylistic conventions only; do not override user instruction or actual data.\n\n"
+                f"{rag_text}\n"
+            )
+            parts.append(rag_section)
+            budget -= len(rag_section)
+
+    text = "\n".join(parts).strip()
+    if not matched and not rag_mode:
+        return {"text": "", "matched": [], "hints": [], "error": None, "rag_mode": ""}
+    if not matched and rag_mode:
+        # 仅 RAG 命中时也返回上下文
+        return {"text": text, "matched": [], "hints": [], "error": None, "rag_mode": rag_mode}
+    return {"text": text, "matched": matched, "hints": hints, "error": None, "rag_mode": rag_mode}
 
 
 def session_goal_text(session: dict | None, messages: list[dict] | None) -> str:
@@ -445,8 +749,14 @@ def session_goal_text(session: dict | None, messages: list[dict] | None) -> str:
 
 
 __all__ = [
+    "build_plot_literature_query",
     "env_enabled",
+    "load_sticky_literature_skills",
     "match_plot_literature",
+    "plot_rag_enabled",
+    "rank_skills_for_plot",
     "session_goal_text",
+    "skill_plot_relevance",
+    "supplement_plot_literature_rag",
     "PLOT_TYPE_TERMS",
 ]

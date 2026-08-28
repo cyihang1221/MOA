@@ -17,6 +17,7 @@ from web_frontend.backend.plot_theme import (
     DEFAULT_PALETTE,
     echarts_config_path_for_png,
     plot_config_path_for_png,
+    resolve_volcano_thresholds,
 )
 
 configure_matplotlib_cjk()
@@ -352,12 +353,10 @@ def render_volcano_plot_png(
     if not required.issubset(df.columns):
         raise ValueError("volcano_results.csv 缺少 log2FC / neglog10p 列")
 
-    thresholds = (
-        plot_config.get("thresholds")
-        if isinstance(plot_config.get("thresholds"), dict)
-        else {}
-    )
+    thresholds = resolve_volcano_thresholds(plot_config)
     p_cut = float(thresholds["p"]) if thresholds.get("p") is not None else None
+    if thresholds.get("padj") is not None and p_cut is None:
+        p_cut = float(thresholds["padj"])
     fc_cut = float(thresholds["log2fc"]) if thresholds.get("log2fc") is not None else None
     if p_cut is not None or fc_cut is not None:
         p_mask = pd.Series(True, index=df.index)
@@ -389,45 +388,114 @@ def render_volcano_plot_png(
     )
     down_color = _color_from_config(plot_config, "downregulated", "#4DBBD5")
     nonsig_color = _color_from_config(plot_config, "nonsignificant", "#B0B0B0")
-    threshold_color = _color_from_config(plot_config, "threshold_color", "#d62728")
+    threshold_color = _color_from_config(plot_config, "threshold_color", "#666666")
     fs = plot_config.get("font_size") or {}
-    fig_w, fig_h = plot_config.get("figure_size") or [8.0, 6.0]
+    marks = plot_config.get("marks") or {}
+    fig_w, fig_h = plot_config.get("figure_size") or [8.0, 6.5]
+    size_sig = max(20, int(marks.get("size") or 55))
+    size_ns = max(10, size_sig - 20)
+    alpha_sig = float(marks.get("opacity") or 0.85)
+    top_n = max(0, int(marks.get("top_n") or 8))
 
     fig, ax = plt.subplots(figsize=(float(fig_w), float(fig_h)), facecolor="white")
-    for label, mask, color, size, alpha in (
-        ("Not significant", nonsig_mask, nonsig_color, 18, 0.7),
-        ("Upregulated", up_mask, up_color, 22, 0.85),
-        ("Downregulated", down_mask, down_color, 22, 0.85),
-    ):
-        if mask.any():
-            ax.scatter(
-                df.loc[mask, "log2FC"],
-                df.loc[mask, "neglog10p"],
-                c=color,
-                s=size,
-                alpha=alpha,
-                label=label,
-            )
-    if fc_cut is not None:
-        ax.axvline(-fc_cut, color=threshold_color, linestyle="--", linewidth=1.5)
-        ax.axvline(fc_cut, color=threshold_color, linestyle="--", linewidth=1.5)
-    if p_cut is not None:
-        ax.axhline(
-            -np.log10(max(p_cut, 1e-300)),
-            color=threshold_color,
-            linestyle="--",
-            linewidth=1.5,
+    if nonsig_mask.any():
+        ax.scatter(
+            df.loc[nonsig_mask, "log2FC"],
+            df.loc[nonsig_mask, "neglog10p"],
+            c=nonsig_color,
+            s=size_ns,
+            alpha=0.55,
+            linewidths=0,
+            label=f"Not significant ({int(nonsig_mask.sum())})",
+            zorder=1,
         )
-    ax.legend(prop=_cjk(fs.get("legend", 11)))
+    if up_mask.any():
+        ax.scatter(
+            df.loc[up_mask, "log2FC"],
+            df.loc[up_mask, "neglog10p"],
+            c=up_color,
+            s=size_sig,
+            alpha=alpha_sig,
+            linewidths=0.4,
+            edgecolors="white",
+            label=f"Upregulated ({int(up_mask.sum())})",
+            zorder=3,
+        )
+    if down_mask.any():
+        ax.scatter(
+            df.loc[down_mask, "log2FC"],
+            df.loc[down_mask, "neglog10p"],
+            c=down_color,
+            s=size_sig,
+            alpha=alpha_sig,
+            linewidths=0.4,
+            edgecolors="white",
+            label=f"Downregulated ({int(down_mask.sum())})",
+            zorder=3,
+        )
+    if fc_cut is not None:
+        ax.axvline(-fc_cut, color=threshold_color, linestyle="--", linewidth=1.2, zorder=2)
+        ax.axvline(fc_cut, color=threshold_color, linestyle="--", linewidth=1.2, zorder=2)
+    if p_cut is not None:
+        y_thr = -np.log10(max(p_cut, 1e-300))
+        ax.axhline(y_thr, color=threshold_color, linestyle="--", linewidth=1.2, zorder=2)
 
+    # 标注 top 显著特征（代谢物 ID）
+    label_col = next(
+        (c for c in ("Feature", "feature_id", "name", "metabolite") if c in df.columns),
+        None,
+    )
+    if top_n > 0 and label_col and sig_mask.any():
+        label_df = df.loc[sig_mask].nlargest(top_n, "neglog10p")
+        for _, row in label_df.iterrows():
+            ax.annotate(
+                str(row[label_col]),
+                (float(row["log2FC"]), float(row["neglog10p"])),
+                textcoords="offset points",
+                xytext=(4, 4),
+                fontsize=max(8, int(fs.get("label") or 10)),
+                fontproperties=_cjk(fs.get("label", 10)),
+                color="#333333",
+                zorder=4,
+            )
+
+    thr_parts: list[str] = []
+    if p_cut is not None:
+        thr_parts.append(f"p<{p_cut:g}")
+    if fc_cut is not None:
+        thr_parts.append(f"|log2FC|≥{fc_cut:g}")
+    if thr_parts:
+        ax.text(
+            0.02,
+            0.02,
+            "Thresholds: " + ", ".join(thr_parts),
+            transform=ax.transAxes,
+            fontsize=max(9, int(fs.get("label") or 10)),
+            fontproperties=_cjk(fs.get("label", 10)),
+            color="#555555",
+            va="bottom",
+        )
+
+    ax.legend(
+        prop=_cjk(fs.get("legend", 11)),
+        frameon=True,
+        framealpha=0.92,
+        edgecolor="#dddddd",
+        loc="upper right",
+    )
     ax.set_title(
         plot_config.get("title", "Volcano Plot"),
         fontproperties=_cjk(fs.get("title", 16), bold=True),
+        pad=12,
     )
     ax.set_xlabel("log2 Fold Change", fontproperties=_cjk(fs.get("axis", 12)))
-    ax.set_ylabel("-log10(p-value)", fontproperties=_cjk(fs.get("axis", 12)))
+    ax.set_ylabel("-log10(P value)", fontproperties=_cjk(fs.get("axis", 12)))
     ax.tick_params(labelsize=fs.get("axis", 12))
-    ax.grid(True, color="#ebebeb", linewidth=0.8)
+    ax.grid(False)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["left"].set_color("#888888")
+    ax.spines["bottom"].set_color("#888888")
     fig.tight_layout()
     out = Path(output_path)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -438,12 +506,10 @@ def render_volcano_plot_png(
 
 def build_echarts_volcano(volcano_csv: str | Path, plot_config: dict[str, Any]) -> dict[str, Any]:
     df = pd.read_csv(volcano_csv)
-    thresholds = (
-        plot_config.get("thresholds")
-        if isinstance(plot_config.get("thresholds"), dict)
-        else {}
-    )
+    thresholds = resolve_volcano_thresholds(plot_config)
     p_cut = float(thresholds["p"]) if thresholds.get("p") is not None else None
+    if thresholds.get("padj") is not None and p_cut is None:
+        p_cut = float(thresholds["padj"])
     fc_cut = float(thresholds["log2fc"]) if thresholds.get("log2fc") is not None else None
     if p_cut is not None or fc_cut is not None:
         p_mask = pd.Series(True, index=df.index)

@@ -1104,6 +1104,10 @@ def _parse_mapping_intent(
     if color_token:
         if color_token.lower() in {"pca", "pls", "plsda", "图", "颜色", "color", "样本", "sample"}:
             color_token = None
+        elif plot_type == "volcano":
+            color_token = None
+        elif re.search(r"文献|规范|样式|配色|颜色|调整", color_token):
+            color_token = None
 
     if color_token:
         has_cjk = any("\u4e00" <= ch <= "\u9fff" for ch in color_token)

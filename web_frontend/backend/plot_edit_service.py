@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 import uuid
 from pathlib import Path
 from typing import Any
@@ -35,6 +36,7 @@ from web_frontend.backend.plot_renderer import (
     save_plot_sidecars,
     _family_size_payload,
 )
+from web_frontend.backend.literature_figure_style import build_initial_plot_config
 from web_frontend.backend.plot_theme import (
     diff_plot_config,
     merge_plot_config,
@@ -67,10 +69,15 @@ def ensure_default_plot_configs(
     directory: str | Path,
     *,
     upload_dir: str | Path | None = None,
+    goal_text: str = "",
+    use_literature: bool = True,
 ) -> list[Path]:
     """为可语义编辑的 PNG 补写 plot_config / Vega-Lite / SVG sidecar。
 
     递归扫描子目录（如 fbmn/、ms2lda_results/），跳过 edited_plots / merged_figures。
+
+    首次写 sidecar 时套用文献/发表级样式（``goal_text`` 提供匹配上下文）；
+    已存在的 sidecar 视为用户已确认的样式，不再覆盖。
     """
     from web_frontend.backend.session_storage import EDITED_PLOTS_SUBDIR, MERGED_FIGURES_SUBDIR
 
@@ -155,11 +162,22 @@ def ensure_default_plot_configs(
                 existing = json.loads(config_path.read_text(encoding="utf-8"))
             except json.JSONDecodeError:
                 existing = None
-        config = normalize_plot_config(
-            existing if isinstance(existing, dict) else None,
-            plot_type=plot_type,
-            color_keys=color_keys,
-        )
+        if isinstance(existing, dict):
+            config = normalize_plot_config(
+                existing,
+                plot_type=plot_type,
+                color_keys=color_keys,
+            )
+            lit = existing.get("literature_style")
+            if isinstance(lit, dict):
+                config["literature_style"] = lit
+        else:
+            config, _style = build_initial_plot_config(
+                plot_type=plot_type,
+                color_keys=color_keys,
+                goal_text=goal_text,
+                use_literature=use_literature,
+            )
         try:
             config["source_rel"] = png.relative_to(root).as_posix()
         except ValueError:
@@ -178,13 +196,33 @@ def ensure_default_plot_configs(
                 written.append(config_path)
             continue
 
-        write_semantic_metadata_files(
-            png_path=png,
-            plot_config=config,
-            vega_spec=vega_spec,
-            source_rel=config.get("source_rel"),
-        )
-        write_svg_sidecar(vega_spec, png)
+        upload_root = upload if upload is not None else data_root
+
+        def _png_renderer(target: Path, *, ptype: str = plot_type, ddir: Path = data_root, cfg: dict = config) -> None:
+            _render_and_build_echarts(
+                plot_type=ptype,
+                data_dir=ddir,
+                upload_dir=upload_root,
+                plot_config=cfg,
+                output_path=target,
+            )
+
+        try:
+            write_semantic_outputs(
+                png_path=png,
+                plot_config=config,
+                vega_spec=vega_spec,
+                source_rel=config.get("source_rel"),
+                png_renderer=_png_renderer,
+            )
+        except Exception:
+            write_semantic_metadata_files(
+                png_path=png,
+                plot_config=config,
+                vega_spec=vega_spec,
+                source_rel=config.get("source_rel"),
+            )
+            write_svg_sidecar(vega_spec, png)
         written.append(config_path)
 
     # vip_scores.csv 存在但无 PNG 时，生成可 SVG 编辑的 VIP 柱状图
@@ -194,7 +232,12 @@ def ensure_default_plot_configs(
         vip_png = vip_csv.with_name("vip_scores.png")
         if vip_csv.is_file() and not vip_png.is_file():
             try:
-                config = normalize_plot_config(None, plot_type="vip_bar", color_keys=["bar_color"])
+                config, _ = build_initial_plot_config(
+                    plot_type="vip_bar",
+                    color_keys=["bar_color"],
+                    goal_text=goal_text,
+                    use_literature=use_literature,
+                )
                 config["source_rel"] = vip_png.name
                 vega_spec = build_vegalite_spec(
                     plot_type="vip_bar",
@@ -810,16 +853,56 @@ def agent_apply_plot_edit(
                 ]
             except Exception:
                 metadata_columns = []
-        from web_frontend.backend.literature_plot_knowledge import match_plot_literature
+        from web_frontend.backend.literature_evidence import (
+            collect_evidence_cards,
+            evidence_cards_to_markdown,
+            suggest_soft_style_patch,
+        )
+        from web_frontend.backend.literature_plot_knowledge import (
+            load_sticky_literature_skills,
+            match_plot_literature,
+        )
+        from web_frontend.backend.visual_edit_journal import append_journal_event
+        from web_frontend.backend.visual_ir import attach_evidence, figure_ir_from_config
+        from web_frontend.backend.visual_validation import validate_plot_patch
 
+        lit_style = (current.get("literature_style") or {}) if isinstance(current, dict) else {}
+        sticky_skill_ids = list(
+            dict.fromkeys(
+                [str(s) for s in (lit_style.get("matched") or []) if s]
+                + load_sticky_literature_skills(output_root)
+            )
+        )
+
+        evidence_cards = collect_evidence_cards(
+            plot_type=plot_type,
+            goal_text=goal_text or "",
+            instruction=instruction,
+            project_root=project_root,
+            sticky_skill_ids=sticky_skill_ids,
+        )
+        figure_ir = attach_evidence(
+            figure_ir_from_config(
+                plot_type=plot_type,
+                source_rel=canonical_rel,
+                plot_config=current,
+                data_dir=str(data_dir),
+                goal_text=goal_text or "",
+            ),
+            evidence_cards,
+        )
         lit_payload = match_plot_literature(
             goal_text=goal_text or "",
             plot_type=plot_type,
             instruction=instruction,
             source_rel=canonical_rel,
             project_root=project_root,
+            sticky_skill_ids=sticky_skill_ids,
         )
-        literature_context = str(lit_payload.get("text") or "")
+        evidence_md = evidence_cards_to_markdown(evidence_cards)
+        literature_context = "\n\n".join(
+            p for p in (evidence_md, str(lit_payload.get("text") or "")) if p.strip()
+        )
         patch = parse_plot_edit_instruction(
             instruction=instruction,
             plot_type=plot_type,
@@ -829,22 +912,65 @@ def agent_apply_plot_edit(
             metadata_columns=metadata_columns,
             literature_context=literature_context or None,
         )
+        from web_frontend.backend.plot_theme import merge_plot_config, sanitize_volcano_plot_patch
+
+        soft_patch, soft_warn = suggest_soft_style_patch(
+            plot_type,
+            evidence_cards,
+            metadata_columns=metadata_columns,
+        )
+        if plot_type == "volcano":
+            soft_patch = sanitize_volcano_plot_patch(soft_patch)
+        if soft_patch:
+            patch = merge_plot_config(current, {**soft_patch, **patch})
+        visual_warnings: list[str] = list(soft_warn)
+
+        validation = validate_plot_patch(
+            patch=patch,
+            current_config=current,
+            color_keys=color_keys,
+            metadata_columns=metadata_columns,
+            evidence_cards=evidence_cards,
+            user_instruction=instruction,
+            plot_type=plot_type,
+        )
+        if validation.get("errors"):
+            raise PlotEditError("；".join(validation["errors"]))
+        accepted_patch = validation.get("accepted_patch") or patch
+        visual_warnings.extend(list(validation.get("warnings") or []))
+
         out_name = filename or stable_intent_filename(base or type_stem or source.stem)
         result = apply_plot_config(
             project_root=project_root,
             session_id=session_id,
             storage_slug=storage_slug,
             source_rel=canonical_rel,
-            plot_config_patch=patch,
+            plot_config_patch=accepted_patch,
             instruction=instruction,
             filename=out_name,
             overwrite_intent=True,
         )
-        result["agent_patch"] = patch
+        result["agent_patch"] = accepted_patch
         result["edit_mode"] = "semantic"
+        result["visual_ir"] = figure_ir
+        result["evidence_refs"] = figure_ir.get("evidence_refs") or []
+        result["visual_warnings"] = visual_warnings
         if lit_payload.get("matched"):
             result["literature_skills"] = lit_payload.get("matched")
             result["literature_hints"] = lit_payload.get("hints") or []
+        after_cfg = (result.get("plot_config") or {}).get("data") or {}
+        journal_path = append_journal_event(
+            output_root=output_root,
+            subdir="edited_plots",
+            event_type="plot_edit",
+            before=current,
+            after=after_cfg if isinstance(after_cfg, dict) else {},
+            user_instruction=instruction,
+            evidence_refs=result["evidence_refs"],
+            validation={"warnings": visual_warnings},
+            output_files=[(result.get("file") or {}).get("name")],
+        )
+        result["journal"] = str(journal_path.relative_to(output_root))
         return result
 
     # 通用改图：任意结果 PNG（标题/字号/颜色）

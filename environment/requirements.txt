@@ -3,9 +3,20 @@
 # change.md extras included: plotly==6.0.1, vl-convert-python
 # Spectral stack pins (install.md): numpy==1.26.4, scipy==1.11.4, scikit-learn==1.4.2, numba==0.59.1, matchms==0.27.0
 #
+# Agent C / Web 报告（2026-08，见 change.md）— 本文件已含下列包，新环境若缺 PDF 可单独补装：
+#   fpdf2==2.8.8              # final_report.md → PDF
+#   markdown-it-py==4.0.0     # 报告 Modal HTML 渲染
+#   mdurl==0.1.2               # markdown-it 依赖
+#   pillow==11.3.0             # PDF 图片缩放 / 出图
+#   fastapi / uvicorn          # Web 前端
+# PDF 中文字体为系统级：见 install.md「Agent C PDF 字体」
+#
 # Install:
 #   conda activate MOA
 #   pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+#
+# 仅补 Agent C 报告依赖（已有 MOA 但 PDF 报错 import fpdf 时）:
+#   pip install fpdf2==2.8.8 markdown-it-py==4.0.0 pillow -i https://pypi.tuna.tsinghua.edu.cn/simple
 #
 # Also install git deps if pip skipped them:
 #   pip install git+https://github.com/biorack/blink.git
@@ -70,6 +81,7 @@ filetype==1.2.0
 fitz==0.0.1.dev2
 flatbuffers==25.9.23
 fonttools==4.62.0
+fpdf2==2.8.8
 fqdn==1.5.1
 freetype-py==2.3.0
 frozenlist==1.8.0

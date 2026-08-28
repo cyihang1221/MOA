@@ -13,7 +13,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional
 
-from web_frontend.backend.agent_intent import looks_like_agent_request
+from web_frontend.backend.agent_intent import (
+    classify_frontend_intent,
+    looks_like_agent_request,
+    looks_like_c_visual_request,
+)
 from web_frontend.backend.agent_jobs import cancel_job, clear_job, is_cancelled, register_job
 from web_frontend.backend.anti_hallucination import chat_guard_messages
 from web_frontend.backend.plot_versioning import prefer_effective_among_rels
@@ -152,13 +156,29 @@ def init_db() -> None:
             conn.execute("ALTER TABLE sessions ADD COLUMN storage_slug TEXT")
         except sqlite3.OperationalError:
             pass
+        try:
+            conn.execute(
+                "ALTER TABLE sessions ADD COLUMN workflow_status TEXT NOT NULL DEFAULT 'WAITING_INPUT'"
+            )
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute(
+                "ALTER TABLE sessions ADD COLUMN plan_version INTEGER NOT NULL DEFAULT 0"
+            )
+        except sqlite3.OperationalError:
+            pass
+        try:
+            conn.execute("ALTER TABLE sessions ADD COLUMN plan_locked_at TEXT")
+        except sqlite3.OperationalError:
+            pass
 
 
 def db_list_sessions() -> list[dict]:
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
         cur = conn.execute(
-            "SELECT id, title, updated_at, is_shared, storage_slug FROM sessions ORDER BY updated_at DESC, created_at DESC"
+            "SELECT id, title, updated_at, is_shared, storage_slug, workflow_status FROM sessions ORDER BY updated_at DESC, created_at DESC"
         )
         rows = cur.fetchall()
         return [
@@ -168,6 +188,7 @@ def db_list_sessions() -> list[dict]:
                 "updated_at": r["updated_at"],
                 "is_shared": bool(r["is_shared"]),
                 "storage_slug": r["storage_slug"] or r["id"],
+                "workflow_status": r["workflow_status"] if "workflow_status" in r.keys() else "WAITING_INPUT",
             }
             for r in rows
         ]
@@ -177,7 +198,7 @@ def db_get_session(session_id: str) -> Optional[dict]:
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
         cur = conn.execute(
-            "SELECT id, title, model, temperature, created_at, updated_at, is_shared, storage_slug FROM sessions WHERE id=?",
+            "SELECT id, title, model, temperature, created_at, updated_at, is_shared, storage_slug, workflow_status, plan_version, plan_locked_at FROM sessions WHERE id=?",
             (session_id,),
         )
         r = cur.fetchone()
@@ -187,6 +208,8 @@ def db_get_session(session_id: str) -> Optional[dict]:
         data["is_shared"] = bool(data.get("is_shared"))
         if not data.get("storage_slug"):
             data["storage_slug"] = session_id
+        data["workflow_status"] = data.get("workflow_status") or "WAITING_INPUT"
+        data["plan_version"] = int(data.get("plan_version") or 0)
         return data
 
 
@@ -198,6 +221,33 @@ def db_set_storage_slug(session_id: str, storage_slug: str) -> None:
         )
 
 
+def db_set_workflow(
+    session_id: str,
+    status: str,
+    *,
+    bump_plan: bool = False,
+    lock_plan: bool = False,
+) -> None:
+    now = utc_now_iso()
+    with sqlite3.connect(DB_PATH) as conn:
+        if bump_plan:
+            conn.execute(
+                "UPDATE sessions SET workflow_status=?, plan_version=COALESCE(plan_version,0)+1, "
+                "plan_locked_at=NULL, updated_at=? WHERE id=?",
+                (status, now, session_id),
+            )
+        elif lock_plan:
+            conn.execute(
+                "UPDATE sessions SET workflow_status=?, plan_locked_at=?, updated_at=? WHERE id=?",
+                (status, now, now, session_id),
+            )
+        else:
+            conn.execute(
+                "UPDATE sessions SET workflow_status=?, updated_at=? WHERE id=?",
+                (status, now, session_id),
+            )
+
+
 def db_create_session(title: str, model: Optional[str], temperature: float) -> str:
     session_id = uuid.uuid4().hex
     storage_slug = make_storage_slug(session_id, title)
@@ -205,8 +255,8 @@ def db_create_session(title: str, model: Optional[str], temperature: float) -> s
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute(
             """
-            INSERT INTO sessions (id, title, model, temperature, created_at, updated_at, storage_slug)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO sessions (id, title, model, temperature, created_at, updated_at, storage_slug, workflow_status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'WAITING_INPUT')
             """,
             (session_id, title, model, temperature, now, now, storage_slug),
         )
@@ -393,6 +443,64 @@ def resolve_storage_slug(session_id: str) -> str:
     return slug
 
 
+def _session_has_result_figures(session_id: str) -> bool:
+    from web_frontend.backend.workflow import session_has_result_figures
+
+    slug = resolve_storage_slug(session_id)
+    return session_has_result_figures(PROJECT_ROOT, slug)
+
+
+def _sync_workflow_for_existing_outputs(session_id: str, sess: dict) -> tuple[dict, bool]:
+    """若 outputspace 已有结果图，将陈旧 workflow 同步为 COMPLETED。"""
+    from web_frontend.backend.workflow import maybe_advance_workflow_for_outputs
+
+    has_figs = _session_has_result_figures(session_id)
+    new_st = maybe_advance_workflow_for_outputs(
+        sess.get("workflow_status"),
+        has_result_figures=has_figs,
+    )
+    if new_st:
+        db_set_workflow(session_id, new_st)
+        sess = dict(sess)
+        sess["workflow_status"] = new_st
+    return sess, has_figs
+
+
+def _resolve_session_chat_action(
+    session_id: str,
+    user_message: str,
+    sess: dict,
+    *,
+    has_figs: bool,
+) -> tuple[str, str | None, dict]:
+    """LLM 路由 + 规则兜底；返回 (action, clarify_message, meta)。"""
+    from web_frontend.backend.chat_router import resolve_chat_action
+    from web_frontend.backend.workflow import session_has_locked_plan
+
+    llm_client = None
+    try:
+        from web_frontend.backend.chat_router import llm_router_enabled
+
+        if llm_router_enabled():
+            llm_client = LLM_Client(
+                model=os.getenv("MASSAGENT_ROUTER_MODEL", "").strip() or None
+            )
+    except Exception:
+        llm_client = None
+
+    slug = resolve_storage_slug(session_id)
+    action, clarify, meta = resolve_chat_action(
+        sess.get("workflow_status"),
+        user_message,
+        has_result_figures=has_figs,
+        has_locked_plan=session_has_locked_plan(PROJECT_ROOT, slug),
+        project_root=PROJECT_ROOT,
+        storage_slug=slug,
+        llm_client=llm_client,
+    )
+    return action, clarify, meta
+
+
 init_db()
 migrate_session_storage_dirs(PROJECT_ROOT)
 
@@ -457,7 +565,7 @@ class ChatStreamRequest(BaseModel):
     user_message: str
     model: Optional[str] = None
     temperature: float = 0.0
-    use_agent: bool = False  # True 时走 MCP 工具执行，而非纯 LLM 对话
+    use_agent: bool = False  # True 时走 Agent C（出图/报告或向 B 交接），而非纯 LLM 对话
     edit_message_id: Optional[int] = None  # 编辑用户消息后重发：更新该条并截断其后
     regenerate_assistant: bool = False  # 基于最后一条用户消息重新生成回答
     # 用户自备 OpenAI 兼容 API（仅本次请求生效，不落库）
@@ -521,6 +629,39 @@ class MetadataSaveRequest(BaseModel):
     align_to_inputs: bool = True
 
 
+class AgentCParsePlanRequest(BaseModel):
+    plan_path: Optional[str] = None
+    plan_text: Optional[str] = None
+    plan: Optional[dict] = None
+
+
+class AgentCInventoryRequest(BaseModel):
+    results_dir: str
+    metadata_csv: Optional[str] = None
+
+
+class AgentCRunRequest(BaseModel):
+    plan_path: Optional[str] = None
+    plan_text: Optional[str] = None
+    plan: Optional[dict] = None
+    repro_recipe_id: Optional[str] = None
+    results_dir: str
+    output_dir: Optional[str] = None
+    metadata_csv: Optional[str] = None
+    figure_mode: str = "plan"
+    language: Optional[str] = None
+    use_llm: bool = False
+
+
+class AgentCSessionRunRequest(BaseModel):
+    plan_path: Optional[str] = None
+    results_dir: Optional[str] = None
+    repro_recipe_id: Optional[str] = None
+    figure_mode: str = "plan"
+    language: Optional[str] = None
+    use_llm: bool = False
+
+
 def _session_metadata_paths(session_id: str) -> dict[str, str]:
     from web_frontend.backend.agent_runner import build_session_paths
 
@@ -535,6 +676,36 @@ def parse_models_from_env() -> List[str]:
     if default_model and default_model not in values:
         values.insert(0, default_model)
     return values
+
+
+def _agent_c_safe_path(raw: str | None, *, required: bool = True) -> Path | None:
+    """HTTP 接口只允许项目根下的路径，避免任意读盘。"""
+    if not raw or not str(raw).strip():
+        if required:
+            raise HTTPException(status_code=400, detail="path is required")
+        return None
+    path = Path(str(raw).strip()).expanduser()
+    if not path.is_absolute():
+        path = (PROJECT_ROOT / path).resolve()
+    else:
+        path = path.resolve()
+    root = PROJECT_ROOT.resolve()
+    try:
+        path.relative_to(root)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="path must be under the project root") from exc
+    return path
+
+
+def _agent_c_plan_source(req: AgentCParsePlanRequest | AgentCRunRequest):
+    if req.plan is not None:
+        return req.plan
+    if req.plan_text:
+        return req.plan_text
+    path = _agent_c_safe_path(req.plan_path, required=True)
+    if path is None or not path.exists():
+        raise HTTPException(status_code=404, detail=f"plan not found: {req.plan_path}")
+    return path
 
 
 # 常见 OpenAI 兼容供应商预设（前端弹窗下拉）
@@ -747,42 +918,232 @@ def app_info():
         "share_hint": "分享给他人时，请用 uvicorn --host 0.0.0.0 启动，并将链接中的 127.0.0.1 换成本机局域网 IP。",
         "reference": "https://github.com/hcji/DeepMASS2_GUI",
         "runtime": runtime,
+        "agent_c": "/api/agent-c/contract",
+        "agent_backends": "/api/agent-backends",
     }
+
+
+@app.get("/api/agent-backends")
+def agent_backends_info():
+    from web_frontend.backend.agent_backends import backend_status
+
+    return backend_status()
+
+
+@app.get("/api/agent-c/repro-recipes")
+def agent_c_repro_recipes():
+    from web_frontend.backend.agent_c import list_repro_recipes
+
+    return {"recipes": list_repro_recipes()}
+
+
+@app.get("/api/agent-c/repro-recipes/{recipe_id}")
+def agent_c_repro_recipe_detail(recipe_id: str):
+    from web_frontend.backend.agent_c import load_repro_recipe, recipe_to_canonical_plan
+
+    recipe = load_repro_recipe(recipe_id)
+    return {
+        "recipe": recipe,
+        "canonical_plan": recipe_to_canonical_plan(recipe),
+    }
+
+
+@app.post("/api/agent-c/repro-checklist")
+def agent_c_repro_checklist(req: AgentCInventoryRequest, recipe_id: str):
+    from web_frontend.backend.agent_c import checklist_inventory, inventory_results, load_repro_recipe
+
+    results_dir = _agent_c_safe_path(req.results_dir, required=True)
+    metadata = _agent_c_safe_path(req.metadata_csv, required=False)
+    recipe = load_repro_recipe(recipe_id)
+    inv = inventory_results(results_dir, metadata_csv=metadata)
+    return checklist_inventory(recipe, inv)
+
+
+@app.get("/api/agent-c/contract")
+def agent_c_contract():
+    from web_frontend.backend.agent_c import contract_document
+
+    return contract_document()
+
+
+@app.post("/api/agent-c/parse-plan")
+def agent_c_parse_plan(req: AgentCParsePlanRequest):
+    from web_frontend.backend.agent_c import parse_plan
+
+    source = _agent_c_plan_source(req)
+    return parse_plan(source)
+
+
+@app.post("/api/agent-c/inventory")
+def agent_c_inventory(req: AgentCInventoryRequest):
+    from web_frontend.backend.agent_c import inventory_results
+
+    results_dir = _agent_c_safe_path(req.results_dir, required=True)
+    metadata = _agent_c_safe_path(req.metadata_csv, required=False)
+    return inventory_results(results_dir, metadata_csv=metadata)
+
+
+@app.post("/api/agent-c/run")
+def agent_c_run(req: AgentCRunRequest):
+    from web_frontend.backend.agent_c import run_agent_c
+
+    plan = None if req.repro_recipe_id else _agent_c_plan_source(req)
+    results_dir = _agent_c_safe_path(req.results_dir, required=True)
+    output_dir = _agent_c_safe_path(req.output_dir, required=False)
+    metadata = _agent_c_safe_path(req.metadata_csv, required=False)
+    try:
+        return run_agent_c(
+            plan=plan,
+            results_dir=results_dir,
+            output_dir=output_dir,
+            metadata_csv=metadata,
+            figure_mode=req.figure_mode or "plan",
+            language=req.language,
+            use_llm=bool(req.use_llm),
+            repro_recipe_id=req.repro_recipe_id,
+        )
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.get("/api/sessions/{session_id}/agent-c/report")
+def agent_c_report_view(session_id: str):
+    """一键查看 Agent C 报告：Markdown/HTML + 解读摘要 + 图表列表。"""
+    from web_frontend.backend.agent_c.report_view import load_report_bundle
+    from web_frontend.backend.session_storage import session_work_dir
+
+    sess = db_get_session(session_id)
+    if not sess:
+        raise HTTPException(status_code=404, detail="session not found")
+    slug = resolve_storage_slug(session_id)
+    output_root = session_work_dir(PROJECT_ROOT, slug)
+    try:
+        return load_report_bundle(session_id=session_id, results_dir=output_root)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.post("/api/sessions/{session_id}/agent-c/regenerate-pdf")
+def agent_c_regenerate_pdf(session_id: str):
+    """从已有 final_report.md 重新导出 PDF（修复路径/字体后无需重跑 C）。"""
+    from web_frontend.backend.agent_c.pdf_export import markdown_file_to_pdf
+    from web_frontend.backend.agent_c.report_view import find_agent_c_output_dir, _rel_to_session
+    from web_frontend.backend.session_storage import session_work_dir
+
+    sess = db_get_session(session_id)
+    if not sess:
+        raise HTTPException(status_code=404, detail="session not found")
+    slug = resolve_storage_slug(session_id)
+    output_root = session_work_dir(PROJECT_ROOT, slug)
+    out_dir = find_agent_c_output_dir(output_root)
+    if not out_dir:
+        raise HTTPException(status_code=404, detail="未找到 agent_c_output/final_report.md")
+    md_path = out_dir / "final_report.md"
+    if not md_path.is_file():
+        raise HTTPException(status_code=404, detail="final_report.md 不存在")
+    try:
+        pdf_path = markdown_file_to_pdf(md_path, results_dir=output_root)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"PDF 生成失败: {exc}") from exc
+    return {
+        "pdf_rel": _rel_to_session(output_root, pdf_path),
+        "markdown_rel": _rel_to_session(output_root, md_path),
+    }
+
+
+@app.post("/api/sessions/{session_id}/agent-c/run")
+def agent_c_run_session(session_id: str, req: AgentCSessionRunRequest):
+    """用当前会话的 outputspace 当 B 结果，自动找 analysis_plan.*。"""
+    from web_frontend.backend.agent_c import run_agent_c
+    from web_frontend.backend.session_metadata import resolve_metadata_csv
+
+    sess = db_get_session(session_id)
+    if not sess:
+        raise HTTPException(status_code=404, detail="session not found")
+    slug = resolve_storage_slug(session_id)
+    output_root = session_work_dir(PROJECT_ROOT, slug)
+    upload_root = storage_upload_dir(PROJECT_ROOT, slug)
+    results_dir = _agent_c_safe_path(req.results_dir, required=False) or output_root
+    if req.plan_path:
+        plan = _agent_c_safe_path(req.plan_path, required=True)
+    else:
+        plan = None
+        for name in ("analysis_plan.json", "analysis_plan.md"):
+            for folder in (output_root, upload_root, results_dir):
+                cand = Path(folder) / name
+                if cand.is_file():
+                    plan = cand
+                    break
+            if plan:
+                break
+        if plan is None:
+            for folder in (output_root, upload_root, results_dir):
+                found = sorted(Path(folder).glob("plan_*.json"), reverse=True)
+                if found:
+                    plan = found[0]
+                    break
+        if plan is None:
+            raise HTTPException(
+                status_code=400,
+                detail="session 中未找到 analysis_plan.md / analysis_plan.json，请传入 plan_path",
+            )
+    metadata = None
+    try:
+        metadata = resolve_metadata_csv(upload_root)
+    except Exception:
+        metadata = None
+    out = Path(results_dir) / "agent_c_output"
+    try:
+        return run_agent_c(
+            plan=plan,
+            results_dir=results_dir,
+            output_dir=out,
+            metadata_csv=metadata,
+            figure_mode=req.figure_mode or "plan",
+            language=req.language,
+            use_llm=bool(req.use_llm),
+        )
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @app.get("/api/tools")
 async def get_tools():
-    from web_frontend.backend.tool_registry import LOCAL_TOOL_SPECS, load_all_tools
+    """前端 Agent 只暴露 C 侧工具；分析 MCP 不在此列表。"""
+    from web_frontend.backend.tool_registry import LOCAL_TOOL_SPECS, tool_spec_as_mcp_like
+    from web_frontend.backend.tool_registry import ToolSpec, _schema
 
-    tools = await load_all_tools()
+    c_run = ToolSpec(
+        name="agent_c_run",
+        description=(
+            "按 A 的 analysis_plan 与 B 的结果目录出图并写 final_report.md。"
+            "不调用 XCMS/mixOmics 等分析工具。"
+        ),
+        input_schema=_schema(
+            {
+                "plan": {"type": "string", "description": "方案路径或会话内 analysis_plan.md"},
+                "results_dir": {"type": "string", "description": "B 的结果目录"},
+            },
+            [],
+        ),
+        runtime="local",
+        category="visual",
+    )
+    tools = [tool_spec_as_mcp_like(spec) for spec in LOCAL_TOOL_SPECS.values()]
+    tools.append(tool_spec_as_mcp_like(c_run))
     grouped: dict[str, list[dict]] = {}
     for tool in tools:
         name = getattr(tool, "name", "") or ""
-        cat_id = categorize_tool(name)
-        if name in LOCAL_TOOL_SPECS:
-            cat_id = "visual"
-        desc = (getattr(tool, "description", None) or "").strip().split("\n")[0][:120]
-        grouped.setdefault(cat_id, []).append(
-            {"name": name, "description": desc}
-        )
-    order = [
-        "convert",
-        "xcms",
-        "networking",
-        "deeplearn",
-        "peaks",
-        "processing",
-        "library",
-        "workflow",
-        "visual",
-        "other",
-    ]
-    categories = [
-        {"category": cat_id, "category_id": cat_id, "tools": grouped[cat_id]}
-        for cat_id in order
-        if cat_id in grouped
-    ]
-    return {"categories": categories, "total": len(tools)}
+        desc = (getattr(tool, "description", None) or "").strip().split("\n")[0][:160]
+        grouped.setdefault("visual", []).append({"name": name, "description": desc})
+    return {
+        "categories": [{"category": "visual", "category_id": "visual", "tools": grouped["visual"]}],
+        "total": len(tools),
+        "agent_role": "C",
+        "note": "Web Agent 只做可视化与报告；分析执行请走 Agent B。",
+    }
 
 
 @app.get("/api/models")
@@ -859,7 +1220,7 @@ def create_session(req: CreateSessionRequest):
     db_append_message(
         session_id=session_id,
         role="assistant",
-        content="你好，我是 MassAgent。你可以先选择模型，再输入问题。",
+        content="你好，我是 MassAgent。请上传数据并描述分析目标；我会先给出分析计划，你回复「确认计划」后再执行，最后自动出图与报告。",
     )
     return {"session_id": session_id}
 
@@ -1395,6 +1756,7 @@ def get_session(session_id: str):
     sess = db_get_session(session_id)
     if not sess:
         raise HTTPException(status_code=404, detail="session not found")
+    sess, _ = _sync_workflow_for_existing_outputs(session_id, sess)
     return {"session": sess}
 
 
@@ -1421,7 +1783,8 @@ def get_session_messages(session_id: str):
     sess = db_get_session(session_id)
     if not sess:
         raise HTTPException(status_code=404, detail="session not found")
-    return {"session": {"id": sess["id"], "title": sess["title"]}, "messages": db_get_messages(session_id)}
+    sess, _ = _sync_workflow_for_existing_outputs(session_id, sess)
+    return {"session": {"id": sess["id"], "title": sess["title"], "workflow_status": sess.get("workflow_status")}, "messages": db_get_messages(session_id)}
 
 
 @app.put("/api/sessions/{session_id}")
@@ -1498,9 +1861,17 @@ def _append_chat_images_marker(text: str, files: list[str]) -> str:
 
 
 def _should_auto_agent(session_id: str, user_message: str) -> bool:
-    """附件或明确分析意图时启用 Agent；普通闲聊仍走纯 LLM。"""
-    del session_id
-    return looks_like_agent_request(user_message)
+    """规划 / 确认 / 执行 / 出图 / 改图 时走编排器，闲聊仍走纯 LLM。"""
+    from web_frontend.backend.workflow import is_plan_confirmation
+
+    sess = db_get_session(session_id) or {}
+    sess, has_figs = _sync_workflow_for_existing_outputs(session_id, sess)
+    action, _, _ = _resolve_session_chat_action(
+        session_id, user_message, sess, has_figs=has_figs
+    )
+    if action not in {"chat", "clarify", "remind_confirm", "remind_rerun"}:
+        return True
+    return looks_like_agent_request(user_message) or is_plan_confirmation(user_message)
 
 
 @app.post("/api/chat/stream")
@@ -1548,17 +1919,138 @@ async def chat_stream(req: ChatStreamRequest, request: Request):
         "X-Accel-Buffering": "no",
     }
 
-    # 改图 / 拼图 / 分析 统一走 Agent loop（LLM 选 plot_edit / image_merge / merge_edit / MCP）
-    # 正则旁路仅作兼容兜底：当前默认关闭，避免与统一 Agent 双路径冲突
-    # if should_route_plot_edit(stream_user_message):
-    #     ...
-    # if should_route_image_merge(stream_user_message):
-    #     ...
+    from web_frontend.backend.workflow import is_plan_confirmation
 
-    if use_agent:
-        print(f"[agent] route analysis agent: {stream_user_message[:120]!r}", flush=True)
+    sess, has_figs = _sync_workflow_for_existing_outputs(req.session_id, sess)
+    action, clarify_msg, router_meta = _resolve_session_chat_action(
+        req.session_id, stream_user_message, sess, has_figs=has_figs
+    )
+    print(
+        f"[workflow] status={sess.get('workflow_status')} action={action} "
+        f"rule={router_meta.get('rule_action')} router={router_meta.get('router_used')} "
+        f"msg={stream_user_message[:120]!r}",
+        flush=True,
+    )
+
+    if action == "clarify" and clarify_msg:
         return StreamingResponse(
-            _stream_agent_sse_async(req, request),
+            _stream_plain_sse_async(req, clarify_msg),
+            media_type="text/event-stream",
+            headers=headers,
+        )
+
+    if action == "remind_confirm":
+        return StreamingResponse(
+            _stream_plain_sse_async(
+                req,
+                (
+                    "分析计划已在上方生成，当前处于 **待确认** 状态，无需重复发送完整分析目标。\n\n"
+                    "请直接回复 **确认计划** 启动 Agent B 执行；"
+                    "若需修改方案，请说明具体修改意见（例如「第三步改用 MZmine」）。"
+                ),
+            ),
+            media_type="text/event-stream",
+            headers=headers,
+        )
+    if action == "remind_rerun":
+        return StreamingResponse(
+            _stream_plain_sse_async(
+                req,
+                (
+                    "本会话已有确认过的分析计划与结果。\n\n"
+                    "若需 **重跑 Agent B 分析**，请回复 **重新分析** 或 **确认计划**；"
+                    "若需 **写报告/出图**，请说「写报告」或「按方案出图」；"
+                    "若需 **修订计划**，请说明修改意见。"
+                ),
+            ),
+            media_type="text/event-stream",
+            headers=headers,
+        )
+
+    if action == "refuse_unconfirmed":
+        return StreamingResponse(
+            _stream_plain_sse_async(
+                req,
+                (
+                    "当前计划尚未确认，**不能启动分析**。"
+                    "请回复「确认计划」，或直接说明修改意见（例如改用 MZmine、不要分子网络）。"
+                ),
+            ),
+            media_type="text/event-stream",
+            headers=headers,
+        )
+    if action == "refuse_visual_early":
+        return StreamingResponse(
+            _stream_plain_sse_async(
+                req,
+                (
+                    "改图/拼图在分析完成并出图之后进行。"
+                    "请先确认计划并执行；若要改方案，请直接说明修改意见。"
+                ),
+            ),
+            media_type="text/event-stream",
+            headers=headers,
+        )
+    if action == "visual":
+        from web_frontend.backend.image_merge_registry import (
+            looks_like_merged_figure_edit_request,
+            should_route_image_merge,
+        )
+        from web_frontend.backend.plot_edit_registry import should_route_plot_edit
+        from web_frontend.backend.visual_message_router import split_compound_visual_message
+
+        plot_msg, merge_msg = split_compound_visual_message(stream_user_message)
+        if not plot_msg and should_route_plot_edit(stream_user_message):
+            plot_msg = stream_user_message
+        if not merge_msg and (
+            looks_like_merged_figure_edit_request(stream_user_message)
+            or should_route_image_merge(stream_user_message)
+        ):
+            merge_msg = stream_user_message
+
+        if plot_msg and merge_msg:
+            return StreamingResponse(
+                _stream_compound_visual_sse_async(
+                    req, request, plot_message=plot_msg, merge_message=merge_msg
+                ),
+                media_type="text/event-stream",
+                headers=headers,
+            )
+        if merge_msg:
+            return StreamingResponse(
+                _stream_image_merge_sse_async(req, request, message=merge_msg),
+                media_type="text/event-stream",
+                headers=headers,
+            )
+        if plot_msg:
+            return StreamingResponse(
+                _stream_plot_edit_sse_async(req, request, message=plot_msg),
+                media_type="text/event-stream",
+                headers=headers,
+            )
+
+    if action == "plan":
+        return StreamingResponse(
+            _stream_orchestrated_sse_async(req, request, action="plan"),
+            media_type="text/event-stream",
+            headers=headers,
+        )
+    if action == "execute":
+        return StreamingResponse(
+            _stream_orchestrated_sse_async(req, request, action="execute"),
+            media_type="text/event-stream",
+            headers=headers,
+        )
+    if action == "report":
+        return StreamingResponse(
+            _stream_orchestrated_sse_async(req, request, action="report"),
+            media_type="text/event-stream",
+            headers=headers,
+        )
+
+    if use_agent and action != "chat":
+        return StreamingResponse(
+            _stream_orchestrated_sse_async(req, request, action="plan"),
             media_type="text/event-stream",
             headers=headers,
         )
@@ -1614,16 +2106,150 @@ async def cancel_session_agent(session_id: str):
     return {"ok": True, "cancelled": cancelled}
 
 
-async def _stream_agent_sse_async(req: ChatStreamRequest, request: Request):
-    """Agent + MCP 工具执行，SSE 流式返回进度。"""
+async def _stream_plain_sse_async(req: ChatStreamRequest, text: str):
+    yield _sse_pack({"delta": text})
+    time_str = db_append_message(req.session_id, "assistant", text)
+    sess = db_get_session(req.session_id) or {}
+    yield _sse_pack(
+        {
+            "done": True,
+            "time": time_str,
+            "finished": True,
+            "workflow_status": sess.get("workflow_status"),
+        }
+    )
+
+
+async def _stream_orchestrated_sse_async(req: ChatStreamRequest, request: Request, *, action: str):
+    from web_frontend.backend.workflow import (
+        AWAITING_APPROVAL,
+        COMPLETED,
+        EXECUTING,
+        FAILED,
+        PLANNING,
+        REPORTING,
+    )
+
+    if action == "plan":
+        db_set_workflow(req.session_id, PLANNING, bump_plan=True)
+        async for pack in _stream_agent_sse_async(req, request, mode="plan"):
+            yield pack
+        return
+    if action == "execute":
+        db_set_workflow(req.session_id, EXECUTING, lock_plan=True)
+        async for pack in _stream_agent_sse_async(
+            req, request, mode="execute", chain_agent_c=True
+        ):
+            yield pack
+        return
+    db_set_workflow(req.session_id, REPORTING)
+    async for pack in _stream_agent_c_sse_async(req, request, intent="c_report"):
+        yield pack
+    sess = db_get_session(req.session_id) or {}
+    if sess.get("workflow_status") == REPORTING:
+        db_set_workflow(req.session_id, COMPLETED)
+
+
+async def _stream_agent_c_sse_async(req: ChatStreamRequest, request: Request, *, intent: str):
+    """前端 Agent C：出图/报告，或把分析计算交接给 B。不启动 MCP。"""
+    from web_frontend.backend.agent_c.session_chat import stream_session_agent_c
+
+    parts: list[str] = []
+    final_error = None
+    visual_results: list = []
+    chat_images: list = []
+    agent_c_report: dict | None = None
+    storage_slug = resolve_storage_slug(req.session_id)
+    cancel_event = await register_job(req.session_id)
+
+    try:
+        yield _sse_pack({"delta": ""})
+        for event in stream_session_agent_c(
+            project_root=PROJECT_ROOT,
+            session_id=req.session_id,
+            storage_slug=storage_slug,
+            user_message=req.user_message,
+            intent=intent,
+        ):
+            if is_cancelled(cancel_event):
+                yield _sse_pack({"delta": "\n\n⚠️ **已终止**\n"})
+                break
+            if "delta" in event:
+                parts.append(event["delta"])
+                yield _sse_pack({"delta": event["delta"]})
+            elif "error" in event:
+                final_error = event["error"]
+                parts.append(f"\n❌ {final_error}\n")
+                yield _sse_pack({"delta": f"\n❌ {final_error}\n"})
+            if event.get("chat_image"):
+                img = event["chat_image"]
+                chat_images.append(img)
+                yield _sse_pack({"chat_image": img})
+            if event.get("visual_results"):
+                visual_results = event["visual_results"]
+            if event.get("agent_c_report"):
+                agent_c_report = event["agent_c_report"]
+
+        text = "".join(parts) or (final_error or "Agent C 未产生输出")
+        chat_files = [
+            str(item.get("file") or "").strip()
+            for item in chat_images
+            if isinstance(item, dict) and item.get("file")
+        ]
+        vr_files = [
+            str(item.get("file") or "").strip()
+            for item in visual_results
+            if isinstance(item, dict) and str(item.get("file") or "").strip()
+        ]
+        chat_files = prefer_effective_among_rels([*chat_files, *vr_files])
+        text = _append_chat_images_marker(text, chat_files)
+        time_str = db_append_message(req.session_id, "assistant", text)
+        done_payload = {
+            "done": True,
+            "time": time_str,
+            "error": final_error,
+            "finished": not bool(final_error),
+            "agent_role": "C",
+        }
+        if visual_results:
+            done_payload["visual_results"] = visual_results
+        if chat_files:
+            done_payload["chat_images"] = chat_files
+        if agent_c_report:
+            done_payload["agent_c_report"] = agent_c_report
+        sess_now = db_get_session(req.session_id) or {}
+        done_payload["workflow_status"] = sess_now.get("workflow_status")
+        yield _sse_pack(done_payload)
+    except Exception as exc:
+        err_msg = f"Agent C 失败: {exc}"
+        parts.append(f"\n❌ {err_msg}\n")
+        yield _sse_pack({"delta": f"\n❌ {err_msg}\n"})
+        if parts:
+            db_append_message(req.session_id, "assistant", "".join(parts))
+        yield _sse_pack({"done": True, "error": err_msg, "finished": False, "agent_role": "C"})
+    finally:
+        await clear_job(req.session_id)
+
+
+async def _stream_agent_sse_async(
+    req: ChatStreamRequest,
+    request: Request,
+    *,
+    mode: str = "full",
+    chain_agent_c: bool = False,
+):
+    """Agent A 规划或 Agent B 执行（MCP）。chain_agent_c 时 B 成功后自动出图写报告。"""
+    from web_frontend.backend.agent_c.session_chat import stream_session_agent_c
     from web_frontend.backend.agent_runner import stream_agent_pipeline
     from web_frontend.backend.web_llm import reset_llm_override
+    from web_frontend.backend.workflow import AWAITING_APPROVAL, COMPLETED, FAILED, REPORTING
 
     parts: list[str] = []
     final_error = None
     was_cancelled = False
     visual_results: list = []
     chat_images: list = []
+    agent_c_report: dict | None = None
     storage_slug = resolve_storage_slug(req.session_id)
     cancel_event = await register_job(req.session_id)
     recent_messages = db_get_messages(req.session_id)[-12:]
@@ -1651,6 +2277,7 @@ async def _stream_agent_sse_async(req: ChatStreamRequest, request: Request):
             cancel_event=cancel_event,
             is_disconnected=_client_gone,
             recent_messages=recent_messages,
+            mode=mode,
         ):
             if "delta" in event:
                 parts.append(event["delta"])
@@ -1667,11 +2294,56 @@ async def _stream_agent_sse_async(req: ChatStreamRequest, request: Request):
                 yield _sse_pack({"chat_image": img})
             if event.get("visual_results"):
                 visual_results = event["visual_results"]
+            if event.get("plan_ready"):
+                db_set_workflow(req.session_id, AWAITING_APPROVAL)
+            if event.get("execute_done"):
+                if event.get("had_tool_failure"):
+                    db_set_workflow(req.session_id, FAILED)
+                elif chain_agent_c and not was_cancelled and not final_error:
+                    db_set_workflow(req.session_id, REPORTING)
+                    yield _sse_pack({"delta": "\n\n---\n🎨 **Agent C**：按方案与结果出图并写报告…\n\n"})
+                    parts.append("\n\n---\n🎨 **Agent C**：按方案与结果出图并写报告…\n\n")
+                    for cev in stream_session_agent_c(
+                        project_root=PROJECT_ROOT,
+                        session_id=req.session_id,
+                        storage_slug=storage_slug,
+                        user_message=req.user_message,
+                        intent="c_report",
+                    ):
+                        if is_cancelled(cancel_event):
+                            was_cancelled = True
+                            break
+                        if "delta" in cev:
+                            parts.append(cev["delta"])
+                            yield _sse_pack({"delta": cev["delta"]})
+                        elif "error" in cev:
+                            final_error = cev["error"]
+                            parts.append(f"\n❌ {final_error}\n")
+                            yield _sse_pack({"delta": f"\n❌ {final_error}\n"})
+                        if cev.get("chat_image"):
+                            img = cev["chat_image"]
+                            chat_images.append(img)
+                            yield _sse_pack({"chat_image": img})
+                        if cev.get("visual_results"):
+                            visual_results = cev["visual_results"]
+                        if cev.get("agent_c_report"):
+                            agent_c_report = cev["agent_c_report"]
+                    if not was_cancelled:
+                        db_set_workflow(
+                            req.session_id, FAILED if final_error else COMPLETED
+                        )
+                elif not was_cancelled and not final_error:
+                    db_set_workflow(req.session_id, COMPLETED)
 
         if is_cancelled(cancel_event) or was_cancelled:
             if not any("已终止" in p or "已执行完毕" in p for p in parts[-3:]):
                 parts.append("\n\n⚠️ **已终止**\n")
                 yield _sse_pack({"delta": "\n\n⚠️ **已终止**\n"})
+
+        if final_error or was_cancelled:
+            cur = (db_get_session(req.session_id) or {}).get("workflow_status")
+            if cur in {"PLANNING", "EXECUTING", "REPORTING"}:
+                db_set_workflow(req.session_id, FAILED)
 
         text = "".join(parts) or (final_error or "Agent 未产生输出")
         chat_files = [
@@ -1699,6 +2371,10 @@ async def _stream_agent_sse_async(req: ChatStreamRequest, request: Request):
             done_payload["visual_results"] = visual_results
         if chat_files:
             done_payload["chat_images"] = chat_files
+        if agent_c_report:
+            done_payload["agent_c_report"] = agent_c_report
+        sess_now = db_get_session(req.session_id) or {}
+        done_payload["workflow_status"] = sess_now.get("workflow_status")
         yield _sse_pack(done_payload)
     except asyncio.CancelledError:
         partial = "".join(parts).strip()
@@ -1712,12 +2388,15 @@ async def _stream_agent_sse_async(req: ChatStreamRequest, request: Request):
         if parts:
             db_append_message(req.session_id, "assistant", "".join(parts))
         yield _sse_pack({"done": True, "error": err_msg, "finished": False})
+        db_set_workflow(req.session_id, FAILED)
     finally:
         reset_llm_override(llm_token)
         await clear_job(req.session_id)
 
 
-async def _stream_plot_edit_sse_async(req: ChatStreamRequest, request: Request):
+async def _stream_plot_edit_sse_async(
+    req: ChatStreamRequest, request: Request, *, message: str | None = None
+):
     """聊天内 Agent 改图，SSE 流式返回进度。"""
     from web_frontend.backend.plot_edit_chat import stream_chat_plot_edit_deltas
 
@@ -1729,6 +2408,7 @@ async def _stream_plot_edit_sse_async(req: ChatStreamRequest, request: Request):
     sess = db_get_session(req.session_id)
     if sess and not model:
         model = (sess.get("model") or "").strip() or None
+    user_message = (message or req.user_message or "").strip()
 
     try:
         yield _sse_pack({"delta": ""})
@@ -1736,7 +2416,7 @@ async def _stream_plot_edit_sse_async(req: ChatStreamRequest, request: Request):
             project_root=PROJECT_ROOT,
             session_id=req.session_id,
             storage_slug=storage_slug,
-            message=req.user_message,
+            message=user_message,
             model=model,
         ):
             if "delta" in event:
@@ -1767,7 +2447,9 @@ async def _stream_plot_edit_sse_async(req: ChatStreamRequest, request: Request):
         yield _sse_pack({"done": True, "error": err_msg, "finished": False, "plot_edit": True})
 
 
-async def _stream_image_merge_sse_async(req: ChatStreamRequest, request: Request):
+async def _stream_image_merge_sse_async(
+    req: ChatStreamRequest, request: Request, *, message: str | None = None
+):
     """聊天内 Agent 合并图片，SSE 流式返回进度。"""
     from web_frontend.backend.image_merge_chat import stream_chat_image_merge_deltas
 
@@ -1780,6 +2462,7 @@ async def _stream_image_merge_sse_async(req: ChatStreamRequest, request: Request
     sess = db_get_session(req.session_id)
     if sess and not model:
         model = (sess.get("model") or "").strip() or None
+    user_message = (message or req.user_message or "").strip()
 
     try:
         yield _sse_pack({"delta": ""})
@@ -1787,7 +2470,7 @@ async def _stream_image_merge_sse_async(req: ChatStreamRequest, request: Request
             project_root=PROJECT_ROOT,
             session_id=req.session_id,
             storage_slug=storage_slug,
-            message=req.user_message,
+            message=user_message,
             model=model,
         ):
             if "delta" in event:
@@ -1816,6 +2499,91 @@ async def _stream_image_merge_sse_async(req: ChatStreamRequest, request: Request
         if parts:
             db_append_message(req.session_id, "assistant", "".join(parts))
         yield _sse_pack({"done": True, "error": err_msg, "finished": False, "image_merge": True})
+
+
+async def _stream_compound_visual_sse_async(
+    req: ChatStreamRequest,
+    request: Request,
+    *,
+    plot_message: str,
+    merge_message: str,
+):
+    """同一条消息内先改图、再拼图。"""
+    from web_frontend.backend.image_merge_chat import stream_chat_image_merge_deltas
+    from web_frontend.backend.plot_edit_chat import stream_chat_plot_edit_deltas
+
+    parts: list[str] = []
+    final_error = None
+    plot_ok = False
+    merge_ok = False
+    storage_slug = resolve_storage_slug(req.session_id)
+    model = (req.model or "").strip() or None
+    sess = db_get_session(req.session_id)
+    if sess and not model:
+        model = (sess.get("model") or "").strip() or None
+
+    try:
+        yield _sse_pack({"delta": ""})
+        for event in stream_chat_plot_edit_deltas(
+            project_root=PROJECT_ROOT,
+            session_id=req.session_id,
+            storage_slug=storage_slug,
+            message=plot_message,
+            model=model,
+        ):
+            if "delta" in event:
+                parts.append(event["delta"])
+                yield _sse_pack({"delta": event["delta"]})
+            elif event.get("plot_edit_done"):
+                plot_ok = True
+            elif "error" in event:
+                final_error = event["error"]
+
+        parts.append("\n---\n\n")
+        yield _sse_pack({"delta": "\n---\n\n"})
+
+        for event in stream_chat_image_merge_deltas(
+            project_root=PROJECT_ROOT,
+            session_id=req.session_id,
+            storage_slug=storage_slug,
+            message=merge_message,
+            model=model,
+        ):
+            if "delta" in event:
+                parts.append(event["delta"])
+                yield _sse_pack({"delta": event["delta"]})
+            elif event.get("image_merge_done"):
+                merge_ok = True
+            elif "error" in event:
+                final_error = event["error"]
+
+        text = "".join(parts) or (final_error or "改图/拼图未产生输出")
+        time_str = db_append_message(req.session_id, "assistant", text)
+        yield _sse_pack(
+            {
+                "done": True,
+                "time": time_str,
+                "error": final_error,
+                "finished": (plot_ok or merge_ok) and not final_error,
+                "plot_edit": True,
+                "image_merge": True,
+            }
+        )
+    except Exception as exc:
+        err_msg = f"改图/拼图失败: {exc}"
+        parts.append(f"\n❌ {err_msg}\n")
+        yield _sse_pack({"delta": f"\n❌ {err_msg}\n"})
+        if parts:
+            db_append_message(req.session_id, "assistant", "".join(parts))
+        yield _sse_pack(
+            {
+                "done": True,
+                "error": err_msg,
+                "finished": False,
+                "plot_edit": True,
+                "image_merge": True,
+            }
+        )
 
 
 def _methods_from_form(methods_json: str | None) -> list[dict]:

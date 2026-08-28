@@ -135,6 +135,47 @@ _PERF_NEW = """perf_res <- perf(
     progressBar = FALSE
 )"""
 
+_CV_SECTION_RE = re.compile(
+    r"# ============================= Cross Validation =============================[\s\S]*?"
+    r"(?=# ============================= VIP =============================)",
+    re.MULTILINE,
+)
+
+_CV_SECTION_NEW = """# ============================= Cross Validation =============================
+set.seed(seed)
+
+min_group_size <- min(table(Y))
+n_samples_cv <- nrow(X_tmp)
+# Mfold CV 在 n<6 或任一组 n<3 时矩阵易奇异；跳过 CV 仍保留 PLS-DA/VIP/火山图
+skip_plsda_cv <- (n_samples_cv < 6 || min_group_size < 3)
+
+if (skip_plsda_cv) {
+    cv_msg <- paste(
+        "Skipped PLS-DA cross-validation:",
+        "n_samples =", n_samples_cv,
+        ", min_group_size =", min_group_size,
+        "(stable Mfold CV needs n>=6 and min_group>=3)."
+    )
+    writeLines(cv_msg, file.path(outdir, "analysis_warning.txt"))
+    writeLines(cv_msg, file.path(outdir, "plsda_cv_results.txt"))
+} else {
+    n_folds <- min(5, max(2, min_group_size))
+    perf_res <- perf(
+        plsda_res,
+        validation = "Mfold",
+        folds = n_folds,
+        nrepeat = 3,
+        progressBar = FALSE
+    )
+    capture.output(
+        print(perf_res$error.rate),
+        file = file.path(outdir, "plsda_cv_results.txt")
+    )
+}
+
+
+"""
+
 _PCA_PLOT_OLD = """plotIndiv(
     pca_res,
     comp = pca_plot_comps,
@@ -281,6 +322,8 @@ def _patch_mixomics_source(text: str) -> str:
         text = text.replace(_OLD_SUB, _NEW_SUB)
     if _PERF_OLD in text:
         text = text.replace(_PERF_OLD, _PERF_NEW)
+    if "skip_plsda_cv" not in text:
+        text, n_cv = _CV_SECTION_RE.subn(_CV_SECTION_NEW, text, count=1)
     if _PCA_PLOT_OLD in text:
         text = text.replace(_PCA_PLOT_OLD, _PCA_PLOT_NEW)
     if _PLSDA_PLOT_OLD in text:

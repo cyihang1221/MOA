@@ -864,7 +864,7 @@ def statistical_analysis_mixomics_impl(
     vip_threshold: float = 1.0,
     pvalue_threshold: float = 0.05,
     padj_threshold: float = 0.05,
-    log2fc_threshold: float = 0.58,
+    log2fc_threshold: float = 1.0,
     use_fdr: bool = True
 ):
     """
@@ -1118,27 +1118,33 @@ dev.off()
 set.seed(seed)
 
 min_group_size <- min(table(Y))
+n_samples_cv <- nrow(X_tmp)
+# Mfold CV 在 n<6 或任一组 n<3 时矩阵易奇异；跳过 CV 仍保留 PLS-DA/VIP/火山图
+skip_plsda_cv <- (n_samples_cv < 6 || min_group_size < 3)
 
-n_folds <- min(
-    5,
-    max(2, min_group_size)
-)
-
-perf_res <- perf(
-    plsda_res,
-    validation = "Mfold",
-    folds = n_folds,
-    nrepeat = 10,
-    progressBar = TRUE
-)
-
-capture.output(
-    print(perf_res$error.rate),
-    file = file.path(
-        outdir,
-        "plsda_cv_results.txt"
+if (skip_plsda_cv) {{
+    cv_msg <- paste(
+        "Skipped PLS-DA cross-validation:",
+        "n_samples =", n_samples_cv,
+        ", min_group_size =", min_group_size,
+        "(stable Mfold CV needs n>=6 and min_group>=3)."
     )
-)
+    writeLines(cv_msg, file.path(outdir, "analysis_warning.txt"))
+    writeLines(cv_msg, file.path(outdir, "plsda_cv_results.txt"))
+}} else {{
+    n_folds <- min(5, max(2, min_group_size))
+    perf_res <- perf(
+        plsda_res,
+        validation = "Mfold",
+        folds = n_folds,
+        nrepeat = 3,
+        progressBar = FALSE
+    )
+    capture.output(
+        print(perf_res$error.rate),
+        file = file.path(outdir, "plsda_cv_results.txt")
+    )
+}}
 
 
 # ============================= VIP =============================
@@ -1252,28 +1258,46 @@ if (nlevels(Y) == 2) {{
         row.names = FALSE
     )
 
+    volcano_df$Direction <- ifelse(
+        !volcano_df$Significant, "Not significant",
+        ifelse(volcano_df$log2FC > 0, "Upregulated", "Downregulated")
+    )
     p <- ggplot(
         volcano_df,
         aes(
             x = log2FC,
             y = neglog10p,
-            color = Significant
+            color = Direction
         )
     ) +
-        geom_point(size = 1.5) +
+        geom_point(size = 1.8, alpha = 0.85) +
+        scale_color_manual(
+            values = c(
+                "Upregulated" = "#E64B35",
+                "Downregulated" = "#4DBBD5",
+                "Not significant" = "#B0B0B0"
+            )
+        ) +
         geom_vline(
             xintercept = c(
                 -log2fc_threshold,
                 log2fc_threshold
             ),
-            linetype = 2
+            linetype = 2,
+            color = "#666666"
         ) +
         geom_hline(
             yintercept = -log10(pvalue_threshold),
-            linetype = 2
+            linetype = 2,
+            color = "#666666"
         ) +
         theme_bw() +
-        ggtitle("Volcano Plot")
+        labs(
+            title = "Volcano Plot",
+            x = "log2 Fold Change",
+            y = "-log10(P value)",
+            color = NULL
+        )
 
     ggsave(
         file.path(outdir, "volcano_plot.png"),
@@ -2849,7 +2873,7 @@ if __name__ == "__main__":
     #     vip_threshold=1.0,
     #     pvalue_threshold=0.05,
     #     padj_threshold=0.05,
-    #     log2fc_threshold=0.58,
+    #     log2fc_threshold=1.0,
     #     use_fdr=False
     # )
 

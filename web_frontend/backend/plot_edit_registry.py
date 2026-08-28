@@ -163,6 +163,56 @@ PLOT_SPECS: tuple[PlotSpec, ...] = (
         ("mass2motif_network_nodes.csv", "mass2motif_network_edges.csv"),
         "motif / spectrum",
     ),
+    # —— 都匀毛尖论文 (Food Chem X 2026) 复现图型 ——
+    PlotSpec(
+        "constituent_bar",
+        "fig01_constituents",
+        "TPC / TFC / TFAA",
+        ("tea_constituents.csv",),
+        "grade 分组柱色",
+    ),
+    PlotSpec(
+        "relative_abundance_heatmap",
+        "fig_diff_abundance",
+        "Relative Abundance Heatmap",
+        ("differential_metabolites_abundance.csv", "volatile_differential_abundance.csv"),
+        "热图色标",
+    ),
+    PlotSpec(
+        "hca_heatmap",
+        "fig05b_hca",
+        "Hierarchical Cluster Heatmap",
+        ("hca_matrix.csv",),
+        "样本聚类热图",
+    ),
+    PlotSpec(
+        "correlation_heatmap",
+        "fig08_correlation",
+        "Pearson Correlation Heatmap",
+        ("correlation_matrix.csv",),
+        "相关矩阵 RdBu",
+    ),
+    PlotSpec(
+        "bioactivity_bar",
+        "fig06_bioactivity",
+        "Bioactivity Assays",
+        ("bioactivity_assays.csv",),
+        "assay 分组柱色",
+    ),
+    PlotSpec(
+        "sensory_scores",
+        "fig07_sensory",
+        "Sensory Evaluation Scores",
+        ("sensory_scores.csv",),
+        "attribute 分组",
+    ),
+    PlotSpec(
+        "plsda_permutation",
+        "fig05d_permutation",
+        "PLS-DA Permutation Test",
+        ("plsda_permutation.csv",),
+        "R2/Q2 scatter",
+    ),
 )
 
 # 最长前缀优先匹配
@@ -218,6 +268,24 @@ PLOT_ALIASES: dict[str, str] = {
     "kegg bar": "kegg_compound_barplot",
     "富集气泡": "kegg_compound_bubble",
     "富集柱状": "kegg_compound_barplot",
+    # 都匀毛尖论文 Fig 1–8
+    "tpc": "fig01_constituents",
+    "tfaa": "fig01_constituents",
+    "成分柱图": "fig01_constituents",
+    "constituent": "fig01_constituents",
+    "相对丰度": "fig_diff_abundance",
+    "relative abundance": "fig_diff_abundance",
+    "hca": "fig05b_hca",
+    "层次聚类": "fig05b_hca",
+    "correlation heatmap": "fig08_correlation",
+    "相关热图": "fig08_correlation",
+    "pearson correlation": "fig08_correlation",
+    "bioactivity": "fig06_bioactivity",
+    "抗氧化": "fig06_bioactivity",
+    "感官": "fig07_sensory",
+    "sensory": "fig07_sensory",
+    "permutation": "fig05d_permutation",
+    "置换检验": "fig05d_permutation",
 }
 
 # 已全部纳入语义 SVG；保留空集合便于兼容旧判断

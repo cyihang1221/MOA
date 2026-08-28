@@ -16,6 +16,7 @@ from web_frontend.backend.anti_hallucination import (
 )
 from web_frontend.backend.json_parse import extract_first_json_object
 from web_frontend.backend.plot_edit_registry import get_plot_spec
+from web_frontend.backend.plot_theme import sanitize_volcano_plot_patch
 from web_frontend.backend.web_llm import WebLLMClient
 
 _SCHEMA_BY_CATEGORY = {
@@ -36,7 +37,12 @@ _SCHEMA_BY_CATEGORY = {
 }}""",
     "volcano": """{{
   "title": "新标题（可选）",
-  "colors": {{"significant": "#E64B35", "nonsignificant": "#B0B0B0"}},
+  "colors": {{
+    "upregulated": "#E64B35",
+    "downregulated": "#4DBBD5",
+    "nonsignificant": "#B0B0B0",
+    "threshold_color": "#d62728"
+  }},
   "font_size": {{"title": 18, "axis": 12, "legend": 11}},
   "figure_size": [8, 6],
   "axes": {{"x_title": "", "y_title": "", "x_min": null, "x_max": null, "y_min": null, "y_max": null}},
@@ -100,6 +106,13 @@ def _build_prompt(
 当前 color_by：{json.dumps(current_config.get("color_by"), ensure_ascii=False)}
 若用户要求「按某列/时间/Batch/聚类着色」，必须设置 color_by 或 cluster，禁止只改 palette 假装换了着色维度。
 按聚类着色示例：{{"cluster": {{"method": "kmeans", "n": 3}}}}
+"""
+    elif plot_type == "volcano":
+        meta_hint = """
+火山图规范：
+- 禁止 color_by / palette / cluster（火山按上/下调/不显著三色着色）
+- 不要删除或清空 thresholds；默认 p=0.05、|log2FC|>=1，阈值线由系统绘制
+- 文献配色只改 colors.upregulated / downregulated / nonsignificant / threshold_color
 """
     lit_hint = ""
     if (literature_context or "").strip():
@@ -288,4 +301,6 @@ def parse_plot_edit_instruction(
         patch["title"] = title_patch["title"]
 
     # 不再无条件注入 title：未改标题时由 merge_plot_config 保留上一版
+    if plot_type == "volcano":
+        patch = sanitize_volcano_plot_patch(patch)
     return patch

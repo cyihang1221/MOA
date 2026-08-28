@@ -255,29 +255,28 @@ def _alias_stems_from_message(message: str) -> list[str]:
 
 
 def _match_images_by_stems(stems: list[str], images: list[dict[str, Any]]) -> list[str]:
+    """每个 stem_prefix 只选一张图（优先 edited_plots、较新 mtime）。"""
     selected: list[str] = []
-    used: set[str] = set()
-    # 同 stem 优先选 edited_plots 中的版本
-    ordered = sorted(images, key=lambda item: (not item.get("in_edited"), -float(item.get("modified") or 0)))
+    used_rels: set[str] = set()
+    used_prefixes: set[str] = set()
+    ordered = sorted(
+        images,
+        key=lambda item: (not item.get("in_edited"), -float(item.get("modified") or 0)),
+    )
     for stem in stems:
+        prefix = stem
+        if prefix in used_prefixes:
+            continue
         for item in ordered:
             rel = item["rel"]
-            if rel in used:
+            if rel in used_rels:
                 continue
             item_stem = item["stem"]
-            if item_stem == stem or item_stem.startswith(f"{stem}_"):
+            if item_stem == prefix or item_stem.startswith(f"{prefix}_"):
                 selected.append(rel)
-                used.add(rel)
+                used_rels.add(rel)
+                used_prefixes.add(prefix)
                 break
-        if stem not in {Path(r).stem.split("_")[0] for r in selected}:
-            for item in ordered:
-                rel = item["rel"]
-                if rel in used:
-                    continue
-                if stem.replace("_", "") in item["stem"].replace("_", ""):
-                    selected.append(rel)
-                    used.add(rel)
-                    break
     return selected
 
 
@@ -342,9 +341,8 @@ def resolve_merge_image_rels(message: str, images: list[dict[str, Any]]) -> list
         if len(picked) >= 2:
             return picked[:12]
         if picked:
-            # 只提到一张时，补全其他最新图
-            rest = [item["rel"] for item in images if item["rel"] not in picked]
-            return (picked + rest)[:12]
+            # 用户已指明图型：只返回匹配到的，不自动塞入目录里其余图
+            return picked[:12]
 
     default = _default_merge_selection(images)
     return default[:12]

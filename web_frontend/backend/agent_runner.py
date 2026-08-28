@@ -189,6 +189,22 @@ def _scan_existing_outputs(paths: dict[str, str]) -> list[str]:
     return found
 
 
+_PLAN_REVIEW_FOOTER = (
+    "\n\n---\n\n"
+    "请审阅上述计划后回复 **确认计划**；修改意见将重新规划。未确认前不会执行。\n"
+)
+
+
+def _plan_preview_for_chat(preview: str) -> str:
+    """计划正文后附审阅提示；若文末已有「确认计划」则不再重复。"""
+    body = (preview or "").rstrip()
+    if not body:
+        return _PLAN_REVIEW_FOOTER
+    if "确认计划" in body[-1200:]:
+        return body + "\n"
+    return body + _PLAN_REVIEW_FOOTER
+
+
 def build_web_goal_description(
     user_message: str,
     paths: dict[str, str],
@@ -392,6 +408,7 @@ async def stream_agent_pipeline(
     cancel_event: Optional[asyncio.Event] = None,
     is_disconnected: Optional[Callable[[], Awaitable[bool]]] = None,
     recent_messages: Optional[list[dict]] = None,
+    mode: str = "full",
 ) -> AsyncIterator[dict]:
     paths = build_session_paths(session_id, project_root, storage_slug=storage_slug)
     meta_report: dict | None = None
@@ -462,7 +479,16 @@ async def stream_agent_pipeline(
                         return _cancelled_payload(exc)
                     raise
 
-    yield {"delta": "🔧 **Agent 模式**：正在加载工具列表并生成执行计划…\n\n"}
+    mode_norm = (mode or "full").strip().lower()
+    if mode_norm not in {"plan", "execute", "full"}:
+        mode_norm = "full"
+
+    if mode_norm == "execute":
+        yield {"delta": "🔒 **Agent B**：加载已确认计划并执行（不重新规划）…\n\n"}
+    elif mode_norm == "plan":
+        yield {"delta": "📋 **Agent A**：根据数据与目标生成分析计划（确认前不执行）…\n\n"}
+    else:
+        yield {"delta": "🔧 **Agent 模式**：正在加载工具列表并生成执行计划…\n\n"}
     if meta_report:
         from web_frontend.backend.session_metadata import format_metadata_report_summary
 
@@ -498,271 +524,474 @@ async def stream_agent_pipeline(
     if raw_conversion_needed(paths):
         mandatory_first_step = build_conversion_plan_step(paths, convert_tool)
 
-    yield {"delta": "📚 正在检索文献/方法学知识库…\n"}
+    tasks: list[str] = []
+    skip_planning = mode_norm == "execute"
+    if skip_planning:
+        from web_frontend.backend.agent_a.plan_document import load_executable_tasks
 
-    def _retrieve_literature():
-        return retrieve_literature(
-            build_plan_literature_query(
-                user_message=user_message,
-                goal_description=goal,
-            ),
-            persist_dir=persist_dir,
-            source_dir=source_dir,
-            top_k=5,
-        )
-
-    try:
-        lit_payload = await _run_cancellable(_retrieve_literature, label="文献检索")
-    except Exception as exc:
-        lit_payload = {
-            "text": "",
-            "mode": "empty",
-            "sources": [],
-            "error": str(exc),
-        }
-
-    if (
-        isinstance(lit_payload, tuple)
-        and len(lit_payload) == 2
-        and lit_payload[0] == "__cancelled__"
-    ):
-        yield {"delta": lit_payload[1]}
-        yield {"cancelled": True}
-        return
-
-    lit_sources: list[Any] = []
-    lit_error = None
-    if isinstance(lit_payload, dict):
-        literature_context = str(lit_payload.get("text") or "")
-        literature_mode = str(lit_payload.get("mode") or "empty")
-        lit_sources = list(lit_payload.get("sources") or [])
-        lit_error = lit_payload.get("error")
-    else:
-        lit_error = "invalid_literature_payload"
-
-    if literature_context.strip():
-        if literature_mode == "vector":
+        tasks = load_executable_tasks(Path(paths["outputspace"]))
+        if not tasks:
             yield {
-                "delta": (
-                    f"✅ 已注入向量文献检索结果"
-                    f"（约 {len(literature_context)} 字符）。\n\n"
-                )
-            }
-        else:
-            src_preview = "、".join(str(s) for s in lit_sources[:4]) or "softwares_database"
-            prefer_vector = False
-            if isinstance(lit_payload, dict):
-                prefer_vector = bool(lit_payload.get("prefer_vector"))
-            if prefer_vector or (lit_error and "vector" in str(lit_error)):
-                reason = ""
-                if lit_error and ":" in str(lit_error):
-                    reason = f"（{str(lit_error).split(':', 1)[-1]}）"
-                yield {
-                    "delta": (
-                        f"⚠️ 向量检索未成功{reason}，已回退关键词文献检索：{src_preview}"
-                        f"（约 {len(literature_context)} 字符）。\n\n"
-                    )
-                }
-            else:
-                yield {
-                    "delta": (
-                        f"✅ 已注入关键词文献检索：{src_preview}"
-                        f"（约 {len(literature_context)} 字符）。\n\n"
-                    )
-                }
-    else:
-        detail = f"（{lit_error}）" if lit_error else ""
-        yield {
-            "delta": (
-                f"ℹ️ 未检索到可用文献上下文{detail}，将按工具白名单与用户意图规划。\n\n"
-            )
-        }
-
-    if skill_match_enabled():
-        yield {"delta": "🧩 正在匹配文献参数 Skill…\n"}
-        try:
-            skill_payload = match_skills(
-                f"{user_message}\n{goal}",
-                project_root=Path(project_root),
-            )
-            skill_context = str(skill_payload.get("text") or "")
-            skill_matched = list(skill_payload.get("matched") or [])
-            skill_err = skill_payload.get("error")
-            if skill_matched:
-                yield {
-                    "delta": (
-                        f"✅ 已注入 Skill：{', '.join(skill_matched)}"
-                        f"（约 {len(skill_context)} 字符）。\n\n"
-                    )
-                }
-            elif skill_err:
-                yield {"delta": f"ℹ️ Skill 未加载（{skill_err}）。\n\n"}
-            else:
-                yield {"delta": "ℹ️ 未命中场景 Skill 触发词，继续文献/默认规划。\n\n"}
-        except Exception as exc:
-            yield {"delta": f"ℹ️ Skill 匹配跳过（{exc}）。\n\n"}
-
-    def _plan():
-        prompt = build_plan_prompt(
-            goal_description=goal,
-            data_list=data_list,
-            metadata_csv=metadata_csv,
-            outputspace=paths["outputspace"],
-            tools_info=tools_info,
-            existing_outputs=existing_outputs,
-            user_message=user_message,
-            mandatory_first_step=mandatory_first_step,
-            literature_context=literature_context or None,
-            skill_context=skill_context or None,
-        )
-        return llm.think_complete(
-            messages_with_system(PLAN_SYSTEM_GUARD, str(prompt)),
-            temperature=temperature,
-            max_tokens=8192,
-        )
-
-    yield {"delta": " 正在调用 LLM 生成计划…\n"}
-    try:
-        plan_resp = await _run_cancellable(_plan, label="计划生成")
-    except Exception as exc:
-        yield {"error": f"计划生成失败: {exc}"}
-        return
-
-    if (
-        isinstance(plan_resp, tuple)
-        and len(plan_resp) == 2
-        and plan_resp[0] == "__cancelled__"
-    ):
-        yield {"delta": plan_resp[1]}
-        yield {"cancelled": True}
-        return
-
-    if await _should_stop():
-        yield {"delta": "\n\n**已终止**（计划阶段）\n"}
-        yield {"cancelled": True}
-        return
-
-    if not plan_resp:
-        yield {
-            "error": (
-                "计划生成失败：LLM 返回为空。"
-                "若刚看到欠费/鉴权报错，请先处理阿里云账户；"
-                "否则请检查模型名、API 密钥与网络。"
-            )
-        }
-        return
-
-    tasks = extract_plan_list(plan_resp)
-    tasks = normalize_plan_tasks_for_platform(tasks)
-    tool_names = [t.name for t in tools_info]
-    tasks_filtered = filter_plan_tasks_to_registered_tools(tasks, tool_names)
-
-    if not tasks_filtered and tasks:
-        yield {
-            "delta": "⚠️ 计划步骤未匹配到已注册工具名，将尝试从文本中保留含 Use 的步骤…\n"
-        }
-        tasks_filtered = [t for t in tasks if "use " in t.lower()]
-
-    tasks = tasks_filtered
-
-    if raw_conversion_needed(paths):
-        tasks = ensure_raw_conversion_step(tasks, paths, convert_tool)
-        yield {
-            "delta": f"ℹ️ 格式转换：{conversion_environment_hint()}\n\n"
-        }
-
-    # 新分析计划里若含 mixOmics，会在本轮产出 differential_metabolites.csv；
-    # 不可因「当前还没有差异表」而提前裁掉注释/KEGG。
-    plan_will_make_diff = any(
-        "statistical_analysis_mixomics" in str(t).lower() for t in tasks
-    )
-    blocked, block_reason = differential_downstream_blocked(paths)
-    if blocked and not plan_will_make_diff:
-        pruned, removed = prune_differential_dependent_tasks(tasks)
-        if removed:
-            tasks = pruned
-            yield {
-                "delta": (
-                    "ℹ️ 当前无可用差异代谢物表，且本轮计划不含统计分析，"
-                    "已跳过差异提取/谱库注释/KEGG 富集；"
-                    "上传 .mgf 时仍可执行分子网络或 DeepMASS。\n\n"
-                )
-            }
-
-    tasks = inject_mgf_standalone_tasks(tasks, user_message, paths, tool_names)
-    tasks = inject_visual_standalone_tasks(tasks, user_message, tool_names)
-    try:
-        from web_frontend.backend.session_metadata import (
-            ensure_metadata_from_inputs,
-            list_metadata_columns,
-            resolve_metadata_csv,
-        )
-
-        _, _ = ensure_metadata_from_inputs(paths["upload"], paths=paths)
-        meta_for_intent = resolve_metadata_csv(paths["upload"])
-        meta_cols = [str(c["name"]) for c in list_metadata_columns(meta_for_intent)]
-    except Exception:
-        meta_for_intent = None
-        meta_cols = []
-    before_prune = list(tasks)
-    tasks, intent_info = inject_analysis_coloring_tasks(
-        tasks,
-        user_message,
-        tool_names,
-        metadata_csv=str(meta_for_intent) if meta_for_intent else None,
-        metadata_columns=meta_cols,
-    )
-    intent_obj = intent_info.get("intent") or {}
-    removed_plot_edits = intent_info.get("removed_plot_edits") or [
-        t for t in before_prune if t not in tasks
-    ]
-    if removed_plot_edits:
-        yield {
-            "delta": (
-                "ℹ️ 已从计划中去掉分析意图类 plot_edit（着色/阈值/通道）；"
-                "将在对应分析工具成功后自动按意图重绘。"
-                f"已去掉 {len(removed_plot_edits)} 步。\n\n"
-            )
-        }
-    removed_by_intent = intent_info.get("removed_by_intent") or []
-    if removed_by_intent:
-        from web_frontend.backend.analysis_intent import describe_intent
-
-        label = describe_intent(intent_obj) or "分析意图"
-        yield {
-            "delta": (
-                f"ℹ️ 已按意图裁剪计划（{label}）：去掉 {len(removed_by_intent)} 步旁支分析"
-                f"（如不要网络 / 只要指定图）。\n\n"
-            )
-        }
-    for err in intent_obj.get("errors") or []:
-        yield {"delta": f"⚠️ 分析意图校验：{err}\n\n"}
-    for warn in intent_obj.get("warnings") or []:
-        yield {"delta": f"ℹ️ {warn}\n\n"}
-
-    if not tasks:
-        parsed = extract_first_json_object(plan_resp or "")
-        if isinstance(parsed.get("plan"), list) and len(parsed.get("plan")) == 0:
-            yield {
-                "delta": (
-                    "ℹ️ 当前消息未触发工具执行。"
-                    "如需分析，请描述具体目标（如「继续跑 XCMS」），或在发送时上传新文件。\n"
+                "error": (
+                    "未找到已锁定的可执行计划（analysis_plan.json 中 executable_tasks）。"
+                    "请先生成并确认计划。"
                 )
             }
             return
-        yield {
-            "delta": "⚠️ 未能解析出可执行计划，原始响应：\n"
-            + (plan_resp or "")[:3000]
-            + "\n\n"
-        }
-        yield {"error": "计划为空或未包含已注册工具，未执行。"}
-        return
+        history_summary.append({"role": "user", "content": f"Plan: {tasks}"})
+        yield {"delta": f"✅ 已加载锁定计划，共 **{len(tasks)}** 步：\n"}
+        for i, t in enumerate(tasks, 1):
+            yield {"delta": f"  {i}. {t}\n"}
+        yield {"delta": "\n---\n\n"}
 
-    history_summary.append({"role": "user", "content": f"Plan: {tasks}"})
-    yield {"delta": f"✅ 计划共 **{len(tasks)}** 步：\n"}
-    for i, t in enumerate(tasks, 1):
-        yield {"delta": f"  {i}. {t}\n"}
-    yield {"delta": "\n---\n\n"}
+    if not skip_planning:
+        from web_frontend.backend.agent_backends import (
+            agent_a_backend,
+            agent_b_backend,
+            backend_status,
+            massomics_available,
+        )
+
+        bs = backend_status(Path(project_root))
+        a_backend = bs["agent_a_backend"]
+        b_backend = bs["agent_b_backend"]
+        yield {
+            "delta": (
+                f"🧭 **Agent A 后端**：`{a_backend}` · **Agent B 后端**：`{b_backend}`\n"
+                f"   MassOmics 根目录：`{bs['massomics_root']}`"
+                f"（{'可用' if bs['massomics_available'] else '不可用'}）\n\n"
+            )
+        }
+        for w in bs.get("warnings") or []:
+            yield {"delta": f"⚠️ {w}\n\n"}
+
+        plan_doc_massomics: dict[str, Any] | None = None
+        plan_resp: str | None = None
+        used_a = "local"
+
+        if skill_match_enabled():
+            yield {"delta": "🧩 正在匹配文献参数 Skill…\n"}
+            try:
+                skill_payload = match_skills(
+                    f"{user_message}\n{goal}",
+                    project_root=Path(project_root),
+                )
+                skill_context = str(skill_payload.get("text") or "")
+                skill_matched = list(skill_payload.get("matched") or [])
+                skill_err = skill_payload.get("error")
+                if skill_matched:
+                    yield {
+                        "delta": (
+                            f"✅ 已注入 Skill：{', '.join(skill_matched)}"
+                            f"（约 {len(skill_context)} 字符）。\n\n"
+                        )
+                    }
+                elif skill_err:
+                    yield {"delta": f"ℹ️ Skill 未加载（{skill_err}）。\n\n"}
+                else:
+                    yield {"delta": "ℹ️ 未命中场景 Skill 触发词，继续默认规划。\n\n"}
+            except Exception as exc:
+                yield {"delta": f"ℹ️ Skill 匹配跳过（{exc}）。\n\n"}
+
+        if a_backend == "massomics" and massomics_available(Path(project_root)):
+            from web_frontend.backend.agent_a.massomics_planner import run_massomics_planning
+
+            yield {
+                "delta": (
+                    "📋 **MassOmics-Agent 规划**：加载 KnowledgeBase + 数据探测，"
+                    "生成 PlanDocument…\n"
+                )
+            }
+            tool_names_pre = [t.name for t in tools_info]
+
+            def _massomics_plan():
+                return run_massomics_planning(
+                    user_message=user_message,
+                    goal=goal,
+                    data_list=data_list if isinstance(data_list, str) else str(data_list),
+                    paths=paths,
+                    registered_tools=tool_names_pre,
+                    llm_client=llm,
+                    temperature=temperature,
+                    project_root=Path(project_root),
+                )
+
+            try:
+                mo_result = await _run_cancellable(_massomics_plan, label="MassOmics 规划")
+            except Exception as exc:
+                mo_result = exc
+
+            if (
+                isinstance(mo_result, tuple)
+                and len(mo_result) == 2
+                and mo_result[0] == "__cancelled__"
+            ):
+                yield {"delta": mo_result[1]}
+                yield {"cancelled": True}
+                return
+
+            if isinstance(mo_result, Exception):
+                yield {
+                    "delta": (
+                        f"⚠️ MassOmics 规划失败（{mo_result}），"
+                        "回退 Web 本地规划（softwares_database RAG）。\n\n"
+                    )
+                }
+            else:
+                tasks, plan_doc_massomics, mo_meta = mo_result
+                if tasks:
+                    used_a = "massomics"
+                    skills_hint = ", ".join(mo_meta.get("matched_skills") or []) or "—"
+                    yield {
+                        "delta": (
+                            f"✅ MassOmics 规划完成：{mo_meta.get('n_steps', 0)} 步方案 → "
+                            f"{mo_meta.get('n_tasks_mapped', 0)} 条 Web 可执行任务"
+                            f"（文献 RAG={'有' if mo_meta.get('has_literature_rag') else '无'}"
+                            f"，数据探测={'有' if mo_meta.get('data_inspect') else '无'}"
+                            f"，skills 示例：{skills_hint}）。\n\n"
+                        )
+                    }
+                else:
+                    yield {
+                        "delta": (
+                            "⚠️ MassOmics 计划未能映射到 Web MCP 工具，"
+                            "回退 Web 本地规划。\n\n"
+                        )
+                    }
+
+        if used_a == "local":
+            yield {"delta": "📚 正在检索文献/方法学知识库…\n"}
+
+        if used_a == "local":
+            def _retrieve_literature():
+                return retrieve_literature(
+                    build_plan_literature_query(
+                        user_message=user_message,
+                        goal_description=goal,
+                    ),
+                    persist_dir=persist_dir,
+                    source_dir=source_dir,
+                    top_k=5,
+                )
+
+            try:
+                lit_payload = await _run_cancellable(_retrieve_literature, label="文献检索")
+            except Exception as exc:
+                lit_payload = {
+                    "text": "",
+                    "mode": "empty",
+                    "sources": [],
+                    "error": str(exc),
+                }
+
+            if (
+                isinstance(lit_payload, tuple)
+                and len(lit_payload) == 2
+                and lit_payload[0] == "__cancelled__"
+            ):
+                yield {"delta": lit_payload[1]}
+                yield {"cancelled": True}
+                return
+
+            lit_sources: list[Any] = []
+            lit_error = None
+            if isinstance(lit_payload, dict):
+                literature_context = str(lit_payload.get("text") or "")
+                literature_mode = str(lit_payload.get("mode") or "empty")
+                lit_sources = list(lit_payload.get("sources") or [])
+                lit_error = lit_payload.get("error")
+            else:
+                lit_error = "invalid_literature_payload"
+
+            if literature_context.strip():
+                if literature_mode == "vector":
+                    yield {
+                        "delta": (
+                            f"✅ 已注入向量文献检索结果"
+                            f"（约 {len(literature_context)} 字符）。\n\n"
+                        )
+                    }
+                else:
+                    src_preview = "、".join(str(s) for s in lit_sources[:4]) or "softwares_database"
+                    prefer_vector = False
+                    if isinstance(lit_payload, dict):
+                        prefer_vector = bool(lit_payload.get("prefer_vector"))
+                    if prefer_vector or (lit_error and "vector" in str(lit_error)):
+                        reason = ""
+                        if lit_error and ":" in str(lit_error):
+                            reason = f"（{str(lit_error).split(':', 1)[-1]}）"
+                        yield {
+                            "delta": (
+                                f"⚠️ 向量检索未成功{reason}，已回退关键词文献检索：{src_preview}"
+                                f"（约 {len(literature_context)} 字符）。\n\n"
+                            )
+                        }
+                    else:
+                        yield {
+                            "delta": (
+                                f"✅ 已注入关键词文献检索：{src_preview}"
+                                f"（约 {len(literature_context)} 字符）。\n\n"
+                            )
+                        }
+            else:
+                detail = f"（{lit_error}）" if lit_error else ""
+                yield {
+                    "delta": (
+                        f"ℹ️ 未检索到可用文献上下文{detail}，将按工具白名单与用户意图规划。\n\n"
+                    )
+                }
+
+            def _plan():
+                prompt = build_plan_prompt(
+                    goal_description=goal,
+                    data_list=data_list,
+                    metadata_csv=metadata_csv,
+                    outputspace=paths["outputspace"],
+                    tools_info=tools_info,
+                    existing_outputs=existing_outputs,
+                    user_message=user_message,
+                    mandatory_first_step=mandatory_first_step,
+                    literature_context=literature_context or None,
+                    skill_context=skill_context or None,
+                )
+                return llm.think_complete(
+                    messages_with_system(PLAN_SYSTEM_GUARD, str(prompt)),
+                    temperature=temperature,
+                    max_tokens=8192,
+                )
+
+            yield {"delta": " 正在调用 LLM 生成计划…\n"}
+            try:
+                plan_resp = await _run_cancellable(_plan, label="计划生成")
+            except Exception as exc:
+                yield {"error": f"计划生成失败: {exc}"}
+                return
+
+            if (
+                isinstance(plan_resp, tuple)
+                and len(plan_resp) == 2
+                and plan_resp[0] == "__cancelled__"
+            ):
+                yield {"delta": plan_resp[1]}
+                yield {"cancelled": True}
+                return
+
+            if await _should_stop():
+                yield {"delta": "\n\n**已终止**（计划阶段）\n"}
+                yield {"cancelled": True}
+                return
+
+            if not plan_resp:
+                yield {
+                    "error": (
+                        "计划生成失败：LLM 返回为空。"
+                        "若刚看到欠费/鉴权报错，请先处理阿里云账户；"
+                        "否则请检查模型名、API 密钥与网络。"
+                    )
+                }
+                return
+
+            tasks = extract_plan_list(plan_resp)
+            tasks = normalize_plan_tasks_for_platform(tasks)
+            tool_names = [t.name for t in tools_info]
+            tasks_filtered = filter_plan_tasks_to_registered_tools(tasks, tool_names)
+
+            if not tasks_filtered and tasks:
+                yield {
+                    "delta": (
+                        "⚠️ 计划步骤未匹配到已注册工具名，"
+                        "将尝试从文本中保留含 Use 的步骤…\n"
+                    )
+                }
+                tasks_filtered = [t for t in tasks if "use " in t.lower()]
+
+            tasks = tasks_filtered
+        else:
+            tool_names = [t.name for t in tools_info]
+
+        if raw_conversion_needed(paths):
+            tasks = ensure_raw_conversion_step(tasks, paths, convert_tool)
+            yield {
+                "delta": f"ℹ️ 格式转换：{conversion_environment_hint()}\n\n"
+            }
+
+        # 新分析计划里若含 mixOmics，会在本轮产出 differential_metabolites.csv；
+        # 不可因「当前还没有差异表」而提前裁掉注释/KEGG。
+        plan_will_make_diff = any(
+            "statistical_analysis_mixomics" in str(t).lower() for t in tasks
+        )
+        blocked, block_reason = differential_downstream_blocked(paths)
+        if blocked and not plan_will_make_diff:
+            pruned, removed = prune_differential_dependent_tasks(tasks)
+            if removed:
+                tasks = pruned
+                yield {
+                    "delta": (
+                        "ℹ️ 当前无可用差异代谢物表，且本轮计划不含统计分析，"
+                        "已跳过差异提取/谱库注释/KEGG 富集；"
+                        "上传 .mgf 时仍可执行分子网络或 DeepMASS。\n\n"
+                    )
+                }
+
+        tasks = inject_mgf_standalone_tasks(tasks, user_message, paths, tool_names)
+        tasks = inject_visual_standalone_tasks(tasks, user_message, tool_names)
+        try:
+            from web_frontend.backend.session_metadata import (
+                ensure_metadata_from_inputs,
+                list_metadata_columns,
+                resolve_metadata_csv,
+            )
+
+            _, _ = ensure_metadata_from_inputs(paths["upload"], paths=paths)
+            meta_for_intent = resolve_metadata_csv(paths["upload"])
+            meta_cols = [str(c["name"]) for c in list_metadata_columns(meta_for_intent)]
+        except Exception:
+            meta_for_intent = None
+            meta_cols = []
+        before_prune = list(tasks)
+        tasks, intent_info = inject_analysis_coloring_tasks(
+            tasks,
+            user_message,
+            tool_names,
+            metadata_csv=str(meta_for_intent) if meta_for_intent else None,
+            metadata_columns=meta_cols,
+        )
+        intent_obj = intent_info.get("intent") or {}
+        removed_plot_edits = intent_info.get("removed_plot_edits") or [
+            t for t in before_prune if t not in tasks
+        ]
+        if removed_plot_edits:
+            yield {
+                "delta": (
+                    "ℹ️ 已从计划中去掉分析意图类 plot_edit（着色/阈值/通道）；"
+                    "将在对应分析工具成功后自动按意图重绘。"
+                    f"已去掉 {len(removed_plot_edits)} 步。\n\n"
+                )
+            }
+        removed_by_intent = intent_info.get("removed_by_intent") or []
+        if removed_by_intent:
+            from web_frontend.backend.analysis_intent import describe_intent
+
+            label = describe_intent(intent_obj) or "分析意图"
+            yield {
+                "delta": (
+                    f"ℹ️ 已按意图裁剪计划（{label}）：去掉 {len(removed_by_intent)} 步旁支分析"
+                    f"（如不要网络 / 只要指定图）。\n\n"
+                )
+            }
+        for err in intent_obj.get("errors") or []:
+            yield {"delta": f"⚠️ 分析意图校验：{err}\n\n"}
+        for warn in intent_obj.get("warnings") or []:
+            yield {"delta": f"ℹ️ {warn}\n\n"}
+
+        if not tasks:
+            if used_a == "local":
+                parsed = extract_first_json_object(plan_resp or "")
+                if isinstance(parsed.get("plan"), list) and len(parsed.get("plan")) == 0:
+                    yield {
+                        "delta": (
+                            "ℹ️ 当前消息未触发工具执行。"
+                            "如需分析，请描述具体目标（如「继续跑 XCMS」），或在发送时上传新文件。\n"
+                        )
+                    }
+                    return
+                yield {
+                    "delta": "⚠️ 未能解析出可执行计划，原始响应：\n"
+                    + (plan_resp or "")[:3000]
+                    + "\n\n"
+                }
+            else:
+                yield {
+                    "delta": (
+                        "⚠️ MassOmics 计划映射后无可执行步骤，"
+                        "请检查 MassOmics 工具名与 Web MCP 白名单映射。\n\n"
+                    )
+                }
+            yield {"error": "计划为空或未包含已注册工具，未执行。"}
+            return
+
+        history_summary.append({"role": "user", "content": f"Plan: {tasks}"})
+        yield {"delta": f"✅ 计划共 **{len(tasks)}** 步（Agent A：`{used_a}`）：\n"}
+        for i, t in enumerate(tasks, 1):
+            yield {"delta": f"  {i}. {t}\n"}
+        yield {"delta": "\n---\n\n"}
+
+        out_path = Path(paths["outputspace"])
+        data_understanding = data_list if isinstance(data_list, str) else str(data_list)
+        if plan_doc_massomics:
+            from web_frontend.backend.agent_a.massomics_planner import (
+                save_massomics_plan_files,
+                write_web_analysis_plan_from_massomics,
+            )
+
+            mo_json, mo_md = save_massomics_plan_files(out_path, plan_doc_massomics)
+            plan_payload = write_web_analysis_plan_from_massomics(
+                out_path,
+                plan_doc=plan_doc_massomics,
+                tasks=tasks,
+                data_understanding=data_understanding,
+                user_message=user_message,
+                project_root=Path(project_root),
+            )
+            n_exec = len(plan_payload.get("executable_tasks") or [])
+            md_path = out_path / "analysis_plan.md"
+            yield {
+                "delta": (
+                    f"\n📄 已写入 MassOmics `plan_*.json/.md` 与 Web `analysis_plan.md`"
+                    f"（可执行 {n_exec} 步）。\n\n"
+                )
+            }
+            try:
+                preview = mo_md.read_text(encoding="utf-8")
+                yield {"delta": _plan_preview_for_chat(preview)}
+            except OSError:
+                try:
+                    preview = md_path.read_text(encoding="utf-8")
+                    yield {"delta": _plan_preview_for_chat(preview)}
+                except OSError:
+                    yield {"delta": _PLAN_REVIEW_FOOTER}
+        else:
+            from web_frontend.backend.agent_a.plan_document import write_analysis_plan
+
+            plan_payload = write_analysis_plan(
+                out_path,
+                objective=user_message,
+                data_understanding=data_understanding,
+                tasks=tasks,
+                user_message=user_message,
+                project_root=Path(project_root),
+            )
+            n_exec = len(plan_payload.get("executable_tasks") or [])
+            md_path = out_path / "analysis_plan.md"
+            yield {
+                "delta": (
+                    f"\n📄 已写入 `analysis_plan.md`（可执行 {n_exec} 步）。\n\n"
+                )
+            }
+            try:
+                preview = md_path.read_text(encoding="utf-8")
+                yield {"delta": _plan_preview_for_chat(preview)}
+            except OSError:
+                yield {"delta": _PLAN_REVIEW_FOOTER}
+        if mode_norm == "plan":
+            yield {"plan_ready": True, "n_steps": n_exec}
+            return
+
+    from web_frontend.backend.agent_backends import agent_b_backend
+
+    b_exec = agent_b_backend()
+    if b_exec == "local":
+        yield {
+            "delta": (
+                "⚙️ **Agent B**：本地 Web MCP（`src/mcp_server` + mixOmics/XCMS 专用 runner）\n\n"
+            )
+        }
+    else:
+        yield {
+            "delta": (
+                "⚙️ **Agent B**：MassOmics 执行（预留；当前建议 `WEB_AGENT_B_BACKEND=local`）\n\n"
+            )
+        }
 
     allowed_set = set(ALL_AGENT_TOOL_NAMES)
     agent_ctx = AgentContext(
@@ -1425,6 +1654,7 @@ async def stream_agent_pipeline(
                                 lambda: ensure_default_plot_configs(
                                     out_dir or paths["outputspace"],
                                     upload_dir=paths.get("upload"),
+                                    goal_text=user_message,
                                 ),
                             )
                             # 再扫一遍会话 output 根，覆盖嵌套目录
@@ -1436,6 +1666,7 @@ async def stream_agent_pipeline(
                                     lambda: ensure_default_plot_configs(
                                         paths["outputspace"],
                                         upload_dir=paths.get("upload"),
+                                        goal_text=user_message,
                                     ),
                                 )
                                 written = list(written) + list(written2)
@@ -1581,6 +1812,8 @@ async def stream_agent_pipeline(
             done_payload["visual_results"] = visual_results
             files_line = "、".join(v["file"] for v in visual_results)
             done_payload["delta"] += f"视觉产物：{files_line}\n"
+        done_payload["execute_done"] = True
+        done_payload["had_tool_failure"] = had_tool_failure
         yield done_payload
         if visual_results:
             yield {"visual_results": visual_results, "finished": True}

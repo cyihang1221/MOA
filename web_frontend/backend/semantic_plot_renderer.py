@@ -11,7 +11,7 @@ import pandas as pd
 
 from web_frontend.backend.plot_edit_registry import resolve_plot_data_file
 from web_frontend.backend.plot_renderer import _family_size_payload, load_scores_and_groups
-from web_frontend.backend.plot_theme import DEFAULT_PALETTE, plot_config_path_for_png
+from web_frontend.backend.plot_theme import DEFAULT_PALETTE, plot_config_path_for_png, resolve_volcano_thresholds
 
 VEGA_LITE_SCHEMA = "https://vega.github.io/schema/vega-lite/v5.json"
 FONT_FAMILY = "Noto Sans CJK SC, Noto Sans CJK, Arial, sans-serif"
@@ -243,9 +243,11 @@ def _volcano_spec(data_dir: Path, plot_config: dict[str, Any]) -> dict[str, Any]
     if not required.issubset(frame.columns):
         raise ValueError("volcano_results.csv 缺少 log2FC / neglog10p 列")
 
-    thr = plot_config.get("thresholds") if isinstance(plot_config.get("thresholds"), dict) else {}
-    p_cut = float(thr["p"]) if isinstance(thr.get("p"), (int, float)) else None
-    fc_cut = float(thr["log2fc"]) if isinstance(thr.get("log2fc"), (int, float)) else None
+    thr = resolve_volcano_thresholds(plot_config)
+    p_cut = float(thr["p"]) if thr.get("p") is not None else None
+    if thr.get("padj") is not None and p_cut is None:
+        p_cut = float(thr["padj"])
+    fc_cut = float(thr["log2fc"]) if thr.get("log2fc") is not None else None
     channel = str(plot_config.get("color_channel") or "").strip()
     color_type = str(plot_config.get("color_type") or "nominal")
 

@@ -5,6 +5,7 @@
 | 文件 | 用途 |
 |------|------|
 | `requirements.txt` | 当前 conda 环境 `MOA` 的 **pip 全量导出**（已合并 `change.md` 中的 `plotly==6.0.1`、`vl-convert-python`，以及谱学栈版本钉死） |
+| `requirements-agent-c.txt` | **仅 Agent C / Web 报告** 的最小 pip 子集（fpdf2、markdown-it-py、出图栈等） |
 | `environment.yml` | **推荐**创建方式：conda 关键包 + `pip -r requirements.txt` |
 | `environment.full.yml` | 当前机器上的 **conda 包精确快照**（Linux x86_64；在其他系统/架构上可能无法解析） |
 
@@ -76,6 +77,47 @@ python -m pip install fastapi uvicorn python-dotenv langchain-openai \
   "plotly==6.0.1" vl-convert-python
 ```
 
+### Agent C 报告 / PDF / CLI（2026-08）
+
+Web 编排器与 `python -m web_frontend.backend.agent_c` 共用以下 pip 包（**已在 requirements.txt**）：
+
+| 包 | 用途 |
+|----|------|
+| `fpdf2==2.8.8` | `final_report.md` → `final_report.pdf` |
+| `markdown-it-py==4.0.0` | 报告 Modal HTML 渲染 |
+| `pillow` | 出图与 PDF 内嵌 PNG 缩放 |
+| `pandas` | 图下「数据支撑」CSV 统计 |
+
+若运行 C 时出现 `PDF 未生成: 需要 fpdf2`，说明当前 MOA 环境未装全 pip 依赖：
+
+```bash
+conda activate MOA
+pip install fpdf2==2.8.8 markdown-it-py==4.0.0 pillow -i https://pypi.tuna.tsinghua.edu.cn/simple
+python -c "from fpdf import FPDF; import markdown_it; print('Agent C report deps OK')"
+```
+
+**PDF 中英混排字体**（系统级，非 pip）：
+
+```bash
+# Ubuntu / Debian
+sudo apt install -y fonts-noto-cjk
+
+# 或确认已有任一路径（Agent C 按此顺序查找）:
+#   /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc
+#   /usr/share/fonts/truetype/wqy/wqy-microhei.ttc
+```
+
+手动跑 Agent C（不经过 Web）：
+
+```bash
+cd /path/to/agent_py_V2.0
+conda activate MOA
+python -m web_frontend.backend.agent_c --session <短id> --plan plan_*.md --dry-run
+python -m web_frontend.backend.agent_c --session <短id> --plan plan_*.md
+```
+
+Web 报告页支持 **重新生成 PDF**（不重跑整次 C）：`POST /api/sessions/{id}/agent-c/regenerate-pdf`
+
 ### 谱库注释 / KEGG 富集 R 包
 
 ```bash
@@ -110,6 +152,8 @@ pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 ```bash
 conda activate MOA
+# 确认 Agent C 报告依赖（PDF / HTML）
+python -c "from fpdf import FPDF; from markdown_it import MarkdownIt; print('report deps OK')"
 python -m uvicorn web_frontend.backend.webapp:app --host 127.0.0.1 --port 8010
 ```
 
