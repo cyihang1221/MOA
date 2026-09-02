@@ -1,0 +1,189 @@
+========== reproducibility_recipe entry ==========
+paper_title: metaX: a flexible and comprehensive software for processing metabolomics data
+source_paper: Wen B et al. (2017), BMC Bioinformatics, DOI: 10.1186/s12859-017-1579-y, PMID: 28327092
+overall_reproducibility_score: 82/100
+
+workflow_steps: 18
+  Step 1: Input data ingestion
+    tool: metaX (v1.0.0 (inferred from 2017 publication))
+    algorithm: file format parsing
+    input: mzXML files or peak table (CSV)
+    output: R object (metaXData class)
+    confidence: high
+  Step 2: Peak detection (if mzXML input)
+    tool: XCMS
+    algorithm: centWave or matchedFilter (not specified, default in XCMS)
+    input: mzXML files
+    output: feature table (peak matrix)
+    confidence: medium
+  Step 3: Peak annotation (if mzXML input)
+    tool: CAMERA
+    algorithm: grouping, isotope, adduct annotation
+    input: XCMS feature table
+    output: annotated feature table with putative compound classes
+    confidence: medium
+  Step 4: Feature filtering by detection frequency
+    tool: metaX
+    algorithm: presence threshold filter
+    parameters: qc_detection_threshold=0.5, sample_detection_threshold=0.2
+    input: feature table
+    output: filtered feature table
+    confidence: high
+  Step 5: Missing value imputation
+    tool: metaX
+    algorithm: k-nearest neighbor (KNN), Bayesian PCA (BPCA), svdImpute, missForest
+    parameters: imputation_method=user-selectable among four
+    input: filtered feature table
+    output: imputed feature table
+    confidence: high
+  Step 6: Data transformation
+    tool: metaX
+    algorithm: log, glog, cube root
+    parameters: transformation_method=user-selectable among three
+    input: imputed feature table
+    output: transformed feature table
+    confidence: high
+  Step 7: Scaling
+    tool: metaX
+    algorithm: Pareto, vast, range, autoscaling, level scaling
+    parameters: scaling_method=user-selectable among five
+    input: transformed feature table
+    output: scaled feature table
+    confidence: high
+  Step 8: Outlier sample removal
+    tool: metaX
+    algorithm: Hotelling’s T² ellipse expansion on PCA scores
+    parameters: pca_components=2, outlier_removal_rounds=3, ellipse_expansion_factor=default (not numerically specified)
+    input: scaled feature table
+    output: outlier-filtered feature table
+    confidence: medium
+  Step 9: Normalization
+    tool: metaX
+    algorithm: QC-RSC, ComBat, SVR, PQN, sum, VSN, quantile
+    parameters: cv_threshold_qc=30, smoothing_parameter_auto=True, smoothing_method=leave-one-out cross-validation
+    input: outlier-filtered feature table
+    output: normalized feature table
+    confidence: high
+  Step 10: QC-based feature filtering post-normalization
+    tool: metaX
+    algorithm: CV filter on QC samples
+    parameters: cv_threshold_qc=30
+    input: normalized feature table
+    output: QC-filtered feature table
+    confidence: high
+  Step 11: Univariate statistical analysis
+    tool: metaX
+    algorithm: Student's t-test, Mann-Whitney U test, ROC analysis
+    parameters: fdr_method=Benjamini-Hochberg, fold_change_threshold=[0.667, 1.5], q_value_threshold=0.05
+    input: QC-filtered feature table
+    output: differentially expressed features list with statistics
+    confidence: high
+  Step 12: Multivariate statistical analysis
+    tool: metaX
+    algorithm: PCA, PLS-DA, OPLS-DA
+    parameters: model_validation=permutation testing, component_selection=cross-validation, vip_threshold=1.0
+    input: QC-filtered feature table
+    output: multivariate model objects (scores, loadings, VIP, R²/Q²)
+    confidence: high
+  Step 13: Power and sample size analysis
+    tool: SSPA (via metaX wrapper)
+    algorithm: power curve simulation
+    input: QC-filtered feature table
+    output: power vs. sample size plot
+    confidence: medium
+  Step 14: Correlation network analysis
+    tool: metaX + DiffCorr + igraph
+    algorithm: Pearson correlation; differential correlation (comp.2.cc.fdr)
+    parameters: correlation_method=Pearson, differential_correlation_fdr=True
+    input: QC-filtered feature table
+    output: correlation network (GML/PAJEK exportable)
+    confidence: high
+  Step 15: Metabolite identification
+    tool: metaX
+    algorithm: m/z matching with adduct/isotope support
+    parameters: mass_tolerance_ppm=10, databases=['HMDB', 'KEGG', 'MassBank', 'PubChem', 'LIPID MAPS', 'MetaCyc', 'PlantCyc']
+    input: feature table with m/z and RT
+    output: putatively annotated metabolites table
+    confidence: high
+  Step 16: Pathway enrichment analysis
+    tool: IMPaLA (via metaX wrapper)
+    algorithm: over-representation analysis
+    input: putatively annotated metabolites table
+    output: enriched pathways with statistics
+    confidence: medium
+  Step 17: Biomarker selection and classification modeling
+    tool: metaX + caret
+    algorithm: random forest, SVM
+    parameters: model_evaluation=ROC curve, performance_metrics=['AUC', 'accuracy', 'sensitivity', 'specificity']
+    input: QC-filtered feature table
+    output: biomarker panel + classification model + ROC plot
+    confidence: high
+  Step 18: HTML report generation
+    tool: Nozzle
+    algorithm: dynamic HTML report assembly
+    input: all analysis results
+    output: interactive HTML report
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: http://metax.genomics.cn/
+  license: GPL-3
+
+figure_recipes: 9
+  Figure 1: [workflow_diagram]
+    caption: Overview of metaX modules, functions and features including input types and analytical steps.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
+    visualization_tool: Custom R plotting (not specified)
+  Figure 2: [web_interface_screenshot]
+    caption: User interface of metaX for quality assessment and normalization evaluation.
+    produced_by_step: [9, 10, 11]
+    visualization_tool: Shiny (R)
+  Figure 3: [qc_chart]
+    caption: QC charts generated by metaX (e.g., peak number distribution, missing value distribution, boxplot of intensity).
+    produced_by_step: [4, 5, 6, 7, 8, 9, 10]
+    visualization_tool: ggplot2 or base R graphics (inferred)
+  Figure 4: [qc_chart]
+    caption: Additional QC charts generated by metaX (e.g., total intensity distribution, m/z vs RT plot, PCA score/loading plots).
+    produced_by_step: [4, 5, 6, 7, 8, 9, 10, 12]
+    visualization_tool: ggplot2 or base R graphics (inferred)
+  Figure 5: [pca_scores]
+    caption: PCA score plots comparing eight normalization methods, showing tighter clustering of QC samples after QC-RSC, ComBat or SVR.
+    produced_by_step: [9, 12]
+    visualization_tool: ggplot2 or base R graphics (inferred)
+  Figure 6: [pca_scores]
+    caption: PCA score and loading plots for the final normalized dataset.
+    produced_by_step: [12]
+    visualization_tool: ggplot2 or base R graphics (inferred)
+  Figure 7: [pls_da_scores]
+    caption: Score and permutation test plots for PLS-DA and OPLS-DA models.
+    produced_by_step: [12]
+    visualization_tool: ggplot2 or base R graphics (inferred)
+    statistical_test: permutation testing (p-value for model significance)
+  Figure 8: [roc_curve]
+    caption: ROC curve for six selected metabolites used as biomarkers.
+    produced_by_step: [17]
+    visualization_tool: ggplot2 or base R graphics (inferred)
+    statistical_test: AUC calculation with confidence intervals
+  Figure 9: [network]
+    caption: Differential correlation network with top six communities color-coded.
+    produced_by_step: [14]
+    visualization_tool: igraph + Gephi/Cytoscape export (for visualization)
+    statistical_test: FDR-corrected differential correlation (DiffCorr)
+
+reproducibility_gaps:
+  - Raw mzXML/mzML data not deposited or referenced
+  - Exact CHD dataset not publicly accessible (only 'published dataset' mentioned)
+  - No DOI or versioned release for metaX package (only website given)
+  - Default parameters for outlier removal (ellipse expansion factor) not numerically specified
+  - No specification of chromatographic platform, gradient, or instrument parameters affecting peak detection
+reproducibility_strengths:
+  - Fully open-source R package (metaX) with documented dependencies (XCMS, CAMERA, ropls, pls, DiffCorr, igraph, IMPaLA, SSPA, caret, Nozzle)
+  - Web interface (http://metax.genomics.cn) enables interactive normalization evaluation and QA
+  - Comprehensive parameter documentation for imputation, transformation, scaling, CV filtering, and mass tolerance
+  - All statistical methods explicitly named with references and implementation sources
+  - HTML report generation ensures traceable, self-contained output

@@ -47,7 +47,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from web_frontend.backend.web_llm import WebLLMClient as LLM_Client
-from src.mcp_server.server import mcp
+from web_frontend.backend.literature_paths import resolve_literature_dirs
 from mcp.client.stdio import stdio_client
 from mcp.client.session import ClientSession
 from src.platform_utils import check_agent_runtime, mcp_stdio_parameters, normalize_display_path
@@ -67,6 +67,7 @@ DATABASE_FILE_DIR = PROJECT_ROOT / "database_file"
 REFERENCE_MGF_PATH = DATABASE_FILE_DIR / "spectraverse-1.0.1.mgf"
 METHOD_COMPARE_DIR = WORKSPACE_DIR / "library_matching_method_compare"
 BASE_DIR = PROJECT_ROOT
+LITERATURE_PERSIST_DIR, LITERATURE_SOURCE_DIR = resolve_literature_dirs(PROJECT_ROOT)
 
 app = FastAPI(title="MassAgent Web UI")
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
@@ -82,10 +83,11 @@ def _warmup_literature_rag_on_startup() -> None:
         try:
             from web_frontend.backend.literature_rag import warmup_literature_rag
 
-            persist = str(BASE_DIR / "softwares_database_RAG")
-            source = str(BASE_DIR / "softwares_database")
-            if not (BASE_DIR / "softwares_database_RAG" / "docstore.json").is_file():
-                _logger.info("文献 RAG 索引不存在，跳过预热")
+            persist, source = LITERATURE_PERSIST_DIR, LITERATURE_SOURCE_DIR
+            has_index = (Path(persist) / "docstore.json").is_file()
+            has_source = Path(source).is_dir()
+            if not has_index and not has_source:
+                _logger.info("文献库与 RAG 索引均不存在，跳过预热")
                 return
             hit = warmup_literature_rag(persist_dir=persist, source_dir=source)
             _logger.info(
@@ -919,6 +921,7 @@ def app_info():
         "reference": "https://github.com/hcji/DeepMASS2_GUI",
         "runtime": runtime,
         "agent_c": "/api/agent-c/contract",
+        "abc_contract": "/api/abc/contract",
         "agent_backends": "/api/agent-backends",
     }
 
@@ -928,6 +931,16 @@ def agent_backends_info():
     from web_frontend.backend.agent_backends import backend_status
 
     return backend_status()
+
+
+@app.get("/api/abc/contract")
+def abc_contract_info():
+    from web_frontend.backend.abc_contract import contract_document
+    from web_frontend.backend.agent_backends import backend_status
+
+    doc = contract_document()
+    doc["backends"] = backend_status()
+    return doc
 
 
 @app.get("/api/agent-c/repro-recipes")
@@ -2238,7 +2251,7 @@ async def _stream_agent_sse_async(
     mode: str = "full",
     chain_agent_c: bool = False,
 ):
-    """Agent A 规划或 Agent B 执行（MCP）。chain_agent_c 时 B 成功后自动出图写报告。"""
+    """Agent A 规划或 Agent B 执行。chain_agent_c 时 B 成功后自动调用独立的 Agent C。"""
     from web_frontend.backend.agent_c.session_chat import stream_session_agent_c
     from web_frontend.backend.agent_runner import stream_agent_pipeline
     from web_frontend.backend.web_llm import reset_llm_override
@@ -2268,8 +2281,8 @@ async def _stream_agent_sse_async(
             session_id=req.session_id,
             storage_slug=storage_slug,
             project_root=PROJECT_ROOT,
-            persist_dir=str(BASE_DIR / "softwares_database_RAG"),
-            source_dir=str(BASE_DIR / "softwares_database"),
+            persist_dir=LITERATURE_PERSIST_DIR,
+            source_dir=LITERATURE_SOURCE_DIR,
             model=req.model,
             temperature=req.temperature,
             llm_api_key=req.llm_api_key,

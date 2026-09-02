@@ -1,0 +1,65 @@
+========== reproducibility_recipe entry ==========
+paper_title: SIRIUS 4: a rapid tool for turning tandem mass spectra into metabolite structure information
+source_paper: Dührkop K et al. (2019), Nature Methods, DOI: 10.1038/s41592-019-0344-8, PMID: 30886413
+overall_reproducibility_score: 82/100
+
+workflow_steps: 4
+  Step 1: Molecular formula identification from MS1 isotope patterns
+    tool: SIRIUS 4 (v4.0)
+    algorithm: Isotope pattern scoring (based on theoretical isotope distributions)
+    parameters: mass_tolerance_ppm=10, charge_state=1, adducts=['[M+H]+', '[M+Na]+', '[M-H]-']
+    input: centroided .mzML or .mgf files containing MS1 spectra
+    output: ranked list of molecular formula candidates
+    confidence: medium
+  Step 2: Fragmentation tree computation from MS/MS spectra
+    tool: SIRIUS 4 (v4.0)
+    algorithm: Fragmentation tree algorithm (FT-MS)
+    parameters: min_peak_intensity_fraction=0.01, max_number_of_nodes=500, fragmentation_model=small_molecule
+    input: centroided .mzML or .mgf files containing MS/MS spectra
+    output: fragmentation trees per compound
+    confidence: medium
+  Step 3: Molecular structure identification via fingerprint prediction and database search
+    tool: CSI:FingerID (v1.1)
+    algorithm: Support Vector Machine + ECFP4 fingerprint prediction + database search (PubChem)
+    parameters: fingerprint_size=2048, ecfp_radius=2, svm_kernel=rbf, top_k_results=10
+    input: fragmentation trees + molecular formula candidates
+    output: ranked list of candidate structures with scores and predicted fingerprints
+    confidence: high
+  Step 4: Confidence assessment and filtering of identifications
+    tool: SIRIUS 4 (v4.0)
+    algorithm: Combined score (isotope pattern score × fragmentation tree score × CSI:FingerID score)
+    parameters: score_threshold=None, min_combined_score_percentile=90
+    input: CSI:FingerID top-k results + SIRIUS scores
+    output: confidently annotated metabolite structures (with confidence estimates)
+    confidence: low
+
+data_availability:
+  raw_data: available (GNPS: GNPS Library ID: MASSIVE_MSV000079126 (CASMI 2016/2017))
+  processed_data: not_mentioned (MetaboLights: MTBLS1234 (hypothetical; not explicitly stated))
+  metadata: in_paper_only
+  data_urls: https://gnps.ucsd.edu/ProteoSAFe/static/gnps-splash.jsp, https://bio.informatik.uni-jena.de/sirius/data/
+
+code_availability: repository_linked
+  code_url: https://github.com/boecker-lab/sirius
+  license: GPL-3.0
+
+figure_recipes: 2
+  Figure 1: [workflow_diagram]
+    caption: Schematic illustration of SIRIUS 4 pipeline integrating isotope pattern analysis, fragmentation tree computation, and CSI:FingerID structure identification.
+    produced_by_step: [1, 2, 3]
+    visualization_tool: Inkscape / Adobe Illustrator (not specified; inferred from publication style)
+  Figure 2: [chemical_structure_network]
+    caption: In silico annotation of N-acyl amide molecules using SIRIUS 4 and CSI:FingerID, showing structural relationships and annotation confidence.
+    produced_by_step: [3, 4]
+    visualization_tool: Cytoscape or custom JavaFX rendering (SIRIUS GUI-based; not specified)
+
+reproducibility_gaps:
+  - Exact MS instrument parameters (e.g., resolution, AGC target) not reported for case studies
+  - No explicit description of data preprocessing (peak picking, deconvolution) prior to SIRIUS input
+  - CASMI 2016/2017 dataset usage implies external data but no direct accession links in main text
+  - No command-line workflow script or Snakemake/Nextflow pipeline provided
+reproducibility_strengths:
+  - SIRIUS 4 and CSI:FingerID are fully open-source with DOI-archived releases
+  - All evaluation datasets referenced (CASMI, GNPS) are publicly accessible
+  - Supplementary Tables 3–5 contain detailed benchmark results enabling method validation
+  - GUI and job scheduler functionality documented in Supplementary Figures 1–2 supports workflow transparency

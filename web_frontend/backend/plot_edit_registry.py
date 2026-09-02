@@ -18,6 +18,8 @@ class PlotSpec:
     default_title: str
     data_files: tuple[str, ...]
     color_keys_hint: str
+    # "all"：每个 data_files 都要命中；"any"：命中其中一个即可（论文图两个丰度表互为备选）
+    data_mode: str = "all"
 
 
 PLOT_SPECS: tuple[PlotSpec, ...] = (
@@ -177,6 +179,7 @@ PLOT_SPECS: tuple[PlotSpec, ...] = (
         "Relative Abundance Heatmap",
         ("differential_metabolites_abundance.csv", "volatile_differential_abundance.csv"),
         "热图色标",
+        "any",
     ),
     PlotSpec(
         "hca_heatmap",
@@ -213,10 +216,60 @@ PLOT_SPECS: tuple[PlotSpec, ...] = (
         ("plsda_permutation.csv",),
         "R2/Q2 scatter",
     ),
+    # —— Agent B step8 变体图（metaX / SIMCA-ropls）：C 侧此前只能通用改标题 ——
+    PlotSpec(
+        "splot",
+        "statistical_analysis_simca_splot",
+        "OPLS-DA S-plot",
+        ("statistical_analysis_simca_result.csv",),
+        "significant / nonsignificant",
+    ),
+    PlotSpec(
+        "opls_outlier",
+        "statistical_analysis_simca_outlier_plot",
+        "Observation Diagnostics (SD/OD)",
+        ("statistical_analysis_simca_outlier_distances.csv",),
+        "outlier / normal",
+    ),
+    PlotSpec(
+        "roc_auc_hist",
+        "statistical_analysis_metax_roc_plot",
+        "Univariate ROC AUC Distribution",
+        ("statistical_analysis_metax_roc.csv",),
+        "histogram_color / threshold_color",
+    ),
+    PlotSpec(
+        "significance_venn",
+        "statistical_analysis_metax_significance_venn",
+        "Significance Set Intersections",
+        ("statistical_analysis_metax_significance_sets.csv",),
+        "集合名（t.test / wilcox.test / VIP）",
+    ),
+    PlotSpec(
+        "log2fc_hist",
+        "statistical_analysis_metax_log2fc_hist",
+        "log2(Ratio) Distribution",
+        ("statistical_analysis_metax_quant_table.csv",),
+        "histogram_color / threshold_color",
+    ),
 )
+
+# Agent B 的同型异名产物（metaX/SIMCA/MetaboAnalyst/sklearn 变体、Act 流水线短名）。
+# 这些 PNG 与已注册图型同型，仅前缀不同，直接复用同一 plot_type 与渲染器。
+PLOT_STEM_ALIASES: dict[str, str] = {
+    "statistical_analysis_metax_pca_plot": "pca",
+    "statistical_analysis_metax_volcano_plot": "volcano",
+    "statistical_analysis_sklearn_volcano_plot": "volcano",
+    "statistical_analysis_metaboanalyst_volcano_plot": "volcano",
+    "statistical_analysis_simca_vip_plot": "vip_bar",
+    "statistical_analysis_simca_permutation_plot": "plsda_permutation",
+}
 
 # 最长前缀优先匹配
 _PLOT_SPECS_SORTED = tuple(sorted(PLOT_SPECS, key=lambda s: len(s.stem_prefix), reverse=True))
+_PLOT_STEM_ALIASES_SORTED = tuple(
+    sorted(PLOT_STEM_ALIASES.items(), key=lambda item: len(item[0]), reverse=True)
+)
 
 PLOT_ALIASES: dict[str, str] = {
     "pca": "pca_plot",
@@ -286,13 +339,45 @@ PLOT_ALIASES: dict[str, str] = {
     "sensory": "fig07_sensory",
     "permutation": "fig05d_permutation",
     "置换检验": "fig05d_permutation",
+    # Agent B step8 变体
+    "s-plot": "statistical_analysis_simca_splot",
+    "splot": "statistical_analysis_simca_splot",
+    "s 图": "statistical_analysis_simca_splot",
+    "opls": "statistical_analysis_simca_splot",
+    "离群": "statistical_analysis_simca_outlier_plot",
+    "outlier": "statistical_analysis_simca_outlier_plot",
+    "roc": "statistical_analysis_metax_roc_plot",
+    "auc": "statistical_analysis_metax_roc_plot",
+    "venn": "statistical_analysis_metax_significance_venn",
+    "韦恩": "statistical_analysis_metax_significance_venn",
+    "维恩": "statistical_analysis_metax_significance_venn",
+    "log2fc分布": "statistical_analysis_metax_log2fc_hist",
+    "倍数变化分布": "statistical_analysis_metax_log2fc_hist",
 }
 
 # 已全部纳入语义 SVG；保留空集合便于兼容旧判断
 UNSUPPORTED_EDIT_STEMS = frozenset()
 
-# FBMN / MolNetEnhancer / KEGG 数据文件别名
+# FBMN / MolNetEnhancer / KEGG / Agent B step8 变体的数据文件别名。
+# 同一逻辑数据在不同工具下文件名不同，按候选顺序取第一个存在的。
 _NETWORK_DATA_ALIASES: dict[str, tuple[str, ...]] = {
+    "pca_scores.csv": ("pca_scores.csv", "statistical_analysis_metax_pca_scores.csv"),
+    "volcano_results.csv": (
+        "volcano_results.csv",
+        "statistical_analysis_metax_result.csv",
+        "statistical_analysis_sklearn_result.csv",
+        "statistical_analysis_metaboanalyst_result.csv",
+        "statistical_analysis_simca_result.csv",
+    ),
+    "vip_scores.csv": (
+        "vip_scores.csv",
+        "statistical_analysis_metaboanalyst_vip.csv",
+        "statistical_analysis_simca_result.csv",
+    ),
+    "plsda_permutation.csv": (
+        "plsda_permutation.csv",
+        "statistical_analysis_simca_permutation.csv",
+    ),
     "network_nodes.csv": ("network_nodes.csv", "fbmn_nodes.csv", "enhanced_nodes.csv"),
     "network_edges.csv": ("network_edges.csv", "fbmn_edges.csv"),
     "chemical_class_distribution.csv": (
@@ -303,9 +388,35 @@ _NETWORK_DATA_ALIASES: dict[str, tuple[str, ...]] = {
     "kegg_compound_enrich.csv": ("kegg_compound_enrich.csv",),
     "mass2motifs.csv": ("mass2motifs.csv",),
     "spectra_motif_scores.csv": ("spectra_motif_scores.csv",),
-    "fbmn_group_intensity.csv": ("fbmn_group_intensity.csv",),
-    "mass2motif_network_nodes.csv": ("mass2motif_network_nodes.csv",),
-    "mass2motif_network_edges.csv": ("mass2motif_network_edges.csv",),
+    # 下面三类 Agent B 只写上游表，坐标/聚合表由 semantic_plot_renderer 现算
+    "network_layout.csv": (
+        "network_layout.csv",
+        "network_nodes.csv",
+        "fbmn_nodes.csv",
+        "enhanced_nodes.csv",
+    ),
+    "fbmn_group_intensity.csv": (
+        "fbmn_group_intensity.csv",
+        "fbmn_nodes.csv",
+        "network_nodes.csv",
+    ),
+    "mass2motif_network_nodes.csv": (
+        "mass2motif_network_nodes.csv",
+        "spectra_motif_scores.csv",
+    ),
+    "mass2motif_network_edges.csv": (
+        "mass2motif_network_edges.csv",
+        "spectra_motif_scores.csv",
+    ),
+    "heatmap_top_vip_matrix.csv": ("heatmap_top_vip_matrix.csv",),
+    "differential_metabolites_abundance.csv": (
+        "differential_metabolites_abundance.csv",
+        "volatile_differential_abundance.csv",
+    ),
+    "volatile_differential_abundance.csv": (
+        "volatile_differential_abundance.csv",
+        "differential_metabolites_abundance.csv",
+    ),
 }
 
 
@@ -319,8 +430,21 @@ def resolve_plot_data_file(data_dir: Path, filename: str) -> Path | None:
     return None
 
 
-def plot_data_files_ready(data_dir: Path, data_files: tuple[str, ...]) -> bool:
-    return all(resolve_plot_data_file(data_dir, name) is not None for name in data_files)
+def plot_data_files_ready(
+    data_dir: Path,
+    data_files: tuple[str, ...],
+    mode: str = "all",
+) -> bool:
+    if not data_files:
+        return False
+    hits = [resolve_plot_data_file(data_dir, name) is not None for name in data_files]
+    if mode == "any":
+        return any(hits)
+    return all(hits)
+
+
+def plot_spec_data_ready(data_dir: Path, spec: PlotSpec) -> bool:
+    return plot_data_files_ready(data_dir, spec.data_files, spec.data_mode)
 
 
 # 仍走通用 Agent 改图（暂无稳定语义数据或布局过复杂）
@@ -331,6 +455,9 @@ def plot_type_from_stem(stem: str) -> str | None:
     for spec in _PLOT_SPECS_SORTED:
         if stem == spec.stem_prefix or stem.startswith(f"{spec.stem_prefix}_"):
             return spec.plot_type
+    for prefix, plot_type in _PLOT_STEM_ALIASES_SORTED:
+        if stem == prefix or stem.startswith(f"{prefix}_"):
+            return plot_type
     return None
 
 
@@ -349,7 +476,7 @@ def get_plot_spec(plot_type: str) -> PlotSpec | None:
 
 
 def agent_editable_stems() -> frozenset[str]:
-    return frozenset(spec.stem_prefix for spec in PLOT_SPECS)
+    return frozenset(spec.stem_prefix for spec in PLOT_SPECS) | frozenset(PLOT_STEM_ALIASES)
 
 
 def is_agent_plot_editable_stem(stem: str) -> bool:
@@ -521,7 +648,7 @@ def list_editable_plots(output_root: Path) -> list[dict[str, Any]]:
         spec = get_plot_spec(plot_type or "") if plot_type else None
         edit_mode = "generic"
         title = stem.replace("_", " ")
-        if spec and plot_data_files_ready(png.parent, spec.data_files):
+        if spec and plot_spec_data_ready(png.parent, spec):
             edit_mode = "semantic"
             title = spec.default_title
             plot_type = spec.plot_type
@@ -588,6 +715,7 @@ _PLOT_REFERENCE_RE = re.compile(
     r"pca|plsda|pls-da|主成分|火山|volcano|vip|热图|heatmap|"
     r"余弦|cosine|相似度|度数|分布图|拓扑|topology|"
     r"pearson|皮尔逊|fbmn|mass2motif|motif|化学类别|注释传播|kegg|气泡|"
+    r"s-?plot|opls|roc|auc|venn|韦恩|维恩|离群|outlier|置换|permutation|"
     r"pca_plot|volcano_plot|cosine_distribution|degree_distribution|family_size|"
     r"network_topology|chemical_class|annotation_propagation|precursor_mass|"
     r"[\w.-]+\.png"

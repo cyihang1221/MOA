@@ -1,0 +1,80 @@
+========== reproducibility_recipe entry ==========
+paper_title: Sharing and community curation of mass spectrometry data with Global Natural Products Social Molecular Networking
+source_paper: Wang M et al. (2016), Nature Biotechnology, DOI: 10.1038/nbt.3597, PMID: 27504778
+overall_reproducibility_score: 92/100
+
+workflow_steps: 5
+  Step 1: MS/MS data upload and storage
+    tool: GNPS platform
+    input: raw .mzML or .mgf files
+    output: centroids, metadata, and spectral libraries
+    confidence: high
+  Step 2: Molecular networking via spectral similarity
+    tool: Cytoscape + GNPS backend (based on Cosine score)
+    algorithm: Cosine correlation
+    parameters: min_cosine_score=0.7, min_matched_peaks=6, fragment_mz_tolerance=0.5, precursor_mz_tolerance=0.5
+    input: centroided MS/MS spectra (.mgf)
+    output: molecular network graph (nodes = spectra, edges = cosine similarity)
+    confidence: high
+  Step 3: Spectral library matching
+    tool: GNPS spectral library search
+    algorithm: dot-product similarity (modified cosine)
+    parameters: min_similarity_score=0.3, min_matched_peaks=3, max_precursor_mass_diff=2.0, library_matching_mode=best_match_only
+    input: query MS/MS spectra
+    output: annotated spectra with compound IDs and confidence scores
+    confidence: high
+  Step 4: Crowdsourced curation and annotation
+    tool: GNPS community annotation interface
+    algorithm: manual and consensus-based annotation
+    input: unannotated or low-confidence spectral matches
+    output: curated spectral library entries with community-voted annotations
+    confidence: medium
+  Step 5: Reanalysis of deposited data ('living data')
+    tool: GNPS automated reprocessing pipeline
+    algorithm: re-clustering and re-matching against updated libraries
+    parameters: reanalysis_frequency=quarterly, trigger_conditions=['new library additions', 'user request']
+    input: previously uploaded datasets
+    output: updated molecular networks and annotations
+    confidence: medium
+
+data_availability:
+  raw_data: available (GNPS)
+  processed_data: available (GNPS)
+  metadata: available
+  data_urls: http://gnps.ucsd.edu
+
+code_availability: repository_linked
+  code_url: https://github.com/CCMS-UCSD/GNPS_Workflows
+  license: Apache-2.0
+
+figure_recipes: 5
+  Figure 1: [workflow_diagram]
+    caption: Overview of the GNPS platform architecture, including data upload, molecular networking, spectral library matching, and community curation.
+    produced_by_step: [1, 2, 3, 4]
+    visualization_tool: Custom web interface + Cytoscape
+  Figure 2: [bar_chart]
+    caption: Statistics on GNPS spectral libraries, including number of spectra, compounds, and contributing labs.
+    produced_by_step: [3, 4]
+    visualization_tool: D3.js / custom GNPS dashboard
+  Figure 3: [network]
+    caption: Example molecular network visualized in Cytoscape, showing clusters of related natural products based on MS/MS spectral similarity.
+    produced_by_step: [2]
+    visualization_tool: Cytoscape
+  Figure 4: [workflow_diagram]
+    caption: Illustration of 'living data' concept: iterative reannotation of spectra through community voting and library updates.
+    produced_by_step: [4, 5]
+    visualization_tool: Custom web interface
+  Figure 5: [network]
+    caption: GNPS-enabled discovery of stenothricin, showing its molecular network cluster and structural elucidation pathway.
+    produced_by_step: [2, 3, 4]
+    visualization_tool: Cytoscape + ChemDraw integration
+
+reproducibility_gaps:
+  - No explicit description of GNPS backend clustering algorithm implementation details (e.g., edge filtering heuristics beyond cosine threshold)
+  - No specification of exact version of Cytoscape or plugins used for visualization
+reproducibility_strengths:
+  - Fully open-source platform with public GitHub repository
+  - All source code and workflows publicly available (Supplementary Source Code ZIP)
+  - Raw and processed data publicly accessible via GNPS web interface
+  - Standardized parameters for cosine scoring and library matching explicitly reported
+  - Apache-2.0 licensed software

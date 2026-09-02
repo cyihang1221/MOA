@@ -1,0 +1,34 @@
+========== reproducibility_recipe entry ==========
+paper_title: Attention Is All You Need
+source_paper:  et al. (2017), NeurIPS
+overall_reproducibility_score: 85/100
+
+workflow_steps: 0
+
+data_availability:
+  raw_data: available (WMT 2014: English-German, English-French)
+  processed_data: not_mentioned
+  metadata: not_mentioned
+  data_urls: http://www.statmt.org/wmt14/translation-task.html
+
+code_availability: repository_linked
+  code_url: https://github.com/tensorflow/tensor2tensor
+  license: Apache License 2.0
+
+figure_recipes: 2
+  Figure 1: [workflow_diagram]
+    caption: Schematic of the Transformer model architecture showing encoder and decoder stacks with self-attention and feed-forward layers.
+    visualization_tool: Custom diagram (no tool specified)
+  Figure 2: [workflow_diagram]
+    caption: Illustration of Scaled Dot-Product Attention (left) and Multi-Head Attention (right), showing parallel attention mechanisms.
+    visualization_tool: Custom diagram (no tool specified)
+
+reproducibility_gaps:
+  - No exact hyperparameter configuration (e.g., learning rate schedule details, dropout rates per layer) fully specified in text
+  - No training data preprocessing script or tokenization pipeline explicitly described
+  - No random seed values reported
+reproducibility_strengths:
+  - Open-source reference implementation available in tensor2tensor
+  - Standard public benchmarks used (WMT 2014)
+  - Architecture fully specified with dimensions (d_model=512, h=8, N=6)
+  - Mathematical formulation of attention mechanisms provided with equations

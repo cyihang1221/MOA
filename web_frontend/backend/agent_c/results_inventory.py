@@ -7,7 +7,7 @@ from typing import Any
 from web_frontend.backend.agent_c.contract import CONTRACT_VERSION, STANDARD_RESULT_FILES
 from web_frontend.backend.plot_edit_registry import (
     PLOT_SPECS,
-    plot_data_files_ready,
+    plot_spec_data_ready,
     resolve_plot_data_file,
 )
 
@@ -15,6 +15,8 @@ _SKIP_DIRS = {
     "edited_plots",
     "merged_figures",
     "agent_c_output",
+    "_abc_handoff",
+    "_handoff_input",
     "__pycache__",
     ".git",
 }
@@ -109,7 +111,7 @@ def inventory_results(
             dirs.add(path)
     for data_dir in sorted(dirs, key=lambda p: len(p.parts)):
         for spec in PLOT_SPECS:
-            if not plot_data_files_ready(data_dir, spec.data_files):
+            if not plot_spec_data_ready(data_dir, spec):
                 continue
             key = (spec.plot_type, str(data_dir))
             if key in seen:
@@ -132,5 +134,8 @@ def inventory_results(
             )
     manifest["plottable"] = plottable
     if not plottable:
-        manifest["warnings"].append("未找到可渲染的语义数据文件（如 pca_scores.csv / volcano_results.csv）")
+        manifest["warnings"].append(
+            "未找到可渲染的语义数据文件"
+            "（如 pca_scores.csv / volcano_results.csv / feature_table.csv）"
+        )
     return manifest

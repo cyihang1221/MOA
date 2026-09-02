@@ -11,7 +11,12 @@ CONTRACT_ID = "massagent.agent_c.v1"
 
 # 需求文档第 8 章：B 侧标准化结果文件（逻辑名 → 本仓库常见实际文件名）
 STANDARD_RESULT_FILES: dict[str, tuple[str, ...]] = {
-    "statistics.csv": ("statistics.csv", "volcano_results.csv", "vip_scores.csv"),
+    "statistics.csv": (
+        "statistics.csv",
+        "volcano_results.csv",
+        "vip_scores.csv",
+        "differential_metabolites.csv",
+    ),
     "embeddings.csv": ("embeddings.csv", "pca_scores.csv", "plsda_scores.csv"),
     "prediction_results.csv": ("prediction_results.csv", "vip_scores.csv"),
     "annotation_table.csv": (
@@ -19,6 +24,14 @@ STANDARD_RESULT_FILES: dict[str, tuple[str, ...]] = {
         "annotated_features.csv",
         "library_matches.csv",
         "enhanced_nodes.csv",
+        "sirius_annotation_result.csv",
+        "all_camera_annotated.csv",
+        "csu_ms2_annotation_result.csv",
+    ),
+    "feature_table.csv": (
+        "feature_table.csv",
+        "feature_table_filtered.csv",
+        "feature_table_filtered_imputed.csv",
     ),
     "enrichment_results.csv": (
         "enrichment_results.csv",
@@ -135,7 +148,7 @@ def contract_document() -> dict:
         "contract_version": CONTRACT_VERSION,
         "roles": {
             "A": "分析规划：MassOmics PlanDocument 或 Web FR-2 analysis_plan.*",
-            "B": "分析执行，产出 analysis_results/（或本仓库 outputspace 结果目录）",
+            "B": "独立执行器：消费 plan_*.json，向 outputspace 写结果（默认 MassOmics-Agent-B）",
             "C": "按方案出图、写图注、汇总报告，不新增计划外分析结论",
         },
         "inputs": {

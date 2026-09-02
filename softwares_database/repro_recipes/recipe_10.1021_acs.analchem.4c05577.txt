@@ -1,27 +1,100 @@
 ========== reproducibility_recipe entry ==========
 paper_title: Multilaboratory Untargeted Mass Spectrometry Metabolomics Collaboration to Identify Bottlenecks and Comprehensively Annotate A Single Dataset.
 source_paper: Houriet J et al. (2025), Analytical chemistry, DOI: 10.1021/acs.analchem.4c05577, PMID: 40693864
-overall_reproducibility_score: 40/100
+overall_reproducibility_score: 42/100
 
-workflow_steps: 0
+workflow_steps: 9
+  Step 1: Sample extraction and preparation
+    tool: manual protocol
+    parameters: extraction_solvent=methanol, dilution_ratio=1:10 (w/v), extraction_time_h=24, temperature_c=25, reconstitution_solvent=1:1 Optima methanol:water, final_concentration_ug_ml=100, blank_type=['Extraction blanks', 'Solvent blanks']
+    input: dry botanical material
+    output: reconstituted extract in LC-MS vials
+    confidence: high
+  Step 2: LC-MS data acquisition
+    tool: Waters SYNAPT G2-Si and Thermo Q-Exactive Plus
+    parameters: column=Acquity HSS T3 C18, 1.8 μm, 2.1 mm × 100 mm, mobile_phase_a=100% CH3CN + 0.01% HCOOH, mobile_phase_b=100% H2O + 0.01% HCOOH, gradient=['0–0.3 min: 5% A', '0.3–9.1 min: 5→90% A', '9.1–10.7 min: 90→98% A', '10.7–11.0 min: 98% A', '11.01–12.8 min: 5% A'], flow_rate_ml_min=0.5, column_temperature_c=40, injection_volume_ul=5, ionization_mode=positive and negative, acquisition_modes=['full scan', 'DDA', 'DIA'], triplicates=True
+    input: reconstituted extract
+    output: raw .raw (Thermo) and .raw (Waters) files
+    confidence: high
+  Step 3: Data conversion and preprocessing
+    tool: vendor software or open-source tools
+    parameters: conversion_target=mzML or vendor-native format, peak_picking_strategy=automatic, intensity_threshold_range=varied across teams (SI-01 Figure S10), isotopic_filtering=True, blank_filtering_strategy=['qualitative (n-blank detection)', 'quantitative (sample/blank area ratio)']
+    input: raw .raw files
+    output: feature table (m/z, RT, intensity)
+    confidence: medium
+  Step 4: Feature filtering and quality control
+    tool: custom scripts / Excel / manual curation
+    parameters: rt_window_min=0.8, rt_window_max=9.0, rstd_triplicate_cutoff_percent=30, msms_required=True, isotope_count_minimum=2, blank_removal=True, peak_picking_consensus=organizing team's peak-picking result used as reference
+    input: feature table
+    output: curated feature table (768 features)
+    confidence: high
+  Step 5: Ion species assignment
+    tool: published fragment/complex list + manual curation
+    algorithm: mass difference matching
+    parameters: mass_tolerance_ppm=5, ion_notation_standard=[M+X±neutral]+, reference_list=SI-04 putative fragments/complexes
+    input: feature table + MS/MS spectra
+    output: ion species-annotated feature table
+    confidence: high
+  Step 6: Chemical class assignment
+    tool: NP Classifier API (vnot specified)
+    algorithm: machine learning-based chemical classification
+    parameters: input_format=SMILES, source_conversion=InChI → SMILES via GNPS API, taxonomy_source=['LOTUS', 'KNApSAcK', 'HMDB', 'literature']
+    input: InChI or InChIKey
+    output: chemical class (e.g., steroidal glycoside)
+    confidence: high
+  Step 7: Structural annotation and consensus building
+    tool: SIRIUS 5.6.3 (v5.6.3)
+    algorithm: fragmentation pattern prediction + molecular formula inference
+    parameters: msms_library_matching=False, taxonomic_context_filtering=True, reference_standards_used=18, confidence_scoring={'level_1A': 'confirmed by standard', 'level_2': 'participant-reported high confidence (e.g., internal DB)', 'level_3': 'refined via fragmentation prediction', 'level_5': 'in-source feature'}
+    input: MS/MS spectra + m/z + RT
+    output: Consensus Annotation Table (142 analytes, 13 confirmed)
+    confidence: high
+  Step 8: Annotation agreement quantification
+    tool: Excel + custom logic
+    algorithm: Annotation Agreement Score
+    parameters: element_1=feature reported (RT ±0.05 min, m/z ±0.003), element_2=ion species description, element_3=chemical class (NP Classifier), element_4=2D structure identity (InChI), score_formula=Occurrence(A_j,i) / AssignmentMatch(j)
+    input: Merged Annotation Table (768 rows)
+    output: Annotation Agreement Scores per feature per element
+    confidence: high
+  Step 9: Interlaboratory performance scoring
+    tool: Excel + custom logic
+    algorithm: binary agreement scoring
+    parameters: scoring_elements=['feature', 'ion species', 'chemical class', 'identity'], match_criteria=exact match to consensus annotation, analyte_level_reduction=True
+    input: team-specific annotations vs Consensus Annotation Table
+    output: per-team agreement scores (feature- and analyte-level)
+    confidence: high
 
 data_availability:
-  raw_data: available (MetaboLights: MTBLS1234)
-  processed_data: not_mentioned
+  raw_data: not_mentioned (not specified)
+  processed_data: in_paper_only (SI-03 Tables S1–S3)
   metadata: in_paper_only
-  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1234
 
 code_availability: not_mentioned
 
-figure_recipes: 0
+figure_recipes: 3
+  Figure 2: [bar_chart]
+    caption: Histogram comparing ion species descriptions proposed by 8 teams versus final consensus assignments, showing bias toward [M+H]+.
+    produced_by_step: [5, 8]
+    visualization_tool: Excel
+  Figure 3: [other]
+    caption: Consensus Annotation Score analysis (details in SI-01).
+    produced_by_step: [8]
+    visualization_tool: Excel
+  Figure 4: [workflow_diagram]
+    caption: LC-MS data and annotation of withanone (confidence level 1A), showing structure, standard MS spectrum, and ion species bar plot by m/z.
+    produced_by_step: [6, 7]
+    visualization_tool: ChemDraw v.21.0 + Excel
 
 reproducibility_gaps:
-  - No description of computational workflows used by individual teams — no tools, parameters, or algorithms specified
-  - No shared code, scripts, or pipelines reported
-  - No details on feature detection, alignment, filtering, or normalization methods
-  - Consensus annotation process not algorithmically defined — described only as 'compiled and cross-checked'
-  - Ion species assignment and in-source fragment handling strategies not standardized or disclosed
+  - Raw mass spectrometry data not deposited in public repository (e.g., MetaboLights, PRIDE)
+  - No code or scripts shared for data merging, duplicate removal, or Annotation Agreement Score calculation
+  - Vendor-specific preprocessing tools (e.g., Waters MassLynx, Thermo Compound Discoverer) not specified or accessible
+  - Exact peak-picking parameters (e.g., centWave settings, noise threshold) not reported per team
+  - SI-01 Section 2 (data preprocessing details) and SI-04 (ion species list) are referenced but not included in provided text
+  - Custom Excel ChemDraw add-ins and GNPS API calls lack reproducible implementation details
 reproducibility_strengths:
-  - Raw LC-MS data publicly available via MetaboLights (MTBLS1234)
-  - Dataset includes multiple platforms (Orbitrap, Q-ToF) and acquisition modes (DDA), enabling method comparison
-  - Consensus annotation list (142 putative analytes, 13 standards-confirmed) is explicitly reported
+  - Detailed LC gradient and instrument parameters fully reported
+  - Consensus Annotation Table provided in SI-03 (Tables S2–S3) with InChIs, InChIKeys, SMILES, and identifiers
+  - Standardized annotation framework (ion notation, NP Classifier, SIRIUS 5.6.3) used and cited
+  - Clear filtering criteria (RT window, RSD, blank removal, isotopes, MS/MS requirement) explicitly defined
+  - Confidence scoring system (levels 1A–5) transparently described and applied

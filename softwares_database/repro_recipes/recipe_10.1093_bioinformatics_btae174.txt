@@ -1,0 +1,30 @@
+========== reproducibility_recipe entry ==========
+paper_title: The IDSM mass spectrometry extension: searching mass spectra using SPARQL
+source_paper: Galgonek J et al. (2024), Bioinformatics, DOI: 10.1093/bioinformatics/btae174, PMID: 38561173
+overall_reproducibility_score: 85/100
+
+workflow_steps: 0
+
+data_availability:
+  raw_data: available (MassBank of North America (MoNA))
+  processed_data: available (IDSM)
+  metadata: available
+  data_urls: https://idsm.elixir-czech.cz, https://mona.fiehnlab.ucdavis.edu
+
+code_availability: repository_linked
+  code_url: https://github.com/idsm-src
+  license: open-source
+
+figure_recipes: 1
+  Figure 1: [workflow_diagram]
+    caption: An example of representation of a MoNA record in the RDF data model.
+    visualization_tool: RDF visualization tool (not specified)
+
+reproducibility_gaps:
+  - No description of computational workflow steps (e.g., spectral preprocessing, similarity scoring, SPARQL query execution parameters)
+  - No specification of mass spectral similarity algorithm or parameters (e.g., cosine score threshold, peak filtering criteria)
+  - No details on RDF conversion pipeline for mass spectra (e.g., tools, ontologies, mapping rules)
+reproducibility_strengths:
+  - Source code openly available under open-source license
+  - Integrated databases (MoNA, In Silico Spectral Database) are publicly accessible
+  - SPARQL endpoint and documentation publicly available

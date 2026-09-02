@@ -1,0 +1,63 @@
+========== reproducibility_recipe entry ==========
+paper_title: Gene set enrichment analysis: A knowledge-based approach for interpreting genome-wide expression profiles
+source_paper: Subramanian A et al. (2005), PNAS, DOI: 10.1073/pnas.0506580102, PMID: 16199517
+overall_reproducibility_score: 85/100
+
+workflow_steps: 4
+  Step 1: Gene ranking
+    tool: GSEA-P
+    algorithm: correlation-based ranking
+    parameters: ranking_metric=signal_to_noise, phenotype_labels=two-class
+    input: gene expression matrix (e.g., microarray intensities) with phenotype labels
+    output: ranked gene list L
+    confidence: high
+  Step 2: Enrichment Score (ES) calculation
+    tool: GSEA-P
+    algorithm: weighted Kolmogorov–Smirnov-like running-sum statistic
+    parameters: weighting_exponent=1.0, step_weight=correlation_with_phenotype
+    input: ranked gene list L and predefined gene set S
+    output: Enrichment Score (ES)
+    confidence: high
+  Step 3: Statistical significance estimation
+    tool: GSEA-P
+    algorithm: phenotype-based permutation test
+    parameters: num_permutations=1000, preserve_gene_correlation=True
+    input: ES and permuted phenotype labels
+    output: nominal P value
+    confidence: high
+  Step 4: Multiple testing correction
+    tool: GSEA-P
+    algorithm: False Discovery Rate (FDR)
+    parameters: fdr_threshold=0.25
+    input: list of ES values across all gene sets
+    output: normalized enrichment score (NES) and FDR q-value
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: https://www.gsea-msigdb.org/gsea/
+  license: freely available (no explicit license stated in paper)
+
+figure_recipes: 2
+  Figure 1: [workflow_diagram]
+    caption: Illustrates GSEA overview: (A) expression data sorted by correlation with phenotype, heat map, and gene tags for set S; (B) running sum plot showing ES and leading-edge subset.
+    produced_by_step: [1, 2]
+    visualization_tool: custom plotting (not specified)
+  Figure 2: [other]
+    caption: Shows original enrichment score behavior for three gene sets ranked by gender correlation in lymphoblastoid cell lines, highlighting problematic mid-list clustering.
+    produced_by_step: [2]
+    visualization_tool: custom plotting (not specified)
+
+reproducibility_gaps:
+  - No raw or processed datasets deposited or accessioned in public repositories
+  - No specific microarray platform or normalization method reported for case studies
+  - No exact parameter values for signal-to-noise metric or weighting exponent provided beyond 'correlation-based'
+reproducibility_strengths:
+  - GSEA-P software freely available at time of publication
+  - Molecular Signature Database (MSigDB) with 1,325 gene sets publicly released
+  - Full mathematical description and algorithmic details provided in main text and Appendix
+  - Phenotype-permutation strategy explicitly described to preserve gene-gene correlations

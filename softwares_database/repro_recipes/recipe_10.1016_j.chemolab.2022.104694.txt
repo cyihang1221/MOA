@@ -1,0 +1,60 @@
+========== reproducibility_recipe entry ==========
+paper_title: Deep denoising autoencoder-assisted continuous scoring of peak quality in high-resolution LC-MS data
+source_paper: Hongchao Ji et al. (2022), Chemometrics and Intelligent Laboratory Systems, DOI: 10.1016/j.chemolab.2022.104694
+overall_reproducibility_score: 78/100
+
+workflow_steps: 4
+  Step 1: ROI extraction
+    tool: HPIC
+    algorithm: region-of-interest detection
+    input: raw .mzML or vendor format LC-MS data
+    output: list of ROIs (m/z, RT range, intensity profile)
+    confidence: medium
+  Step 2: Chromatographic peak profile preprocessing
+    tool: AutoMS (custom)
+    algorithm: linear interpolation + max-normalization
+    parameters: profile_length=50, normalization_method=divide_by_max
+    input: ROI peak profiles (ion abundance vs. scan index)
+    output: normalized 1D vectors of length 50
+    confidence: high
+  Step 3: Denoising autoencoder inference
+    tool: TensorFlow (v2.9.1)
+    algorithm: denoising autoencoder (DAE)
+    parameters: interference_std=0.2, interference_mean=0.0, encoder_conv_kernels=[8, 4], encoder_kernel_size=5, latent_vector_length=64, decoder_dense_channels=32, activation_function=ReLU (hidden), linear (output), loss_function=mean_squared_error, optimizer=Adam
+    input: normalized 1D peak profile vectors
+    output: reconstructed noise-deducted peak profiles
+    confidence: high
+  Step 4: Continuous peak quality scoring
+    tool: AutoMS (custom score function)
+    algorithm: reconstruction residual-based scoring
+    parameters: scoring_metric=mean_absolute_error_or_mse_between_input_and_reconstruction
+    input: input peak profile and reconstructed profile
+    output: continuous peak quality score (0–1 or arbitrary scale)
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: https://github.com/hcji/AutoMS
+  license: MIT
+
+figure_recipes: 1
+  Fig. 1: [workflow_diagram]
+    caption: Schematic of AutoMS integration in LC-MS workflow: (a) AutoMS scores ROIs after ROI extraction by tools like HPIC or XCMS; (b) DAE architecture with interferential layer, encoder, decoder, and peak qu
+    produced_by_step: [1, 2, 3, 4]
+    visualization_tool: Not specified
+
+reproducibility_gaps:
+  - Raw LC-MS datasets used for training/evaluation not deposited in public repository
+  - No description of training dataset composition (e.g., number of manually curated true peaks, source instruments, biological matrices)
+  - No details on how the 10% validation set was split (stratified? random?) or early stopping criteria
+  - No model weights or pre-trained DAE checkpoint provided — users must retrain from scratch
+  - No specification of LC-MS acquisition parameters (e.g., resolution, scan rate, gradient) affecting ROI shape and interpolation validity
+reproducibility_strengths:
+  - Full source code publicly available under MIT license
+  - Explicit TensorFlow version and complete DAE architecture (layer types, dimensions, activations, loss, optimizer)
+  - Deterministic preprocessing steps fully specified (length=50, max-normalization, Gaussian noise σ=0.2)
+  - Clear conceptual mapping from DAE reconstruction error to continuous peak quality score

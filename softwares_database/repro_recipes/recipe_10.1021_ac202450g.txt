@@ -1,0 +1,91 @@
+========== reproducibility_recipe entry ==========
+paper_title: CAMERA: An Integrated Strategy for Compound Spectra Extraction and Annotation of Liquid Chromatography/Mass Spectrometry Data Sets
+source_paper: Kuhl C et al. (2012), Analytical Chemistry, DOI: 10.1021/ac202450g, PMID: 22111785
+overall_reproducibility_score: 72/100
+
+workflow_steps: 7
+  Step 1: Feature detection
+    tool: XCMS
+    algorithm: centWave
+    parameters: snthresh=6, ppm=30, peakwidth=[5, 12], prefilter=[2, 200]
+    input: raw .d/.raw files (Bruker MicrOTOF-Q-I)
+    output: feature table (m/z, RT, intensity)
+    confidence: high
+  Step 2: Feature alignment and retention time correction
+    tool: XCMS
+    algorithm: group.density
+    parameters: bw=3, mzwid=0.015
+    input: feature tables from multiple samples
+    output: aligned feature table with matched features across samples
+    confidence: high
+  Step 3: Compound spectrum construction (retention time grouping)
+    tool: CAMERA (vBioconductor release 2.4 (2009+), used in 2012 study)
+    algorithm: RT window-based grouping (60% of FWHM around centroid)
+    parameters: rt_window_factor=0.6
+    input: XCMS-aligned feature table
+    output: initial compound spectra (groups of co-eluting features)
+    confidence: medium
+  Step 4: Isotope peak detection
+    tool: CAMERA
+    algorithm: pairwise m/z distance + intensity ratio check
+    parameters: mass_difference_ppm=1000, isotope_mass_tolerance_ppm=10, intensity_ratio_check=described in Supplementary Information S1
+    input: compound spectra
+    output: isotope-annotated features with charge state inference
+    confidence: low
+  Step 5: Graph-based compound spectrum refinement
+    tool: CAMERA
+    algorithm: Highly-connected-subgraphs (HCS) or label propagation community (LPC)
+    parameters: scoring_function=Score(x,y) = CAS_xy + ISO_xy + (1/N) * sum_i(CPS_i_xy), correlation_method=Pearson, peak_shape_correlation_scope=EIC from sample with most intense feature (default) OR all samples, clustering_algorithm=['HCS', 'LPC']
+    input: compound spectra with isotope annotations
+    output: refined compound spectra (deconvolved co-eluting compounds)
+    confidence: medium
+  Step 6: Adduct and fragment ion annotation
+    tool: CAMERA
+    algorithm: dynamic rule matching against ion species database
+    parameters: mass_tolerance_relative_error=given relative error threshold (unspecified numerically), rule_sources=predefined lists of observable ions (e.g., [M+H]+, [M+Na]+, [M-H]−, [M+Cl]−, neutral losses)
+    input: refined compound spectra
+    output: annotated ion species (adducts, fragments) and molecular mass hypotheses
+    confidence: low
+  Step 7: Cross-polarity annotation verification
+    tool: CAMERA
+    algorithm: bipolar m/z difference matching against cross-polarity rule table
+    parameters: retention_time_window=unspecified (but implied narrow window for co-elution), cross_polarity_rules=trusted combinations only (e.g., [M+H]+ ↔ [M-H]−)
+    input: compound spectra from positive and negative ion mode datasets
+    output: verified/updated molecular mass hypotheses and ion annotations
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: https://bioconductor.org/packages/release/bioc/html/CAMERA.html
+  license: Artistic-2.0
+
+figure_recipes: 3
+  Figure 1: [workflow_diagram]
+    caption: Schematic overview of the CAMERA workflow: XCMS preprocessing feeds into CAMERA steps including RT grouping (①), isotope detection (②), peak shape correlation (③), adduct annotation (④), and cross-pol
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7]
+    visualization_tool: Not specified
+  Figure 2: [network]
+    caption: Graph-based deconvolution example: initial RT-grouped features (top left), their EICs (top right), scoring matrix (bottom left), and relationship graph before/after clustering showing separation of tw
+    produced_by_step: [5]
+    visualization_tool: Not specified
+  Figure 3: [chromatogram]
+    caption: Identification of camalexin as a Trp-derived phytoalexin in silver nitrate-treated Arabidopsis thaliana leaves using [ring-D5]-Trp labeling and LC/MS.
+    produced_by_step: [6, 7]
+    visualization_tool: Not specified
+
+reproducibility_gaps:
+  - Raw mass spectrometry data not deposited in public repository (e.g., MetaboLights, MassIVE)
+  - Exact relative error threshold for molecular mass hypothesis grouping not specified
+  - Cross-polarity retention time window width not quantified
+  - Supplementary Information S1–S4 and S9 referenced but not included in paper nor linked; critical algorithmic details (intensity ratio check, conflict resolution, instrument settings) reside there
+  - No code or parameter scripts provided for reproducing XCMS/CAMERA pipeline execution
+reproducibility_strengths:
+  - CAMERA is open-source, available via Bioconductor with Artistic-2.0 license
+  - Full XCMS centWave and group.density parameters explicitly reported
+  - Chromatographic gradient, column, flow rate, and MS acquisition settings fully specified
+  - Biological protocols (plant growth, treatment, extraction) detailed in supplement references
+  - Use of stable isotope labeling ([ring-D5]-Trp) enables unambiguous metabolite tracing

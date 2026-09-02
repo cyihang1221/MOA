@@ -1,0 +1,68 @@
+========== reproducibility_recipe entry ==========
+paper_title: MS-DIAL: data-independent MS/MS deconvolution for comprehensive metabolome analysis
+source_paper: Tsugawa H et al. (2015), Nature Methods, DOI: 10.1038/nmeth.3393, PMID: 25938372
+overall_reproducibility_score: 78/100
+
+workflow_steps: 5
+  Step 1: Raw data preprocessing and spectral centroiding
+    tool: MS-DIAL (v1.0 (2015))
+    algorithm: centroiding
+    parameters: centroiding_method=simple centroiding, mz_slice_width=0.1, mz_step_size=0.05
+    input: profile-mode LC-MS/MS DIA raw files (.raw, .d, .mzML)
+    output: centroided MS1 and MS/MS spectra
+    confidence: high
+  Step 2: Peak detection (spotting) on MS1 data
+    tool: MS-DIAL (v1.0 (2015))
+    algorithm: linearly weighted smoothing + differential calculus-based peak detection
+    parameters: smoothing_method=linearly weighted smoothing average, amplitude_filter_percentile=5, first_derivative_filter_percentile=5, second_derivative_filter_percentile=5, minimum_amplitude_threshold=0.0001, derivative_approximation_points=5, mz_tolerance_for_merging=not explicitly quantified; 'close m/z value in adjacent bins'
+    input: centroided MS1 data (base peak chromatograms)
+    output: detected peak spots (RT-m/z-intensity table)
+    confidence: high
+  Step 3: MS/MS deconvolution (MS2Dec)
+    tool: MS-DIAL (v1.0 (2015))
+    algorithm: least squares model peak fitting with Gaussian derivative filter
+    parameters: rt_extraction_window=±1.5 × peak width, ideal_slope_threshold=0.95, baseline_correction_segments=user-defined, baseline_correction_band_width=user-defined, model_peak_basis=['M1(n)', 'M2(n)', 'M3(n)'], ad_hoc_model_peak_selection=median sharpness among ideal slope = 1 candidates
+    input: MS/MS chromatograms extracted per spot
+    output: deconvolved, quantified MS/MS peak intensities per spot
+    confidence: medium
+  Step 4: Metabolite identification
+    tool: MS-DIAL (v1.0 (2015))
+    algorithm: multi-criteria scoring (RT, accurate mass, isotope ratio, MS/MS spectrum)
+    parameters: mass_tolerance_ppm=None, rt_tolerance_seconds=None, isotope_similarity_formula_required=True, msms_similarity_weighting={'dot_product': 1, 'reverse_dot_product': 1, 'matched_fragments_ratio': 1}, weight_function=w = 1 / (1 + A / sum(A) - 0.5), total_score_denominator=3.5, total_score_isotope_weight=0.5, identification_threshold=user-defined
+    input: deconvolved spots + reference library (NIST MSP format)
+    output: annotated feature table with compound IDs and confidence scores
+    confidence: low
+  Step 5: Peak alignment across samples
+    tool: MS-DIAL (v1.0 (2015))
+    algorithm: Joint Aligner–inspired algorithm
+    parameters: reference_file_selection=user-defined, rt_alignment_tolerance=None, mz_alignment_tolerance=None, missing_value_interpolation=enabled
+    input: per-sample peak tables (RT, m/z, intensity)
+    output: aligned feature table (consensus peaks across samples)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: not_mentioned (not mentioned)
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: https://github.com/d6j1a3/ms-dial
+  license: GPL-3.0
+
+figure_recipes: 1
+  F2: [chromatogram]
+    caption: Demonstrates co-elution of metoclopramide and norcocaine with 1.8-s RT difference and shows raw MS/MS spectra where metoclopramide dominates, illustrating MS-DIAL's ability to deconvolve overlapping M
+    produced_by_step: [2, 3]
+    visualization_tool: MS-DIAL built-in viewer
+
+reproducibility_gaps:
+  - Exact mass tolerance (ppm) and RT tolerance (seconds) values not specified for alignment or identification
+  - No public deposition of raw algal strain LC-MS/MS data used in the main result (1,023 lipids)
+  - User-defined parameters (e.g., segment count, band width for baseline correction) left unspecified
+  - LipidBlast library version and enrichment details not provided
+  - No description of gap-filling, normalization, or statistical analysis methods applied downstream of feature table generation
+reproducibility_strengths:
+  - MS-DIAL is open-source (GPL-3.0), publicly archived on Zenodo (DOI: 10.5281/zenodo.12177)
+  - Full mathematical derivation of algorithms provided in Supplementary Notes (Equations 1–15)
+  - Algorithmic workflow described in sufficient detail for independent reimplementation
+  - Uses standard NIST MSP library format, enabling interoperability

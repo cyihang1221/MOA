@@ -1,0 +1,97 @@
+========== reproducibility_recipe entry ==========
+paper_title: Predicting Network Activity from High Throughput Metabolomics
+source_paper: Li S et al. (2013), PLoS Computational Biology, DOI: 10.1371/journal.pcbi.1003123, PMID: 23861661
+overall_reproducibility_score: 78/100
+
+workflow_steps: 6
+  Step 1: Sample preparation and LC/MS acquisition
+    tool: Thermo Orbitrap-Velos
+    parameters: ionization_mode=positive-ion ESI, mz_range=[85, 2000], chromatography=anion exchange, sample_processing=acetonitrile precipitation (2:1 v/v), centrifugation at 14000×g for 5 min at 4°C
+    input: biological samples (moDC cell pellets, supernatants)
+    output: raw .raw files
+    confidence: high
+  Step 2: Feature extraction and quantification
+    tool: apLCMS
+    algorithm: peak detection and alignment
+    parameters: intensity_threshold_removal=10000, missing_value_imputation=1000, log_transformation=log2, cv_filter_threshold=0.2, replicate_averaging=average over three machine replicates
+    input: raw .raw files
+    output: feature table (m/z–RT pairs with intensities)
+    confidence: high
+  Step 3: Quality filtering and feature selection
+    tool: custom R/scripting
+    algorithm: statistical filtering
+    parameters: statistical_test=Student's t-test, p_value_threshold=0.05, comparison_groups=['infected (6 hr) vs mock (6 hr)', 'infected (6 hr) vs baseline (0 hr)'], intersection_required=True
+    input: feature table
+    output: significant feature list (S)
+    confidence: medium
+  Step 4: Metabolite annotation (targeted validation)
+    tool: LTQ-FTMS
+    algorithm: tandem MS (MS/MS) matching
+    parameters: isolation_width_amu=1, normalized_collision_energy_eV=35, validation_strategy=biological sample + spiked authentic standard + authentic reference run sequentially
+    input: selected features from S
+    output: annotated metabolites (for verification only)
+    confidence: high
+  Step 5: Functional network prediction without identification
+    tool: mummichog
+    algorithm: resampling-based module enrichment using metabolic reaction network
+    parameters: metabolic_model_source=BioCyc (yeast), HumanCyc (human), enrichment_metric=overlap count (min(features, matched_metabolites)), pathway_size_definition=number of analytically detectable metabolites in pathway, sampling_method=whole feature list resampling, module_finding=extensive subnetwork sampling, distance_metric=reaction steps (max 4 steps used as practical cutoff)
+    input: feature table (S or full list)
+    output: predicted activity networks / enriched modules
+    confidence: high
+  Step 6: Cross-dataset validation and benchmarking
+    tool: custom analysis
+    algorithm: comparison against ground-truth annotations
+    parameters: validation_datasets=['human urinary data (MetaboLights MTBLS439020)', 'yeast MAVEN mzXML data (targeted vs untargeted features)'], ground_truth_sources=['3689 manually annotated features (urine)', '177 targeted MAVEN annotations → 101 metabolites'], performance_metric=overlap between mummichog-predicted modules and annotated metabolites
+    input: mummichog predictions + external annotations
+    output: validation metrics (e.g., precision/recall per module)
+    confidence: medium
+
+data_availability:
+  raw_data: available (MetaboLights: MTBLS439020)
+  processed_data: available (PLoS Computational Biology Supplemental Data: Dataset S1)
+  metadata: in_paper_only
+  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS439020, https://journals.plos.org/ploscompbiol/s/supplementary-information?article=10.1371/journal.pcbi.1003123
+
+code_availability: repository_linked
+  code_url: https://github.com/shaunmahony/mummichog
+  license: GPL-3.0
+
+figure_recipes: 6
+  Figure 1: [workflow_diagram]
+    caption: Contrasts conventional metabolite ID-first pathway analysis vs mummichog's direct network activity prediction (blue arrow).
+    produced_by_step: [5]
+    visualization_tool: Adobe Illustrator
+  Figure 2: [network_graph]
+    caption: Hierarchical clustering of metabolic reactions by shortest path distance; shows modular structure and distinction between pathways and network modules.
+    produced_by_step: [5]
+    visualization_tool: Cytoscape or custom R plotting
+  Figure 3: [other]
+    caption: Prediction by mummichog — details not fully described in caption text provided.
+    produced_by_step: [5]
+    visualization_tool: unknown
+  Figure 4: [bar_chart]
+    caption: ELISA cytokine data (A) and qRT-PCR gene expression (B,C) validating immune activation and glutathione/nitric oxide pathway modulation.
+    produced_by_step: [3, 4]
+    visualization_tool: GraphPad Prism or similar
+    statistical_test: Student's t-test (n=3)
+  Figure 5: [chromatogram]
+    caption: Arginine example showing MS/MS fragmentation pattern, extracted ion chromatogram, and retention time alignment across sample types.
+    produced_by_step: [4]
+    visualization_tool: Xcalibur or Thermo software
+  Figure 6: [other]
+    caption: Metabolite prediction by mummichog — details not fully described in caption text provided.
+    produced_by_step: [5]
+    visualization_tool: unknown
+
+reproducibility_gaps:
+  - Raw .raw files from moDC experiment not deposited in public repository (only processed Dataset S1 and external MTBLS439020 provided)
+  - apLCMS parameters (e.g., peak width, ppm tolerance, RT alignment settings) not specified beyond filtering thresholds
+  - No explicit version or commit hash for mummichog used in paper (2013 version likely pre-1.0)
+  - Custom R scripts for t-test filtering and resampling not shared (only 'apLCMS' and 'mummichog' named)
+  - No description of how 'baseline (0 hr)' controls were collected or processed
+reproducibility_strengths:
+  - mummichog source code publicly available on GitHub with DOI
+  - External datasets (MTBLS439020, MAVEN yeast) openly accessible
+  - Full feature table and predictions provided as Dataset S1
+  - Detailed experimental protocols for cell culture, LC/MS, and qRT-PCR included
+  - Robustness analyses (Figures S7–S8) demonstrate algorithmic stability to parameter variation

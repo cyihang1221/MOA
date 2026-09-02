@@ -1,0 +1,82 @@
+========== reproducibility_recipe entry ==========
+paper_title: DeepSeMS: revealing the hidden biosynthetic potential of the global ocean microbiome
+source_paper: Tingjun Xu et al. (2026), Nature Computational Science, DOI: 10.1038/s43588-026-00983-1
+overall_reproducibility_score: 42/100
+
+workflow_steps: 5
+  Step 1: BGC sequence encoding
+    tool: DeepSeMS
+    algorithm: Transformer-based language model
+    parameters: token_representation=Pfam domain identifiers, sequence_length_limit=250, input_encoding=functional-domain sequences
+    input: biosynthetic gene cluster (BGC) sequences from metagenome-assembled genomes (MAGs)
+    output: tokenized functional-domain sequence
+    confidence: high
+  Step 2: Feature-aligned data augmentation
+    tool: Custom SMILES enumeration
+    algorithm: Scaffold-aware SMILES enumeration
+    parameters: base_dataset_size=3029, augmented_dataset_size=55903, scaffold_preservation=True, tanimoto_coefficient_structure_mean=0.66, tanimoto_coefficient_scaffold_mean=0.73, exact_structure_recovery_rate=0.2424, scaffold_recovery_rate=0.4978
+    input: Experimentally validated BGC–SM pairs from MIBiG database
+    output: Augmented training dataset of BGC–SMILES pairs
+    confidence: medium
+  Step 3: Model training with ensemble inference
+    tool: DeepSeMS
+    algorithm: Tenfold cross-validated transformer ensemble
+    parameters: cross_validation_folds=10, ensemble_aggregation=prediction aggregation across folds, chemical_validity_rate=0.8571, mean_structural_similarity_to_reference=0.85
+    input: Augmented BGC–SMILES training dataset
+    output: Ensemble-predicted SMILES strings per BGC
+    confidence: high
+  Step 4: Physicochemical and novelty annotation
+    tool: RDKit
+    algorithm: Descriptor calculation
+    parameters: computed_properties=['molecular_weight', 'heavy_atom_count', 'synthetic_accessibility']
+    input: Predicted SMILES strings
+    output: Annotated metabolite predictions with physicochemical and novelty metrics
+    confidence: medium
+  Step 5: Global ocean metagenome screening
+    tool: DeepSeMS
+    algorithm: Large-scale BGC-to-SM prediction
+    parameters: input_bgc_source=bathypelagic MAGs from global ocean metagenomes, predicted_metabolites_count=60000
+    input: Cryptic BGCs from ocean MAGs
+    output: Predicted secondary metabolite structures and annotations
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: not_mentioned
+
+code_availability: mentioned_no_link
+
+figure_recipes: 5
+  Fig. 1a: [workflow_diagram]
+    caption: Overview of the DeepSeMS framework mapping BGC sequences to SMILES strings via a transformer model.
+    produced_by_step: [1, 3]
+    visualization_tool: Not specified
+  Fig. 1b: [other]
+    caption: Comparison of BGC sequence encoding strategies showing functional-domain representation achieves optimal balance of biochemical resolution and tractability.
+    produced_by_step: [1]
+    visualization_tool: Not specified
+  Fig. 1c: [other]
+    caption: Illustration of feature-aligned SMILES enumeration strategy preserving scaffold features during data augmentation.
+    produced_by_step: [2]
+    visualization_tool: Not specified
+  Supplementary Fig. 2: [other]
+    caption: Detailed schematic of structural feature-aligned SMILES enumeration procedure.
+    produced_by_step: [2]
+    visualization_tool: Not specified
+  Supplementary Fig. 3: [workflow_diagram]
+    caption: Tenfold cross-validation and ensemble modeling scheme for capturing biosynthetic variability.
+    produced_by_step: [3]
+    visualization_tool: Not specified
+
+reproducibility_gaps:
+  - Raw metagenomic sequencing data and MAGs not deposited or referenced
+  - No public link to DeepSeMS code repository or model weights
+  - No access to augmented training dataset (n=55,903) or MIBiG-derived splits
+  - Missing implementation details for feature-aligned SMILES enumeration (e.g., scaffold detection rules, enumeration constraints)
+  - No specification of transformer architecture hyperparameters (layers, heads, embedding dim, learning rate schedule)
+reproducibility_strengths:
+  - Clear description of input/output representations (Pfam tokens → SMILES)
+  - Quantitative validation metrics reported for augmentation and ensemble performance
+  - Use of standard cheminformatics tools (RDKit) implied for property calculation
+  - Explicit benchmarking against antiSMASH 7 and PRISM 4

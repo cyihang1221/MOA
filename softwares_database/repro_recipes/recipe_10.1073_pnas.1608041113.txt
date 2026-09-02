@@ -1,0 +1,62 @@
+========== reproducibility_recipe entry ==========
+paper_title: Topic modeling for untargeted substructure exploration in metabolomics
+source_paper: van der Hooft JJ et al. (2016), PNAS, DOI: 10.1073/pnas.1608041113, PMID: 27856765
+overall_reproducibility_score: 72/100
+
+workflow_steps: 5
+  Step 1: LC-MS/MS data acquisition
+    tool: Thermo Xcalibur Tune (v2.5)
+    parameters: ionization_mode=['positive', 'negative'], acquisition_mode=data-dependent TopN MS/MS, top_n=10, collision_energy_levels=[25.2, 60.0, 94.8], dynamic_exclusion=True, full_scan_duty_cycle=2, gradient_duration_min=15, wash_step_min=2, reequilibration_min=7, solvent_a=20 mM ammonium carbonate in water, solvent_b=acetonitrile, initial_solvent_b_pct=80, final_solvent_b_pct=20, flow_rate_ul_per_min=300, column_temperature_c=25, injection_volume_ul=10, autosampler_temperature_c=4, column=SeQuant ZIC-pHILIC (150×4.6 mm, 5 µm)
+    input: extracted beer and urine samples
+    output: raw .raw files (Thermo)
+    confidence: high
+  Step 2: Spectral preprocessing and feature table generation
+    tool: xcmsFragments
+    input: raw .raw files
+    output: fragmentation spectra (peak lists) and associated metadata
+    confidence: low
+  Step 3: Mass2Motif extraction via topic modeling
+    tool: Latent Dirichlet Allocation (LDA)
+    algorithm: LDA
+    parameters: num_topics=None, alpha=None, beta=None, iterations=None, convergence_threshold=None
+    input: matrix of fragment m/z intensities across all spectra
+    output: Mass2Motifs (co-occurring fragment/neutral loss patterns)
+    confidence: low
+  Step 4: Substructure annotation and de novo interpretation
+    tool: RMassBank
+    algorithm: in-silico fragmentation + formula annotation
+    parameters: mass_accuracy_ppm=None, neutral_loss_tolerance_da=None, fragment_tolerance_da=None
+    input: Mass2Motifs + molecular formula candidates
+    output: putative substructure annotations (e.g., glycosyl, acyl, phosphate motifs)
+    confidence: medium
+  Step 5: Integration with orthogonal correlations
+    tool: custom R scripts
+    algorithm: correlation analysis (abundance co-variation)
+    parameters: correlation_method=Pearson or Spearman, p_value_threshold=0.05, fdr_correction=Benjamini-Hochberg
+    input: Mass2Motif abundances + sample metadata
+    output: biologically coherent motif groups linked to perturbation
+    confidence: low
+
+data_availability:
+  raw_data: available (Glasgow Research Data Repository: 10.5525/gla.researchdata.313)
+  processed_data: in_paper_only
+  metadata: in_paper_only
+  data_urls: https://doi.org/10.5525/gla.researchdata.313
+
+code_availability: repository_linked
+  code_url: https://doi.org/10.5525/gla.researchdata.313
+  license: CC BY 4.0
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Exact LDA hyperparameters (number of topics, alpha/beta, convergence criteria) not specified
+  - No details on spectral binning or m/z tolerance used for fragment matrix construction
+  - xcmsFragments and RMassBank versions not reported
+  - No description of how Mass2Motif abundances were quantified per sample
+  - Custom R scripts referenced but not explicitly archived with version control or documentation
+reproducibility_strengths:
+  - Raw and processed data publicly available via DOI-linked repository
+  - All key software tools are open-source (xcmsFragments, RMassBank, LDA implementations)
+  - Detailed LC-MS/MS acquisition parameters fully reported
+  - Validation using independent published urine dataset (ref 16)

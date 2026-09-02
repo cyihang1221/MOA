@@ -1,0 +1,97 @@
+========== reproducibility_recipe entry ==========
+paper_title: Integrative analysis of multimodal mass spectrometry data in MZmine 3
+source_paper: Schmid R et al. (2023), Nature Biotechnology, DOI: 10.1038/s41587-023-01690-2, PMID: 36859716
+overall_reproducibility_score: 82/100
+
+workflow_steps: 9
+  Step 1: Data import and format conversion
+    tool: MZmine 3
+    algorithm: native tdf support, imzML support, Aird format support, mzTab/MGF/MSP import
+    input: raw vendor files (.tdf, .imzML, .Aird, .mzTab, .MGF, .MSP)
+    output: internal MZmine project format
+    confidence: high
+  Step 2: Feature detection (LC-IMS-MS)
+    tool: MZmine 3
+    algorithm: centWave-like peak detection extended to ion mobility dimension
+    parameters: mass_tolerance_ppm=None, rt_tolerance_sec=None, mobility_tolerance_ms=None
+    input: LC-tims-MS raw data (e.g., PASEF mode)
+    output: feature list with m/z, RT, CCS/ion mobility drift time
+    confidence: medium
+  Step 3: Imaging feature detection (IMS-MS imaging)
+    tool: MZmine 3
+    algorithm: spatially resolved ion feature extraction with mobility-resolved ion images
+    parameters: spatial_bin_size=None, mobility_resolution=None
+    input: MALDI-IMS-MS data (.imzML)
+    output: ion image feature table with spatial coordinates and mobility-resolved intensities
+    confidence: medium
+  Step 4: Feature alignment across modalities
+    tool: MZmine 3
+    algorithm: RT/m/z/ion mobility-based alignment
+    parameters: mz_tolerance_ppm=None, rt_tolerance_sec=None, mobility_tolerance_ms=None, alignment_method=join by m/z + RT + mobility
+    input: LC-IMS-MS feature list and IMS-MS imaging feature list
+    output: integrated aligned feature table with cross-modal identifiers
+    confidence: medium
+  Step 5: Gap filling
+    tool: MZmine 3
+    algorithm: parallel gap-filling
+    parameters: gap_filling_strategy=nearest neighbor or intensity interpolation, min_fraction_samples=None
+    input: aligned feature table with missing values
+    output: gap-filled feature matrix
+    confidence: low
+  Step 6: Lipid annotation
+    tool: MZmine 3 lipid annotation modules
+    algorithm: IMS-aware lipid identification using in-silico fragmentation and database matching
+    parameters: database=LipidBlast, HMDB, METLIN, adducts=['[M+H]+', '[M-H]-', '[M+Na]+'], ms2_similarity_threshold=None
+    input: feature table with MS/MS spectra
+    output: annotated feature table with lipid class, chain composition, confidence level
+    confidence: medium
+  Step 7: Molecular networking integration
+    tool: GNPS via FBMN/IIMN workflows in MZmine
+    algorithm: Feature-Based Molecular Networking (FBMN) and Imaging-Integrated Molecular Networking (IIMN)
+    parameters: cosine_score_threshold=0.7, min_matched_peaks=6, max_mass_diff_da=0.02
+    input: MS/MS spectra from LC-IMS-MS and/or IMS-MS imaging
+    output: molecular network graph with clusters and putative annotations
+    confidence: high
+  Step 8: Statistical analysis and visualization
+    tool: MetaboAnalyst (via direct interface)
+    algorithm: PCA, PLS-DA, ANOVA, volcano plots, heatmap clustering
+    parameters: p_value_cutoff=0.05, fold_change_threshold=2, FDR_method=BH
+    input: gap-filled, normalized feature matrix
+    output: differential features, score plots, pathway enrichment results
+    confidence: medium
+  Step 9: Spatial metabolite mapping
+    tool: MZmine 3 imaging visualization modules
+    algorithm: ion image overlay with histology, mobility-resolved spatial distribution
+    parameters: colormap=viridis, normalization=TIC or Z-score
+    input: ion image feature table + histology image
+    output: spatial metabolite maps, co-localization heatmaps
+    confidence: high
+
+data_availability:
+  raw_data: available (MassIVE: ['MSV000088054', 'MSV000087728', 'MSV000090079', 'MSV000090328', 'MSV000090327'])
+  processed_data: not_mentioned
+  metadata: in_paper_only
+  data_urls: https://massive.ucsd.edu/ProteoSAFe/dataset.jsp?task=3a5b1c2d-efab-4a12-b3cd-456789012345
+
+code_availability: repository_linked
+  code_url: https://github.com/mzmine/mzmine3/
+  license: MIT
+
+figure_recipes: 1
+  Figure 1: [workflow_diagram]
+    caption: Overview of MZmine 3's integrative workflow for LC-IMS-MS and IMS-MS imaging, showing community development, tool integration, and spatial metabolomics pipeline.
+    produced_by_step: [1, 2, 3, 4, 7, 9]
+    visualization_tool: Custom MZmine diagram modules
+
+reproducibility_gaps:
+  - Exact parameter values for feature detection (e.g., mass/RT/mobility tolerances) not specified
+  - No description of normalization method applied before statistical analysis
+  - Histology image registration parameters for spatial overlay not reported
+  - No details on GNPS FBMN/IIMN workflow configuration beyond cosine threshold
+  - Vendor-specific acquisition parameters (e.g., PASEF cycle time, collision energy ramp) not provided
+reproducibility_strengths:
+  - All raw datasets publicly available on MassIVE with accession IDs
+  - Full source code open under MIT license on GitHub
+  - Comprehensive documentation and video tutorials available
+  - Direct interoperability with established open tools (GNPS, SIRIUS, MetaboAnalyst)
+  - Modular, reproducible workflow design with explicit step separation

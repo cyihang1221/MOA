@@ -1,0 +1,64 @@
+========== reproducibility_recipe entry ==========
+paper_title: OpenMS: a flexible open-source software platform for mass spectrometry data analysis
+source_paper: Hannes L Röst et al. (2016), Nature Methods, DOI: 10.1038/nmeth.3959
+overall_reproducibility_score: 85/100
+
+workflow_steps: 6
+  Step 1: Data conversion and preprocessing
+    tool: OpenMS (v2.0)
+    algorithm: Centroiding, smoothing, isotopic deconvolution
+    input: raw vendor files (e.g., .raw, .d, .mzML)
+    output: centroided, smoothed, deconvoluted spectra in open formats (e.g., mzML)
+    confidence: medium
+  Step 2: Feature detection
+    tool: OpenMS (v2.0)
+    algorithm: FeatureFinderCentroided / FeatureFinderMetabo
+    input: centroided mzML files
+    output: feature table (consensusXML or featureXML)
+    confidence: low
+  Step 3: Retention time alignment
+    tool: OpenMS (v2.0)
+    algorithm: MapAlignerPoseClustering / MapAlignerIdentification
+    input: featureXML files across runs
+    output: RT-aligned featureXML files
+    confidence: low
+  Step 4: Cross-run feature linking
+    tool: OpenMS (v2.0)
+    algorithm: FeatureLinkerUnlabeledQT / FeatureLinkerLabeledQT
+    input: RT-aligned featureXML files
+    output: consensus feature table (consensusXML)
+    confidence: low
+  Step 5: Quantification and normalization
+    tool: OpenMS (v2.0)
+    algorithm: Label-free or labeled quantification workflows
+    input: consensusXML
+    output: quantified consensus table (e.g., TSV/CSV)
+    confidence: low
+  Step 6: Statistical analysis and visualization
+    tool: OpenMS + external tools (e.g., KNIME, Galaxy, R)
+    algorithm: t-test, ANOVA, PCA, clustering
+    input: quantified consensus table
+    output: differential features, score plots, heatmaps
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: http://www.openms.de
+  license: BSD
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - No specific workflow parameters (e.g., mass tolerance, RT window, min peak intensity) reported for any step
+  - No example dataset or tutorial data accession provided in paper
+  - Figure 1 is referenced but not described in text — no caption or analysis mapping available
+reproducibility_strengths:
+  - Fully open-source, cross-platform software with permissive BSD license
+  - Supports standardized open data formats (mzML, mzXML, consensusXML)
+  - Integrates with widely used open workflow systems (KNIME, Galaxy)
+  - 185+ documented command-line tools and pre-built workflows
+  - Continuous integration testing and modular C++/Python architecture

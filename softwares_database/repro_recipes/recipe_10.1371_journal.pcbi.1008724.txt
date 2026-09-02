@@ -1,0 +1,126 @@
+========== reproducibility_recipe entry ==========
+paper_title: Spec2Vec: Improved mass spectral similarity scoring through learning of structural relationships
+source_paper: Huber F et al. (2021), PLoS Computational Biology, DOI: 10.1371/journal.pcbi.1008724, PMID: 33591968
+overall_reproducibility_score: 92/100
+
+workflow_steps: 11
+  Step 1: Raw spectral data acquisition and curation
+    tool: GNPS
+    input: raw MS/MS spectra (JSON format from GNPS)
+    output: curated spectral dataset with metadata
+    confidence: high
+  Step 2: Metadata cleaning and InChIKey annotation
+    tool: matchms (v>=0.6.0)
+    algorithm: InChIKey inference via PubChem lookup
+    parameters: pubchempy_lookup=True
+    input: GNPS JSON spectra with raw metadata
+    output: spectra annotated with InChIKey (94,121 spectra)
+    confidence: high
+  Step 3: Dataset filtering by ionization mode and spectral quality
+    tool: custom Python script (matchms-based)
+    algorithm: ion mode filtering + peak count thresholding
+    parameters: ion_mode=positive, min_peaks_per_spectrum=10, mz_range_min=0, mz_range_max=1000
+    input: InChIKey-annotated spectra
+    output: AllPositive dataset (95,320 spectra; 77,092 with InChIKey) and UniqueInchiKeys subset (12,797 spectra)
+    confidence: high
+  Step 4: Peak and neutral loss tokenization into spectrum documents
+    tool: spec2vec (v0.3.2)
+    algorithm: m/z binning + neutral loss derivation
+    parameters: mz_decimal_precision=2, neutral_loss_range_min_da=5.0, neutral_loss_range_max_da=200.0, token_format_peak=peak@xxx.xx, token_format_loss=loss@xxx.xx
+    input: filtered spectra (m/z, intensity arrays)
+    output: spectrum documents (lists of tokens)
+    confidence: high
+  Step 5: Word2Vec model training for spectral embeddings
+    tool: gensim
+    algorithm: Continuous Bag of Words (CBOW)
+    parameters: window_size=500, vector_size=100, min_count=1, epochs={'AllPositive': 15, 'UniqueInchiKeys': 50}, negative_sampling=5, cbow_mean=True, workers=0
+    input: spectrum documents
+    output: trained Word2Vec model (word embeddings)
+    confidence: medium
+  Step 6: Spectrum vector generation via weighted sum of word embeddings
+    tool: spec2vec (v0.3.2)
+    algorithm: intensity-weighted vector summation
+    parameters: intensity_normalization=to max = 1.0, missing_fraction_threshold=0.05
+    input: spectrum + trained Word2Vec model
+    output: spectrum embedding vectors
+    confidence: high
+  Step 7: Spec2Vec similarity scoring
+    tool: spec2vec (v0.3.2)
+    algorithm: cosine similarity between spectrum vectors
+    input: pair of spectrum embedding vectors
+    output: Spec2Vec similarity score (0–1)
+    confidence: high
+  Step 8: Cosine and modified cosine similarity computation
+    tool: matchms (v>=0.6.0)
+    algorithm: Watrous-modified cosine (precursor-shifted matching)
+    parameters: intensity_threshold_relative=0.01, matching_method=one-to-one, precursor_shift_enabled=True
+    input: paired spectra (m/z, intensity arrays)
+    output: cosine / modified cosine similarity score (0–1)
+    confidence: high
+  Step 9: Structural similarity calculation (Tanimoto)
+    tool: RDKit (v2020.03.2)
+    algorithm: Daylight-like Morgan fingerprints (2048 bits)
+    parameters: fingerprint_radius=2, fingerprint_length=2048, tanimoto_metric=Jaccard
+    input: InChIKey → SMILES → molecular graph
+    output: Tanimoto structural similarity score (0–1)
+    confidence: high
+  Step 10: Library matching evaluation
+    tool: custom Python (pandas, numpy, numba)
+    algorithm: top-k retrieval + rank-based performance metrics (e.g., recall@k)
+    parameters: top_k=[1, 5, 10, 20], evaluation_metric=fraction of correct InChIKey matches in top-k
+    input: all-vs-all similarity matrices (Spec2Vec, cosine, modified cosine) + Tanimoto ground truth
+    output: library matching performance curves and statistics
+    confidence: medium
+  Step 11: Molecular networking and cluster quality assessment
+    tool: custom Python (networkx, sklearn)
+    algorithm: threshold-based spectral clustering + intra-cluster Tanimoto averaging
+    parameters: similarity_threshold=0.5, cluster_quality_metric=mean_Tanimoto_within_cluster
+    input: all-vs-all Spec2Vec similarity matrix + InChIKey annotations
+    output: clusters + cluster quality scores
+    confidence: medium
+
+data_availability:
+  raw_data: available (Zenodo: 10.5281/zenodo.3979010)
+  processed_data: available (Zenodo: 3979074)
+  metadata: available
+  data_urls: https://doi.org/10.5281/zenodo.3979010, https://zenodo.org/record/3979074, https://zenodo.org/record/3978054, https://zenodo.org/record/4173596
+
+code_availability: repository_linked
+  code_url: https://github.com/iomega/spec2vec_gnps_data_analysis
+  license: BSD-3-Clause
+
+figure_recipes: 6
+  Figure 1: [workflow_diagram]
+    caption: Illustrates conceptual analogy between MS/MS spectra as molecular signatures and limitations of cosine-based similarity for structural analogues.
+    produced_by_step: [1, 7, 8, 9]
+    visualization_tool: Matplotlib
+  Figure 2: [chromatogram]
+    caption: Illustrative comparison showing how Spec2Vec captures co-occurring peaks across training data to assign high similarity to structurally related molecules despite m/z shifts, unlike cosine scores.
+    produced_by_step: [4, 5, 7]
+    visualization_tool: Matplotlib
+  Figure 3: [histogram]
+    caption: Histogram of structural (Tanimoto) similarity scores across all spectrum pairs in the UniqueInchiKeys dataset.
+    produced_by_step: [9]
+    visualization_tool: Matplotlib
+  Figure 4: [other]
+    caption: Evaluation of library matching robustness after removing 1000 randomly selected spectra with duplicate InChIKeys.
+    produced_by_step: [10]
+    visualization_tool: Matplotlib
+  Figure 5: [other]
+    caption: Evaluation of molecular networking robustness after removing all spectra for 200 randomly selected InChIKeys (1030 spectra).
+    produced_by_step: [11]
+    visualization_tool: Matplotlib
+  Figure 6: [bar_chart]
+    caption: Cluster quality assessed by average intra-cluster Tanimoto similarity at varying Spec2Vec similarity thresholds, with threshold 0.5 highlighted.
+    produced_by_step: [11]
+    visualization_tool: Matplotlib
+
+reproducibility_gaps:
+  - Exact Word2Vec hyperparameters (e.g., vector_size, min_count, workers) are only partially specified — full list deferred to S1 Text (not provided in methods text)
+  - No explicit seed or random state control reported for stochastic steps (e.g., Word2Vec training, random spectrum removal in Fig 4/5)
+  - Precursor mass estimation method (used for neutral loss calculation and peak filtering scaling) not described
+reproducibility_strengths:
+  - Full workflow documented in executable Jupyter notebooks (github.com/iomega/spec2vec_gnps_data_analysis)
+  - All key datasets (raw, processed, models, similarity matrices) publicly archived on Zenodo with DOIs
+  - All software (matchms, spec2vec, RDKit, gensim) is open-source with version pins provided
+  - Parameterized peak filtering, tokenization, and model training clearly described with rationale

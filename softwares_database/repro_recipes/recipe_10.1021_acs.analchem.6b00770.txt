@@ -1,0 +1,94 @@
+========== reproducibility_recipe entry ==========
+paper_title: Hydrogen Rearrangement Rules: Computational MS/MS Fragmentation and Structure Elucidation Using MS-FINDER Software
+source_paper: Tsugawa H et al. (2016), Analytical Chemistry, DOI: 10.1021/acs.analchem.6b00770, PMID: 27419259
+overall_reproducibility_score: 78/100
+
+workflow_steps: 4
+  Step 1: Hydrogen rearrangement (HR) rule derivation and validation
+    tool: MOPAC2012 (v2012 (PM7 parametrization))
+    algorithm: Enthalpy-based ionic stability assessment
+    parameters: parametrization=PM7, energy_components=['electronic_energy', 'nuclear_nuclear_repulsion', 'valence_electron_removal', 'heat_of_atomization'], empirical_settings=default element-specific parameters for heat of atomization
+    input: ionic substructures in MOL format
+    output: stability assessment (heat of formation), HR rule classification (resolved/semiresolved/formula-assigned)
+    confidence: medium
+  Step 2: MS/MS fragment ion assignment using HR rules
+    tool: MS-FINDER
+    algorithm: Combinatorial bond cleavage with hydrogen rearrangement enumeration (±2 H per cleavage)
+    parameters: max_bond_cleavages={'tree_like': 2, 'two_ring_dissociation': 4}, hydrogen_rearrangement_range=[-2, 2], cleavage_priority_order=['first_cleavage_HR_regular', 'first_cleavage_HR_irregular_±2H', 'second_cleavage_HR_regular', 'second_cleavage_precursor_assigned_higher_mz', 'minimum_mass_error'], mass_tolerance_da=0.01, deisotoping_criteria={'isotope_intensity_threshold': 1.5, 'mass_tolerance_da': 'user-defined'}
+    input: experimental MS/MS spectrum (m/z, intensity), precursor m/z, adduct type
+    output: annotated fragment ions with HR classification and elemental formulas
+    confidence: high
+  Step 3: Molecular formula generation and ranking
+    tool: MS-FINDER
+    algorithm: Valence-constrained combinatorial formula enumeration + multi-scoring ranking
+    parameters: allowed_elements=['C', 'H', 'N', 'O', 'P', 'S', 'F', 'Cl', 'Br', 'I', 'Si'], valence_constraints={'N': 3, 'O': 2, 'P': 5, 'S': 6}, valence_equations=['OV or SV is even', 'SV >= 2 * (TA - 1)'], hydrogen_carbon_ratio_constraints=empirically derived from metabolome databases (SI Tables S3, S7), formula_scoring_components=['mass_error_score', 'isotopic_ratio_score', 'product_ion_assignment_rate', 'neutral_loss_match_rate', 'database_existence_score'], mass_error_score_function=Gaussian: exp[-0.5*(Δm/δ)^2], isotopic_ratio_score_function=mean of Gaussian scores for M+1 and M+2, neutral_loss_database_size=135, database_score_base=0.5, database_score_increment=0.5 * (num_databases_containing_formula / total_databases)
+    input: precursor m/z, adduct type, MS/MS spectrum (for neutral loss & product ion assignment)
+    output: ranked list of molecular formulas with total score F ∈ [0,5]
+    confidence: high
+  Step 4: Structural isomer retrieval and in silico fragmentation
+    tool: MS-FINDER
+    algorithm: InChIKey-based deduplication + BDE-weighted fragmentation scoring
+    parameters: source_databases=14, InChIKey_truncation=14, stereochemistry_handling=merged by first 14 chars of InChIKey, structure_selection_heuristic=PubChem synonym count, in_silico_fragmentation_rules=HR rules + bond dissociation energy (BDE) dictionary, penalty_scores={'HR_unresolved_penalty_Ph': 0.2, 'fragment_linkage_penalty_Pt': 0.5}, BDE_penalty_function=1 - (Bf / Bm), structure_score_normalization=cumulative fragmentation score normalized to 4 + database presence score (0–1), final_ranking_function=T = a*F + b*S, with a=1, b=1
+    input: top-ranked molecular formula(s), MS/MS spectrum
+    output: ranked list of structural isomers with total score T ∈ [0,5]
+    confidence: high
+
+data_availability:
+  raw_data: available (MassBank)
+  processed_data: available (GNPS)
+  metadata: in_paper_only
+  data_urls: http://prime.psc.riken.jp/
+
+code_availability: repository_linked
+  code_url: http://prime.psc.riken.jp/
+  license: free (no explicit license stated, but described as 'freely available')
+
+figure_recipes: 8
+  Figure 1: [workflow_diagram]
+    caption: Illustrates the nine hydrogen rearrangement (HR) rules (P1, P2, N1–N3, etc.) applied to R1-X-R2 structures, showing candidate atoms and rearranged neutral forms (M/M′).
+    produced_by_step: [1]
+    visualization_tool: not specified
+  Figure 2: [chromatogram]
+    caption: Shows experimental MS/MS spectra (reserpine+, 2′-deoxycytidine 5′-diphosphate−, 3-indoxyl sulfate−) with annotated bond cleavages and associated HR-corrected formulas.
+    produced_by_step: [2]
+    visualization_tool: not specified
+  Figure 3: [chromatogram]
+    caption: Highlights semiresolved (red) and resolved (blue) fragment peaks in MS/MS spectra of phosphocholine, isoproturon, and kaempferide; blue encircled regions indicate conjugation validated by MOPAC.
+    produced_by_step: [1, 2]
+    visualization_tool: not specified
+  Figure 4: [workflow_diagram]
+    caption: Outline of the MS-FINDER software pipeline: from survey MS → formula prediction → structure retrieval → in silico fragmentation → HR-based scoring → ranking.
+    produced_by_step: [3, 4]
+    visualization_tool: not specified
+  Figure 5: [table]
+    caption: Results of formula prediction accuracy: 98.0% correct for MassBank (n=5063), 90.4% for human plasma HILIC-QTOF data (n=936).
+    produced_by_step: [3]
+    visualization_tool: not specified
+    statistical_test: accuracy percentage (no inferential test reported)
+  Figure 6: [chromatogram]
+    caption: Overlay of HR-rule-annotated fragments (red) vs. experimental MS/MS spectrum (blue) for unspecified compound(s).
+    produced_by_step: [2]
+    visualization_tool: not specified
+  Figure 7: [chromatogram]
+    caption: Two examples of novel compound identification in human plasma where MS-FINDER identified structures absent from spectral libraries.
+    produced_by_step: [4]
+    visualization_tool: not specified
+  Figure 8: [table]
+    caption: Results of structure selection accuracy: 82.1% top-3 correct for MassBank, 80.4% top-3 correct for human plasma data.
+    produced_by_step: [4]
+    visualization_tool: not specified
+    statistical_test: accuracy percentage (no inferential test reported)
+
+reproducibility_gaps:
+  - MOPAC2012 is commercial software requiring license and manual execution — not automatable in open pipeline
+  - Ionic substructures in MOL format are 'available on request' — not publicly deposited
+  - Exact mass tolerance δ values are user-defined but not reported in methods (e.g., for mass error or isotopic windows)
+  - Internal BDE dictionary and neutral loss database (135 entries) are not publicly shared
+  - In-house metabolome database curation details (Table S4) are in Supporting Information but not archived or linked
+  - No source code or algorithmic implementation details for HR rule engine or combinatorial cleavage enumeration
+reproducibility_strengths:
+  - MS-FINDER software freely available at http://prime.psc.riken.jp/
+  - Validation performed on public resources: MassBank and GNPS databases
+  - All HR rules explicitly enumerated and illustrated in Figure 1
+  - Full mathematical specification of scoring functions (Gaussian mass error, isotopic ratio, BDE penalty, etc.)
+  - Transparent valence constraints and elemental ratio heuristics provided

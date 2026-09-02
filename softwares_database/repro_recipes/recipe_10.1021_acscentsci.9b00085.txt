@@ -1,0 +1,91 @@
+========== reproducibility_recipe entry ==========
+paper_title: Rapid Prediction of Electron-Ionization Mass Spectrometry Using Neural Networks
+source_paper: Wei JN et al. (2019), ACS Central Science, DOI: 10.1021/acscentsci.9b00085, PMID: 31041390
+overall_reproducibility_score: 87/100
+
+workflow_steps: 6
+  Step 1: Molecular fingerprint generation
+    tool: RDKit
+    algorithm: Extended Circular Fingerprints (ECFP)
+    parameters: fingerprint_length=4096, radius=2, type=additive
+    input: SMILES or molecular structure
+    output: additive ECFP vector
+    confidence: high
+  Step 2: Forward spectral prediction
+    tool: TensorFlow
+    algorithm: Multilayer Perceptron (MLP) regression
+    parameters: batch_size=100, training_steps=100000, optimizer=Adam, loss_function=weighted_mean_squared_error, weighting_scheme=m/z-weighted as in Eq. 1
+    input: additive ECFP vector
+    output: predicted intensity vector (discrete m/z bins, 1–500 Da)
+    confidence: high
+  Step 3: Reverse spectral prediction
+    tool: TensorFlow
+    algorithm: Reverse-indexed MLP (mass-residual parametrization)
+    parameters: shift_parameter=small shift for isotopes, indexing_scheme=i → m_z - m_fragment, shared_hidden_layers=True, separate_final_layer=True
+    input: additive ECFP vector + molecular mass
+    output: reverse-predicted intensity vector (indexed by neutral loss)
+    confidence: medium
+  Step 4: Bidirectional spectral fusion
+    tool: custom TensorFlow implementation
+    algorithm: Coordinate-wise gated combination
+    parameters: gate_activation=sigmoid, gate_input=ECFP features, fusion_rule=y_i = g_i * y_i^forward + (1 - g_i) * y_i^reverse
+    input: forward prediction + reverse prediction + ECFP features
+    output: bidirectional predicted spectrum
+    confidence: medium
+  Step 5: Postprocessing and physical constraints
+    tool: custom Python/TensorFlow
+    algorithm: Mass cutoff and intensity zeroing
+    parameters: max_mz=molecular_mass, zero_out_above_mz=True
+    input: bidirectional predicted spectrum
+    output: physically constrained predicted spectrum
+    confidence: high
+  Step 6: Library augmentation and matching evaluation
+    tool: custom evaluation script
+    algorithm: Weighted cosine similarity (Eq. 1)
+    parameters: similarity_metric=weighted_cosine, weighting=m/z, mass_filter_tolerance=few Daltons, recall_at_k=10
+    input: query spectra (NIST 2017 replicates) + augmented library (NIST main + NEIMS predictions)
+    output: ranked matches, recall@10 score
+    confidence: high
+
+data_availability:
+  raw_data: available (NIST Mass Spectrometry Data Center: NIST 2017 Main Library and Replicates Library)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+  data_urls: https://webbook.nist.gov/chemistry/
+
+code_availability: repository_linked
+  code_url: https://github.com/chemprop/neims
+  license: MIT
+
+figure_recipes: 5
+  Figure 1: [workflow_diagram]
+    caption: Illustrates the library matching task: query spectra matched against a hybrid reference library of experimental (NIST) and model-predicted spectra.
+    produced_by_step: [6]
+    visualization_tool: Adobe Illustrator / NIST Webbook spectral images
+  Figure 2: [chromatogram]
+    caption: Compares true (blue) vs. predicted (red inverted) EI-MS spectra for forward MLP (a) and bidirectional NEIMS (b), highlighting improved high-mass region accuracy.
+    produced_by_step: [2, 3, 4, 5]
+    visualization_tool: Matplotlib or similar plotting library
+  Figure 3: [workflow_diagram]
+    caption: Schematic of NEIMS architecture: ECFP input → MLP → forward + reverse prediction branches → gated fusion.
+    produced_by_step: [1, 2, 3, 4]
+    visualization_tool: Adobe Illustrator
+  Figure 4: [bar_chart]
+    caption: Shows recall@10 performance comparison across models (LR, forward MLP, reverse MLP, bidirectional NEIMS) and benchmark against NIST library alone.
+    produced_by_step: [6]
+    visualization_tool: Matplotlib or ggplot2
+    statistical_test: Recall@10 metric (no inferential test reported)
+  Figure 5: [scatter_plot]
+    caption: Compares pairwise similarity between predicted and ground-truth spectra versus inter-spectrum similarity for same molecules, assessing fidelity.
+    produced_by_step: [6]
+    visualization_tool: Matplotlib
+
+reproducibility_gaps:
+  - Exact hyperparameter values for Adam optimizer (e.g., learning rate, beta parameters) not specified
+  - No public link to NIST 2017 Replicates Library subset used for tuning/test split
+  - Mass filtering tolerance ('few Daltons') not quantified
+reproducibility_strengths:
+  - Full code repository publicly available on GitHub with Zenodo DOI
+  - Uses only open-source tools (RDKit, TensorFlow)
+  - NIST data is publicly accessible
+  - Detailed architectural description and loss function specification

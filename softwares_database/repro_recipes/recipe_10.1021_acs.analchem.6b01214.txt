@@ -1,0 +1,56 @@
+========== reproducibility_recipe entry ==========
+paper_title: xMSannotator: An R Package for Network-Based Annotation of High-Resolution Metabolomics Data
+source_paper: Uppal K et al. (2017), Analytical Chemistry, DOI: 10.1021/acs.analchem.6b01214, PMID: 27977166
+overall_reproducibility_score: 72/100
+
+workflow_steps: 3
+  Step 1: Data-driven network module derivation
+    tool: xMSannotator
+    algorithm: multistage clustering
+    input: feature table (m/z, RT, intensity matrix across samples)
+    output: network modules (co-regulated feature clusters)
+    confidence: low
+  Step 2: Integrative annotation scoring with pathway and chemical database matching
+    tool: xMSannotator
+    algorithm: integrative scoring algorithm
+    parameters: databases=['ChemSpider', 'KEGG', 'HMDB', 'T3DB', 'LipidMaps'], annotation_dimensions=['intensity profiles', 'retention time characteristics', 'mass defect', 'isotope/adduct patterns', 'metabolic pathway associations']
+    input: network modules + high-resolution MS data + external databases
+    output: annotated features with confidence levels (high/medium/low)
+    confidence: medium
+  Step 3: Confidence-level filtering and match reduction
+    tool: xMSannotator
+    algorithm: threshold-based filtering
+    parameters: filtered_matches_fraction=0.67, high_confidence_count=533, medium_confidence_count=10704
+    input: database matches with integrative scores
+    output: curated annotation list stratified by confidence level
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/ebolyen/xmsannotator
+  license: MIT
+
+figure_recipes: 2
+  Figure 1: [workflow_diagram]
+    caption: Schematic of the xMSannotator integrative scoring algorithm showing multistage clustering and confidence assignment using network modules and database integration.
+    produced_by_step: [1, 2]
+    visualization_tool: not specified
+  Figure 2: [bar_chart]
+    caption: Distribution of database matches by confidence level (A) and illustration of network-pathway integration for phenylalanine metabolism (B).
+    produced_by_step: [2, 3]
+    visualization_tool: not specified
+
+reproducibility_gaps:
+  - Raw LC-HRMS data not deposited or referenced (no accession, repository, or URL)
+  - Supplementary Information cited but not described in methods — critical implementation details (e.g., clustering parameters, scoring weights, RT alignment method) missing
+  - No specification of mass tolerance (ppm), adduct rules, or isotope scoring thresholds
+  - No description of how pathway associations were computationally derived (e.g., KEGG module mapping, reaction distance, ontology enrichment)
+reproducibility_strengths:
+  - xMSannotator is open-source R package available on GitHub under MIT license
+  - Explicit listing of integrated public databases (KEGG, HMDB, etc.)
+  - Quantitative performance metrics reported (F1 = 0.8; 80% MS/MS validation rate)
+  - Clear output structure defined (high/medium/low confidence annotations)

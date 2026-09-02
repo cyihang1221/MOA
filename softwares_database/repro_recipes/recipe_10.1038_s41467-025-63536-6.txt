@@ -1,75 +1,75 @@
 ========== reproducibility_recipe entry ==========
-paper_title: Knowledge and data-driven two-layer networking for accurate metabolite annotation in untargeted metabolomics.
-source_paper: Zhang H et al. (2025), Nature communications, DOI: 10.1038/s41467-025-63536-6, PMID: 40885726
-overall_reproducibility_score: 82/100
+paper_title: Knowledge and data-driven two-layer networking for accurate metabolite annotation in untargeted metabolomics
+source_paper: Haosong Zhang et al. (2025), Nature Communications, DOI: 10.1038/s41467-025-63536-6
+overall_reproducibility_score: 52/100
 
-workflow_steps: 6
-  Step 1: Raw data conversion
-    tool: ProteoWizard MSConvert (v3.0.20360 (Orbitrap) / 3.0.24214 (Astral))
-    algorithm: file format conversion
-    parameters: input_format=.raw, output_formats=['.mzXML', '.mgf']
-    input: raw .raw files
-    output: .mzXML (MS1) and .mgf (MS2) files
-    confidence: high
-  Step 2: Feature detection and alignment (Orbitrap datasets)
-    tool: XCMS (v3.12.0)
-    algorithm: centWave
-    parameters: ppm=10, snthr=3, peakwidth=[5, 30], minfrac=0.5
-    input: .mzXML files
-    output: feature table (peak matrix)
-    confidence: high
-  Step 3: Feature detection and alignment (Astral datasets)
-    tool: Met4DX (v2.2.0)
-    algorithm: centWave
-    parameters: peakwidth_min=5, peakwidth_max=30, snthr=6, minfrac=0.5
-    input: .mzXML files
-    output: feature table (peak matrix)
-    confidence: high
-  Step 4: Metabolite annotation via two-layer networking
-    tool: MetDNA3 (v3.1)
-    algorithm: knowledge- and data-driven two-layer interactive networking
-    parameters: lc_mode=['HILIC', 'RP'], collision_energy_setting=SNCE_20_30_40%, ion_mode=['ESI+', 'ESI-']
-    input: feature table + .mgf MS2 spectra
-    output: annotated metabolite table with confidence levels (seed vs. propagated)
-    confidence: high
-  Step 5: Knowledge-based metabolic reaction network (MRN) curation
-    tool: Custom GNN pipeline + BioTransformer + RDKit (vBioTransformer 3.0; RDKit unspecified)
-    algorithm: GNN-based reaction relationship prediction + Δmass prefiltering + structural similarity (Dice ≥ 0.7) filtering
-    parameters: inchikey_layer=1, elemental_composition=['C', 'H', 'O', 'N', 'P', 'S'], delta_mass_filtering=True, structural_overlap_coefficient_threshold=0.7, dice_similarity_threshold=0.7
-    input: KEGG (2023-09-11), MetaCyc (2023-09-16), HMDB (2023-09-09) databases
-    output: Curated MRN: 47,748 metabolites × 1,447,443 reaction pairs
+workflow_steps: 3
+  Step 1: Metabolic reaction network (MRN) curation
+    tool: Graph Neural Network (GNN) model
+    algorithm: GNN-based reaction relationship prediction
+    parameters: pre_screening_steps=2, reaction_pair_sources=['KEGG', 'MetaCyc', 'HMDB'], metabolite_generation_tool=BioTransformer
+    input: Metabolite knowledge databases (KEGG, MetaCyc, HMDB), known reaction pairs
+    output: Curated metabolic reaction network (MRN) with 765,755 metabolites and 2,437,884 predicted reaction pairs
     confidence: medium
-  Step 6: Network expansion with in-silico metabolites
-    tool: BioTransformer (v3.0)
-    algorithm: biotransformation prediction
-    parameters: database=BioTransformer default biotransformation rules, stereoisomer_removal=InChIKey layer 1, elemental_restriction=CHONPS
-    input: Known metabolites from MRN
-    output: Expanded MRN with predicted unknown metabolites and associated reaction pairs
+  Step 2: Experimental data pre-mapping onto MRN
+    tool: MetDNA3 (v3)
+    algorithm: Sequential MS1 m/z matching → reaction relationship mapping → MS2 similarity constraints
+    parameters: ms1_matching_tolerance_ppm=None, ms2_similarity_threshold=None, reaction_mapping_rule_set=biochemically plausible transformations
+    input: LC-MS raw data (.mzML or vendor format), curated MRN
+    output: Two-layer interactive network topology (data-driven feature nodes + knowledge-driven metabolite nodes)
+    confidence: low
+  Step 3: Recursive metabolite annotation propagation
+    tool: MetDNA3 (v3)
+    algorithm: Cross-network interaction-driven recursive annotation
+    parameters: propagation_depth=None, annotation_confidence_threshold=None, computational_efficiency_gain=10-fold
+    input: Two-layer interactive network topology
+    output: Annotated metabolite list: >1600 seed metabolites (with standards), >12,000 putatively annotated metabolites
     confidence: medium
 
 data_availability:
-  raw_data: available (MetaboLights: MTBLS1234)
-  processed_data: available (MetaboLights: MTBLS1234)
-  metadata: available
-  data_urls: https://www.ebi.ac.uk/metabolights/MTBLS1234
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
 
 code_availability: repository_linked
-  code_url: https://github.com/zhu-lab/MetDNA3
-  license: GPL-3.0
+  code_url: http://metdna.zhulab.cn/
+  license: free_web (no explicit license stated)
 
-figure_recipes: 1
-  Figure 1a: [network_diagram]
-    caption: Schematic of the two-layer interactive networking topology integrating knowledge-driven (curated MRN) and data-driven (MS1/MS2-mapped) networks.
-    produced_by_step: [5, 4]
-    visualization_tool: Cytoscape or custom Python (networkx + matplotlib)
+figure_recipes: 6
+  Figure 1: [workflow_diagram]
+    caption: Curation of the metabolic reaction network (MRN) using GNN-based prediction of reaction relationships, integrated with KEGG, MetaCyc, and HMDB, and expanded via BioTransformer.
+    produced_by_step: [1]
+    visualization_tool: not_mentioned
+  Figure 2: [workflow_diagram]
+    caption: Two-layer interactive networking topology integrating data-driven and knowledge-driven networks for recursive metabolite annotation.
+    produced_by_step: [2, 3]
+    visualization_tool: not_mentioned
+  Supplementary Fig. 1a and b: [network_topology_plot]
+    caption: Sparse topological connectivity of existing knowledge databases (KEGG, MetaCyc, HMDB) vs. enhanced connectivity in curated MRN.
+    produced_by_step: [1]
+    visualization_tool: not_mentioned
+  Supplementary Fig. 1c–h: [model_evaluation_plot]
+    caption: Validation of GNN-predicted reaction pairs through structural similarity (Tanimoto coefficient) and reaction rule learning.
+    produced_by_step: [1]
+    visualization_tool: not_mentioned
+  Supplementary Fig. 2: [network_topology_plot]
+    caption: Comprehensive visualization of predicted reaction pairs across chemical space.
+    produced_by_step: [1]
+    visualization_tool: not_mentioned
+  Supplementary Fig. 3a–g: [chemical_space_plot]
+    caption: Spatial distribution and chemical class concordance of known/predicted/unknown metabolites in MRN vs. PubChem and MetDNA2 MRN.
+    produced_by_step: [1]
+    visualization_tool: not_mentioned
 
 reproducibility_gaps:
-  - Exact GNN model architecture and training code not fully open-sourced (only described conceptually)
-  - Met4DX v2.2.0 is web-accessible but source code not publicly available
-  - No explicit specification of LC gradient dwell time or column equilibration time
-  - BioTransformer v3.0 parameters beyond those in Supplementary Table 3 are not detailed
+  - Raw LC-MS data not deposited in any public repository (e.g., MetaboLights, GNPS)
+  - No access to the GNN training code, model weights, or reaction pair training dataset
+  - Critical parameters missing: MS1 tolerance (ppm), MS2 similarity threshold, propagation depth, confidence cutoffs
+  - BioTransformer usage details (version, settings, output filtering) not specified
+  - No description of LC-MS acquisition parameters (column, gradient, instrument method) needed for reproducible feature mapping
+  - MetDNA3 web interface does not provide full programmatic API or offline CLI mode for batch/reproducible runs
 reproducibility_strengths:
-  - All raw and processed data deposited in MetaboLights (MTBLS1234)
-  - MetDNA3 source code and Docker image publicly available on GitHub under GPL-3.0
-  - Full instrument method parameters (voltages, temperatures, resolutions, collision energies) explicitly reported
-  - All database versions and download dates specified for KEGG/MetaCyc/HMDB
+  - MetDNA3 is freely available as a web service with documented two-layer networking workflow
+  - Comprehensive MRN construction methodology described (multi-database integration, GNN prediction, BioTransformer augmentation)
+  - Validation metrics reported (Tanimoto coefficient alignment, degree distribution, clustering coefficient)
+  - Explicit benchmarking against prior versions (MetDNA2) and external databases (PubChem)

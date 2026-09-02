@@ -1,0 +1,67 @@
+========== reproducibility_recipe entry ==========
+paper_title: Graph Contrastive Learning via Spectral Graph Alignment
+source_paper: Antor Mahmud et al. (2025), IEEE Big Data (arXiv), DOI: 10.1109/bigdata62323.2024.10825886
+overall_reproducibility_score: 52/100
+
+workflow_steps: 5
+  Step 1: Graph augmentation
+    tool: custom PyTorch implementation
+    algorithm: stochastic graph augmentation
+    parameters: node_drop_ratio=not specified, edge_perturb_ratio=not specified, attribute_mask_ratio=not specified, subgraph_sampling_method=random walk
+    input: raw undirected graphs (adjacency matrix + node features)
+    output: two augmented graph views per input graph
+    confidence: low
+  Step 2: Graph encoding
+    tool: GNN (architecture unspecified)
+    algorithm: L-layer message-passing GNN with READOUT pooling
+    parameters: num_layers=L (unspecified), aggregation_function=mean/sum (unspecified), combine_function=nonlinear transformation (unspecified), readout_function=sum/mean/attention (unspecified)
+    input: augmented graphs
+    output: normalized d-dimensional graph embeddings z_i^(1), z_i^(2)
+    confidence: low
+  Step 3: Contrastive loss computation
+    tool: InfoNCE
+    algorithm: normalized temperature-scaled cross-entropy
+    parameters: temperature_tau=τ (unspecified numeric value), embedding_normalization=L2 normalization to unit sphere
+    input: normalized graph embeddings from two views
+    output: scalar contrastive loss LC
+    confidence: medium
+  Step 4: Spectral graph matching loss computation
+    tool: custom spectral loss (SpecMatch-CL)
+    algorithm: spectral norm minimization of normalized Laplacian difference
+    parameters: similarity_graph_construction=k-nearest neighbors or fully connected? (not specified), k_or_epsilon=not specified, laplacian_type=normalized (symmetric) Laplacian, norm_type=spectral norm (operator norm)
+    input: two sets of graph-level embeddings (one per view)
+    output: scalar spectral loss LG
+    confidence: low
+  Step 5: Joint optimization
+    tool: PyTorch optimizer
+    algorithm: gradient descent (optimizer type not specified)
+    parameters: loss_weight_alpha=1.0 (implied by L = LC + LG, no weighting coefficient stated), optimizer=not specified (e.g., Adam, SGD), learning_rate=not specified, batch_size=not specified, epochs=not specified
+    input: LC and LG losses
+    output: trained GNN encoder with projection head
+    confidence: low
+
+data_availability:
+  raw_data: available (TU datasets, PPI-306K, ZINC 2M)
+  processed_data: not_mentioned
+  metadata: not_mentioned
+
+code_availability: repository_linked
+  code_url: https://github.com/manhbeo/GNN-CL
+
+figure_recipes: 1
+  Figure 1: [workflow_diagram]
+    caption: Illustration of SpecMatch-CL showing two augmented graph views, projection heads, contrastive loss LC, spectral graph loss LG, and final objective L = LC + LG.
+    produced_by_step: [1, 2, 3, 4, 5]
+    visualization_tool: not specified
+
+reproducibility_gaps:
+  - No specification of hyperparameters (τ, L, k for similarity graph, optimizer, learning rate, batch size, epochs)
+  - No details on similarity graph construction (k-NN vs. ε-ball, k value, distance metric)
+  - GNN architecture details omitted (layer types, hidden dimensions, activation functions)
+  - Augmentation probabilities/ratios not quantified
+  - No seed or randomization protocol reported
+  - GitHub repository URL provided but no version tag or commit hash referenced
+reproducibility_strengths:
+  - Open-source PyTorch implementation publicly available
+  - Evaluation on standard benchmarks (TU, PPI-306K, ZINC 2M) enables comparison
+  - Clear modular decomposition of loss components (LC + LG)

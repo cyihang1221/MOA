@@ -1,0 +1,65 @@
+========== reproducibility_recipe entry ==========
+paper_title: Structure-informed deep generation enables de novo metabolite annotation in untargeted metabolomics
+source_paper: Hongmiao Wang et al. (2026), Nature Communications, DOI: 10.1038/s41467-026-72149-6
+overall_reproducibility_score: 30/100
+
+workflow_steps: 5
+  Step 1: Spectral vector encoding
+    tool: Word2Vec
+    algorithm: textualization + word embedding + pooling
+    parameters: vector_dimension=512
+    input: raw MS2 spectrum (mz/intensity pairs)
+    output: 512-dimensional spectral vector
+    confidence: medium
+  Step 2: Template search via spectral similarity
+    tool: custom spectral similarity search
+    algorithm: cosine similarity on spectral vectors
+    parameters: top_k_templates=5
+    input: 512-dimensional spectral vector
+    output: list of top-k structurally similar metabolite templates (SMILES or InChI)
+    confidence: low
+  Step 3: Template encoding into feature vectors
+    tool: custom encoder
+    algorithm: fingerprint + formula + formula difference encoding
+    parameters: fingerprint_bits=3878, formula_bits=10, formula_diff_bits=10, total_vector_dim=3898
+    input: SMILES/InChI of template metabolites + query MS2 spectrum
+    output: 3898-dimensional structure-informed template vector
+    confidence: low
+  Step 4: Structure-to-structure generation
+    tool: MetGenX (encoder-decoder neural network)
+    algorithm: structure-informed encoder-decoder with template guidance
+    parameters: generation_mode=['database-restricted', 'database-free'], reranking_model=ML-based structural similarity scorer
+    input: 3898-dimensional template vector
+    output: generated candidate SMILES structures
+    confidence: medium
+  Step 5: Candidate re-ranking
+    tool: custom machine learning model
+    algorithm: structural similarity scoring against retrieved templates
+    input: generated SMILES candidates + template SMILES
+    output: ranked list of candidate structures (top-1, top-5, etc.)
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: not_mentioned
+
+code_availability: not_mentioned
+
+figure_recipes: 1
+  Figure 1: [workflow_diagram]
+    caption: Schematic of the MetGenX framework comprising three modules: (a) template search via spectral vector encoding and similarity search, (b) template encoding into 3898-dim feature vectors including finge
+    produced_by_step: [1, 2, 3, 4]
+    visualization_tool: not_mentioned
+
+reproducibility_gaps:
+  - No repository link or accession ID provided for raw or processed MS2 spectra used in training or evaluation
+  - No code repository, GitHub link, or software DOI provided for MetGenX implementation
+  - Custom Word2Vec spectral embedding pipeline not fully specified (e.g., tokenization strategy, vocabulary size, training corpus)
+  - Template search algorithm (e.g., spectral distance metric, reference spectral library used) not described in detail
+  - Neural architecture details (layer types, dimensions, training hyperparameters) omitted
+  - Reranking ML model unspecified (algorithm, features, training data)
+reproducibility_strengths:
+  - Explicit description of input/output data types at each step
+  - Clear conceptual distinction between 'spectrum-to-structure' and 'structure-to-structure' paradigm
+  - Quantitative performance metrics reported (top-1 accuracy on NIST and biological datasets)

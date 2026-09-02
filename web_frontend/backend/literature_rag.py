@@ -1,7 +1,7 @@
 """Web 端文献检索：接入 softwares_database / softwares_database_RAG。
 
-优先向量 RAG（与 CLI PromptGenerator 同索引）；embedding API 失败或未配置时回退到
-关键词检索，保证前端规划链路仍能注入文献/方法学上下文。
+优先向量 RAG（与 CLI PromptGenerator 同索引，覆盖工具卡片 / paper_workflows）；
+并行注入 repro_recipes + figure_index（向量库未收录）。embedding 失败时回退关键词。
 """
 from __future__ import annotations
 
@@ -47,6 +47,22 @@ _TOOL_HINTS = {
 _MAX_CONTEXT_CHARS = 10000
 _MAX_FALLBACK_FILES = 4
 _MAX_FILE_CHARS = 2800
+_LEXICAL_SKIP_NAMES = frozenset(
+    {
+        "all.txt",
+        "literature_summary.txt",
+        "figure_index.txt",
+    }
+)
+_PLOT_PARAM_NOISE_RE = re.compile(
+    r"\b(ppm|peakwidth|centwave|mzdiff|snthresh|noise\s*=|prefilter)\b",
+    re.I,
+)
+_PLOT_VISUAL_RE = re.compile(
+    r"\b(figure|plot|caption|heatmap|volcano|score plot|legend|axis|pca|pls-da|"
+    r"ggplot|palette|color|colour|visualization)\b",
+    re.I,
+)
 # DashScope text-embedding-v2: input length [1, 2048] tokens — keep query short (chars << tokens for CJK)
 _EMBED_QUERY_MAX_CHARS = int(os.getenv("WEB_LITERATURE_QUERY_MAX_CHARS", "1200") or 1200)
 _EMBED_USER_MAX_CHARS = int(os.getenv("WEB_LITERATURE_USER_MAX_CHARS", "600") or 600)
@@ -284,8 +300,14 @@ def _iter_fallback_candidates(source_dir: Path) -> list[Path]:
     workflows = source_dir / "paper_workflows"
     if workflows.is_dir():
         files.extend(sorted(workflows.glob("*_workflows.txt")))
-    # 工具卡片（根目录 txt）
-    files.extend(sorted(source_dir.glob("*.txt")))
+    # 工具卡片（根目录 txt）；巨型汇总 / 图注索引另走 corpus
+    files.extend(
+        sorted(
+            p
+            for p in source_dir.glob("*.txt")
+            if p.name not in _LEXICAL_SKIP_NAMES
+        )
+    )
     # 去重保序
     seen: set[Path] = set()
     out: list[Path] = []
@@ -339,22 +361,80 @@ def _lexical_retrieve(query: str, source_dir: str) -> tuple[str, list[str]]:
     return "\n\n".join(chunks), sources
 
 
+def _filter_plot_vector_text(text: str) -> str:
+    """作图检索去掉纯峰检测参数块，避免软件数字污染样式。"""
+    raw = (text or "").strip()
+    if not raw:
+        return ""
+    chunks = re.split(r"\n(?=--- (?:RAG|Literature) Document)", raw)
+    if len(chunks) <= 1:
+        if _PLOT_PARAM_NOISE_RE.search(raw) and not _PLOT_VISUAL_RE.search(raw):
+            return ""
+        return raw
+    kept: list[str] = []
+    for ch in chunks:
+        if _PLOT_PARAM_NOISE_RE.search(ch) and not _PLOT_VISUAL_RE.search(ch):
+            continue
+        kept.append(ch)
+    return "\n".join(kept).strip() if kept else ""
+
+
+def _corpus_retrieve(
+    query: str,
+    source_dir: str,
+    *,
+    intent: str,
+    plot_type: str,
+) -> tuple[str, list[str]]:
+    try:
+        from web_frontend.backend.literature_corpus import retrieve_corpus
+
+        payload = retrieve_corpus(
+            query,
+            source_dir,
+            intent=intent,
+            plot_type=plot_type,
+            max_chars=3200 if intent == "plot" else 2800,
+        )
+        return str(payload.get("text") or "").strip(), list(payload.get("sources") or [])
+    except Exception as exc:
+        print(f"[literature_rag] corpus retrieve failed: {exc}")
+        return "", []
+
+
+def _join_layers(*layers: tuple[str, list[str]]) -> tuple[str, list[str]]:
+    texts: list[str] = []
+    sources: list[str] = []
+    seen_src: set[str] = set()
+    for text, srcs in layers:
+        if text:
+            texts.append(text)
+        for s in srcs:
+            if s and s not in seen_src:
+                seen_src.add(s)
+                sources.append(s)
+    return "\n\n".join(texts).strip(), sources
+
+
 def retrieve_literature(
     query: str,
     *,
     persist_dir: str,
     source_dir: str,
     top_k: int = 5,
+    intent: str = "plan",
+    plot_type: str = "",
 ) -> dict[str, Any]:
     """检索文献/方法学上下文。
 
     默认（``WEB_LITERATURE_VECTOR=auto``）：云端 embedding 已配置时优先向量 RAG，
     失败则回退关键词；设为 ``0`` 可强制只用关键词。
+    无论向量是否命中，都会合并 ``repro_recipes`` / ``figure_index`` 结构化语料。
 
     Returns:
         {
           "text": str,
-          "mode": "vector" | "lexical" | "empty",
+          "mode": "vector" | "lexical" | "corpus" | "empty",
           "sources": list[str],
           "error": str | None,
           "prefer_vector": bool,
@@ -371,43 +451,62 @@ def retrieve_literature(
         }
 
     prefer_vector = _prefer_vector_mode()
+    use_intent = "plot" if (intent == "plot" or plot_type) else "plan"
+    corpus_text, corpus_sources = _corpus_retrieve(
+        q, source_dir, intent=use_intent, plot_type=plot_type
+    )
 
-    if prefer_vector:
-        vector_text = _vector_retrieve(q, persist_dir, source_dir, top_k)
-        if vector_text:
+    def _pack(mode: str, text: str, sources: list[str], error: str | None) -> dict[str, Any]:
+        merged, srcs = _join_layers((corpus_text, corpus_sources), (text, sources))
+        if not merged:
             return {
-                "text": _truncate(vector_text),
-                "mode": "vector",
-                "sources": ["softwares_database_RAG"],
-                "error": None,
-                "prefer_vector": True,
+                "text": "",
+                "mode": "empty",
+                "sources": [],
+                "error": error or _vector_disabled_reason or "no_literature_matched",
+                "prefer_vector": prefer_vector,
             }
-
-    lexical_text, sources = _lexical_retrieve(q, source_dir)
-    if lexical_text:
-        err = None
-        if prefer_vector and _vector_disabled_reason:
-            err = f"vector_rag_unavailable_fallback_lexical:{_vector_disabled_reason}"
-        elif prefer_vector:
-            err = "vector_rag_unavailable_fallback_lexical"
+        out_mode = mode
+        if corpus_text and not text:
+            out_mode = "corpus"
         return {
-            "text": _truncate(lexical_text),
-            "mode": "lexical",
-            "sources": sources,
-            "error": err,
+            "text": _truncate(merged),
+            "mode": out_mode,
+            "sources": srcs,
+            "error": error,
             "prefer_vector": prefer_vector,
         }
 
+    if prefer_vector:
+        vector_text = _vector_retrieve(q, persist_dir, source_dir, top_k)
+        if vector_text and use_intent == "plot":
+            filtered = _filter_plot_vector_text(vector_text)
+            vector_text = filtered or vector_text
+        if vector_text:
+            return _pack("vector", vector_text, ["softwares_database_RAG"], None)
+
+    lexical_text, sources = _lexical_retrieve(q, source_dir)
+    if lexical_text or corpus_text:
+        err = None
+        if prefer_vector and _vector_disabled_reason:
+            err = f"vector_rag_unavailable_fallback_lexical:{_vector_disabled_reason}"
+        elif prefer_vector and not lexical_text and corpus_text:
+            err = None
+        elif prefer_vector:
+            err = "vector_rag_unavailable_fallback_lexical"
+        mode = "lexical" if lexical_text else "corpus"
+        return _pack(mode, lexical_text, sources, err)
+
     if not prefer_vector:
         vector_text = _vector_retrieve(q, persist_dir, source_dir, top_k)
+        if vector_text and use_intent == "plot":
+            filtered = _filter_plot_vector_text(vector_text)
+            vector_text = filtered or vector_text
         if vector_text:
-            return {
-                "text": _truncate(vector_text),
-                "mode": "vector",
-                "sources": ["softwares_database_RAG"],
-                "error": None,
-                "prefer_vector": False,
-            }
+            return _pack("vector", vector_text, ["softwares_database_RAG"], None)
+
+    if corpus_text:
+        return _pack("corpus", "", [], None)
 
     return {
         "text": "",

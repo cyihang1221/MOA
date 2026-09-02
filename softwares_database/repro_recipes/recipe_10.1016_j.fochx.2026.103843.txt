@@ -1,0 +1,91 @@
+========== reproducibility_recipe entry ==========
+paper_title: Different grades of green tea 'Duyun Maojian': a comprehensive constituent, bioactivity, and sensory evaluation from the consumer's specific perspective
+source_paper: Wei-wu Xia et al. (2026), Food Chemistry: X, DOI: 10.1016/j.fochx.2026.103843
+overall_reproducibility_score: 42/100
+
+workflow_steps: 9
+  Step 1: Volatile compound extraction and GC-MS analysis
+    tool: Agilent 8890-7000D GC-MS
+    algorithm: HS-SPME + EI spectral library matching
+    parameters: fiber=50/30 μm DVB/CAR/PDMS, extraction_time_min=40, extraction_temperature_c=70, carrier_gas=helium, carrier_flow_mL_per_min=1.0, ionization_energy_eV=70, ion_source_temperature_c=230, column=HP-5ms Ultra Inert (30 m × 0.25 mm × 0.25 μm), internal_standard=ethyl decanoate (200 μg)
+    input: tea sample (1.0 g) in headspace vial with 6 mL boiling water
+    output: GC-MS raw data (.cdf or .d format, inferred)
+    confidence: medium
+  Step 2: GC-MS data preprocessing and compound identification
+    tool: GNPS GC-MS EI Data Analysis workflow
+    algorithm: Spectral Library Search
+    parameters: mass_tolerance_da=0.02, library_search_method=automated spectral matching
+    input: GC-MS raw data
+    output: quantitative compound table (peak area/intensity per compound)
+    confidence: high
+  Step 3: GC-MS data normalization and statistical preprocessing
+    tool: MetaboAnalyst online platform (v6.0)
+    algorithm: not specified (default MetaboAnalyst pipeline)
+    parameters: normalization_method=probabilistic quotient normalization (PQN) or similar (implied by platform defaults), filtering=missing value threshold, CV cutoff (not specified), transformation=log transformation, autoscaling (standard default)
+    input: quantitative compound table from GNPS
+    output: normalized, filtered, transformed feature table
+    confidence: medium
+  Step 4: Non-volatile compound extraction and LC-MS acquisition
+    tool: Ultimate 3000 UPLC + Q-Exactive Focus MS
+    algorithm: UPLC separation + high-res dd-MS2
+    parameters: column=ACQUITY UPLC HSS T3 (2.1 × 100 mm, 1.8 μm), flow_rate_mL_per_min=0.2, mobile_phase_A=0.1% formic acid in water, mobile_phase_B=0.1% formic acid in acetonitrile, gradient_profile_min_B_percent=[10, 10, 15, 18, 10, 16, 18, 22, 23, 95, 95, 10, 10], gradient_profile_time_min=[0, 1, 2.5, 7, 8, 10, 10.5, 12, 14, 15, 18, 19, 21], injection_volume_uL=2, column_temperature_c=30, spray_voltage_V=3400, capillary_temperature_c=350, sheath_gas_arbitrary_units=45, auxiliary_gas_arbitrary_units=15, ms1_resolution=70000, ms1_scan_range_mz=[100, 1500], ms2_resolution=17500, collision_energy_ev=[30, 40, 60], acquisition_mode=full MS dd-MS2
+    input: pulverized tea (100 mg) extracted with 4 mL 70% methanol/water
+    output: raw .raw files
+    confidence: high
+  Step 5: LC-MS data conversion to open format
+    tool: MSConvert
+    algorithm: peak picking
+    parameters: ms_levels=[1, 2], filtering=peak picking enabled
+    input: Thermo .raw files
+    output: .mzML files
+    confidence: high
+  Step 6: LC-MS feature detection, alignment, and filtering
+    tool: MZmine (v4.3.0)
+    algorithm: centWave (implied by MZmine 4.x default), isotope grouping, row filtering
+    parameters: isotope_filtering=True, feature_alignment_tolerance_ppm=None, row_filtering_min_samples=None, row_filtering_min_intensity=None, chromatographic_peak_width_sec=None
+    input: .mzML files (including QC and blank)
+    output: MS1 feature quantification table (CSV/TSV)
+    confidence: low
+  Step 7: LC-MS feature table QC-based filtering and normalization
+    tool: RStudio
+    algorithm: QC-based signal correction and normalization (custom R code)
+    parameters: qc_correction_method=QC-based response drift correction (implied), normalization_method=not specified (likely PQN or internal standard if available)
+    input: MS1 feature quantification table
+    output: QC-corrected, normalized feature table
+    confidence: low
+  Step 8: Molecular networking and metabolite annotation
+    tool: GNPS
+    algorithm: feature-based molecular networking + multi-library matching
+    parameters: precursor_mass_tolerance_da=0.02, fragment_mass_tolerance_da=0.02, min_cosine_score=0.7, top_k_matches=10, min_matched_fragment_ions=6, max_precursor_mass_shift_da=500, identification_level=2
+    input: .mgf file derived from MS1 feature table
+    output: annotated molecular network with putative compound IDs
+    confidence: high
+  Step 9: Statistical analysis and multivariate modeling
+    tool: MetaboAnalyst (v6.0)
+    algorithm: PCA, PLS-DA, OPLS-DA, ANOVA, fold-change, VIP scoring
+    parameters: multivariate_method=['PCA', 'PLS-DA', 'OPLS-DA'], univariate_method=['ANOVA', 't-test'], vip_threshold=1.0, p_value_cutoff=0.05, fdr_correction=BH, fold_change_threshold=1.5
+    input: normalized feature table (GC-MS or LC-MS)
+    output: differential features, biomarker lists, model plots
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: not_mentioned (not mentioned)
+  metadata: in_paper_only
+
+code_availability: mentioned_no_link
+
+figure_recipes: 0
+
+reproducibility_gaps:
+  - Raw GC-MS and LC-MS data not deposited in public repository (e.g., MetaboLights, MassIVE)
+  - Supplemental Information sections referenced (SI Sections 1–4) are not provided in the text — critical LC-MS/GC-MS parameters and R code missing
+  - MZmine 4.3.0 parameter settings only stated to be 'in Section 3 of SI' — no actual values given
+  - No accession ID or repository link for GNPS molecular networking job or MetaboAnalyst project
+  - Commercial instruments (Agilent GC-MS, Thermo Q-Exactive) require proprietary software for raw data acquisition — no open acquisition method details provided
+  - R code for QC-based normalization is referenced but not shared or linked
+reproducibility_strengths:
+  - Uses widely adopted open/web platforms: GNPS, MetaboAnalyst, MZmine, MSConvert
+  - Explicit instrument parameters (gradients, voltages, temperatures) reported for LC-MS and GC-MS
+  - Clear description of sample preparation, extraction, and internal standard use
+  - Metabolite identification level explicitly stated (Level 2 per MSI guidelines)

@@ -1,0 +1,100 @@
+========== reproducibility_recipe entry ==========
+paper_title: Metabolic reaction network-based recursive metabolite annotation for untargeted metabolomics
+source_paper: Shen X et al. (2019), Nature Communications, DOI: 10.1038/s41467-019-09550-x, PMID: 30944337
+overall_reproducibility_score: 82/100
+
+workflow_steps: 7
+  Step 1: Metabolic reaction network (MRN) construction
+    tool: KEGGREST (vBioconductor package, data downloaded 2017-03-07)
+    algorithm: KEGG RPAIR-based graph construction
+    parameters: reaction_pair_source=KEGG RPAIR database, node_filtering=1200 non-organic/ill-defined formulas excluded, graph_library=igraph
+    input: KEGG compound and reaction pair databases (R files: kegg.compound, kegg.rpair)
+    output: MRN graph object (7639 nodes, 9603 edges; 6439 organic metabolites)
+    confidence: high
+  Step 2: Input data preparation
+    tool: ['XCMS', 'MS-DIAL', 'ProteoWizard'] (v['XCMS27', 'MS-DIAL36', 'ProteoWizard 3.0.6150'])
+    algorithm: LC-MS raw file conversion and peak picking
+    parameters: ms1_peak_table_format=CSV, ms2_format=['mgf', 'msp'], mz_tolerance_ppm_ms1_ms2_match=25, rt_tolerance_s_ms1_ms2_match=10, ms2_abundance_metric=sum of top 10 fragment ion intensities
+    input: Raw LC-MS files (.raw, .wiff, etc.)
+    output: MS1 peak table (.csv) + MS2 spectra files (.mgf/.msp)
+    confidence: high
+  Step 3: Initial seed metabolite annotation
+    tool: MetDNA (in-house R package)
+    algorithm: DP score-based MS2 spectral matching
+    parameters: ms1_mz_tolerance_ppm=25, dp_score_threshold=0.8, dp_weight_exponent_mz=0, dp_weight_exponent_intensity=1, rt_theoretical_filter_percent=30, dp_scoring_direction=['forward', 'reverse']
+    input: MS1 peak table + MS2 spectra + in-house standard spectral library
+    output: Seed metabolite annotations (50–200 metabolites)
+    confidence: high
+  Step 4: Isotope peak annotation
+    tool: Rdisop
+    algorithm: Binomial/McLaurin isotope pattern calculation
+    parameters: isotope_range=[M] to [M+4], mz_tolerance_ppm=25, rt_tolerance_s=3, intensity_tolerance_percent=500, weight_mz=0.45, weight_rt=0.45, weight_intensity=0.1
+    input: Seed metabolite formulas + MS1 peak table
+    output: Isotope peak annotations with Scoreiso
+    confidence: high
+  Step 5: Adduct peak annotation
+    tool: MetDNA
+    algorithm: Adduct pattern matching using predefined tables
+    parameters: adduct_tables_source=Supplementary Table 5 (HILIC/RP, ± polarity), mz_tolerance_ppm=25, rt_tolerance_s=3, weight_mz=0.8, weight_rt=0.2
+    input: Seed metabolite formulas + MS1 peak table
+    output: Adduct peak annotations with Scoreadduct
+    confidence: high
+  Step 6: Recursive neighbor metabolite annotation via MRN
+    tool: MetDNA
+    algorithm: Reaction-step–bounded surrogate MS2 propagation
+    parameters: max_reaction_step=3, reaction_step_start=1, mz_tolerance_ppm=25, rt_tolerance_percent=30, ms2_similarity_threshold_dp=0.5, adduct_precursor_calculation=based on LC mode and polarity
+    input: Seed metabolites + MRN + MS1 peak table + MS2 spectra
+    output: Annotated neighbor metabolites (cumulative ~2000)
+    confidence: high
+  Step 7: Theoretical RT prediction
+    tool: MetDNA
+    algorithm: Not explicitly described — implied use of retention time prediction model (likely structure- or logP-based)
+    input: Metabolite structures/formulas
+    output: Predicted RTs for neighbor metabolites
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: https://github.com/zhanglabNKU/MetDNA
+  license: GPL-3.0
+
+figure_recipes: 5
+  Figure 1: [network]
+    caption: Illustrates the metabolic reaction network (MRN) and spectral similarity of neighbor metabolites in reaction pairs.
+    produced_by_step: [1, 3]
+    visualization_tool: Unknown (likely custom R/ggplot2 or Cytoscape)
+  Figure 2: [workflow_diagram]
+    caption: Depicts the MRN-based recursive metabolite annotation process and cumulative count of annotated metabolites across rounds.
+    produced_by_step: [1, 3, 6]
+    visualization_tool: Unknown (schematic diagram)
+  Figure 3: [bar_chart]
+    caption: Validates high annotation accuracy of MetDNA compared to CFM-ID using benchmark datasets.
+    produced_by_step: [3, 6]
+    visualization_tool: Unknown (likely ggplot2 or GraphPad)
+    statistical_test: Accuracy comparison (no explicit test named; likely binomial proportion test or paired t-test)
+  Figure 4: [line_plot]
+    caption: Demonstrates robustness of MetDNA to small spectral libraries and low misannotation propagation rate.
+    produced_by_step: [3, 6]
+    visualization_tool: Unknown
+    statistical_test: Error propagation analysis (no explicit test named)
+  Figure 5: [pathway_map]
+    caption: Shows dysregulated metabolic pathways in aging fruit flies using MetDNA-annotated metabolites.
+    produced_by_step: [6]
+    visualization_tool: KEGG pathway mapper or similar (e.g., clusterProfiler, MetaboAnalyst)
+    statistical_test: Pathway enrichment (likely hypergeometric test or Fisher’s exact test)
+
+reproducibility_gaps:
+  - Theoretical RT prediction algorithm not described (Step 7)
+  - In-house standard spectral library not publicly deposited (only referenced as 'in-house')
+  - No raw LC-MS data deposited in public repository (e.g., MetaboLights, PRIDE)
+  - Supplementary Data 9–11 provided as R files but no direct public archive link given in text
+reproducibility_strengths:
+  - MRN construction fully reproducible using KEGGREST + fixed-date KEGG dump (2017-03-07)
+  - MetDNA source code publicly available on GitHub under GPL-3.0
+  - All key parameters (tolerances, weights, thresholds) explicitly reported
+  - Detailed input format specifications (MS1 CSV, MGF/MSP) and preprocessing tools listed
+  - Supplementary Notes and Tables provide implementation details (e.g., adduct tables, DP scoring)

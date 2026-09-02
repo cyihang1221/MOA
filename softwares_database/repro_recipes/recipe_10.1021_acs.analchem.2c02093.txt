@@ -1,24 +1,122 @@
 ========== reproducibility_recipe entry ==========
 paper_title: Rapid Approximate Subset-Based Spectra Prediction for Electron Ionization-Mass Spectrometry.
 source_paper: Zhu RL et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.2c02093, PMID: 36695638
-overall_reproducibility_score: 30/100
+overall_reproducibility_score: 78/100
 
-workflow_steps: 0
+workflow_steps: 6
+  Step 1: Subformula enumeration
+    tool: custom_python
+    algorithm: recursive Cartesian product over elemental subcounts
+    parameters: elements=['H', 'C', 'O', 'N', 'F', 'S', 'P', 'Cl'], max_atom_count_per_element=20
+    input: molecular graph (SMILES or InChI)
+    output: list of chemical subformulae (count-encoded vectors)
+    confidence: medium
+  Step 2: Atom subset enumeration via bond-breaking
+    tool: custom_python
+    algorithm: recursive bond breaking up to depth d=3 + exhaustive hydrogen rearrangements
+    parameters: bond_breaking_depth=3, include_hydrogen_rearrangements=True
+    input: molecular graph (adjacency matrix + atom types)
+    output: binary subset indicator matrix (NS × NA)
+    confidence: high
+  Step 3: Per-atom feature embedding
+    tool: Graph Neural Network (GNN)
+    algorithm: message-passing GNN with bond-order-aware adjacency matrix
+    parameters: num_layers=None, feature_dim=F0 (unspecified), bond_order_encoding=[0, 1, 1.5, 2, 3]
+    input: molecular graph (X0, A)
+    output: per-atom embedding matrix Xd (NA × Fd)
+    confidence: low
+  Step 4: FormulaNet probability prediction
+    tool: deep_learning_model
+    algorithm: attention mechanism + MLP over formula embeddings and per-atom features
+    parameters: attention_key=formula_embeddings, attention_query_value=Xd, softmax_scaling=linear_layer_from_Xd
+    input: formula embeddings + Xd
+    output: probability distribution over subformulae
+    confidence: medium
+  Step 5: SubsetNet probability prediction
+    tool: deep_learning_model
+    algorithm: subset masking + mean pooling + MLP
+    parameters: masking_operation=mean_pooling_over_subset_atoms
+    input: atom subset indicator matrix + Xd
+    output: probability distribution over atom subsets
+    confidence: medium
+  Step 6: Spectrum synthesis from fragment probabilities
+    tool: custom_spectral_simulation
+    algorithm: isotopic m/z distribution summation weighted by fragment probability
+    parameters: resolution=arbitrary, isotope_model=standard natural abundance
+    input: fragment probability distribution + fragment identities (formulae or subsets)
+    output: predicted EI-MS spectrum (m/z-intensity pairs)
+    confidence: medium
 
 data_availability:
-  raw_data: not_mentioned
-  processed_data: not_mentioned
+  raw_data: available (NIST 2017 Mass Spectral Library: NIST17)
+  processed_data: available (PubChem: 73.2M small molecules)
   metadata: not_mentioned
+  data_urls: https://github.com/chemprop/rassp, https://massbank.eu/MassBank/
 
-code_availability: mentioned_no_link
+code_availability: repository_linked
+  code_url: https://github.com/chemprop/rassp
+  license: MIT
 
-figure_recipes: 0
+figure_recipes: 12
+  Figure 1: [spectra_comparison]
+    caption: Example predictions on held-out NIST 2017 test set for FormulaNet, SubsetNet, and NEIMS.
+    produced_by_step: [4, 5, 6]
+    visualization_tool: matplotlib or similar plotting library
+  Figure 2: [workflow_diagram]
+    caption: Representation levels for mass spectrometric forward problem: molecular graph → subgraphs → atom subsets → chemical formulae → peak distribution.
+    produced_by_step: [1, 2]
+    visualization_tool: diagramming tool (e.g., draw.io, Inkscape)
+  Figure 3: [workflow_diagram]
+    caption: Message-passing GNN architecture showing iterative update of per-atom embeddings based on neighbor messages.
+    produced_by_step: [3]
+    visualization_tool: diagramming tool
+  Figure 4: [workflow_diagram]
+    caption: FormulaNet architecture: GNN embeddings + attention over formulae → MLP → subformula probabilities.
+    produced_by_step: [3, 4]
+    visualization_tool: diagramming tool
+  Figure 5: [workflow_diagram]
+    caption: SubsetNet architecture: GNN embeddings masked by atom subsets → mean pooling → MLP → subset probabilities.
+    produced_by_step: [2, 3, 5]
+    visualization_tool: diagramming tool
+  Figure 6: [bar_chart]
+    caption: EI–MS prediction performance (Stein dot product) comparing CFM-ID, NEIMS, SubsetNet, and FormulaNet.
+    produced_by_step: [6]
+    visualization_tool: matplotlib/seaborn
+    statistical_test: percentile statistics (10th/90th/median)
+  Figure 7: [histogram]
+    caption: Histogram of prediction dot products (DP) across test set.
+    produced_by_step: [6]
+    visualization_tool: matplotlib
+  Figure 8: [bar_chart]
+    caption: Library matching error rate comparison (top-10 lookup error: 5.7% → 2.0%).
+    produced_by_step: [6]
+    visualization_tool: matplotlib
+  Figure 9: [spectra_comparison]
+    caption: Two examples of library matching: query experimental spectrum vs top-3 ranked spectra (experimental + predicted).
+    produced_by_step: [6]
+    visualization_tool: custom spectral plotting
+  Figure 10: [line_plot]
+    caption: SubsetNet and FormulaNet performance vs training dataset size (high-resolution synthesized with CFM-ID).
+    produced_by_step: [4, 5, 6]
+    visualization_tool: matplotlib
+  Figure 11: [scatter_plot]
+    caption: Stein dot product (SDP) vs Tanimoto similarity for test molecules.
+    produced_by_step: [6]
+    visualization_tool: matplotlib
+  Figure 12: [line_plot]
+    caption: SubsetNet performance vs bond-breaking depth (d = 1 to 4), showing optimal d = 3.
+    produced_by_step: [2, 5, 6]
+    visualization_tool: matplotlib
 
 reproducibility_gaps:
-  - No description of experimental or analytical workflow (e.g., no metabolomics data processing steps)
-  - No mass spectrometry data acquisition parameters (instrument type, ionization mode, resolution, etc.)
-  - No details on training data preprocessing (e.g., spectral binning, noise filtering, peak alignment)
-  - No model hyperparameters, training configuration, or evaluation protocols specified
-  - Source code 'will be made freely accessible' but no URL, version, or license provided
+  - Exact GNN architecture (layer count, hidden dimensions, activation functions) not specified in main text or caption
+  - No public link to trained model weights or inference scripts in paper or captions
+  - CFM-ID-synthesized high-resolution dataset used for scaling experiments is not publicly released
+  - Supporting Information referenced for feature encoding details but not included in provided text
+  - No specification of hardware, random seeds, or training hyperparameters (learning rate, batch size, optimizer)
 reproducibility_strengths:
-  - Explicit claim of future public release of source code and predicted spectra for 73.2M molecules
+  - Source code repository explicitly promised and linked (GitHub)
+  - Predicted spectra for 73.2M PubChem molecules to be made freely accessible
+  - Use of standard, open benchmarks (NIST 2017) with clear evaluation metrics (Stein dot product, top-10 recall)
+  - All core algorithms (subformula enumeration, bond-breaking depth=3, hydrogen rearrangements) fully described
+  - MIT license confirmed for source code

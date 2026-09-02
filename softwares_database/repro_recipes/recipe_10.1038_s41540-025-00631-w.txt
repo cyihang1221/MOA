@@ -1,0 +1,108 @@
+========== reproducibility_recipe entry ==========
+paper_title: SIMBA-GNN: mechanistic graph learning for microbiome prediction
+source_paper: Aminian-Dehkordi J et al. (2025), npj Systems Biology and Applications, DOI: 10.1038/s41540-025-00631-w, PMID: 41387745
+overall_reproducibility_score: 42/100
+
+workflow_steps: 10
+  Step 1: Microbial abundance data acquisition
+    tool: 16S rRNA sequencing or shotgun metagenomics (not specified)
+    input: biological samples from 186 individuals
+    output: microbial relative abundance profiles
+    confidence: low
+  Step 2: Genome-scale metabolic model (GEM) retrieval
+    tool: AGORA database
+    parameters: n_microbes=76
+    input: list of identified microbial taxa
+    output: 76 curated GEMs (SBML format)
+    confidence: high
+  Step 3: Pairwise metabolic simulation
+    tool: optGP (COBRApy or similar)
+    algorithm: constraint-based flux sampling (Monte Carlo)
+    parameters: n_samples_per_pair=10000, thinning_factor=100, diet_constraint=averaged high-fiber diet profile (Supplementary Table 2), anaerobic=True, non_dietary_exchange_closed=True, byproduct_upper_bound=1000, joint_biomass_objective=True, individual_biomass_constraint=≥10% of monoculture FBA optimum, convergence_test=Geweke diagnostic
+    input: paired GEMs + shared pool compartment model
+    output: flux distributions, cross-fed metabolite lists, pathway activity scores
+    confidence: high
+  Step 4: Cross-feeding edge inference
+    tool: custom Python/R script
+    algorithm: Spearman correlation on paired fluxes
+    parameters: correlation_threshold=-0.5, metabolite_filter=absent from dietary input & flux > threshold
+    input: flux distributions per microbe pair
+    output: directed microbe-metabolite edges with probability, directionality, frequency
+    confidence: medium
+  Step 5: Pathway activity fingerprinting
+    tool: VMH and KEGG databases
+    algorithm: reaction-to-pathway mapping + flux aggregation
+    parameters: transformation=log1p, scaling=zero mean, unit variance per pathway
+    input: flux distributions
+    output: pathway activity matrix (microbes × pathways)
+    confidence: high
+  Step 6: Functional similarity graph construction
+    tool: scipy.cluster.hierarchy
+    algorithm: hierarchical agglomerative clustering (Ward’s method, Euclidean distance)
+    parameters: similarity_metric=cosine, edge_threshold=0.85, clustering_algorithm=Ward’s variance minimization
+    input: pathway activity matrix
+    output: microbe-microbe similarity edges
+    confidence: high
+  Step 7: Heterogeneous graph construction
+    tool: custom PyTorch/Deep Graph Library (DGL) or PyG implementation
+    algorithm: heterogeneous graph assembly
+    parameters: node_types=['microbe', 'metabolite', 'pathway'], edge_types=['microbe-metabolite', 'microbe-pathway', 'microbe-microbe'], microbe_node_features=['ESM-2 protein embeddings (2560-d)', 'log1p pathway scores', 'metabolite probability fingerprints'], metabolite_node_features=learnable embedding (128-d), pathway_node_features=learnable embedding (256-d)
+    input: cross-feeding edges, pathway fingerprints, similarity edges, node feature vectors
+    output: global heterogeneous graph (HGT-ready)
+    confidence: medium
+  Step 8: Self-supervised learning (SSL)
+    tool: GraphCL
+    algorithm: graph contrastive learning
+    parameters: temperature=0.1, batch_size_negatives=256
+    input: heterogeneous graph
+    output: pretrained node embeddings
+    confidence: high
+  Step 9: Supervised pretraining
+    tool: custom PyTorch GNN
+    algorithm: multi-task supervised learning on simulated graphs
+    parameters: loss_functions=['Tweedie loss (p=1.5) for abundance', 'binary cross-entropy for presence & metabolite'], tweedie_power=1.5, auxiliary_tasks=['microbe presence', 'metabolite production capability']
+    input: simulation-derived graphs + ground-truth abundances/metabolite probabilities
+    output: pretrained SIMBA model weights
+    confidence: medium
+  Step 10: Fine-tuning on experimental data
+    tool: custom PyTorch GNN
+    algorithm: supervised fine-tuning
+    parameters: loss_function=Tweedie loss (p=1.5), optimizer=Adam (not specified), learning_rate=not specified, epochs=not numerically specified (see Supplementary Fig. 5), validation_metric=Spearman correlation (0.85 achieved)
+    input: shared heterogeneous graph + sample-specific microbe membership masks + experimental abundances
+    output: final SIMBA model
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not mentioned)
+  processed_data: not_mentioned (not mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 3
+  Figure 1: [workflow_diagram]
+    caption: Schematic showing data sources (cohort + simulations), graph construction from metabolic simulations, and model architecture.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7]
+    visualization_tool: not specified
+  Figure 2: [heatmap]
+    caption: a) Microbial presence/absence heatmap across samples; b) histogram of cosine similarities between pathway profiles; c) sparsity fraction (63.8%) in abundance matrix; d) log-scale distribution of nonze
+    produced_by_step: [1, 5, 6]
+    visualization_tool: not specified
+  Figure 3: [scatterplot]
+    caption: Side-by-side comparison of ground truth vs. SIMBA-predicted microbial presence (gray/colored circles) and abundance (color intensity = prediction/ground-truth ratio) for one sample.
+    produced_by_step: [10]
+    visualization_tool: not specified
+
+reproducibility_gaps:
+  - Raw microbial abundance data not deposited in public repository
+  - No code repository or software DOI provided
+  - Exact GEM versions and preprocessing steps (e.g., SBML parsing, gap-filling) not specified
+  - Optimization hyperparameters (learning rate, scheduler, weight decay) omitted
+  - No details on how 'membership mask' is implemented or validated
+  - ESM-2 embedding generation: no version, layer pooling strategy, or NCBI accession provenance given
+  - Supplementary Tables/Figures referenced but not included in provided text (e.g., Supplementary Table 1, Table 2, Fig. 1, Fig. 2, Fig. 5)
+reproducibility_strengths:
+  - Use of publicly available resources (AGORA, VMH, KEGG)
+  - Explicit specification of flux sampling parameters (10,000 samples, thinning=100, Geweke test)
+  - Clear description of graph construction logic (edge thresholds, node feature composition)
+  - Justification of Tweedie loss power selection via ablation (1.1, 1.5, 1.8)

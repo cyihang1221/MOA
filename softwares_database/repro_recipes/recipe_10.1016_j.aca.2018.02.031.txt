@@ -1,53 +1,71 @@
 ========== reproducibility_recipe entry ==========
 paper_title: Towards enhanced metabolomic data analysis of mass spectrometry image: Multivariate Curve Resolution and Machine Learning.
 source_paper: Tian X et al. (2018), Analytica chimica acta, DOI: 10.1016/j.aca.2018.02.031, PMID: 30292295
-overall_reproducibility_score: 20/100
+overall_reproducibility_score: 30/100
 
 workflow_steps: 4
   Step 1: Multivariate Curve Resolution-Alternating Least Squares (MCR-ALS)
     tool: MCR-ALS
     algorithm: Alternating Least Squares
-    input: raw mass spectrometry imaging (MSI) data cubes (m/z × x × y)
-    output: resolved spatial distribution maps and corresponding spectral profiles (metabolite groups with shared spatial patterns)
+    input: raw MSI data (m/z-intensity matrices per pixel)
+    output: spatial distribution patterns and grouped metabolites with shared spatial profiles
     confidence: low
   Step 2: Supervised machine learning classification
     tool: Random Forest
     algorithm: Random Forest
-    parameters: n_trees=None, mtry=None, ntree=None
-    input: feature matrix derived from MCR-ALS-resolved spatial patterns (e.g., resolved component intensities per pixel or region)
-    output: classification model and spatial class prediction maps
-    confidence: low
-  Step 3: Unsupervised spatial clustering
-    tool: DBSCAN
-    algorithm: Density-based Spatial Clustering of Applications with Noise
-    parameters: eps=None, min_samples=None
-    input: MSI data (intensity matrix per m/z or MCR-ALS component intensities)
-    output: spatial cluster labels and noise identification
-    confidence: low
-  Step 4: Unsupervised spatial clustering
+    parameters: robustness_against_overfitting=True, high_prediction_accuracy=True, handles_large_number_of_variables=True
+    input: MCR-ALS-derived spatial pattern features + manually labeled training data (inner/outer medulla, cortex)
+    output: tissue-type classification map (histological distribution prediction)
+    confidence: medium
+  Step 3: Unsupervised clustering (CLARA)
     tool: CLARA
     algorithm: Clustering Large Applications
-    parameters: k=None, samples=None
-    input: MSI data (intensity matrix per m/z or MCR-ALS component intensities)
-    output: spatial cluster labels
-    confidence: low
+    parameters: optimized_number_of_clusters=6
+    input: dimensionality-reduced MSI data (t-SNE implied, though not explicitly applied in step description)
+    output: six-cluster spatial segmentation map
+    confidence: medium
+  Step 4: Unsupervised clustering (DBSCAN)
+    tool: DBSCAN
+    algorithm: Density-based Spatial Clustering of Applications with Noise
+    parameters: number_of_clusters=7
+    input: dimensionality-reduced MSI data (t-SNE implied)
+    output: seven-cluster spatial segmentation map
+    confidence: medium
 
 data_availability:
-  raw_data: not_mentioned
-  processed_data: not_mentioned
-  metadata: not_mentioned
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
 
 code_availability: not_mentioned
 
-figure_recipes: 0
+figure_recipes: 4
+  F1: [workflow_diagram]
+    caption: Flowchart illustrating the overall MSI data analysis pipeline integrating MCR-ALS and supervised/unsupervised ML.
+    produced_by_step: [1, 2, 3, 4]
+    visualization_tool: not_mentioned
+  F2: [comparison_plot]
+    caption: Comparison of traditional selected-ion MS image vs. MCR-ALS–derived spatial distribution for [PC(38:5)+Na]+, overlaid on optical image of mouse kidney with annotated histological regions.
+    produced_by_step: [1]
+    visualization_tool: not_mentioned
+  F3: [classification_map]
+    caption: Supervised ML (Random Forest) results: (A) manually selected training regions based on MCR-ALS output; (B) predicted histological tissue distribution map; (C) evaluation of MCR-ALS clustering capabili
+    produced_by_step: [1, 2]
+    visualization_tool: not_mentioned
+  F4: [clustering_map]
+    caption: Unsupervised ML results: (A–B) CLARA clustering into six groups and corresponding tissue distribution; (C–D) DBSCAN clustering into seven groups and corresponding tissue distribution.
+    produced_by_step: [3, 4]
+    visualization_tool: not_mentioned
 
 reproducibility_gaps:
-  - No raw or processed MSI data deposited or referenced
-  - No software versions specified for MCR-ALS, Random Forest, DBSCAN, or CLARA
-  - No parameter values reported for any algorithm (e.g., eps/min_samples for DBSCAN, k for CLARA, tree count/mtry for Random Forest)
-  - No description of preprocessing steps (e.g., denoising, normalization, m/z binning, peak alignment)
-  - No information on MCR-ALS constraints (e.g., non-negativity, closure, sparsity), number of components, or convergence criteria
-  - No code repository or implementation details provided
+  - No specification of MCR-ALS implementation (e.g., software package, constraints, convergence criteria, number of components)
+  - No details on dimensionality reduction preprocessing before unsupervised ML (e.g., t-SNE parameters, number of components retained)
+  - No description of MSI data format, m/z range, or instrument acquisition parameters
+  - Raw MSI dataset not deposited or referenced (no repository, accession, or URL)
+  - No code, scripts, or workflow documentation provided
+  - Training data selection criteria for Random Forest are described only as 'manually selected' without reproducible rules or coordinates
+  - CLARA and DBSCAN parameters (e.g., eps, minPts for DBSCAN; sample size and iterations for CLARA) are unspecified
 reproducibility_strengths:
-  - Explicit naming of core algorithms (MCR-ALS, Random Forest, DBSCAN, CLARA)
-  - Clear conceptual workflow linking MCR-ALS output to ML input
+  - Clear conceptual separation of MCR-ALS and ML stages
+  - Explicit naming of algorithms (MCR-ALS, Random Forest, CLARA, DBSCAN)
+  - Biological validation via anatomical correspondence (mouse kidney regions)

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import re
+from pathlib import Path
 from typing import Any
 
 from web_frontend.backend.literature_plot_knowledge import (
@@ -235,6 +236,28 @@ def collect_evidence_cards(
     cards: list[dict[str, Any]] = []
     for sk in ranked:
         cards.extend(_cards_from_skill(sk, plot_type))
+    try:
+        from web_frontend.backend.literature_corpus import (
+            evidence_cards_from_hits,
+            search_figure_hits,
+        )
+        from web_frontend.backend.literature_paths import resolve_literature_dirs
+
+        _persist, source_dir = resolve_literature_dirs(
+            project_root,
+            allow_install_fallback=project_root is None,
+        )
+        if source_dir and Path(source_dir).is_dir():
+            q = " ".join(x for x in (goal_text, instruction, plot_type) if x).strip()
+            hits = search_figure_hits(
+                source_dir=source_dir,
+                plot_type=plot_type,
+                query=q,
+                max_hits=4,
+            )
+            cards.extend(evidence_cards_from_hits(hits, plot_type=plot_type, max_cards=4))
+    except Exception:
+        pass
     cards.sort(key=lambda c: float(c.get("confidence") or 0), reverse=True)
     return cards[:max_cards]
 
@@ -330,6 +353,10 @@ def build_style_patch_from_evidence(
     hints = {h for c in cards for h in (c.get("field_hints") or [])}
 
     for card in cards:
+        hint = card.get("journal_hint")
+        if hint and "_journal" not in patch:
+            patch["_journal"] = str(hint)
+            applied.append(f"palette={hint}")
         spec = card.get("structured")
         if not isinstance(spec, dict):
             continue

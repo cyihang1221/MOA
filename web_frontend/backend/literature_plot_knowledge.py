@@ -8,6 +8,10 @@ from pathlib import Path
 from typing import Any
 
 from web_frontend.backend.plot_edit_registry import PLOT_SPECS, plot_type_from_stem
+from web_frontend.backend.skill_match import (
+    _massomics_skills_root,
+    _trigger_keywords_from_description,
+)
 
 # plot_type → 在出图清单/正文中检索用的关键词（由 registry 扩展 + 手工补充）
 _PLOT_TYPE_TERMS_EXTRA: dict[str, tuple[str, ...]] = {
@@ -31,6 +35,11 @@ _PLOT_TYPE_TERMS_EXTRA: dict[str, tuple[str, ...]] = {
     "correlation_heatmap": ("correlation heatmap", "相关热图"),
     "bioactivity_bar": ("bioactivity", "生物活性"),
     "sensory_scores": ("sensory", "感官"),
+    "splot": ("s-plot", "s plot", "opls-da", "loading", "p(corr)"),
+    "opls_outlier": ("outlier", "离群", "score distance", "orthogonal distance", "hotelling"),
+    "roc_auc_hist": ("roc", "auc", "auroc", "受试者工作特征"),
+    "significance_venn": ("venn", "韦恩", "维恩", "intersection", "交集"),
+    "log2fc_hist": ("log2fc", "fold change", "倍数变化"),
 }
 
 
@@ -118,8 +127,9 @@ def plot_rag_enabled() -> bool:
 
 
 def _rag_database_paths(project_root: Path | None = None) -> tuple[str, str]:
-    root = project_root or _project_root()
-    return str(root / "softwares_database_RAG"), str(root / "softwares_database")
+    from web_frontend.backend.literature_paths import resolve_literature_dirs
+
+    return resolve_literature_dirs(project_root or _project_root())
 
 
 def build_plot_literature_query(
@@ -131,14 +141,18 @@ def build_plot_literature_query(
     from web_frontend.backend.literature_rag import build_tool_literature_query
 
     terms = ", ".join(PLOT_TYPE_TERMS.get(plot_type, (plot_type.replace("_", " "),))[:8])
-    task_bits = [f"Publication-style figure styling for plot type `{plot_type}`"]
+    task_bits = [
+        f"Published metabolomics figure captions and styling for plot type `{plot_type}`",
+        "Search figure_index captions and repro_recipes figure_recipes "
+        "(pca_scores, volcano_plot, heatmap, network), not peak-picking parameters.",
+    ]
     if terms:
         task_bits.append(f"Related terms: {terms}")
     if instruction.strip():
         task_bits.append(f"User edit request: {instruction.strip()[:200]}")
     task_bits.append(
         "Focus on chart purpose, title wording, axis labels, color semantics, legend layout, "
-        "and panel arrangement from published metabolomics papers."
+        "and panel arrangement. Ignore ppm/peakwidth/centWave unless the user asked about them."
     )
     return build_tool_literature_query(goal_description=goal_text, task=" ".join(task_bits))
 
@@ -150,7 +164,7 @@ def supplement_plot_literature_rag(
     instruction: str = "",
     project_root: Path | None = None,
     top_k: int = 3,
-    max_chars: int = 1500,
+    max_chars: int = 2200,
 ) -> dict[str, Any]:
     """向量/关键词 RAG 补充作图语境（与 Skill 检索并行，不替代 rank）。"""
     if not plot_rag_enabled() or not plot_type:
@@ -171,6 +185,8 @@ def supplement_plot_literature_rag(
             persist_dir=persist_dir,
             source_dir=source_dir,
             top_k=top_k,
+            intent="plot",
+            plot_type=plot_type,
         )
         text = str(payload.get("text") or "").strip()
         if len(text) > max_chars:
@@ -183,11 +199,6 @@ def supplement_plot_literature_rag(
         }
     except Exception as exc:
         return {"text": "", "mode": "empty", "sources": [], "error": str(exc)}
-
-
-def _massomics_skills_root(project_root: Path | None = None) -> Path:
-    root = project_root or _project_root()
-    return root / "MassOmics-Agent" / "MassOmics-Agent" / "skills"
 
 
 def _phase2_registry_path(project_root: Path | None = None) -> Path:
@@ -205,14 +216,14 @@ def _parse_skill_frontmatter(text: str) -> tuple[str, str, list[str]]:
         nm = re.search(r"^name:\s*(.+)$", block, re.M)
         if nm:
             name = nm.group(1).strip()
-        dm = re.search(r"description:\s*>\s*\n(.*?)(?:\n[a-z_]+:|\n---)", block, re.S)
+        dm = re.search(r"description:\s*[>|]-?\s*\n(.*)", block, re.S)
         if dm:
-            desc = dm.group(1).strip()
+            desc = re.split(r"\n[a-z_]+:\s*", dm.group(1), maxsplit=1)[0].strip()
         else:
             dm2 = re.search(r"description:\s*(.+)$", block, re.M)
             if dm2:
                 desc = dm2.group(1).strip()
-    keywords = [k.strip() for k in re.split(r"[，,。、；;\n]+", desc) if len(k.strip()) >= 2]
+    keywords = _trigger_keywords_from_description(desc)
     if not name:
         m_title = re.search(r"^#\s+(.+)$", text, re.M)
         name = (m_title.group(1).strip() if m_title else "skill")[:80]
@@ -322,7 +333,12 @@ def _load_massomics_skills(project_root: Path | None = None) -> list[dict[str, A
         name, desc, keywords = _parse_skill_frontmatter(text)
         rel = skill_md.relative_to(root).as_posix()
         branch = skill_md.parent.parent.name if skill_md.parent.parent != root else ""
-        skill_pool = _SKILL_POOL_SOFTWARE_PARAMS if "/software-params/" in rel.replace("\\", "/") else _SKILL_POOL_LITERATURE
+        rel_norm = rel.replace("\\", "/")
+        skill_pool = (
+            _SKILL_POOL_SOFTWARE_PARAMS
+            if rel_norm.startswith("software-params/") or "/software-params/" in rel_norm
+            else _SKILL_POOL_LITERATURE
+        )
         skills.append(
             {
                 "source": "massomics",
@@ -588,6 +604,12 @@ def _suggest_instruction(plot_type: str, skill: dict[str, Any], visual: str) -> 
         "degree_hist": "节点度数分布图",
         "family_size": "分子家族大小分布图",
         "network_topology": "分子网络拓扑图",
+        "splot": "OPLS-DA S-plot",
+        "opls_outlier": "样本离群诊断图",
+        "roc_auc_hist": "单变量 ROC AUC 分布图",
+        "significance_venn": "显著性集合交集图",
+        "log2fc_hist": "log2 倍数变化分布图",
+        "plsda_permutation": "置换检验图",
     }.get(plot_type, plot_type)
 
     doi = skill.get("doi") or ""
@@ -618,6 +640,33 @@ def _suggest_instruction(plot_type: str, skill: dict[str, Any], visual: str) -> 
         hint = "突出 VIP>1 特征；柱状主色 #3C5488；标题 VIP Scores"
     elif plot_type == "heatmap_vip":
         hint = "行聚类展示 top VIP 特征；色标对比度适中；标题 Top VIP Heatmap"
+    elif plot_type == "splot":
+        hint = (
+            "横轴 p[1]、纵轴 p(corr)[1]；显著特征 #E64B35、其余 #9AA0A6；"
+            "过零参考线保留；标题 OPLS-DA S-plot"
+        )
+    elif plot_type == "plsda_permutation":
+        hint = "横轴 similarity、纵轴 R2Y/Q2；真实模型值作水平参考线；标题标注 pR2Y / pQ2"
+    elif plot_type == "opls_outlier":
+        hint = "横轴 score distance、纵轴 orthogonal distance；离群样本 #d62728 并标注样本名；保留两条 95% 阈值线"
+    elif plot_type == "roc_auc_hist":
+        hint = "展示逐特征 AUC 分布；标注 mean AUC 与 AUC=0.5 参考线；说明非 ROC 曲线"
+    elif plot_type == "log2fc_hist":
+        hint = "横轴 log2(ratio)；零点参考线；标题说明差异倍数分布"
+    elif plot_type == "significance_venn":
+        hint = "按交集集合分组计数；集合名保留 t.test / wilcox.test / VIP 原始命名；配色对比清晰"
+    elif plot_type == "constituent_bar":
+        hint = "按等级分面柱图；标注显著性字母；轴单位 μg/g DM；标题对应 TPC/TFC/TFAA"
+    elif plot_type == "relative_abundance_heatmap":
+        hint = "行=化合物、列=等级；YlOrRd 色标；标题 Relative abundance"
+    elif plot_type == "hca_heatmap":
+        hint = "行=样本；色标对比度适中；标题 Hierarchical cluster analysis"
+    elif plot_type == "correlation_heatmap":
+        hint = "对称 Pearson 矩阵；RdBu 色标域 [-1, 1]；对角线为 1"
+    elif plot_type == "bioactivity_bar":
+        hint = "按 assay 分面；等级柱色一致；轴带单位"
+    elif plot_type == "sensory_scores":
+        hint = "分组柱图按感官属性着色；纵轴 0–5；图例放右侧"
     else:
         hint = "标题与轴标签符合代谢组学论文惯例；配色对比清晰、图例完整"
 
@@ -704,7 +753,7 @@ def match_plot_literature(
         )
 
     rag_mode = ""
-    rag_budget = min(1500, max(0, budget))
+    rag_budget = min(2200, max(0, budget))
     if rag_budget > 200 and plot_type:
         rag = supplement_plot_literature_rag(
             plot_type=plot_type,
@@ -717,8 +766,9 @@ def match_plot_literature(
         rag_mode = str(rag.get("mode") or "")
         if rag_text:
             rag_section = (
-                "## Supplementary literature (softwares_database_RAG)\n"
-                "Use for stylistic conventions only; do not override user instruction or actual data.\n\n"
+                "## Supplementary literature (repro_recipes / figure_index / RAG)\n"
+                "Use captions and visual conventions only; do not override user instruction or actual data.\n"
+                "Do not copy peak-picking or statistical thresholds into plot_config.\n\n"
                 f"{rag_text}\n"
             )
             parts.append(rag_section)

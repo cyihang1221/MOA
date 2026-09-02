@@ -1,0 +1,31 @@
+========== reproducibility_recipe entry ==========
+paper_title: HMDB 5.0: the Human Metabolome Database for 2022
+source_paper: Wishart DS et al. (2022), Nucleic Acids Research, DOI: 10.1093/nar/gkab1062, PMID: 34986597
+overall_reproducibility_score: 85/100
+
+workflow_steps: 0
+
+data_availability:
+  raw_data: available (HMDB: HMDB 5.0)
+  processed_data: available (HMDB: HMDB 5.0)
+  metadata: available
+  data_urls: https://hmdb.ca
+
+code_availability: not_mentioned
+
+figure_recipes: 2
+  F1: [workflow_diagram]
+    caption: Screenshot montage showcasing new structure, spectral, and pathway visualization tools in HMDB 5.0.
+    visualization_tool: HMDB internal tools (including PathWhiz)
+  F2: [pathway_map]
+    caption: Example HMDB pathway for indoxyl sulfate generated using PathWhiz, illustrating multi-scale biological renderings and linking to >100,000 pathways.
+    visualization_tool: PathWhiz
+
+reproducibility_gaps:
+  - No description of computational pipelines or algorithms used for spectral prediction (e.g., BioTransformer parameters, NMR/MS prediction models)
+  - No access details for underlying curation scripts (e.g., ChemoSummarizer, Data Wrangler)
+  - No versioning or provenance metadata for predicted data (e.g., retention indices, collision cross sections)
+reproducibility_strengths:
+  - Database publicly accessible at https://hmdb.ca
+  - All metabolite entries include literature references and classification status ('detected', 'expected')
+  - Explicit mention of curation protocols and prior methodological publications (refs 8,9)

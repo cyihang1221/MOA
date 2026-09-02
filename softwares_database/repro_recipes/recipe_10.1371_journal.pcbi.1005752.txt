@@ -1,0 +1,104 @@
+========== reproducibility_recipe entry ==========
+paper_title: mixOmics: An R package for 'omics feature selection and multiple data integration
+source_paper: Rohart F et al. (2017), PLoS Computational Biology, DOI: 10.1371/journal.pcbi.1005752, PMID: 29099853
+overall_reproducibility_score: 88/100
+
+workflow_steps: 8
+  Step 1: Data preprocessing and filtering
+    tool: mixOmics
+    algorithm: near-zero variance removal, Median Absolute Deviation (MAD) filtering
+    parameters: max_predictors_per_dataset=10000
+    input: raw 'omics data matrices (e.g., gene expression, metabolite intensities, count data)
+    output: filtered and normalized data matrix X (N × P), dummy indicator matrix Y (N × K)
+    confidence: medium
+  Step 2: Unsupervised dimension reduction and exploration
+    tool: mixOmics
+    algorithm: PCA (NIPALS for missing values), ICA, rCCA, rGCCA
+    input: filtered and normalized data matrix X
+    output: latent component scores (t1,…,tH), loadings (a1,…,aH), explained variance
+    confidence: high
+  Step 3: Supervised multivariate modeling
+    tool: mixOmics
+    algorithm: PLS-DA, sparse PLS-DA (sPLS-DA), GCC-DA, multi-group PLS-DA
+    parameters: ncomp=K−1 recommended, keepX=user-defined grid of features to select per component
+    input: filtered X and dummy indicator matrix Y
+    output: discriminant latent components, class predictions, classification performance metrics
+    confidence: high
+  Step 4: Parameter tuning via cross-validation
+    tool: mixOmics
+    algorithm: repeated stratified cross-validation (10×5-fold), Leave-One-Group-Out (LOGO)
+    parameters: measure=Balanced Error Rate (BER) or overall misclassification error, distance=['maximum', 'Centroid', 'Mahalanobis']
+    input: training data (X, Y)
+    output: optimal ncomp and keepX values, tuned model object
+    confidence: high
+  Step 5: Feature selection and molecular signature identification
+    tool: mixOmics
+    algorithm: ℓ1 regularisation (LASSO) via soft-thresholding (keepX parameter)
+    parameters: keepX=grid-specified number of top features per component
+    input: tuned sPLS-DA or sGCCA model
+    output: selected feature subsets per component (e.g., genes, metabolites), relevance networks, clustered image maps
+    confidence: high
+  Step 6: Multi-'omics integration (N-integration)
+    tool: mixOmics
+    algorithm: DIABLO (Discriminant Integration Analysis with Bias Learning Optimization)
+    parameters: ncomp=K−1, keepX=per-data-set grid, weight_mode=majority vote or weighted vote (correlation-based)
+    input: multiple matched 'omics matrices (same N samples, different platforms)
+    output: integrated sample scores, multi-omics signature, Circos correlation plot
+    confidence: high
+  Step 7: Multi-'omics integration (P-integration)
+    tool: mixOmics
+    algorithm: MINT (Multiple Independent ‘omics Data Integration)
+    parameters: ncomp=2, cv=Leave-One-Group-Out, distance=maximum, measure=BER
+    input: multiple independent studies (same P features, different N samples)
+    output: consensus signature, global sample plot, per-study performance
+    confidence: high
+  Step 8: Classification prediction and distance-based inference
+    tool: mixOmics
+    algorithm: prediction using maximum / Centroid / Mahalanobis distance on latent scores or dummy variables
+    parameters: distance=['maximum', 'Centroid', 'Mahalanobis']
+    input: tuned model + new test set (X_test)
+    output: predicted class labels, prediction confidence areas, per-class error rates
+    confidence: high
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: repository_linked
+  code_url: https://github.com/mixOmicsTeam/mixOmics
+  license: GPL-2
+
+figure_recipes: 5
+  Figure 1: [workflow_diagram]
+    caption: Overview of mixOmics multivariate methods for single and integrative 'omics analyses, distinguishing N-integration (DIABLO) and P-integration (MINT).
+    produced_by_step: [2, 3, 6, 7]
+    visualization_tool: mixOmics plotIndiv, plotVar, plotLoadings
+  Figure 2: [pca_scores]
+    caption: Prediction area plots comparing three distance metrics (maximum, Centroid, Mahalanobis) for a PLS-DA model on microarray data with four cancer classes.
+    produced_by_step: [8]
+    visualization_tool: mixOmics plotIndiv with prediction area overlay
+  Figure 3: [workflow_diagram]
+    caption: Single-'omics analysis pipeline: PCA exploration (A), PLS-DA classification with CV performance (B), and sPLS-DA feature selection (C).
+    produced_by_step: [2, 3, 4, 5]
+    visualization_tool: mixOmics plotIndiv, plotVar, perf, plotLoadings
+    statistical_test: repeated stratified 10×5-fold CV with BER and overall error rate
+  Figure 4: [network]
+    caption: N-integrative DIABLO analysis showing per-dataset sample plots, inter-component correlations, clustered image map of multi-omics signature, and Circos plot of feature correlations.
+    produced_by_step: [6]
+    visualization_tool: mixOmics plotDiablo, cim, circosPlot
+  Figure 5: [volcano_plot]
+    caption: MINT sPLS-DA tuning (A) and performance (B–C), including BER vs. keepX, classification error per class, and global sample plot with confidence ellipses.
+    produced_by_step: [4, 7, 8]
+    visualization_tool: mixOmics tune, perf, plotIndiv
+    statistical_test: Leave-One-Group-Out cross-validation with BER
+
+reproducibility_gaps:
+  - No raw or processed 'omics datasets explicitly deposited or linked in the paper
+  - Example data used in figures not fully described (e.g., microarray dataset in Fig 2)
+  - Exact normalization method per 'omics type left to user discretion (no protocol specified)
+reproducibility_strengths:
+  - Fully open-source R package on GitHub with DOI and GPL-2 license
+  - All statistical methods, tuning procedures, and visualization functions exhaustively documented in Supporting Information S1 Text
+  - Consistent S3 generic function interface (plot, predict, perf) enables reproducible workflows
+  - Detailed description of distance metrics, cross-validation schemes, and feature selection logic

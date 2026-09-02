@@ -4,12 +4,15 @@
 
 ```
 上传 + 分析目标
-  → Agent A 写出 analysis_plan.md（停在待确认）
+  → Agent A 写出 plan_*.json + analysis_plan.md（停在待确认）
   → 用户回复「确认计划」
-  → Agent B 按锁定计划调用 MCP
+  → Agent B 在独立进程中执行 MassOmics-Agent-B（origin/B）
   → Agent C 自动出图并写 final_report.md / final_report.pdf
   → 完成后可改图 / 拼图 / 修订报告
 ```
+
+A / B / C 保持三个独立智能体：网页只编排交接，不把三者合成一个 Agent。
+默认 B **不**使用本仓库 `src/mcp_server`。需要旧执行器时设置 `WEB_AGENT_B_BACKEND=local`。
 
 未确认计划不会启动分析（需求 AC-2）。改图/拼图只在完成后进行。
 
@@ -25,9 +28,11 @@ web_frontend/
 │   ├── webapp.py           # FastAPI 应用、REST/SSE API、静态资源挂载
 │   ├── workflow.py         # 会话阶段与聊天路由（确认闸门）
 │   ├── agent_intent.py     # 话术分类（规划/执行/出图/改图）
-│   ├── agent_a/            # 把步骤列表写成可评审的 analysis_plan.md
-│   ├── agent_c/            # 出图、报告
-│   ├── agent_runner.py     # mode=plan 只规划；mode=execute 按锁定计划跑 MCP
+│   ├── agent_a/            # Agent A：写出可评审的 analysis_plan.md / plan_*.json
+│   ├── agent_b/            # Agent B：调用 MassOmics-Agent-B 执行器
+│   ├── agent_c/            # Agent C：出图、报告
+│   ├── abc_contract.py     # A/B/C 交接契约
+│   ├── agent_runner.py     # mode=plan 只规划；mode=execute 交给 B
 │   ├── literature_rag.py   # softwares_database(_RAG) 文献检索
 │   ├── session_storage.py  # SQLite 会话/消息持久化
 │   ├── agent_jobs.py       # 后台任务与取消（终止生成）
@@ -41,14 +46,49 @@ web_frontend/
 
 ## 启动方式
 
-在项目根目录、已激活 `MOA` 环境后：
+在**仓库根目录**、已激活 Python 环境后：
 
-```powershell
-cd E:\bin\shixi\MassAgent
+```bash
 python -m uvicorn web_frontend.backend.webapp:app --host 0.0.0.0 --port 8010
 ```
 
 浏览器访问：`http://127.0.0.1:8010`
+
+本目录可放在两种仓库里：
+
+| 布局 | 仓库根 | A / B 默认位置 |
+|------|--------|----------------|
+| MassOmics-Agent `cyh` | 本文件的上一级 | 同仓 `plan/` 与 `src/executor.py` |
+| MassAgent 单仓 | `agent_py_V2.0` | `MassOmics-Agent/MassOmics-Agent` 与 `MassOmics-Agent-B` |
+
+未设置环境变量时会自动探测，不必为 cyh 再配 `WEB_MASSOMICS_ROOT`。
+
+### Agent B 工作区（仅单仓布局需要独立 worktree）
+
+不要把 nested 仓库 `MassOmics-Agent/MassOmics-Agent` 切到 `B`（那是 Agent A 的 cyh 规划侧）。单仓里的 B 使用独立 worktree：
+
+```bash
+cd MassOmics-Agent/MassOmics-Agent
+GIT_LFS_SKIP_SMUDGE=1 git worktree add --detach ../../MassOmics-Agent-B origin/B
+```
+
+环境变量：
+
+| 变量 | 默认 | 含义 |
+|------|------|------|
+| `WEB_AGENT_A_BACKEND` | `massomics` | A：cyh 规划 / `local` 网页规划 |
+| `WEB_AGENT_B_BACKEND` | `massomics` | B：origin/B 执行器 / `local` 本仓库 MCP |
+| `WEB_MASSOMICS_ROOT` | 自动探测 | Agent A 代码根（cyh：本仓；单仓：`MassOmics-Agent/MassOmics-Agent`） |
+| `WEB_MASSOMICS_B_ROOT` | 自动探测 | Agent B 代码根（cyh：本仓；单仓：`MassOmics-Agent-B`） |
+
+契约：`GET /api/abc/contract`。命令行：
+
+```bash
+python -m web_frontend.backend.agent_a --session <slug>   # 只规划
+python -m web_frontend.backend.agent_b --session <slug>   # 只执行
+python -m web_frontend.backend.agent_c --session <slug>   # 只出图/报告
+python -m web_frontend.backend.abc_run --data <inputspace> --outputspace <out> --goal "..."
+```
 
 ## 各文件用途
 
@@ -66,9 +106,11 @@ python -m uvicorn web_frontend.backend.webapp:app --host 0.0.0.0 --port 8010
 |------|------|
 | `backend/webapp.py` | 聊天按阶段编排 A/B/C；会话含 `workflow_status` |
 | `backend/workflow.py` | 确认闸门与阶段路由 |
-| `backend/agent_a/` | 写出可评审的 `analysis_plan.md` |
-| `backend/agent_c/` | 出图与报告；B 成功后由编排器调用 |
-| `backend/agent_runner.py` | `mode=plan` 停在确认；`mode=execute` 按锁定计划跑 MCP |
+| `backend/agent_a/` | Agent A：写出可评审的 `analysis_plan.md` / `plan_*.json` |
+| `backend/agent_b/` | Agent B：独立进程调用 MassOmics-Agent-B（`execute_plan`） |
+| `backend/agent_c/` | Agent C：出图与报告；B 成功后由编排器调用 |
+| `backend/abc_contract.py` | 三智能体交接契约（`GET /api/abc/contract`） |
+| `backend/agent_runner.py` | `mode=plan` 停在确认；`mode=execute` 交给 B |
 | `backend/literature_rag.py` | 接入 `softwares_database_RAG`（向量）与 `softwares_database`（关键词回退） |
 | `backend/web_llm.py` | Web 专用 LLM 客户端（静默流式、`stream_to_stdout`） |
 | `backend/web_prompts.py` | Web 提示词；可注入 `literature_context`（文献检索结果） |
@@ -96,6 +138,7 @@ python -m uvicorn web_frontend.backend.webapp:app --host 0.0.0.0 --port 8010
 | GET | `/api/sessions/{id}/workspace-files` | 输入/输出文件树 |
 | POST | `/api/chat/stream` | 流式对话：改图/拼图、Agent C 出图/报告，或把计算交接给 B |
 | POST | `/api/sessions/{id}/cancel` | 终止当前 Agent 任务 |
+| GET | `/api/abc/contract` | A/B/C 三智能体交接契约与当前后端状态 |
 | GET | `/api/agent-c/contract` | Agent C 与 A/B 的字段契约 |
 | POST | `/api/agent-c/parse-plan` | 解析 `analysis_plan.md` / JSON |
 | POST | `/api/agent-c/inventory` | 清点 B 的结果目录中可出图数据 |

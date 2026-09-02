@@ -128,6 +128,50 @@ def _base_spec(plot_config: dict[str, Any], values: list[dict[str, Any]]) -> dic
     }
 
 
+# Agent B step8 变体表用小写/其它列名（如 metaX、SIMCA 的 *_result.csv），
+# 与前端语义渲染器期望列不同：读入时统一改名，缺失的派生列按需补算。
+_COLUMN_ALIASES: dict[str, dict[str, tuple[str, ...]]] = {
+    "volcano_results.csv": {
+        "Feature": ("Feature", "feature_id", "ID"),
+        "log2FC": ("log2FC", "log2fc", "log2FoldChange"),
+        "pvalue": ("pvalue", "p_value", "PValue", "t.test_p.value"),
+        "padj": ("padj", "FDR", "qvalue", "t.test_p.value_BHcorrect"),
+        "Significant": ("Significant", "significant"),
+    },
+    "vip_scores.csv": {
+        "Feature": ("Feature", "feature_id", "ID"),
+        "VIP": ("VIP", "vip"),
+    },
+    "plsda_permutation.csv": {
+        "R2Y": ("R2Y", "R2Y(cum)", "r2y", "R2"),
+        "Q2": ("Q2", "Q2(cum)", "q2"),
+        "similarity": ("similarity", "sim", "permutation"),
+        "perm_i": ("perm_i", "permutation", "i"),
+    },
+}
+
+
+def read_plot_frame(data_dir: Path, filename: str) -> pd.DataFrame:
+    """按文件别名解析 CSV，并把 Agent B 的列名归一到前端约定列名。"""
+    path = resolve_plot_data_file(data_dir, filename)
+    if path is None:
+        raise ValueError(f"缺少 {filename}")
+    frame = pd.read_csv(path)
+    for canonical, candidates in (_COLUMN_ALIASES.get(filename) or {}).items():
+        if canonical in frame.columns:
+            continue
+        for name in candidates:
+            if name in frame.columns:
+                frame[canonical] = frame[name]
+                break
+    if filename == "volcano_results.csv" and "neglog10p" not in frame.columns:
+        source = "pvalue" if "pvalue" in frame.columns else ("padj" if "padj" in frame.columns else None)
+        if source:
+            pvals = pd.to_numeric(frame[source], errors="coerce").clip(lower=1e-300)
+            frame["neglog10p"] = -np.log10(pvals)
+    return frame
+
+
 def _score_spec(
     plot_type: str,
     data_dir: Path,
@@ -137,8 +181,9 @@ def _score_spec(
     from web_frontend.backend.plot_renderer import score_color_meta
 
     scores_file = "pca_scores.csv" if plot_type == "pca" else "plsda_scores.csv"
+    scores_path = resolve_plot_data_file(data_dir, scores_file) or (data_dir / scores_file)
     scores, groups, samples, axis_names = load_scores_and_groups(
-        data_dir / scores_file,
+        scores_path,
         metadata_csv,
         plot_config=plot_config,
     )
@@ -238,7 +283,7 @@ def _score_spec(
 
 
 def _volcano_spec(data_dir: Path, plot_config: dict[str, Any]) -> dict[str, Any]:
-    frame = pd.read_csv(data_dir / "volcano_results.csv")
+    frame = read_plot_frame(data_dir, "volcano_results.csv")
     required = {"log2FC", "neglog10p"}
     if not required.issubset(frame.columns):
         raise ValueError("volcano_results.csv 缺少 log2FC / neglog10p 列")
@@ -489,6 +534,23 @@ def _histogram_spec(
             ("Threshold", 0.7, "threshold_color"),
             ("Median", float(np.median(values_array)) if values_array else 0.0, "median_color"),
         ]
+    return _value_histogram_spec(
+        values_array,
+        plot_config,
+        x_title=x_title,
+        y_title=y_title,
+        rules=rules,
+    )
+
+
+def _value_histogram_spec(
+    values_array: list[float],
+    plot_config: dict[str, Any],
+    *,
+    x_title: str,
+    y_title: str,
+    rules: list[tuple[str, float, str]],
+) -> dict[str, Any]:
     values = [{"value": value} for value in values_array if _finite(value) is not None]
     colors = plot_config.get("colors") or {}
     bins = (plot_config.get("histogram") or {}).get("bins", 40)
@@ -535,7 +597,7 @@ def _histogram_spec(
 
 
 def _vip_bar_spec(data_dir: Path, plot_config: dict[str, Any]) -> dict[str, Any]:
-    frame = pd.read_csv(data_dir / "vip_scores.csv")
+    frame = read_plot_frame(data_dir, "vip_scores.csv")
     if "Feature" not in frame.columns or "VIP" not in frame.columns:
         raise ValueError("vip_scores.csv 缺少 Feature / VIP 列")
     top_n = int((plot_config.get("marks") or {}).get("top_n") or 30)
@@ -568,8 +630,8 @@ def _vip_bar_spec(data_dir: Path, plot_config: dict[str, Any]) -> dict[str, Any]
 
 
 def _heatmap_vip_spec(data_dir: Path, plot_config: dict[str, Any]) -> dict[str, Any]:
-    matrix_path = data_dir / "heatmap_top_vip_matrix.csv"
-    if not matrix_path.is_file():
+    matrix_path = resolve_plot_data_file(data_dir, "heatmap_top_vip_matrix.csv")
+    if matrix_path is None:
         raise ValueError("缺少 heatmap_top_vip_matrix.csv，无法语义渲染热图")
     frame = pd.read_csv(matrix_path, index_col=0)
     if frame.empty:
@@ -673,14 +735,86 @@ def _join_topology_node_attrs(data_dir: Path, layout: pd.DataFrame) -> pd.DataFr
     return out
 
 
-def _network_topology_spec(data_dir: Path, plot_config: dict[str, Any]) -> dict[str, Any]:
+def _circular_family_layout(nodes: pd.DataFrame, id_col: str) -> pd.DataFrame:
+    """networkx 不可用时的确定性回退：同家族聚成一圈，家族之间再排一圈。"""
+    family_col = "molecular_family" if "molecular_family" in nodes.columns else None
+    families = (
+        list(dict.fromkeys(str(v) for v in nodes[family_col].fillna("singleton")))
+        if family_col
+        else ["all"]
+    )
+    rows: list[dict[str, Any]] = []
+    for f_index, family in enumerate(families):
+        angle = 2 * math.pi * f_index / max(1, len(families))
+        cx, cy = math.cos(angle) * len(families), math.sin(angle) * len(families)
+        members = (
+            nodes[nodes[family_col].fillna("singleton").astype(str) == family]
+            if family_col
+            else nodes
+        )
+        count = max(1, len(members))
+        for m_index, (_, row) in enumerate(members.iterrows()):
+            theta = 2 * math.pi * m_index / count
+            rows.append(
+                {
+                    "node_id": str(row[id_col]),
+                    "x": cx + math.cos(theta) * math.sqrt(count) * 0.4,
+                    "y": cy + math.sin(theta) * math.sqrt(count) * 0.4,
+                }
+            )
+    return pd.DataFrame(rows)
+
+
+def _derive_network_layout(data_dir: Path, plot_config: dict[str, Any]) -> pd.DataFrame:
+    """B 的 FBMN/GNPS 只写节点表与边表，不写坐标；这里现算一份确定性布局。"""
+    nodes_path = resolve_plot_data_file(data_dir, "network_nodes.csv")
+    if nodes_path is None:
+        raise ValueError("缺少 network_layout.csv，且无节点表可派生布局")
+    nodes = pd.read_csv(nodes_path)
+    id_col = next((c for c in ("feature_id", "node_id", "id") if c in nodes.columns), None)
+    if id_col is None:
+        raise ValueError("节点表缺少 feature_id / node_id 列，无法派生布局")
+
+    max_nodes = int((plot_config.get("marks") or {}).get("top_n") or 1500)
+    if len(nodes) > max_nodes and "degree" in nodes.columns:
+        nodes = nodes.nlargest(max_nodes, "degree")
+    elif len(nodes) > max_nodes:
+        nodes = nodes.head(max_nodes)
+
+    edges_path = resolve_plot_data_file(data_dir, "network_edges.csv")
+    try:
+        import networkx as nx
+    except ImportError:
+        return _circular_family_layout(nodes, id_col)
+
+    graph = nx.Graph()
+    keep = {str(v) for v in nodes[id_col]}
+    graph.add_nodes_from(sorted(keep))
+    if edges_path is not None:
+        edges = pd.read_csv(edges_path)
+        if {"source", "target"}.issubset(edges.columns):
+            for _, row in edges.iterrows():
+                src, tgt = str(row["source"]), str(row["target"])
+                if src in keep and tgt in keep:
+                    graph.add_edge(src, tgt, weight=_finite(row.get("cosine")) or 1.0)
+    positions = nx.spring_layout(graph, seed=42, weight="weight")
+    return pd.DataFrame(
+        [{"node_id": node, "x": float(xy[0]), "y": float(xy[1])} for node, xy in positions.items()]
+    )
+
+
+def _network_layout_frame(data_dir: Path, plot_config: dict[str, Any]) -> pd.DataFrame:
     layout_path = data_dir / "network_layout.csv"
-    if not layout_path.is_file():
-        raise ValueError("缺少 network_layout.csv，无法语义渲染拓扑图")
-    layout = pd.read_csv(layout_path)
-    required = {"node_id", "x", "y"}
-    if not required.issubset(layout.columns):
+    if layout_path.is_file():
+        layout = pd.read_csv(layout_path)
+        if {"node_id", "x", "y"}.issubset(layout.columns):
+            return layout
         raise ValueError("network_layout.csv 缺少 node_id / x / y 列")
+    return _derive_network_layout(data_dir, plot_config)
+
+
+def _network_topology_spec(data_dir: Path, plot_config: dict[str, Any]) -> dict[str, Any]:
+    layout = _network_layout_frame(data_dir, plot_config)
     layout = _join_topology_node_attrs(data_dir, layout)
 
     color_by = str(plot_config.get("color_by") or "family").strip()
@@ -1412,11 +1546,49 @@ def _kegg_enrich_spec(data_dir: Path, plot_config: dict[str, Any], *, mode: str)
     return spec
 
 
+def _derive_fbmn_group_intensity(data_dir: Path, plot_config: dict[str, Any]) -> pd.DataFrame:
+    """从 fbmn_nodes.csv 的 ``mean_<group>`` 列按分子家族聚合（B 只写节点表）。"""
+    nodes_path = resolve_plot_data_file(data_dir, "network_nodes.csv")
+    if nodes_path is None:
+        raise ValueError("缺少 fbmn_group_intensity.csv，且无节点表可派生")
+    nodes = pd.read_csv(nodes_path)
+    group_cols = [c for c in nodes.columns if str(c).startswith("mean_")]
+    if len(group_cols) < 2 or "molecular_family" not in nodes.columns:
+        raise ValueError("节点表缺少 mean_<group> 列或 molecular_family 列，无法派生组强度")
+    families = nodes["molecular_family"].fillna("singleton").astype(str)
+    top_families = int((plot_config.get("marks") or {}).get("top_n") or 8)
+    keep = [
+        family
+        for family in families.value_counts().head(max(2, top_families)).index
+        if family != "singleton"
+    ]
+    rows: list[dict[str, Any]] = []
+    for rank, family in enumerate(keep):
+        subset = nodes[families == family]
+        for column in group_cols:
+            series = pd.to_numeric(subset[column], errors="coerce").dropna()
+            if series.empty:
+                continue
+            rows.append(
+                {
+                    "molecular_family": family,
+                    "group": column[len("mean_") :],
+                    "mean_intensity": float(series.mean()),
+                    "std_intensity": float(series.std(ddof=0)) if len(series) > 1 else 0.0,
+                    "rank": rank,
+                }
+            )
+    if not rows:
+        raise ValueError("节点表 mean_<group> 列无有效数值")
+    return pd.DataFrame(rows)
+
+
 def _fbmn_group_intensity_spec(data_dir: Path, plot_config: dict[str, Any]) -> dict[str, Any]:
-    path = resolve_plot_data_file(data_dir, "fbmn_group_intensity.csv")
-    if path is None:
-        raise ValueError("缺少 fbmn_group_intensity.csv")
-    frame = pd.read_csv(path)
+    path = data_dir / "fbmn_group_intensity.csv"
+    if path.is_file():
+        frame = pd.read_csv(path)
+    else:
+        frame = _derive_fbmn_group_intensity(data_dir, plot_config)
     required = {"molecular_family", "group", "mean_intensity"}
     if not required.issubset(frame.columns):
         raise ValueError("fbmn_group_intensity.csv 缺少 molecular_family / group / mean_intensity")
@@ -1472,13 +1644,72 @@ def _fbmn_group_intensity_spec(data_dir: Path, plot_config: dict[str, Any]) -> d
     return spec
 
 
+def _derive_mass2motif_network(
+    data_dir: Path,
+    plot_config: dict[str, Any],
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """从 spectra_motif_scores.csv 宽表派生 motif–spectrum 二部图（B 只写打分矩阵）。"""
+    path = resolve_plot_data_file(data_dir, "spectra_motif_scores.csv")
+    if path is None:
+        raise ValueError("缺少 mass2motif_network 节点/边表，且无 spectra_motif_scores.csv 可派生")
+    scores = pd.read_csv(path, index_col=0)
+    motif_cols = [c for c in scores.columns if str(c).startswith("Motif_")]
+    if not motif_cols:
+        raise ValueError("spectra_motif_scores.csv 无 Motif_* 列")
+    marks = plot_config.get("marks") or {}
+    top_motifs = max(3, int(marks.get("top_motifs") or 15))
+    top_spectra = max(5, int(marks.get("top_spectra") or 60))
+    threshold = 0.05
+
+    loads = scores[motif_cols].sum(axis=0).sort_values(ascending=False)
+    motifs = loads.head(top_motifs).index.tolist()
+    spectra = scores[motifs].sum(axis=1).nlargest(top_spectra).index.tolist()
+
+    angle_step = 2 * math.pi / max(1, len(motifs))
+    node_rows: list[dict[str, Any]] = []
+    for index, motif in enumerate(motifs):
+        node_rows.append(
+            {
+                "node_id": f"motif:{motif}",
+                "label": str(motif),
+                "node_type": "motif",
+                "x": math.cos(index * angle_step) * 1.6,
+                "y": math.sin(index * angle_step) * 1.6,
+                "total_load": float(loads[motif]),
+            }
+        )
+    spectrum_step = 2 * math.pi / max(1, len(spectra))
+    for index, spectrum in enumerate(spectra):
+        node_rows.append(
+            {
+                "node_id": f"spec:{spectrum}",
+                "label": str(spectrum),
+                "node_type": "spectrum",
+                "x": math.cos(index * spectrum_step) * 3.2,
+                "y": math.sin(index * spectrum_step) * 3.2,
+                "total_load": float(scores.loc[spectrum, motifs].sum()),
+            }
+        )
+    edge_rows: list[dict[str, Any]] = []
+    for spectrum in spectra:
+        for motif in motifs:
+            score = _finite(scores.at[spectrum, motif])
+            if score is None or score < threshold:
+                continue
+            edge_rows.append(
+                {"spectrum_id": spectrum, "motif_id": motif, "score": score}
+            )
+    return pd.DataFrame(node_rows), pd.DataFrame(edge_rows)
+
+
 def _mass2motif_network_spec(data_dir: Path, plot_config: dict[str, Any]) -> dict[str, Any]:
-    nodes_path = resolve_plot_data_file(data_dir, "mass2motif_network_nodes.csv")
-    edges_path = resolve_plot_data_file(data_dir, "mass2motif_network_edges.csv")
-    if nodes_path is None or edges_path is None:
-        raise ValueError("缺少 mass2motif_network_nodes.csv / mass2motif_network_edges.csv")
-    nodes = pd.read_csv(nodes_path)
-    edges = pd.read_csv(edges_path)
+    nodes_path = data_dir / "mass2motif_network_nodes.csv"
+    edges_path = data_dir / "mass2motif_network_edges.csv"
+    if nodes_path.is_file() and edges_path.is_file():
+        nodes = pd.read_csv(nodes_path)
+        edges = pd.read_csv(edges_path)
+    else:
+        nodes, edges = _derive_mass2motif_network(data_dir, plot_config)
     if nodes.empty:
         raise ValueError("mass2motif_network_nodes.csv 为空")
     colors = plot_config.get("colors") or {}
@@ -1592,6 +1823,622 @@ def _mass2motif_network_spec(data_dir: Path, plot_config: dict[str, Any]) -> dic
     }
 
 
+def _splot_spec(data_dir: Path, plot_config: dict[str, Any]) -> dict[str, Any]:
+    """OPLS-DA S-plot：x = p[1] scaled loading，y = p(corr)[1]。"""
+    frame = read_plot_frame(data_dir, "statistical_analysis_simca_result.csv")
+    if "loading_p1" not in frame.columns or "pcorr" not in frame.columns:
+        raise ValueError("simca_result.csv 缺少 loading_p1 / pcorr 列")
+    colors = plot_config.get("colors") or {}
+    values: list[dict[str, Any]] = []
+    for _, row in frame.iterrows():
+        x = _finite(row.get("loading_p1"))
+        y = _finite(row.get("pcorr"))
+        if x is None or y is None:
+            continue
+        values.append(
+            {
+                "x": x,
+                "y": y,
+                "feature": str(row.get("feature_id") or ""),
+                "vip": _finite(row.get("vip")) or 0.0,
+                "status": "Significant" if bool(row.get("significant")) else "Not significant",
+            }
+        )
+    if not values:
+        raise ValueError("S-plot 无有效数据点")
+    spec = _base_spec(plot_config, values)
+    spec["layer"] = [
+        {
+            "mark": {
+                "type": "point",
+                "filled": True,
+                "size": (plot_config.get("marks") or {}).get("size", 30),
+                "opacity": (plot_config.get("marks") or {}).get("opacity", 0.75),
+            },
+            "encoding": {
+                "x": {"field": "x", **_axis(plot_config, "x", "p[1] (scaled loading)")},
+                "y": {"field": "y", **_axis(plot_config, "y", "p(corr)[1]")},
+                "color": {
+                    "field": "status",
+                    "type": "nominal",
+                    "scale": {
+                        "domain": ["Significant", "Not significant"],
+                        "range": [
+                            colors.get("significant", "#d62728"),
+                            colors.get("nonsignificant", "#9aa0a6"),
+                        ],
+                    },
+                    "legend": _legend(plot_config, title="Status"),
+                },
+                "tooltip": [
+                    {"field": "feature", "type": "nominal"},
+                    {"field": "vip", "type": "quantitative", "format": ".3f"},
+                    {"field": "x", "type": "quantitative", "format": ".4g"},
+                    {"field": "y", "type": "quantitative", "format": ".4g"},
+                ],
+            },
+        },
+        {
+            "data": {"values": [{"zero": 0}]},
+            "mark": {"type": "rule", "color": "#9aa0a6", "strokeDash": [4, 4]},
+            "encoding": {"y": {"field": "zero", "type": "quantitative"}},
+        },
+        {
+            "data": {"values": [{"zero": 0}]},
+            "mark": {"type": "rule", "color": "#9aa0a6", "strokeDash": [4, 4]},
+            "encoding": {"x": {"field": "zero", "type": "quantitative"}},
+        },
+    ]
+    return spec
+
+
+def _opls_outlier_spec(data_dir: Path, plot_config: dict[str, Any]) -> dict[str, Any]:
+    """官方 SD/OD 离群诊断散点 + 两条阈值线。"""
+    frame = read_plot_frame(data_dir, "statistical_analysis_simca_outlier_distances.csv")
+    required = {"score_distance", "orthogonal_distance"}
+    if not required.issubset(frame.columns):
+        raise ValueError("outlier_distances.csv 缺少 score_distance / orthogonal_distance 列")
+    colors = plot_config.get("colors") or {}
+    values: list[dict[str, Any]] = []
+    for _, row in frame.iterrows():
+        sd = _finite(row.get("score_distance"))
+        od = _finite(row.get("orthogonal_distance"))
+        if sd is None or od is None:
+            continue
+        values.append(
+            {
+                "sd": sd,
+                "od": od,
+                "sample": str(row.get("sample") or ""),
+                "status": "Outlier" if bool(row.get("is_outlier")) else "Normal",
+            }
+        )
+    if not values:
+        raise ValueError("离群诊断无有效数据点")
+    sd_thr = _finite(frame["sd_threshold"].iloc[0]) if "sd_threshold" in frame.columns else None
+    od_thr = _finite(frame["od_threshold"].iloc[0]) if "od_threshold" in frame.columns else None
+    layers: list[dict[str, Any]] = [
+        {
+            "mark": {
+                "type": "point",
+                "filled": True,
+                "shape": "square",
+                "size": (plot_config.get("marks") or {}).get("size", 60),
+                "opacity": (plot_config.get("marks") or {}).get("opacity", 0.85),
+            },
+            "encoding": {
+                "x": {"field": "sd", **_axis(plot_config, "x", "Score distance (SD)", zero=True)},
+                "y": {"field": "od", **_axis(plot_config, "y", "Orthogonal distance (OD)", zero=True)},
+                "color": {
+                    "field": "status",
+                    "type": "nominal",
+                    "scale": {
+                        "domain": ["Outlier", "Normal"],
+                        "range": [
+                            colors.get("outlier", "#d62728"),
+                            colors.get("normal", "#7f7f7f"),
+                        ],
+                    },
+                    "legend": _legend(plot_config, title="Sample"),
+                },
+                "tooltip": [
+                    {"field": "sample", "type": "nominal"},
+                    {"field": "sd", "type": "quantitative", "format": ".3f"},
+                    {"field": "od", "type": "quantitative", "format": ".3f"},
+                ],
+            },
+        }
+    ]
+    for value, axis in ((sd_thr, "x"), (od_thr, "y")):
+        if value is None:
+            continue
+        layers.append(
+            {
+                "data": {"values": [{"thr": value}]},
+                "mark": {
+                    "type": "rule",
+                    "strokeDash": [6, 4],
+                    "color": colors.get("threshold_color", "#d62728"),
+                },
+                "encoding": {axis: {"field": "thr", "type": "quantitative"}},
+            }
+        )
+    spec = _base_spec(plot_config, values)
+    spec["layer"] = layers
+    return spec
+
+
+def _roc_auc_hist_spec(data_dir: Path, plot_config: dict[str, Any]) -> dict[str, Any]:
+    """逐特征 AUROC 分布直方图（metaX peakStat 只算 AUC 数值，无曲线）。"""
+    frame = read_plot_frame(data_dir, "statistical_analysis_metax_roc.csv")
+    column = "auroc" if "auroc" in frame.columns else ("roc" if "roc" in frame.columns else None)
+    if column is None:
+        raise ValueError("metax_roc.csv 缺少 auroc 列")
+    values_array = pd.to_numeric(frame[column], errors="coerce").dropna().astype(float).tolist()
+    if not values_array:
+        raise ValueError("AUROC 全为空值")
+    mean_auc = float(np.mean(values_array))
+    return _value_histogram_spec(
+        values_array,
+        plot_config,
+        x_title="Per-feature AUC",
+        y_title="Count",
+        rules=[("Mean AUC", mean_auc, "threshold_color"), ("Random", 0.5, "median_color")],
+    )
+
+
+def _log2fc_hist_spec(data_dir: Path, plot_config: dict[str, Any]) -> dict[str, Any]:
+    """log2(ratio) 分布直方图（metaX quant 表的 ratio 列）。"""
+    frame = read_plot_frame(data_dir, "statistical_analysis_metax_quant_table.csv")
+    if "ratio" in frame.columns:
+        ratio = pd.to_numeric(frame["ratio"], errors="coerce")
+        series = np.log2(ratio.where(ratio > 0))
+    elif "log2fc" in frame.columns:
+        series = pd.to_numeric(frame["log2fc"], errors="coerce")
+    else:
+        raise ValueError("quant_table.csv 缺少 ratio / log2fc 列")
+    values_array = [v for v in series.dropna().astype(float).tolist() if math.isfinite(v)]
+    if not values_array:
+        raise ValueError("log2(ratio) 全为空值")
+    return _value_histogram_spec(
+        values_array,
+        plot_config,
+        x_title="log2(ratio)",
+        y_title="Number of Features",
+        rules=[("Zero", 0.0, "threshold_color")],
+    )
+
+
+def _significance_venn_spec(data_dir: Path, plot_config: dict[str, Any]) -> dict[str, Any]:
+    """显著性集合交集计数条形图（Venn 的可读替代，集合成员来自 B 的 sets 表）。"""
+    frame = read_plot_frame(data_dir, "statistical_analysis_metax_significance_sets.csv")
+    if "intersection" not in frame.columns:
+        flags = [c for c in ("t_test_bh_sig", "wilcox_bh_sig", "vip_sig") if c in frame.columns]
+        if not flags:
+            raise ValueError("significance_sets.csv 缺少 intersection 或显著性标记列")
+        label_map = {"t_test_bh_sig": "t.test", "wilcox_bh_sig": "wilcox.test", "vip_sig": "VIP"}
+        frame["intersection"] = [
+            "+".join(label_map[c] for c in flags if bool(row[c])) for _, row in frame[flags].iterrows()
+        ]
+    counts = (
+        frame["intersection"].fillna("").astype(str).replace("", "none").value_counts().to_dict()
+    )
+    counts.pop("none", None)
+    if not counts:
+        raise ValueError("无任何显著性集合命中")
+    palette = plot_config.get("palette") or {}
+    values = [
+        {
+            "set": key,
+            "count": int(value),
+            "order": index,
+            "color": palette.get(key, DEFAULT_PALETTE[index % len(DEFAULT_PALETTE)]),
+        }
+        for index, (key, value) in enumerate(sorted(counts.items(), key=lambda kv: -kv[1]))
+    ]
+    spec = _base_spec(plot_config, values)
+    spec["mark"] = {"type": "bar", "opacity": (plot_config.get("marks") or {}).get("opacity", 0.85)}
+    spec["encoding"] = {
+        "y": {
+            "field": "set",
+            **_axis(plot_config, "y", "Significance set", axis_type="nominal"),
+            "sort": {"field": "order", "order": "ascending"},
+        },
+        "x": {"field": "count", **_axis(plot_config, "x", "Number of Features", zero=True)},
+        "color": {
+            "field": "set",
+            "type": "nominal",
+            "scale": {
+                "domain": [item["set"] for item in values],
+                "range": [item["color"] for item in values],
+            },
+            "legend": _legend(plot_config, title="Set"),
+        },
+        "tooltip": [
+            {"field": "set", "type": "nominal"},
+            {"field": "count", "type": "quantitative"},
+        ],
+    }
+    return spec
+
+
+_GRADE_ORDER = ("Supreme", "Premium", "Special", "Grade I", "Grade II")
+_MATRIX_INDEX_HINTS = {
+    "compound",
+    "feature",
+    "metabolite",
+    "name",
+    "sample",
+    "sample_id",
+    "variable",
+    "trait",
+    "index",
+}
+
+
+def _read_labeled_matrix(path: Path) -> pd.DataFrame:
+    frame = pd.read_csv(path)
+    if frame.empty:
+        raise ValueError(f"{path.name} 为空")
+    first = str(frame.columns[0]).strip()
+    if first.lower() in _MATRIX_INDEX_HINTS or first in {"Sample", "Unnamed: 0"}:
+        frame = frame.set_index(frame.columns[0])
+    return frame
+
+
+def _matrix_heatmap_spec(
+    frame: pd.DataFrame,
+    plot_config: dict[str, Any],
+    *,
+    x_title: str,
+    y_title: str,
+    color_title: str,
+    scheme: str,
+    reverse: bool = False,
+    domain: list[float] | None = None,
+) -> dict[str, Any]:
+    numeric = frame.apply(pd.to_numeric, errors="coerce")
+    values: list[dict[str, Any]] = []
+    for row_label, row in numeric.iterrows():
+        for column, value in row.items():
+            number = _finite(value)
+            if number is None:
+                continue
+            values.append(
+                {
+                    "row": str(row_label),
+                    "column": str(column),
+                    "value": number,
+                }
+            )
+    if not values:
+        raise ValueError("热图矩阵无有效数值")
+    spec = _base_spec(plot_config, values)
+    width, height = _dimensions(plot_config)
+    spec["width"] = max(width, min(1400, 24 * max(8, numeric.shape[1])))
+    spec["height"] = max(height, min(1200, 18 * max(8, numeric.shape[0])))
+    spec["mark"] = "rect"
+    color_scale: dict[str, Any] = {"scheme": scheme}
+    if reverse:
+        color_scale["reverse"] = True
+    if domain is not None:
+        color_scale["domain"] = domain
+    spec["encoding"] = {
+        "x": {
+            "field": "column",
+            **_axis(plot_config, "x", x_title, axis_type="nominal"),
+            "axis": {
+                "titleFontSize": (plot_config.get("font_size") or {}).get("axis", 12),
+                "labelFontSize": (plot_config.get("font_size") or {}).get("label", 9),
+                "labelAngle": -45,
+            },
+        },
+        "y": {
+            "field": "row",
+            **_axis(plot_config, "y", y_title, axis_type="nominal"),
+            "axis": {
+                "titleFontSize": (plot_config.get("font_size") or {}).get("axis", 12),
+                "labelFontSize": (plot_config.get("font_size") or {}).get("label", 9),
+            },
+        },
+        "color": {
+            "field": "value",
+            "type": "quantitative",
+            "scale": color_scale,
+            "legend": _legend(plot_config, title=color_title),
+        },
+        "tooltip": [
+            {"field": "row", "type": "nominal", "title": y_title},
+            {"field": "column", "type": "nominal", "title": x_title},
+            {"field": "value", "type": "quantitative", "format": ".4g"},
+        ],
+    }
+    return spec
+
+
+def _grade_order_index(label: str) -> int:
+    try:
+        return _GRADE_ORDER.index(label)
+    except ValueError:
+        return len(_GRADE_ORDER)
+
+
+def _facet_bar_spec(
+    values: list[dict[str, Any]],
+    plot_config: dict[str, Any],
+    *,
+    x_field: str,
+    y_field: str,
+    facet_field: str,
+    y_title: str,
+) -> dict[str, Any]:
+    palette = plot_config.get("palette") or {}
+    x_domain = list(dict.fromkeys(item[x_field] for item in values))
+    colors = [
+        palette.get(key, DEFAULT_PALETTE[index % len(DEFAULT_PALETTE)])
+        for index, key in enumerate(x_domain)
+    ]
+    spec = _base_spec(plot_config, values)
+    spec["facet"] = {
+        "column": {
+            "field": facet_field,
+            "type": "nominal",
+            "title": None,
+        }
+    }
+    spec["spec"] = {
+        "mark": {
+            "type": "bar",
+            "opacity": (plot_config.get("marks") or {}).get("opacity", 0.85),
+        },
+        "encoding": {
+            "x": {
+                "field": x_field,
+                **_axis(plot_config, "x", "Grade", axis_type="nominal"),
+                "sort": {"field": "order", "order": "ascending"},
+            },
+            "y": {"field": y_field, **_axis(plot_config, "y", y_title, zero=True)},
+            "color": {
+                "field": x_field,
+                "type": "nominal",
+                "scale": {"domain": x_domain, "range": colors},
+                "legend": _legend(plot_config, title="Grade"),
+            },
+            "tooltip": [
+                {"field": x_field, "type": "nominal"},
+                {"field": facet_field, "type": "nominal"},
+                {"field": y_field, "type": "quantitative", "format": ".3g"},
+            ],
+        },
+    }
+    spec.pop("mark", None)
+    spec.pop("encoding", None)
+    return spec
+
+
+def _constituent_bar_spec(data_dir: Path, plot_config: dict[str, Any]) -> dict[str, Any]:
+    path = resolve_plot_data_file(data_dir, "tea_constituents.csv")
+    if path is None:
+        raise ValueError("缺少 tea_constituents.csv")
+    frame = pd.read_csv(path)
+    required = {"grade", "metric", "mean"}
+    if not required.issubset(frame.columns):
+        raise ValueError("tea_constituents.csv 缺少 grade / metric / mean")
+    values = [
+        {
+            "grade": str(row["grade"]),
+            "metric": str(row["metric"]),
+            "mean": float(row["mean"]),
+            "order": _grade_order_index(str(row["grade"])),
+        }
+        for _, row in frame.iterrows()
+        if _finite(row.get("mean")) is not None
+    ]
+    if not values:
+        raise ValueError("tea_constituents.csv 无有效数值")
+    return _facet_bar_spec(values, plot_config, x_field="grade", y_field="mean", facet_field="metric", y_title="Content")
+
+
+def _bioactivity_bar_spec(data_dir: Path, plot_config: dict[str, Any]) -> dict[str, Any]:
+    path = resolve_plot_data_file(data_dir, "bioactivity_assays.csv")
+    if path is None:
+        raise ValueError("缺少 bioactivity_assays.csv")
+    frame = pd.read_csv(path)
+    required = {"grade", "assay", "value"}
+    if not required.issubset(frame.columns):
+        raise ValueError("bioactivity_assays.csv 缺少 grade / assay / value")
+    values = [
+        {
+            "grade": str(row["grade"]),
+            "assay": str(row["assay"]),
+            "value": float(row["value"]),
+            "order": _grade_order_index(str(row["grade"])),
+        }
+        for _, row in frame.iterrows()
+        if _finite(row.get("value")) is not None
+    ]
+    if not values:
+        raise ValueError("bioactivity_assays.csv 无有效数值")
+    return _facet_bar_spec(values, plot_config, x_field="grade", y_field="value", facet_field="assay", y_title="Value")
+
+
+def _sensory_scores_spec(data_dir: Path, plot_config: dict[str, Any]) -> dict[str, Any]:
+    path = resolve_plot_data_file(data_dir, "sensory_scores.csv")
+    if path is None:
+        raise ValueError("缺少 sensory_scores.csv")
+    frame = pd.read_csv(path)
+    required = {"grade", "attribute", "score"}
+    if not required.issubset(frame.columns):
+        raise ValueError("sensory_scores.csv 缺少 grade / attribute / score")
+    palette = plot_config.get("palette") or {}
+    attributes = list(dict.fromkeys(str(v) for v in frame["attribute"].tolist()))
+    values = [
+        {
+            "grade": str(row["grade"]),
+            "attribute": str(row["attribute"]),
+            "score": float(row["score"]),
+            "order": _grade_order_index(str(row["grade"])),
+        }
+        for _, row in frame.iterrows()
+        if _finite(row.get("score")) is not None
+    ]
+    if not values:
+        raise ValueError("sensory_scores.csv 无有效数值")
+    spec = _base_spec(plot_config, values)
+    spec["mark"] = {
+        "type": "bar",
+        "opacity": (plot_config.get("marks") or {}).get("opacity", 0.85),
+    }
+    spec["encoding"] = {
+        "x": {
+            "field": "grade",
+            **_axis(plot_config, "x", "Grade", axis_type="nominal"),
+            "sort": {"field": "order", "order": "ascending"},
+        },
+        "y": {"field": "score", **_axis(plot_config, "y", "Score (0–5)", zero=True)},
+        "xOffset": {"field": "attribute", "type": "nominal"},
+        "color": {
+            "field": "attribute",
+            "type": "nominal",
+            "scale": {
+                "domain": attributes,
+                "range": [
+                    palette.get(name, DEFAULT_PALETTE[index % len(DEFAULT_PALETTE)])
+                    for index, name in enumerate(attributes)
+                ],
+            },
+            "legend": _legend(plot_config, title="Attribute"),
+        },
+        "tooltip": [
+            {"field": "grade", "type": "nominal"},
+            {"field": "attribute", "type": "nominal"},
+            {"field": "score", "type": "quantitative", "format": ".2f"},
+        ],
+    }
+    return spec
+
+
+def _relative_abundance_spec(data_dir: Path, plot_config: dict[str, Any]) -> dict[str, Any]:
+    path = resolve_plot_data_file(data_dir, "differential_metabolites_abundance.csv")
+    if path is None:
+        path = resolve_plot_data_file(data_dir, "volatile_differential_abundance.csv")
+    if path is None:
+        raise ValueError("缺少 differential_metabolites_abundance.csv / volatile_differential_abundance.csv")
+    frame = _read_labeled_matrix(path)
+    return _matrix_heatmap_spec(
+        frame,
+        plot_config,
+        x_title="Grade",
+        y_title="Compound",
+        color_title="Relative abundance",
+        scheme="yelloworangered",
+    )
+
+
+def _hca_heatmap_spec(data_dir: Path, plot_config: dict[str, Any]) -> dict[str, Any]:
+    path = resolve_plot_data_file(data_dir, "hca_matrix.csv")
+    if path is None:
+        raise ValueError("缺少 hca_matrix.csv")
+    frame = _read_labeled_matrix(path)
+    return _matrix_heatmap_spec(
+        frame,
+        plot_config,
+        x_title="Feature",
+        y_title="Sample",
+        color_title="Intensity",
+        scheme="viridis",
+    )
+
+
+def _correlation_heatmap_spec(data_dir: Path, plot_config: dict[str, Any]) -> dict[str, Any]:
+    path = resolve_plot_data_file(data_dir, "correlation_matrix.csv")
+    if path is None:
+        raise ValueError("缺少 correlation_matrix.csv")
+    frame = _read_labeled_matrix(path)
+    return _matrix_heatmap_spec(
+        frame,
+        plot_config,
+        x_title="Variable",
+        y_title="Variable",
+        color_title="Pearson r",
+        scheme="redblue",
+        reverse=True,
+        domain=[-1, 1],
+    )
+
+
+def _permutation_spec(data_dir: Path, plot_config: dict[str, Any]) -> dict[str, Any]:
+    """置换检验图：x = similarity(y, y_perm)，y = R2Y / Q2，真实模型值作参考线。"""
+    frame = read_plot_frame(data_dir, "plsda_permutation.csv")
+    if frame.empty:
+        raise ValueError("permutation.csv 为空（Python 回退路径无置换分布）")
+    if "R2Y" not in frame.columns or "Q2" not in frame.columns:
+        raise ValueError("permutation.csv 缺少 R2Y / Q2 列")
+    if "similarity" in frame.columns:
+        x_values = pd.to_numeric(frame["similarity"], errors="coerce")
+        x_title = "Similarity(y, y[perm])"
+    else:
+        x_values = pd.Series(range(len(frame)), dtype=float)
+        x_title = "Permutation"
+    colors = plot_config.get("colors") or {}
+    r2_color = colors.get("r2_color", "#9aa0a6")
+    q2_color = colors.get("q2_color", "#1f2937")
+    values: list[dict[str, Any]] = []
+    for index in range(len(frame)):
+        x = _finite(x_values.iloc[index])
+        for metric in ("R2Y", "Q2"):
+            y = _finite(frame[metric].iloc[index])
+            if x is None or y is None:
+                continue
+            values.append({"x": x, "y": y, "metric": metric})
+    if not values:
+        raise ValueError("置换检验无有效数据点")
+    layers: list[dict[str, Any]] = [
+        {
+            "mark": {
+                "type": "point",
+                "filled": True,
+                "shape": "diamond",
+                "size": (plot_config.get("marks") or {}).get("size", 60),
+                "opacity": (plot_config.get("marks") or {}).get("opacity", 0.85),
+            },
+            "encoding": {
+                "x": {"field": "x", **_axis(plot_config, "x", x_title)},
+                "y": {"field": "y", **_axis(plot_config, "y", "R2Y / Q2")},
+                "color": {
+                    "field": "metric",
+                    "type": "nominal",
+                    "scale": {"domain": ["R2Y", "Q2"], "range": [r2_color, q2_color]},
+                    "legend": _legend(plot_config, title="Metric"),
+                },
+                "tooltip": [
+                    {"field": "metric", "type": "nominal"},
+                    {"field": "x", "type": "quantitative", "format": ".3f"},
+                    {"field": "y", "type": "quantitative", "format": ".3f"},
+                ],
+            },
+        }
+    ]
+    # permMN 第 1 行为真实模型
+    for metric, color in (("R2Y", r2_color), ("Q2", q2_color)):
+        actual = _finite(frame[metric].iloc[0])
+        if actual is None:
+            continue
+        layers.append(
+            {
+                "data": {"values": [{"actual": actual, "label": f"{metric} = {actual:.3f}"}]},
+                "mark": {"type": "rule", "color": color, "strokeWidth": 1.5},
+                "encoding": {
+                    "y": {"field": "actual", "type": "quantitative"},
+                    "tooltip": [{"field": "label", "type": "nominal"}],
+                },
+            }
+        )
+    spec = _base_spec(plot_config, values)
+    spec["layer"] = layers
+    return spec
+
+
 def build_vegalite_spec(
     *,
     plot_type: str,
@@ -1641,6 +2488,30 @@ def build_vegalite_spec(
         return _fbmn_group_intensity_spec(data_path, plot_config)
     if plot_type == "mass2motif_network":
         return _mass2motif_network_spec(data_path, plot_config)
+    if plot_type == "splot":
+        return _splot_spec(data_path, plot_config)
+    if plot_type == "opls_outlier":
+        return _opls_outlier_spec(data_path, plot_config)
+    if plot_type == "roc_auc_hist":
+        return _roc_auc_hist_spec(data_path, plot_config)
+    if plot_type == "log2fc_hist":
+        return _log2fc_hist_spec(data_path, plot_config)
+    if plot_type == "significance_venn":
+        return _significance_venn_spec(data_path, plot_config)
+    if plot_type == "plsda_permutation":
+        return _permutation_spec(data_path, plot_config)
+    if plot_type == "constituent_bar":
+        return _constituent_bar_spec(data_path, plot_config)
+    if plot_type == "relative_abundance_heatmap":
+        return _relative_abundance_spec(data_path, plot_config)
+    if plot_type == "hca_heatmap":
+        return _hca_heatmap_spec(data_path, plot_config)
+    if plot_type == "correlation_heatmap":
+        return _correlation_heatmap_spec(data_path, plot_config)
+    if plot_type == "bioactivity_bar":
+        return _bioactivity_bar_spec(data_path, plot_config)
+    if plot_type == "sensory_scores":
+        return _sensory_scores_spec(data_path, plot_config)
     raise ValueError(f"暂不支持语义渲染: {plot_type}")
 
 

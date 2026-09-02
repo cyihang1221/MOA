@@ -7,6 +7,8 @@ import re
 from pathlib import Path
 from typing import Any
 
+from web_frontend.backend.agent_backends import massomics_root
+
 
 def _project_root() -> Path:
     # web_frontend/backend/skill_match.py → repo root
@@ -19,8 +21,115 @@ def _registry_path(project_root: Path | None = None) -> Path:
 
 
 def _massomics_skills_root(project_root: Path | None = None) -> Path:
-    root = project_root or _project_root()
-    return root / "MassOmics-Agent" / "MassOmics-Agent" / "skills"
+    return massomics_root(project_root or _project_root()) / "skills"
+
+
+def _in_goal(token: str, goal_lower: str) -> bool:
+    """短英文 id 用词界匹配，避免 kpic 命中 peakpicking、ms 命中 openms。"""
+    t = (token or "").strip().lower()
+    if len(t) < 2:
+        return False
+    if re.search(r"[\u4e00-\u9fff]", t) or " " in t:
+        return t in goal_lower
+    return re.search(rf"(?<![a-z0-9]){re.escape(t)}(?![a-z0-9])", goal_lower) is not None
+
+
+def _trigger_keywords_from_description(desc: str) -> list[str]:
+    """YAML description 触发词：整句切片 +「当提到 A、B 时触发」里的短名。"""
+    keywords = [k.strip() for k in re.split(r"[，,。、；;\n]+", desc) if len(k.strip()) >= 2]
+    m = re.search(r"当提到(.+?)时触发", desc, re.S)
+    if m:
+        keywords.extend(
+            k.strip()
+            for k in re.split(r"[，,、/]+", m.group(1))
+            if len(k.strip()) >= 2
+        )
+    return list(dict.fromkeys(keywords))
+
+
+# 同一 software-id 多篇时，按 MCP/模块名把分数加到对应 paper-slug
+_SLUG_GOAL_HINTS: dict[str, tuple[str, ...]] = {
+    "tautenhahn-2008-centwave": (
+        "centwave",
+        "xcms-centwave",
+        "snthresh",
+        "peakwidth",
+        "prefilter",
+    ),
+    "mclean-2020-autotuner": ("autotuner",),
+    "naser-2019-credentialing": (
+        "credential",
+        "credentialing",
+        "obiwarp",
+        "loess",
+        "xcms-obiwarp",
+        "xcms-loess",
+    ),
+    "pluskal-2010-mzmine2": (
+        "gridmass",
+        "girdmass",
+        "mzmine-girdmass",
+        "mzmine-gridmass",
+    ),
+    "heuckeroth-2024-reproducible-processing": (
+        "adap",
+        "mzmine-adap",
+        "jointaligner",
+        "joint aligner",
+        "mzmine-jointaligner",
+    ),
+    "schmid-2023-mzmine3": ("mzmine 3", "mzmine3"),
+    "kenar-2014-featurefindermetabo": (
+        "featurefinder",
+        "featurefindermetabo",
+        "openms-featurefindermetabo",
+    ),
+    "sturm-2008-openms": (
+        "fileconverter",
+        "peakpicking",
+        "peak picking",
+        "openms-peakpicking",
+        "openms fileconverter",
+    ),
+    "rost-2016-openms2": (
+        "isotopetools",
+        "peakgroup",
+        "openms-isotopetools",
+        "openms-peakgroup",
+        "mapaligner",
+    ),
+}
+
+
+def _software_param_needles(software_id: str) -> tuple[str, ...]:
+    """software-id 与 catalog keyword 的小写别名（goal 用词界匹配）。"""
+    extra = {
+        "msbert": ("ms-bert", "ms_bert"),
+        "csu-ms2": ("csums2", "csu_ms2"),
+        "e-sgmn": ("esgmn", "e_sgmn"),
+        "ms-dial": ("msdial", "ms_dial"),
+        "kpic": ("kpic2",),
+        "fft": ("fft-based",),
+        "dtw": ("dtw-based",),
+        "bpca": ("bayesian pca", "bayesian-pca"),
+        "deeplearning": ("deeplearning-based", "deep learning", "deep learning-based"),
+        "spectral-entropy": ("spectral entropy", "谱熵"),
+        "missforest": ("miss-forest",),
+        "knn": ("k-nn",),
+        "cfm-id": ("cfmid", "cfm_id"),
+        "ramclust": ("ramclustr",),
+        "scikit-learn": ("sklearn",),
+        "cosine": ("modified cosine",),
+        "mzannotation": ("xmsannotator",),
+        "peakonly": ("neatms",),
+        "deepmass": ("deepmass2",),
+        "mixomics": ("mixomics",),
+        "metax": ("metax",),
+    }
+    compact = software_id.replace("-", "").replace("_", "")
+    needles = [software_id, compact, software_id.replace("-", " ")]
+    needles.extend(extra.get(software_id, ()))
+    return tuple(dict.fromkeys(n.lower() for n in needles if n))
 
 
 def _load_massomics_skill_hits(goal_lower: str, project_root: Path | None = None) -> list[tuple[dict, str, list[str], int]]:
@@ -45,8 +154,8 @@ def _load_massomics_skill_hits(goal_lower: str, project_root: Path | None = None
             m2 = re.search(r"description:\s*(.+)$", content, re.M)
             if m2:
                 desc = m2.group(1)
-        keywords = [k.strip() for k in re.split(r"[，,。、；;\n]+", desc) if len(k.strip()) >= 2]
-        matched_kw = [kw for kw in keywords if str(kw).lower() in goal_lower]
+        keywords = _trigger_keywords_from_description(desc)
+        matched_kw = [kw for kw in keywords if _in_goal(str(kw), goal_lower)]
         name = skill_md.parent.name
         blob = f"{name} {desc} {content[:400]}".lower()
         extra = [
@@ -63,11 +172,8 @@ def _load_massomics_skill_hits(goal_lower: str, project_root: Path | None = None
                 "pca",
                 "volcano",
             )
-            if kw in goal_lower and kw in blob
+            if _in_goal(kw, goal_lower) and _in_goal(kw, blob)
         ]
-        matched_kw = list(dict.fromkeys(matched_kw + extra))
-        if not matched_kw:
-            continue
         try:
             rel_parts = skill_md.relative_to(skills_root).parts
         except ValueError:
@@ -76,16 +182,17 @@ def _load_massomics_skill_hits(goal_lower: str, project_root: Path | None = None
         is_software_params = len(rel_parts) >= 4 and rel_parts[0] == "software-params"
         software_id = rel_parts[1] if is_software_params else ""
         parent_kind = rel_parts[0] if len(rel_parts) >= 2 else skill_md.parent.parent.name
+        slug_boost = 0
         if is_software_params:
-            aliases = {
-                "xcms": ("xcms",),
-                "ms-dial": ("ms-dial", "msdial", "ms_dial"),
-                "mzmine": ("mzmine",),
-                "openms": ("openms",),
-            }
-            needles = aliases.get(software_id, (software_id.replace("-", ""), software_id))
-            if not any(n in goal_lower for n in needles):
+            needles = _software_param_needles(software_id)
+            if not any(_in_goal(n, goal_lower) for n in needles):
                 continue
+            extra.extend(n for n in needles if _in_goal(n, goal_lower))
+            if any(_in_goal(hint, goal_lower) for hint in _SLUG_GOAL_HINTS.get(name, ())):
+                slug_boost = 25
+        matched_kw = list(dict.fromkeys(matched_kw + extra))
+        if not matched_kw:
+            continue
         skill = {
             "skill_name": name,
             "functional_domain": software_id if is_software_params else parent_kind,
@@ -95,7 +202,7 @@ def _load_massomics_skill_hits(goal_lower: str, project_root: Path | None = None
         priority = min(len(matched_kw), 8) + 5  # 手工卡略加权
         if is_software_params:
             # 点名软件时优先注入参数卡，避免被冗长共识挤出 3 卡名额
-            priority += 110
+            priority += 110 + slug_boost
         hits.append((skill, content, matched_kw, priority))
     return hits
 
@@ -133,7 +240,7 @@ def match_skills(
             registry_error = str(exc)
         for skill in registry.get("skills", []) or []:
             keywords = skill.get("trigger_keywords") or []
-            matched_kw = [kw for kw in keywords if str(kw).lower() in goal_lower]
+            matched_kw = [kw for kw in keywords if _in_goal(str(kw), goal_lower)]
             if not matched_kw:
                 continue
             rel = skill.get("file") or ""

@@ -3,8 +3,8 @@
 在 WEB_AGENT_A_BACKEND=massomics 时：
 1. 加载 MassOmics KnowledgeBase + 数据探测
 2. 用 MassOmics Planner 系统提示 + Web LLM 生成 PlanDocument
-3. 映射为 Web B 可执行的 ``Use <mcp_tool> to ...`` 任务
-4. 写入 plan_<timestamp>.json/.md（MassOmics 格式）并供 C 侧读取
+3. 写入 plan_<timestamp>.json/.md 供 Agent B（MassOmics-Agent-B）与 Agent C 读取
+4. 同步写出 analysis_plan.md 供网页评审；并映射为 local B 可执行任务（WEB_AGENT_B_BACKEND=local 时使用）
 """
 from __future__ import annotations
 
@@ -19,8 +19,42 @@ from web_frontend.backend.agent_a.massomics_tool_map import plan_document_to_tas
 from web_frontend.backend.json_parse import extract_first_json_object
 
 
-class MassOmicsPlannerError(Exception):
-    pass
+def _join_str(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return value
+    if isinstance(value, (list, tuple)):
+        return ", ".join(str(item).strip() for item in value if str(item).strip())
+    return str(value)
+
+
+def coerce_plan_document(raw: dict[str, Any]) -> dict[str, Any]:
+    """把 LLM 偶尔写成 list 的路径字段收成 cyh PlanDocument 需要的字符串。"""
+    out = dict(raw)
+    out["goal"] = _join_str(out.get("goal"))
+    steps_out: list[dict[str, Any]] = []
+    for index, step in enumerate(out.get("steps") or []):
+        if not isinstance(step, dict):
+            continue
+        tools = step.get("tools") or []
+        if isinstance(tools, str):
+            tools = [part.strip() for part in tools.split(",") if part.strip()]
+        elif not isinstance(tools, list):
+            tools = [str(tools)]
+        steps_out.append(
+            {
+                **step,
+                "step_number": int(step.get("step_number") or index + 1),
+                "description": _join_str(step.get("description") or step.get("task")),
+                "input_filename": _join_str(step.get("input_filename")),
+                "output_filename": _join_str(step.get("output_filename")),
+                "expected_output": _join_str(step.get("expected_output")),
+                "tools": [str(item).strip() for item in tools if str(item).strip()],
+            }
+        )
+    out["steps"] = steps_out
+    return out
 
 
 def _ensure_massomics_path(root: Path) -> None:
@@ -75,6 +109,23 @@ def _inspect_data(upload_dir: str, goal: str) -> str:
             return ""
 
 
+def _inspect_metadata(upload_dir: str) -> str:
+    from web_frontend.backend.agent_b.artifact_bridge import inspect_metadata_csv
+
+    path = Path(upload_dir)
+    candidates = [
+        path / "metadata.csv",
+        path.parent / "metadata.csv",
+        path / "raw" / "metadata.csv",
+    ]
+    if path.name == "raw":
+        candidates.append(path.parent / "metadata.csv")
+    for cand in candidates:
+        if cand.is_file():
+            return inspect_metadata_csv(str(cand))
+    return ""
+
+
 def _planner_system_prompt() -> str:
     _ensure_massomics_path(massomics_root())
     from plan.planner import Planner
@@ -109,7 +160,10 @@ def run_massomics_planning(
     output = paths.get("outputspace") or "."
     goal_text = (goal or user_message or "").strip()
     inspect_txt = _inspect_data(upload, goal_text)
+    meta_txt = _inspect_metadata(upload)
     kb_ctx = kb.as_prompt_context(f"{goal_text} {data_list}", goal=goal_text, data_desc=data_list)
+    if len(kb_ctx) > 8000:
+        kb_ctx = kb_ctx[:8000] + "\n…(知识库上下文已截断，避免规划超时)"
 
     mem_note = ""
     refs = ""
@@ -126,6 +180,7 @@ def run_massomics_planning(
         f"知识库中相关的工作流模板与文献:\n{kb_ctx}\n"
         + (f"\n记忆:\n{mem_note}\n" if mem_note else "")
         + (f"\n{insp}" if insp else "")
+        + (f"\n{meta_txt}\n" if meta_txt else "")
         + (f"\n{refs}" if refs else "")
         + "\n请基于上述信息输出分析计划 JSON。"
     )
@@ -142,7 +197,7 @@ def run_massomics_planning(
     if not resp or not str(resp).strip():
         raise MassOmicsPlannerError("MassOmics 规划 LLM 返回为空")
 
-    raw = extract_first_json_object(str(resp))
+    raw = coerce_plan_document(extract_first_json_object(str(resp)))
     if not raw.get("goal") and not raw.get("steps"):
         raise MassOmicsPlannerError("MassOmics 规划 JSON 缺少 goal/steps")
 
@@ -214,6 +269,7 @@ def write_web_analysis_plan_from_massomics(
 
 __all__ = [
     "MassOmicsPlannerError",
+    "coerce_plan_document",
     "run_massomics_planning",
     "save_massomics_plan_files",
     "write_web_analysis_plan_from_massomics",

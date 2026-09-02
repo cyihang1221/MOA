@@ -1,0 +1,141 @@
+========== reproducibility_recipe entry ==========
+paper_title: Missing Value Imputation Approach for Mass Spectrometry-based Metabolomics Data
+source_paper: Wei R et al. (2018), Scientific Reports, DOI: 10.1038/s41598-017-19120-0, PMID: 29330539
+overall_reproducibility_score: 87/100
+
+workflow_steps: 14
+  Step 1: Missing value type simulation
+    tool: custom R script
+    algorithm: random sampling + quantile-based censoring
+    parameters: mcmar_proportions={'min': 0.025, 'max': 0.5, 'step': 0.025}, mnar_metabolite_fraction={'min': 0.04, 'max': 0.8, 'step': 0.04}, mnar_quantile_cutoff_range=[0.3, 0.6]
+    input: complete metabolomics data matrix (no missing values)
+    output: simulated MCAR/MAR and MNAR datasets
+    confidence: high
+  Step 2: Missing value imputation
+    tool: R (v3.4.2)
+    algorithm: kNN
+    parameters: k=None, distance_metric=Euclidean, imputation_target=samples
+    input: missing-value matrix
+    output: imputed matrix
+    confidence: medium
+  Step 3: Missing value imputation
+    tool: missForest
+    algorithm: Random Forest iterative imputation
+    parameters: ntree=100, maxiter=10, replace=True
+    input: missing-value matrix
+    output: imputed matrix
+    confidence: high
+  Step 4: Missing value imputation
+    tool: pcaMethods
+    algorithm: SVD imputation
+    parameters: nPCs=5, center=True, scale=True, initialization=zero
+    input: missing-value matrix
+    output: imputed matrix
+    confidence: high
+  Step 5: Missing value imputation
+    tool: base R
+    algorithm: mean imputation
+    input: missing-value matrix
+    output: imputed matrix
+    confidence: high
+  Step 6: Missing value imputation
+    tool: base R
+    algorithm: median imputation
+    input: missing-value matrix
+    output: imputed matrix
+    confidence: high
+  Step 7: Missing value imputation
+    tool: imputeLCMD
+    algorithm: Quantile Regression Imputation of Left-Censored data
+    parameters: log_transform=True, quantile_regression_method=rq, truncation_distribution=estimated_from_data
+    input: missing-value matrix
+    output: imputed matrix
+    confidence: high
+  Step 8: Missing value imputation
+    tool: base R
+    algorithm: zero imputation
+    input: missing-value matrix
+    output: imputed matrix
+    confidence: high
+  Step 9: Missing value imputation
+    tool: base R
+    algorithm: half-minimum imputation
+    input: missing-value matrix
+    output: imputed matrix
+    confidence: high
+  Step 10: Imputation accuracy evaluation (MCAR/MAR)
+    tool: custom R script
+    algorithm: Normalized Root Mean Squared Error (NRMSE)
+    parameters: normalization=variance-based, data_scaling=scaled
+    input: imputed matrix, original complete matrix
+    output: NRMSE scores per method
+    confidence: high
+  Step 11: Imputation accuracy evaluation (MNAR)
+    tool: custom R script
+    algorithm: NRMSE-based Sum of Ranks (SOR)
+    parameters: ranking_strategy=per-variable NRMSE rank summation, M=None
+    input: imputed matrix, original complete matrix
+    output: SOR scores per method
+    confidence: high
+  Step 12: Sample distribution evaluation
+    tool: vegan
+    algorithm: PCA + Procrustes analysis
+    parameters: n_components=None, procrustes_error_metric=sum_of_squared_errors
+    input: imputed matrix, original complete matrix
+    output: Procrustes sum of squared errors
+    confidence: medium
+  Step 13: Univariate statistical impact assessment
+    tool: stats (R base)
+    algorithm: Student's t-test + Pearson correlation of log-p-values
+    parameters: test_type=two-sample t-test, p_value_transformation=log10, correlation_method=Pearson
+    input: imputed matrix, original complete matrix, class labels
+    output: correlation coefficient between log-p-values
+    confidence: high
+  Step 14: Multivariate statistical impact assessment
+    tool: ropls
+    algorithm: PLS-DA + Procrustes analysis
+    parameters: n_components=None, scaling=pareto, cross_validation=none
+    input: imputed matrix, original complete matrix, class labels
+    output: Procrustes sum of squared errors (PLS-DA space)
+    confidence: medium
+
+data_availability:
+  raw_data: available (GitHub: https://github.com/WandeRum/MVI-evaluation)
+  processed_data: available (MetImp web server: https://metabolomics.cc.hawaii.edu/software/MetImp/)
+  metadata: in_paper_only
+  data_urls: https://github.com/WandeRum/MVI-evaluation, https://metabolomics.cc.hawaii.edu/software/MetImp/
+
+code_availability: repository_linked
+  code_url: https://github.com/WandeRum/MVI-evaluation
+  license: MIT
+
+figure_recipes: 4
+  Figure 1: [bar_chart]
+    caption: Evaluation of different imputation methods for MCAR/MAR using NRMSE.
+    produced_by_step: [10]
+    visualization_tool: ggplot2 or base R graphics
+  Figure 2: [bar_chart]
+    caption: Evaluation of different imputation methods for MNAR using SOR.
+    produced_by_step: [11]
+    visualization_tool: ggplot2 or base R graphics
+  Figure 3: [boxplot]
+    caption: Comparisons between QRILC and HM for MNAR imputation performance.
+    produced_by_step: [11]
+    visualization_tool: ggplot2 or base R graphics
+  Figure 4: [workflow_diagram]
+    caption: Proposed comprehensive imputation strategy for metabolomics studies.
+    produced_by_step: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+    visualization_tool: Inkscape, Illustrator, or R (diagrammeR/ggplot2)
+
+reproducibility_gaps:
+  - Exact k value for kNN not specified
+  - Number of PCA components for Procrustes analysis not reported
+  - No details on PLS-DA component number or cross-validation settings
+  - Supplemental 'Imputation Evaluation and Visualization Vignette' referenced but not linked in text
+  - Two datasets described as 'available upon request' — no repository or contact mechanism provided
+reproducibility_strengths:
+  - Source code publicly available on GitHub with MIT license
+  - Primary dataset (diabetes study) available on both GitHub and web server
+  - All imputation methods implemented using well-documented open-source R packages
+  - Evaluation metrics (NRMSE, SOR, Procrustes SSE) fully defined and computable
+  - Web-tool MetImp provides public access to methodology and interactive use

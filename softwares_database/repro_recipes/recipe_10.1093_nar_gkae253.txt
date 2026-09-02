@@ -1,44 +1,74 @@
 ========== reproducibility_recipe entry ==========
 paper_title: MetaboAnalyst 6.0: towards a unified platform for metabolomics data processing, analysis and interpretation.
 source_paper: Pang Z et al. (2024), Nucleic acids research, DOI: 10.1093/nar/gkae253, PMID: 38587201
-overall_reproducibility_score: 45/100
+overall_reproducibility_score: 72/100
 
-workflow_steps: 6
-  Step 1: Spectra processing with MS2 support
-    tool: MetaboAnalyst (v6.0)
+workflow_steps: 10
+  Step 1: LC-MS spectra processing
+    tool: MetaboAnalyst 6.0 (v6.0)
     algorithm: asari
-    input: raw .mzML or vendor files (e.g., .raw, .wiff)
-    output: processed feature table with MS2 spectra
+    parameters: auto_optimized=True
+    input: raw .mzML or other open-format LC-MS spectra files (zipped)
+    output: feature table (peak matrix)
     confidence: medium
-  Step 2: MS2 peak annotation
-    tool: MetaboAnalyst (v6.0)
-    algorithm: fragment-level annotation against MS2 reference databases
-    input: feature table with MS2 spectra
-    output: annotated metabolite list with confidence levels (e.g., Level 1–3)
+  Step 2: LC-MS spectra processing (alternative)
+    tool: MetaboAnalyst 6.0 (v6.0)
+    algorithm: centWave
+    parameters: auto_optimized=True
+    input: raw .mzML or other open-format LC-MS spectra files (zipped)
+    output: feature table (peak matrix)
     confidence: medium
-  Step 3: Statistical analysis for complex study designs
-    tool: MetaboAnalyst (v6.0)
-    algorithm: ANOVA, multivariate ANOVA (MANOVA), mixed-effects models
-    input: normalized feature table + metadata with multiple factors
-    output: differentially abundant metabolites, p-values, FDR-corrected q-values
+  Step 3: MS2 spectral deconvolution (DDA)
+    tool: MetaboAnalyst 6.0 (v6.0)
+    algorithm: DecoID
+    input: DDA MS2 spectra (MSP/MGF) linked to LC-MS features
+    output: deconvolved MS2 spectra
     confidence: low
-  Step 4: Causal analysis via two-sample Mendelian randomization
-    tool: MetaboAnalyst (v6.0)
-    algorithm: two-sample Mendelian randomization (MR)
-    input: GWAS summary statistics + metabolite association data
-    output: causal effect estimates (e.g., IVW, MR-Egger)
+  Step 4: MS2 spectral deconvolution (SWATH-DIA)
+    tool: MetaboAnalyst 6.0 (v6.0)
+    algorithm: DecoMetDIA (Rcpp/C++ reimplementation)
+    input: SWATH-DIA MS2 spectra (zipped), with SWATH window design (auto-extracted or manually entered)
+    output: deconvolved MS2 spectra
     confidence: low
-  Step 5: Dose-response analysis and benchmark dose calculation
-    tool: MetaboAnalyst (v6.0)
-    algorithm: benchmark dose (BMD) modeling
-    input: dose-response metabolomics data
-    output: BMD estimates (e.g., BMD10, BMDL10)
+  Step 5: Consensus spectrum generation
+    tool: MetaboAnalyst 6.0 (v6.0)
+    algorithm: replicate-based consensus
+    input: replicated deconvolved MS2 spectra
+    output: consensus MS2 spectra
     confidence: low
-  Step 6: Pathway analysis across ~130 species
-    tool: MetaboAnalyst (v6.0)
+  Step 6: MS2 database searching & annotation
+    tool: MetaboAnalyst 6.0 (v6.0)
+    algorithm: dot product or spectral entropy similarity scoring
+    input: consensus or single MS2 spectra + precursor m/z (if applicable)
+    output: fragment-level annotated metabolite identifications
+    confidence: medium
+  Step 7: Statistical analysis for complex study designs
+    tool: MetaboAnalyst 6.0 (v6.0)
+    algorithm: multivariate linear modeling (e.g., ANOVA, MANOVA, mixed-effects models)
+    parameters: multiple_factors=True, covariate_adjustment=True
+    input: feature table + rich phenotypic/metadata table
+    output: differentially abundant metabolites, model diagnostics
+    confidence: low
+  Step 8: Causal analysis (metabolite–phenotype)
+    tool: MetaboAnalyst 6.0 (v6.0)
+    algorithm: two-sample Mendelian randomization (2SMR)
+    parameters: mGWAS_data_integration=True, GWAS_data_integration=True
+    input: metabolite–phenotype associations + mGWAS + phenotype-GWAS summary statistics
+    output: causal effect estimates (e.g., Wald ratio, IVW, MR-Egger)
+    confidence: low
+  Step 9: Dose-response analysis & benchmark dose (BMD) calculation
+    tool: MetaboAnalyst 6.0 (v6.0)
+    algorithm: nonlinear curve fitting (e.g., Hill, log-logistic)
+    parameters: confidence_interval=0.95
+    input: dose–response concentration and effect data
+    output: BMD, BMDL, best-fit model, dose-response curves
+    confidence: low
+  Step 10: Functional/pathway analysis
+    tool: MetaboAnalyst 6.0 (v6.0)
     algorithm: over-representation analysis (ORA), pathway topology analysis
-    input: annotated differential metabolite list
-    output: enriched pathways, impact scores, p-values
+    parameters: species=≈130, database_updated=True
+    input: annotated feature table (with HMDB/KEGG/ChEBI IDs)
+    output: enriched pathways, metabolite sets, network visualizations
     confidence: medium
 
 data_availability:
@@ -48,18 +78,29 @@ data_availability:
 
 code_availability: repository_linked
   code_url: https://www.metaboanalyst.ca
-  license: CC BY-NC 4.0
+  license: CC BY-NC-SA 4.0 (per MetaboAnalyst website)
 
-figure_recipes: 0
+figure_recipes: 2
+  Figure 1: [workflow_diagram]
+    caption: Schematic of MetaboAnalyst 6.0 workflow showing integration of targeted and untargeted metabolomics data, with extra steps for spectra processing and peak annotation for untargeted inputs.
+    produced_by_step: [1, 2, 3, 4, 5, 6]
+    visualization_tool: MetaboAnalyst internal rendering
+  Figure 2: [other]
+    caption: Composite figure showing example outputs: (A) integrated 3D PCA score/loading plots; (B) interactive mirror plot for MS2 matching; (C) top significant pathways from functional analysis; (D) forest plo
+    produced_by_step: [1, 3, 6, 7, 8, 9, 10]
+    visualization_tool: MetaboAnalyst internal rendering (ggplot2-like, custom JS/HTML)
+    statistical_test: Wald ratio, IVW, MR-Egger (D); nonlinear regression F-test/BIC/AIC (E,F)
 
 reproducibility_gaps:
-  - No example dataset or workflow parameters provided
-  - No specification of preprocessing settings (e.g., mass tolerance, RT window, min peak width)
-  - No details on MS2 database versions or annotation confidence thresholds
-  - Causal and dose-response modules lack algorithmic implementation details
-  - No access to underlying R/Python source code — web interface only
+  - No specific real dataset used for demonstration — all workflows described generically without example data accession
+  - Exact parameter values for asari, DecoID, or DecoMetDIA not specified (e.g., mass tolerance, RT window, SNR thresholds)
+  - SWATH window design extraction logic not detailed
+  - No public code repository (e.g., GitHub) provided — only web interface referenced
+  - MR module dependencies on external mGWAS/GWAS summary stats are not curated or versioned in the platform
+  - Dose-response model selection criteria (AIC/BIC/F-test) not explicitly stated
 reproducibility_strengths:
-  - Freely accessible web platform
-  - Integrated end-to-end workflow from raw data to pathway analysis
-  - Support for community-standard formats (mzML, CSV, GMT)
-  - Regularly updated compound and pathway databases
+  - Fully web-based, free, and openly accessible platform
+  - Support for open spectral formats (.mzML, MSP, MGF)
+  - Auto-optimized pipelines reduce parameter tuning burden
+  - Integration of state-of-the-art algorithms (asari, DecoID, DecoMetDIA)
+  - Comprehensive documentation and active user forum (omicsforum.ca)

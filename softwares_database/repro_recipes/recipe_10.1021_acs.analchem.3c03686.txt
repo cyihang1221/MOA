@@ -1,46 +1,98 @@
 ========== reproducibility_recipe entry ==========
 paper_title: Systematic Evaluation of Chromatographic Peak Quality for Targeted Mass Spectrometry via Variational Autoencoder.
 source_paper: Yang C et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.3c03686, PMID: 38336364
-overall_reproducibility_score: 40/100
+overall_reproducibility_score: 58/100
 
-workflow_steps: 3
-  Step 1: Peak group extraction and representation
-    tool: TMSQE
-    algorithm: Variational Autoencoder (VAE)
-    parameters: latent_dim=32, batch_size=256, epochs=100, learning_rate=0.001
-    input: chromatographic peak group matrices (transition-level intensity traces, retention time, peak width, signal-to-noise ratio, symmetry metrics)
-    output: three-dimensional quality scores (transition-level, peak-group-level, consistency-level)
+workflow_steps: 6
+  Step 1: Data collection and preprocessing
+    tool: Skyline
+    algorithm: manual export
+    parameters: export_format=chromatogram_and_peak_boundary_csv
+    input: Skyline .sky files
+    output: chromatogram CSV + peak boundary CSV
+    confidence: high
+  Step 2: Quality feature extraction
+    tool: TargetedMSQC-derived metrics
+    algorithm: 47-feature computation from 32 quality metrics
+    parameters: aspects=['jaggedness', 'symmetry', 'similarity', 'modality', 'shift', 'full_width_at_half_maximum', 'area_ratio', 'intensity', 'retention_time'], levels=['transition', 'transition_pair', 'isotope', 'peak_group'], type_I_features=17, type_II_features=22, type_III_features=8
+    input: chromatogram + peak boundary CSV
+    output: quality feature vectors (type I, II, III)
+    confidence: high
+  Step 3: Latent space encoding via variational autoencoder
+    tool: β-TCVAE
+    algorithm: beta-tuned conditional variational autoencoder
+    parameters: latent_dimensions=2, minibatch_size=10000, initial_learning_rate=0.001, final_learning_rate=1e-06, epochs=40, convergence_criterion=loss_stabilization
+    input: quality feature vectors (type I, II, III)
+    output: 2D latent embeddings per quality type
     confidence: medium
-  Step 2: Unsupervised training on large-scale peak group dataset
-    tool: TMSQE
-    algorithm: Variational Autoencoder (VAE) with reconstruction loss + KL divergence regularization
-    parameters: training_dataset_size=1703827, train_validation_split=0.9
-    input: curated peak group features from targeted MS data (peptide and metabolite)
-    output: trained VAE model (encoder/decoder weights)
+  Step 4: Reference point annotation and scoring function definition
+    tool: custom Python implementation
+    algorithm: Euclidean distance-based weighted scoring
+    parameters: reference_points_count=5, reference_point_labels=['best', '70%_best', 'light_worst_heavy_best', 'light_best_heavy_best', 'worst'], weights=[2, 1, 1, -1, -2], distance_normalization=d_max = distance(best, worst), score_normalization=min_max_to_range(-10, 10)
+    input: 2D latent embeddings
+    output: TMSQE scores (type I, II, III)
+    confidence: high
+  Step 5: Quality categorization guideline derivation
+    tool: empirical distribution analysis
+    algorithm: multimodal thresholding
+    parameters: categories=['poor', 'acceptable', 'good'], thresholds=determined from bimodal/multimodal score distributions (Fig 4)
+    input: TMSQE scores (type I, II, III)
+    output: quality classification labels
     confidence: medium
-  Step 3: Peak quality scoring and outlier detection
-    tool: TMSQE
-    algorithm: Latent space distance-based anomaly scoring (Mahalanobis distance in 3D quality space)
-    parameters: anomaly_threshold_percentile=5
-    input: new peak group feature vectors
-    output: quality scores + binary flag for manual review
+  Step 6: Cross-dataset evaluation and compatibility adaptation
+    tool: automRm
+    algorithm: virtual heavy-light pairing
+    parameters: filtering_criteria=molecules with 13C-labeled standards only, pairing_method=artificial replication of heavy signal, feature_robustness_assumption=PeakGroupRatioCorr impact tolerated
+    input: automRm output (HILIC/RP metabolite data)
+    output: TMSQE-evaluated peak quality labels
     confidence: medium
 
 data_availability:
-  raw_data: not_mentioned (Not specified)
-  processed_data: not_mentioned (Not specified)
-  metadata: not_mentioned
+  raw_data: available (Panorama Public: Table S1 (75 targeted proteomic studies))
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+  data_urls: https://panoramaweb.org/
 
-code_availability: not_mentioned
+code_availability: mentioned_no_link
 
-figure_recipes: 0
+figure_recipes: 6
+  Figure 1: [workflow_diagram]
+    caption: Flowchart of TMSQE development including quality feature embedding, β-TCVAE encoding, reference point annotation, and scoring function derivation.
+    produced_by_step: [2, 3, 4]
+    visualization_tool: not_mentioned
+  Figure 2: [workflow_diagram]
+    caption: Workflow of peak quality evaluation using TMSQE, showing input chromatograms → quality features → three quality types → latent encoding → scoring.
+    produced_by_step: [2, 3, 4]
+    visualization_tool: not_mentioned
+  Figure 3: [heatmap]
+    caption: Scoring contour plots on latent spaces for type I, II, and III quality, showing Euclidean distance-based score gradients relative to five annotated reference points.
+    produced_by_step: [4]
+    visualization_tool: not_mentioned
+  Figure 4: [histogram]
+    caption: Distribution of TMSQE scores for types I, II, and III; multimodal patterns support three-tier quality classification using two empirically derived thresholds.
+    produced_by_step: [4, 5]
+    visualization_tool: not_mentioned
+  Figure 5: [violin_plot]
+    caption: Violin plots comparing TMSQE score distributions before/after manual curation across all three quality types, showing systematic improvement in median scores post-curation.
+    produced_by_step: [4, 5]
+    visualization_tool: not_mentioned
+    statistical_test: none reported (descriptive comparison)
+  Figure 6: [bar_chart]
+    caption: Stacked bar charts showing quality category distribution across 12 concentration points in response curve experiments; panel D shows median TMSQE scores vs. concentration for selected peptides.
+    produced_by_step: [4, 5]
+    visualization_tool: not_mentioned
+    statistical_test: none reported (trend visualization)
 
 reproducibility_gaps:
-  - No public repository link for raw or processed data
-  - No code repository or installation instructions provided
-  - VAE architecture details (e.g., layer sizes, activation functions, exact loss weighting) not fully specified
-  - Preprocessing pipeline for peak group feature extraction not described (e.g., how S/N, symmetry, or retention time deviation were computed)
+  - β-TCVAE implementation not publicly shared (no code repository or DOI provided)
+  - Custom neural network architectures described only in Table S4 (not included in text or supplementary materials provided here)
+  - Exact Skyline version and export settings (e.g., integration algorithm, smoothing parameters) not specified
+  - No access details for the unpublished MRM saliva dataset (OPMD/OSCC cohort)
+  - Threshold values for 'poor/acceptable/good' categories not numerically reported (only shown as vertical lines in Fig 4)
+  - No validation of TMSQE on independent external datasets beyond automRm reanalysis
 reproducibility_strengths:
-  - Explicit description of training scale (1.7M peak groups)
-  - Clear definition of three orthogonal quality dimensions
-  - Demonstrated application across peptide and metabolite data — suggests modularity
+  - Raw Skyline files publicly available via Panorama Public
+  - Comprehensive description of 47 quality features and their biological/technical rationale
+  - Explicit hyperparameters for β-TCVAE training (batch size, learning rate schedule, epochs)
+  - Transparent scoring formula with defined weights and normalization method
+  - Demonstrated generalizability across peptide and metabolite data (via automRm adaptation)

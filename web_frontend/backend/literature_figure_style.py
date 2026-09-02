@@ -284,7 +284,21 @@ def resolve_figure_style(
     lit_patch, applied, warnings = _style_from_evidence(
         plot_type, cards, metadata_columns=metadata_columns
     )
-    journal = lit_patch.pop("_journal", None) or DEFAULT_JOURNAL
+    journal = lit_patch.pop("_journal", None)
+    if not journal:
+        for card in cards:
+            if card.get("journal_hint"):
+                journal = str(card["journal_hint"])
+                break
+    journal = journal or DEFAULT_JOURNAL
+
+    from web_frontend.backend.literature_corpus import short_title_from_caption
+
+    for card in cards:
+        suggested = short_title_from_caption(plot_type, str(card.get("caption") or ""))
+        if suggested:
+            style["title_suggestion"] = suggested
+            break
 
     style["patch"] = _merge_style(style["patch"], lit_patch)
     style["journal"] = journal
@@ -405,6 +419,12 @@ def style_provenance_line(style: dict[str, Any] | None, *, language: str = "zh")
         dois = sorted({str(r.get("doi")) for r in (style.get("evidence_refs") or []) if r.get("doi")})
         cite = "、".join(matched[:2])
         doi_part = f"，DOI:{'; '.join(dois[:2])}" if dois else ""
+        if "literature_corpus" in matched:
+            return (
+                f"作图规范：参考文献语料（figure_index/repro_recipes）{doi_part}；配色 {journal}。"
+                if zh
+                else f"Figure style: literature corpus (figure_index/repro_recipes){doi_part}; palette {journal}."
+            )
         return (
             f"作图规范：参考文献 Skill {cite}{doi_part}；配色 {journal}。"
             if zh

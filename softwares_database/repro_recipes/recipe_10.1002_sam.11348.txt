@@ -1,0 +1,95 @@
+========== reproducibility_recipe entry ==========
+paper_title: Random forest missing data algorithms
+source_paper: Tang F et al. (2012), Statistical Analysis and Data Mining, DOI: 10.1002/sam.11348, PMID: 29403567
+overall_reproducibility_score: 42/100
+
+workflow_steps: 6
+  Step 1: Data collection and characterization
+    tool: Custom R scripts
+    algorithm: L2-norm correlation metric
+    parameters: correlation_metric_definition=L2-norm of off-diagonal, upper-triangular correlation matrix, log_information_metric=I = log10(n/p), data_set_count=60, data_types=['real', 'synthetic']
+    input: Complete (no missing) data matrices
+    output: Characterized data sets (ρ, n, p, I)
+    confidence: high
+  Step 2: Missingness induction
+    tool: Custom R implementation
+    algorithm: ['MCAR', 'MAR', 'NMAR']
+    parameters: target_missing_fraction=γNA ∈ (0,1), MCAR_method=random uniform sampling over flattened matrix, MAR_method=column-wise missingness driven by tail behavior of randomly selected covariate using logistic link F(x) = (1 + exp(−3x))⁻¹, NMAR_method=variable-wise missingness driven by own empirical tail behavior, Bj_distribution=i.i.d. symmetric Bernoulli (0–1)
+    input: Complete data matrices
+    output: Partially missing data matrices (with ground truth)
+    confidence: high
+  Step 3: RF-based imputation
+    tool: R (custom RF implementations: RFotf, RFunsv, RFprx, mForest)
+    algorithm: ['On-the-fly imputation', 'Unsupervised RF splitting', 'Proximity imputation', 'missForest generalization (mForest)']
+    parameters: nsplit=10, mtry=p (all features), ytry=p (for RFunsv), nodesize=1, ntree=500, mForest_alpha=[0.05, 0.25], iterations=[1, 5], iteration_behavior_note=Iteration improved accuracy except for NMAR in low/medium correlation
+    input: Partially missing data matrices
+    output: Imputed data matrices
+    confidence: high
+  Step 4: KNN imputation (benchmark)
+    tool: impute.knn from R package 'impute'
+    algorithm: k-nearest neighbors with Euclidean distance
+    parameters: k=10, rowmax=1.0, colmax=1.0, distance_metric=Euclidean (confined to non-missing columns per row)
+    input: Partially missing data matrices
+    output: Imputed data matrices
+    confidence: high
+  Step 5: Imputation error evaluation
+    tool: Custom R metrics
+    algorithm: Standardized RMSE (continuous), misclassification error (categorical)
+    parameters: standardized_rmse_denominator=variance of Xj over artificially missing entries, misclassification_error=fraction of mismatches among imputed categorical values, relative_imputation_error_baseline=strawman imputation (𝒮), relative_error_formula=ℰ(ℐ) / ℰ(𝒮) × 100
+    input: Imputed matrices + ground truth + missingness indicators
+    output: Relative imputation error (%) per variable type and dataset
+    confidence: high
+  Step 6: Statistical analysis and visualization
+    tool: ANOVA
+    algorithm: Analysis of variance
+    parameters: effect_size_metric=η² (eta-squared) for log-information, replicates_per_setting=100, experimental_factors=['missingness mechanism', 'γNA', 'correlation', 'data complexity (I)']
+    input: Relative imputation error results
+    output: ANOVA tables, effect sizes, aggregated performance summaries
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 6
+  Figure 1: [scatterplot_matrix]
+    caption: Summary of the 60 data sets across correlation (ρ), sample size (n), number of variables (p), and log-information (I = log10(n/p)).
+    produced_by_step: [1]
+    visualization_tool: Unknown (likely base R or lattice/ggplot2)
+  Figure 2: [bar_chart]
+    caption: ANOVA effect size (η²) for log-information across experimental conditions.
+    produced_by_step: [6]
+    visualization_tool: Unknown
+    statistical_test: ANOVA
+  Figure 3: [line_plot]
+    caption: Relative imputation error ℰ across methods and missingness mechanisms.
+    produced_by_step: [5]
+    visualization_tool: Unknown
+  Figure 4: [boxplot]
+    caption: Mean relative imputation error across all datasets and settings.
+    produced_by_step: [5]
+    visualization_tool: Unknown
+  Figure 5: [scatterplot]
+    caption: Log computing time vs. log-computational complexity (log10(n×p)).
+    produced_by_step: [3, 4]
+    visualization_tool: Unknown
+  Figure 6: [scatterplot]
+    caption: Relative log-computing time (vs. KNN) vs. log-computational complexity.
+    produced_by_step: [3, 4]
+    visualization_tool: Unknown
+
+reproducibility_gaps:
+  - No repository link or accession ID for the 60 datasets (real and synthetic)
+  - No code repository or implementation details for custom RF algorithms (RFotf, RFunsv, RFprx, mForest)
+  - No specification of synthetic data generation procedures
+  - No public release of the strawman imputation method (𝒮) used as baseline
+  - Missing exact parameterizations for MAR/NMAR probability functions (e.g., random seed handling, tie-breaking in selection)
+  - No version numbers for R or dependencies (e.g., 'impute' package)
+reproducibility_strengths:
+  - Full specification of missingness mechanisms (MCAR/MAR/NMAR) with mathematical formulas
+  - Explicit hyperparameters reported for all RF variants (ntree=500, nodesize=1, mtry=p, etc.)
+  - Clear evaluation metric definition (standardized RMSE + misclassification + relative error)
+  - Repetition details provided (100 independent runs per setting)

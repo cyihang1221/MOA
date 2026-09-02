@@ -130,7 +130,7 @@ class VisualLiteratureTests(unittest.TestCase):
         md = evidence_cards_to_markdown(cards)
         self.assertIn("Literature evidence cards", md)
         patch, warnings = suggest_soft_style_patch("volcano", cards)
-        self.assertIn("significant", patch.get("colors", {}))
+        self.assertIn("upregulated", patch.get("colors", {}))
 
 
 if __name__ == "__main__":

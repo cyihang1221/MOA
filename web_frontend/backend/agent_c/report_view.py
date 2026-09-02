@@ -10,6 +10,8 @@ _SKIP_DIRS = {
     "agent_c_output",
     "edited_plots",
     "merged_figures",
+    "_abc_handoff",
+    "_handoff_input",
     "__pycache__",
     ".git",
 }

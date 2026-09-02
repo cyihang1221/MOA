@@ -1,5 +1,8 @@
 """
-Web 端 Agent 执行：文献检索增强 → 计划 → 工具匹配 → 执行（MCP + 本地 visual）。
+Web 端编排：A 规划、B 执行、C 出图（三个独立智能体）。
+
+默认 Agent B 走 MassOmics-Agent-B（origin/B）独立进程，不使用本仓库 src/mcp_server。
+``WEB_AGENT_B_BACKEND=local`` 时仍可回退到本地 MCP。
 RAG 索引目录由 webapp 传入（softwares_database / softwares_database_RAG）。
 """
 from __future__ import annotations
@@ -501,6 +504,24 @@ async def stream_agent_pipeline(
                 )
             }
 
+    if mode_norm == "execute":
+        from web_frontend.backend.agent_backends import agent_b_backend
+
+        if agent_b_backend() == "massomics":
+            from web_frontend.backend.agent_b.massomics_executor import (
+                stream_massomics_b_execution,
+            )
+
+            async for event in stream_massomics_b_execution(
+                paths=paths,
+                session_id=session_id,
+                project_root=Path(project_root),
+                cancel_event=cancel_event,
+                should_stop=_should_stop,
+            ):
+                yield event
+            return
+
     try:
         tools_info = await _load_allowed_tools()
     except Exception as exc:
@@ -708,6 +729,14 @@ async def stream_agent_pipeline(
                     yield {
                         "delta": (
                             f"✅ 已注入向量文献检索结果"
+                            f"（约 {len(literature_context)} 字符）。\n\n"
+                        )
+                    }
+                elif literature_mode == "corpus":
+                    src_preview = "、".join(str(s) for s in lit_sources[:4]) or "repro_recipes"
+                    yield {
+                        "delta": (
+                            f"✅ 已注入文献语料（repro_recipes/figure_index）：{src_preview}"
                             f"（约 {len(literature_context)} 字符）。\n\n"
                         )
                     }
@@ -980,18 +1009,26 @@ async def stream_agent_pipeline(
     from web_frontend.backend.agent_backends import agent_b_backend
 
     b_exec = agent_b_backend()
-    if b_exec == "local":
-        yield {
-            "delta": (
-                "⚙️ **Agent B**：本地 Web MCP（`src/mcp_server` + mixOmics/XCMS 专用 runner）\n\n"
-            )
-        }
-    else:
-        yield {
-            "delta": (
-                "⚙️ **Agent B**：MassOmics 执行（预留；当前建议 `WEB_AGENT_B_BACKEND=local`）\n\n"
-            )
-        }
+    if b_exec == "massomics":
+        from web_frontend.backend.agent_b.massomics_executor import (
+            stream_massomics_b_execution,
+        )
+
+        async for event in stream_massomics_b_execution(
+            paths=paths,
+            session_id=session_id,
+            project_root=Path(project_root),
+            cancel_event=cancel_event,
+            should_stop=_should_stop,
+        ):
+            yield event
+        return
+
+    yield {
+        "delta": (
+            "⚙️ **Agent B**：本地 Web MCP（`src/mcp_server` + mixOmics/XCMS 专用 runner）\n\n"
+        )
+    }
 
     allowed_set = set(ALL_AGENT_TOOL_NAMES)
     agent_ctx = AgentContext(

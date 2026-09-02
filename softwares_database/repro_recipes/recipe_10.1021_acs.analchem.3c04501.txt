@@ -1,27 +1,93 @@
 ========== reproducibility_recipe entry ==========
 paper_title: MINNO: An Open Source Software for Refining Metabolic Networks and Investigating Complex Network Activity Using Empirical Metabolomics Data.
 source_paper: Mandwal A et al. (2024), Analytical chemistry, DOI: 10.1021/acs.analchem.3c04501, PMID: 38359900
-overall_reproducibility_score: 40/100
+overall_reproducibility_score: 58/100
 
-workflow_steps: 0
+workflow_steps: 7
+  Step 1: Sample preparation and extraction
+    tool: Manual protocol
+    parameters: centrifugation_speed_rpm=13000, centrifugation_time_min=10, extraction_solvent=100% HPLC-grade methanol, dilution_ratio=1:10, diluent_composition=50% LC-MS grade methanol + 50% LC-MS grade water
+    input: cell culture supernatant
+    output: extracted metabolite samples ready for LC-MS
+    confidence: high
+  Step 2: LC-MS data acquisition
+    tool: Thermo Fisher Scientific Vanquish UHPLC + Q Exactive HF Hybrid Quadrupole-Orbitrap
+    parameters: chromatography_mode=HILIC, column=Syncronis HILIC, 100 mm × 2.1 mm, 2.1 μm, column_conditioning_injections=400, temperature_celsius=35, co2_percent=1.5, incubation_time_hours=72, time_points=[0, 72], biological_replicates=3
+    input: extracted metabolite samples
+    output: raw .raw files
+    confidence: high
+  Step 3: Data conversion
+    tool: MSConvert GUI
+    algorithm: ProteoWizard MSConvert
+    parameters: output_format=mzXML
+    input: raw .raw files
+    output: mzXML files
+    confidence: high
+  Step 4: Metabolite detection and quantification
+    tool: El-Maven (vv0.12.0)
+    algorithm: peak integration with reference library matching
+    parameters: library_type=in-house metabolite library (MetaSci), quantification_method=external standard curves, standards_source=Sigma-Aldrich
+    input: mzXML files
+    output: quantified metabolite table (intensity or concentration)
+    confidence: high
+  Step 5: Boundary flux calculation
+    tool: Custom calculation (eq 1)
+    algorithm: empirical boundary flux estimation
+    parameters: formula=ΔC_sp / ΔC_med, time_delta_hours=72, normalization_target=medium control to correct evaporation & batch effects
+    input: quantified metabolite table (0h and 72h, species + medium controls)
+    output: boundary flux table (metabolite-wise flux values with STD and z-score)
+    confidence: high
+  Step 6: Statistical significance testing
+    tool: Student t-test (paired)
+    algorithm: paired sample t-test
+    parameters: alpha=0.05
+    input: metabolite concentration time-series (0h vs 72h)
+    output: list of significantly changing metabolites (p < 0.05)
+    confidence: high
+  Step 7: Metabolic network refinement
+    tool: MINNO
+    algorithm: empirical network curation using metabolomics data
+    parameters: genomic_input=NCBI refSeq, data_integration=metabolite presence/absence, flux directionality, orphan reaction inference
+    input: species-specific genomic network + metabolomics-derived flux/concentration data
+    output: refined metabolic network (KEGG-aligned with orphan reactions)
+    confidence: medium
 
 data_availability:
-  raw_data: not_mentioned
-  processed_data: not_mentioned
-  metadata: not_mentioned
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
 
 code_availability: repository_linked
-  code_url: https://github.com/Minno-Project/MINNO
+  code_url: https://minno.ca
   license: MIT
 
-figure_recipes: 0
+figure_recipes: 4
+  Figure 1: [workflow_diagram]
+    caption: Schematic of metabolic network refinement integrating omics data and genomic databases via MINNO.
+    produced_by_step: [1, 2, 4, 7]
+    visualization_tool: Custom diagram (not specified)
+  Figure 2: [other]
+    caption: Screenshot of the MINNO web-browser interface highlighting key interactive features.
+    produced_by_step: [7]
+    visualization_tool: Web-based UI (MINNO)
+  Figure 3: [heatmap]
+    caption: Heatmap showing temporal profile of selected metabolite intensities across three Borrelia species.
+    produced_by_step: [4, 5, 6]
+    visualization_tool: Not specified (likely El-Maven or custom R/Python)
+    statistical_test: t-test p<0.05 used to select significant metabolites shown
+  Figure 4: [pathway_map]
+    caption: Refined nicotinate and nicotinamide metabolism pathway showing KEGG-annotated (solid) and orphan (dashed) reactions, with error bars representing standard deviation.
+    produced_by_step: [7]
+    visualization_tool: MINNO pathway rendering engine
 
 reproducibility_gaps:
-  - No description of metabolomics data acquisition (instrumentation, LC/GC parameters, sample prep)
-  - No details on metabolomics data processing (peak picking, alignment, annotation)
-  - No statistical or multivariate analysis methods described
-  - No information on input metabolomics data format or structure required by MINNO
-  - No example datasets or tutorials provided in paper or linked repository (as inferred from abstract and title alone)
+  - Raw LC-MS data (.raw or mzXML) not deposited in public repository (e.g., MetaboLights, GNPS)
+  - No access to in-house MetaSci metabolite library parameters (mass accuracy, RT windows, adducts)
+  - El-Maven peak picking parameters (e.g., m/z tolerance, RT window, noise threshold) not reported
+  - No code or scripts provided for boundary flux calculation (eq 1) or z-score derivation
+  - MINNO backend source code not publicly available (only web interface linked; MIT license claimed but no GitHub repo cited)
 reproducibility_strengths:
-  - Open-source code available on GitHub under MIT license
-  - Web-based tool enables accessibility without local installation
+  - MINNO is openly accessible via web interface (minno.ca) with MIT license stated
+  - Detailed experimental metadata: strains, media composition, incubation conditions, extraction protocol
+  - Instrumental parameters fully specified (column, UHPLC/MS platform, conditioning steps)
+  - Quantification method explicitly described (external standards, CAS numbers in Supporting Information)

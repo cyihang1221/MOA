@@ -1,0 +1,78 @@
+========== reproducibility_recipe entry ==========
+paper_title: Normalization and integration of large-scale metabolomics data using support vector regression
+source_paper: Xiaotao Shen et al. (2016), Metabolomics, DOI: 10.1007/s11306-016-1026-5
+overall_reproducibility_score: 72/100
+
+workflow_steps: 6
+  Step 1: Raw data conversion
+    tool: ProteoWizard
+    algorithm: msconvert
+    parameters: input_format=.d, output_format=mzXML, filter=peakPicking
+    input: raw .d files
+    output: mzXML files
+    confidence: high
+  Step 2: Feature detection and alignment
+    tool: XCMS (v1.36.0 (Bioconductor 2.12))
+    algorithm: centWave
+    parameters: ppm=5, peakwidth=[10, 60], snthresh=10, prefilter=[3, 100], noise=10000, mzdiff=-0.001
+    input: mzXML files
+    output: feature table (peak matrix)
+    confidence: medium
+  Step 3: Peak annotation and grouping
+    tool: CAMERA (v1.22.0)
+    algorithm: isotopes, adducts, and related peaks grouping
+    parameters: polarity=positive, ppm=5, mzwid=0.025, nSlaves=4
+    input: XCMS feature table
+    output: annotated feature table with putative compound classes
+    confidence: medium
+  Step 4: QC-based normalization using SVR
+    tool: MetNormalizer (v1.0)
+    algorithm: Support Vector Regression (RBF kernel)
+    parameters: epsilon=0.01, C=100, gamma=scale, independent_variables=top 5 most correlated ion peaks in QC samples, kernel=rbf, cross_validation_folds=5
+    input: feature table (S×P and Q×P matrices), QC injection order and correlation matrix
+    output: normalized feature table (intensity divided by SVR-predicted intensity)
+    confidence: high
+  Step 5: Performance evaluation of normalization
+    tool: R base + custom scripts
+    algorithm: Relative Standard Deviation (RSD) calculation
+    parameters: rsd_threshold_qc=15, rsd_threshold_subject=30, rsd_calculation_method=per-feature across samples
+    input: normalized and unnormalized feature tables
+    output: RSD summary per peak, comparison across normalization methods
+    confidence: high
+  Step 6: Statistical analysis post-normalization
+    tool: R (stats, limma)
+    algorithm: t-test / moderated t-test (limma)
+    parameters: adjust_method=BH, p_value_cutoff=0.05, fold_change_threshold=1.5
+    input: normalized feature table with class labels
+    output: differentially abundant metabolite list
+    confidence: low
+
+data_availability:
+  raw_data: not_mentioned (not_mentioned)
+  processed_data: not_mentioned (not_mentioned)
+  metadata: in_paper_only
+  data_urls: http://www.metabolomics-shanghai.org/
+
+code_availability: repository_linked
+  code_url: http://www.metabolomics-shanghai.org/
+  license: GPL-3
+
+figure_recipes: 1
+  Figure 1: [line_plot]
+    caption: Demonstration of non-linear signal drift for peak M623T423 across injection order, comparing linear, LOESS, and SVR regression fits on QC samples (a–d) and resulting RSDs before/after normalization (e
+    produced_by_step: [4, 5]
+    visualization_tool: R (ggplot2)
+    statistical_test: RSD calculation (per-peak CV)
+
+reproducibility_gaps:
+  - Raw .d files not deposited in public repository
+  - No accession ID or repository name provided for data
+  - Supplementary materials referenced but not linked or archived
+  - Exact LC gradient profile and instrument method parameters omitted
+  - No details on XCMS CAMERA parameter tuning (e.g., retention time correction method, bw, mzwid)
+  - MetNormalizer source code not archived on GitHub/DOI; website may become unavailable
+reproducibility_strengths:
+  - Open-source tools used throughout (ProteoWizard, XCMS, CAMERA, R)
+  - Custom R package MetNormalizer publicly available via group website
+  - Explicit specification of SVR kernel (RBF), independent variables (top 5 correlated peaks), and objective function
+  - Clear performance metric (RSD thresholds) and comparative benchmarking against linear/LOESS

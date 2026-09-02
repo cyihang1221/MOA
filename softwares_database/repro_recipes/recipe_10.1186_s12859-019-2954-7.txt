@@ -1,0 +1,96 @@
+========== reproducibility_recipe entry ==========
+paper_title: Improving MetFrag with statistical learning of fragment annotations
+source_paper: Ruttkies C et al. (2019), BMC Bioinformatics, DOI: 10.1186/s12859-019-2954-7, PMID: 31277571
+overall_reproducibility_score: 78/100
+
+workflow_steps: 6
+  Step 1: MS/MS spectral preprocessing and centroiding
+    tool: MetFrag (v2.4.5)
+    algorithm: centroiding
+    input: raw MS/MS spectra (centroided)
+    output: centroided m/z fragment peak lists
+    confidence: medium
+  Step 2: In silico fragmentation and fragment-structure assignment
+    tool: MetFrag (v2.4.5)
+    algorithm: combinatorial in silico fragmentation
+    parameters: mass_tolerance_ppm=None, mass_tolerance_abs=None
+    input: candidate molecular structures (from database) and precursor m/z
+    output: fragment-structure assignments to m/z peaks (f_nck)
+    confidence: low
+  Step 3: Fragment fingerprint encoding
+    tool: RDKit or Open Babel (implied)
+    algorithm: MACCS fingerprint or Circular fingerprint
+    parameters: fingerprint_type=['MACCSFingerPrint', 'CircularFingerprint', 'LingoFingerprint']
+    input: fragment-structures (as graphs)
+    output: binary molecular fingerprints
+    confidence: high
+  Step 4: m/z binning with mass accuracy-aware discretization
+    tool: custom implementation in MetFrag2.4.5 (v2.4.5)
+    algorithm: non-equidistant binning
+    parameters: mzabs=None, mzppm=None, b0=minimum mass value
+    input: centroided m/z fragment peaks
+    output: binned m/z values (central bin values)
+    confidence: low
+  Step 5: Bayesian statistical scoring model training
+    tool: custom Bayesian model in MetFrag2.4.5 (v2.4.5)
+    algorithm: Bayesian probability estimation P(f̃_k | m_k)
+    parameters: domain_reduction=empirical (observed only), independence_assumption=True
+    input: training MS/MS spectra + reference candidates + assignments
+    output: learned fragment-structure likelihoods per binned m/z
+    confidence: medium
+  Step 6: Candidate scoring with statistical fragment annotation
+    tool: MetFrag2.4.5 (v2.4.5)
+    algorithm: product of fragment probabilities + neutral loss term
+    parameters: scoring_formula=S^c_RawPeak = ∏_{k=1}^K P(f̃_k | m_k)
+    input: test MS/MS spectra + candidate structures + learned model
+    output: ranked candidate list (Top1, Top10 scores)
+    confidence: high
+
+data_availability:
+  raw_data: available (CASMI 2016 contest repository: CASMI2016)
+  processed_data: not_mentioned
+  metadata: in_paper_only
+  data_urls: https://casmi-contest.org/2016/
+
+code_availability: repository_linked
+  code_url: https://github.com/c-ruttkies/MetFrag
+  license: GPL-3.0
+
+figure_recipes: 6
+  Fig1: [workflow_diagram]
+    caption: Schematic of MetFrag processing for a single query spectrum, showing input spectrum, candidate retrieval, in silico fragmentation, and scoring.
+    produced_by_step: [1, 2, 6]
+    visualization_tool: custom diagram (no tool specified)
+  Fig2: [workflow_diagram]
+    caption: Training phase diagram showing two-stage training using subsets of reference MS/MS spectra for parameter learning.
+    produced_by_step: [5]
+    visualization_tool: custom diagram
+  Fig3: [bar_chart]
+    caption: Top rankings (Top1/Top3/Top10) across ten training runs for different fingerprint functions in positive and negative mode.
+    produced_by_step: [5, 6]
+    visualization_tool: R/ggplot2 or similar (not specified)
+  Fig4: [boxplot]
+    caption: Distribution of optimal weight and hyperparameters from ten randomized training runs using CircularFingerprint.
+    produced_by_step: [5]
+    visualization_tool: R/ggplot2 or similar
+  Fig5: [bar_chart]
+    caption: Distribution of Top1 rankings on CASMI 2016 challenge data for selected parameter sets, comparing full training set vs. convex hull of optimal parameters.
+    produced_by_step: [6]
+    visualization_tool: R/ggplot2 or similar
+  Fig6: [venn_diagram]
+    caption: Overlap of correctly identified Top1 spectra among selected participants in the CASMI 2016 challenge.
+    produced_by_step: [6]
+    visualization_tool: custom or R (e.g., 'VennDiagram' package)
+
+reproducibility_gaps:
+  - Exact mass tolerance parameters (mzabs, mzppm) not reported numerically
+  - No explicit description of training data split (e.g., train/validation/test ratios)
+  - No public release of the exact training spectra subset used (only 'CASMI 2016' referenced)
+  - Neutral loss modeling details omitted (no parameters or algorithm specified)
+  - No link to trained model files or serialized Bayesian parameters
+reproducibility_strengths:
+  - MetFrag2.4.5 source code publicly available on GitHub under GPL-3.0
+  - CASMI 2016 challenge data openly accessible
+  - Full mathematical formulation of Bayesian model provided
+  - Multiple fingerprint types evaluated and compared
+  - Ten-fold randomized training validation strategy described

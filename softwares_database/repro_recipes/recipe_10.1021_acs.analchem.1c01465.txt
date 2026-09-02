@@ -3,20 +3,34 @@ paper_title: CFM-ID 4.0: More Accurate ESI-MS/MS Spectral Prediction and Compoun
 source_paper: Wang F et al. (2021), Analytical chemistry, DOI: 10.1021/acs.analchem.1c01465, PMID: 34403256
 overall_reproducibility_score: 75/100
 
-workflow_steps: 2
-  Step 1: ESI-MS/MS spectral prediction
+workflow_steps: 4
+  Step 1: Fragmentation graph generation
     tool: CFM-ID 4.0 (v4.0)
-    algorithm: machine learning model trained on molecular topology features + expanded rule-based fragmentation engine
-    parameters: collision_energy=default ramped energy profile (not numerically specified), ionization_mode=ESI+ and ESI-, ring_cleavage_model=sequential bond dissociation, chemical_classes_covered=['acylcarnitines', 'acylcholines', 'flavonols', 'flavones', 'flavanones', 'flavonoid glycosides']
-    input: chemical structure (SMILES or InChI)
-    output: predicted ESI-MS/MS spectrum (m/z and intensity list)
+    algorithm: Stochastic homogeneous Markov process with sequential ring cleavage modeling
+    parameters: ring_cleavage_model=sequential_two_step, persistence_probability_intermediate_fragment=0.0, bond_break_feature_representation=single-bond-centric, fragmentation_graph_structure=directed_graph_with_self_loops
+    input: molecular structure (SMILES or InChI)
+    output: fragmentation graph (nodes = ion fragments, edges = transitions)
+    confidence: high
+  Step 2: Transition probability estimation
+    tool: CFM-ID 4.0 (v4.0)
+    algorithm: Machine-learned parameter model trained on QTOF ESI-MS/MS spectra
+    parameters: training_data_source=quadrupole time-of-flight (QTOF) ESI-MS/MS spectra, feature_basis=molecular topology-derived features, model_type=learned parameters from bond topology descriptors
+    input: fragmentation graph + molecular topology features
+    output: weighted fragmentation graph (edge weights = transition probabilities)
     confidence: medium
-  Step 2: In silico compound identification
+  Step 3: In silico ESI-MS/MS spectrum prediction
     tool: CFM-ID 4.0 (v4.0)
-    algorithm: spectral similarity search (Tanimoto similarity on predicted spectra) against in silico spectral library
-    parameters: similarity_score=Tanimoto coefficient, library_source=in silico predicted spectra from HMDB, LipidMaps, and other structure databases, top_k_candidates=default top 10
-    input: experimental MS/MS spectrum
-    output: ranked list of candidate compounds with similarity scores
+    algorithm: Spectrum construction from weighted fragmentation graph
+    parameters: ionization_mode=ESI+, precursor_ion=[M+H]+, spectral_resolution=unit mass resolution (implied), peak_intensity_calculation=path-probability aggregation over fragmentation pathways
+    input: weighted fragmentation graph
+    output: predicted ESI-MS/MS spectrum (m/z, intensity pairs)
+    confidence: high
+  Step 4: Compound identification via spectral matching
+    tool: CFM-ID 4.0 (v4.0)
+    algorithm: Spectral similarity search against in silico reference spectral library
+    parameters: matching_algorithm=standard spectral matching (e.g., dot product, cosine similarity), reference_library=CFM-ID 4.0–generated in silico spectral library, chemical_classes_covered=['acylcarnitines', 'acylcholines', 'flavonols', 'flavones', 'flavanones', 'flavonoid glycosides']
+    input: experimental ESI-MS/MS spectrum
+    output: ranked list of candidate compounds with spectral similarity scores
     confidence: medium
 
 data_availability:
@@ -26,17 +40,29 @@ data_availability:
 
 code_availability: repository_linked
   code_url: https://hub.docker.com/r/wishartlab/cfmid
-  license: Apache License 2.0
 
-figure_recipes: 0
+figure_recipes: 3
+  Figure 1: [workflow_diagram]
+    caption: A fragmentation graph for the acetic acid [M+H]+ ion, where nodes denote ion fragments and edges denote transitions.
+    produced_by_step: [1]
+    visualization_tool: Not specified
+  Figure 2: [workflow_diagram]
+    caption: Comparison of fragmentation modeling: (a) single-bond cleavage; (b) prior ring cleavage (two-bond simultaneous); (c) new sequential ring cleavage (two-step single-bond cleavage).
+    produced_by_step: [1]
+    visualization_tool: Not specified
+  Figure 3: [workflow_diagram]
+    caption: Illustration of ion fragment root atom identification (a), graph extraction (b), and vertex labeling (c) for topology-based feature computation.
+    produced_by_step: [2]
+    visualization_tool: Not specified
 
 reproducibility_gaps:
-  - No experimental MS/MS data used for benchmarking is deposited or accessioned
-  - Exact collision energy ramp parameters and instrument-specific calibration details not provided
-  - Training dataset for ML component not publicly released or described in sufficient detail (e.g., size, source, preprocessing)
-  - No code or scripts for generating in silico spectral libraries shared
+  - No public training dataset or spectral evaluation benchmarks disclosed
+  - Exact machine learning model architecture (e.g., SVM/kernel, neural net) not specified
+  - Spectral matching scoring metric (e.g., cosine, dot product, weighted cross-correlation) not defined
+  - No access to underlying fragmentation rule set or topology feature definitions
+  - Docker image lacks version-tagged releases or build instructions for reproducible environment
 reproducibility_strengths:
-  - Docker image available for local deployment
-  - Web server interface publicly accessible
-  - Explicit expansion of chemical class coverage documented
-  - Open-source license (Apache 2.0) confirmed via Docker Hub repository
+  - Docker container publicly available for execution environment isolation
+  - Web server accessible for direct use and validation
+  - Explicit description of algorithmic improvements (sequential ring cleavage, topology features, expanded chemical classes)
+  - Clear distinction between CFM-ID versions and performance claims relative to CASMI 2016

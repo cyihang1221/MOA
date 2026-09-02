@@ -1,0 +1,96 @@
+========== reproducibility_recipe entry ==========
+paper_title: Deep MS/MS-Aided Structural-Similarity Scoring for Unknown Metabolite Identification
+source_paper: Ji H et al. (2019), Analytical Chemistry, DOI: 10.1021/acs.analchem.8b05405, PMID: 30990670
+overall_reproducibility_score: 35/100
+
+workflow_steps: 7
+  Step 1: MS/MS spectral data acquisition
+    tool: Shimadzu LC-ESI-IT-TOF-MS, Bruker Compact LC-ESI-QTOF-MS, Thermo Scientific Orbitrap Velos, Thermo Scientific Q-Exactive
+    input: biological samples (seminal plasma, endothelial cell, urine, CSF, serum, plasma)
+    output: experimental MS/MS spectra
+    confidence: low
+  Step 2: Reference spectral database curation
+    tool: KEGG, HMDB, PubChem, Metabolite Database (321,616 metabolites)
+    input: compound structures, theoretical/experimental MS/MS spectra
+    output: curated spectral database
+    confidence: medium
+  Step 3: Structural fingerprint generation
+    tool: FP (fingerprint) scoring — unspecified method (likely ECFP4 or similar)
+    algorithm: molecular fingerprint-based structural similarity (FP score)
+    parameters: fingerprint_type=unspecified, similarity_metric=Tanimoto
+    input: SMILES or InChI representations of metabolites
+    output: FP score (0–1) for metabolite pairs
+    confidence: low
+  Step 4: Spectral cross-correlation feature extraction
+    tool: Custom implementation
+    algorithm: m/z-shifted cross-correlation coefficient
+    parameters: mass_shift_range_da=100.0, shift_resolution_da=0.01, max_shift_da=18.01
+    input: pairwise experimental or theoretical MS/MS spectra
+    output: cross-correlation coefficient vector (function of m/z shift)
+    confidence: medium
+  Step 5: Deep neural network training for structural-similarity scoring
+    tool: DeepMASS (custom deep learning model)
+    algorithm: Deep neural network (architecture unspecified: likely CNN or Siamese network)
+    parameters: train_test_split=0.2, validation_strategy=leave-one-out, loss_function=mean_absolute_error, metrics=['MAE', 'correlation']
+    input: paired MS/MS spectra + cross-correlation coefficients + FP scores
+    output: MASS score (predicted structural similarity, 0–1)
+    confidence: low
+  Step 6: Metabolite identification by structural similarity ranking
+    tool: DeepMASS
+    algorithm: Ranking by MASS score
+    parameters: top_k_candidates=[1, 3, 5, 10, 20], database_search_mode=unfiltered PubChem search
+    input: unknown MS/MS spectrum, candidate structure database
+    output: ranked list of structurally similar metabolites with MASS scores
+    confidence: medium
+  Step 7: Performance evaluation and confidence assessment
+    tool: Custom Python/R scripts
+    algorithm: ROC analysis, MAE calculation, hit-rate statistics
+    parameters: auc_thresholds=[0.94], mae_thresholds=[0.073, 0.082], hit_rank_levels=[1, 3, 5, 10, 20]
+    input: MASS scores, FP scores, ground-truth identifications
+    output: AUC, MAE, top-k hit rates, confidence criteria (reference count & FP score thresholds)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned (not specified)
+  processed_data: not_mentioned (not specified)
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 5
+  Figure 3: [boxplot]
+    caption: Box-whisker plots comparing FP scores of positive (biotransformation-related) vs. negative metabolite pairs; ROC curve showing AUC = 0.94 for binary classification using FP score.
+    produced_by_step: [3, 7]
+    visualization_tool: unspecified
+    statistical_test: ROC analysis, AUC = 0.94
+  Figure 4: [spectral_comparison]
+    caption: MS/MS spectra pairs (NAD/NADP and PRFGAM/AIR) with corresponding cross-correlation coefficients showing m/z shift = 0 Da and 18.01 Da, respectively, illustrating deviation from linear correlation due 
+    produced_by_step: [4]
+    visualization_tool: unspecified
+  Figure 5: [scatter_plot]
+    caption: Scatter plots of predicted MASS scores vs. true FP scores for theoretical (CFM-ID generated) and experimental spectra, showing high correlation (MAE = 0.073 and 0.082).
+    produced_by_step: [5, 7]
+    visualization_tool: unspecified
+    statistical_test: mean absolute error (MAE)
+  Table 1: [table]
+    caption: Identification performance (top-1/3/5/10/20 hit rates) of DeepMASS vs. MetFrag and CFM-ID on KEGG-derived cross-validation using Metabolite Database and PubChem.
+    produced_by_step: [6, 7]
+    visualization_tool: unspecified
+  Table 2: [table]
+    caption: External test results on seminal biomarkers measured on Shimadzu IT-TOF and Bruker QTOF, comparing DeepMASS against MS-Finder, MAGMa, MetFrag, and CFM-ID.
+    produced_by_step: [6, 7]
+    visualization_tool: unspecified
+
+reproducibility_gaps:
+  - No raw or processed MS/MS spectra deposited in public repository (e.g., MassIVE, GNPS, MetaboLights)
+  - DeepMASS source code not shared or linked (no GitHub, Zenodo, or Bioconductor reference)
+  - Neural network architecture, hyperparameters, and training details omitted (layer types, optimizer, batch size, epochs, dropout)
+  - Fingerprint generation method unspecified (ECFP? MACCS? RDKit default?)
+  - Cross-correlation implementation details missing (binning, normalization, peak weighting)
+  - Instrument-specific acquisition parameters (collision energy, isolation width, resolution mode) not reported
+  - CASMI 2014 subset selection criteria (first 10 challenges) not justified or documented
+reproducibility_strengths:
+  - Use of publicly available databases (KEGG, HMDB, PubChem)
+  - Transparent evaluation metrics (AUC, MAE, top-k hit rates)
+  - Multi-instrument and multi-biosample validation (Shimadzu, Bruker, Thermo; semen, CSF, plasma, etc.)
+  - Comparison against established tools (MetFrag, CFM-ID, MS-Finder, MAGMa)

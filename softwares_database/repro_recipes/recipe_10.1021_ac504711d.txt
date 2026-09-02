@@ -1,0 +1,64 @@
+========== reproducibility_recipe entry ==========
+paper_title: Ion Trace Detection Algorithm to Extract Pure Ion Chromatograms to Improve Untargeted Peak Detection Quality for Liquid Chromatography/Time-of-Flight Mass Spectrometry-Based Metabolomics Data
+source_paper: Wang SY et al. (2015), Analytical Chemistry, DOI: 10.1021/ac504711d, PMID: 25622715
+overall_reproducibility_score: 42/100
+
+workflow_steps: 4
+  Step 1: Relative mass difference tolerance estimation
+    tool: PITracer
+    algorithm: Gaussian kernel density estimation with intensity-weighted adaptive tolerance
+    parameters: mass_tolerance_ppm=10, intensity_ratio_threshold=0.6745, saturation_intensity_reference=Isaturated, default_retention_time_merge_window_s=1.0, minimum_trace_length_scans=None, density_threshold_method=mean_density_plus_std
+    input: raw .mzXML or .mzML files (centroid mode)
+    output: estimated relative mass difference tolerance (δ̂i,j) per ion
+    confidence: high
+  Step 2: Optional m/z calibration using reference ion
+    tool: PITracer
+    algorithm: base ion–driven m/z recalibration
+    parameters: calibration_enabled=optional, reference_ion_selection=most abundant base ion
+    input: raw LC/TOF-MS profile (mzXML/mzML)
+    output: calibrated m/z values
+    confidence: medium
+  Step 3: Pure ion trace detection
+    tool: PITracer
+    algorithm: graph-based ion tracking with edge selection and trace merging
+    parameters: edge_connection_condition=|(m/z′)i,j − (m/z′)i−1,k| / (m/z′)i,j ≤ max(δ̂i,j, δi,b) / 1e6, trace_merging_mz_tolerance=same as δ̂overall, trace_merging_rt_window_s=1.0, minimum_trace_length_scans=None
+    input: calibrated (or raw) m/z-intensity matrix
+    output: pure ion chromatograms (one per trace ID)
+    confidence: high
+  Step 4: Chromatographic peak detection on pure ion chromatograms
+    tool: TIPick
+    algorithm: recursive peak detection using scoring function
+    parameters: peak_detection_algorithm=TIPick scoring function, mass_correction_enabled=optional (user-specified metabolite)
+    input: pure ion chromatograms
+    output: detected peaks (m/z, RT, intensity, peak boundaries)
+    confidence: medium
+
+data_availability:
+  raw_data: not_mentioned
+  processed_data: not_mentioned
+  metadata: in_paper_only
+
+code_availability: not_mentioned
+
+figure_recipes: 2
+  Figure 1: [workflow_diagram]
+    caption: Illustrates the overall four-step workflow of PITracer: (1) relative mass difference tolerance estimation, (2) optional m/z calibration, (3) pure ion trace detection, and (4) peak detection on pure io
+    produced_by_step: [1, 2, 3, 4]
+    visualization_tool: Not specified
+  Figure 2: [schematic_diagram]
+    caption: Schematic illustration of pure ion trace detection across three consecutive scans, showing edge construction (A), trace ID assignment via minimum-difference edge selection (B), and iterative trace ext
+    produced_by_step: [3]
+    visualization_tool: Not specified
+
+reproducibility_gaps:
+  - PITracer implementation not publicly available (no code repository, DOI, or download link mentioned)
+  - Raw data not deposited in public repository (e.g., MetaboLights, MassIVE)
+  - Critical parameters left unspecified: minimum trace length (Lmin), exact Gaussian kernel bandwidth, saturation intensity (Isaturated) quantification method
+  - TIPick algorithm details and version not provided — only cited as 'our previous implemented peak detection algorithm'
+  - No description of software environment (R/Python version, dependencies, OS)
+  - Supporting Information referenced but not accessible in provided text — key calibration equations (S-1) and experimental protocols missing
+reproducibility_strengths:
+  - Explicit mathematical formulation of relative mass difference (Eq 1) and adaptive tolerance (Eq 2)
+  - Clear stepwise algorithmic description of ion trace graph construction and merging logic
+  - Use of standard open interchange formats (.mzXML/.mzML, centroid mode) ensures vendor neutrality
+  - Performance evaluation against centWave with defined metrics (recall, precision, F-score)

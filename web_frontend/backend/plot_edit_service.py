@@ -13,11 +13,12 @@ from src.platform_utils import normalize_display_path
 
 from web_frontend.backend.plot_edit_agent import parse_plot_edit_instruction
 from web_frontend.backend.plot_edit_registry import (
+    PLOT_STEM_ALIASES,
     extract_plot_edit_tasks,
     get_plot_spec,
     is_agent_plot_editable_stem,
     list_editable_plots,
-    plot_data_files_ready,
+    plot_spec_data_ready,
     plot_type_from_stem,
     resolve_plot_data_file,
     resolve_plot_source_rel,
@@ -116,7 +117,7 @@ def ensure_default_plot_configs(
         if not spec:
             continue
         data_root = png.parent
-        if not plot_data_files_ready(data_root, spec.data_files):
+        if not plot_spec_data_ready(data_root, spec):
             continue
 
         config_path = Path(plot_config_path_for_png(str(png)))
@@ -146,13 +147,7 @@ def ensure_default_plot_configs(
             elif plot_type == "kegg_barplot":
                 color_keys = ["bar_color"]
             elif plot_type == "network_topology":
-                layout = data_root / "network_layout.csv"
-                if layout.is_file():
-                    layout_df = pd.read_csv(layout)
-                    if "family" in layout_df.columns:
-                        color_keys = list(
-                            dict.fromkeys(str(v) for v in layout_df["family"].fillna("singleton"))
-                        )
+                color_keys = _topology_family_keys(data_root)
         except Exception:
             color_keys = []
 
@@ -396,13 +391,13 @@ def get_semantic_plot_payload(
 
 def _topology_color_by_columns(data_dir: Path) -> list[str]:
     """拓扑图可选着色列（layout + 可 join 的节点属性）。"""
-    from web_frontend.backend.semantic_plot_renderer import _join_topology_node_attrs
+    from web_frontend.backend.semantic_plot_renderer import (
+        _join_topology_node_attrs,
+        _network_layout_frame,
+    )
 
-    layout_path = data_dir / "network_layout.csv"
-    if not layout_path.is_file():
-        return ["family"]
     try:
-        layout = pd.read_csv(layout_path)
+        layout = _network_layout_frame(data_dir, {})
         layout = _join_topology_node_attrs(data_dir, layout)
     except Exception:
         return ["family"]
@@ -430,6 +425,23 @@ def _topology_color_by_columns(data_dir: Path) -> list[str]:
     return found or ["family"]
 
 
+def _topology_family_keys(data_dir: Path) -> list[str]:
+    """拓扑图调色键：优先 network_layout.csv 的 family，缺失时回落节点表。"""
+    layout = data_dir / "network_layout.csv"
+    if layout.is_file():
+        frame = pd.read_csv(layout)
+        if "family" in frame.columns:
+            return list(dict.fromkeys(str(v) for v in frame["family"].fillna("singleton")))
+    nodes = resolve_plot_data_file(data_dir, "network_nodes.csv")
+    if nodes is None:
+        return []
+    frame = pd.read_csv(nodes)
+    for column in ("family", "molecular_family"):
+        if column in frame.columns:
+            return list(dict.fromkeys(str(v) for v in frame[column].fillna("singleton")))
+    return []
+
+
 def _color_keys_for_plot(
     plot_type: str,
     data_dir: Path,
@@ -442,7 +454,9 @@ def _color_keys_for_plot(
         spec = get_plot_spec(plot_type)
         if not spec:
             return []
-        scores_path = data_dir / spec.data_files[0]
+        scores_path = resolve_plot_data_file(data_dir, spec.data_files[0]) or (
+            data_dir / spec.data_files[0]
+        )
         metadata_csv = resolve_metadata_csv(upload_dir)
         cfg = dict(plot_config) if isinstance(plot_config, dict) else {}
         _, groups, _, _ = load_scores_and_groups(scores_path, metadata_csv, plot_config=cfg)
@@ -522,11 +536,49 @@ def _color_keys_for_plot(
     if plot_type == "mass2motif_network":
         return ["motif_color", "spectrum_color", "edge_color"]
     if plot_type == "network_topology":
-        layout = data_dir / "network_layout.csv"
-        if layout.is_file():
-            frame = pd.read_csv(layout)
-            if "family" in frame.columns:
-                return list(dict.fromkeys(str(v) for v in frame["family"].fillna("singleton")))
+        return _topology_family_keys(data_dir)
+    if plot_type == "splot":
+        return ["significant", "nonsignificant"]
+    if plot_type == "opls_outlier":
+        return ["outlier", "normal", "threshold_color"]
+    if plot_type in ("roc_auc_hist", "log2fc_hist"):
+        return ["histogram_color", "threshold_color", "median_color"]
+    if plot_type == "plsda_permutation":
+        return ["r2_color", "q2_color"]
+    if plot_type == "significance_venn":
+        try:
+            path = resolve_plot_data_file(
+                data_dir, "statistical_analysis_metax_significance_sets.csv"
+            )
+            if path is None:
+                return []
+            frame = pd.read_csv(path)
+            if "intersection" in frame.columns:
+                sets = [s for s in dict.fromkeys(frame["intersection"].fillna("").astype(str)) if s]
+                return sets
+        except Exception:
+            return []
+        return []
+    if plot_type in {"constituent_bar", "bioactivity_bar"}:
+        filename = (
+            "tea_constituents.csv" if plot_type == "constituent_bar" else "bioactivity_assays.csv"
+        )
+        path = resolve_plot_data_file(data_dir, filename)
+        if path is None:
+            return []
+        frame = pd.read_csv(path)
+        if "grade" in frame.columns:
+            return list(dict.fromkeys(str(v) for v in frame["grade"].tolist()))
+        return []
+    if plot_type == "sensory_scores":
+        path = resolve_plot_data_file(data_dir, "sensory_scores.csv")
+        if path is None:
+            return []
+        frame = pd.read_csv(path)
+        if "attribute" in frame.columns:
+            return list(dict.fromkeys(str(v) for v in frame["attribute"].tolist()))
+        return []
+    if plot_type in {"hca_heatmap", "correlation_heatmap", "relative_abundance_heatmap"}:
         return []
     return []
 
@@ -566,9 +618,14 @@ def _render_and_build_echarts(
         )
 
     if plot_type == "volcano":
-        volcano_csv = data_dir / spec.data_files[0]
-        render_volcano_plot_png(volcano_csv, plot_config, output_path)
-        return build_echarts_volcano(volcano_csv, plot_config)
+        volcano_csv = resolve_plot_data_file(data_dir, spec.data_files[0])
+        if volcano_csv is None:
+            raise PlotEditError("缺少 volcano_results.csv")
+        if volcano_csv.name == "volcano_results.csv":
+            render_volcano_plot_png(volcano_csv, plot_config, output_path)
+            return build_echarts_volcano(volcano_csv, plot_config)
+        # Agent B 变体表列名不同，matplotlib 回退不适用：复制原图保底
+        return _copy_source_png_fallback(plot_type, data_dir, output_path)
 
     if plot_type == "family_size":
         nodes_csv = resolve_plot_data_file(data_dir, "network_nodes.csv")
@@ -628,19 +685,40 @@ def _render_and_build_echarts(
             raise PlotEditError("缺少 vl-convert 且无法回退渲染: precursor_mass_diff")
         return {}
 
-    # vip / heatmap / topology：matplotlib 回退缺失时复制原图
-    if plot_type in {"vip_bar", "heatmap_vip", "network_topology"}:
-        import shutil
+    from web_frontend.backend.agent_c.tea_paper_plots import TEA_PAPER_PLOT_TYPES, render_tea_paper_plot
 
-        source_name = spec.stem_prefix + ".png"
-        source_png = data_dir / source_name
+    if plot_type in TEA_PAPER_PLOT_TYPES:
+        try:
+            render_tea_paper_plot(plot_type, data_dir, output_path, plot_config)
+            return {}
+        except Exception:
+            return _copy_source_png_fallback(plot_type, data_dir, output_path)
+
+    # 其余语义图（vip / heatmap / topology / Agent B step8 变体）：
+    # 无 matplotlib 回退实现时复制原图，保证 vl-convert 缺失也不中断改图
+    return _copy_source_png_fallback(plot_type, data_dir, output_path)
+
+
+def _copy_source_png_fallback(
+    plot_type: str,
+    data_dir: Path,
+    output_path: Path,
+) -> dict[str, Any]:
+    import shutil
+
+    candidates: list[str] = []
+    spec = get_plot_spec(plot_type)
+    if spec:
+        candidates.append(spec.stem_prefix)
+    candidates.extend(stem for stem, ptype in PLOT_STEM_ALIASES.items() if ptype == plot_type)
+    for stem in candidates:
+        source_png = data_dir / f"{stem}.png"
         if source_png.is_file() and source_png.resolve() != output_path.resolve():
             shutil.copy2(source_png, output_path)
-        elif not output_path.is_file():
-            raise PlotEditError(f"缺少 vl-convert 且无法回退渲染: {plot_type}")
+            return {}
+    if output_path.is_file():
         return {}
-
-    raise PlotEditError(f"暂不支持重绘: {plot_type}")
+    raise PlotEditError(f"缺少 vl-convert 且无法回退渲染: {plot_type}")
 
 
 def apply_plot_config(
@@ -839,7 +917,7 @@ def agent_apply_plot_edit(
 
     # 语义改图：有 PlotSpec 且数据齐全
     spec = get_plot_spec(plot_type) if plot_type else None
-    can_semantic = bool(spec and plot_data_files_ready(data_dir, spec.data_files))
+    can_semantic = bool(spec and plot_spec_data_ready(data_dir, spec))
     if can_semantic:
         color_keys = _color_keys_for_plot(
             plot_type, data_dir, upload_dir, existing if isinstance(existing, dict) else None
