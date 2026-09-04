@@ -635,6 +635,7 @@ async def stream_agent_pipeline(
                     llm_client=llm,
                     temperature=temperature,
                     project_root=Path(project_root),
+                    skill_context=skill_context or None,
                 )
 
             try:
@@ -1018,6 +1019,7 @@ async def stream_agent_pipeline(
             paths=paths,
             session_id=session_id,
             project_root=Path(project_root),
+            goal_text=user_message,
             cancel_event=cancel_event,
             should_stop=_should_stop,
         ):

@@ -72,6 +72,7 @@ def ensure_default_plot_configs(
     upload_dir: str | Path | None = None,
     goal_text: str = "",
     use_literature: bool = True,
+    project_root: str | Path | None = None,
 ) -> list[Path]:
     """为可语义编辑的 PNG 补写 plot_config / Vega-Lite / SVG sidecar。
 
@@ -171,6 +172,7 @@ def ensure_default_plot_configs(
                 plot_type=plot_type,
                 color_keys=color_keys,
                 goal_text=goal_text,
+                project_root=Path(project_root) if project_root else None,
                 use_literature=use_literature,
             )
         try:
@@ -231,6 +233,7 @@ def ensure_default_plot_configs(
                     plot_type="vip_bar",
                     color_keys=["bar_color"],
                     goal_text=goal_text,
+                    project_root=Path(project_root) if project_root else None,
                     use_literature=use_literature,
                 )
                 config["source_rel"] = vip_png.name

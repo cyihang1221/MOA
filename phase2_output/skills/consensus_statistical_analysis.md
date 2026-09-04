@@ -2,7 +2,7 @@
 
 - **skill_type**: multi_paper_consensus
 - **functional_domain**: `statistical_analysis`
-- **n_papers**: 8
+- **n_papers**: 11
 - **trigger_keywords**: 统计分析, PCA, PLS-DA, 火山图, VIP, 差异代谢物, mixOmics, volcano
 
 ## Analysis Goal
@@ -10,18 +10,18 @@
 
 ## Tool Preference Order
 
-- `XCMS` （出现于 5/8 篇）
-- `MetaboAnalystR` （出现于 3/8 篇）
-- `MetaboAnalyst` （出现于 3/8 篇）
-- `CAMERA` （出现于 2/8 篇）
-- `Custom R script` （出现于 2/8 篇）
-- `R` （出现于 2/8 篇）
-- `MetaboAnalyst 5.0` （出现于 1/8 篇）
-- `PhenoMeNal platform` （出现于 1/8 篇）
-- `xcms` （出现于 1/8 篇）
-- `SIRIUS + CSI:FingerID` （出现于 1/8 篇）
-- `Metabolite extraction protocol` （出现于 1/8 篇）
-- `Agilent 6230 TOF LC-MS` （出现于 1/8 篇）
+- `XCMS` （出现于 6/11 篇）
+- `CAMERA` （出现于 3/11 篇）
+- `MetaboAnalystR` （出现于 3/11 篇）
+- `R` （出现于 3/11 篇）
+- `MetaboAnalyst` （出现于 3/11 篇）
+- `mixOmics` （出现于 2/11 篇）
+- `imputeLCMD` （出现于 2/11 篇）
+- `Custom R script` （出现于 2/11 篇）
+- `MetaboAnalyst 5.0` （出现于 1/11 篇）
+- `PhenoMeNal platform` （出现于 1/11 篇）
+- `xcms` （出现于 1/11 篇）
+- `SIRIUS + CSI:FingerID` （出现于 1/11 篇）
 
 ## Parameter Consensus（按出现频次）
 
@@ -33,6 +33,20 @@
   - source: Pang Z et al. (2022), Nature protocols, DOI: 10.1038/s41596-022-00710-w, PMID: 35715522
 - **metaboanalyst 5.0 (v5.0)** `adjustment_method=linear regression residualization, covariates=['age', 'sex', 'batch'], association_test=ANOVA or linear regression, multiple_testing_correction=FDR (BH)` — 1 篇共识
   - source: Pang Z et al. (2022), Nature protocols, DOI: 10.1038/s41596-022-00710-w, PMID: 35715522
+- **mixomics** `max_predictors_per_dataset=10000` — 1 篇共识
+  - source: Rohart F et al. (2017), PLoS Computational Biology, DOI: 10.1371/journal.pcbi.1005752, PMID: 29099853
+- **mixomics** `ncomp=K−1 recommended, keepX=user-defined grid of features to select per component` — 1 篇共识
+  - source: Rohart F et al. (2017), PLoS Computational Biology, DOI: 10.1371/journal.pcbi.1005752, PMID: 29099853
+- **mixomics** `measure=Balanced Error Rate (BER) or overall misclassification error, distance=['maximum', 'Centroid', 'Mahalanobis']` — 1 篇共识
+  - source: Rohart F et al. (2017), PLoS Computational Biology, DOI: 10.1371/journal.pcbi.1005752, PMID: 29099853
+- **mixomics** `keepX=grid-specified number of top features per component` — 1 篇共识
+  - source: Rohart F et al. (2017), PLoS Computational Biology, DOI: 10.1371/journal.pcbi.1005752, PMID: 29099853
+- **mixomics** `ncomp=K−1, keepX=per-data-set grid, weight_mode=majority vote or weighted vote (correlation-based)` — 1 篇共识
+  - source: Rohart F et al. (2017), PLoS Computational Biology, DOI: 10.1371/journal.pcbi.1005752, PMID: 29099853
+- **mixomics** `ncomp=2, cv=Leave-One-Group-Out, distance=maximum, measure=BER` — 1 篇共识
+  - source: Rohart F et al. (2017), PLoS Computational Biology, DOI: 10.1371/journal.pcbi.1005752, PMID: 29099853
+- **mixomics** `distance=['maximum', 'Centroid', 'Mahalanobis']` — 1 篇共识
+  - source: Rohart F et al. (2017), PLoS Computational Biology, DOI: 10.1371/journal.pcbi.1005752, PMID: 29099853
 - **xcms (v3.8.0)** `ppm=10, peakwidth=[10, 60], snthresh=10, prefilter=[5, 10000], noise=1000, bw=30, mzdiff=-0.001, max=5` — 1 篇共识
   - source: Peters K et al. (2019), GigaScience, DOI: 10.1093/gigascience/giy149, PMID: 30535405
 - **xcms (v3.8.0)** `profiling=density, span=0.3, center=median` — 1 篇共识
@@ -51,42 +65,31 @@
   - source: Medley JK et al. (2022), eLife, DOI: 10.7554/elife.74539, PMID: 35703366
 - **agilent 6230 tof lc-ms** `column=ZORBAX Eclipse Plus C18, gradient=not fully specified, flow_rate=0.3 mL/min, column_temp=40°C, mass_range=50–1000 m/z, polarity=['positive', 'negative']` — 1 篇共识
   - source: Medley JK et al. (2022), eLife, DOI: 10.7554/elife.74539, PMID: 35703366
-- **proteowizard msconvert** `32-bit=True, filter=peakPicking true 1-2` — 1 篇共识
-  - source: Medley JK et al. (2022), eLife, DOI: 10.7554/elife.74539, PMID: 35703366
-- **xcms (r/bioconductor) (v3.14.0)** `ppm=10, peakwidth=[10, 60], snthresh=10, prefilter=[3, 100], noise=1000, bw=30, mzwid=0.015, minfrac=0.5, intensity=10000` — 1 篇共识
-  - source: Medley JK et al. (2022), eLife, DOI: 10.7554/elife.74539, PMID: 35703366
-- **xcms (v3.14.0)** `method=obiwarp, profiling=False, span=0.5` — 1 篇共识
-  - source: Medley JK et al. (2022), eLife, DOI: 10.7554/elife.74539, PMID: 35703366
-- **imputelcmd (r package) (v3.4.0)** `k=5, method=knn` — 1 篇共识
-  - source: Medley JK et al. (2022), eLife, DOI: 10.7554/elife.74539, PMID: 35703366
-- **metaboanalystr (v3.0.3)** `cv_cutoff=0.25, scaling=pareto, filtering_method=CV-based` — 1 篇共识
-  - source: Medley JK et al. (2022), eLife, DOI: 10.7554/elife.74539, PMID: 35703366
-- **metaboanalystr (v3.0.3)** `alpha=0.05, fdr_method=BH` — 1 篇共识
-  - source: Medley JK et al. (2022), eLife, DOI: 10.7554/elife.74539, PMID: 35703366
-- **metaboanalystr (v3.0.3)** `ncomp_PCA=2, ncomp_PLS_DA=2, ncomp_OPLS_DA=2, validation=permutation test (200 permutations)` — 1 篇共识
-  - source: Medley JK et al. (2022), eLife, DOI: 10.7554/elife.74539, PMID: 35703366
 
 ## Expected Figures Consensus
 
-- `workflow_diagram` （5 次）
+- `workflow_diagram` （9 次）
+- `pca_scores` （5 次）
 - `heatmap` （4 次）
+- `bar_chart` （4 次）
+- `volcano_plot` （4 次）
 - `pathway_map` （3 次）
-- `volcano_plot` （3 次）
+- `network` （3 次）
 - `chromatogram` （2 次）
-- `bar_chart` （2 次）
-- `pca_scores` （2 次）
+- `qc_chart` （2 次）
 - `other` （1 次）
-- `violin_plot` （1 次）
-- `network` （1 次）
 
 ## Representative Sources
 
 - Pang Z et al. (2022), Nature protocols, DOI: 10.1038/s41596-022-00710-w, PMID: 35715522
+- Rohart F et al. (2017), PLoS Computational Biology, DOI: 10.1371/journal.pcbi.1005752, PMID: 29099853
 - Peters K et al. (2019), GigaScience, DOI: 10.1093/gigascience/giy149, PMID: 30535405
 - Medley JK et al. (2022), eLife, DOI: 10.7554/elife.74539, PMID: 35703366
+- Wei R et al. (2018), Scientific Reports, DOI: 10.1038/s41598-017-19120-0, PMID: 29330539
 - Pang Z et al. (2024), Nature communications, DOI: 10.1038/s41467-024-48009-6, PMID: 38693118
 - Chen YC et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c02419, PMID: 37713273
 - Hector EC et al. (2025), Briefings in bioinformatics, DOI: 10.1093/bib/bbaf095, PMID: 40067114
+- Wen B et al. (2017), BMC Bioinformatics, DOI: 10.1186/s12859-017-1579-y, PMID: 28327092
 - Chen CY et al. (2025), Nature communications, DOI: 10.1038/s41467-025-64328-8, PMID: 41173857
 - Yuan Y et al. (2023), Analytical chemistry, DOI: 10.1021/acs.analchem.3c01864, PMID: 37428854
 

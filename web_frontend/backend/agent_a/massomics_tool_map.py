@@ -15,6 +15,8 @@ MASSOMICS_TO_WEB: dict[str, str] = {
     "mixomics": "statistical_analysis_mixomics",
     "ropls": "statistical_analysis_mixomics",
     "opls": "statistical_analysis_mixomics",
+    "simca": "statistical_analysis_mixomics",
+    "metaboanalyst": "statistical_analysis_mixomics",
     "knn": "feature_filtering_and_missing_value_imputation_knn",
     "imputation": "feature_filtering_and_missing_value_imputation_knn",
     "feature_filter": "feature_filtering_and_missing_value_imputation_knn",
@@ -43,6 +45,21 @@ def resolve_web_mcp_tool(name: str, registered: set[str]) -> str | None:
         return None
     if raw in registered:
         return raw
+    candidates = [raw]
+    first = raw.split()[0]
+    if first != raw:
+        candidates.append(first)
+    for cand in candidates:
+        key = _normalize(cand)
+        if key in _NORM:
+            mapped = _NORM[key]
+            if mapped in registered:
+                return mapped
+        stripped = re.sub(r"\d+$", "", key)
+        if stripped and stripped in _NORM:
+            mapped = _NORM[stripped]
+            if mapped in registered:
+                return mapped
     key = _normalize(raw)
     if key in _NORM:
         mapped = _NORM[key]
@@ -62,6 +79,17 @@ def _abs_path(base: str, fragment: str) -> str:
     if frag.startswith("/"):
         return frag
     return f"{base.rstrip('/')}/{frag.lstrip('/')}"
+
+
+def _vip_from_text(text: str) -> str | None:
+    t = text or ""
+    m = re.search(r"vip_threshold\s*[=:]\s*([0-9.]+)", t, re.I)
+    if m:
+        return m.group(1)
+    m = re.search(r"VIP\s*>\s*([0-9.]+)", t, re.I)
+    if m:
+        return m.group(1)
+    return None
 
 
 def step_to_executable_task(
@@ -111,9 +139,11 @@ def step_to_executable_task(
         )
     if web_tool == "statistical_analysis_mixomics":
         meta = _abs_path(upload, "metadata.csv")
+        vip = _vip_from_text(desc)
+        vip_part = f", vip_threshold={vip}" if vip else ""
         return (
             f"Use {web_tool} to perform PCA and differential analysis using metadata.csv "
-            f"from {meta}, input_dir={inp}, output_dir={out}, group_column=Group"
+            f"from {meta}, input_dir={inp}, output_dir={out}, group_column=Group{vip_part}"
         )
     return f"Use {web_tool} to {desc} input={inp} output={out}"
 

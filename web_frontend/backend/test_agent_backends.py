@@ -33,6 +33,8 @@ MINI_CATALOG = {
         "statistical_analysis": {},
         "feature_detection": {},
         "enrichment_analysis": {},
+        "library_matching": {},
+        "unknown_identification": {},
     },
     "tools": [
         {
@@ -76,6 +78,13 @@ MINI_CATALOG = {
             "aliases": [],
             "support_status": "supported",
             "mcp_tools": ["pathway_analysis_kegg"],
+        },
+        {
+            "keyword": "DeepMASS",
+            "stage": "unknown_identification",
+            "aliases": [],
+            "support_status": "supported",
+            "mcp_tools": ["deepmass_annotation"],
         },
     ],
 }
@@ -238,6 +247,35 @@ class AgentBPlanNormalizeTest(unittest.TestCase):
         self.assertEqual(out["steps"][1]["tools"], ["spectral_annotation"])
         self.assertEqual(out["steps"][2]["tools"], ["KEGG compound enrichment"])
         self.assertEqual(out["steps"][2]["stage"], "enrichment_analysis")
+
+    def test_mixed_stage_tools_are_split(self) -> None:
+        plan = {
+            "goal": "demo",
+            "steps": [
+                {
+                    "step_number": 6,
+                    "description": "annotate",
+                    "stage": "library_matching",
+                    "tools": ["spectral_annotation", "deepmass_annotation"],
+                    "output_filename": "annotated",
+                }
+            ],
+        }
+        out, warnings = normalize_plan_for_b(plan, MINI_CATALOG)
+        self.assertEqual(
+            [(s["stage"], s["tools"]) for s in out["steps"]],
+            [
+                ("library_matching", ["spectral_annotation"]),
+                ("unknown_identification", ["DeepMASS"]),
+            ],
+        )
+        self.assertEqual(out["steps"][0]["step_number"], 1)
+        self.assertEqual(out["steps"][1]["step_number"], 2)
+        self.assertNotEqual(
+            out["steps"][0]["output_filename"],
+            out["steps"][1]["output_filename"],
+        )
+        self.assertTrue(any("拆成" in w for w in warnings))
 
     def test_real_b_catalog_maps_skipped_tools(self) -> None:
         from web_frontend.backend.agent_b.plan_normalize import load_tool_catalog

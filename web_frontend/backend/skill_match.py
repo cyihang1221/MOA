@@ -10,18 +10,73 @@ from typing import Any
 from web_frontend.backend.agent_backends import massomics_root
 
 
+# 场景共识触发词：命中这些不足以压过「点名某篇论文」的 paper_recipe。
+_GENERIC_SKILL_TRIGGERS = {
+    "统计分析",
+    "pca",
+    "pls-da",
+    "火山图",
+    "vip",
+    "差异代谢物",
+    "mixomics",
+    "volcano",
+    "分子网络",
+    "gnps",
+    "fbmn",
+    "ms2lda",
+    "molecular networking",
+    "motif",
+    "余弦",
+    "通路",
+    "kegg",
+    "富集",
+    "pathway",
+    "enrichment",
+    "metaboanalyst",
+    "峰检测",
+    "xcms",
+    "预处理",
+    "peak picking",
+    "alignment",
+    "mzml",
+    "代谢组",
+    "metabolomics",
+    "lc-ms",
+    "完整流程",
+}
+
+
 def _project_root() -> Path:
     # web_frontend/backend/skill_match.py → repo root
     return Path(__file__).resolve().parents[2]
 
 
 def _registry_path(project_root: Path | None = None) -> Path:
-    root = project_root or _project_root()
-    return root / "phase2_output" / "skill_registry.json"
+    from web_frontend.backend.literature_paths import resolve_phase2_registry
+
+    return resolve_phase2_registry(project_root or _project_root())
 
 
 def _massomics_skills_root(project_root: Path | None = None) -> Path:
     return massomics_root(project_root or _project_root()) / "skills"
+
+
+def _paper_specific_hits(matched_kw: list[str]) -> bool:
+    """中文专名、带空格品种名、DOI 尾号才算点名论文。"""
+    for kw in matched_kw:
+        t = str(kw).strip()
+        tl = t.lower()
+        if tl in _GENERIC_SKILL_TRIGGERS:
+            continue
+        if re.search(r"[\u4e00-\u9fff]", t):
+            return True
+        if " " in t:
+            return True
+        if t.isdigit() and len(t) >= 5:
+            return True
+        if tl in {"fochx", "maojian"}:
+            return True
+    return False
 
 
 def _in_goal(token: str, goal_lower: str) -> bool:
@@ -255,6 +310,9 @@ def match_skills(
             priority = 0
             if prefer_consensus and stype == "multi_paper_consensus":
                 priority += 100
+            if stype == "paper_recipe" and _paper_specific_hits(matched_kw):
+                # 点名论文/品种时压过场景共识；MSConvert 等通用工具名不加分
+                priority += 200
             priority += min(len(matched_kw), 8)
             priority += int(skill.get("reproducibility_score") or 0) // 20
             priority += min(int(skill.get("n_param_steps") or 0), 10)

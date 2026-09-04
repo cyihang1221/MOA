@@ -7,6 +7,28 @@ from typing import Iterable
 
 from parse_recipes import Recipe, WorkflowStep
 
+# 论文专名触发词：仅靠领域词（PCA/GNPS）会命中共识 Skill，点名论文时必须能命中本篇。
+PAPER_TRIGGER_ALIASES: dict[str, list[str]] = {
+    "10.1016/j.fochx.2026.103843": [
+        "都匀毛尖",
+        "都匀毛尖茶",
+        "Duyun Maojian",
+        "Maojian",
+        "五等级",
+        "fochx",
+        "103843",
+    ],
+}
+
+# 文献软件名 → 当前 Agent B 可执行工具（写入 Skill，供 A 映射；禁止发明未注册工具）
+LITERATURE_TOOL_MAP: list[tuple[str, str]] = [
+    ("msconvert", "convert_raw_to_mzml_msconvert 或 convert_raw_to_mzml_ThermoRawFileParser"),
+    ("mzmine", "data_preprocessing_mzmine（已注册且本机可运行时）；否则 data_preprocessing_xcms"),
+    ("simca", "statistical_analysis_mixomics（LC-MS vip_threshold=1.2；GC-MS vip_threshold=1.5）"),
+    ("metaboanalyst", "statistical_analysis_mixomics"),
+    ("gnps", "molecular_networking_gnps / molecular_networking_fbmn"),
+]
+
 
 def slugify(text: str, max_len: int = 60) -> str:
     s = re.sub(r"[^a-zA-Z0-9\u4e00-\u9fff]+", "_", (text or "").strip())
@@ -31,6 +53,14 @@ def infer_domain(recipe: Recipe) -> str:
 
 def infer_triggers(recipe: Recipe) -> list[str]:
     keys: list[str] = []
+    blob = f"{recipe.source_paper} {recipe.path} {recipe.paper_title}"
+    for doi, aliases in PAPER_TRIGGER_ALIASES.items():
+        if doi.lower() in blob.lower() or doi.replace("/", "_").lower() in blob.lower():
+            keys.extend(aliases)
+    for quoted in re.findall(r"[‘'\"«]([^'\"»]{3,40})[’'\"»]", recipe.paper_title or ""):
+        q = quoted.strip()
+        if q:
+            keys.append(q)
     domain = infer_domain(recipe)
     domain_map = {
         "molecular_networking": ["分子网络", "GNPS", "FBMN", "molecular networking", "motif"],
@@ -42,11 +72,20 @@ def infer_triggers(recipe: Recipe) -> list[str]:
     keys.extend(domain_map.get(domain, []))
     for tool in recipe.tools[:8]:
         t = tool.strip()
-        # 只保留主工具名，避免把整句参数塞进触发器
-        main = re.split(r"[\(/,]", t)[0].strip()
-        if len(main) >= 3 and main.lower() not in {"custom", "python", "r", "script"}:
-            keys.append(main)
-    # 去重保序（不做标题分词，避免误触发）
+        # 只保留短主工具名，避免把整句参数/仪器型号塞进触发器
+        main = re.split(r"[\(/,;]", t)[0].strip()
+        token = main.split()[0] if main else ""
+        if 3 <= len(token) <= 24 and token.lower() not in {
+            "custom",
+            "python",
+            "r",
+            "script",
+            "metadata.csv",
+        }:
+            if "." in token and not token.lower().startswith("ms"):
+                continue
+            keys.append(token)
+    # 去重保序（不做整句标题分词，避免误触发）
     seen = set()
     out = []
     for k in keys:
@@ -55,7 +94,7 @@ def infer_triggers(recipe: Recipe) -> list[str]:
             continue
         seen.add(kl)
         out.append(k)
-    return out[:16]
+    return out[:20]
 
 
 def _analysis_goal(recipe: Recipe) -> str:
@@ -122,14 +161,24 @@ def render_paper_skill(recipe: Recipe) -> str:
         for item in recipe.strengths[:8]:
             lines.append(f"- {item}")
 
+    mapped = []
+    tools_l = " ".join(recipe.tools).lower()
+    for needle, dest in LITERATURE_TOOL_MAP:
+        if needle in tools_l:
+            mapped.append(f"- `{needle}` → {dest}")
+
     lines += [
         "",
         "## Agent Usage Notes",
         "- 用户意图优先；本 Skill 提供文献证据级工具顺序与参数。",
         "- 仅使用当前系统已注册的 MCP/本地工具；文献工具名需映射到可用工具。",
         "- 出图时优先满足 Expected Figures；解释需回扣 Analysis Goal。",
+        "- 湿法/细胞/斑马鱼/国标感官不得写成 Agent B 可执行步，除非用户已上传对应结果表。",
+        "- 以实际 metadata 分组为准；论文五等级设计与 BK/DY/QC 会话不是同一实验。",
         "",
     ]
+    if mapped:
+        lines += ["## Available-tool mapping", *mapped, ""]
     return "\n".join(lines)
 
 

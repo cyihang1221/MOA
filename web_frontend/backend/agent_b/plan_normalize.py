@@ -146,8 +146,7 @@ def normalize_plan_for_b(
         if stage_hint and stage_hint not in known_stages:
             # A 常写 output_category 或 "Step N"，不是 B catalog 的 stage 名
             stage_hint = ""
-        mapped: list[str] = []
-        resolved_stage = stage_hint
+        mapped_entries: list[dict[str, Any]] = []
         for tool in tools_raw:
             entry = resolve_catalog_entry(str(tool), catalog, stage_hint=stage_hint)
             if entry is None and stage_hint:
@@ -155,32 +154,68 @@ def normalize_plan_for_b(
             if entry is None:
                 warnings.append(f"步骤 {step_number} 工具 {tool!r} 不在 B 的 tool_catalog，已跳过")
                 continue
-            mapped.append(str(entry["keyword"]))
-            if not resolved_stage:
-                resolved_stage = str(entry.get("stage") or "")
+            mapped_entries.append(entry)
 
-        if not mapped:
+        if not mapped_entries:
             warnings.append(f"步骤 {step_number} 没有可映射到 B 的工具，整步跳过")
             continue
-        if not resolved_stage:
+
+        groups = _group_entries_by_stage(mapped_entries)
+        if any(not stage for stage, _ in groups):
             warnings.append(f"步骤 {step_number} 缺少 stage，且无法从工具名推断")
 
         mode = str(raw.get("mode") or "sequential").strip() or "sequential"
-        out_steps.append(
-            {
-                **{k: v for k, v in raw.items() if k not in {"tools", "stage", "mode"}},
+        if len(groups) > 1:
+            detail = "; ".join(f"{stage}/{'+'.join(kws)}" for stage, kws in groups)
+            warnings.append(
+                f"步骤 {step_number} 的工具分属不同 catalog stage，已拆成 {len(groups)} 步: {detail}"
+            )
+            if mode == "comparison":
+                warnings.append(f"步骤 {step_number} 跨 stage 无法 comparison，已改为 sequential")
+                mode = "sequential"
+
+        base = {k: v for k, v in raw.items() if k not in {"tools", "stage", "mode"}}
+        orig_out = str(raw.get("output_filename") or "").strip()
+        for group_index, (stage, keywords) in enumerate(groups):
+            step_out = {
+                **base,
                 "step_number": step_number,
                 "description": str(raw.get("description") or raw.get("task") or "").strip(),
-                "tools": mapped,
-                "stage": resolved_stage,
-                "mode": mode,
+                "tools": keywords,
+                "stage": stage,
+                "mode": mode if len(groups) == 1 else "sequential",
             }
-        )
+            if len(groups) > 1 and group_index < len(groups) - 1:
+                step_out["output_filename"] = (
+                    f"{orig_out}__{stage}" if orig_out else f"step_{step_number}_{stage}_output"
+                )
+            out_steps.append(step_out)
 
     normalized = dict(document)
     normalized["steps"] = _ensure_imputation_before_stats(out_steps, catalog, warnings)
+    _renumber_steps(normalized["steps"])
     _chain_step_filenames(normalized["steps"])
     return normalized, warnings
+
+
+def _group_entries_by_stage(
+    entries: list[dict[str, Any]],
+) -> list[tuple[str, list[str]]]:
+    """同一 A 步里跨 catalog stage 的工具不能共用一个 (stage, keyword) 查找。"""
+    groups: list[tuple[str, list[str]]] = []
+    for entry in entries:
+        keyword = str(entry.get("keyword") or "")
+        stage = str(entry.get("stage") or "")
+        if groups and groups[-1][0] == stage:
+            groups[-1][1].append(keyword)
+        else:
+            groups.append((stage, [keyword]))
+    return groups
+
+
+def _renumber_steps(steps: list[dict[str, Any]]) -> None:
+    for index, step in enumerate(steps, start=1):
+        step["step_number"] = index
 
 
 def _step_keywords(step: dict[str, Any]) -> list[str]:

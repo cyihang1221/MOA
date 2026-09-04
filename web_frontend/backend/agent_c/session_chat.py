@@ -7,6 +7,7 @@ from typing import Any, Iterator
 from web_frontend.backend.agent_c.plan_parser import parse_plan, resolve_all_plot_types
 from web_frontend.backend.agent_c.results_inventory import find_metadata_csv, inventory_results
 from web_frontend.backend.agent_c.runner import run_agent_c
+from web_frontend.backend.literature_plot_knowledge import effective_plot_goal_text
 from web_frontend.backend.plot_edit_registry import get_plot_spec
 from web_frontend.backend.session_storage import session_upload_dir, session_work_dir
 
@@ -120,6 +121,7 @@ def stream_session_agent_c(
     storage_slug: str,
     user_message: str,
     intent: str,
+    goal_text: str = "",
 ) -> Iterator[dict[str, Any]]:
     """产出 SSE 事件：delta / visual_results / chat_image / error。"""
     output_root = session_work_dir(project_root, storage_slug)
@@ -185,6 +187,18 @@ def stream_session_agent_c(
                 "📝 报告将包含 **结果解读与科研意义**（AI 深度解读，基于现有结果文件）。\n\n"
             )
         }
+    parsed_for_goal: dict[str, Any] = {}
+    try:
+        if isinstance(plan_src, dict):
+            parsed_for_goal = plan_src
+        elif plan_src is not None:
+            parsed_for_goal = parse_plan(plan_src)
+    except Exception:
+        parsed_for_goal = {}
+    plot_goal = effective_plot_goal_text(
+        user_message=goal_text or user_message,
+        plan=parsed_for_goal,
+    )
     yield {"delta": "正在渲染图表并组装 `final_report.md`…\n\n"}
     try:
         manifest = run_agent_c(
@@ -195,7 +209,7 @@ def stream_session_agent_c(
             figure_mode=figure_mode,
             language="zh",
             use_llm=use_insights,
-            goal_text=user_message,
+            goal_text=plot_goal,
             project_root=project_root,
         )
     except Exception as exc:

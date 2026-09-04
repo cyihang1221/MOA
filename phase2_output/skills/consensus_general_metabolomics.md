@@ -11,17 +11,17 @@
 ## Tool Preference Order
 
 - `R` （出现于 9/40 篇）
-- `RDKit` （出现于 3/40 篇）
+- `RDKit` （出现于 4/40 篇）
 - `PyTorch` （出现于 2/40 篇）
 - `custom Python script` （出现于 2/40 篇）
 - `matchms` （出现于 2/40 篇）
 - `DIA-NN` （出现于 2/40 篇）
 - `Custom pipeline` （出现于 2/40 篇）
+- `TensorFlow` （出现于 2/40 篇）
 - `MS-DIAL` （出现于 2/40 篇）
 - `ReAdW.exe` （出现于 1/40 篇）
 - `COMET` （出现于 1/40 篇）
 - `custom filtering strategy` （出现于 1/40 篇）
-- `protein parsimony rules` （出现于 1/40 篇）
 
 ## Parameter Consensus（按出现频次）
 
@@ -68,13 +68,13 @@
 
 ## Expected Figures Consensus
 
-- `workflow_diagram` （23 次）
-- `bar_chart` （22 次）
+- `workflow_diagram` （25 次）
+- `bar_chart` （23 次）
 - `boxplot` （10 次）
 - `volcano_plot` （10 次）
-- `heatmap` （8 次）
 - `pca_scores` （8 次）
-- `chromatogram` （5 次）
+- `heatmap` （7 次）
+- `chromatogram` （6 次）
 - `pathway_map` （4 次）
 - `other` （4 次）
 - `table` （4 次）

@@ -14,7 +14,7 @@
 
     <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
 
-    <link rel="stylesheet" href="/static/styles.css?v=20260821-report-view" />
+    <link rel="stylesheet" href="/static/styles.css?v=20260903-empty-md" />
 
   </head>
 
@@ -172,25 +172,53 @@
 
         <div class="chat-main">
 
-          <!-- 暂时隐藏欢迎区工具列表（后续可能恢复）
-          <section id="welcomePanel" class="welcome-panel">
-
-            <h2 data-i18n="welcome.title">MassAgent 能做什么？</h2>
-
-            <p data-i18n="welcome.desc">
-
-              上传 raw / mzML / mgf / rds 等质谱相关文件，用对话驱动完整分析流程。
-
-              Agent 会根据你的描述自动选择工具；结果图可在图库中语义编辑，或用自然语言让 Agent 改图/拼图。
-
-            </p>
-
-            <div id="toolsPanel" class="tools-panel"></div>
-
+          <section id="welcomePanel" class="welcome-panel hidden">
+            <div class="welcome-hero">
+              <h2 data-i18n="welcome.title">从数据和问题开始</h2>
+              <p data-i18n="welcome.desc">
+                上传质谱数据，用一句话说明分析目标。系统会生成可评审的分析计划；你确认后才执行、出图并写报告。
+              </p>
+            </div>
+            <ol class="welcome-steps">
+              <li data-i18n="welcome.step1">上传 mzML / CSV / raw 等数据</li>
+              <li data-i18n="welcome.step2">描述要回答的科学问题</li>
+              <li data-i18n="welcome.step3">审阅计划，回复「确认计划」后才会执行</li>
+            </ol>
+            <div class="welcome-actions">
+              <button id="welcomeUploadBtn" type="button" class="welcome-upload-btn" data-i18n="welcome.upload">
+                上传数据文件
+              </button>
+              <p class="welcome-formats" data-i18n="welcome.formats">
+                支持 mzML、CSV/TSV、raw、mgf 等；可一次上传多个文件
+              </p>
+            </div>
+            <p class="welcome-examples-label" data-i18n="welcome.examplesLabel">或先选一个分析目标，再补充你的数据</p>
+            <div class="welcome-examples">
+              <button type="button" class="welcome-example" data-example-key="welcome.example1.prompt">
+                <strong data-i18n="welcome.example1.title">寻找差异代谢物</strong>
+                <span data-i18n="welcome.example1.hint">分组比较，PCA 与火山图</span>
+              </button>
+              <button type="button" class="welcome-example" data-example-key="welcome.example2.prompt">
+                <strong data-i18n="welcome.example2.title">疾病进展与机制</strong>
+                <span data-i18n="welcome.example2.hint">分期变化、通路与解释</span>
+              </button>
+              <button type="button" class="welcome-example" data-example-key="welcome.example3.prompt">
+                <strong data-i18n="welcome.example3.title">分类与生物标志物</strong>
+                <span data-i18n="welcome.example3.hint">分组判别与关键特征</span>
+              </button>
+            </div>
           </section>
-          -->
 
           <div id="messages" class="messages"></div>
+
+          <button
+            id="jumpToLatestBtn"
+            type="button"
+            class="jump-to-latest hidden"
+            data-i18n="chat.jumpLatest"
+          >
+            ↓ 最新
+          </button>
 
         </div>
 
@@ -912,8 +940,9 @@
     <script src="https://cdn.jsdelivr.net/npm/vega-lite@5"></script>
     <script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
 
-    <script src="/static/i18n.js?v=20260821-report-view"></script>
-    <script src="/static/app.js?v=20260821-report-view"></script>
+    <script src="https://cdn.jsdelivr.net/npm/markdown-it@14.1.0/dist/markdown-it.min.js"></script>
+    <script src="/static/i18n.js?v=20260903-empty-md"></script>
+    <script src="/static/app.js?v=20260903-empty-md"></script>
 
   </body>
 

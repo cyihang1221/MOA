@@ -17,6 +17,7 @@ const llmModelInput = document.getElementById("llmModelInput");
 const llmModelSuggestions = document.getElementById("llmModelSuggestions");
 const tempInput = document.getElementById("tempInput");
 const messagesEl = document.getElementById("messages");
+const jumpToLatestBtn = document.getElementById("jumpToLatestBtn");
 const form = document.getElementById("chatForm");
 const promptInput = document.getElementById("promptInput");
 const chatColorBtn = document.getElementById("chatColorBtn");
@@ -394,6 +395,88 @@ function escapeHtml(text) {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+let chatMarkdown = null;
+const mdRenderTimers = new WeakMap();
+
+function getChatMarkdown() {
+  if (chatMarkdown) return chatMarkdown;
+  const factory = window.markdownit;
+  if (typeof factory !== "function") return null;
+  const md = factory({
+    html: false,
+    linkify: true,
+    breaks: true,
+  });
+  try {
+    md.enable(["table", "strikethrough"]);
+  } catch {
+    /* preset already includes these */
+  }
+  md.validateLink = (url) => {
+    const value = String(url || "").trim();
+    return /^(https?:|mailto:)/i.test(value) || value.startsWith("#");
+  };
+  const defaultLinkOpen =
+    md.renderer.rules.link_open ||
+    function (tokens, idx, options, env, self) {
+      return self.renderToken(tokens, idx, options);
+    };
+  md.renderer.rules.link_open = (tokens, idx, options, env, self) => {
+    tokens[idx].attrSet("target", "_blank");
+    tokens[idx].attrSet("rel", "noopener noreferrer");
+    return defaultLinkOpen(tokens, idx, options, env, self);
+  };
+  md.renderer.rules.image = (tokens, idx) => {
+    const token = tokens[idx];
+    const src = token.attrGet("src") || "";
+    const alt = token.content || "";
+    if (!/^(https?:)/i.test(src) && !src.startsWith("/api/sessions/")) {
+      return `<code>${escapeHtml(`[${alt}](${src})`)}</code>`;
+    }
+    return `<img src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" />`;
+  };
+  chatMarkdown = md;
+  return chatMarkdown;
+}
+
+function renderMarkdownSafe(src) {
+  const text = String(src ?? "");
+  if (!text) return "";
+  const parser = getChatMarkdown();
+  if (!parser) return `<pre class="md-fallback">${escapeHtml(text)}</pre>`;
+  try {
+    return parser.render(text);
+  } catch {
+    return `<pre class="md-fallback">${escapeHtml(text)}</pre>`;
+  }
+}
+
+function setMessageContent(contentEl, text, { markdown = false, immediate = true } = {}) {
+  if (!contentEl) return;
+  const raw = String(text ?? "");
+  contentEl.dataset.raw = raw;
+  const apply = () => {
+    mdRenderTimers.delete(contentEl);
+    if (!markdown) {
+      contentEl.classList.remove("markdown-body");
+      contentEl.textContent = raw;
+      return;
+    }
+    contentEl.classList.add("markdown-body");
+    contentEl.innerHTML = renderMarkdownSafe(raw);
+    scrollMessagesIfPinned();
+  };
+  if (immediate) {
+    const timer = mdRenderTimers.get(contentEl);
+    if (timer) clearTimeout(timer);
+    apply();
+    return;
+  }
+  const prev = mdRenderTimers.get(contentEl);
+  if (prev) clearTimeout(prev);
+  mdRenderTimers.set(contentEl, setTimeout(apply, 40));
 }
 
 function cacheAgentCFigureCards(cards) {
@@ -895,6 +978,10 @@ let pendingFiles = [];
 let isStreaming = false;
 let activeStreamAbort = null;
 let lastAssistantMessageId = null;
+let messagesPinToBottom = true;
+let messagesScrollLock = 0;
+let messagesFollowRaf = 0;
+let messagesSizeObserver = null;
 let appRuntime = null;
 let serverLlmDefaults = {
   model: "",
@@ -1790,6 +1877,7 @@ function setStreamingState(streaming) {
   sendButton.disabled = streaming;
   attachBtn.disabled = streaming || isSharedView;
   promptInput.disabled = streaming || isSharedView;
+  if (streaming) scrollMessagesIfPinned(true);
 }
 
 function forceStopStreamingUI() {
@@ -1826,7 +1914,10 @@ function createMessageEl(role, content, timeStr = "", messageId = null) {
 
   const contentEl = document.createElement("div");
   contentEl.className = "message-content";
-  contentEl.textContent = text;
+  setMessageContent(contentEl, text, {
+    markdown: role === "assistant",
+    immediate: true,
+  });
 
   const actionsEl = document.createElement("div");
   actionsEl.className = "message-actions";
@@ -1857,7 +1948,10 @@ function createMessageEl(role, content, timeStr = "", messageId = null) {
   }
   if (actionsEl.childElementCount) div.appendChild(actionsEl);
   div.appendChild(metaEl);
-  messagesEl.appendChild(div);
+  const sentinel = ensureMessagesSentinel();
+  if (sentinel) messagesEl.insertBefore(div, sentinel);
+  else messagesEl.appendChild(div);
+  observeMessageSize(div);
   scrollMessagesIfPinned(true);
 
   if (role === "assistant" && messageId != null) {
@@ -2023,6 +2117,7 @@ function appendChatImage(galleryEl, sessionId, rel) {
   const img = document.createElement("img");
   img.loading = "lazy";
   img.alt = fileRel.split("/").pop() || fileRel;
+  img.addEventListener("load", () => scrollMessagesIfPinned());
   img.src = url;
 
   const caption = document.createElement("span");
@@ -2061,7 +2156,9 @@ function appendChatImagesToMessage(messageApi, sessionId, rels) {
 }
 
 function getMessagePlainText(contentEl) {
-  return contentEl?.textContent || "";
+  if (!contentEl) return "";
+  if (contentEl.dataset.raw != null) return contentEl.dataset.raw;
+  return contentEl.textContent || "";
 }
 
 function openMessageEditor(messageDiv, messageId, currentText) {
@@ -2118,7 +2215,7 @@ function openMessageEditor(messageDiv, messageId, currentText) {
 async function resendFromEditedUser(messageId, content) {
   const userEl = messagesEl.querySelector(`[data-message-id="${messageId}"]`);
   const contentEl = userEl?.querySelector(".message-content");
-  if (contentEl) contentEl.textContent = content;
+  if (contentEl) setMessageContent(contentEl, content, { markdown: false, immediate: true });
   const idx = Array.from(messagesEl.querySelectorAll(".message")).findIndex(
     (el) => el.dataset.messageId === String(messageId)
   );
@@ -5041,16 +5138,112 @@ async function saveImageMerge() {
   }
 }
 
-function isMessagesNearBottom(threshold = 96) {
+function isMessagesNearBottom(threshold = 80) {
+  if (!messagesEl) return true;
   return (
     messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight <= threshold
   );
 }
 
-function scrollMessagesIfPinned(force = false) {
-  if (force || isMessagesNearBottom()) {
-    messagesEl.scrollTop = messagesEl.scrollHeight;
+function ensureMessagesSentinel() {
+  if (!messagesEl) return null;
+  let sentinel = messagesEl.querySelector(".messages-end-sentinel");
+  if (!sentinel) {
+    sentinel = document.createElement("div");
+    sentinel.className = "messages-end-sentinel";
+    sentinel.setAttribute("aria-hidden", "true");
+    messagesEl.appendChild(sentinel);
+  } else if (sentinel !== messagesEl.lastElementChild) {
+    messagesEl.appendChild(sentinel);
   }
+  return sentinel;
+}
+
+function syncJumpToLatestBtn() {
+  if (!jumpToLatestBtn || !messagesEl) return;
+  const overflow = messagesEl.scrollHeight - messagesEl.clientHeight > 8;
+  jumpToLatestBtn.classList.toggle("hidden", !overflow || messagesPinToBottom);
+}
+
+function setMessagesPinned(pinned) {
+  messagesPinToBottom = Boolean(pinned);
+  syncJumpToLatestBtn();
+}
+
+function observeMessageSize(el) {
+  if (!el || typeof ResizeObserver === "undefined") return;
+  if (!messagesSizeObserver) {
+    messagesSizeObserver = new ResizeObserver(() => {
+      if (messagesPinToBottom) scrollMessagesIfPinned();
+    });
+  }
+  messagesSizeObserver.observe(el);
+}
+
+function resetMessagesSizeObserver() {
+  if (!messagesSizeObserver) return;
+  messagesSizeObserver.disconnect();
+}
+
+function followMessagesToBottom() {
+  if (!messagesEl) return;
+  const sentinel = ensureMessagesSentinel();
+  messagesScrollLock += 1;
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+  if (sentinel) {
+    try {
+      sentinel.scrollIntoView({ block: "end", inline: "nearest" });
+    } catch {
+      /* ignore */
+    }
+  }
+  requestAnimationFrame(() => {
+    if (messagesEl) messagesEl.scrollTop = messagesEl.scrollHeight;
+    messagesScrollLock = Math.max(0, messagesScrollLock - 1);
+    syncJumpToLatestBtn();
+  });
+}
+
+function scrollMessagesIfPinned(force = false) {
+  if (force) setMessagesPinned(true);
+  if (!messagesPinToBottom) {
+    syncJumpToLatestBtn();
+    return;
+  }
+  if (messagesFollowRaf) cancelAnimationFrame(messagesFollowRaf);
+  messagesFollowRaf = requestAnimationFrame(() => {
+    messagesFollowRaf = 0;
+    followMessagesToBottom();
+  });
+}
+
+function onMessagesUserScroll() {
+  if (messagesScrollLock > 0) return;
+  setMessagesPinned(isMessagesNearBottom(100));
+}
+
+if (messagesEl) {
+  messagesEl.addEventListener("scroll", onMessagesUserScroll, { passive: true });
+  messagesEl.addEventListener(
+    "wheel",
+    (event) => {
+      if (event.deltaY < -4) setMessagesPinned(false);
+    },
+    { passive: true }
+  );
+  messagesEl.addEventListener(
+    "touchmove",
+    () => {
+      if (!isMessagesNearBottom(100)) setMessagesPinned(false);
+    },
+    { passive: true }
+  );
+}
+
+if (jumpToLatestBtn) {
+  jumpToLatestBtn.addEventListener("click", () => {
+    scrollMessagesIfPinned(true);
+  });
 }
 
 function renderRuntimeInfo(runtime) {
@@ -5363,18 +5556,48 @@ function renderSessionList() {
 
 function toggleWelcomePanel(show) {
   if (!welcomePanel) return;
-  welcomePanel.classList.toggle("hidden", !show);
+  const visible = Boolean(show) && !isSharedView;
+  welcomePanel.classList.toggle("hidden", !visible);
+  if (messagesEl) messagesEl.classList.toggle("is-empty-hidden", visible);
+  if (visible && jumpToLatestBtn) jumpToLatestBtn.classList.add("hidden");
+}
+
+function sessionHasConversation(msgs) {
+  return (msgs || []).some((m) => {
+    const role = String(m.role || "").toLowerCase();
+    if (role === "system") return false;
+    return String(m.content || "").trim().length > 0;
+  });
+}
+
+function bindWelcomePanel() {
+  const uploadBtn = document.getElementById("welcomeUploadBtn");
+  if (uploadBtn && fileInput) {
+    uploadBtn.addEventListener("click", () => fileInput.click());
+  }
+  document.querySelectorAll(".welcome-example").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const key = btn.getAttribute("data-example-key");
+      const prompt = key ? t(key) : "";
+      if (!prompt || !promptInput) return;
+      promptInput.value = prompt;
+      promptInput.dispatchEvent(new Event("input"));
+      promptInput.focus();
+    });
+  });
 }
 
 async function loadMessages(sessionId) {
+  resetMessagesSizeObserver();
   messagesEl.innerHTML = "";
   const res = await fetch(`/api/sessions/${sessionId}/messages`);
   const data = await res.json();
   if (!res.ok) throw new Error(data.detail || t("err.loadMessages"));
   const msgs = data.messages || [];
-  toggleWelcomePanel(msgs.length <= 1);
+  toggleWelcomePanel(!sessionHasConversation(msgs));
   lastAssistantMessageId = null;
   msgs.forEach((m) => createMessageEl(m.role, m.content, m.time || "", m.id));
+  scrollMessagesIfPinned(true);
 }
 
 function updateWorkflowStatus(status) {
@@ -5398,12 +5621,14 @@ async function loadSessionView(sessionId) {
 }
 
 async function loadSharedMessages(sessionId) {
+  resetMessagesSizeObserver();
   messagesEl.innerHTML = "";
   const res = await fetch(`/api/public/sessions/${sessionId}/messages`);
   const data = await res.json();
   if (!res.ok) throw new Error(data.detail || t("err.sharedNotFound"));
   toggleWelcomePanel(false);
   (data.messages || []).forEach((m) => createMessageEl(m.role, m.content, m.time || "", m.id));
+  scrollMessagesIfPinned(true);
 }
 
 async function bootSessionsAndLoad() {
@@ -5526,6 +5751,7 @@ async function runAssistantStream({
   if (!currentSessionId) return;
   setStreamingState(true);
   activeStreamAbort = new AbortController();
+  scrollMessagesIfPinned(true);
 
   const assistantEl = createMessageEl("assistant", "", "");
   let assistantText = "";
@@ -5548,7 +5774,10 @@ async function runAssistantStream({
       signal: activeStreamAbort.signal,
       onDelta: (delta) => {
         assistantText += delta;
-        assistantEl.contentEl.textContent = assistantText;
+        setMessageContent(assistantEl.contentEl, assistantText, {
+          markdown: true,
+          immediate: false,
+        });
         scrollMessagesIfPinned();
       },
       onChatImage: (img) => {
@@ -5556,11 +5785,20 @@ async function runAssistantStream({
         if (rel) appendChatImageToMessage(assistantEl, currentSessionId, rel);
       },
       onDone: (payload) => {
+        if (assistantText) {
+          setMessageContent(assistantEl.contentEl, assistantText, {
+            markdown: true,
+            immediate: true,
+          });
+        }
         if (payload?.time) {
           assistantEl.metaEl.textContent = `${t("role.assistant")} · ${displayTime(payload.time)}`;
         }
         if (payload?.error) {
-          assistantEl.contentEl.textContent = assistantText || payload.error;
+          setMessageContent(assistantEl.contentEl, assistantText || payload.error, {
+            markdown: true,
+            immediate: true,
+          });
         }
         const fromChat = Array.isArray(payload?.chat_images) ? payload.chat_images : [];
         const fromVisual = (Array.isArray(payload?.visual_results) ? payload.visual_results : [])
@@ -5595,7 +5833,10 @@ async function runAssistantStream({
             const tail = "\n\n---\n✅ **分析已完成**";
             if (!assistantText.includes("分析已完成")) {
               assistantText += tail;
-              assistantEl.contentEl.textContent = assistantText;
+              setMessageContent(assistantEl.contentEl, assistantText, {
+                markdown: true,
+                immediate: true,
+              });
             }
           }
         }
@@ -5610,7 +5851,10 @@ async function runAssistantStream({
         }
       },
       onError: (msg) => {
-        assistantEl.contentEl.textContent = msg;
+        setMessageContent(assistantEl.contentEl, msg, {
+          markdown: true,
+          immediate: true,
+        });
       },
     });
     await fetchSessions();
@@ -5618,10 +5862,12 @@ async function runAssistantStream({
     await loadSessionView(currentSessionId);
   } catch (err) {
     if (err.name === "AbortError") {
-      const partial = (assistantEl.contentEl.textContent || "").trim();
-      assistantEl.contentEl.textContent = partial
-        ? `${partial}\n\n⚠️ **[已终止]**`
-        : "⚠️ **[已终止]**";
+      const partial = String(getMessagePlainText(assistantEl.contentEl) || "").trim();
+      setMessageContent(
+        assistantEl.contentEl,
+        partial ? `${partial}\n\n⚠️ **[已终止]**` : "⚠️ **[已终止]**",
+        { markdown: true, immediate: true }
+      );
       statusText.className = "status-text status-warn";
       setStatus(t("status.cancelledBg"));
       try {
@@ -5659,6 +5905,7 @@ form.addEventListener("submit", async (event) => {
     promptInput.value = "";
     promptInput.style.height = "auto";
     toggleWelcomePanel(false);
+    scrollMessagesIfPinned(true);
 
     await runAssistantStream({
       userMessage: finalMessage,
@@ -5680,12 +5927,18 @@ stopButton.addEventListener("click", async () => {
     ".message.assistant:last-of-type .message-content"
   );
   if (lastContent) {
-    const cur = String(lastContent.textContent || "").trim();
+    const cur = String(getMessagePlainText(lastContent) || "").trim();
     if (cur && !cur.includes("已终止")) {
-      lastContent.textContent = `${cur}\n\n⚠️ **[已终止]**`;
+      setMessageContent(lastContent, `${cur}\n\n⚠️ **[已终止]**`, {
+        markdown: true,
+        immediate: true,
+      });
       scrollMessagesIfPinned();
     } else if (!cur) {
-      lastContent.textContent = "⚠️ **[已终止]**";
+      setMessageContent(lastContent, "⚠️ **[已终止]**", {
+        markdown: true,
+        immediate: true,
+      });
     }
   }
 
@@ -5869,6 +6122,7 @@ renderChatColorPresets();
 setChatColorSelection(chatColorState.selected);
 
 attachBtn.addEventListener("click", () => fileInput.click());
+bindWelcomePanel();
 fileInput.addEventListener("change", () => {
   addPendingFiles(fileInput.files);
   fileInput.value = "";

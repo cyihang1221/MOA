@@ -19,6 +19,10 @@ from web_frontend.backend.agent_a.massomics_tool_map import plan_document_to_tas
 from web_frontend.backend.json_parse import extract_first_json_object
 
 
+class MassOmicsPlannerError(RuntimeError):
+    """MassOmics 规划失败。"""
+
+
 def _join_str(value: Any) -> str:
     if value is None:
         return ""
@@ -143,6 +147,7 @@ def run_massomics_planning(
     llm_client: Any,
     temperature: float = 0.0,
     project_root: Path | None = None,
+    skill_context: str | None = None,
 ) -> tuple[list[str], dict[str, Any], dict[str, Any]]:
     """执行 MassOmics 风格规划。
 
@@ -172,6 +177,18 @@ def run_massomics_planning(
         if inspect_txt.strip()
         else ""
     )
+    skill_txt = (skill_context or "").strip()
+    if len(skill_txt) > 7000:
+        skill_txt = skill_txt[:7000] + "\n…(skill 已截断)"
+    skill_block = ""
+    if skill_txt:
+        skill_block = (
+            "\n[文献参数 Skill — 优先级：用户指令 > 本 Skill > 知识库默认。"
+            "必须把文献软件名映射到当前已注册工具，禁止发明未注册工具。"
+            "湿法化学、细胞、斑马鱼、国标感官不得写成可执行计算步，除非用户已提供对应结果表。"
+            "样本分组以实际 metadata 为准；若与论文五等级设计不一致，按实际分组规划并在 goal 中注明。]\n"
+            f"{skill_txt}\n"
+        )
     user_prompt = (
         f"数据路径: {upload}\n"
         f"输出目录: {output}\n"
@@ -182,6 +199,7 @@ def run_massomics_planning(
         + (f"\n{insp}" if insp else "")
         + (f"\n{meta_txt}\n" if meta_txt else "")
         + (f"\n{refs}" if refs else "")
+        + skill_block
         + "\n请基于上述信息输出分析计划 JSON。"
     )
 
@@ -221,6 +239,7 @@ def run_massomics_planning(
         "data_inspect": bool(inspect_txt.strip()),
         "n_steps": len(plan_dict.get("steps") or []),
         "n_tasks_mapped": len(tasks),
+        "injected_skill": bool(skill_txt),
     }
     return tasks, plan_dict, meta
 

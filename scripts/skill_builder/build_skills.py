@@ -65,6 +65,17 @@ SCENARIO_TRIGGERS = {
     "general_metabolomics": ["代谢组", "metabolomics", "LC-MS", "完整流程"],
 }
 
+# 低于 min_score 仍写入单篇 Skill（用户点名复现的论文）
+PINNED_RECIPE_MARKERS = (
+    "10.1016_j.fochx.2026.103843",
+    "j.fochx.2026.103843",
+)
+
+
+def _recipe_pinned(recipe) -> bool:
+    blob = f"{recipe.path} {recipe.source_paper} {recipe.paper_title}".lower()
+    return any(m.lower() in blob for m in PINNED_RECIPE_MARKERS)
+
 
 def build(
     *,
@@ -123,6 +134,16 @@ def build(
 
     # 1) 单篇高质量 Skill
     paper_pick = filtered[:max_paper_skills]
+    pinned = [r for r in recipes if _recipe_pinned(r) and r.steps]
+    seen_paths = {r.path for r in paper_pick}
+    for r in pinned:
+        if r.path not in seen_paths:
+            paper_pick.append(r)
+            seen_paths.add(r.path)
+            print(
+                f"[skill_builder] pinned paper skill: {r.paper_title[:60]} "
+                f"(score={r.reproducibility_score})"
+            )
     for r in paper_pick:
         domain = infer_domain(r)
         stem = slugify(

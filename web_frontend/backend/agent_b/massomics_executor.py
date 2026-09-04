@@ -41,6 +41,7 @@ async def stream_massomics_b_execution(
     session_id: str,
     project_root: Path | None = None,
     plan_path: str | Path | None = None,
+    goal_text: str = "",
     cancel_event: Optional[asyncio.Event] = None,
     should_stop: Optional[Callable[[], Awaitable[bool]]] = None,
 ) -> AsyncIterator[dict[str, Any]]:
@@ -168,6 +169,24 @@ async def stream_massomics_b_execution(
     if not receipt:
         yield {"error": f"Agent B 未写入回执（退出码 {returncode}）"}
         return
+
+    # B 的 mixOmics ggplot 不是文献图；立刻用 Vega-Lite 按文献样式重绘可编辑 PNG。
+    try:
+        from web_frontend.backend.plot_edit_service import ensure_default_plot_configs
+
+        n_lit = len(
+            ensure_default_plot_configs(
+                outputspace,
+                upload_dir=upload if upload.is_dir() else None,
+                goal_text=goal_text,
+                project_root=project_root,
+                use_literature=True,
+            )
+        )
+        if n_lit:
+            yield {"delta": f"📚 已按文献样式首次渲染 {n_lit} 张结果图（Vega-Lite）。\n"}
+    except Exception as exc:
+        yield {"delta": f"ℹ️ 文献首渲跳过：{exc}\n"}
 
     had_failure = bool(receipt.get("had_tool_failure")) or returncode != 0
     status = str(receipt.get("status") or ("failed" if had_failure else "success"))

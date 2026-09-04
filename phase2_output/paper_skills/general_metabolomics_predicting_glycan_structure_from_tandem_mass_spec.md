@@ -54,3 +54,8 @@
 - 用户意图优先；本 Skill 提供文献证据级工具顺序与参数。
 - 仅使用当前系统已注册的 MCP/本地工具；文献工具名需映射到可用工具。
 - 出图时优先满足 Expected Figures；解释需回扣 Analysis Goal。
+- 湿法/细胞/斑马鱼/国标感官不得写成 Agent B 可执行步，除非用户已上传对应结果表。
+- 以实际 metadata 分组为准；论文五等级设计与 BK/DY/QC 会话不是同一实验。
+
+## Available-tool mapping
+- `msconvert` → convert_raw_to_mzml_msconvert 或 convert_raw_to_mzml_ThermoRawFileParser

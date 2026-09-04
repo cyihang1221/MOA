@@ -2,6 +2,9 @@
 from __future__ import annotations
 
 import csv
+import os
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -396,6 +399,130 @@ class KeggEmptyAndDatabaseTest(unittest.TestCase):
             text = result.read_text(encoding="utf-8")
             self.assertIn("p.adjust", text)
             self.assertLessEqual(text.count("\n"), 2)
+
+
+class DifferentialAndIdHandoffTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.b_root = ensure_b_importable()
+
+    def test_extract_accepts_feature_id_column(self) -> None:
+        from src.tools.step9_differential_feature_extraction import (
+            extract_differential_features_impl,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            table = root / "diff.csv"
+            _write_csv(table, ["feature_id", "VIP"], [["FT1", 1.5], ["FT2", 2.0]])
+            mgf = root / "spectra.mgf"
+            mgf.write_text(
+                "BEGIN IONS\nTITLE=FT1\nPEPMASS=100\n1 10\nEND IONS\n"
+                "BEGIN IONS\nTITLE=FT9\nPEPMASS=200\n2 20\nEND IONS\n",
+                encoding="utf-8",
+            )
+            out = root / "out"
+            extract_differential_features_impl(str(table), str(mgf), str(out))
+            feat = (out / "differential_feature_table.csv").read_text(encoding="utf-8")
+            self.assertIn("Feature", feat)
+            spectra = (out / "differential_spectra.mgf").read_text(encoding="utf-8")
+            self.assertIn("TITLE=FT1", spectra)
+            self.assertNotIn("TITLE=FT9", spectra)
+
+    def test_identification_keeps_differential_mgf(self) -> None:
+        from src.tools._artifact_resolve import materialize_identification_dir
+
+        with tempfile.TemporaryDirectory() as tmp:
+            src = Path(tmp) / "in"
+            dest = Path(tmp) / "id"
+            src.mkdir()
+            _write_csv(
+                src / "differential_feature_table.csv",
+                ["feature_id", "mz", "rt_med", "A"],
+                [["FT1", 100.0, 10.0, 1]],
+            )
+            blocks = "".join(
+                f"BEGIN IONS\nTITLE=FT{i}\nPEPMASS=100\n1 10\nEND IONS\n" for i in range(3)
+            )
+            (src / "differential_spectra.mgf").write_text(blocks, encoding="utf-8")
+            os.environ["ABC_MAX_ID_SPECTRA"] = "1"
+            try:
+                materialize_identification_dir(str(src), str(dest))
+            finally:
+                os.environ.pop("ABC_MAX_ID_SPECTRA", None)
+            text = (dest / "differential_spectra.mgf").read_text(encoding="utf-8")
+            self.assertEqual(text.count("BEGIN IONS"), 3)
+            header = (dest / "differential_feature_table.csv").read_text(
+                encoding="utf-8"
+            ).splitlines()[0]
+            self.assertTrue(header.startswith("Feature,"))
+
+    def test_pairwise_diff_excludes_qc(self) -> None:
+        from src.tools.step8_statistical_analysis import (
+            ensure_pairwise_differential_metabolites,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            samples = ["BK1", "BK2", "BK3", "DY1", "DY2", "DY3", "QC1", "QC2"]
+            header = ["feature_id", "mz", "rt_med", *samples]
+            rows = []
+            for i in range(8):
+                fid = f"FT{i:04d}"
+                bk = [10 + i, 11 + i, 12 + i]
+                dy = [40 + i, 41 + i, 42 + i]
+                qc = [20, 21]
+                rows.append([fid, 100 + i, 10.0, *bk, *dy, *qc])
+            _write_csv(root / "feature_table_filtered_imputed.csv", header, rows)
+            meta_rows = []
+            for s in samples:
+                if s.startswith("BK"):
+                    meta_rows.append([s, "BK"])
+                elif s.startswith("DY"):
+                    meta_rows.append([s, "DY"])
+                else:
+                    meta_rows.append([s, "QC"])
+            _write_csv(root / "metadata.csv", ["Sample", "Group"], meta_rows)
+            vip_rows = [[f"FT{i:04d}", 2.0 if i < 4 else 0.2] for i in range(8)]
+            _write_csv(root / "vip_scores.csv", ["Feature", "VIP"], vip_rows)
+            dest = ensure_pairwise_differential_metabolites(
+                str(root),
+                str(root / "metadata.csv"),
+                str(root),
+                vip_threshold=1.0,
+                log2fc_threshold=0.58,
+            )
+            self.assertIsNotNone(dest)
+            assert dest is not None
+            text = Path(dest).read_text(encoding="utf-8")
+            self.assertIn("Feature", text)
+            self.assertGreater(text.count("\n"), 1)
+            summary = (root / "differential_summary.txt").read_text(encoding="utf-8")
+            self.assertIn("QC excluded", summary)
+
+
+class ExecuteCliImportTest(unittest.TestCase):
+    def test_artifact_bridge_imports_without_web_frontend_package(self) -> None:
+        """execute_cli 子进程 PYTHONPATH 只有 B 仓根，顶层不得依赖 web_frontend 包。"""
+        agent_b_dir = Path(__file__).resolve().parent / "agent_b"
+        script = (
+            "from artifact_bridge import inspect_metadata_csv, prepare_tool_args\n"
+            "assert callable(inspect_metadata_csv) and callable(prepare_tool_args)\n"
+            "print('ok')\n"
+        )
+        env = os.environ.copy()
+        env["PYTHONPATH"] = str(agent_b_dir)
+        proc = subprocess.run(
+            [sys.executable, "-c", script],
+            env=env,
+            cwd=str(agent_b_dir),
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn("ok", proc.stdout)
 
 
 if __name__ == "__main__":

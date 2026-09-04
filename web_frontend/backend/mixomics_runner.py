@@ -569,7 +569,11 @@ def run_statistical_analysis_mixomics(
     try:
         from web_frontend.backend.plot_edit_service import ensure_default_plot_configs
 
-        ensure_default_plot_configs(output_path, upload_dir=Path(meta_csv).parent if meta_csv else None)
+        ensure_default_plot_configs(
+            output_path,
+            upload_dir=Path(meta_csv).parent if meta_csv else None,
+            use_literature=True,
+        )
     except Exception as exc:
         print(f"    ⚠️ Default plot_config backfill skipped: {exc}")
     return log_path

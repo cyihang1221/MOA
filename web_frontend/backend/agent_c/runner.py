@@ -115,13 +115,15 @@ def run_agent_c(
         repro_checklist = checklist_inventory(recipe, inv)
     meta = metadata_csv or inv.get("metadata_csv") or find_metadata_csv(results)
 
-    goal = (goal_text or "").strip() or _plan_goal_text(parsed)
+    from web_frontend.backend.literature_plot_knowledge import effective_plot_goal_text
+
+    goal = effective_plot_goal_text(user_message=goal_text, plan=parsed)
     figure_mode_effective = figure_mode
-    insights_enabled = False
     from web_frontend.backend.agent_c.report_insights import should_enable_insights
 
     insights_enabled = should_enable_insights(use_llm=use_llm, repro_recipe_id=repro_recipe_id)
-    # 深度报告：仅按方案出图，B 侧已有 PNG 走 existing_figures，避免重复渲染
+    # 深度报告仍用 LLM 写解读；B 侧 ggplot 只进 existing_figures 附录。
+    # 首次出图必须走 Vega-Lite 文献样式，不能因为写报告就复制 mixOmics PNG。
 
     jobs = match_figures(parsed, inv, figure_mode=figure_mode_effective)
     from web_frontend.backend.agent_c.figure_checklist import (
@@ -142,7 +144,7 @@ def run_agent_c(
         goal_text=goal,
         project_root=Path(project_root) if project_root else None,
         use_literature=use_literature,
-        use_existing_when_available=insights_enabled,
+        use_existing_when_available=insights_enabled and not use_literature,
     )
     captions_path = write_captions_json(figures, out)
     warnings = list(parsed.get("warnings") or []) + list(inv.get("warnings") or [])

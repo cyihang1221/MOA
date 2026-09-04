@@ -996,6 +996,12 @@ def agent_c_inventory(req: AgentCInventoryRequest):
     return inventory_results(results_dir, metadata_csv=metadata)
 
 
+def _session_plot_goal(session_id: str) -> str:
+    from web_frontend.backend.literature_plot_knowledge import session_goal_text
+
+    return session_goal_text(db_get_session(session_id), db_get_messages(session_id))
+
+
 @app.post("/api/agent-c/run")
 def agent_c_run(req: AgentCRunRequest):
     from web_frontend.backend.agent_c import run_agent_c
@@ -1014,6 +1020,7 @@ def agent_c_run(req: AgentCRunRequest):
             language=req.language,
             use_llm=bool(req.use_llm),
             repro_recipe_id=req.repro_recipe_id,
+            project_root=PROJECT_ROOT,
         )
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -1117,6 +1124,8 @@ def agent_c_run_session(session_id: str, req: AgentCSessionRunRequest):
             figure_mode=req.figure_mode or "plan",
             language=req.language,
             use_llm=bool(req.use_llm),
+            goal_text=_session_plot_goal(session_id),
+            project_root=PROJECT_ROOT,
         )
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -2183,6 +2192,7 @@ async def _stream_agent_c_sse_async(req: ChatStreamRequest, request: Request, *,
             storage_slug=storage_slug,
             user_message=req.user_message,
             intent=intent,
+            goal_text=_session_plot_goal(req.session_id),
         ):
             if is_cancelled(cancel_event):
                 yield _sse_pack({"delta": "\n\n⚠️ **已终止**\n"})
@@ -2322,6 +2332,7 @@ async def _stream_agent_sse_async(
                         storage_slug=storage_slug,
                         user_message=req.user_message,
                         intent="c_report",
+                        goal_text=_session_plot_goal(req.session_id),
                     ):
                         if is_cancelled(cancel_event):
                             was_cancelled = True

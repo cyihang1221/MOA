@@ -202,8 +202,9 @@ def supplement_plot_literature_rag(
 
 
 def _phase2_registry_path(project_root: Path | None = None) -> Path:
-    root = project_root or _project_root()
-    return root / "phase2_output" / "skill_registry.json"
+    from web_frontend.backend.literature_paths import resolve_phase2_registry
+
+    return resolve_phase2_registry(project_root if project_root is not None else _project_root())
 
 
 def _parse_skill_frontmatter(text: str) -> tuple[str, str, list[str]]:
@@ -798,6 +799,67 @@ def session_goal_text(session: dict | None, messages: list[dict] | None) -> str:
     return "\n".join(parts[-6:])
 
 
+def _is_weak_plot_goal(text: str) -> bool:
+    """执行口令（确认计划等）不能当文献匹配上下文。"""
+    msg = (text or "").strip()
+    if not msg:
+        return True
+    try:
+        from web_frontend.backend.workflow import is_plan_confirmation
+
+        if is_plan_confirmation(msg):
+            return True
+    except Exception:
+        pass
+    weak = {
+        "确认计划",
+        "开始执行",
+        "开始分析",
+        "执行分析",
+        "写报告",
+        "按方案出图",
+        "出图",
+    }
+    return msg in weak or msg.lower() in {"execute", "run", "report"}
+
+
+def effective_plot_goal_text(
+    *,
+    user_message: str = "",
+    plan: dict[str, Any] | None = None,
+    session: dict | None = None,
+    messages: list[dict] | None = None,
+) -> str:
+    """首次出图用的文献匹配上下文：方案目标优先，忽略「确认计划」口令。"""
+    parts: list[str] = []
+    if isinstance(plan, dict):
+        objective = str(plan.get("objective") or "").strip()
+        if objective:
+            parts.append(objective)
+        for fig in (plan.get("required_visualization") or [])[:6]:
+            if not isinstance(fig, dict):
+                continue
+            for key in ("title", "theme", "purpose"):
+                val = str(fig.get(key) or "").strip()
+                if val:
+                    parts.append(val)
+    sess = session_goal_text(session, messages)
+    if sess.strip():
+        parts.append(sess.strip())
+    msg = (user_message or "").strip()
+    if msg and not _is_weak_plot_goal(msg):
+        parts.append(msg)
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for part in parts:
+        key = part[:120]
+        if key in seen:
+            continue
+        seen.add(key)
+        ordered.append(part)
+    return "\n".join(ordered)[:1200]
+
+
 __all__ = [
     "build_plot_literature_query",
     "env_enabled",
@@ -806,6 +868,7 @@ __all__ = [
     "plot_rag_enabled",
     "rank_skills_for_plot",
     "session_goal_text",
+    "effective_plot_goal_text",
     "skill_plot_relevance",
     "supplement_plot_literature_rag",
     "PLOT_TYPE_TERMS",

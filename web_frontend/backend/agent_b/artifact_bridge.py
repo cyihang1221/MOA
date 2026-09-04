@@ -2,7 +2,8 @@
 
 B 工具多数硬编码文件名；网页编排器在调用 MCP 前做一次落盘，不把 A/B/C 合成一个 Agent。
 实现复用 MassOmics-Agent-B 的 ``src.tools._artifact_resolve``；子进程由 execute_cli 注入
-PYTHONPATH，网页进程内则用 ``ensure_b_importable`` 扩展 ``src`` 包搜索路径。
+PYTHONPATH（只有 B 仓根，没有 ``web_frontend`` 包）。网页进程内则用
+``ensure_b_importable`` 扩展 ``src`` 包搜索路径。
 """
 from __future__ import annotations
 
@@ -12,7 +13,15 @@ import types
 from pathlib import Path
 from typing import Any
 
-from web_frontend.backend.agent_b.b_imports import ensure_b_importable
+
+def _ensure_b_src() -> None:
+    """网页进程补 B 的 src 搜索路径；execute_cli 子进程里 B 根已在 sys.path。"""
+    try:
+        from web_frontend.backend.agent_b.b_imports import ensure_b_importable
+    except ImportError:
+        return
+    ensure_b_importable()
+
 
 _PEAK_TABLE_TOOLS = frozenset(
     {
@@ -77,7 +86,7 @@ def prepare_tool_args(
     run_output_dir: str,
 ) -> dict[str, Any]:
     """按工具类型整理 input_dir / input_mgf；失败则原样返回，交给工具自己报错。"""
-    ensure_b_importable()
+    _ensure_b_src()
     from src.tools._artifact_resolve import (
         materialize_identification_dir,
         materialize_peak_table_dir,
@@ -112,6 +121,17 @@ def prepare_tool_args(
                     out["differential_csv"] = str(hits[0].resolve())
             elif csv_path.is_file():
                 out["differential_csv"] = str(csv_path.resolve())
+            if not str(out.get("differential_csv") or "").strip() or not Path(
+                str(out.get("differential_csv"))
+            ).is_file():
+                for name in ("differential_metabolites.csv", "vip_gt_1.csv"):
+                    hits = []
+                    for root in [Path(run_dir)] if run_dir else []:
+                        hits.extend(root.rglob(name))
+                    hits = [p for p in hits if p.is_file() and p.stat().st_size > 0]
+                    if hits:
+                        out["differential_csv"] = str(hits[0].resolve())
+                        break
             mgf = str(out.get("input_mgf") or "").strip()
             if not mgf or not Path(mgf).is_file():
                 search = input_dir or run_dir
@@ -120,6 +140,19 @@ def prepare_tool_args(
                     extra_roots=extras,
                     prefer_differential=False,
                 )
+        elif tool_name == "kegg_compound_enrichment":
+            annot = "differential_feature_table_library_match_clean&add.csv"
+            current = Path(str(out.get("input_dir") or ""))
+            if not (current / annot).is_file():
+                for root in [Path(run_dir)] if run_dir else []:
+                    hits = [
+                        p
+                        for p in root.rglob(annot)
+                        if p.is_file() and p.stat().st_size > 0
+                    ]
+                    if hits:
+                        out["input_dir"] = str(hits[0].parent.resolve())
+                        break
         elif tool_name in _PEAK_TABLE_TOOLS and input_dir:
             out["input_dir"] = materialize_peak_table_dir(
                 input_dir, dest / "peaks", extra_roots=extras
@@ -327,7 +360,7 @@ def adopt_legacy_output_dir(
     """把旧的 <category>/<mcp_tool>/ 迁到 <工具名称>/结果/，便于跳过重跑。"""
     import shutil
 
-    ensure_b_importable()
+    _ensure_b_src()
     from src.output_layout import find_legacy_output_dir
 
     if not new_output_dir:
