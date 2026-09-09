@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MassAgent — 代谢组学科研分析智能体</title>
+  <meta name="description" content="MassAgent / MOA：数据 + 科学问题 → 分析规划 → 工具执行 → 可视化与科研报告。Agent A/B/C 协同，Web 编排一站完成。" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <a class="skip" href="#main">跳到主要内容</a>
+
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="#top" aria-label="MassAgent 首页">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span class="brand-name">MassAgent</span>
+      </a>
+      <nav class="nav" aria-label="主导航">
+        <a href="#pipeline">流程</a>
+        <a href="#agents">三 Agent</a>
+        <a href="#frontend">Web 编排</a>
+        <a href="#start">开始</a>
+      </nav>
+      <a class="btn btn-ghost" href="https://github.com/cyihang1221/MOA" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </header>
+
+  <main id="main">
+    <section id="top" class="hero">
+      <div class="hero-bg" aria-hidden="true">
+        <svg class="hero-spectrum" viewBox="0 0 1200 640" preserveAspectRatio="xMidYMid slice">
+          <defs>
+            <linearGradient id="peakGlow" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="#1ec8b8" stop-opacity="0" />
+              <stop offset="100%" stop-color="#1ec8b8" stop-opacity="0.55" />
+            </linearGradient>
+          </defs>
+          <path class="baseline" d="M0 520 H1200" />
+          <g class="peaks">
+            <path d="M80 520 L110 420 L140 520" />
+            <path d="M180 520 L210 360 L240 520" />
+            <path d="M280 520 L330 180 L380 520" />
+            <path d="M420 520 L450 400 L480 520" />
+            <path d="M520 520 L560 240 L600 520" />
+            <path d="M640 520 L670 390 L700 520" />
+            <path d="M740 520 L800 120 L860 520" />
+            <path d="M900 520 L930 350 L960 520" />
+            <path d="M1000 520 L1030 430 L1060 520" />
+            <path d="M1100 520 L1125 380 L1150 520" />
+          </g>
+          <path class="glow-fill" fill="url(#peakGlow)" d="M740 520 L800 120 L860 520 Z" />
+        </svg>
+      </div>
+      <div class="wrap hero-content">
+        <p class="brand-hero">MassAgent</p>
+        <h1>数据与科学问题进，分析方案、结果图与报告出</h1>
+        <p class="lede">面向代谢组学等科研数据分析的任务驱动智能体：Agent A 规划、Agent B 执行、Agent C 可视化与报告；Web 端编排上传、计划评审、执行与出图。</p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="#agents">了解三 Agent</a>
+          <a class="btn btn-secondary" href="https://github.com/cyihang1221/MOA" target="_blank" rel="noopener">查看仓库</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="pipeline" class="section section-pipeline">
+      <div class="wrap">
+        <p class="eyebrow">工作流</p>
+        <h2>从任务到报告的闭环</h2>
+        <p class="section-lede">用户只提供原始数据与分析目标；系统完成需求理解、Pipeline 构建、工具调用、科研级可视化与报告撰写。未确认计划不得启动执行。</p>
+        <ol class="flow">
+          <li>
+            <span class="flow-num">01</span>
+            <strong>输入</strong>
+            <span>上传 mzML / RAW / 特征表，描述分析目标，可选参考文献与元数据</span>
+          </li>
+          <li>
+            <span class="flow-num">02</span>
+            <strong>规划</strong>
+            <span>Agent A 生成结构化分析方案：流程、工具、预期结果与目标图表</span>
+          </li>
+          <li>
+            <span class="flow-num">03</span>
+            <strong>评审</strong>
+            <span>用户确认或提出修改；反馈修订后再次评审，直至锁定计划</span>
+          </li>
+          <li>
+            <span class="flow-num">04</span>
+            <strong>执行</strong>
+            <span>Agent B 按计划调用预处理、统计、注释、通路等工具</span>
+          </li>
+          <li>
+            <span class="flow-num">05</span>
+            <strong>展示</strong>
+            <span>Agent C 出图、解读并汇总 Markdown/PDF 报告；支持改图与拼图迭代</span>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section id="agents" class="section section-agents">
+      <div class="wrap">
+        <p class="eyebrow">智能体分工</p>
+        <h2>三个角色，一条契约</h2>
+        <p class="section-lede">A → B → C 串行协同；分析计划文档是唯一接口契约。网页对用户透明地编排三者。</p>
+        <div class="agent-grid">
+          <article class="agent">
+            <header>
+              <span class="agent-tag">Agent A</span>
+              <h3>分析规划</h3>
+            </header>
+            <p>理解数据与科研问题，设计 Pipeline：步骤目标、工具调配、预期输出、可视化方案与报告结构。</p>
+            <ul>
+              <li>目的驱动，禁止套固定模板</li>
+              <li>输出可评审的方案文档</li>
+              <li>文献 / Skill / RAG 辅助选型</li>
+            </ul>
+            <p class="io"><span>入</span> 数据 + 任务 → <span>出</span> 分析方案</p>
+          </article>
+          <article class="agent">
+            <header>
+              <span class="agent-tag">Agent B</span>
+              <h3>分析执行</h3>
+            </header>
+            <p>解析已确认计划，自动调用质谱与统计工具，完成预处理、建模与结果整理，写入标准化结果目录。</p>
+            <ul>
+              <li>须先通过用户计划确认</li>
+              <li>日志可复现（参数与版本）</li>
+              <li>失败可降级或结构化报错</li>
+            </ul>
+            <p class="io"><span>入</span> 方案 + 数据 → <span>出</span> 分析结果</p>
+          </article>
+          <article class="agent">
+            <header>
+              <span class="agent-tag">Agent C</span>
+              <h3>可视化与报告</h3>
+            </header>
+            <p>按方案与 B 的结果生成科研图表、结果解释与最终报告；支持完成后的改图、拼图与报告迭代。</p>
+            <ul>
+              <li>图随分析目的设计，非固定套图</li>
+              <li>结论绑定图表与结果文件</li>
+              <li>Markdown / PDF 输出</li>
+            </ul>
+            <p class="io"><span>入</span> 方案 + 结果 → <span>出</span> 图 + 报告</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="frontend" class="section section-frontend">
+      <div class="wrap">
+        <p class="eyebrow">Web 编排器</p>
+        <h2>一个会话走完上传到报告</h2>
+        <p class="section-lede">前端是 A/B/C 的编排界面：聊天式交互、侧栏五步进度与计划评审卡片，执行态避免幻觉进度。</p>
+        <div class="feature-list">
+          <div>
+            <h3>欢迎与上传</h3>
+            <p>拖放上传、分析目标示例、服务器路径导入大体积 RAW（硬链接，不经浏览器）。</p>
+          </div>
+          <div>
+            <h3>计划评审</h3>
+            <p>可滚动计划卡片与目录；确认执行或自然语言修改意见；锁定前可多轮修订。</p>
+          </div>
+          <div>
+            <h3>状态机进度</h3>
+            <p>侧栏同步 WAITING → PLANNING → 待确认 → EXECUTING → REPORTING；重置会真正清空任务与工作区。</p>
+          </div>
+          <div>
+            <h3>图与报告</h3>
+            <p>出图后可取色改图、拼图；顶栏进入报告；流式回复贴底跟随，支持中英文界面。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="capability" class="section section-capability">
+      <div class="wrap">
+        <p class="eyebrow">能力范围</p>
+        <h2>代谢组学分析链路</h2>
+        <ul class="chips">
+          <li>格式转换 / 峰检测对齐</li>
+          <li>XCMS · MZmine · OpenMS</li>
+          <li>归一化与差异统计</li>
+          <li>分子网络 / 谱库注释</li>
+          <li>通路富集 · KEGG</li>
+          <li>PCA / OPLS · 火山图 · 热图</li>
+          <li>文献 Skill 与参数 RAG</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="start" class="section section-start">
+      <div class="wrap start-panel">
+        <div>
+          <p class="eyebrow">开始使用</p>
+          <h2>本地运行与仓库</h2>
+          <p class="section-lede">完整依赖见仓库 <code>environment/install.md</code>。Web 编排器请从 MassOmics-Agent 前端目录启动（以仓库 README 为准）。</p>
+          <pre class="code"><code>conda activate MOA
+# 按 install.md 安装依赖后
+python -m uvicorn web_frontend.backend.webapp:app --host 127.0.0.1 --port 8010</code></pre>
+        </div>
+        <div class="start-links">
+          <a class="btn btn-primary" href="https://github.com/cyihang1221/MOA" target="_blank" rel="noopener">MOA 仓库</a>
+          <a class="btn btn-secondary" href="https://github.com/cyihang1221/MOA/blob/graph/environment/install.md" target="_blank" rel="noopener">安装说明</a>
+          <a class="btn btn-secondary" href="https://github.com/cyihang1221/MOA/blob/graph/项目需求文档.md" target="_blank" rel="noopener">需求文档</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-inner">
+      <span class="brand-name">MassAgent</span>
+      <span>科研数据分析智能体 · A / B / C + Web 编排</span>
+      <a href="https://github.com/cyihang1221/MOA" target="_blank" rel="noopener">github.com/cyihang1221/MOA</a>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
