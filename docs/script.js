@@ -3,7 +3,7 @@
   if (reduce) return;
 
   const targets = document.querySelectorAll(
-    ".section h2, .flow li, .agent, .feature-list > div, .chips"
+    ".section h2, .flow li, .agent, .feature-list > div, .chips, .case-block, .shot"
   );
   targets.forEach((el) => el.classList.add("reveal"));
 
