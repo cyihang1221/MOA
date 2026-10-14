@@ -3,7 +3,7 @@
 在 WEB_AGENT_A_BACKEND=massomics 时：
 1. 加载 MassOmics KnowledgeBase + 数据探测
 2. 用 MassOmics Planner 系统提示 + Web LLM 生成 PlanDocument
-3. 写入 plan_<timestamp>.json/.md 供 Agent B（MassOmics-Agent-B）与 Agent C 读取
+3. 写入 plan_<timestamp>.json/.md 供 Agent B（complete 同根执行器）与 Agent C 读取
 4. 同步写出 analysis_plan.md 供网页评审；并映射为 local B 可执行任务（WEB_AGENT_B_BACKEND=local 时使用）
 """
 from __future__ import annotations

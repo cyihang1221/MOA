@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 from typing import Any
 
+from web_frontend.backend.agent_c.nature_distill import vision_system_prompt
 from web_frontend.backend.json_parse import extract_first_json_object
 
 _VISION_SYSTEM = """你是代谢组学/质谱科研图表解读助手。用户会提供一张已生成的统计图 PNG 及辅助文字。
@@ -22,12 +23,19 @@ _VISION_SYSTEM = """你是代谢组学/质谱科研图表解读助手。用户�
 confidence 0~1：图像清晰且模式明确则高；模糊或无法判断则低。
 """
 
+_VISION_SYSTEM = vision_system_prompt(_VISION_SYSTEM)
+
 _MAX_BYTES = 4 * 1024 * 1024
 
 
 def vision_enabled() -> bool:
     v = os.getenv("MASSAGENT_FIGURE_VISION", "1").strip().lower()
     return v not in {"0", "false", "off", "no"}
+
+
+def should_attach_figure_vision() -> bool:
+    """读图观察独立于深度解读（use_llm）。默认开启；MASSAGENT_FIGURE_VISION=0 关闭。"""
+    return vision_enabled()
 
 
 def _vision_model() -> str | None:
@@ -154,5 +162,6 @@ __all__ = [
     "attach_vision_to_figures",
     "describe_figure_image",
     "format_vision_markdown",
+    "should_attach_figure_vision",
     "vision_enabled",
 ]

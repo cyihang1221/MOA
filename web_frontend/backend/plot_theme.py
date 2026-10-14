@@ -296,10 +296,52 @@ def normalize_plot_config(
 
     # marks.top_n 等扩展字段
     if isinstance(marks_in, dict):
-        for extra in ("top_n", "top_frags", "top_motifs", "top_spectra"):
+        for extra in ("top_n", "top_frags", "top_motifs", "top_spectra", "vip_threshold"):
             val = marks_in.get(extra)
             if isinstance(val, (int, float)) and val > 0:
-                marks[extra] = int(val)
+                marks[extra] = int(val) if extra != "vip_threshold" else float(val)
+
+    ellipse = None
+    if isinstance(raw, dict) and "ellipse" in raw:
+        if isinstance(raw["ellipse"], dict):
+            ellipse = {"show": bool(raw["ellipse"].get("show", True))}
+        else:
+            ellipse = bool(raw["ellipse"])
+
+    hide_isolates = None
+    if isinstance(raw, dict) and "hide_isolates" in raw:
+        hide_isolates = bool(raw["hide_isolates"])
+
+    show_grid = None
+    if isinstance(raw, dict) and "show_grid" in raw:
+        show_grid = bool(raw["show_grid"])
+
+    vip_threshold = None
+    if isinstance(raw, dict) and isinstance(raw.get("vip_threshold"), (int, float)):
+        vip_threshold = float(raw["vip_threshold"])
+
+    cmap = ""
+    if isinstance(raw, dict) and isinstance(raw.get("cmap"), str) and raw["cmap"].strip():
+        cmap = raw["cmap"].strip()
+
+    annotation_columns: list[str] = []
+    if isinstance(raw, dict) and isinstance(raw.get("annotation_columns"), (list, tuple)):
+        annotation_columns = [str(x) for x in raw["annotation_columns"] if str(x).strip()]
+
+    score_style = "simca" if plot_type in {"pca", "plsda"} else ""
+    size_by = None
+    if isinstance(raw, dict):
+        asked = str(raw.get("score_style") or "").strip().lower()
+        if asked in {"ggplot", "ggplot2"}:
+            score_style = "ggplot"
+        elif asked == "simca":
+            score_style = "simca"
+        if "size_by" in raw:
+            raw_size = raw.get("size_by")
+            if raw_size in (None, False, ""):
+                size_by = ""
+            else:
+                size_by = str(raw_size).strip()
 
     return {
         "version": 2,
@@ -321,6 +363,14 @@ def normalize_plot_config(
         "cluster": cluster,
         "thresholds": thresholds,
         "color_channel": color_channel,
+        "ellipse": ellipse,
+        "hide_isolates": hide_isolates,
+        "show_grid": show_grid,
+        "vip_threshold": vip_threshold,
+        "cmap": cmap,
+        "annotation_columns": annotation_columns,
+        "score_style": score_style,
+        "size_by": size_by,
     }
 
 
@@ -394,6 +444,9 @@ def merge_plot_config(base: dict[str, Any], patch: dict[str, Any]) -> dict[str, 
         merged["thresholds"] = thr
     if isinstance(patch.get("color_channel"), str) and patch["color_channel"].strip():
         merged["color_channel"] = patch["color_channel"].strip()
+    for key in ("ellipse", "hide_isolates", "show_grid", "vip_threshold", "cmap", "annotation_columns", "score_style", "size_by"):
+        if key in patch:
+            merged[key] = patch[key]
     for section in ("axes", "legend", "marks", "histogram"):
         if isinstance(patch.get(section), dict):
             merged.setdefault(section, {})

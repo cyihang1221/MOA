@@ -177,6 +177,25 @@ def apply_preferred_png_to_figures(
         )
         if not preferred:
             continue
+        current = fig.get("png")
+        current_path = Path(str(current)) if current else None
+        from web_frontend.backend.agent_c.nature_distill.journal_export import (
+            is_journal_plot,
+            sidecar_path_for,
+        )
+
+        # 投稿终稿：C 已写出 600dpi sidecar 时，不要被 B 侧默认 PNG 换掉。
+        # edited_plots 用户改图仍优先。
+        preferred_is_edit = "edited_plots" in preferred.parts
+        if (
+            not preferred_is_edit
+            and is_journal_plot(plot_type)
+            and fig.get("status") == "rendered"
+            and current_path is not None
+            and current_path.is_file()
+            and sidecar_path_for(current_path).is_file()
+        ):
+            continue
         fig["png"] = str(preferred)
         if fig.get("status") == "missing_data":
             fig["status"] = "copied_existing"

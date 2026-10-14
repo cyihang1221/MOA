@@ -1,7 +1,7 @@
 """
 Web 端编排：A 规划、B 执行、C 出图（三个独立智能体）。
 
-默认 Agent B 走 MassOmics-Agent-B（origin/B）独立进程，不使用本仓库 src/mcp_server。
+默认 Agent B 走 complete 同根执行器（优先 MassOmics-Agent-B = origin/complete），不使用本仓库根 src/mcp_server。
 ``WEB_AGENT_B_BACKEND=local`` 时仍可回退到本地 MCP。
 RAG 索引目录由 webapp 传入（softwares_database / softwares_database_RAG）。
 """
@@ -590,6 +590,12 @@ async def stream_agent_pipeline(
         plan_resp: str | None = None
         used_a = "local"
 
+        if b_backend == "massomics" and (
+            a_backend != "massomics" or not bs["massomics_available"]
+        ):
+            yield {"error": "MassOmics Agent B 需要 MassOmics Agent A 生成的计划；请检查 A 后端配置及 plan/ 模块完整性。"}
+            return
+
         if skill_match_enabled():
             yield {"delta": "🧩 正在匹配文献参数 Skill…\n"}
             try:
@@ -600,6 +606,39 @@ async def stream_agent_pipeline(
                 skill_context = str(skill_payload.get("text") or "")
                 skill_matched = list(skill_payload.get("matched") or [])
                 skill_err = skill_payload.get("error")
+                try:
+                    from web_frontend.backend.agent_a.figure_blueprint import match_repro_recipe
+                    from web_frontend.backend.agent_b.skill_param_inject import SIDECAR_NAME, merge_param_dicts, write_sidecar
+                    from web_frontend.backend.b_paper_contract import collect_skill_parameters
+
+                    recipe = match_repro_recipe(f"{user_message}\n{goal}")
+                    skill_params = collect_skill_parameters(
+                        goal_text=f"{user_message}\n{goal}",
+                        skill_text=skill_context,
+                        recipe=recipe,
+                    )
+                    skill_params = merge_param_dicts(
+                        skill_payload.get("parameters") or {},
+                        skill_params,
+                    )
+                    if skill_params:
+                        sidecar_path = Path(paths["outputspace"]) / SIDECAR_NAME
+                        write_sidecar(sidecar_path, skill_params)
+                        bits = []
+                        if skill_params.get("vip_threshold") is not None:
+                            bits.append(f"VIP>{skill_params['vip_threshold']}")
+                        if skill_params.get("prefer_preprocess"):
+                            bits.append(str(skill_params["prefer_preprocess"]))
+                        if bits:
+                            yield {
+                                "delta": (
+                                    f"📎 已写入 B 参数契约 `{SIDECAR_NAME}`："
+                                    + "、".join(bits)
+                                    + "。\n\n"
+                                )
+                            }
+                except Exception as exc:
+                    yield {"delta": f"ℹ️ Skill 参数契约跳过（{exc}）。\n\n"}
                 if skill_matched:
                     yield {
                         "delta": (
@@ -653,6 +692,9 @@ async def stream_agent_pipeline(
                 return
 
             if isinstance(mo_result, Exception):
+                if b_backend == "massomics":
+                    yield {"error": f"MassOmics 规划失败（{mo_result}）；未生成可供 Agent B 执行的计划。"}
+                    return
                 yield {
                     "delta": (
                         f"⚠️ MassOmics 规划失败（{mo_result}），"
@@ -674,6 +716,9 @@ async def stream_agent_pipeline(
                         )
                     }
                 else:
+                    if b_backend == "massomics":
+                        yield {"error": "MassOmics 计划未映射出可执行任务，未进入待确认状态。"}
+                        return
                     yield {
                         "delta": (
                             "⚠️ MassOmics 计划未能映射到 Web MCP 工具，"
@@ -955,6 +1000,16 @@ async def stream_agent_pipeline(
             )
 
             mo_json, mo_md = save_massomics_plan_files(out_path, plan_doc_massomics)
+            if b_backend == "massomics":
+                from web_frontend.backend.agent_b.plan_locate import load_plan_document
+
+                try:
+                    saved_plan = load_plan_document(mo_json)
+                    if not saved_plan["steps"]:
+                        raise ValueError("计划没有可执行步骤")
+                except Exception as exc:
+                    yield {"error": f"MassOmics 计划写入后校验失败（{exc}），未进入待确认状态。"}
+                    return
             plan_payload = write_web_analysis_plan_from_massomics(
                 out_path,
                 plan_doc=plan_doc_massomics,

@@ -101,6 +101,8 @@ def stream_chat_image_merge_deltas(
                 f"- 可在图库点击 **AI 改拼图** 继续调整标签/字号\n\n"
             )
         }
+        if rel_png:
+            yield {"chat_image": {"file": rel_png}}
         yield {"image_merge_done": True, "result": result, "finished": True, "edited": is_edit}
     except ImageMergeError as exc:
         yield {"delta": f"⚠️ 拼图失败：{exc}\n\n"}

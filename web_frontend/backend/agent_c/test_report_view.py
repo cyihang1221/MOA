@@ -97,6 +97,32 @@ class ReportViewTest(unittest.TestCase):
             picked = preferred_png_for_plot_type(root, "pca")
             self.assertEqual(picked, (edited / "pca_plot_intent.png").resolve())
 
+    def test_apply_preferred_keeps_journal_export_png(self) -> None:
+        import json
+        import tempfile
+
+        from web_frontend.backend.agent_c.report_view import apply_preferred_png_to_figures
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            c_png = root / "agent_c_output" / "figures" / "Figure_1__pca_plot.png"
+            c_png.parent.mkdir(parents=True)
+            c_png.write_bytes(b"journal")
+            sidecar = c_png.with_name("Figure_1__pca_plot.journal_export.json")
+            sidecar.write_text(json.dumps({"dpi": 600}), encoding="utf-8")
+            b_png = root / "mixOmics" / "结果" / "pca_plot.png"
+            b_png.parent.mkdir(parents=True)
+            b_png.write_bytes(b"b-default")
+            figures = [
+                {
+                    "plot_type": "pca",
+                    "status": "rendered",
+                    "png": str(c_png),
+                }
+            ]
+            apply_preferred_png_to_figures(figures, root)
+            self.assertEqual(Path(figures[0]["png"]).resolve(), c_png.resolve())
+
     def test_split_markdown_figure_section(self) -> None:
         md = "# T\n\n## 引言\n\nobj\n\n## 图表\n\nfig\n\n## 方法\n\nm\n"
         prose, fig_sec = split_markdown_figure_section(md)

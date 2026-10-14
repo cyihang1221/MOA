@@ -1,12 +1,28 @@
 """会话级目录：项目根下 inputspace / outputspace，按 storage_slug 分子目录。"""
 from __future__ import annotations
 
+import os
 import re
 import shutil
 import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
+
+IMPORTABLE_SUFFIXES = {
+    ".raw",
+    ".mzml",
+    ".mzxml",
+    ".mgf",
+    ".csv",
+    ".tsv",
+    ".txt",
+    ".xlsx",
+    ".xls",
+    ".pdf",
+}
+MAX_IMPORT_FILES = 500
+MAX_IMPORT_DEPTH = 5
 
 INPUTSPACE_ROOT_NAME = "inputspace"
 OUTPUTSPACE_ROOT_NAME = "outputspace"
@@ -106,6 +122,91 @@ def upload_target_dir(upload_root: Path, filename: str) -> Path:
         dest.mkdir(parents=True, exist_ok=True)
         return dest
     return upload_root
+
+
+def collect_importable_files(source: Path) -> list[Path]:
+    """收集服务器本地可导入的质谱/表格文件（不经浏览器上传）。"""
+    source = source.expanduser().resolve()
+    if not source.exists():
+        raise FileNotFoundError(f"路径不存在：{source}")
+    if source.is_file():
+        if source.suffix.lower() not in IMPORTABLE_SUFFIXES:
+            raise ValueError(f"不支持的文件类型：{source.suffix or source.name}")
+        return [source]
+    if not source.is_dir():
+        raise ValueError("路径必须是文件或目录")
+
+    files: list[Path] = []
+
+    def walk(dir_path: Path, depth: int) -> None:
+        if depth > MAX_IMPORT_DEPTH or len(files) >= MAX_IMPORT_FILES:
+            return
+        try:
+            entries = sorted(dir_path.iterdir(), key=lambda p: p.name.lower())
+        except OSError:
+            return
+        for item in entries:
+            if len(files) >= MAX_IMPORT_FILES:
+                return
+            if item.name.startswith("."):
+                continue
+            try:
+                if item.is_dir() and not item.is_symlink():
+                    walk(item, depth + 1)
+                elif item.is_file() and item.suffix.lower() in IMPORTABLE_SUFFIXES:
+                    files.append(item)
+            except OSError:
+                continue
+
+    walk(source, 0)
+    if not files:
+        raise FileNotFoundError("该路径下没有可导入的数据文件（raw / mzML / csv 等）")
+    return files
+
+
+def link_or_copy_file(src: Path, dest: Path) -> None:
+    """同盘硬链接（瞬时、不占额外空间）；失败再复制。"""
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    if dest.exists():
+        try:
+            if dest.samefile(src):
+                return
+        except OSError:
+            pass
+        if dest.stat().st_size == src.stat().st_size:
+            return
+        dest.unlink()
+    try:
+        os.link(src, dest)
+        return
+    except OSError:
+        shutil.copy2(src, dest)
+
+
+def import_files_into_upload_dir(upload_root: Path, source: Path) -> list[dict]:
+    """把服务器本地文件挂到会话 inputspace，返回 {name, path, size}。"""
+    upload_root = upload_root.resolve()
+    saved: list[dict] = []
+    for src in collect_importable_files(source):
+        filename = src.name.replace("/", "_").replace("\\", "_")
+        dest_dir = upload_target_dir(upload_root, filename)
+        dest = dest_dir / filename
+        try:
+            if dest.exists() and dest.samefile(src):
+                saved.append(
+                    {"name": filename, "path": str(dest), "size": dest.stat().st_size}
+                )
+                continue
+        except OSError:
+            pass
+        if dest.exists() and dest.stat().st_size != src.stat().st_size:
+            dest = dest_dir / f"{src.stem}_{uuid.uuid4().hex[:8]}{src.suffix}"
+            filename = dest.name
+        link_or_copy_file(src, dest)
+        saved.append(
+            {"name": filename, "path": str(dest), "size": dest.stat().st_size}
+        )
+    return saved
 
 
 def session_work_dir(project_root: Path, storage_slug: str) -> Path:

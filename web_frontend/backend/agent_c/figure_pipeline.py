@@ -9,9 +9,11 @@ from web_frontend.backend.literature_figure_style import (
     build_initial_plot_config,
     style_provenance_line,
 )
+from web_frontend.backend.b_paper_contract import is_paper_strict
 from web_frontend.backend.plot_edit_registry import get_plot_spec
 from web_frontend.backend.semantic_plot_renderer import (
     build_vegalite_spec,
+    write_semantic_metadata_files,
     write_semantic_outputs,
 )
 
@@ -25,6 +27,14 @@ def _inventory_file_names(inventory: dict[str, Any]) -> dict[str, dict]:
     return index
 
 
+def _file_map_record(inventory: dict[str, Any], filename: str) -> dict[str, Any] | None:
+    name = str(filename or "").split("/")[-1]
+    rec = (inventory.get("file_map") or {}).get(name)
+    if isinstance(rec, dict):
+        return rec
+    return None
+
+
 def _pick_plottable(
     plot_type: str,
     *,
@@ -32,8 +42,44 @@ def _pick_plottable(
     file_index: dict[str, dict],
     source_files: list[str],
     used: set[str],
+    inventory: dict[str, Any] | None = None,
 ) -> dict | None:
-    """优先按 source_files 匹配，再按 plot_type 池取用。"""
+    """优先按 source_files 走文件契约；有点名文件时禁止用同型其它实验表顶替。"""
+    inv = inventory or {}
+    file_map = inv.get("file_map") or {}
+    if source_files and file_map:
+        resolved: dict[str, str] = {}
+        missing: list[str] = []
+        for sf in source_files:
+            rec = _file_map_record(inv, sf)
+            if rec and rec.get("status") == "present" and rec.get("path"):
+                resolved[str(sf).split("/")[-1]] = str(rec["path"])
+            else:
+                missing.append(str(sf).split("/")[-1])
+        spec = get_plot_spec(plot_type)
+        mode = spec.data_mode if spec else "all"
+        paper_missing = [name for name in missing if is_paper_strict(name)]
+        ok = bool(resolved) if mode == "any" else not missing
+        if paper_missing and not resolved:
+            ok = False
+        if ok:
+            contract_dir = inv.get("contract_dir")
+            data_dir = contract_dir or str(Path(next(iter(resolved.values()))).parent)
+            key = f"{plot_type}:{data_dir}:{'|'.join(sorted(resolved))}"
+            if key not in used:
+                used.add(key)
+                return {
+                    "plot_type": plot_type,
+                    "stem": (spec.stem_prefix if spec else plot_type),
+                    "title": spec.default_title if spec else plot_type,
+                    "data_dir": data_dir,
+                    "data_files": resolved,
+                    "existing_png": None,
+                    "missing_files": missing,
+                }
+        # 点名了论文专用文件却没找到：不要退回 mixOmics 同型图
+        if paper_missing or (source_files and not resolved):
+            return None
     for sf in source_files:
         base = str(sf).split("/")[-1].lower()
         hit = file_index.get(base)
@@ -43,6 +89,8 @@ def _pick_plottable(
                 used.add(key)
                 return hit
     pool = by_type.get(plot_type) or []
+    if source_files:
+        return None
     for item in pool:
         key = f"{item['plot_type']}:{item['data_dir']}"
         if key in used:
@@ -50,6 +98,59 @@ def _pick_plottable(
         used.add(key)
         return item
     return pool[0] if pool else None
+
+
+# 方案没点名时仍要出的投稿主图（B 已写出对应 CSV）。
+CORE_PUBLICATION_PLOT_TYPES = frozenset(
+    {
+        "pca",
+        "plsda",
+        "volcano",
+        "vip_bar",
+        "heatmap_vip",
+        "network_topology",
+        "plsda_permutation",
+    }
+)
+
+
+def _supplement_core_publication_jobs(
+    jobs: list[dict[str, Any]],
+    plottable: list[dict[str, Any]],
+    used: set[str],
+) -> None:
+    """B 已有 CSV 的主图，即使方案漏写也补进出图清单。每种图只补一张。"""
+    ready = {str(job.get("plot_type") or "") for job in jobs if job.get("status") == "ready"}
+    for item in plottable:
+        plot_type = str(item.get("plot_type") or "")
+        if plot_type not in CORE_PUBLICATION_PLOT_TYPES or plot_type in ready:
+            continue
+        key = f"{plot_type}:{item.get('data_dir')}"
+        if key in used:
+            continue
+        used.add(key)
+        ready.add(plot_type)
+        jobs.append(
+            {
+                "figure_id": "",
+                "title": item.get("title") or plot_type,
+                "plot_type": plot_type,
+                "stem": item.get("stem") or "",
+                "theme": "",
+                "logic": "",
+                "purpose": "方案未点名；B 已写出对应 CSV，按投稿主图补出",
+                "expected_observation": "",
+                "source_step": 0,
+                "source_files": list((item.get("data_files") or {}).keys()),
+                "panels": [],
+                "plot_config_hint": {},
+                "data_dir": item["data_dir"],
+                "data_files": item.get("data_files") or {},
+                "existing_png": item.get("existing_png"),
+                "status": "ready",
+                "source": "b_csv",
+            }
+        )
 
 
 def match_figures(
@@ -81,6 +182,7 @@ def match_figures(
             file_index=file_index,
             source_files=source_files or [],
             used=used,
+            inventory=inventory,
         )
 
     if mode in {"plan", "plan_then_available"}:
@@ -115,22 +217,59 @@ def match_figures(
                 )
             else:
                 job["status"] = "missing_data"
+                wet = {
+                    "constituent_bar": "tea_constituents.csv",
+                    "bioactivity_bar": "bioactivity_assays.csv",
+                    "sensory_scores": "sensory_scores.csv",
+                    "correlation_heatmap": "correlation_matrix.csv",
+                    "paper_fig2_composite": "volatile_pca_scores.csv（禁止用 mixOmics pca_scores.csv 替代）",
+                    "paper_fig5_composite": "pca_scores.csv / hca_matrix.csv / plsda_permutation.csv",
+                }
+                extra = ""
+                if plot_type in wet:
+                    extra = (
+                        f"；缺 `{wet[plot_type]}` 时标为缺失，不伪造五等级图，"
+                        "也不宣称复现 Food Chem X 2026"
+                    )
+                notes = []
+                for sf in source_files:
+                    rec = _file_map_record(inventory, sf)
+                    if rec and rec.get("status") != "present" and rec.get("notes"):
+                        notes.append(str(rec["notes"]))
+                if notes:
+                    extra = extra + "。" + "；".join(dict.fromkeys(notes))
                 job["missing_reason"] = (
                     f"方案需要 {plot_type or '未识别图型'}"
                     + (f"（Step {job.get('source_step')} 预期 {', '.join(source_files)}）" if source_files else "")
                     + "，但结果目录没有对应数据文件"
+                    + extra
                     if plot_type
                     else "方案未给出可映射的 plot_type"
                 )
             jobs.append(job)
+
+    _supplement_core_publication_jobs(jobs, plottable, used)
 
     if mode in {"available", "plan_then_available"}:
         for item in plottable:
             key = f"{item['plot_type']}:{item['data_dir']}"
             if key in used:
                 continue
-            # B 侧已有 PNG 时不再补渲染任务（报告 existing_figures 会引用）
-            if item.get("existing_png"):
+            # B 侧已有 PNG 时默认不补渲染（报告 existing_figures 会引用）。
+            # 论文级代谢组学图仍要进 C，避免软件默认图（无椭圆/孤立点圆环）留在主报告。
+            from web_frontend.backend.agent_c.tea_paper_plots import TEA_PAPER_PLOT_TYPES
+
+            publication_rerender = str(item.get("plot_type") or "") in TEA_PAPER_PLOT_TYPES or str(
+                item.get("plot_type") or ""
+            ) in {
+                "pca",
+                "plsda",
+                "vip_bar",
+                "heatmap_vip",
+                "volcano",
+                "network_topology",
+            }
+            if item.get("existing_png") and not publication_rerender:
                 continue
             used.add(key)
             jobs.append(
@@ -155,7 +294,12 @@ def match_figures(
     return jobs
 
 
-def extract_figure_facts(plot_type: str, data_dir: str | Path) -> list[str]:
+def extract_figure_facts(
+    plot_type: str,
+    data_dir: str | Path,
+    *,
+    plot_config: dict[str, Any] | None = None,
+) -> list[str]:
     """只从结果文件计数，不编造显著性结论。"""
     facts: list[str] = []
     root = Path(data_dir)
@@ -176,8 +320,17 @@ def extract_figure_facts(plot_type: str, data_dir: str | Path) -> list[str]:
         elif plot_type == "volcano":
             path = root / spec.data_files[0]
             if path.is_file():
+                from web_frontend.backend.plot_theme import DEFAULT_VOLCANO_THRESHOLDS
+
                 df = pd.read_csv(path)
+                p_thr = float(DEFAULT_VOLCANO_THRESHOLDS["p"])
+                fc_thr = float(DEFAULT_VOLCANO_THRESHOLDS["log2fc"])
+                facts.append(f"文件来源 `{path.name}`")
+                facts.append(f"阈值 p<{p_thr}、|log2FC|≥{fc_thr}")
                 facts.append(f"火山表 {len(df)} 行")
+                if "p_value" in df.columns:
+                    n_p = int((pd.to_numeric(df["p_value"], errors="coerce") < p_thr).sum())
+                    facts.append(f"p<{p_thr} {n_p} 个")
                 if "Significant" in df.columns:
                     n_sig = int(df["Significant"].fillna(False).astype(bool).sum())
                     facts.append(f"Significant=True {n_sig} 行")
@@ -192,25 +345,61 @@ def extract_figure_facts(plot_type: str, data_dir: str | Path) -> list[str]:
         elif plot_type == "vip_bar":
             path = root / spec.data_files[0]
             if path.is_file():
-                facts.append(f"VIP 表 {len(pd.read_csv(path))} 行")
+                from web_frontend.backend.paper_plot_helpers import vip_threshold_from_config
+
+                df = pd.read_csv(path)
+                threshold = vip_threshold_from_config(plot_config)
+                facts.append(f"文件来源 `{path.name}`")
+                facts.append(f"阈值 VIP>{threshold:g}（计数与作图虚线同一阈值）")
+                facts.append(f"VIP 表 {len(df)} 行")
+                vcol = next((c for c in df.columns if str(c).lower() == "vip"), None)
+                if vcol is not None:
+                    n_high = int((pd.to_numeric(df[vcol], errors="coerce") > threshold).sum())
+                    facts.append(f"VIP>{threshold:g} 共 {n_high} 个")
     except Exception:
         return facts
     return facts
 
 
-def _build_caption(job: dict[str, Any], facts: list[str], language: str) -> str:
+def _build_caption(
+    job: dict[str, Any],
+    facts: list[str],
+    language: str,
+    *,
+    metadata_csv: str | Path | None = None,
+    data_narrative: dict[str, Any] | None = None,
+) -> str:
     fig_id = job.get("figure_id") or "Figure"
     title = job.get("title") or job.get("plot_type") or ""
     zh = (language or "zh").lower().startswith("zh")
     parts = [f"**{fig_id}.** {title}".strip()]
     if job.get("source_step"):
         parts.append(("来源步骤：" if zh else "Source step: ") + f"Step {job['source_step']}")
-    if job.get("theme"):
-        parts.append(("总体主题：" if zh else "Theme: ") + str(job["theme"]))
-    if job.get("purpose"):
-        parts.append(("目的：" if zh else "Purpose: ") + str(job["purpose"]))
-    if job.get("logic"):
-        parts.append(("逻辑链：" if zh else "Logic: ") + str(job["logic"]))
+    from web_frontend.backend.agent_c.nature_distill import (
+        caption_contract_and_stats,
+        caption_footer,
+        evidence_role_from_job,
+        figure_claim_from_job,
+    )
+
+    claim = figure_claim_from_job(job)
+    if claim:
+        parts.append(
+            ("图件主张（方案，非已证实）：" if zh else "Figure claim (from plan, not confirmed): ")
+            + claim
+        )
+    role = evidence_role_from_job(job)
+    if role:
+        parts.append(("证据角色：" if zh else "Evidence role: ") + role)
+    theme = str(job.get("theme") or "").strip()
+    purpose = str(job.get("purpose") or "").strip()
+    logic = str(job.get("logic") or "").strip()
+    if theme and theme != claim:
+        parts.append(("总体主题：" if zh else "Theme: ") + theme)
+    if purpose and purpose != claim:
+        parts.append(("目的：" if zh else "Purpose: ") + purpose)
+    if logic and logic != claim:
+        parts.append(("逻辑链：" if zh else "Logic: ") + logic)
     panels = job.get("panels") or []
     if panels and isinstance(panels[0], dict):
         p0 = panels[0]
@@ -222,11 +411,28 @@ def _build_caption(job: dict[str, Any], facts: list[str], language: str) -> str:
         parts.append(("方案预期观察：" if zh else "Planned observation: ") + str(job["expected_observation"]))
     if facts:
         parts.append(("结果文件事实：" if zh else "File facts: ") + "；".join(facts))
+    parts.extend(
+        caption_contract_and_stats(
+            job,
+            facts,
+            zh=zh,
+            data_narrative=data_narrative if data_narrative is not None else job.get("data_narrative"),
+        )
+    )
     if job.get("style_note"):
         parts.append(str(job["style_note"]))
-    parts.append(
-        ("图注只陈述方案要求与文件计数，不把预期观察当成已证实结论。" if zh else "Caption states the plan and file counts only.")
-    )
+    from web_frontend.backend.paper_plot_helpers import study_design_disclaimer
+
+    disclaimer = study_design_disclaimer(metadata_csv=metadata_csv, language=language)
+    if disclaimer:
+        parts.append(disclaimer)
+    if job.get("status") == "missing_data":
+        parts.append(
+            "缺数据图未绘制，不补造五等级/湿实验结果。"
+            if zh
+            else "Missing-data figures are not fabricated."
+        )
+    parts.append(caption_footer(zh=zh))
     return "\n".join(parts)
 
 
@@ -293,6 +499,7 @@ def render_jobs(
         if use_existing_when_available and plot_type:
             from web_frontend.backend.agent_c.figure_data_narrative import plot_data_files_available
             from web_frontend.backend.agent_c.report_view import preferred_png_for_plot_type
+            from web_frontend.backend.agent_c.tea_paper_plots import TEA_PAPER_PLOT_TYPES
 
             csv_ready = item.get("status") != "missing_data" or plot_data_files_available(
                 results_root, plot_type
@@ -305,22 +512,33 @@ def render_jobs(
                 )
                 if preferred:
                     existing_png = str(preferred)
+            publication_rerender = plot_type in TEA_PAPER_PLOT_TYPES or plot_type in {
+                "pca",
+                "plsda",
+                "vip_bar",
+                "heatmap_vip",
+                "volcano",
+                "network_topology",
+            }
+        else:
+            publication_rerender = False
         if (
             use_existing_when_available
             and existing_png
             and Path(existing_png).is_file()
+            and not publication_rerender
         ):
             facts = extract_figure_facts(plot_type, Path(item.get("data_dir") or existing_png).parent)
             item["facts"] = facts
             item["png"] = str(Path(existing_png).resolve())
             item["status"] = "copied_existing"
             item["missing_reason"] = None
-            item["caption"] = _build_caption(item, facts, language)
+            item["caption"] = _build_caption(item, facts, language, metadata_csv=metadata_csv)
             rendered.append(item)
             continue
 
         if item.get("status") != "ready":
-            item["caption"] = _build_caption(item, [], language)
+            item["caption"] = _build_caption(item, [], language, metadata_csv=metadata_csv)
             rendered.append(item)
             continue
 
@@ -330,14 +548,14 @@ def render_jobs(
         if not spec:
             item["status"] = "unsupported"
             item["missing_reason"] = f"C 侧尚未注册图类型: {plot_type}"
-            item["caption"] = _build_caption(item, [], language)
+            item["caption"] = _build_caption(item, [], language, metadata_csv=metadata_csv)
             rendered.append(item)
             continue
 
         if plot_type in {"pca", "plsda"} and not metadata_csv:
             item["status"] = "missing_metadata"
             item["missing_reason"] = "PCA/PLS-DA 需要 metadata.csv 才能按样本着色"
-            item["caption"] = _build_caption(item, [], language)
+            item["caption"] = _build_caption(item, [], language, metadata_csv=metadata_csv)
             rendered.append(item)
             continue
 
@@ -362,7 +580,7 @@ def render_jobs(
             "warnings": style.get("warnings") or [],
         }
         item["style_note"] = style_provenance_line(style, language=language)
-        facts = extract_figure_facts(plot_type, data_dir)
+        facts = extract_figure_facts(plot_type, data_dir, plot_config=config)
         item["facts"] = facts
 
         def _fallback_png(target: Path, ptype: str = plot_type, ddir: Path = data_dir, cfg: dict = config) -> None:
@@ -396,28 +614,75 @@ def render_jobs(
                     data_dir,
                     png_path,
                     config,
+                    metadata_csv=metadata_csv,
                 )
+                try:
+                    vega = build_vegalite_spec(
+                        plot_type=plot_type,
+                        data_dir=data_dir,
+                        metadata_csv=metadata_csv,
+                        plot_config=config,
+                    )
+                    write_semantic_metadata_files(
+                        png_path=png_path,
+                        plot_config=config,
+                        vega_spec=vega,
+                        source_rel=_rel_maybe(data_dir, png_path),
+                    )
+                except Exception:
+                    pass
                 item["status"] = "rendered"
                 item["renderer"] = "tea_paper_matplotlib"
-                item["caption"] = _build_caption(item, facts, language)
+                _attach_journal_export(item, png_path)
+                item["caption"] = _build_caption(item, facts, language, metadata_csv=metadata_csv)
                 rendered.append(item)
                 continue
 
-            vega = build_vegalite_spec(
-                plot_type=plot_type,
-                data_dir=data_dir,
-                metadata_csv=metadata_csv,
-                plot_config=config,
-            )
-            write_semantic_outputs(
-                png_path=png_path,
-                plot_config=config,
-                vega_spec=vega,
-                source_rel=_rel_maybe(data_dir, png_path),
-                png_renderer=lambda p: _fallback_png(p),
-            )
-            item["status"] = "rendered"
-            item["plot_config"] = str(png_path.with_suffix(".plot_config.json"))
+            matplotlib_first = plot_type in {
+                "pca",
+                "plsda",
+                "vip_bar",
+                "heatmap_vip",
+                "volcano",
+                "network_topology",
+            }
+            if matplotlib_first:
+                _fallback_png(png_path)
+                try:
+                    vega = build_vegalite_spec(
+                        plot_type=plot_type,
+                        data_dir=data_dir,
+                        metadata_csv=metadata_csv,
+                        plot_config=config,
+                    )
+                    write_semantic_metadata_files(
+                        png_path=png_path,
+                        plot_config=config,
+                        vega_spec=vega,
+                        source_rel=_rel_maybe(data_dir, png_path),
+                    )
+                except Exception:
+                    pass
+                item["status"] = "rendered"
+                item["renderer"] = "matplotlib_publication"
+                item["plot_config"] = str(png_path.with_suffix(".plot_config.json"))
+                _attach_journal_export(item, png_path)
+            else:
+                vega = build_vegalite_spec(
+                    plot_type=plot_type,
+                    data_dir=data_dir,
+                    metadata_csv=metadata_csv,
+                    plot_config=config,
+                )
+                write_semantic_outputs(
+                    png_path=png_path,
+                    plot_config=config,
+                    vega_spec=vega,
+                    source_rel=_rel_maybe(data_dir, png_path),
+                    png_renderer=lambda p: _fallback_png(p),
+                )
+                item["status"] = "rendered"
+                item["plot_config"] = str(png_path.with_suffix(".plot_config.json"))
         except Exception as exc:
             existing = item.get("existing_png")
             if existing and Path(existing).is_file():
@@ -427,13 +692,47 @@ def render_jobs(
             else:
                 item["status"] = "render_failed"
                 item["missing_reason"] = str(exc)
-        item["caption"] = _build_caption(item, facts, language)
+        item["caption"] = _build_caption(item, facts, language, metadata_csv=metadata_csv)
         if png_path.is_file():
             item["png"] = str(png_path)
             svg = png_path.with_suffix(".svg")
             item["svg"] = str(svg) if svg.is_file() else None
+            _attach_journal_export(item, png_path)
         rendered.append(item)
     return rendered
+
+
+def _attach_journal_export(item: dict[str, Any], png_path: Path) -> None:
+    from web_frontend.backend.agent_c.nature_distill.journal_export import load_journal_export
+
+    payload = load_journal_export(png_path)
+    if not payload:
+        return
+    item["journal_export"] = payload
+    pdf = payload.get("pdf") or str(Path(png_path).with_suffix(".pdf"))
+    if pdf and Path(str(pdf)).is_file():
+        item["pdf"] = str(pdf)
+    journal_svg = payload.get("svg")
+    if journal_svg and Path(str(journal_svg)).is_file():
+        item["journal_svg"] = str(journal_svg)
+
+
+def refresh_figure_captions(
+    figures: list[dict[str, Any]],
+    *,
+    language: str = "zh",
+    metadata_csv: str | Path | None = None,
+) -> None:
+    """叙事补全后重写图注，把统计清单和文件来源收进 caption。"""
+    for fig in figures:
+        facts = list(fig.get("facts") or [])
+        fig["caption"] = _build_caption(
+            fig,
+            facts,
+            language,
+            metadata_csv=metadata_csv,
+            data_narrative=fig.get("data_narrative"),
+        )
 
 
 def _rel_maybe(data_dir: Path, png: Path) -> str:
@@ -454,6 +753,7 @@ def write_captions_json(figures: list[dict[str, Any]], output_dir: Path) -> Path
             "caption": f.get("caption"),
             "facts": f.get("facts") or [],
             "missing_reason": f.get("missing_reason"),
+            "journal_export": f.get("journal_export"),
         }
         for f in figures
     ]

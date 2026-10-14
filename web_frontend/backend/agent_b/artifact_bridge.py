@@ -1,9 +1,7 @@
 """A→B 产物交接：按工具类型把上一阶段目录整理成下一工具要的文件名。
 
 B 工具多数硬编码文件名；网页编排器在调用 MCP 前做一次落盘，不把 A/B/C 合成一个 Agent。
-实现复用 MassOmics-Agent-B 的 ``src.tools._artifact_resolve``；子进程由 execute_cli 注入
-PYTHONPATH（只有 B 仓根，没有 ``web_frontend`` 包）。网页进程内则用
-``ensure_b_importable`` 扩展 ``src`` 包搜索路径。
+实现复用 MassOmics-Agent-B 的 ``src.tools._artifact_resolve``（execute_cli 已把 B 放进 PYTHONPATH）。
 """
 from __future__ import annotations
 
@@ -12,16 +10,6 @@ import json
 import types
 from pathlib import Path
 from typing import Any
-
-
-def _ensure_b_src() -> None:
-    """网页进程补 B 的 src 搜索路径；execute_cli 子进程里 B 根已在 sys.path。"""
-    try:
-        from web_frontend.backend.agent_b.b_imports import ensure_b_importable
-    except ImportError:
-        return
-    ensure_b_importable()
-
 
 _PEAK_TABLE_TOOLS = frozenset(
     {
@@ -86,7 +74,6 @@ def prepare_tool_args(
     run_output_dir: str,
 ) -> dict[str, Any]:
     """按工具类型整理 input_dir / input_mgf；失败则原样返回，交给工具自己报错。"""
-    _ensure_b_src()
     from src.tools._artifact_resolve import (
         materialize_identification_dir,
         materialize_peak_table_dir,
@@ -106,54 +93,7 @@ def prepare_tool_args(
     dest = Path(run_dir or ".") / "_abc_handoff" / tool_name
 
     try:
-        if tool_name == "extract_differential_features":
-            csv = str(out.get("differential_csv") or "").strip()
-            csv_path = Path(csv) if csv else None
-            if csv_path is not None and csv_path.is_dir():
-                nested = csv_path / "differential_metabolites.csv"
-                csv_path = nested if nested.is_file() else csv_path
-            if csv_path is None or not csv_path.is_file():
-                hits = []
-                for root in [Path(run_dir)] if run_dir else []:
-                    hits.extend(root.rglob("differential_metabolites.csv"))
-                hits = [p for p in hits if p.is_file() and p.stat().st_size > 0]
-                if hits:
-                    out["differential_csv"] = str(hits[0].resolve())
-            elif csv_path.is_file():
-                out["differential_csv"] = str(csv_path.resolve())
-            if not str(out.get("differential_csv") or "").strip() or not Path(
-                str(out.get("differential_csv"))
-            ).is_file():
-                for name in ("differential_metabolites.csv", "vip_gt_1.csv"):
-                    hits = []
-                    for root in [Path(run_dir)] if run_dir else []:
-                        hits.extend(root.rglob(name))
-                    hits = [p for p in hits if p.is_file() and p.stat().st_size > 0]
-                    if hits:
-                        out["differential_csv"] = str(hits[0].resolve())
-                        break
-            mgf = str(out.get("input_mgf") or "").strip()
-            if not mgf or not Path(mgf).is_file():
-                search = input_dir or run_dir
-                out["input_mgf"] = resolve_spectra_mgf(
-                    search,
-                    extra_roots=extras,
-                    prefer_differential=False,
-                )
-        elif tool_name == "kegg_compound_enrichment":
-            annot = "differential_feature_table_library_match_clean&add.csv"
-            current = Path(str(out.get("input_dir") or ""))
-            if not (current / annot).is_file():
-                for root in [Path(run_dir)] if run_dir else []:
-                    hits = [
-                        p
-                        for p in root.rglob(annot)
-                        if p.is_file() and p.stat().st_size > 0
-                    ]
-                    if hits:
-                        out["input_dir"] = str(hits[0].parent.resolve())
-                        break
-        elif tool_name in _PEAK_TABLE_TOOLS and input_dir:
+        if tool_name in _PEAK_TABLE_TOOLS and input_dir:
             out["input_dir"] = materialize_peak_table_dir(
                 input_dir, dest / "peaks", extra_roots=extras
             )
@@ -198,20 +138,7 @@ _REUSE_NAMED_FILES: dict[str, tuple[str, ...]] = {
     "feature_filtering_and_missing_value_imputation_knn": (
         "feature_table_filtered_imputed.csv",
     ),
-    # pca_scores 在 perf() 崩溃前就会写出；必须等 VIP/差异表齐了才算成功，否则失败残留会被跳过
-    "statistical_analysis_mixomics": (
-        "pca_scores.csv",
-        "vip_scores.csv",
-        "differential_metabolites.csv",
-    ),
-    "extract_differential_features": (
-        "differential_feature_table.csv",
-        "differential_spectra.mgf",
-    ),
-    "spectral_annotation": (
-        "differential_feature_table_library_match_clean&add.csv",
-    ),
-    "kegg_compound_enrichment": ("kegg_compound_enrich.csv",),
+    "statistical_analysis_mixomics": ("pca_scores.csv",),
     "sirius_annotation": ("sirius_annotation_result.csv",),
 }
 _PREFERRED_CSV = {
@@ -219,57 +146,6 @@ _PREFERRED_CSV = {
     "statistical_analysis_mixomics": "pca_scores.csv",
     "sirius_annotation": "sirius_annotation_result.csv",
 }
-
-
-def _csv_has_identity(path: Path) -> bool:
-    """谱注释表是否已有化合物名或 KEGG ID（全 NA 的空匹配不算完成）。"""
-    try:
-        import pandas as pd
-
-        df = pd.read_csv(path)
-    except Exception:
-        return False
-    for col in ("kegg_id", "compound_name"):
-        if col not in df.columns:
-            continue
-        series = df[col].dropna().astype(str).str.strip()
-        series = series[~series.str.lower().isin({"", "na", "nan", "none"})]
-        if len(series) > 0:
-            return True
-    return False
-
-
-def _spectral_annotation_reusable(root: Path) -> bool:
-    csv = root / "differential_feature_table_library_match_clean&add.csv"
-    if not csv.is_file() or csv.stat().st_size <= 0:
-        return False
-    if _csv_has_identity(csv):
-        return True
-    note = root / "libraries_used.txt"
-    if not note.is_file():
-        return False
-    for line in note.read_text(encoding="utf-8").splitlines():
-        if line.startswith("FOUND\t"):
-            parts = line.split("\t")
-            if len(parts) >= 3 and Path(parts[2]).is_file():
-                return True
-    return False
-
-
-def _kegg_enrichment_reusable(root: Path) -> bool:
-    csv = root / "kegg_compound_enrich.csv"
-    if not csv.is_file() or csv.stat().st_size <= 0:
-        return False
-    note = root / "kegg_enrichment_note.txt"
-    if note.is_file():
-        return False
-    try:
-        import pandas as pd
-
-        df = pd.read_csv(csv)
-    except Exception:
-        return False
-    return len(df) > 0
 
 
 def stage_output_reusable(tool_name: str, output_dir: str) -> bool:
@@ -284,10 +160,6 @@ def stage_output_reusable(tool_name: str, output_dir: str) -> bool:
             if p.is_file() and p.suffix.lower() == ".mzml" and p.stat().st_size > 0
         ]
         return len(hits) >= 1
-    if tool_name == "spectral_annotation":
-        return _spectral_annotation_reusable(root)
-    if tool_name == "kegg_compound_enrichment":
-        return _kegg_enrichment_reusable(root)
     names = _REUSE_NAMED_FILES.get(tool_name)
     if names:
         return all(
@@ -360,7 +232,6 @@ def adopt_legacy_output_dir(
     """把旧的 <category>/<mcp_tool>/ 迁到 <工具名称>/结果/，便于跳过重跑。"""
     import shutil
 
-    _ensure_b_src()
     from src.output_layout import find_legacy_output_dir
 
     if not new_output_dir:

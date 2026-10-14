@@ -6,7 +6,7 @@ A 输出分析方案，B 输出结果目录，C 只消费这两份输入，不�
 """
 from __future__ import annotations
 
-CONTRACT_VERSION = "1.1"
+CONTRACT_VERSION = "1.2"
 CONTRACT_ID = "massagent.agent_c.v1"
 
 # 需求文档第 8 章：B 侧标准化结果文件（逻辑名 → 本仓库常见实际文件名）
@@ -46,7 +46,7 @@ STANDARD_RESULT_FILES: dict[str, tuple[str, ...]] = {
     "hca_matrix.csv": ("hca_matrix.csv",),
     "differential_metabolites_abundance.csv": ("differential_metabolites_abundance.csv",),
     "volatile_differential_abundance.csv": ("volatile_differential_abundance.csv",),
-    "plsda_permutation.csv": ("plsda_permutation.csv",),
+    "plsda_permutation.csv": ("plsda_permutation.csv", "statistical_analysis_simca_permutation.csv"),
     "volatile_pca_scores.csv": ("volatile_pca_scores.csv",),
     "volatile_plsda_scores.csv": ("volatile_plsda_scores.csv",),
 }
@@ -148,7 +148,7 @@ def contract_document() -> dict:
         "contract_version": CONTRACT_VERSION,
         "roles": {
             "A": "分析规划：MassOmics PlanDocument 或 Web FR-2 analysis_plan.*",
-            "B": "独立执行器：消费 plan_*.json，向 outputspace 写结果（默认 MassOmics-Agent-B）",
+            "B": "独立执行器：消费 plan_*.json，向 outputspace 写结果（默认 complete 同根 src/）",
             "C": "按方案出图、写图注、汇总报告，不新增计划外分析结论",
         },
         "inputs": {
@@ -197,11 +197,12 @@ def contract_document() -> dict:
             "results": {
                 "accept": ["analysis_results/ 目录", "本仓库 mixOmics/网络等结果目录"],
                 "optional_manifest": "results_manifest.json",
+                "b_file_map": "outputspace/b_file_map.json + _b_contract/<逻辑名>；volatile_* / tea_* 不得用 mixOmics pca_scores 替代",
             },
             "options": {
                 "output_dir": "C 的产出目录，默认 results_dir/agent_c_output",
                 "metadata_csv": "PCA/PLS-DA 着色用；可空则在 results/upload 中查找",
-                "figure_mode": "plan | available | plan_then_available",
+                "figure_mode": "plan | available | plan_then_available；plan 会补画 B 已写出 CSV 的投稿主图，并把方案未点名但已生成的结果 PNG 一并写入报告",
                 "language": "zh | en",
                 "use_llm": "true 时写入「结果解读与科研意义」章节（LLM）；写报告会话默认开启；论文复现 repro_recipe_id 下自动关闭",
             },

@@ -5,7 +5,7 @@
 """
 from __future__ import annotations
 
-CONTRACT_VERSION = "1.2"
+CONTRACT_VERSION = "1.4"
 CONTRACT_ID = "massagent.abc.v1"
 
 
@@ -29,7 +29,7 @@ def contract_document() -> dict:
                 "role": "分析规划",
                 "module": "web_frontend.backend.agent_a",
                 "backend_env": "WEB_AGENT_A_BACKEND=massomics|local（默认 massomics）",
-                "code_root_env": "WEB_MASSOMICS_ROOT（未设则探测：本仓 plan/ 或 MassOmics-Agent/MassOmics-Agent）",
+                "code_root_env": "WEB_MASSOMICS_ROOT（未设则探测 complete 同根：优先 MassOmics-Agent-B）",
                 "input": ["会话 inputspace 数据", "用户分析目标"],
                 "output": [
                     "outputspace/<slug>/plan_<timestamp>.json（MassOmics PlanDocument）",
@@ -44,7 +44,7 @@ def contract_document() -> dict:
                 "role": "分析执行",
                 "module": "web_frontend.backend.agent_b",
                 "backend_env": "WEB_AGENT_B_BACKEND=massomics|local（默认 massomics）",
-                "code_root_env": "WEB_MASSOMICS_B_ROOT（未设则探测：MassOmics-Agent-B 或本仓 src/executor）",
+                "code_root_env": "WEB_MASSOMICS_B_ROOT（未设则与 A 同一 complete 同根）",
                 "input": [
                     "A 的 plan_*.json",
                     "会话 inputspace（--data）",
@@ -79,7 +79,7 @@ def contract_document() -> dict:
                 "to": "B",
                 "artifact": "plan_*.json（goal + steps[]）",
                 "note": (
-                    "B 按 origin/B 的 tool_catalog 补全 stage/keyword，再 adapt_massomics_plan。"
+                    "B 按 complete 同根 tool_catalog 补全 stage/keyword，再 adapt_massomics_plan。"
                     "跨步默认吃上一阶段产物，不信任 A 猜的绝对路径。"
                     "统计分析前若无 kNN 会自动插入。"
                 ),
@@ -114,6 +114,17 @@ def contract_document() -> dict:
                 "metadata.csv 需要 Sample, Group；每组 n>=2 才跑 PLS-DA/VIP",
                 "n=1 时只保留 PCA，并写 mixomics_skip_supervised.txt",
             ],
+            "paper_logical_files": {
+                "pca_scores.csv": "mixOmics/结果/pca_scores.csv（默认 LC-MS）",
+                "volatile_pca_scores.csv": "仅同名文件；禁止用 mixOmics pca_scores 替代",
+                "tea_constituents.csv": "论文/上传；质谱流水线不会写",
+                "plsda_permutation.csv": "同名或 SIMCA statistical_analysis_simca_permutation.csv；mixOmics 默认不写则标缺",
+            },
+            "skill_parameters": (
+                "文献 Skill / recipe 参数写入 outputspace/skill_parameters.json，"
+                "B 规范化计划时合并进 steps[].tool_parameters（vip_threshold、scale_method、ppm；"
+                "论文指定 MZmine 时改预处理工具，catalog 没有则记录 software_substitution）"
+            ),
         },
         "http": [
             "GET /api/abc/contract",

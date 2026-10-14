@@ -1,6 +1,6 @@
-"""Agent B 独立入口：必须在 MassOmics-Agent-B 的 PYTHONPATH 下运行。
+"""Agent B 独立入口：必须在 complete 同根（默认 MassOmics-Agent-B）的 PYTHONPATH 下运行。
 
-网页编排器通过子进程调用本文件，避免与本仓库 ``src/`` 以及 Agent A/C 抢同一解释器路径。
+网页编排器通过子进程调用本文件，避免与本仓库根 ``src/`` 以及 Agent A/C 抢同一解释器路径。
 不调用 ``src.agent.Agent.run()``（那会重做规划并写报告）。
 """
 from __future__ import annotations
@@ -53,22 +53,6 @@ def _stub_optional_b_rag() -> None:
     print("[Agent B] ⚠️ 当前解释器没有 llama_index，已跳过 B 侧 RAG 导入", flush=True)
 
 
-def _inject_database_dir(b_root: Path) -> None:
-    """让 B 子进程能找到工作区根的 database_file（谱库 / compound_pathway.tsv）。"""
-    if (os.environ.get("MASSOMICS_DATABASE_DIR") or "").strip():
-        return
-    here = Path(__file__).resolve()
-    candidates = [b_root / "database_file"]
-    if len(here.parents) >= 4:
-        candidates.append(here.parents[3] / "database_file")
-    candidates.append(Path.cwd() / "database_file")
-    for cand in candidates:
-        if cand.is_dir() and any(cand.iterdir()):
-            os.environ["MASSOMICS_DATABASE_DIR"] = str(cand.resolve())
-            print(f"[Agent B] database_file: {cand.resolve()}", flush=True)
-            return
-
-
 def _write_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -100,7 +84,6 @@ def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     b_root = _b_root()
     _bind_b_src(b_root)
-    _inject_database_dir(b_root)
 
     plan_path = Path(args.plan).expanduser().resolve()
     data_path = Path(args.data).expanduser().resolve()
@@ -135,6 +118,13 @@ def main(argv: list[str] | None = None) -> int:
         document = load_plan_document(plan_path)
         catalog = load_tool_catalog(b_root / "src" / "tool_catalog.json")
         normalized, warnings = normalize_plan_for_b(document, catalog)
+        from skill_param_inject import SIDECAR_NAME, apply_skill_parameters
+
+        sidecar_hits = [
+            outputspace / SIDECAR_NAME,
+            plan_path.parent / SIDECAR_NAME,
+        ]
+        warnings.extend(apply_skill_parameters(normalized, catalog, sidecar_paths=sidecar_hits))
         _write_json(adapted_path, normalized)
         for warn in warnings:
             print(f"[Agent B] ⚠️ {warn}", flush=True)

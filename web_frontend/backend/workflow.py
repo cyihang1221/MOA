@@ -37,6 +37,8 @@ ChatAction = Literal[
     "execute",
     "report",
     "visual",
+    "cancel",
+    "interrupt_plan",
     "refuse_unconfirmed",
     "refuse_visual_early",
     "clarify",
@@ -56,7 +58,7 @@ STATUS_LABELS_ZH = {
 
 _CONFIRM_RE = re.compile(
     r"(?:"
-    r"确认计划|同意(?:本|该|此)?计划|按此执行|按这个执行|批准执行|"
+    r"确认计划|确认执行|同意(?:本|该|此)?计划|按此执行|按这个执行|批准执行|"
     r"可以执行|开始执行|"
     r"confirm(?:\s+the)?\s+plan|approve(?:\s+the)?\s+plan"
     r")",
@@ -79,7 +81,8 @@ _REVISION_RE = re.compile(
     r"修改计划|改用|换成|增加一步|少做|"
     r"第.{0,4}步|"
     r"不要(?:做|跑|用|分子)|"
-    r"MZmine|MS-?DIAL"
+    r"不用(?:进行|跑|做)|"
+    r"DeepMASS|MZmine|MS-?DIAL"
     r")",
     re.IGNORECASE,
 )
@@ -89,12 +92,27 @@ _REPLAN_EXPLICIT_RE = re.compile(
     re.IGNORECASE,
 )
 
+_CANCEL_RE = re.compile(
+    r"^(?:请)?(?:终止|停止)(?:当前)?(?:生成|任务|分析|执行)?(?:吧)?[!！。.\s]*$"
+    r"|^(?:取消(?:当前)?(?:任务|生成|分析|执行))[!！。.\s]*$"
+    r"|^(?:stop|cancel)(?:\s+(?:now|it|job|run|task))?[!！.\s]*$",
+    re.IGNORECASE,
+)
+
 
 def normalize_status(value: str | None) -> WorkflowStatus:
     raw = (value or "").strip() or WAITING_INPUT
     if raw in STATUS_LABELS_ZH:
         return raw  # type: ignore[return-value]
     return WAITING_INPUT
+
+
+def is_cancel_request(user_message: str) -> bool:
+    """用户明确要求停止当前规划/执行/出图（短句，避免误伤「取消分子网络」）。"""
+    text = intent_text(user_message).strip()
+    if not text or len(text) > 40:
+        return False
+    return bool(_CANCEL_RE.search(text))
 
 
 def is_plan_confirmation(user_message: str) -> bool:
@@ -135,7 +153,7 @@ def maybe_advance_workflow_for_outputs(
     if not has_result_figures:
         return None
     st = normalize_status(status)
-    if st in {COMPLETED, REPORTING, EXECUTING}:
+    if st in {COMPLETED, REPORTING, EXECUTING, PLANNING, AWAITING_APPROVAL}:
         return None
     return COMPLETED
 
@@ -174,6 +192,9 @@ def route_chat_action(
             return "refuse_visual_early"
         return "chat"
 
+    if st in {PLANNING, EXECUTING, REPORTING} and is_cancel_request(user_message):
+        return "cancel"
+
     if visual:
         if st in {COMPLETED, REPORTING} or has_result_figures:
             return "visual"
@@ -193,6 +214,8 @@ def route_chat_action(
         return "chat"
 
     if st == EXECUTING:
+        if _REVISION_RE.search(text) or _REPLAN_EXPLICIT_RE.search(text):
+            return "interrupt_plan"
         return "chat"
 
     if st in {REPORTING, COMPLETED, FAILED}:

@@ -1,4 +1,4 @@
-"""把 Agent A（cyh PlanDocument）的步骤工具名对齐到 origin/B 的 tool_catalog。
+"""把 Agent A（complete PlanDocument）的步骤工具名对齐到 B 的 tool_catalog。
 
 A 的 schema 没有强制 ``stage``，工具名也常是 ``xcms`` / ``mixomics``；
 B 的 ``adapt_massomics_plan`` 要求 catalog 内的 stage + keyword。
@@ -24,9 +24,6 @@ EXTRA_ALIASES: dict[str, str] = {
     "knn": "kNN",
     "imputation": "kNN",
     "featurefilter": "kNN",
-    "extractdifferentialfeatures": "extract_differential_features",
-    "spectralannotation": "spectral_annotation",
-    "keggcompoundenrichment": "KEGG compound enrichment",
     "kegg": "KEGG",
     "gnps": "GNPS",
     "fbmn": "FBMN",
@@ -38,6 +35,9 @@ EXTRA_ALIASES: dict[str, str] = {
     "camera": "CAMERA",
     "sirius": "SIRIUS",
     "molnetenhancer": "MolNetEnhancer",
+    "mzmine": "MZMine-Pipeline",
+    "mzminepipeline": "MZMine-Pipeline",
+    "mzmineadap": "MZmine-ADAP",
 }
 
 _IMPUTE_KEYWORDS = frozenset({"kNN", "MissForest", "Bayesian PCA"})
@@ -51,9 +51,16 @@ def fold_name(name: str) -> str:
 
 
 def load_tool_catalog(path: str | Path) -> dict[str, Any]:
-    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    catalog_path = Path(path)
+    text = catalog_path.read_text(encoding="utf-8")
+    if text.startswith("version https://git-lfs.github.com/spec/v1"):
+        raise ValueError(
+            f"tool_catalog.json 仍是 Git LFS 指针（未 smudge）：{catalog_path}。"
+            "请执行 git lfs pull --include='src/tool_catalog.json'"
+        )
+    data = json.loads(text)
     if not isinstance(data, dict) or not isinstance(data.get("tools"), list):
-        raise ValueError(f"无效的 tool_catalog: {path}")
+        raise ValueError(f"无效的 tool_catalog: {catalog_path}")
     return data
 
 
@@ -128,9 +135,6 @@ def normalize_plan_for_b(
     if not isinstance(steps_in, list) or not steps_in:
         raise ValueError("MassOmics 计划为空：没有可执行步骤")
 
-    known_stages = {
-        str(key).strip() for key in (catalog.get("stages") or {}) if str(key).strip()
-    }
     out_steps: list[dict[str, Any]] = []
     for index, raw in enumerate(steps_in):
         if not isinstance(raw, dict):
@@ -143,79 +147,79 @@ def normalize_plan_for_b(
             tools_raw = []
 
         stage_hint = str(raw.get("stage") or "").strip()
-        if stage_hint and stage_hint not in known_stages:
-            # A 常写 output_category 或 "Step N"，不是 B catalog 的 stage 名
-            stage_hint = ""
+        mapped: list[str] = []
         mapped_entries: list[dict[str, Any]] = []
+        requested: list[str] = []
+        resolved_stage = stage_hint
         for tool in tools_raw:
             entry = resolve_catalog_entry(str(tool), catalog, stage_hint=stage_hint)
-            if entry is None and stage_hint:
-                entry = resolve_catalog_entry(str(tool), catalog, stage_hint="")
             if entry is None:
                 warnings.append(f"步骤 {step_number} 工具 {tool!r} 不在 B 的 tool_catalog，已跳过")
                 continue
+            mapped.append(str(entry["keyword"]))
             mapped_entries.append(entry)
+            requested.append(str(tool))
+            if not resolved_stage:
+                resolved_stage = str(entry.get("stage") or "")
 
-        if not mapped_entries:
+        if not mapped:
             warnings.append(f"步骤 {step_number} 没有可映射到 B 的工具，整步跳过")
             continue
-
-        groups = _group_entries_by_stage(mapped_entries)
-        if any(not stage for stage, _ in groups):
+        if not resolved_stage:
             warnings.append(f"步骤 {step_number} 缺少 stage，且无法从工具名推断")
 
         mode = str(raw.get("mode") or "sequential").strip() or "sequential"
-        if len(groups) > 1:
-            detail = "; ".join(f"{stage}/{'+'.join(kws)}" for stage, kws in groups)
-            warnings.append(
-                f"步骤 {step_number} 的工具分属不同 catalog stage，已拆成 {len(groups)} 步: {detail}"
-            )
-            if mode == "comparison":
-                warnings.append(f"步骤 {step_number} 跨 stage 无法 comparison，已改为 sequential")
-                mode = "sequential"
-
-        base = {k: v for k, v in raw.items() if k not in {"tools", "stage", "mode"}}
-        orig_out = str(raw.get("output_filename") or "").strip()
-        for group_index, (stage, keywords) in enumerate(groups):
-            step_out = {
-                **base,
+        remapped_params = _remap_tool_parameters(
+            raw.get("tool_parameters") or {},
+            requested,
+            mapped,
+            mapped_entries,
+        )
+        carried = {k: v for k, v in raw.items() if k not in {"tools", "stage", "mode", "tool_parameters"}}
+        out_steps.append(
+            {
+                **carried,
                 "step_number": step_number,
                 "description": str(raw.get("description") or raw.get("task") or "").strip(),
-                "tools": keywords,
-                "stage": stage,
-                "mode": mode if len(groups) == 1 else "sequential",
+                "tools": mapped,
+                "stage": resolved_stage,
+                "mode": mode,
+                "tool_parameters": remapped_params,
             }
-            if len(groups) > 1 and group_index < len(groups) - 1:
-                step_out["output_filename"] = (
-                    f"{orig_out}__{stage}" if orig_out else f"step_{step_number}_{stage}_output"
-                )
-            out_steps.append(step_out)
+        )
 
     normalized = dict(document)
     normalized["steps"] = _ensure_imputation_before_stats(out_steps, catalog, warnings)
-    _renumber_steps(normalized["steps"])
     _chain_step_filenames(normalized["steps"])
     return normalized, warnings
 
 
-def _group_entries_by_stage(
+def _remap_tool_parameters(
+    raw_params: Any,
+    requested: list[str],
+    mapped: list[str],
     entries: list[dict[str, Any]],
-) -> list[tuple[str, list[str]]]:
-    """同一 A 步里跨 catalog stage 的工具不能共用一个 (stage, keyword) 查找。"""
-    groups: list[tuple[str, list[str]]] = []
-    for entry in entries:
-        keyword = str(entry.get("keyword") or "")
-        stage = str(entry.get("stage") or "")
-        if groups and groups[-1][0] == stage:
-            groups[-1][1].append(keyword)
-        else:
-            groups.append((stage, [keyword]))
-    return groups
-
-
-def _renumber_steps(steps: list[dict[str, Any]]) -> None:
-    for index, step in enumerate(steps, start=1):
-        step["step_number"] = index
+) -> dict[str, Any]:
+    """把 A 写在 mixomics / MCP 名下的参数挂到 catalog keyword 上，避免 adapter 取不到。"""
+    if not isinstance(raw_params, dict):
+        return {}
+    out: dict[str, Any] = {}
+    for old, new, entry in zip(requested, mapped, entries):
+        keys = [old, new, *(str(t) for t in (entry.get("mcp_tools") or []))]
+        merged: dict[str, Any] = {}
+        for key in keys:
+            slot = raw_params.get(key)
+            if isinstance(slot, dict):
+                merged.update(slot)
+        if merged:
+            out[new] = dict(merged)
+            for mcp in entry.get("mcp_tools") or []:
+                out.setdefault(str(mcp), dict(merged))
+    for key, slot in raw_params.items():
+        if key in out or not isinstance(slot, dict):
+            continue
+        out[key] = dict(slot)
+    return out
 
 
 def _step_keywords(step: dict[str, Any]) -> list[str]:

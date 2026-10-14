@@ -108,8 +108,20 @@ PLOT_DATA_CONTRACT: tuple[PlotDataContract, ...] = (
     PlotDataContract(
         "plsda_permutation",
         "mixed",
-        ("statistical_analysis_simca", "agent_c.fixtures.duyun_maojian"),
-        "SIMCA permMN 与论文 permutation/R2/Q2 表共用渲染器，列名归一",
+        ("statistical_analysis_simca", "statistical_analysis_mixomics", "agent_c.fixtures.duyun_maojian"),
+        "SIMCA permMN 与 mixOmics/论文 permutation/R2/Q2 表共用渲染器，列名归一",
+    ),
+    PlotDataContract(
+        "paper_fig2_composite",
+        "paper_or_upload",
+        ("agent_c.fixtures.duyun_maojian",),
+        "Fig 2 复合图；缺挥发物表时可用 pca_scores 占位，缺 panel 标 missing",
+    ),
+    PlotDataContract(
+        "paper_fig5_composite",
+        "paper_or_upload",
+        ("agent_c.fixtures.duyun_maojian", "statistical_analysis_mixomics"),
+        "Fig 5 复合图，data_mode=any，缺 panel 不伪造",
     ),
     PlotDataContract("splot", "b_tool", ("statistical_analysis_simca",)),
     PlotDataContract("opls_outlier", "b_tool", ("statistical_analysis_simca",)),
@@ -141,6 +153,11 @@ PAPER_ONLY_FILES: frozenset[str] = frozenset(
         "hca_matrix.csv",
         "differential_metabolites_abundance.csv",
         "volatile_differential_abundance.csv",
+        "volatile_pca_scores.csv",
+        "volatile_plsda_scores.csv",
+        "volatile_network_nodes.csv",
+        "volatile_network_edges.csv",
+        "volatile_network_layout.csv",
     }
 )
 

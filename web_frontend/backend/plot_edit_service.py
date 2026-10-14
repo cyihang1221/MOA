@@ -32,7 +32,10 @@ from web_frontend.backend.plot_renderer import (
     render_cosine_hist_png,
     render_degree_hist_png,
     render_family_size_png,
+    render_heatmap_vip_png,
+    render_network_topology_png,
     render_score_plot_png,
+    render_vip_bar_png,
     render_volcano_plot_png,
     save_plot_sidecars,
     _family_size_payload,
@@ -611,6 +614,9 @@ def _render_and_build_echarts(
             axis_names=axis_names,
             plot_config=plot_config,
             output_path=output_path,
+            data_dir=data_dir,
+            plot_type=plot_type,
+            metadata_csv=metadata_csv,
         )
         return build_echarts_option(
             scores=scores,
@@ -677,6 +683,24 @@ def _render_and_build_echarts(
             ],
         )
 
+    if plot_type == "vip_bar":
+        render_vip_bar_png(data_dir, plot_config, output_path)
+        return {}
+
+    if plot_type == "heatmap_vip":
+        metadata_csv = resolve_metadata_csv(upload_dir)
+        render_heatmap_vip_png(
+            data_dir,
+            plot_config,
+            output_path,
+            metadata_csv=metadata_csv,
+        )
+        return {}
+
+    if plot_type == "network_topology":
+        render_network_topology_png(data_dir, plot_config, output_path)
+        return {}
+
     if plot_type == "precursor_mass_diff":
         # PNG 由 vl-convert / 原图回退；此处仅返回空 echarts（语义预览走 Vega）
         import shutil
@@ -692,7 +716,13 @@ def _render_and_build_echarts(
 
     if plot_type in TEA_PAPER_PLOT_TYPES:
         try:
-            render_tea_paper_plot(plot_type, data_dir, output_path, plot_config)
+            render_tea_paper_plot(
+                plot_type,
+                data_dir,
+                output_path,
+                plot_config,
+                metadata_csv=resolve_metadata_csv(upload_dir),
+            )
             return {}
         except Exception:
             return _copy_source_png_fallback(plot_type, data_dir, output_path)
@@ -786,6 +816,17 @@ def apply_plot_config(
     merged = merge_plot_config(before_cfg, plot_config_patch)
     color_keys = _color_keys_for_plot(plot_type, data_dir, upload_dir, merged)
     merged = normalize_plot_config(merged, plot_type=plot_type, color_keys=color_keys)
+    if plot_type in {"pca", "plsda"}:
+        # 本次请求里显式选的风格优先于已保存的 score_style，否则换风格必须先删旧图。
+        explicit = str(plot_config_patch.get("score_style") or "").strip().lower()
+        if explicit.startswith("ggplot"):
+            merged["score_style"] = "ggplot"
+        elif explicit == "simca":
+            merged["score_style"] = "simca"
+        elif str(merged.get("score_style") or "").startswith("ggplot"):
+            merged["score_style"] = "ggplot"
+        else:
+            merged["score_style"] = "simca"
     config_diff = diff_plot_config(before_cfg, merged)
 
     out_name = filename or stable_intent_filename(base or stem_for_type)
@@ -872,6 +913,7 @@ def agent_apply_plot_edit(
     model: str | None = None,
     filename: str | None = None,
     goal_text: str | None = None,
+    score_style: str | None = None,
 ) -> dict[str, Any]:
     output_root = session_work_dir(project_root, storage_slug).resolve()
     try:
@@ -999,6 +1041,8 @@ def agent_apply_plot_edit(
             plot_type,
             evidence_cards,
             metadata_columns=metadata_columns,
+            current_config=current,
+            user_instruction=instruction,
         )
         if plot_type == "volcano":
             soft_patch = sanitize_volcano_plot_patch(soft_patch)
@@ -1017,7 +1061,11 @@ def agent_apply_plot_edit(
         )
         if validation.get("errors"):
             raise PlotEditError("；".join(validation["errors"]))
-        accepted_patch = validation.get("accepted_patch") or patch
+        accepted_patch = dict(validation.get("accepted_patch") or patch)
+        if plot_type in {"pca", "plsda"} and score_style:
+            asked = str(score_style).strip().lower()
+            if asked in {"simca", "ggplot", "ggplot2"}:
+                accepted_patch["score_style"] = "ggplot" if asked.startswith("ggplot") else "simca"
         visual_warnings.extend(list(validation.get("warnings") or []))
 
         out_name = filename or stable_intent_filename(base or type_stem or source.stem)
@@ -1036,9 +1084,10 @@ def agent_apply_plot_edit(
         result["visual_ir"] = figure_ir
         result["evidence_refs"] = figure_ir.get("evidence_refs") or []
         result["visual_warnings"] = visual_warnings
-        if lit_payload.get("matched"):
-            result["literature_skills"] = lit_payload.get("matched")
-            result["literature_hints"] = lit_payload.get("hints") or []
+        result["literature_skills"] = list(lit_payload.get("matched") or [])
+        result["literature_hints"] = lit_payload.get("hints") or []
+        result["literature_rag_mode"] = str(lit_payload.get("rag_mode") or "")
+        result["literature_rag_sources"] = list(lit_payload.get("rag_sources") or [])
         after_cfg = (result.get("plot_config") or {}).get("data") or {}
         journal_path = append_journal_event(
             output_root=output_root,

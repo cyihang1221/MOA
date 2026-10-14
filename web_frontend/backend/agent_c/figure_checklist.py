@@ -1,6 +1,7 @@
 """Agent C Phase 1：对照方案 Figure 蓝图输出缺数据 checklist。"""
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 
@@ -41,10 +42,21 @@ def format_checklist_markdown(
     checklist: dict[str, Any],
     *,
     language: str = "zh",
+    metadata_csv: str | Path | None = None,
 ) -> str:
     """生成用户可读的补齐指引（SSE / 报告）。"""
     zh = (language or "zh").lower().startswith("zh")
     lines: list[str] = []
+    from web_frontend.backend.paper_plot_helpers import study_design_disclaimer
+
+    disclaimer = study_design_disclaimer(
+        metadata_csv=metadata_csv,
+        reproduction_target=checklist.get("reproduction_target"),
+        language=language,
+    )
+    if disclaimer:
+        lines.append(disclaimer)
+        lines.append("")
     repro = checklist.get("reproduction_target") or {}
     if repro.get("short_title") or repro.get("recipe_id"):
         title = repro.get("short_title") or repro.get("recipe_id")

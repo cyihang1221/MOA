@@ -31,15 +31,31 @@ const chatColorCancel = document.getElementById("chatColorCancel");
 const chatColorClose = document.getElementById("chatColorClose");
 const sendButton = document.getElementById("sendButton");
 const stopButton = document.getElementById("stopButton");
+const homeBtn = document.getElementById("homeBtn");
 const newSessionBtn = document.getElementById("newSessionBtn");
 const clearSessionBtn = document.getElementById("clearSessionBtn");
 const sessionListEl = document.getElementById("sessionList");
 const workflowStatusEl = document.getElementById("workflowStatus");
+const workflowStepper = document.getElementById("workflowStepper");
+const toolbarStageBadge = document.getElementById("toolbarStageBadge");
+const stageActionBar = document.getElementById("stageActionBar");
+const stageActionTitle = document.getElementById("stageActionTitle");
+const stageActionHint = document.getElementById("stageActionHint");
+const confirmPlanBtn = document.getElementById("confirmPlanBtn");
+const revisePlanBtn = document.getElementById("revisePlanBtn");
+const stageStopBtn = document.getElementById("stageStopBtn");
+const stageReportBtn = document.getElementById("stageReportBtn");
+const devSettingsBtn = document.getElementById("devSettingsBtn");
+const devSettingsPanel = document.getElementById("devSettingsPanel");
+const runtimeCard = document.getElementById("runtimeCard");
+const runtimeToggle = document.getElementById("runtimeToggle");
 const statusText = document.getElementById("statusText");
 const fileInput = document.getElementById("fileInput");
 const attachBtn = document.getElementById("attachBtn");
 const attachmentBar = document.getElementById("attachmentBar");
 const attachmentList = document.getElementById("attachmentList");
+const attachmentToggle = document.getElementById("attachmentToggle");
+const attachmentSummary = document.getElementById("attachmentSummary");
 const composer = document.getElementById("composer");
 const shareBtn = document.getElementById("shareBtn");
 const shareStatus = document.getElementById("shareStatus");
@@ -378,13 +394,15 @@ function toWorkspaceRel(path) {
   return match ? match[1] : null;
 }
 
-function workspaceFileUrl(sessionId, relOrAbs) {
+function workspaceFileUrl(sessionId, relOrAbs, version) {
   if (!sessionId) return null;
   const rel = relOrAbs.includes("/") && !relOrAbs.startsWith("outputspace")
     ? toWorkspaceRel(relOrAbs) || relOrAbs.replace(/^\/+/, "")
     : relOrAbs;
   if (!rel || rel.includes("..")) return null;
-  return `/api/sessions/${sessionId}/workspace-file?rel=${encodeURIComponent(rel)}`;
+  const base = `/api/sessions/${sessionId}/workspace-file?rel=${encodeURIComponent(rel)}`;
+  if (version == null || version === "") return base;
+  return `${base}&v=${encodeURIComponent(version)}`;
 }
 
 const agentCFigureCardByRel = new Map();
@@ -605,7 +623,9 @@ function renderReportFigureCard(sessionId, fig) {
   }
   card.appendChild(head);
 
-  const imgUrl = fig.image_url || workspaceFileUrl(sessionId, fig.rel);
+  const imgUrl = fig.image_url
+    ? `${fig.image_url}${String(fig.image_url).includes("?") ? "&" : "?"}v=${Date.now()}`
+    : workspaceFileUrl(sessionId, fig.rel, Date.now());
   if (imgUrl) {
     const imgWrap = document.createElement("div");
     imgWrap.className = "report-figure-card-image-wrap";
@@ -671,16 +691,23 @@ function renderAgentCReportBody(sessionId, data) {
 async function syncAgentCReportButton(sessionId) {
   if (!openAgentCReportBtn || !sessionId || isSharedView) {
     openAgentCReportBtn?.classList.add("hidden");
+    hasAgentCReport = false;
+    stageReportBtn?.classList.add("hidden");
     return;
   }
   try {
     const res = await fetch(`/api/sessions/${sessionId}/agent-c/report`);
+    hasAgentCReport = res.ok;
     openAgentCReportBtn.classList.toggle("hidden", !res.ok);
     if (res.ok) {
       prefetchAgentCFigureCards(sessionId);
     }
   } catch {
+    hasAgentCReport = false;
     openAgentCReportBtn.classList.add("hidden");
+  }
+  if (stageReportBtn && currentWorkflowStatus === "COMPLETED") {
+    stageReportBtn.classList.toggle("hidden", !hasAgentCReport);
   }
 }
 
@@ -737,6 +764,8 @@ function closeAgentCReportViewer() {
 
 let sessions = [];
 let currentSessionId = null;
+let currentWorkflowStatus = "WAITING_INPUT";
+let hasAgentCReport = false;
 let isSharedView = false;
 let metadataEditorState = {
   columns: ["Sample", "Group"],
@@ -975,8 +1004,11 @@ async function inferMetadataFromFiles() {
 }
 
 let pendingFiles = [];
+let importedServerFiles = [];
+let attachmentOpen = null;
 let isStreaming = false;
 let activeStreamAbort = null;
+let cancelRequestInFlight = false;
 let lastAssistantMessageId = null;
 let messagesPinToBottom = true;
 let messagesScrollLock = 0;
@@ -1538,7 +1570,7 @@ function renderFileTree(listEl, files, emptyMsg, { sessionId = null, excludeImag
   list.forEach((file) => {
     const li = document.createElement("li");
     li.className = "file-item";
-    li.title = file.path || "";
+    li.title = file.name || "";
 
     const main = document.createElement("div");
     main.className = "file-item-main";
@@ -1598,7 +1630,7 @@ function renderOutputImageGallery(files, sessionId) {
   if (!images.length || !sessionId || isSharedView) return;
 
   images.forEach((file) => {
-    const url = workspaceFileUrl(sessionId, file.name);
+    const url = workspaceFileUrl(sessionId, file.name, file.modified || file.size || Date.now());
     if (!url) return;
 
     const item = document.createElement("article");
@@ -1822,11 +1854,12 @@ async function loadWorkspaceFiles(sessionId) {
     const res = await fetch(`/api/sessions/${sessionId}/workspace-files`);
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || t("files.loadFail", { msg: "" }));
-    filesPanelHint.textContent = data.storage_slug
-      ? t("files.slug", { slug: data.storage_slug })
-      : t("files.current");
-    inputFilesDir.textContent = data.inputs_dir || "";
-    outputFilesDir.textContent = data.outputs_dir || "";
+    filesPanelHint.textContent = t("files.count", {
+      in: (data.inputs || []).length,
+      out: (data.outputs || []).length,
+    });
+    if (inputFilesDir) inputFilesDir.textContent = "";
+    if (outputFilesDir) outputFilesDir.textContent = "";
     renderOutputImageGallery(data.outputs || [], sessionId);
     renderFileTree(inputFilesList, data.inputs, t("files.noInput"), { sessionId });
     renderFileTree(outputFilesList, data.outputs, t("files.noOutput"), {
@@ -1839,19 +1872,56 @@ async function loadWorkspaceFiles(sessionId) {
   }
 }
 
+function syncAttachmentFold(count) {
+  if (!attachmentBar || !attachmentToggle) return;
+  if (count === 0) {
+    attachmentOpen = null;
+    return;
+  }
+  const open = attachmentOpen === null ? count <= 4 : attachmentOpen;
+  attachmentBar.classList.toggle("is-collapsed", !open);
+  attachmentToggle.setAttribute("aria-expanded", open ? "true" : "false");
+  if (attachmentSummary) {
+    attachmentSummary.textContent = t("attach.summary", { n: count });
+  }
+}
+
 function renderAttachments() {
   attachmentList.innerHTML = "";
-  attachmentBar.classList.toggle("hidden", pendingFiles.length === 0);
-  pendingFiles.forEach((file, index) => {
+  const chips = [
+    ...pendingFiles.map((file, index) => ({
+      name: file.name,
+      size: file.size,
+      source: "browser",
+      index,
+    })),
+    ...importedServerFiles.map((file, index) => ({
+      name: file.name,
+      size: file.size,
+      source: "server",
+      index,
+    })),
+  ];
+  attachmentBar.classList.toggle("hidden", chips.length === 0);
+  syncAttachmentFold(chips.length);
+  chips.forEach((item) => {
     const chip = document.createElement("div");
-    chip.className = "attachment-chip";
+    chip.className = item.source === "server" ? "attachment-chip is-server" : "attachment-chip";
+    const sizeLabel =
+      item.source === "server"
+        ? `${formatSize(item.size)} · ${t("welcome.serverImport")}`
+        : formatSize(item.size);
     chip.innerHTML = `
-      <span class="attachment-name" title="${file.name}">${file.name}</span>
-      <span class="attachment-size">${formatSize(file.size)}</span>
+      <span class="attachment-name" title="${item.name}">${item.name}</span>
+      <span class="attachment-size">${sizeLabel}</span>
       <button type="button" aria-label="${t("attach.remove")}">×</button>
     `;
     chip.querySelector("button").addEventListener("click", () => {
-      pendingFiles.splice(index, 1);
+      if (item.source === "server") {
+        importedServerFiles.splice(item.index, 1);
+      } else {
+        pendingFiles.splice(item.index, 1);
+      }
       renderAttachments();
     });
     attachmentList.appendChild(chip);
@@ -1870,13 +1940,26 @@ function addPendingFiles(fileList) {
   renderAttachments();
 }
 
+function workflowIsBusy(st) {
+  const s = st || currentWorkflowStatus;
+  return s === "PLANNING" || s === "EXECUTING" || s === "REPORTING";
+}
+
+function syncStopButton() {
+  const show = !isSharedView && (isStreaming || workflowIsBusy());
+  stopButton?.classList.toggle("hidden", !show);
+  sendButton?.classList.toggle("hidden", isStreaming);
+}
+
 function setStreamingState(streaming) {
   isStreaming = streaming;
-  sendButton.classList.toggle("hidden", streaming);
-  stopButton.classList.toggle("hidden", !streaming);
-  sendButton.disabled = streaming;
-  attachBtn.disabled = streaming || isSharedView;
-  promptInput.disabled = streaming || isSharedView;
+  if (sendButton) sendButton.disabled = streaming;
+  if (attachBtn) attachBtn.disabled = streaming || isSharedView;
+  if (promptInput) promptInput.disabled = streaming || isSharedView;
+  if (confirmPlanBtn) confirmPlanBtn.disabled = streaming || isSharedView;
+  if (revisePlanBtn) revisePlanBtn.disabled = streaming || isSharedView;
+  if (stageStopBtn) stageStopBtn.disabled = isSharedView;
+  syncStopButton();
   if (streaming) scrollMessagesIfPinned(true);
 }
 
@@ -1965,7 +2048,11 @@ const CHAT_IMAGES_MARKER_RE = /<!--massagent:chat_images:(\[[\s\S]*?\])-->/g;
 /** 同一底图若同时有原始图与 edited_plots/*_intent*，优先保留意图重绘版 */
 function preferEditedChatImageRels(rels) {
   const list = (Array.isArray(rels) ? rels : [])
-    .map((r) => String(r || "").trim())
+    .map((r) => {
+      if (typeof r === "string") return r.trim();
+      if (r && typeof r === "object") return String(r.file || r.name || "").trim();
+      return "";
+    })
     .filter(Boolean);
   if (list.length <= 1) return list;
 
@@ -2095,14 +2182,19 @@ function syncChatImageGalleryCollapse(galleryEl) {
   }
 }
 
-function appendChatImage(galleryEl, sessionId, rel) {
+function appendChatImage(galleryEl, sessionId, rel, version) {
   const fileRel = String(rel || "").trim();
   if (!galleryEl || !sessionId || !fileRel) return;
   const already = Array.from(galleryEl.querySelectorAll("[data-chat-image-rel]")).some(
     (el) => el.getAttribute("data-chat-image-rel") === fileRel
   );
-  if (already) return;
-  const url = workspaceFileUrl(sessionId, fileRel);
+  if (already) {
+    const old = galleryEl.querySelector(`[data-chat-image-rel="${CSS.escape(fileRel)}"] img`);
+    const fresh = workspaceFileUrl(sessionId, fileRel, version || Date.now());
+    if (old && fresh) old.src = fresh;
+    return;
+  }
+  const url = workspaceFileUrl(sessionId, fileRel, version || Date.now());
   if (!url) return;
 
   const wrap = document.createElement("div");
@@ -2128,7 +2220,7 @@ function appendChatImage(galleryEl, sessionId, rel) {
   card.appendChild(img);
   card.appendChild(caption);
   card.addEventListener("click", () => {
-    openImageLightbox({ url, title: fileRel.split("/").pop() || fileRel });
+    openImageLightbox({ url: img.currentSrc || img.src || url, title: fileRel.split("/").pop() || fileRel });
   });
   wrap.appendChild(card);
 
@@ -2139,10 +2231,10 @@ function appendChatImage(galleryEl, sessionId, rel) {
   syncChatImageGalleryCollapse(galleryEl);
 }
 
-function appendChatImageToMessage(messageApi, sessionId, rel) {
+function appendChatImageToMessage(messageApi, sessionId, rel, version) {
   if (!messageApi?.div) return;
   const gallery = ensureChatImageGallery(messageApi.div);
-  appendChatImage(gallery, sessionId, rel);
+  appendChatImage(gallery, sessionId, rel, version);
   scrollMessagesIfPinned();
 }
 
@@ -2693,6 +2785,10 @@ function scheduleSemanticPreview() {
 }
 
 async function tryOpenSemanticEditor({ rel, title }) {
+  if (isScorePlotRel(rel)) {
+    openPlotAgentEditor({ rel, title });
+    return true;
+  }
   if (!isSemanticEditableRel(rel) || !currentSessionId || !window.vegaEmbed || !semanticEditor) {
     return false;
   }
@@ -2880,25 +2976,34 @@ function shouldUseImageMerge(message) {
 function shouldUsePlotEdit(message) {
   const text = (message || "").trim();
   if (!text) return false;
-  if (/(?:进行|执行|跑|开始|继续).{0,12}分析/.test(text)) {
-    if (!/标题|颜色|色号|配色|#|改成|改为|改图|字号|字体|直方图|分布图|拓扑|热图/.test(text)) {
+    if (/(?:进行|执行|跑|开始|继续).{0,12}分析/.test(text)) {
+    if (!/标题|颜色|色号|配色|#|改成|改为|改图|字号|字体|直方图|分布图|拓扑|热图|文献|知识库/.test(text)) {
       return false;
     }
   }
-  if (
-    /改图|修改(?:一下)?图|调整(?:一下)?图|更改?图|美化图|标题改|标题改为|标题改成|标题修改为|标题为|改(?:一下)?标题|修改.*标题|更换标题|颜色|色号|配色|调色|字体|字号|图例|用\s*#|#[0-9a-fA-F]{3,8}\b|改成|改为|换成|用.{0,8}色|直方图|分布图|拓扑图|热图|气泡图|重新绘|重绘|重新作图|edit\s+(?:the\s+)?plot|change\s+(?:the\s+)?title|recolor|font\s+size|plot\s+style/i.test(
+    if (
+        /改图|修改(?:一下)?图|调整(?:一下)?图|更改?图|美化图|标题改|标题改为|标题改成|标题修改为|标题为|改(?:一下)?标题|修改.*标题|更换标题|颜色|色号|配色|调色|字体|字号|图例|椭圆|用\s*#|#[0-9a-fA-F]{3,8}\b|改成|改为|换成|用.{0,8}色|直方图|分布图|拓扑图|热图|气泡图|重新绘|重绘|重新作图|edit\s+(?:the\s+)?plot|change\s+(?:the\s+)?title|recolor|font\s+size|plot\s+style/i.test(
       text
     )
   ) {
     return true;
   }
+  const hasLitRestyle =
+    /知识库|RAG|ggsci|\bnpg\b|nature|lancet|jama|DOI[:\s]*\d|doi\.org|发表级|论文风|期刊风|(?:参考|按照?|对照|对齐|贴合).{0,24}(?:文献|论文|期刊|知识库|RAG|skill)|(?:文献|论文|期刊).{0,16}(?:规范|风格|配色|画法|样子|那种)|像(?:论文|文献|期刊).{0,10}(?:那样|那种|里)|按.{0,24}(?:那篇|这篇)/i.test(
+      text
+    );
   const hasPlotRef =
+    /pca|plsda|pls-da|主成分|火山|volcano|vip|热图|heatmap|余弦|cosine|相似度|度数|分布图|拓扑|topology|pearson|皮尔逊|fbmn|mass2motif|motif|化学类别|注释传播|kegg|气泡|pca_plot|volcano_plot|cosine_distribution|network_topology|chemical_class|[\w.-]+\.png|图|plot|figure/i.test(
+      text
+    );
+  if (hasLitRestyle && hasPlotRef) return true;
+  const hasPlotName =
     /pca|plsda|pls-da|主成分|火山|volcano|vip|热图|heatmap|余弦|cosine|相似度|度数|分布图|拓扑|topology|pearson|皮尔逊|fbmn|mass2motif|motif|化学类别|注释传播|kegg|气泡|pca_plot|volcano_plot|cosine_distribution|network_topology|chemical_class|[\w.-]+\.png/i.test(
       text
     );
   const hasStyle =
-    /标题|字号|字体|颜色|色号|配色|图例|改成|改为|换成|用\s*#|#[0-9a-fA-F]{3,8}/i.test(text);
-  return hasPlotRef && hasStyle;
+    /标题|字号|字体|颜色|色号|配色|图例|椭圆|改成|改为|换成|用\s*#|#[0-9a-fA-F]{3,8}/i.test(text);
+  return hasPlotName && hasStyle;
 }
 
 function echartsCompanionRel(imageRel) {
@@ -3889,6 +3994,65 @@ function disposePlotAgentEcharts() {
   if (plotAgentEcharts) plotAgentEcharts.innerHTML = "";
 }
 
+function isScorePlotRel(rel) {
+  const name = String(rel || "").toLowerCase();
+  return /pls-?da|(^|[^a-z])pca([^a-z]|$)|pca_plot|主成分/.test(name);
+}
+
+function messageNeedsScoreStyle(text) {
+  return shouldUsePlotEdit(text) && /pls-?da|pca|主成分/i.test(text || "");
+}
+
+let plotAgentScoreStyle = "simca";
+let plotAgentScoreStyleTouched = false;
+
+async function loadSavedScoreStyle(rel) {
+  if (!currentSessionId || !rel) return;
+  try {
+    const res = await fetch(
+      `/api/sessions/${currentSessionId}/semantic-plot?source_rel=${encodeURIComponent(rel)}`
+    );
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || plotAgentScoreStyleTouched) return;
+    const saved = String(data?.plot_config?.score_style || "");
+    plotAgentScoreStyle = saved.startsWith("ggplot") ? "ggplot" : "simca";
+    selectScoreStyleCards(document.getElementById("plotAgentScoreStyles"), plotAgentScoreStyle);
+  } catch {
+    /* 读不到已保存风格时保持默认 SIMCA，用户仍可点另一张预览 */
+  }
+}
+
+function selectScoreStyleCards(root, style) {
+  if (!root) return;
+  root.querySelectorAll(".score-style-card").forEach((card) => {
+    card.classList.toggle("is-selected", card.dataset.scoreStyle === style);
+  });
+}
+
+function pickScoreStyle() {
+  const modal = document.getElementById("scoreStyleModal");
+  if (!modal) return Promise.resolve("simca");
+  return new Promise((resolve) => {
+    const finish = (value) => {
+      modal.classList.add("hidden");
+      modal.setAttribute("aria-hidden", "true");
+      modal.querySelectorAll("[data-score-style], #scoreStyleModalCancel, #scoreStyleModalBackdrop").forEach((el) => {
+        el.onclick = null;
+      });
+      resolve(value);
+    };
+    modal.classList.remove("hidden");
+    modal.setAttribute("aria-hidden", "false");
+    modal.querySelectorAll(".score-style-card").forEach((card) => {
+      card.onclick = () => finish(card.dataset.scoreStyle || "simca");
+    });
+    const cancel = document.getElementById("scoreStyleModalCancel");
+    const backdrop = document.getElementById("scoreStyleModalBackdrop");
+    if (cancel) cancel.onclick = () => finish(null);
+    if (backdrop) backdrop.onclick = () => finish(null);
+  });
+}
+
 function openPlotAgentEditor({ rel, title }) {
   if (!plotAgentEditor) return;
   closeImageLightbox();
@@ -3910,9 +4074,33 @@ function openPlotAgentEditor({ rel, title }) {
     });
   }
   if (plotAgentEditorHint) plotAgentEditorHint.textContent = t("image.plotAgentHint");
+  plotAgentScoreStyle = "";
+  plotAgentScoreStyleTouched = false;
+  const stylePicker = document.getElementById("plotAgentScoreStyles");
+  if (stylePicker) {
+    const show = isScorePlotRel(rel);
+    stylePicker.classList.toggle("hidden", !show);
+    selectScoreStyleCards(stylePicker, "simca");
+    stylePicker.querySelectorAll(".score-style-card").forEach((card) => {
+      card.onclick = () => {
+        plotAgentScoreStyleTouched = true;
+        plotAgentScoreStyle = card.dataset.scoreStyle || "simca";
+        selectScoreStyleCards(stylePicker, plotAgentScoreStyle);
+      };
+    });
+    if (show) void loadSavedScoreStyle(rel);
+  }
   plotAgentEditor.classList.remove("hidden");
   plotAgentEditor.setAttribute("aria-hidden", "false");
   setPlotAgentEditorStatus("");
+  if (isScorePlotRel(rel) && currentSessionId && plotAgentPreviewImg && plotAgentPreviewWrap) {
+    const url = workspaceFileUrl(currentSessionId, rel);
+    if (url) {
+      plotAgentPreviewWrap.classList.remove("hidden");
+      plotAgentPreviewImg.src = `${url}&_=${Date.now()}`;
+      plotAgentPreviewImg.classList.remove("hidden");
+    }
+  }
   void loadPlotLiteratureHints(rel);
 }
 
@@ -3932,6 +4120,15 @@ async function renderPlotAgentPreview(result) {
   disposePlotAgentEcharts();
 
   const fileRel = result?.file?.name;
+  if (isScorePlotRel(fileRel) && currentSessionId && plotAgentPreviewImg) {
+    const url = workspaceFileUrl(currentSessionId, fileRel);
+    if (url) {
+      plotAgentPreviewImg.src = `${url}&_=${Date.now()}`;
+      plotAgentPreviewImg.classList.remove("hidden");
+      if (plotAgentEcharts) plotAgentEcharts.innerHTML = "";
+      return;
+    }
+  }
   const vegaRel = result?.vega?.name;
   const echartsRel = result?.echarts?.name;
   if (vegaRel && currentSessionId && window.vegaEmbed && plotAgentEcharts) {
@@ -3994,6 +4191,10 @@ async function submitPlotAgentEdit() {
         source_rel: plotAgentState.sourceRel,
         instruction,
         model: getEffectiveModelId(),
+        score_style:
+          isScorePlotRel(plotAgentState.sourceRel) && plotAgentScoreStyleTouched
+            ? plotAgentScoreStyle
+            : null,
         ...getClientLlmPayload(),
       }),
     });
@@ -5427,8 +5628,8 @@ async function uploadPendingFiles(sessionId) {
   if (pendingFiles.length === 0) return [];
   const queue = pendingFiles.filter((file) => file && file.size > 0);
   if (!queue.length) {
-  pendingFiles = [];
-  renderAttachments();
+    pendingFiles = [];
+    renderAttachments();
     throw new Error(t("err.uploadEmpty"));
   }
 
@@ -5442,6 +5643,41 @@ async function uploadPendingFiles(sessionId) {
   pendingFiles = [];
   renderAttachments();
   return saved;
+}
+
+async function importFilesFromServerPath(sessionId, path) {
+  const res = await fetch(`/api/sessions/${sessionId}/files/from-path`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ path }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data.detail || t("welcome.serverImportFail", { msg: res.status }));
+  }
+  return data.files || [];
+}
+
+async function importServerPathFromUi(path) {
+  const trimmed = (path || "").trim();
+  if (!trimmed) {
+    setStatus(t("welcome.serverPathNeed"));
+    return null;
+  }
+  if (!currentSessionId) await bootSessionsAndLoad();
+  try {
+    setStatus(t("status.uploading"));
+    const files = await importFilesFromServerPath(currentSessionId, trimmed);
+    importedServerFiles = files;
+    pendingFiles = [];
+    renderAttachments();
+    await loadWorkspaceFiles(currentSessionId);
+    setStatus(t("welcome.serverImportOk", { n: files.length }));
+    return files;
+  } catch (err) {
+    setStatus(t("welcome.serverImportFail", { msg: err.message || String(err) }));
+    return null;
+  }
 }
 
 function intentText(message) {
@@ -5464,6 +5700,47 @@ function shouldUseAgent(message, hasNewUpload = false) {
   return /确认计划|批准执行|按此执行|confirm(?:\s+the)?\s+plan|开始分析|执行分析|进行分析|做分析|跑一遍|运行工具|execute pipeline|run analysis|start agent|重新(?:运行|进行|分析)|峰检测|预处理|gap[\s-]?fill|补峰|XCMS|OpenMS|MZmine|MS-?DIAL|KPIC|PeakOnly|PITracer|TracMass|convert(?:ed)?_mzml|ThermoRaw|msconvert|\.raw\b|DeepMASS|deepmass|谱库注释|谱库匹配|feature[_\s-]?filter|缺失值|molecular_networking_|data_preprocessing_|写(?:一份|篇)?报告|生成报告|分析报告|final_report|按方案出图|出图|可视化|科研图表|figure\s*list|interpretation|图注|caption|统计(?:分析|作图)?|做统计|跑统计|mixOmics|mixomics|火山图|volcano|PLS-?DA|做\s*PCA|跑\s*PCA|(?<![a-z])pca(?![a-z])|主成分|组间对比|两组对比|显著性分析|差异分析|分子网(?:络|格)|molecular\s*network|GNPS|FBMN|富集分析|KEGG|Treatment\s*vs\.?\s*Control|Control\s*vs\.?\s*Treatment|(?:Treatment|Control|Group).{0,20}(?:vs|VS|对比|比较)/i.test(
     text
   );
+}
+
+function composeAnalysisGoalMessage(objective) {
+  const dataEl = document.getElementById("goalDataDescInput");
+  const litEl = document.getElementById("goalLiteratureInput");
+  const dataDesc = (dataEl?.value || "").trim();
+  const literature = (litEl?.value || "").trim();
+  const parts = [];
+  if ((objective || "").trim()) parts.push(objective.trim());
+  if (dataDesc) parts.push(`【数据描述】\n${dataDesc}`);
+  if (literature) parts.push(`【参考文献/资料】\n${literature}`);
+  return parts.join("\n\n");
+}
+
+function clearGoalExtraFields() {
+  const objectiveEl = document.getElementById("goalObjectiveInput");
+  const dataEl = document.getElementById("goalDataDescInput");
+  const litEl = document.getElementById("goalLiteratureInput");
+  if (objectiveEl) objectiveEl.value = "";
+  if (dataEl) dataEl.value = "";
+  if (litEl) litEl.value = "";
+}
+
+function syncObjectiveFromWelcome() {
+  const objectiveEl = document.getElementById("goalObjectiveInput");
+  if (!objectiveEl || !promptInput) return;
+  promptInput.value = objectiveEl.value;
+  promptInput.dispatchEvent(new Event("input"));
+}
+
+function fillGoalFields({ objective, dataDesc, literature }) {
+  const objectiveEl = document.getElementById("goalObjectiveInput");
+  const dataEl = document.getElementById("goalDataDescInput");
+  const litEl = document.getElementById("goalLiteratureInput");
+  if (objectiveEl && objective != null) objectiveEl.value = objective;
+  if (dataEl && dataDesc != null) dataEl.value = dataDesc;
+  if (litEl && literature != null) litEl.value = literature;
+  if (objective != null && promptInput) {
+    promptInput.value = objective;
+    promptInput.dispatchEvent(new Event("input"));
+  }
 }
 
 function buildUserMessage(text, uploadedFiles) {
@@ -5560,31 +5837,113 @@ function toggleWelcomePanel(show) {
   welcomePanel.classList.toggle("hidden", !visible);
   if (messagesEl) messagesEl.classList.toggle("is-empty-hidden", visible);
   if (visible && jumpToLatestBtn) jumpToLatestBtn.classList.add("hidden");
+  applyWorkflowChrome(currentWorkflowStatus);
+}
+
+const DEFAULT_ASSISTANT_GREETING_RE = /^你好，我是 MassAgent[。.]/;
+
+function isDefaultGreetingMessage(message) {
+  const role = String(message?.role || "").toLowerCase();
+  if (role !== "assistant") return false;
+  return DEFAULT_ASSISTANT_GREETING_RE.test(String(message?.content || "").trim());
 }
 
 function sessionHasConversation(msgs) {
   return (msgs || []).some((m) => {
     const role = String(m.role || "").toLowerCase();
     if (role === "system") return false;
+    if (isDefaultGreetingMessage(m)) return false;
     return String(m.content || "").trim().length > 0;
   });
 }
 
 function bindWelcomePanel() {
   const uploadBtn = document.getElementById("welcomeUploadBtn");
+  const uploadZone = document.getElementById("welcomeUploadZone");
   if (uploadBtn && fileInput) {
-    uploadBtn.addEventListener("click", () => fileInput.click());
+    uploadBtn.addEventListener("click", (event) => {
+      event.stopPropagation();
+      fileInput.click();
+    });
+  }
+  if (uploadZone && fileInput) {
+    uploadZone.addEventListener("click", (event) => {
+      if (event.target.closest("button, input, .welcome-server-import")) return;
+      fileInput.click();
+    });
+    uploadZone.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      uploadZone.classList.add("dragover");
+    });
+    uploadZone.addEventListener("dragleave", () => {
+      uploadZone.classList.remove("dragover");
+    });
+    uploadZone.addEventListener("drop", (event) => {
+      event.preventDefault();
+      uploadZone.classList.remove("dragover");
+      addPendingFiles(event.dataTransfer.files);
+    });
+  }
+  const welcomeServerPath = document.getElementById("welcomeServerPath");
+  const welcomeServerImportBtn = document.getElementById("welcomeServerImportBtn");
+  const welcomeServerImport = document.getElementById("welcomeServerImport");
+  if (welcomeServerImport) {
+    welcomeServerImport.addEventListener("click", (event) => event.stopPropagation());
+  }
+  if (welcomeServerImportBtn) {
+    welcomeServerImportBtn.addEventListener("click", async (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      await importServerPathFromUi(welcomeServerPath ? welcomeServerPath.value : "");
+    });
+  }
+  if (welcomeServerPath) {
+    welcomeServerPath.addEventListener("keydown", async (event) => {
+      if (event.key !== "Enter") return;
+      event.preventDefault();
+      event.stopPropagation();
+      await importServerPathFromUi(welcomeServerPath.value);
+    });
+  }
+  const importServerPathBtn = document.getElementById("importServerPathBtn");
+  if (importServerPathBtn) {
+    importServerPathBtn.addEventListener("click", async () => {
+      const preset = welcomeServerPath ? welcomeServerPath.value.trim() : "";
+      const path = window.prompt(t("welcome.serverPathNeed"), preset);
+      if (path == null) return;
+      await importServerPathFromUi(path);
+    });
   }
   document.querySelectorAll(".welcome-example").forEach((btn) => {
     btn.addEventListener("click", () => {
       const key = btn.getAttribute("data-example-key");
+      const dataKey = btn.getAttribute("data-example-data-key");
+      const litKey = btn.getAttribute("data-example-lit-key");
       const prompt = key ? t(key) : "";
-      if (!prompt || !promptInput) return;
-      promptInput.value = prompt;
-      promptInput.dispatchEvent(new Event("input"));
-      promptInput.focus();
+      if (!prompt) return;
+      fillGoalFields({
+        objective: prompt,
+        dataDesc: dataKey ? t(dataKey) : "",
+        literature: litKey ? t(litKey) : "",
+      });
+      const dataEl = document.getElementById("goalDataDescInput");
+      if (dataEl) dataEl.focus();
+      else if (promptInput) promptInput.focus();
     });
   });
+  const goalObjectiveInput = document.getElementById("goalObjectiveInput");
+  if (goalObjectiveInput) {
+    goalObjectiveInput.addEventListener("input", syncObjectiveFromWelcome);
+  }
+  const goalLiteratureInput = document.getElementById("goalLiteratureInput");
+  if (goalLiteratureInput) {
+    goalLiteratureInput.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter") return;
+      event.preventDefault();
+      event.stopPropagation();
+      if (promptInput) promptInput.focus();
+    });
+  }
 }
 
 async function loadMessages(sessionId) {
@@ -5596,28 +5955,245 @@ async function loadMessages(sessionId) {
   const msgs = data.messages || [];
   toggleWelcomePanel(!sessionHasConversation(msgs));
   lastAssistantMessageId = null;
-  msgs.forEach((m) => createMessageEl(m.role, m.content, m.time || "", m.id));
+  msgs.forEach((m) => {
+    if (isDefaultGreetingMessage(m)) return;
+    createMessageEl(m.role, m.content, m.time || "", m.id);
+  });
   scrollMessagesIfPinned(true);
 }
 
-function updateWorkflowStatus(status) {
-  if (!workflowStatusEl) return;
+function workflowStepIndex(status) {
+  switch (status) {
+    case "PLANNING":
+      return 1;
+    case "AWAITING_APPROVAL":
+      return 2;
+    case "EXECUTING":
+      return 3;
+    case "REPORTING":
+      return 4;
+    case "COMPLETED":
+      return 5;
+    case "FAILED":
+      return 3;
+    default:
+      return 0;
+  }
+}
+
+function shortStatusLabel(status) {
   const key = `workflow.status.${status || "WAITING_INPUT"}`;
   const label = t(key);
-  workflowStatusEl.textContent =
-    label && label !== key ? label : t("workflow.statusWaiting");
+  return label && label !== key ? label : t("workflow.statusWaiting");
+}
+
+function renderWorkflowStepper(status) {
+  const items = workflowStepper?.querySelectorAll("li") || [];
+  const failed = status === "FAILED";
+  const completed = status === "COMPLETED";
+  const current = workflowStepIndex(status);
+  const running = status === "PLANNING" || status === "EXECUTING" || status === "REPORTING";
+  items.forEach((el, index) => {
+    el.classList.remove("is-current", "is-done", "is-error", "needs-action", "is-running");
+    el.removeAttribute("aria-current");
+    if (completed) {
+      el.classList.add("is-done");
+      return;
+    }
+    if (failed) {
+      if (index < 3) el.classList.add("is-done");
+      else if (index === 3) el.classList.add("is-error");
+      return;
+    }
+    if (index < current) el.classList.add("is-done");
+    else if (index === current) {
+      el.classList.add("is-current");
+      el.setAttribute("aria-current", "step");
+      if (status === "AWAITING_APPROVAL") el.classList.add("needs-action");
+      if (running) el.classList.add("is-running");
+    }
+  });
+}
+
+function planHeadingId(index, text) {
+  const slug = String(text || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^\w\u4e00-\u9fff-]+/g, "")
+    .slice(0, 40);
+  return `plan-sec-${index}-${slug || "h"}`;
+}
+
+function decoratePlanMessage(status) {
+  document.querySelectorAll(".message.assistant.plan-review").forEach((el) => {
+    el.classList.remove("plan-review", "has-outline");
+    el.querySelector(".plan-review-badge")?.remove();
+    el.querySelector(".plan-review-outline")?.remove();
+  });
+  if (status !== "AWAITING_APPROVAL" || !messagesEl) return;
+  const messages = messagesEl.querySelectorAll(".message.assistant");
+  const last = messages[messages.length - 1];
+  if (!last) return;
+  last.classList.add("plan-review");
+  const badge = document.createElement("div");
+  badge.className = "plan-review-badge";
+  badge.textContent = t("stage.planBadge");
+  last.insertBefore(badge, last.firstChild);
+
+  const content = last.querySelector(".message-content");
+  const headings = content
+    ? [...content.querySelectorAll("h1, h2, h3")].filter((h) => String(h.textContent || "").trim())
+    : [];
+  if (headings.length >= 2) {
+    last.classList.add("has-outline");
+    const nav = document.createElement("nav");
+    nav.className = "plan-review-outline";
+    nav.setAttribute("aria-label", t("stage.outlineTitle"));
+    const label = document.createElement("p");
+    label.className = "plan-review-outline-label";
+    label.textContent = t("stage.outlineTitle");
+    nav.appendChild(label);
+    headings.forEach((h, i) => {
+      h.id = planHeadingId(i, h.textContent);
+      const link = document.createElement("a");
+      link.href = `#${h.id}`;
+      link.textContent = h.textContent.trim();
+      link.addEventListener("click", (event) => {
+        event.preventDefault();
+        h.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      });
+      nav.appendChild(link);
+    });
+    if (content) last.insertBefore(nav, content);
+  }
+
+  requestAnimationFrame(() => {
+    last.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+}
+
+function composerPlaceholderFor(status) {
+  if (status === "AWAITING_APPROVAL") return t("composer.placeholderApproval");
+  if (status === "PLANNING" || status === "EXECUTING" || status === "REPORTING") {
+    return t("composer.placeholderRunning");
+  }
+  if (status === "COMPLETED") return t("composer.placeholderDone");
+  if (status === "FAILED") return t("stage.failedHint");
+  return t("composer.placeholderWaiting");
+}
+
+function applyWorkflowChrome(status) {
+  const st = status || "WAITING_INPUT";
+  currentWorkflowStatus = st;
+  renderWorkflowStepper(st);
+  decoratePlanMessage(st);
+
+  if (toolbarStageBadge) {
+    toolbarStageBadge.textContent = {
+      WAITING_INPUT: t("workflow.stage.input"),
+      PLANNING: t("workflow.stage.plan"),
+      AWAITING_APPROVAL: t("workflow.stage.confirm"),
+      EXECUTING: t("workflow.stage.run"),
+      REPORTING: t("workflow.stage.report"),
+      COMPLETED: t("stage.completedTitle"),
+      FAILED: t("stage.failedTitle"),
+    }[st] || t("workflow.stage.input");
+    toolbarStageBadge.classList.remove("is-confirm", "is-run", "is-done", "is-error");
+    if (st === "AWAITING_APPROVAL") toolbarStageBadge.classList.add("is-confirm");
+    else if (st === "PLANNING" || st === "EXECUTING" || st === "REPORTING") {
+      toolbarStageBadge.classList.add("is-run");
+    } else if (st === "COMPLETED") toolbarStageBadge.classList.add("is-done");
+    else if (st === "FAILED") toolbarStageBadge.classList.add("is-error");
+  }
+
+  const welcomeVisible = Boolean(welcomePanel && !welcomePanel.classList.contains("hidden"));
+  const showColor = st === "COMPLETED" || st === "REPORTING";
+  composer?.classList.toggle("allow-color", showColor);
+  if (!showColor && typeof closeChatColorPicker === "function") {
+    try {
+      closeChatColorPicker();
+    } catch {
+      /* defined later */
+    }
+  }
+
+  if (promptInput && !promptInput.value) {
+    promptInput.placeholder = composerPlaceholderFor(st);
+  } else if (promptInput) {
+    promptInput.setAttribute("data-i18n-placeholder-dynamic", composerPlaceholderFor(st));
+    promptInput.placeholder = composerPlaceholderFor(st);
+  }
+
+  if (!stageActionBar) {
+    syncStopButton();
+    return;
+  }
+  const hideBar = isSharedView || welcomeVisible || st === "WAITING_INPUT";
+  stageActionBar.classList.toggle("hidden", hideBar);
+  stageActionBar.classList.remove("is-confirm", "is-done", "is-error", "is-run");
+  confirmPlanBtn?.classList.add("hidden");
+  revisePlanBtn?.classList.add("hidden");
+  stageStopBtn?.classList.add("hidden");
+  stageReportBtn?.classList.add("hidden");
+  if (hideBar) {
+    syncStopButton();
+    return;
+  }
+
+  let title = "";
+  let hint = "";
+  if (st === "AWAITING_APPROVAL") {
+    title = t("stage.confirmTitle");
+    hint = t("stage.confirmHint");
+    stageActionBar.classList.add("is-confirm");
+    confirmPlanBtn?.classList.remove("hidden");
+    revisePlanBtn?.classList.remove("hidden");
+    if (confirmPlanBtn) confirmPlanBtn.disabled = isStreaming;
+    if (revisePlanBtn) revisePlanBtn.disabled = isStreaming;
+  } else if (st === "PLANNING" || st === "EXECUTING" || st === "REPORTING") {
+    stageActionBar.classList.add("is-run");
+    stageStopBtn?.classList.remove("hidden");
+    if (stageStopBtn) stageStopBtn.disabled = isSharedView;
+    if (st === "PLANNING") {
+      title = t("stage.planningTitle");
+      hint = t("stage.planningHint");
+    } else if (st === "EXECUTING") {
+      title = t("stage.executingTitle");
+      hint = t("stage.executingHint");
+    } else {
+      title = t("stage.reportingTitle");
+      hint = t("stage.reportingHint");
+    }
+  } else if (st === "COMPLETED") {
+    title = t("stage.completedTitle");
+    hint = t("stage.completedHint");
+    stageActionBar.classList.add("is-done");
+    if (hasAgentCReport) stageReportBtn?.classList.remove("hidden");
+  } else if (st === "FAILED") {
+    title = t("stage.failedTitle");
+    hint = t("stage.failedHint");
+    stageActionBar.classList.add("is-error");
+  }
+  if (stageActionTitle) stageActionTitle.textContent = title;
+  if (stageActionHint) stageActionHint.textContent = hint;
+  syncStopButton();
+}
+
+function updateWorkflowStatus(status) {
+  const st = status || "WAITING_INPUT";
+  if (workflowStatusEl) workflowStatusEl.textContent = shortStatusLabel(st);
+  applyWorkflowChrome(st);
 }
 
 async function loadSessionView(sessionId) {
+  const statusPromise = fetch(`/api/sessions/${sessionId}`)
+    .then((res) => res.json())
+    .catch(() => null);
   await loadMessages(sessionId);
   await loadWorkspaceFiles(sessionId);
-  try {
-    const res = await fetch(`/api/sessions/${sessionId}`);
-    const data = await res.json();
-    updateWorkflowStatus(data.session?.workflow_status);
-  } catch {
-    updateWorkflowStatus("WAITING_INPUT");
-  }
+  const data = await statusPromise;
+  updateWorkflowStatus(data?.session?.workflow_status || "WAITING_INPUT");
 }
 
 async function loadSharedMessages(sessionId) {
@@ -5631,21 +6207,76 @@ async function loadSharedMessages(sessionId) {
   scrollMessagesIfPinned(true);
 }
 
+async function sessionLooksEmpty(sessionId) {
+  try {
+    const res = await fetch(`/api/sessions/${sessionId}/messages`);
+    const data = await res.json();
+    if (!res.ok) return false;
+    return !sessionHasConversation(data.messages || []);
+  } catch {
+    return false;
+  }
+}
+
+async function findOrCreateWelcomeSession() {
+  const waiting = sessions.filter(
+    (session) => (session.workflow_status || "WAITING_INPUT") === "WAITING_INPUT"
+  );
+  for (const session of waiting.slice(0, 8)) {
+    if (await sessionLooksEmpty(session.id)) return session.id;
+  }
+  return createSession({
+    model: getEffectiveModelId(),
+    temperature: Number(tempInput.value || 0),
+  });
+}
+
 async function bootSessionsAndLoad() {
   await fetchSessions();
-  if (!sessions.length) {
+  const urlSession = getUrlParams().get("session");
+  const urlSessionExists = Boolean(
+    urlSession && sessions.some((session) => session.id === urlSession)
+  );
+
+  if (urlSessionExists) {
+    currentSessionId = urlSession;
+  } else if (!sessions.length) {
     currentSessionId = await createSession({
       model: getEffectiveModelId(),
       temperature: Number(tempInput.value || 0),
     });
     await fetchSessions();
+  } else {
+    currentSessionId = await findOrCreateWelcomeSession();
+    await fetchSessions();
   }
+
   if (!sessions.find((s) => s.id === currentSessionId) && sessions.length) {
     currentSessionId = sessions[0].id;
   }
   renderSessionList();
   await loadSessionView(currentSessionId);
-  updateBrowserUrl(currentSessionId, false);
+  // 直接访问根地址时始终保持首页 URL；显式选择历史会话时才保留 session 参数。
+  updateBrowserUrl(urlSessionExists ? currentSessionId : null, false);
+}
+
+async function openWelcomeHome() {
+  if (isSharedView) {
+    window.location.href = "/";
+    return;
+  }
+  forceStopStreamingUI();
+  setStatus("");
+  await fetchSessions();
+  currentSessionId = await findOrCreateWelcomeSession();
+  await fetchSessions();
+  pendingFiles = [];
+  importedServerFiles = [];
+  clearGoalExtraFields();
+  renderAttachments();
+  renderSessionList();
+  await loadSessionView(currentSessionId);
+  updateBrowserUrl(null, false);
 }
 
 async function enterSharedView(sessionId) {
@@ -5689,7 +6320,7 @@ async function consumeSseStream(res, onDelta, onDone, onError, signal, onChatIma
           onChatImage(payload.chat_image);
         }
         if (payload?.delta !== undefined) onDelta(payload.delta);
-        else if (payload?.done) onDone(payload);
+        else if (payload?.done) await onDone(payload);
         else if (payload?.error) onError(payload.error);
       }
     }
@@ -5703,6 +6334,7 @@ async function streamChat({
   temperature,
   useAgent,
   editMessageId,
+  scoreStyle,
   signal,
   onDelta,
   onDone,
@@ -5721,6 +6353,7 @@ async function streamChat({
         model: model || null,
         temperature: Number(temperature || 0),
         use_agent: Boolean(useAgent),
+        score_style: scoreStyle || null,
         edit_message_id:
           editMessageId != null ? Number(editMessageId) : null,
         regenerate_assistant: false,
@@ -5749,6 +6382,14 @@ async function runAssistantStream({
   editMessageId = null,
 }) {
   if (!currentSessionId) return;
+  let scoreStyle = null;
+  if (messageNeedsScoreStyle(userMessage)) {
+    scoreStyle = await pickScoreStyle();
+    if (!scoreStyle) {
+      setStatus("");
+      return;
+    }
+  }
   setStreamingState(true);
   activeStreamAbort = new AbortController();
   scrollMessagesIfPinned(true);
@@ -5771,6 +6412,7 @@ async function runAssistantStream({
       temperature: Number(tempInput.value || 0),
       useAgent,
       editMessageId,
+      scoreStyle,
       signal: activeStreamAbort.signal,
       onDelta: (delta) => {
         assistantText += delta;
@@ -5782,9 +6424,10 @@ async function runAssistantStream({
       },
       onChatImage: (img) => {
         const rel = typeof img === "string" ? img : img?.file;
-        if (rel) appendChatImageToMessage(assistantEl, currentSessionId, rel);
+        const version = img && typeof img === "object" ? img.version : null;
+        if (rel) appendChatImageToMessage(assistantEl, currentSessionId, rel, version);
       },
-      onDone: (payload) => {
+      onDone: async (payload) => {
         if (assistantText) {
           setMessageContent(assistantEl.contentEl, assistantText, {
             markdown: true,
@@ -5844,7 +6487,7 @@ async function runAssistantStream({
         applyCompletionStatus(payload);
         if (payload?.agent_c_report?.view_url) {
           attachAgentCReportButton(assistantEl, currentSessionId);
-          syncAgentCReportButton(currentSessionId);
+          await syncAgentCReportButton(currentSessionId);
         }
         if (payload?.workflow_status) {
           updateWorkflowStatus(payload.workflow_status);
@@ -5892,18 +6535,33 @@ form.addEventListener("submit", async (event) => {
     return;
   }
 
-  const text = promptInput.value.trim();
-  if (!text && pendingFiles.length === 0) return;
+  const objective = promptInput.value.trim();
+  const text = composeAnalysisGoalMessage(objective);
+  if (!text && pendingFiles.length === 0 && importedServerFiles.length === 0) return;
   if (!currentSessionId) await bootSessionsAndLoad();
+  // 一旦真正开始任务，就把会话写入 URL，刷新后仍回到本次分析。
+  updateBrowserUrl(currentSessionId, false);
 
   try {
+    const welcomeServerPath = document.getElementById("welcomeServerPath");
+    const serverPath = welcomeServerPath ? welcomeServerPath.value.trim() : "";
+    if (serverPath && importedServerFiles.length === 0 && pendingFiles.length === 0) {
+      const imported = await importServerPathFromUi(serverPath);
+      if (!imported) return;
+    }
     setStatus(pendingFiles.length ? t("status.uploading") : t("status.sending"));
-    const uploaded = await uploadPendingFiles(currentSessionId);
+    const uploaded = [
+      ...(await uploadPendingFiles(currentSessionId)),
+      ...importedServerFiles,
+    ];
+    importedServerFiles = [];
+    renderAttachments();
     if (uploaded.length) await loadWorkspaceFiles(currentSessionId);
     const finalMessage = buildUserMessage(text, uploaded);
 
     promptInput.value = "";
     promptInput.style.height = "auto";
+    clearGoalExtraFields();
     toggleWelcomePanel(false);
     scrollMessagesIfPinned(true);
 
@@ -5917,38 +6575,52 @@ form.addEventListener("submit", async (event) => {
   }
 });
 
-stopButton.addEventListener("click", async () => {
-  // 先拿到 controller，再发 cancel；切勿在 abort 前把 activeStreamAbort 置空
-  const ctrl = activeStreamAbort;
+async function requestCancelCurrentJob() {
+  if (!currentSessionId || isSharedView) return null;
+  if (cancelRequestInFlight) return null;
+  cancelRequestInFlight = true;
   statusText.className = "status-text status-warn";
   setStatus(t("status.stopRequested"));
+  try {
+    const res = await fetch(`/api/sessions/${currentSessionId}/cancel`, {
+      method: "POST",
+    });
+    const data = await res.json().catch(() => ({}));
+    if (data.workflow_status) {
+      updateWorkflowStatus(data.workflow_status);
+    }
+    return data;
+  } catch {
+    return null;
+  } finally {
+    cancelRequestInFlight = false;
+  }
+}
 
+function markLastAssistantCancelled() {
   const lastContent = messagesEl.querySelector(
     ".message.assistant:last-of-type .message-content"
   );
-  if (lastContent) {
-    const cur = String(getMessagePlainText(lastContent) || "").trim();
-    if (cur && !cur.includes("已终止")) {
-      setMessageContent(lastContent, `${cur}\n\n⚠️ **[已终止]**`, {
-        markdown: true,
-        immediate: true,
-      });
-      scrollMessagesIfPinned();
-    } else if (!cur) {
-      setMessageContent(lastContent, "⚠️ **[已终止]**", {
-        markdown: true,
-        immediate: true,
-      });
-    }
+  if (!lastContent) return;
+  const cur = String(getMessagePlainText(lastContent) || "").trim();
+  if (cur && !cur.includes("已终止")) {
+    setMessageContent(lastContent, `${cur}\n\n⚠️ **[已终止]**`, {
+      markdown: true,
+      immediate: true,
+    });
+    scrollMessagesIfPinned();
+  } else if (!cur) {
+    setMessageContent(lastContent, "⚠️ **[已终止]**", {
+      markdown: true,
+      immediate: true,
+    });
   }
+}
 
-  try {
-    if (currentSessionId) {
-      await fetch(`/api/sessions/${currentSessionId}/cancel`, { method: "POST" });
-    }
-  } catch {
-    /* ignore */
-  }
+async function handleStopClick() {
+  const ctrl = activeStreamAbort;
+  markLastAssistantCancelled();
+  await requestCancelCurrentJob();
   if (ctrl) {
     try {
       ctrl.abort();
@@ -5956,14 +6628,34 @@ stopButton.addEventListener("click", async () => {
       /* ignore */
     }
   }
-  setStreamingState(false);
   activeStreamAbort = null;
+  setStreamingState(false);
+  if (!ctrl && currentSessionId) {
+    try {
+      await loadSessionView(currentSessionId);
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
+stopButton.addEventListener("click", () => {
+  handleStopClick();
 });
+if (stageStopBtn) {
+  stageStopBtn.addEventListener("click", () => {
+    handleStopClick();
+  });
+}
 
 promptInput.addEventListener("input", () => {
   promptInput.style.height = "auto";
   promptInput.style.height = `${Math.min(promptInput.scrollHeight, 260)}px`;
   syncChatColorPickerFromInput();
+  const objectiveEl = document.getElementById("goalObjectiveInput");
+  if (objectiveEl && objectiveEl.value !== promptInput.value) {
+    objectiveEl.value = promptInput.value;
+  }
 });
 
 function normalizeHexColor(value) {
@@ -6122,6 +6814,14 @@ renderChatColorPresets();
 setChatColorSelection(chatColorState.selected);
 
 attachBtn.addEventListener("click", () => fileInput.click());
+attachmentToggle?.addEventListener("click", () => {
+  const collapsed = attachmentBar.classList.contains("is-collapsed");
+  attachmentOpen = collapsed;
+  const count =
+    attachmentList.querySelectorAll(".attachment-chip").length ||
+    pendingFiles.length + importedServerFiles.length;
+  syncAttachmentFold(count);
+});
 bindWelcomePanel();
 fileInput.addEventListener("change", () => {
   addPendingFiles(fileInput.files);
@@ -6139,6 +6839,71 @@ composer.addEventListener("drop", (e) => {
   addPendingFiles(e.dataTransfer.files);
 });
 
+function setDevSettingsOpen(open) {
+  if (!devSettingsBtn || !devSettingsPanel) return;
+  devSettingsPanel.classList.toggle("hidden", !open);
+  devSettingsBtn.classList.toggle("active", open);
+  devSettingsBtn.setAttribute("aria-expanded", open ? "true" : "false");
+}
+
+function focusComposerForRevision() {
+  if (!promptInput || isSharedView || isStreaming) return;
+  promptInput.focus();
+  composer?.classList.add("is-revise-focus");
+  window.setTimeout(() => composer?.classList.remove("is-revise-focus"), 1200);
+}
+
+if (confirmPlanBtn) {
+  confirmPlanBtn.addEventListener("click", () => {
+    if (isSharedView || isStreaming) return;
+    promptInput.value = t("stage.confirmPhrase");
+    form.requestSubmit();
+  });
+}
+
+if (revisePlanBtn) {
+  revisePlanBtn.addEventListener("click", () => {
+    focusComposerForRevision();
+  });
+}
+
+if (stageReportBtn) {
+  stageReportBtn.addEventListener("click", () => {
+    if (!currentSessionId || isSharedView) return;
+    openAgentCReportViewer(currentSessionId);
+  });
+}
+
+if (devSettingsBtn && devSettingsPanel) {
+  devSettingsBtn.addEventListener("click", (event) => {
+    event.stopPropagation();
+    setDevSettingsOpen(devSettingsPanel.classList.contains("hidden"));
+  });
+  document.addEventListener("click", (event) => {
+    if (devSettingsPanel.classList.contains("hidden")) return;
+    if (event.target.closest("#devSettingsPanel") || event.target.closest("#devSettingsBtn")) return;
+    if (event.target.closest("#llmSettingsModal")) return;
+    setDevSettingsOpen(false);
+  });
+}
+
+if (runtimeToggle && runtimeCard) {
+  runtimeToggle.addEventListener("click", () => {
+    const collapsed = runtimeCard.classList.toggle("is-collapsed");
+    runtimeToggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
+  });
+}
+
+if (homeBtn) {
+  homeBtn.addEventListener("click", async () => {
+    try {
+      await openWelcomeHome();
+    } catch (err) {
+      setStatus(t("status.pageLoadFailed", { msg: err.message }));
+    }
+  });
+}
+
 newSessionBtn.addEventListener("click", async () => {
   if (isSharedView) return;
   try {
@@ -6149,11 +6914,13 @@ newSessionBtn.addEventListener("click", async () => {
       temperature: Number(tempInput.value || 0),
     });
     pendingFiles = [];
+    importedServerFiles = [];
+    clearGoalExtraFields();
     renderAttachments();
     await fetchSessions();
     renderSessionList();
     await loadSessionView(currentSessionId);
-    updateBrowserUrl(currentSessionId, false);
+    updateBrowserUrl(null, false);
     setStatus("");
   } catch (err) {
     setStatus(t("status.createSessionFailed", { msg: err.message }));
@@ -6163,11 +6930,21 @@ newSessionBtn.addEventListener("click", async () => {
 clearSessionBtn.addEventListener("click", async () => {
   if (!currentSessionId || isSharedView) return;
   if (!confirm(t("session.clearConfirm"))) return;
+  try {
+    await fetch(`/api/sessions/${currentSessionId}/cancel`, { method: "POST" });
+  } catch {
+    /* 即使当前没有任务，也继续重置 */
+  }
   const res = await fetch(`/api/sessions/${currentSessionId}/clear`, { method: "POST" });
   if (!res.ok) throw new Error(t("err.clearSession"));
+  pendingFiles = [];
+  importedServerFiles = [];
+  clearGoalExtraFields();
+  renderAttachments();
   await fetchSessions();
   renderSessionList();
   await loadSessionView(currentSessionId);
+  updateBrowserUrl(null, false);
 });
 
 refreshFilesBtn.addEventListener("click", async () => {
@@ -6617,6 +7394,10 @@ document.addEventListener("keydown", (event) => {
     closeLlmSettingsModal();
     return;
   }
+  if (event.key === "Escape" && devSettingsPanel && !devSettingsPanel.classList.contains("hidden")) {
+    setDevSettingsOpen(false);
+    return;
+  }
   if (event.key === "Escape" && metadataEditor && !metadataEditor.classList.contains("hidden")) {
     closeMetadataEditor();
     return;
@@ -6683,8 +7464,9 @@ function onLanguageChanged() {
   if (appRuntime) renderRuntimeInfo(appRuntime);
   else if (runtimeInfo) runtimeInfo.textContent = t("runtime.detecting");
   initTools();
+  updateWorkflowStatus(currentWorkflowStatus);
   if (currentSessionId && !isSharedView) {
-    loadWorkspaceFiles(currentSessionId);
+    loadWorkspaceFiles(currentSessionId).then(() => applyWorkflowChrome(currentWorkflowStatus));
   } else if (!currentSessionId || isSharedView) {
     filesPanelHint.textContent = t("files.hint");
   }

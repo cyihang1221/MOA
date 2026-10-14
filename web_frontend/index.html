@@ -8,13 +8,13 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <meta name="description" content="MassAgent - 质谱数据分析智能 Agent" />
+    <meta name="description" content="上传质谱数据并描述科学问题，系统生成可评审的分析计划；确认后执行分析、出图并撰写报告。" />
 
-    <title>MassAgent · 质谱 Agent</title>
+    <title>MassAgent · 质谱数据分析智能体</title>
 
     <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
 
-    <link rel="stylesheet" href="/static/styles.css?v=20260903-empty-md" />
+    <link rel="stylesheet" href="/static/styles.css?v=20261012-score-style" />
 
   </head>
 
@@ -48,37 +48,62 @@
 
           </div>
 
-          <button id="newSessionBtn" type="button" data-i18n="btn.newSession">+ 新会话</button>
+        </div>
+
+        <div class="account-bar">
+          <span id="accountName"></span>
+          <button id="logoutBtn" type="button">退出</button>
+        </div>
+
+        <div class="sidebar-primary-actions">
+
+          <button id="homeBtn" type="button" class="sidebar-home-btn" data-i18n="btn.home">首页</button>
+
+          <button id="newSessionBtn" type="button" data-i18n="btn.newSession">+ 新分析</button>
 
         </div>
 
 
 
-        <section class="sidebar-card" id="runtimeCard">
+        <section class="sidebar-card workflow-card">
 
-          <h2 data-i18n="runtime.title">运行环境</h2>
+          <h2 data-i18n="workflow.title">分析进度</h2>
 
-          <div id="runtimeInfo" class="runtime-info muted" data-i18n="runtime.detecting">正在检测…</div>
+          <p id="workflowStatus" class="muted workflow-status">当前：等待输入</p>
+
+          <ol id="workflowStepper" class="workflow-stepper">
+
+            <li data-i18n="workflow.stage.input">上传与提问</li>
+
+            <li data-i18n="workflow.stage.plan">生成计划</li>
+
+            <li data-i18n="workflow.stage.confirm">确认计划</li>
+
+            <li data-i18n="workflow.stage.run">执行分析</li>
+
+            <li data-i18n="workflow.stage.report">出图与报告</li>
+
+          </ol>
 
         </section>
 
 
 
-        <section class="sidebar-card">
+        <section class="sidebar-card runtime-card is-collapsed" id="runtimeCard">
 
-          <h2 data-i18n="workflow.title">使用方式</h2>
+          <button id="runtimeToggle" type="button" class="sidebar-disclosure" aria-expanded="false">
 
-          <p id="workflowStatus" class="muted workflow-status">当前：等待输入</p>
+            <span data-i18n="runtime.title">运行环境</span>
 
-          <ol class="workflow-list">
+            <span class="disclosure-chevron" aria-hidden="true"></span>
 
-            <li data-i18n="workflow.step1">上传数据并用自然语言描述分析目标</li>
+          </button>
 
-            <li data-i18n="workflow.step2">审阅计划，回复「确认计划」或提出修改意见</li>
+          <div id="runtimePanel" class="runtime-panel">
 
-            <li data-i18n="workflow.step3">确认后自动执行、出图并写报告；之后可改图/拼图</li>
+            <div id="runtimeInfo" class="runtime-info muted" data-i18n="runtime.detecting">正在检测…</div>
 
-          </ol>
+          </div>
 
         </section>
 
@@ -112,49 +137,45 @@
 
         <header class="chat-toolbar">
 
-          <div class="toolbar-group">
+          <div class="toolbar-main">
 
-            <label for="modelSelect" data-i18n="toolbar.model">模型</label>
+            <span id="toolbarStageBadge" class="stage-badge">等待输入</span>
 
-            <select id="modelSelect"></select>
+            <button id="openAgentCReportBtn" type="button" class="secondary-btn hidden" data-i18n="report.open">
 
-            <button id="llmSettingsBtn" type="button" class="secondary-btn" data-i18n="toolbar.apiSettings">
-
-              API 设置
+              查看分析报告
 
             </button>
 
           </div>
 
-          <div class="toolbar-group">
+          <div class="toolbar-actions">
 
-            <label for="tempInput" data-i18n="toolbar.temp">Temperature</label>
+            <div class="toolbar-group lang-group">
 
-            <input id="tempInput" type="number" min="0" max="2" step="0.1" value="0" />
+              <label for="langSelect" data-i18n="toolbar.lang">语言</label>
 
-          </div>
+              <select id="langSelect" aria-label="Language">
 
-          <div class="toolbar-group lang-group">
+                <option value="zh-CN">中文</option>
 
-            <label for="langSelect" data-i18n="toolbar.lang">Language</label>
+                <option value="en">English</option>
 
-            <select id="langSelect" aria-label="Language">
+              </select>
 
-              <option value="zh-CN">中文</option>
+            </div>
 
-              <option value="en">English</option>
+            <button id="devSettingsBtn" type="button" class="secondary-btn" data-i18n="toolbar.settings" aria-expanded="false">
 
-            </select>
+              设置
 
-          </div>
+            </button>
 
-          <button id="clearSessionBtn" type="button" class="secondary-btn" data-i18n="toolbar.clearSession">
+            <button id="clearSessionBtn" type="button" class="secondary-btn" data-i18n="toolbar.clearSession">
 
-            清空会话
+              重置分析
 
-          </button>
-
-          <div class="toolbar-group share-group">
+            </button>
 
             <button id="shareBtn" type="button" class="secondary-btn" data-i18n="toolbar.share">
 
@@ -166,46 +187,139 @@
 
           </div>
 
+          <div id="devSettingsPanel" class="dev-settings-panel hidden">
+
+            <div class="toolbar-group">
+
+              <label for="modelSelect" data-i18n="toolbar.model">模型</label>
+
+              <select id="modelSelect"></select>
+
+              <button id="llmSettingsBtn" type="button" class="secondary-btn" data-i18n="toolbar.apiSettings">
+
+                API 设置
+
+              </button>
+
+            </div>
+
+            <div class="toolbar-group">
+
+              <label for="tempInput" data-i18n="toolbar.temp">温度</label>
+
+              <input id="tempInput" type="number" min="0" max="2" step="0.1" value="0" />
+
+            </div>
+
+          </div>
+
         </header>
 
 
 
         <div class="chat-main">
 
-          <section id="welcomePanel" class="welcome-panel hidden">
-            <div class="welcome-hero">
-              <h2 data-i18n="welcome.title">从数据和问题开始</h2>
-              <p data-i18n="welcome.desc">
-                上传质谱数据，用一句话说明分析目标。系统会生成可评审的分析计划；你确认后才执行、出图并写报告。
-              </p>
-            </div>
-            <ol class="welcome-steps">
-              <li data-i18n="welcome.step1">上传 mzML / CSV / raw 等数据</li>
-              <li data-i18n="welcome.step2">描述要回答的科学问题</li>
-              <li data-i18n="welcome.step3">审阅计划，回复「确认计划」后才会执行</li>
-            </ol>
-            <div class="welcome-actions">
-              <button id="welcomeUploadBtn" type="button" class="welcome-upload-btn" data-i18n="welcome.upload">
-                上传数据文件
-              </button>
-              <p class="welcome-formats" data-i18n="welcome.formats">
-                支持 mzML、CSV/TSV、raw、mgf 等；可一次上传多个文件
-              </p>
-            </div>
-            <p class="welcome-examples-label" data-i18n="welcome.examplesLabel">或先选一个分析目标，再补充你的数据</p>
-            <div class="welcome-examples">
-              <button type="button" class="welcome-example" data-example-key="welcome.example1.prompt">
-                <strong data-i18n="welcome.example1.title">寻找差异代谢物</strong>
-                <span data-i18n="welcome.example1.hint">分组比较，PCA 与火山图</span>
-              </button>
-              <button type="button" class="welcome-example" data-example-key="welcome.example2.prompt">
-                <strong data-i18n="welcome.example2.title">疾病进展与机制</strong>
-                <span data-i18n="welcome.example2.hint">分期变化、通路与解释</span>
-              </button>
-              <button type="button" class="welcome-example" data-example-key="welcome.example3.prompt">
-                <strong data-i18n="welcome.example3.title">分类与生物标志物</strong>
-                <span data-i18n="welcome.example3.hint">分组判别与关键特征</span>
-              </button>
+          <section id="welcomePanel" class="welcome-panel">
+            <div class="welcome-inner">
+              <div class="welcome-hero">
+                <p class="welcome-kicker" data-i18n="welcome.kicker">任务驱动 · 确认后才执行</p>
+                <h2 data-i18n="welcome.title">从数据和问题开始</h2>
+                <p data-i18n="welcome.desc">
+                  上传质谱数据，填写分析目标、数据描述，可选附参考文献检索式。系统会生成可评审的分析计划；你确认后才执行、出图并写报告。
+                </p>
+              </div>
+              <ol class="welcome-steps">
+                <li>
+                  <strong data-i18n="welcome.step1Title">上传数据</strong>
+                  <span data-i18n="welcome.step1">mzML、CSV/TSV、raw、mgf 等，可一次多个文件</span>
+                </li>
+                <li>
+                  <strong data-i18n="welcome.step2Title">提出问题</strong>
+                  <span data-i18n="welcome.step2">填写分析目标、数据描述，可选给中英文文献检索式</span>
+                </li>
+                <li>
+                  <strong data-i18n="welcome.step3Title">确认计划</strong>
+                  <span data-i18n="welcome.step3">审阅方案后点「确认计划并执行」，才会开始分析</span>
+                </li>
+              </ol>
+              <div id="welcomeUploadZone" class="welcome-upload-card">
+                <button id="welcomeUploadBtn" type="button" class="welcome-upload-btn" data-i18n="welcome.upload">
+                  上传数据文件
+                </button>
+                <p class="welcome-upload-hint" data-i18n="welcome.uploadHint">点击选择，或把文件拖到这里</p>
+                <p class="welcome-formats" data-i18n="welcome.formats">支持 mzML、CSV/TSV、raw、mgf 等</p>
+                <div id="welcomeServerImport" class="welcome-server-import">
+                  <p class="welcome-server-label" data-i18n="welcome.serverPathHint">
+                    数据已在服务器上？填绝对路径导入，无需经浏览器上传
+                  </p>
+                  <div class="welcome-server-row">
+                    <input
+                      id="welcomeServerPath"
+                      type="text"
+                      spellcheck="false"
+                      autocomplete="off"
+                      data-i18n-placeholder="welcome.serverPathPlaceholder"
+                      placeholder="/home/.../raw 或 mzML 目录"
+                    />
+                    <button id="welcomeServerImportBtn" type="button" class="secondary-btn" data-i18n="welcome.serverImport">
+                      从服务器导入
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div class="welcome-goal-form" id="welcomeGoalForm">
+                <label class="welcome-goal-field">
+                  <span class="welcome-goal-label" data-i18n="goal.objectiveLabel">分析目标</span>
+                  <textarea
+                    id="goalObjectiveInput"
+                    rows="3"
+                    data-i18n-placeholder="goal.objectivePlaceholder"
+                    placeholder="用一句话说明要回答的科学问题"
+                  ></textarea>
+                </label>
+                <label class="welcome-goal-field">
+                  <span class="welcome-goal-label" data-i18n="goal.dataLabel">数据描述 (简要说明数据类型/条件)</span>
+                  <textarea
+                    id="goalDataDescInput"
+                    rows="2"
+                    data-i18n-placeholder="goal.dataPlaceholder"
+                    placeholder="例如：Thermo RAW，正离子 LC-MS；分组 BK / DY / QC"
+                  ></textarea>
+                </label>
+                <label class="welcome-goal-field">
+                  <span class="welcome-goal-label" data-i18n="goal.literatureLabel">可选 · 参考文献/资料</span>
+                  <span class="welcome-goal-hint" data-i18n="goal.literatureHint">中文/英文检索式或备注，回车跳过</span>
+                  <input
+                    id="goalLiteratureInput"
+                    type="text"
+                    spellcheck="false"
+                    autocomplete="off"
+                    data-i18n-placeholder="goal.literaturePlaceholder"
+                    placeholder="例如：Duyun Maojian untargeted metabolomics；DOI 或中文检索式"
+                  />
+                </label>
+              </div>
+              <div class="welcome-examples-block">
+                <p class="welcome-examples-label" data-i18n="welcome.examplesLabel">或先选一个分析目标，再补充你的数据</p>
+                <div class="welcome-examples">
+                  <button type="button" class="welcome-example" data-example-key="welcome.example1.prompt" data-example-data-key="welcome.example1.data" data-example-lit-key="welcome.example1.lit">
+                    <strong data-i18n="welcome.example1.title">寻找差异代谢物</strong>
+                    <span data-i18n="welcome.example1.hint">分组比较，PCA 与火山图</span>
+                  </button>
+                  <button type="button" class="welcome-example" data-example-key="welcome.example2.prompt" data-example-data-key="welcome.example2.data" data-example-lit-key="welcome.example2.lit">
+                    <strong data-i18n="welcome.example2.title">疾病进展与机制</strong>
+                    <span data-i18n="welcome.example2.hint">分期变化、通路与解释</span>
+                  </button>
+                  <button type="button" class="welcome-example" data-example-key="welcome.example3.prompt" data-example-data-key="welcome.example3.data" data-example-lit-key="welcome.example3.lit">
+                    <strong data-i18n="welcome.example3.title">分类与生物标志物</strong>
+                    <span data-i18n="welcome.example3.hint">分组判别与关键特征</span>
+                  </button>
+                  <button type="button" class="welcome-example" data-example-key="welcome.example4.prompt" data-example-data-key="welcome.example4.data" data-example-lit-key="welcome.example4.lit">
+                    <strong data-i18n="welcome.example4.title">都匀毛尖茶样</strong>
+                    <span data-i18n="welcome.example4.hint">非靶向代谢组，含文献检索式</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </section>
 
@@ -224,10 +338,51 @@
 
 
 
+        <div id="stageActionBar" class="stage-action-bar hidden">
+
+          <div class="stage-action-copy">
+
+            <p id="stageActionTitle" class="stage-action-title"></p>
+
+            <p id="stageActionHint" class="stage-action-hint"></p>
+
+          </div>
+
+          <div class="stage-action-buttons">
+
+            <button id="stageStopBtn" type="button" class="stage-stop-btn hidden" data-i18n="stage.stopBtn">
+              终止当前任务
+            </button>
+            <button id="revisePlanBtn" type="button" class="stage-revise-btn hidden" data-i18n="stage.reviseBtn">
+
+              提出修改意见
+
+            </button>
+
+            <button id="confirmPlanBtn" type="button" class="stage-confirm-btn hidden" data-i18n="stage.confirmBtn">
+
+              确认计划并执行
+
+            </button>
+
+            <button id="stageReportBtn" type="button" class="stage-confirm-btn hidden" data-i18n="report.open">
+
+              查看分析报告
+
+            </button>
+
+          </div>
+
+        </div>
+
         <div id="composer" class="composer">
 
           <div id="attachmentBar" class="attachment-bar hidden">
 
+            <button id="attachmentToggle" type="button" class="attachment-toggle" aria-expanded="true">
+              <span id="attachmentSummary"></span>
+              <span class="disclosure-chevron" aria-hidden="true"></span>
+            </button>
             <div id="attachmentList" class="attachment-list"></div>
 
           </div>
@@ -239,7 +394,7 @@
                 <textarea
                   id="promptInput"
                   data-i18n-placeholder="composer.placeholder"
-                  placeholder="描述分析目标；审阅计划后回复「确认计划」。完成后可改图或写报告（Enter 发送）"
+                  placeholder="描述分析目标；审阅计划后可点「确认计划并执行」。完成后可改图或写报告（Enter 发送）"
                 ></textarea>
                 <button
                   id="chatColorBtn"
@@ -289,7 +444,9 @@
 
               >
 
-                📎
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                  <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M21.4 11.6 12.2 20.8a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 1 1 5.7 5.7l-9.2 9.2a2 2 0 1 1-2.8-2.8l8.5-8.5"/>
+                </svg>
 
               </button>
 
@@ -336,11 +493,11 @@
           <h2 data-i18n="files.title">会话文件</h2>
 
           <div class="files-panel-actions">
-            <button id="openAgentCReportBtn" type="button" class="secondary-btn small-btn hidden" data-i18n="report.open">
-              查看分析报告
-            </button>
             <button id="editMetadataBtn" type="button" class="secondary-btn small-btn" data-i18n="metadata.edit">
-              编辑 metadata
+              编辑样本信息
+            </button>
+            <button id="importServerPathBtn" type="button" class="secondary-btn small-btn" data-i18n="welcome.serverImport">
+              从服务器导入
             </button>
             <button id="refreshFilesBtn" type="button" class="secondary-btn small-btn" data-i18n="files.refresh">
               刷新
@@ -349,13 +506,13 @@
 
         </div>
 
-        <p id="filesPanelHint" class="files-hint muted" data-i18n="files.hint">切换会话后显示输入/输出文件</p>
+        <p id="filesPanelHint" class="files-hint muted" data-i18n="files.hint">上传的数据与分析结果会显示在这里</p>
 
         <section class="files-section">
 
           <h3 data-i18n="files.input">输入（上传）</h3>
 
-          <p id="inputFilesDir" class="files-dir muted"></p>
+          <p id="inputFilesDir" class="files-dir muted hidden"></p>
 
           <ul id="inputFilesList" class="file-tree"></ul>
 
@@ -363,9 +520,9 @@
 
         <section class="files-section">
 
-          <h3 data-i18n="files.output">输出（Agent）</h3>
+          <h3 data-i18n="files.output">输出（结果）</h3>
 
-          <p id="outputFilesDir" class="files-dir muted"></p>
+          <p id="outputFilesDir" class="files-dir muted hidden"></p>
 
           <div id="outputImageGalleryWrap" class="output-image-gallery-wrap hidden">
             <div class="output-image-gallery-toolbar">
@@ -765,6 +922,25 @@
     </div>
 
 
+    <div id="scoreStyleModal" class="score-style-modal hidden" role="dialog" aria-modal="true" aria-hidden="true">
+      <div class="score-style-modal-backdrop" id="scoreStyleModalBackdrop"></div>
+      <div class="score-style-modal-panel">
+        <h3 data-i18n="image.scoreStyleTitle">选择得分图风格</h3>
+        <p class="muted" data-i18n="image.scoreStyleHint">点一张预览，选择这次 PCA / PLS-DA 的风格。第一次出图仍用 SIMCA。</p>
+        <div class="score-style-grid">
+          <button type="button" class="score-style-card" data-score-style="simca">
+            <img src="/static/score_styles/simca.png" alt="SIMCA" />
+            <span data-i18n="image.scoreStyleSimca">SIMCA 得分图</span>
+          </button>
+          <button type="button" class="score-style-card" data-score-style="ggplot">
+            <img src="/static/score_styles/ggplot.png" alt="ggplot" />
+            <span data-i18n="image.scoreStyleGgplot">ggplot 分组椭圆</span>
+          </button>
+        </div>
+        <button type="button" class="secondary-btn" id="scoreStyleModalCancel" data-i18n="msg.cancel">取消</button>
+      </div>
+    </div>
+
     <div id="plotAgentEditor" class="plot-agent-editor hidden" role="dialog" aria-modal="true" aria-hidden="true">
       <div class="plot-agent-editor-backdrop" id="plotAgentEditorBackdrop"></div>
       <div class="plot-agent-editor-panel">
@@ -773,12 +949,25 @@
           <button id="plotAgentEditorClose" type="button" class="icon-btn" aria-label="Close">×</button>
         </header>
         <div class="plot-agent-editor-body">
+          <div id="plotAgentScoreStyles" class="score-style-picker hidden">
+            <p class="score-style-hint" data-i18n="image.scoreStyleHint">点一张预览，选择这次 PCA / PLS-DA 的风格。第一次出图仍用 SIMCA。</p>
+            <div class="score-style-grid">
+              <button type="button" class="score-style-card is-selected" data-score-style="simca">
+                <img src="/static/score_styles/simca.png" alt="SIMCA" />
+                <span data-i18n="image.scoreStyleSimca">SIMCA 得分图</span>
+              </button>
+              <button type="button" class="score-style-card" data-score-style="ggplot">
+                <img src="/static/score_styles/ggplot.png" alt="ggplot" />
+                <span data-i18n="image.scoreStyleGgplot">ggplot 分组椭圆</span>
+              </button>
+            </div>
+          </div>
           <p id="plotAgentEditorHint" class="plot-agent-editor-hint muted" data-i18n="image.plotAgentHint">
             描述你想修改的内容，例如：标题改为「PCA 分组比较」，Control 用 #4DBBD5，Case 用 #E64B35，标题字号 20。
           </p>
           <label class="plot-agent-editor-field">
             <span data-i18n="image.plotAgentInstruction">改图要求</span>
-            <textarea id="plotAgentInstruction" rows="4" class="plot-agent-instruction" data-i18n-placeholder="image.plotAgentPlaceholder" placeholder="例如：把标题改成 PCA Score Plot，A 组红色 #E64B35"></textarea>
+            <textarea id="plotAgentInstruction" rows="4" class="plot-agent-instruction" data-i18n-placeholder="image.plotAgentPlaceholder" placeholder="PCA 按知识库里那篇茶叶的图改一下，椭圆加上，样本名就别标了"></textarea>
           </label>
           <div id="plotAgentLiteratureHints" class="plot-agent-literature hidden">
             <p class="plot-agent-literature-title" data-i18n="image.plotLiteratureTitle">文献作图参考</p>
@@ -941,8 +1130,9 @@
     <script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/markdown-it@14.1.0/dist/markdown-it.min.js"></script>
-    <script src="/static/i18n.js?v=20260903-empty-md"></script>
-    <script src="/static/app.js?v=20260903-empty-md"></script>
+    <script src="/static/i18n.js?v=20261009-collapse"></script>
+    <script src="/static/auth_bar.js?v=20260929-auth2"></script>
+    <script src="/static/app.js?v=20261012-score-style"></script>
 
   </body>
 

@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MassAgent · 登录</title>
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/static/styles.css?v=20260929-auth2" />
+  </head>
+  <body class="auth-body">
+    <main class="auth-card">
+      <p class="auth-mark">MassAgent</p>
+      <h1 id="authTitle">登录</h1>
+      <p id="authLead" class="muted">登录后只能看到该账号自己的对话。</p>
+      <div class="auth-tabs" role="tablist">
+        <a id="loginTab" href="/login">登录</a>
+        <a id="registerTab" href="/register">注册</a>
+      </div>
+      <form id="authForm" novalidate>
+        <label>
+          用户名
+          <input id="username" name="username" autocomplete="username" maxlength="32" spellcheck="false" required />
+        </label>
+        <p id="usernameHint" class="auth-hint" hidden>2–32 位，可使用字母、数字、下划线或中文。</p>
+        <label>
+          密码
+          <span class="auth-password">
+            <input id="password" name="password" type="password" autocomplete="current-password" maxlength="64" required />
+            <button id="togglePassword" type="button" tabindex="-1">显示</button>
+          </span>
+        </label>
+        <ul id="passwordRules" class="auth-rules" hidden>
+          <li data-rule="length">至少 8 位，不超过 64 位</li>
+          <li data-rule="letter">包含字母</li>
+          <li data-rule="digit">包含数字</li>
+          <li data-rule="name">不与用户名相同</li>
+        </ul>
+        <p id="authError" class="auth-error" hidden></p>
+        <button id="submitBtn" type="submit">登录</button>
+      </form>
+      <p class="auth-foot">密码经哈希后保存，不以明文存放。每个账号使用单独的数据库保存对话。</p>
+    </main>
+    <script>
+      const registerMode = location.pathname === "/register";
+      document.title = registerMode ? "MassAgent · 注册" : "MassAgent · 登录";
+      document.getElementById("authTitle").textContent = registerMode ? "注册" : "登录";
+      document.getElementById("authLead").textContent = registerMode
+        ? "注册后会为这个账号建立独立的对话数据库。"
+        : "登录后只能看到该账号自己的对话。";
+      document.getElementById(registerMode ? "registerTab" : "loginTab").classList.add("active");
+      document.getElementById("submitBtn").textContent = registerMode ? "注册" : "登录";
+      document.getElementById("password").autocomplete = registerMode ? "new-password" : "current-password";
+      document.getElementById("usernameHint").hidden = !registerMode;
+      document.getElementById("passwordRules").hidden = !registerMode;
+
+      const errorEl = document.getElementById("authError");
+      const passwordEl = document.getElementById("password");
+      document.getElementById("togglePassword").addEventListener("click", () => {
+        const show = passwordEl.type === "password";
+        passwordEl.type = show ? "text" : "password";
+        document.getElementById("togglePassword").textContent = show ? "隐藏" : "显示";
+      });
+
+      function refreshRules() {
+        if (!registerMode) return;
+        const password = passwordEl.value;
+        const username = document.getElementById("username").value.trim();
+        const checks = {
+          length: password.length >= 8 && password.length <= 64,
+          letter: /[A-Za-z]/.test(password),
+          digit: /\d/.test(password),
+          name: password.length > 0 && password.toLowerCase() !== username.toLowerCase(),
+        };
+        document.querySelectorAll("#passwordRules li").forEach((item) => {
+          item.classList.toggle("met", Boolean(checks[item.dataset.rule]));
+        });
+      }
+      ["username", "password"].forEach((id) => {
+        document.getElementById(id).addEventListener("input", refreshRules);
+      });
+
+      document.getElementById("authForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        errorEl.hidden = true;
+        const username = document.getElementById("username").value.trim();
+        const password = passwordEl.value;
+        const payload = { username, password };
+        const res = await fetch(registerMode ? "/api/auth/register" : "/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          errorEl.textContent = data.detail || "操作未完成，请重试";
+          errorEl.hidden = false;
+          return;
+        }
+        location.href = "/";
+      });
+    </script>
+  </body>
+</html>

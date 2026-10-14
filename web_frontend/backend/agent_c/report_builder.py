@@ -271,6 +271,15 @@ def build_report_markdown(
         objective,
         "",
     ]
+    from web_frontend.backend.paper_plot_helpers import study_design_disclaimer
+
+    disclaimer = study_design_disclaimer(
+        metadata_csv=inventory.get("metadata_csv"),
+        reproduction_target=plan.get("reproduction_target"),
+        language="zh" if zh else "en",
+    )
+    if disclaimer:
+        intro_lines += ["> " + disclaimer, ""]
 
     methods_lines = [
         f"## {'Methods' if not zh else '方法'}",
@@ -323,6 +332,17 @@ def build_report_markdown(
         if present:
             results_lines.append(("标准化结果映射：" if zh else "Standard file mapping: ") + "; ".join(present))
         results_lines.append("")
+
+    from web_frontend.backend.agent_c.nature_distill import kegg_gap_markdown, resolve_kegg_status
+
+    kegg = resolve_kegg_status(
+        plan=plan,
+        inventory=inventory,
+        figures=list(figures) + list(incomplete_figures or []),
+    )
+    gap_md = kegg_gap_markdown(kegg, zh=zh)
+    if gap_md:
+        results_lines += [gap_md, ""]
 
     figures_lines = [f"## {'Figures' if not zh else '图表'}", ""]
     figures_lines += _figure_style_provenance(figures, zh)

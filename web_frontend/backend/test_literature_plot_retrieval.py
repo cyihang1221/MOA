@@ -10,6 +10,7 @@ from web_frontend.backend.literature_evidence import (
     apply_data_contract_to_patch,
     build_style_patch_from_evidence,
     collect_evidence_cards,
+    suggest_soft_style_patch,
 )
 from web_frontend.backend.literature_figure_style import clear_style_cache
 from web_frontend.backend.literature_plot_knowledge import (
@@ -193,6 +194,63 @@ class LiteraturePlotRetrievalTest(unittest.TestCase):
         self.assertIn("Supplementary literature", payload.get("text") or "")
         self.assertIn("NPG palette", payload.get("text") or "")
         self.assertEqual(payload.get("rag_mode"), "lexical")
+        self.assertTrue(payload.get("hints"))
+
+    def test_instruction_boosts_named_paper_skill(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            base = root / "MassOmics-Agent" / "MassOmics-Agent" / "skills" / "lcms-untargeted"
+            self._write_skill(
+                base,
+                ("generic-pca",),
+                "---\nname: generic-pca\ndescription: PCA score plot metabolomics\n---\n"
+                "## 出图清单\n| PCA | score plot |\n",
+            )
+            self._write_skill(
+                base,
+                ("keemun-lcms-untargeted-2023",),
+                "---\nname: keemun-lcms-untargeted-2023\n"
+                "description: 祁门红茶 LC-MS PCA 得分图\n---\n"
+                "DOI: 10.1016/j.foodchem.2022.135172\n\n"
+                "## 出图清单\n| PCA | 无监督整体趋势，分组着色 |\n",
+            )
+            ranked = rank_skills_for_plot(
+                plot_type="pca",
+                goal_text="",
+                instruction="PCA 按祁门红茶那篇来，椭圆和 NPG 都要",
+                project_root=root,
+                max_skills=2,
+            )
+            self.assertTrue(ranked)
+            self.assertEqual(ranked[0]["skill_id"], "keemun-lcms-untargeted-2023")
+
+    def test_literature_restyle_intent(self) -> None:
+        from web_frontend.backend.plot_edit_registry import looks_like_plot_edit_request
+
+        self.assertTrue(looks_like_plot_edit_request("参考文献把火山图弄得像论文里那样"))
+        self.assertTrue(looks_like_plot_edit_request("PCA 按祁门红茶那篇来，椭圆和 NPG 都要"))
+        self.assertTrue(looks_like_plot_edit_request("用知识库里的文献规范优化一下 VIP 图"))
+        self.assertFalse(looks_like_plot_edit_request("开始分析包括 xcms 和分子网络"))
+
+    def test_ellipse_applied_on_literature_restyle(self) -> None:
+        cards = [
+            {
+                "evidence_id": "t#L1",
+                "skill_id": "keemun",
+                "quote": "PCA score plot with 95% confidence ellipse, NPG palette",
+                "field_hints": ["palette", "legend.position"],
+                "claim_type": "literature_example",
+            }
+        ]
+        patch, warnings = suggest_soft_style_patch(
+            "pca",
+            cards,
+            metadata_columns=["Group"],
+            current_config={"palette": {"BK": "#111111", "DY": "#222222"}},
+            user_instruction="PCA 按知识库里那篇茶叶的图改一下，椭圆加上",
+        )
+        self.assertTrue(patch.get("ellipse") or (patch.get("marks") or {}).get("ellipse"))
+        self.assertFalse(any("不支持" in w for w in warnings))
 
 
 if __name__ == "__main__":

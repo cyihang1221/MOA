@@ -243,6 +243,7 @@ _MIXOMICS_FN_KWARGS = frozenset({
     "padj_threshold",
     "log2fc_threshold",
     "use_fdr",
+    "n_permutations",
 })
 
 _METADATA_GROUP_CHECK_OLD = """if (!all(c("Sample", "Group") %in% colnames(metadata))) {{
@@ -435,7 +436,7 @@ def run_statistical_analysis_mixomics(
 
     fn_kwargs = {k: v for k, v in kwargs.items() if k in _MIXOMICS_FN_KWARGS}
 
-    from src.tools.xcms import statistical_analysis_mixomics_impl as fn
+    from src.tools.step8_statistical_analysis import statistical_analysis_mixomics_impl as fn
 
     log_path = output_path / "statistical_analysis_mixomics.log"
     started = time.time()

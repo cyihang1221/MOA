@@ -5,10 +5,15 @@
 from __future__ import annotations
 
 import json
-import re
 from pathlib import Path
 from typing import Any
 
+from web_frontend.backend.agent_c.nature_distill import (
+    apply_enrichment_claim_guard,
+    insights_system_prompt,
+    insights_user_prompt_suffix,
+    resolve_kegg_status,
+)
 from web_frontend.backend.json_parse import extract_first_json_object
 
 INSIGHTS_SYSTEM = """你是代谢组学/质谱数据分析报告助手。你的任务是根据用户提供的**分析方案、结果文件清单、图表事实**，
@@ -41,6 +46,8 @@ INSIGHTS_SYSTEM = """你是代谢组学/质谱数据分析报告助手。你的�
 6. figure_interpretations 必须与输入中每张已完成图的 figure_id 一一对应；缺数据的图写「当前无足够数据支撑图意解读」。
 """
 
+INSIGHTS_SYSTEM = insights_system_prompt(INSIGHTS_SYSTEM)
+
 
 def collect_report_context(
     *,
@@ -69,6 +76,7 @@ def collect_report_context(
         "figures": [],
         "quantitative_hints": [],
         "existing_result_pngs": [],
+        "kegg_status": resolve_kegg_status(plan=plan, inventory=inventory, figures=figures),
     }
     for step in plan.get("workflow") or []:
         if isinstance(step, dict):
@@ -160,7 +168,10 @@ def _scan_quantitative_hints(results_dir: Path) -> list[str]:
                 hints.append(f"{name}: {msg}")
         except Exception:
             continue
-    return hints[:12]
+    kegg_hit = any(h.startswith("kegg_compound_enrich.csv") for h in hints)
+    if not kegg_hit:
+        hints.insert(0, "KEGG：标缺（未找到 kegg_compound_enrich.csv）。不得写通路富集阳性结论。")
+    return hints[:13]
 
 
 def _volcano_hint(df) -> str:
@@ -175,10 +186,13 @@ def _volcano_hint(df) -> str:
 
 
 def _vip_hint(df) -> str:
+    from web_frontend.backend.paper_plot_helpers import DEFAULT_VIP_THRESHOLD
+
     n = len(df)
     if "VIP" in df.columns:
-        high = int((df["VIP"].astype(float) > 1).sum())
-        return f"{n} 行，VIP>1 约 {high} 个"
+        thr = float(DEFAULT_VIP_THRESHOLD)
+        high = int((df["VIP"].astype(float) > thr).sum())
+        return f"{n} 行，VIP>{thr:g} 约 {high} 个"
     return f"{n} 行"
 
 
@@ -229,6 +243,7 @@ def _build_user_prompt(ctx: dict[str, Any], *, zh: bool = True) -> str:
         f"{ctx.get('result_summary_excerpt') or '（无）'}\n\n"
         "【方案解读指南（须遵守）】\n"
         f"{ctx.get('interpretation_guideline') or '只陈述可核对事实，不过度推断。'}\n"
+        + insights_user_prompt_suffix(ctx.get("kegg_status"), zh=zh)
     )
 
 
@@ -283,7 +298,17 @@ def generate_report_insights(
         return payload
 
     payload.update(parsed)
-    payload["markdown"] = format_insights_markdown(parsed, zh=zh)
+    kegg = ctx.get("kegg_status") or resolve_kegg_status(
+        plan=plan, inventory=inventory, figures=figures
+    )
+    payload["kegg_status"] = kegg
+    if not kegg.get("allow_enrichment_claim"):
+        payload = apply_enrichment_claim_guard(payload, kegg_missing=True)
+    payload["markdown"] = format_insights_markdown(payload, zh=zh)
+    if not kegg.get("allow_enrichment_claim"):
+        payload["markdown"] = apply_enrichment_claim_guard(
+            payload.get("markdown") or "", kegg_missing=True
+        )
     return payload
 
 

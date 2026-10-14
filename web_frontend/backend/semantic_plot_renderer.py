@@ -14,6 +14,7 @@ from web_frontend.backend.plot_renderer import _family_size_payload, load_scores
 from web_frontend.backend.plot_theme import DEFAULT_PALETTE, plot_config_path_for_png, resolve_volcano_thresholds
 
 VEGA_LITE_SCHEMA = "https://vega.github.io/schema/vega-lite/v5.json"
+MATPLOTLIB_PRIMARY_PLOT_TYPES = frozenset({"pca", "plsda"})
 FONT_FAMILY = "Noto Sans CJK SC, Noto Sans CJK, Arial, sans-serif"
 
 
@@ -178,11 +179,29 @@ def _score_spec(
     metadata_csv: Path,
     plot_config: dict[str, Any],
 ) -> dict[str, Any]:
+    """SIMCA 版式的交互预览；终稿 PNG/SVG 由 simca_score_plot 用 matplotlib 画。"""
+    from web_frontend.backend.paper_plot_helpers import (
+        ellipse_enabled,
+        ellipse_polyline,
+        is_qc_label,
+        read_explained_variance,
+    )
+    from web_frontend.backend.ggplot_score_plot import ggplot_axis_name, ggplot_title
     from web_frontend.backend.plot_renderer import score_color_meta
+    from web_frontend.backend.simca_score_plot import (
+        SIMCA_ELLIPSE,
+        SIMCA_FRAME,
+        SIMCA_GRID,
+        component_axis_label,
+        hotelling_semi_axes,
+        simca_group_colors,
+        simca_title_lines,
+        variance_fraction,
+    )
 
     scores_file = "pca_scores.csv" if plot_type == "pca" else "plsda_scores.csv"
     scores_path = resolve_plot_data_file(data_dir, scores_file) or (data_dir / scores_file)
-    scores, groups, samples, axis_names = load_scores_and_groups(
+    scores, groups, samples, _axis_names = load_scores_and_groups(
         scores_path,
         metadata_csv,
         plot_config=plot_config,
@@ -192,11 +211,24 @@ def _score_spec(
     if x_index == y_index and scores.shape[1] > 1:
         y_index = 1 if x_index != 1 else 0
     legend_title, color_type = score_color_meta(plot_config)
+    use_ggplot = str(plot_config.get("score_style") or "").startswith("ggplot")
+    axes_cfg = plot_config.get("axes") or {}
+    if use_ggplot:
+        x_title = str(axes_cfg.get("x_title") or "").strip() or ggplot_axis_name(x_index, plot_type)
+    else:
+        x_title = str(axes_cfg.get("x_title") or "").strip() or component_axis_label(x_index, plot_type)
+    if use_ggplot:
+        y_title = str(axes_cfg.get("y_title") or "").strip() or ggplot_axis_name(y_index, plot_type)
+    else:
+        y_title = str(axes_cfg.get("y_title") or "").strip() or component_axis_label(y_index, plot_type)
+
+    xs = scores[:, x_index]
+    ys = scores[:, y_index]
     values = []
     for i in range(len(samples)):
         row: dict[str, Any] = {
-            "x": float(scores[i, x_index]),
-            "y": float(scores[i, y_index]),
+            "x": float(xs[i]),
+            "y": float(ys[i]),
             "sample": str(samples[i]).replace(".mzML", "").replace(".mzml", ""),
         }
         if color_type == "quantitative":
@@ -208,76 +240,230 @@ def _score_spec(
             row["group"] = str(groups[i])
         values.append(row)
 
-    marks = plot_config.get("marks") or {}
+    ellipse = None if use_ggplot else (hotelling_semi_axes(xs, ys) if ellipse_enabled(plot_config) else None)
+    x_ext = [float(np.nanmin(xs)), float(np.nanmax(xs))]
+    y_ext = [float(np.nanmin(ys)), float(np.nanmax(ys))]
+    if use_ggplot and color_type != "quantitative" and ellipse_enabled(plot_config):
+        from web_frontend.backend.ggplot_score_plot import ggplot_group_ellipse_bounds
+
+        for xmin, xmax, ymin, ymax in ggplot_group_ellipse_bounds(xs, ys, [str(g) for g in groups]):
+            x_ext += [xmin, xmax]
+            y_ext += [ymin, ymax]
+    if ellipse:
+        cx, cy, ax_x, ax_y = ellipse
+        x_ext += [cx - ax_x, cx + ax_x]
+        y_ext += [cy - ax_y, cy + ax_y]
+    x_span = (max(x_ext) - min(x_ext)) or 1.0
+    y_span = (max(y_ext) - min(y_ext)) or 1.0
+    x_domain = [min(x_ext) - 0.12 * x_span, max(x_ext) + 0.16 * x_span]
+    y_domain = [min(y_ext) - 0.12 * y_span, max(y_ext) + 0.14 * y_span]
+    if axes_cfg.get("x_min") is not None:
+        x_domain[0] = min(x_domain[0], _finite(axes_cfg.get("x_min")))
+    if axes_cfg.get("x_max") is not None:
+        x_domain[1] = max(x_domain[1], _finite(axes_cfg.get("x_max")))
+    if axes_cfg.get("y_min") is not None:
+        y_domain[0] = min(y_domain[0], _finite(axes_cfg.get("y_min")))
+    if axes_cfg.get("y_max") is not None:
+        y_domain[1] = max(y_domain[1], _finite(axes_cfg.get("y_max")))
+
+    axis_style = {
+        "grid": not use_ggplot,
+        "gridColor": SIMCA_GRID,
+        "gridWidth": 0.6,
+        "domainColor": SIMCA_FRAME,
+        "tickColor": SIMCA_FRAME,
+        "labelFontSize": 10,
+        "titleFontSize": 11,
+        "titleFontWeight": "normal",
+        "labelColor": "#000000",
+        "titleColor": "#000000",
+    }
+    x_enc = {
+        "field": "x",
+        "type": "quantitative",
+        "title": x_title,
+        "scale": {"domain": x_domain, "nice": True, "zero": False},
+        "axis": axis_style,
+    }
+    y_enc = {
+        "field": "y",
+        "type": "quantitative",
+        "title": y_title,
+        "scale": {"domain": y_domain, "nice": True, "zero": False},
+        "axis": axis_style,
+    }
+    show_legend = (plot_config.get("legend") or {}).get("show", True)
     if color_type == "quantitative":
         color_encoding: dict[str, Any] = {
             "field": "color_value",
             "type": "quantitative",
             "scale": {"scheme": "viridis"},
-            "legend": _legend(plot_config, title=legend_title),
+            "legend": {"title": legend_title} if show_legend else None,
         }
+        label_color: dict[str, Any] = {"value": "#1f1f1f"}
         tooltip = [
             {"field": "sample", "type": "nominal", "title": "Sample"},
             {"field": "color_value", "type": "quantitative", "title": legend_title, "format": ".4g"},
-            {"field": "x", "type": "quantitative", "format": ".4g"},
-            {"field": "y", "type": "quantitative", "format": ".4g"},
         ]
     else:
         ordered_groups = list(dict.fromkeys(str(group) for group in groups))
-        palette = plot_config.get("palette") or {}
-        colors = [
-            palette.get(group, DEFAULT_PALETTE[i % len(DEFAULT_PALETTE)])
-            for i, group in enumerate(ordered_groups)
-        ]
+        colors = simca_group_colors(ordered_groups, plot_config.get("palette") or {})
+        scale = {"domain": ordered_groups, "range": [colors[g] for g in ordered_groups]}
         color_encoding = {
             "field": "group",
             "type": "nominal",
-            "scale": {"domain": ordered_groups, "range": colors},
-            "legend": _legend(plot_config, title=legend_title),
+            "scale": scale,
+            "legend": (
+                {
+                    "title": None,
+                    "orient": "right",
+                    "symbolType": "square",
+                    "symbolSize": 90,
+                    "labelFontSize": 10,
+                    "labelColor": "#000000",
+                }
+                if show_legend
+                else None
+            ),
         }
+        label_color = {"field": "group", "type": "nominal", "scale": scale, "legend": None}
         tooltip = [
             {"field": "sample", "type": "nominal", "title": "Sample"},
             {"field": "group", "type": "nominal", "title": legend_title},
-            {"field": "x", "type": "quantitative", "format": ".4g"},
-            {"field": "y", "type": "quantitative", "format": ".4g"},
         ]
+    tooltip += [
+        {"field": "x", "type": "quantitative", "title": x_title, "format": ".4g"},
+        {"field": "y", "type": "quantitative", "title": y_title, "format": ".4g"},
+    ]
 
-    point_encoding = {
-        "x": {"field": "x", **_axis(plot_config, "x", axis_names[x_index])},
-        "y": {"field": "y", **_axis(plot_config, "y", axis_names[y_index])},
-        "color": color_encoding,
-        "tooltip": tooltip,
-    }
-    layers: list[dict[str, Any]] = [
+    layers: list[dict[str, Any]] = []
+    if use_ggplot and color_type != "quantitative" and ellipse_enabled(plot_config):
+        import math as _math
+
+        ordered_groups = list(dict.fromkeys(str(group) for group in groups))
+        colors = simca_group_colors(ordered_groups, plot_config.get("palette") or {})
+        n_std = _math.sqrt(5.991464547107979)
+        for group in ordered_groups:
+            if is_qc_label(group):
+                continue
+            mask = np.array([str(g) == group for g in groups])
+            poly = ellipse_polyline(xs[mask], ys[mask], n_std=n_std)
+            if len(poly) < 8:
+                continue
+            layers.append(
+                {
+                    "data": {"values": poly},
+                    "mark": {
+                        "type": "line",
+                        "color": colors.get(group, "#888888"),
+                        "opacity": 0.35,
+                        "strokeWidth": 1.2,
+                    },
+                    "encoding": {
+                        "x": {"field": "x", "type": "quantitative"},
+                        "y": {"field": "y", "type": "quantitative"},
+                        "order": {"field": "t", "type": "quantitative"},
+                    },
+                }
+            )
+    if ellipse:
+        cx, cy, ax_x, ax_y = ellipse
+        theta = np.linspace(0.0, 2.0 * np.pi, 121)
+        poly = [
+            {"x": float(cx + ax_x * math.cos(t)), "y": float(cy + ax_y * math.sin(t)), "t": k}
+            for k, t in enumerate(theta)
+        ]
+        layers.append(
+            {
+                "data": {"values": poly},
+                "mark": {"type": "line", "color": SIMCA_ELLIPSE, "strokeWidth": 1.1, "clip": True},
+                "encoding": {
+                    "x": {"field": "x", "type": "quantitative"},
+                    "y": {"field": "y", "type": "quantitative"},
+                    "order": {"field": "t", "type": "quantitative"},
+                },
+            }
+        )
+    layers.append(
         {
             "mark": {
                 "type": "point",
+                "shape": "circle",
                 "filled": True,
-                "size": marks.get("size", 70),
-                "opacity": marks.get("opacity", 0.85),
-                "stroke": "white",
-                "strokeWidth": 0.8,
+                "size": 70,
+                "opacity": 1,
+                "stroke": "#333333",
+                "strokeWidth": 0.5,
             },
-            "encoding": point_encoding,
+            "encoding": {"x": x_enc, "y": y_enc, "color": color_encoding, "tooltip": tooltip},
         }
-    ]
+    )
     if plot_config.get("show_sample_labels", True):
         layers.append(
             {
                 "mark": {
                     "type": "text",
-                    "dy": -9,
+                    "align": "left",
+                    "baseline": "middle",
+                    "dx": 6,
                     "font": FONT_FAMILY,
-                    "fontSize": (plot_config.get("font_size") or {}).get("label", 10),
+                    "fontSize": 9,
                 },
                 "encoding": {
                     "x": {"field": "x", "type": "quantitative"},
                     "y": {"field": "y", "type": "quantitative"},
                     "text": {"field": "sample", "type": "nominal"},
+                    "color": label_color,
                 },
             }
         )
+
+    if use_ggplot:
+        line1, line2 = ggplot_title(plot_config, plot_type), ""
+    else:
+        line1, line2 = simca_title_lines(plot_config, plot_type, legend_title)
+    ratios = read_explained_variance(data_dir, plot_type)
+    footer: list[str] = []
+    for idx in (x_index, y_index):
+        frac = variance_fraction(ratios[idx]) if idx < len(ratios) else None
+        if frac is not None:
+            footer.append(f"R2X[{idx + 1}] = {frac:.3f}")
+    if ellipse:
+        footer.append("Ellipse: Hotelling's T2 (95%)")
+
     spec = _base_spec(plot_config, values)
+    spec["width"] = 520
+    spec["height"] = 340
+    spec["title"] = {
+        "text": line1,
+        "subtitle": line2,
+        "font": FONT_FAMILY,
+        "fontSize": 13,
+        "fontWeight": "normal",
+        "subtitleFontSize": 12,
+        "subtitleColor": "#000000",
+        "anchor": "middle",
+        "offset": 8,
+    }
+    if footer:
+        layers.append(
+            {
+                "data": {"values": [{"text": ("\u00a0" * 10).join(footer)}]},
+                "mark": {
+                    "type": "text",
+                    "align": "left",
+                    "baseline": "top",
+                    "font": FONT_FAMILY,
+                    "fontSize": 10,
+                    "color": "#000000",
+                    "x": -40,
+                    "y": {"expr": "height + 34"},
+                },
+                "encoding": {"text": {"field": "text", "type": "nominal"}},
+            }
+        )
+    spec["config"]["view"] = {"stroke": SIMCA_FRAME, "strokeWidth": 0.8}
+    spec["usermeta"] = {"plot_type": plot_type, "style": "ggplot" if use_ggplot else "simca"}
     spec["layer"] = layers
     return spec
 
@@ -597,35 +783,85 @@ def _value_histogram_spec(
 
 
 def _vip_bar_spec(data_dir: Path, plot_config: dict[str, Any]) -> dict[str, Any]:
-    frame = read_plot_frame(data_dir, "vip_scores.csv")
+    from web_frontend.backend.paper_plot_helpers import (
+        direction_from_log2fc,
+        join_vip_volcano,
+        vip_threshold_from_config,
+    )
+
+    frame = join_vip_volcano(data_dir)
     if "Feature" not in frame.columns or "VIP" not in frame.columns:
         raise ValueError("vip_scores.csv 缺少 Feature / VIP 列")
     top_n = int((plot_config.get("marks") or {}).get("top_n") or 30)
     top = frame.dropna(subset=["VIP"]).sort_values("VIP", ascending=False).head(max(5, top_n))
-    values = [
-        {"feature": str(row["Feature"]), "vip": float(row["VIP"]), "order": index}
-        for index, (_, row) in enumerate(top.iterrows())
-    ]
     colors = plot_config.get("colors") or {}
-    bar_color = colors.get("bar_color", "#3C5488")
+    up_color = colors.get("upregulated", "#E64B35")
+    down_color = colors.get("downregulated", "#4DBBD5")
+    unk_color = colors.get("bar_color", "#3C5488")
+    threshold = vip_threshold_from_config(plot_config)
+    values = []
+    for index, (_, row) in enumerate(top.iterrows()):
+        direction = direction_from_log2fc(row.get("log2FC"))
+        label = str(row["Feature"])
+        mz = row.get("precursor_mz")
+        if pd.notna(mz):
+            try:
+                label = f"{label} ({float(mz):.4f})"
+            except (TypeError, ValueError):
+                pass
+        values.append(
+            {
+                "feature": label,
+                "vip": float(row["VIP"]),
+                "order": index,
+                "direction": {"up": "log2FC > 0", "down": "log2FC < 0"}.get(direction, "no FC"),
+            }
+        )
     spec = _base_spec(plot_config, values)
-    spec["mark"] = {
-        "type": "bar",
-        "color": bar_color,
-        "opacity": (plot_config.get("marks") or {}).get("opacity", 0.85),
-    }
-    spec["encoding"] = {
-        "y": {
-            "field": "feature",
-            **_axis(plot_config, "y", "Feature", axis_type="nominal"),
-            "sort": {"field": "order", "order": "ascending"},
+    bar_layer = {
+        "mark": {
+            "type": "bar",
+            "opacity": (plot_config.get("marks") or {}).get("opacity", 0.85),
         },
-        "x": {"field": "vip", **_axis(plot_config, "x", "VIP", zero=True)},
-        "tooltip": [
-            {"field": "feature", "type": "nominal"},
-            {"field": "vip", "type": "quantitative", "format": ".3f"},
-        ],
+        "encoding": {
+            "y": {
+                "field": "feature",
+                **_axis(plot_config, "y", "Feature", axis_type="nominal"),
+                "sort": {"field": "order", "order": "ascending"},
+            },
+            "x": {"field": "vip", **_axis(plot_config, "x", "VIP", zero=True)},
+            "color": {
+                "field": "direction",
+                "type": "nominal",
+                "scale": {
+                    "domain": ["log2FC > 0", "log2FC < 0", "no FC"],
+                    "range": [up_color, down_color, unk_color],
+                },
+                "legend": _legend(plot_config, title="Direction"),
+            },
+            "tooltip": [
+                {"field": "feature", "type": "nominal"},
+                {"field": "vip", "type": "quantitative", "format": ".3f"},
+                {"field": "direction", "type": "nominal"},
+            ],
+        },
     }
+    spec["layer"] = [
+        bar_layer,
+        {
+            "data": {"values": [{"threshold": threshold, "label": f"VIP = {threshold:g}"}]},
+            "mark": {
+                "type": "rule",
+                "strokeDash": [5, 4],
+                "strokeWidth": 1.4,
+                "color": colors.get("threshold_color", "#666666"),
+            },
+            "encoding": {
+                "x": {"field": "threshold", "type": "quantitative"},
+                "tooltip": [{"field": "label", "type": "nominal"}],
+            },
+        },
+    ]
     return spec
 
 
@@ -636,6 +872,15 @@ def _heatmap_vip_spec(data_dir: Path, plot_config: dict[str, Any]) -> dict[str, 
     frame = pd.read_csv(matrix_path, index_col=0)
     if frame.empty:
         raise ValueError("heatmap_top_vip_matrix.csv 为空")
+    from web_frontend.backend.paper_plot_helpers import DEFAULT_HEATMAP_MAX_ROWS, unique_display_ids
+
+    max_rows = int((plot_config.get("marks") or {}).get("top_n") or DEFAULT_HEATMAP_MAX_ROWS)
+    if len(frame) > max_rows:
+        numeric = frame.apply(pd.to_numeric, errors="coerce")
+        score = numeric.var(axis=1, skipna=True).fillna(-1)
+        frame = frame.loc[score.sort_values(ascending=False).index[:max_rows]]
+    frame = frame.copy()
+    frame.index = unique_display_ids(list(frame.index))
     values: list[dict[str, Any]] = []
     for feature, row in frame.iterrows():
         for sample, value in row.items():
@@ -677,8 +922,12 @@ def _heatmap_vip_spec(data_dir: Path, plot_config: dict[str, Any]) -> dict[str, 
         "color": {
             "field": "value",
             "type": "quantitative",
-            "scale": {"scheme": "viridis"},
-            "legend": _legend(plot_config, title="Intensity"),
+            "scale": {
+                "scheme": "redblue",
+                "reverse": True,
+                "domainMid": 0,
+            },
+            "legend": _legend(plot_config, title="Z-score"),
         },
         "tooltip": [
             {"field": "feature", "type": "nominal"},
@@ -776,6 +1025,12 @@ def _derive_network_layout(data_dir: Path, plot_config: dict[str, Any]) -> pd.Da
         raise ValueError("节点表缺少 feature_id / node_id 列，无法派生布局")
 
     max_nodes = int((plot_config.get("marks") or {}).get("top_n") or 1500)
+    from web_frontend.backend.paper_plot_helpers import hide_isolates_enabled
+
+    if hide_isolates_enabled(plot_config) and "degree" in nodes.columns:
+        connected = nodes[pd.to_numeric(nodes["degree"], errors="coerce").fillna(0) > 0]
+        if len(connected) >= 3:
+            nodes = connected
     if len(nodes) > max_nodes and "degree" in nodes.columns:
         nodes = nodes.nlargest(max_nodes, "degree")
     elif len(nodes) > max_nodes:
@@ -814,8 +1069,28 @@ def _network_layout_frame(data_dir: Path, plot_config: dict[str, Any]) -> pd.Dat
 
 
 def _network_topology_spec(data_dir: Path, plot_config: dict[str, Any]) -> dict[str, Any]:
+    from web_frontend.backend.paper_plot_helpers import hide_isolates_enabled
+    from web_frontend.backend.plot_edit_registry import resolve_plot_data_file as _resolve_nodes
+
     layout = _network_layout_frame(data_dir, plot_config)
     layout = _join_topology_node_attrs(data_dir, layout)
+    isolate_note = ""
+    nodes_path = _resolve_nodes(data_dir, "network_nodes.csv")
+    n_total = n_iso = 0
+    if nodes_path is not None:
+        try:
+            raw_nodes = pd.read_csv(nodes_path)
+            n_total = len(raw_nodes)
+            if "degree" in raw_nodes.columns:
+                n_iso = int((pd.to_numeric(raw_nodes["degree"], errors="coerce").fillna(0) <= 0).sum())
+        except Exception:
+            n_total = 0
+    if hide_isolates_enabled(plot_config) and "degree" in layout.columns:
+        connected = layout[pd.to_numeric(layout["degree"], errors="coerce").fillna(0) > 0]
+        if len(connected) >= 3:
+            layout = connected
+            isolate_note = f"Isolates hidden: {n_iso}/{n_total}" if n_total else ""
+
 
     color_by = str(plot_config.get("color_by") or "family").strip()
     if color_by in {"molecular_family", "Family"}:
@@ -946,9 +1221,17 @@ def _network_topology_spec(data_dir: Path, plot_config: dict[str, Any]) -> dict[
         }
     )
     width, height = _dimensions(plot_config)
+    title = _title_block(plot_config)
+    if isolate_note:
+        main = title.get("text") if isinstance(title, dict) else plot_config.get("title", "")
+        title = {
+            **title,
+            "text": [str(main), isolate_note],
+            "fontSize": (plot_config.get("font_size") or {}).get("title", 14),
+        }
     return {
         "$schema": VEGA_LITE_SCHEMA,
-        "title": _title_block(plot_config),
+        "title": title,
         "background": "white",
         "padding": 12,
         "width": max(width, 640),
@@ -2325,11 +2608,25 @@ def _relative_abundance_spec(data_dir: Path, plot_config: dict[str, Any]) -> dic
     if path is None:
         raise ValueError("缺少 differential_metabolites_abundance.csv / volatile_differential_abundance.csv")
     frame = _read_labeled_matrix(path)
+    from web_frontend.backend.paper_plot_helpers import DEFAULT_HEATMAP_MAX_ROWS, unique_display_ids
+
+    max_rows = int((plot_config.get("marks") or {}).get("top_n") or DEFAULT_HEATMAP_MAX_ROWS)
+    vip_col = next((c for c in frame.columns if str(c).lower() == "vip"), None)
+    drop = [c for c in frame.columns if str(c).lower() in {"vip", "class", "name"}]
+    if vip_col and len(frame) > max_rows:
+        order = pd.to_numeric(frame[vip_col], errors="coerce").fillna(-1)
+        frame = frame.loc[order.sort_values(ascending=False).index[:max_rows]]
+    numeric = frame.drop(columns=drop, errors="ignore").apply(pd.to_numeric, errors="coerce")
+    numeric = numeric.dropna(axis=1, how="all")
+    if vip_col is None and len(numeric) > max_rows:
+        score = numeric.var(axis=1, skipna=True).fillna(-1)
+        numeric = numeric.loc[score.sort_values(ascending=False).index[:max_rows]]
+    numeric.index = unique_display_ids(list(numeric.index))
     return _matrix_heatmap_spec(
-        frame,
+        numeric,
         plot_config,
-        x_title="Grade",
-        y_title="Compound",
+        x_title="Sample",
+        y_title="ID",
         color_title="Relative abundance",
         scheme="yelloworangered",
     )
@@ -2377,6 +2674,9 @@ def _permutation_spec(data_dir: Path, plot_config: dict[str, Any]) -> dict[str, 
     if "similarity" in frame.columns:
         x_values = pd.to_numeric(frame["similarity"], errors="coerce")
         x_title = "Similarity(y, y[perm])"
+    elif "permutation" in frame.columns:
+        x_values = pd.to_numeric(frame["permutation"], errors="coerce")
+        x_title = "Permutation"
     else:
         x_values = pd.Series(range(len(frame)), dtype=float)
         x_title = "Permutation"
@@ -2512,6 +2812,14 @@ def build_vegalite_spec(
         return _bioactivity_bar_spec(data_path, plot_config)
     if plot_type == "sensory_scores":
         return _sensory_scores_spec(data_path, plot_config)
+    if plot_type in {"paper_fig2_composite", "paper_fig5_composite"}:
+        spec = _base_spec(plot_config, [{"x": 0, "y": 0, "label": "matplotlib composite"}])
+        spec["mark"] = "point"
+        spec["encoding"] = {
+            "x": {"field": "x", "type": "quantitative"},
+            "y": {"field": "y", "type": "quantitative"},
+        }
+        return spec
     raise ValueError(f"暂不支持语义渲染: {plot_type}")
 
 
@@ -2521,6 +2829,8 @@ def write_svg_sidecar(vega_spec: dict[str, Any], png_path: str | Path) -> Path |
     svg_path = svg_path_for_png(png)
     vega_path = vega_config_path_for_png(png)
     vega_path.write_text(json.dumps(vega_spec, ensure_ascii=False, indent=2), encoding="utf-8")
+    if str(vega_spec.get("usermeta", {}).get("plot_type") or "") in MATPLOTLIB_PRIMARY_PLOT_TYPES:
+        return svg_path if svg_path.is_file() else None
     try:
         import vl_convert as vlc
 
@@ -2583,6 +2893,11 @@ def write_semantic_outputs(
         source_rel=source_rel,
     )
     svg_path = svg_path_for_png(png)
+
+    # 得分图终稿由 matplotlib 画成 SIMCA 版式（PNG + SVG 同源），Vega 只留作 JSON 元数据。
+    if png_renderer is not None and str(plot_config.get("plot_type") or "") in MATPLOTLIB_PRIMARY_PLOT_TYPES:
+        png_renderer(png)
+        return config_path, vega_path, (svg_path if svg_path.is_file() else None), png
 
     try:
         import vl_convert as vlc

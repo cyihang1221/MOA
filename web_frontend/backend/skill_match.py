@@ -281,9 +281,9 @@ def match_skills(
         }
     """
     path = _registry_path(project_root)
-    goal_lower = (goal_text or "").lower()
+    goal_lower = (goal_text or "").strip().lower()
     if not goal_lower.strip():
-        return {"text": "", "matched": [], "error": None}
+        return {"text": "", "matched": [], "parameters": {}, "error": None}
 
     hits: list[tuple[dict, str, list[str], int]] = []
     registry_error = None
@@ -323,7 +323,7 @@ def match_skills(
     hits.extend(_load_massomics_skill_hits(goal_lower, project_root))
 
     if not hits:
-        return {"text": "", "matched": [], "error": registry_error}
+        return {"text": "", "matched": [], "parameters": {}, "error": registry_error}
 
     hits.sort(key=lambda x: x[3], reverse=True)
     # 按 functional_domain 去重，保证「预处理 + 统计」等组合都能注入
@@ -368,7 +368,15 @@ def match_skills(
         if budget <= 0:
             break
 
-    return {"text": "\n".join(parts).strip(), "matched": names, "error": registry_error if not names else None}
+    from web_frontend.backend.agent_b.skill_param_inject import parse_skill_parameters
+
+    params = parse_skill_parameters("\n".join(parts))
+    return {
+        "text": "\n".join(parts).strip(),
+        "matched": names,
+        "parameters": params,
+        "error": registry_error if not names else None,
+    }
 
 
 def env_enabled() -> bool:

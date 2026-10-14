@@ -56,6 +56,10 @@ class WorkflowRoutingTests(unittest.TestCase):
             "visual",
         )
         self.assertEqual(
+            route_chat_action(COMPLETED, "PCA 按知识库里那篇茶叶的图改一下，椭圆加上"),
+            "visual",
+        )
+        self.assertEqual(
             route_chat_action(
                 WAITING_INPUT,
                 "把 PCA 标题改成分组比较",
@@ -74,6 +78,42 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertIsNone(
             maybe_advance_workflow_for_outputs(COMPLETED, has_result_figures=True),
         )
+        from web_frontend.backend.workflow import AWAITING_APPROVAL, EXECUTING
+
+        self.assertIsNone(
+            maybe_advance_workflow_for_outputs(
+                AWAITING_APPROVAL, has_result_figures=True
+            ),
+        )
+        self.assertIsNone(
+            maybe_advance_workflow_for_outputs(EXECUTING, has_result_figures=True),
+        )
+
+    def test_executing_cancel_and_replan(self):
+        from web_frontend.backend.workflow import (
+            EXECUTING,
+            PLANNING,
+            REPORTING,
+            is_cancel_request,
+        )
+
+        self.assertTrue(is_cancel_request("终止"))
+        self.assertTrue(is_cancel_request("停止"))
+        self.assertTrue(is_cancel_request("终止当前任务"))
+        self.assertTrue(is_cancel_request("cancel"))
+        self.assertFalse(is_cancel_request("取消分子网络"))
+        self.assertEqual(route_chat_action(EXECUTING, "终止"), "cancel")
+        self.assertEqual(route_chat_action(PLANNING, "终止"), "cancel")
+        self.assertEqual(route_chat_action(REPORTING, "停止当前分析"), "cancel")
+        self.assertEqual(
+            route_chat_action(EXECUTING, "不用进行deepmass，重新制定计划"),
+            "interrupt_plan",
+        )
+        self.assertEqual(
+            route_chat_action(EXECUTING, "不要 DeepMASS"),
+            "interrupt_plan",
+        )
+        self.assertEqual(route_chat_action(EXECUTING, "进度如何"), "chat")
 
     def test_completed_report_is_c(self):
         self.assertEqual(route_chat_action(COMPLETED, "写报告"), "report")

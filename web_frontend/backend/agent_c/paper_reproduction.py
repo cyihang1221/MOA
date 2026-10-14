@@ -114,9 +114,23 @@ def recipe_to_canonical_plan(recipe: dict[str, Any]) -> dict[str, Any]:
 
 
 def checklist_inventory(recipe: dict[str, Any], inventory: dict[str, Any]) -> dict[str, Any]:
-    """对照 recipe 检查 B 侧必需文件是否齐全。"""
+    """对照 recipe 检查 B 侧必需文件是否齐全（走逻辑名契约，不只看 basename）。"""
+    from web_frontend.backend.b_paper_contract import is_paper_strict, resolve_logical_record
+
     root = Path(str(inventory.get("results_dir") or ""))
+    file_map = inventory.get("file_map") or {}
     names = {str(f.get("name") or "") for f in (inventory.get("files") or [])}
+
+    def _present(filename: str) -> bool:
+        rec = file_map.get(filename)
+        if isinstance(rec, dict) and rec.get("status") == "present":
+            return True
+        if filename in names and not is_paper_strict(filename):
+            return True
+        if root.is_dir():
+            rec = resolve_logical_record(root, filename)
+            return rec.get("status") == "present"
+        return False
     required: set[str] = set()
     for fig in recipe.get("figures") or []:
         for sf in fig.get("source_files") or []:
@@ -128,12 +142,12 @@ def checklist_inventory(recipe: dict[str, Any], inventory: dict[str, Any]) -> di
     }
     required |= optional_b
 
-    present = sorted(f for f in required if f in names)
-    missing = sorted(f for f in required if f not in names)
+    present = sorted(f for f in required if _present(f))
+    missing = sorted(f for f in required if not _present(f))
     figure_status: list[dict[str, Any]] = []
     for fig in recipe.get("figures") or []:
         sfs = [str(x) for x in (fig.get("source_files") or [])]
-        fig_missing = [f for f in sfs if f not in names]
+        fig_missing = [f for f in sfs if not _present(f)]
         figure_status.append(
             {
                 "figure_id": fig.get("figure_id"),

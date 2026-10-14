@@ -27,6 +27,19 @@ def _cjk(size: float | int | None = None, *, bold: bool = False):
     return cjk_fontproperties(size=size, bold=bold)
 
 
+def _savefig(fig, out: Path, *, plot_type: str = "") -> None:
+    """普通预览 300 dpi；PCA/火山/VIP/热图走投稿导出（600 dpi + 矢量）。"""
+    from web_frontend.backend.agent_c.nature_distill.journal_export import (
+        export_matplotlib_figure,
+        is_journal_plot,
+    )
+
+    if is_journal_plot(plot_type):
+        export_matplotlib_figure(fig, out)
+        return
+    fig.savefig(out, dpi=300, bbox_inches="tight", facecolor="white")
+
+
 def _group_color(palette: dict[str, str], group: str, index: int) -> str:
     return palette.get(str(group), DEFAULT_PALETTE[index % len(DEFAULT_PALETTE)])
 
@@ -122,13 +135,13 @@ def build_echarts_option(
             "name": axis_names[x_idx],
             "nameTextStyle": {"fontSize": fs.get("axis", 12)},
             "axisLabel": {"fontSize": fs.get("axis", 12)},
-            "splitLine": {"lineStyle": {"color": "#ebebeb"}},
+            "splitLine": {"show": False},
         },
         "yAxis": {
             "name": axis_names[y_idx],
             "nameTextStyle": {"fontSize": fs.get("axis", 12)},
             "axisLabel": {"fontSize": fs.get("axis", 12)},
-            "splitLine": {"lineStyle": {"color": "#ebebeb"}},
+            "splitLine": {"show": False},
         },
         "series": series,
     }
@@ -142,110 +155,39 @@ def render_score_plot_png(
     axis_names: list[str],
     plot_config: dict[str, Any],
     output_path: str | Path,
+    data_dir: str | Path | None = None,
+    plot_type: str = "",
+    metadata_csv: str | Path | None = None,
 ) -> Path:
-    """用 matplotlib 重绘 PCA / PLS-DA 得分图并保存 PNG。"""
-    out = Path(output_path)
-    out.parent.mkdir(parents=True, exist_ok=True)
+    """PCA / PLS-DA 得分图。默认 SIMCA；score_style=ggplot 时用分组填色椭圆。"""
+    from web_frontend.backend.ggplot_score_plot import GGPLOT_STYLE, render_ggplot_score_png
+    from web_frontend.backend.paper_plot_helpers import read_explained_variance
+    from web_frontend.backend.simca_score_plot import render_simca_score_png
 
-    x_idx = max(0, int(plot_config["components"][0]) - 1)
-    y_idx = max(0, int(plot_config["components"][1]) - 1)
-    ncol = scores.shape[1]
-    x_idx = min(x_idx, ncol - 1)
-    y_idx = min(y_idx, ncol - 1)
-    if x_idx == y_idx and ncol >= 2:
-        y_idx = 1
-
-    palette = plot_config.get("palette") or {}
-    fs = plot_config.get("font_size") or {}
-    fig_w, fig_h = plot_config.get("figure_size") or [10.0, 8.0]
-
+    inferred = plot_type or ("pca" if str(axis_names[0]).upper().startswith("PC") else "plsda")
+    try:
+        ratios = read_explained_variance(Path(data_dir) if data_dir else Path(output_path).parent, inferred)
+    except Exception:
+        ratios = []
     legend_title, color_type = score_color_meta(plot_config)
-    fig, ax = plt.subplots(figsize=(float(fig_w), float(fig_h)), facecolor="white")
-
-    if color_type == "quantitative":
-        try:
-            nums = np.array([float(g) if g == g else np.nan for g in groups], dtype=float)
-        except (TypeError, ValueError):
-            nums = np.full(len(groups), np.nan)
-        sc = ax.scatter(
-            scores[:, x_idx],
-            scores[:, y_idx],
-            c=nums,
-            s=70,
-            cmap="viridis",
-            alpha=0.9,
-            edgecolors="white",
-            linewidths=0.8,
-        )
-        cbar = fig.colorbar(sc, ax=ax)
-        cbar.set_label(legend_title, fontproperties=_cjk(fs.get("legend", 11)))
-        if plot_config.get("show_sample_labels", True):
-            for j in range(len(groups)):
-                label = sample_names[j].replace(".mzML", "").replace(".mzml", "")
-                ax.annotate(
-                    label,
-                    (scores[j, x_idx], scores[j, y_idx]),
-                    textcoords="offset points",
-                    xytext=(0, 6),
-                    ha="center",
-                    fontproperties=_cjk(fs.get("label", 10)),
-                    color="#111827",
-                )
-    else:
-        ordered_groups: list[str] = []
-        seen: set[str] = set()
-        for group in groups:
-            g = str(group)
-            if g not in seen:
-                seen.add(g)
-                ordered_groups.append(g)
-
-        for i, group in enumerate(ordered_groups):
-            mask = np.array([str(g) == group for g in groups], dtype=bool)
-            xs = scores[mask, x_idx]
-            ys = scores[mask, y_idx]
-            color = _group_color(palette, group, i)
-            ax.scatter(
-                xs,
-                ys,
-                s=70,
-                c=color,
-                alpha=0.9,
-                edgecolors="white",
-                linewidths=0.8,
-                label=group,
-            )
-            if plot_config.get("show_sample_labels", True):
-                for j, m in enumerate(mask):
-                    if not m:
-                        continue
-                    label = sample_names[j].replace(".mzML", "").replace(".mzml", "")
-                    ax.annotate(
-                        label,
-                        (scores[j, x_idx], scores[j, y_idx]),
-                        textcoords="offset points",
-                        xytext=(0, 6),
-                        ha="center",
-                        fontproperties=_cjk(fs.get("label", 10)),
-                        color="#111827",
-                    )
-        legend = ax.legend(title=legend_title, prop=_cjk(fs.get("legend", 11)), framealpha=0.9)
-        if legend and legend.get_title():
-            legend.get_title().set_fontproperties(_cjk(fs.get("legend", 11), bold=True))
-
-    ax.set_title(
-        plot_config.get("title", ""),
-        fontproperties=_cjk(fs.get("title", 16), bold=True),
+    style = str(plot_config.get("score_style") or "simca").strip().lower()
+    use_ggplot = style in {GGPLOT_STYLE, "ggplot2"}
+    renderer = render_ggplot_score_png if use_ggplot else render_simca_score_png
+    extra: dict[str, Any] = {"metadata_csv": metadata_csv} if use_ggplot else {}
+    return renderer(
+        scores=scores,
+        groups=[str(g) for g in groups],
+        sample_names=sample_names,
+        axis_names=axis_names,
+        plot_config=plot_config,
+        output_path=output_path,
+        plot_type=inferred,
+        ratios=ratios,
+        legend_title=legend_title,
+        quantitative=color_type == "quantitative",
+        **extra,
     )
-    ax.set_xlabel(axis_names[x_idx], fontproperties=_cjk(fs.get("axis", 12)))
-    ax.set_ylabel(axis_names[y_idx], fontproperties=_cjk(fs.get("axis", 12)))
-    ax.tick_params(labelsize=fs.get("axis", 12))
-    ax.grid(True, color="#ebebeb", linewidth=0.8)
-    ax.set_axisbelow(True)
-    fig.tight_layout()
-    fig.savefig(out, dpi=300, bbox_inches="tight", facecolor="white")
-    plt.close(fig)
-    return out
+
 
 def save_plot_sidecars(
     *,
@@ -499,7 +441,7 @@ def render_volcano_plot_png(
     fig.tight_layout()
     out = Path(output_path)
     out.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(out, dpi=300, bbox_inches="tight", facecolor="white")
+    _savefig(fig, out, plot_type="volcano")
     plt.close(fig)
     return out
 
@@ -775,3 +717,246 @@ def render_cosine_hist_png(
     fig.savefig(out, dpi=300, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     return out
+
+
+def render_vip_bar_png(
+    data_dir: str | Path,
+    plot_config: dict[str, Any],
+    output_path: str | Path,
+) -> Path:
+    """VIP 条形图：联结火山表按 log2FC 方向着色，并画 VIP 阈值线。"""
+    from web_frontend.backend.paper_plot_helpers import (
+        direction_from_log2fc,
+        join_vip_volcano,
+        show_grid_enabled,
+        vip_threshold_from_config,
+    )
+
+    frame = join_vip_volcano(data_dir)
+    if "Feature" not in frame.columns or "VIP" not in frame.columns:
+        raise ValueError("vip_scores.csv 缺少 Feature / VIP 列")
+    top_n = int((plot_config.get("marks") or {}).get("top_n") or 30)
+    top = frame.dropna(subset=["VIP"]).sort_values("VIP", ascending=True).tail(max(5, top_n))
+    colors = plot_config.get("colors") or {}
+    up_color = colors.get("upregulated", "#E64B35")
+    down_color = colors.get("downregulated", "#4DBBD5")
+    unk_color = colors.get("bar_color", "#3C5488")
+    threshold = vip_threshold_from_config(plot_config)
+    bar_colors = []
+    labels = []
+    for _, row in top.iterrows():
+        direction = direction_from_log2fc(row.get("log2FC"))
+        bar_colors.append({"up": up_color, "down": down_color}.get(direction, unk_color))
+        label = str(row["Feature"])
+        mz = row.get("precursor_mz")
+        if pd.notna(mz):
+            try:
+                label = f"{label} ({float(mz):.4f})"
+            except (TypeError, ValueError):
+                pass
+        labels.append(label)
+    fs = plot_config.get("font_size") or {}
+    fig_w, fig_h = plot_config.get("figure_size") or [7.5, max(4.5, 0.22 * len(top) + 1.6)]
+    fig, ax = plt.subplots(figsize=(float(fig_w), float(fig_h)), facecolor="white")
+    ax.barh(range(len(top)), top["VIP"].to_numpy(dtype=float), color=bar_colors, edgecolor="white", height=0.72)
+    ax.axvline(threshold, color=colors.get("threshold_color", "#666666"), linestyle="--", linewidth=1.1)
+    ax.set_yticks(range(len(top)))
+    ax.set_yticklabels(labels, fontproperties=_cjk(fs.get("label", 8)))
+    ax.set_xlabel("VIP", fontproperties=_cjk(fs.get("axis", 11)))
+    ax.set_title(plot_config.get("title") or "VIP Scores", fontproperties=_cjk(fs.get("title", 14), bold=True))
+    ax.text(
+        0.99,
+        0.02,
+        f"VIP = {threshold:g}  |  red: log2FC>0  blue: log2FC<0",
+        transform=ax.transAxes,
+        ha="right",
+        va="bottom",
+        fontproperties=_cjk(8),
+        color="#555555",
+    )
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    if show_grid_enabled(plot_config):
+        ax.grid(True, axis="x", color="#ebebeb", linewidth=0.6)
+        ax.set_axisbelow(True)
+    else:
+        ax.grid(False)
+    fig.tight_layout()
+    out = Path(output_path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    _savefig(fig, out, plot_type="vip_bar")
+    plt.close(fig)
+    return out
+
+
+def render_heatmap_vip_png(
+    data_dir: str | Path,
+    plot_config: dict[str, Any],
+    output_path: str | Path,
+    *,
+    metadata_csv: str | Path | None = None,
+) -> Path:
+    """VIP 热图：Z-score 发散色标、行列聚类树、顶部组别色条。"""
+    from matplotlib.gridspec import GridSpec
+
+    from web_frontend.backend.agent_c.tea_paper_plots import _draw_clustered_heatmap
+    from web_frontend.backend.paper_plot_helpers import (
+        DEFAULT_HEATMAP_MAX_ROWS,
+        group_color,
+        heatmap_figure_inches,
+        infer_group_from_sample,
+        unique_display_ids,
+    )
+    from web_frontend.backend.plot_edit_registry import resolve_plot_data_file
+
+    matrix_path = resolve_plot_data_file(Path(data_dir), "heatmap_top_vip_matrix.csv")
+    if matrix_path is None:
+        raise ValueError("缺少 heatmap_top_vip_matrix.csv")
+    frame = pd.read_csv(matrix_path, index_col=0)
+    if frame.empty:
+        raise ValueError("heatmap_top_vip_matrix.csv 为空")
+    mat = frame.apply(pd.to_numeric, errors="coerce").to_numpy(dtype=float)
+    samples = [str(c) for c in frame.columns]
+    features = [str(i) for i in frame.index]
+    max_rows = int((plot_config.get("marks") or {}).get("top_n") or DEFAULT_HEATMAP_MAX_ROWS)
+    if len(features) > max_rows:
+        score = np.nanvar(mat, axis=1)
+        keep = np.argsort(np.nan_to_num(score, nan=-1.0))[::-1][:max_rows]
+        mat = mat[keep]
+        features = [features[i] for i in keep]
+    features = unique_display_ids(features)
+    group_map: dict[str, str] = {}
+    if metadata_csv and Path(metadata_csv).is_file():
+        try:
+            meta = pd.read_csv(metadata_csv)
+            sample_col = "Sample" if "Sample" in meta.columns else meta.columns[0]
+            group_col = "Group" if "Group" in meta.columns else None
+            if group_col:
+                for _, row in meta.iterrows():
+                    group_map[str(row[sample_col]).replace(".mzML", "").replace(".mzml", "")] = str(row[group_col])
+        except Exception:
+            group_map = {}
+    groups = []
+    for sample in samples:
+        key = str(sample).replace(".mzML", "").replace(".mzml", "")
+        groups.append(group_map.get(key) or infer_group_from_sample(key))
+    uniq = list(dict.fromkeys(groups))
+    palette = plot_config.get("palette") or {}
+    col_colors = [group_color(g, palette, uniq.index(g) if g in uniq else 0) for g in groups]
+    cmap = str(plot_config.get("cmap") or "RdBu_r")
+    fig = plt.figure(figsize=heatmap_figure_inches(len(samples), len(features)))
+    gs = GridSpec(2, 2, width_ratios=[0.16, 1.0], height_ratios=[0.14, 1.0], hspace=0.03, wspace=0.04, figure=fig)
+    ax_col = fig.add_subplot(gs[0, 1])
+    ax_row = fig.add_subplot(gs[1, 0])
+    ax = fig.add_subplot(gs[1, 1])
+    im = _draw_clustered_heatmap(
+        ax,
+        mat,
+        features,
+        samples,
+        cmap=cmap,
+        vmin=None,
+        vmax=None,
+        row_dendro_ax=ax_row,
+        col_dendro_ax=ax_col,
+        col_colors=col_colors,
+        fontsize=9,
+    )
+    ax.yaxis.tick_right()
+    fig.colorbar(im, ax=ax, fraction=0.03, pad=0.12, label="Z-score")
+    ax.set_title(plot_config.get("title") or "Top VIP heatmap", fontproperties=_cjk(12, bold=True), pad=28)
+    out = Path(output_path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    _savefig(fig, out, plot_type="heatmap_vip")
+    plt.close(fig)
+    return out
+
+
+def render_network_topology_png(
+    data_dir: str | Path,
+    plot_config: dict[str, Any],
+    output_path: str | Path,
+) -> Path:
+    """分子网络：隐藏孤立点，边宽按 cosine，节点按类别/家族着色。"""
+    from web_frontend.backend.paper_plot_helpers import group_color, hide_isolates_enabled
+    from web_frontend.backend.plot_edit_registry import resolve_plot_data_file
+    from web_frontend.backend.semantic_plot_renderer import (
+        _join_topology_node_attrs,
+        _network_layout_frame,
+    )
+
+    root = Path(data_dir)
+    layout = _join_topology_node_attrs(root, _network_layout_frame(root, plot_config))
+    n_total = n_iso = 0
+    nodes_path = resolve_plot_data_file(root, "network_nodes.csv")
+    if nodes_path is not None:
+        raw = pd.read_csv(nodes_path)
+        n_total = len(raw)
+        if "degree" in raw.columns:
+            n_iso = int((pd.to_numeric(raw["degree"], errors="coerce").fillna(0) <= 0).sum())
+    if hide_isolates_enabled(plot_config) and "degree" in layout.columns:
+        connected = layout[pd.to_numeric(layout["degree"], errors="coerce").fillna(0) > 0]
+        if len(connected) >= 3:
+            layout = connected
+    pos = {str(row["node_id"]): (float(row["x"]), float(row["y"])) for _, row in layout.iterrows()}
+    color_by = str(plot_config.get("color_by") or "family").strip()
+    if color_by in {"molecular_family", "Family"}:
+        color_by = "family"
+    if color_by == "family" and "family" not in layout.columns and "molecular_family" in layout.columns:
+        layout = layout.rename(columns={"molecular_family": "family"})
+        color_by = "family"
+    if color_by not in layout.columns:
+        color_by = next((c for c in ("chemical_category", "family", "molecular_family") if c in layout.columns), None)
+    palette = plot_config.get("palette") or {}
+    groups = []
+    if color_by:
+        groups = list(dict.fromkeys("unannotated" if pd.isna(v) else str(v) for v in layout[color_by].tolist()))
+    fs = plot_config.get("font_size") or {}
+    fig_w, fig_h = plot_config.get("figure_size") or [8.5, 7.5]
+    fig, ax = plt.subplots(figsize=(float(fig_w), float(fig_h)), facecolor="white")
+    edges_path = resolve_plot_data_file(root, "network_edges.csv")
+    if edges_path is not None:
+        edges = pd.read_csv(edges_path)
+        if {"source", "target"}.issubset(edges.columns):
+            for _, row in edges.iterrows():
+                p1 = pos.get(str(row["source"]))
+                p2 = pos.get(str(row["target"]))
+                if not p1 or not p2:
+                    continue
+                cosine = row["cosine"] if "cosine" in edges.columns else 0.7
+                try:
+                    width = max(0.3, min(2.4, float(cosine) * 2.2))
+                except (TypeError, ValueError):
+                    width = 0.6
+                ax.plot([p1[0], p2[0]], [p1[1], p2[1]], color="#c8c8c8", lw=width, zorder=1)
+    xs = layout["x"].to_numpy(dtype=float)
+    ys = layout["y"].to_numpy(dtype=float)
+    sizes = np.full(len(layout), 28.0)
+    if "degree" in layout.columns:
+        deg = pd.to_numeric(layout["degree"], errors="coerce").fillna(1.0).to_numpy(dtype=float)
+        sizes = np.clip(deg * 18 + 16, 16, 160)
+    node_colors = []
+    for i, (_, row) in enumerate(layout.iterrows()):
+        if color_by:
+            raw_val = row.get(color_by)
+            key = "unannotated" if pd.isna(raw_val) else str(raw_val)
+            node_colors.append(group_color(key, palette, groups.index(key) if key in groups else i))
+        else:
+            node_colors.append("#3C5488")
+    ax.scatter(xs, ys, s=sizes, c=node_colors, edgecolors="white", linewidths=0.35, zorder=2)
+    ax.set_xticks([])
+    ax.set_yticks([])
+    for spine in ax.spines.values():
+        spine.set_visible(False)
+    title = str(plot_config.get("title") or "Molecular network")
+    if n_total:
+        title = f"{title}\nIsolates hidden: {n_iso}/{n_total}"
+    ax.set_title(title, fontproperties=_cjk(fs.get("title", 14), bold=True))
+    ax.set_aspect("equal", adjustable="datalim")
+    fig.tight_layout()
+    out = Path(output_path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    _savefig(fig, out, plot_type="network_topology")
+    plt.close(fig)
+    return out
+

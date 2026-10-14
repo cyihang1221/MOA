@@ -421,7 +421,9 @@ def build_style_patch_from_evidence(
         applied.append("colors.bar_color")
 
     if plot_type in {"pca", "plsda"} and re.search(r"椭圆|ellipse|置信", blob, re.IGNORECASE):
-        warnings.append("文献使用置信椭圆，当前渲染器暂不支持，已忽略")
+        patch["ellipse"] = True
+        patch.setdefault("marks", {})["ellipse"] = True
+        applied.append("ellipse")
 
     if _THRESHOLD_MENTION_RE.search(blob):
         warnings.append("文献提及统计阈值；未自动修改 thresholds（请在改图指令中显式说明）")
@@ -441,12 +443,48 @@ def suggest_soft_style_patch(
     cards: list[dict[str, Any]],
     *,
     metadata_columns: list[str] | None = None,
+    current_config: dict[str, Any] | None = None,
+    user_instruction: str = "",
 ) -> tuple[dict[str, Any], list[str]]:
     """从证据卡生成可选软样式 patch（不碰 thresholds 数值）。"""
     patch, _applied, warnings = build_style_patch_from_evidence(
         plot_type, cards, metadata_columns=metadata_columns
     )
-    patch.pop("_journal", None)
+    journal = patch.pop("_journal", None)
+    invite = False
+    inst = (user_instruction or "").strip()
+    if inst:
+        try:
+            from web_frontend.backend.plot_edit_registry import looks_like_literature_plot_restyle
+
+            invite = looks_like_literature_plot_restyle(inst)
+        except Exception:
+            invite = False
+        if not journal:
+            journal = _detect_journal(inst)
+    if invite and not journal:
+        journal = "npg"
+    if journal and current_config:
+        try:
+            from web_frontend.backend.literature_figure_style import apply_journal_palette
+            from web_frontend.backend.plot_theme import merge_plot_config
+
+            merged = merge_plot_config(current_config, patch)
+            styled = apply_journal_palette(merged, journal, plot_type=plot_type)
+            pal = styled.get("palette")
+            if isinstance(pal, dict) and pal != (merged.get("palette") or {}):
+                patch["palette"] = pal
+        except Exception:
+            pass
+    if not invite:
+        # 普通改标题/字号时不要顺手改椭圆
+        if "椭圆" not in inst.lower() and "ellipse" not in inst.lower():
+            patch.pop("ellipse", None)
+            marks = patch.get("marks")
+            if isinstance(marks, dict):
+                marks.pop("ellipse", None)
+                if not marks:
+                    patch.pop("marks", None)
     return patch, warnings
 
 

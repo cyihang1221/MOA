@@ -96,6 +96,7 @@ def _wants_deep_report(message: str) -> bool:
         "分析价值",
         "价值与意义",
         "写解读",
+        "读图观察",
         "interpretation report",
         "insight report",
     )
@@ -181,6 +182,15 @@ def stream_session_agent_c(
     meta = inv.get("metadata_csv") or find_metadata_csv(output_root, upload_root / "metadata.csv")
     out = output_root / "agent_c_output"
     use_insights = _use_report_insights(user_message, intent)
+    from web_frontend.backend.agent_c.figure_vision import vision_enabled
+
+    if vision_enabled():
+        yield {
+            "delta": (
+                "🔎 将尝试对前 6 张图做 **读图观察**（需多模态模型；"
+                "可用环境变量 `MASSAGENT_VISION_MODEL` 指定 Vision 模型）。\n\n"
+            )
+        }
     if use_insights:
         yield {
             "delta": (

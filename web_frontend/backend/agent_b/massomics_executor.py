@@ -1,4 +1,4 @@
-"""网页侧 Agent B：子进程调用 MassOmics-Agent-B 执行器（与 A/C 分离）。"""
+"""网页侧 Agent B：子进程调用 complete 同根执行器（与 A/C 分离）。"""
 from __future__ import annotations
 
 import asyncio
@@ -78,6 +78,42 @@ async def stream_massomics_b_execution(
     metadata = _metadata_csv(str(upload))
     data_dir = _b_data_dir(upload)
     outputspace.mkdir(parents=True, exist_ok=True)
+    try:
+        from web_frontend.backend.agent_a.figure_blueprint import match_repro_recipe
+        from web_frontend.backend.agent_b.skill_param_inject import SIDECAR_NAME, write_sidecar
+        from web_frontend.backend.b_paper_contract import collect_skill_parameters
+        from web_frontend.backend.agent_b.plan_locate import load_plan_document
+
+        sidecar = outputspace / SIDECAR_NAME
+        if not sidecar.is_file():
+            plan_obj = {}
+            try:
+                plan_obj = load_plan_document(plan_path) or {}
+            except Exception:
+                plan_obj = {}
+            recipe = match_repro_recipe(
+                f"{goal_text}\n{plan_obj.get('goal') or ''}"
+            )
+            params = collect_skill_parameters(
+                goal_text=goal_text,
+                recipe=recipe,
+                plan=plan_obj if isinstance(plan_obj, dict) else None,
+            )
+            if params:
+                write_sidecar(sidecar, params)
+                yield {
+                    "delta": (
+                        f"📎 已补写 B 参数契约 `{SIDECAR_NAME}`"
+                        + (
+                            f"（VIP>{params.get('vip_threshold')}）"
+                            if params.get("vip_threshold") is not None
+                            else ""
+                        )
+                        + "。\n"
+                    )
+                }
+    except Exception as exc:
+        yield {"delta": f"ℹ️ B 参数契约跳过：{exc}\n"}
 
     yield {
         "delta": (
@@ -169,6 +205,25 @@ async def stream_massomics_b_execution(
     if not receipt:
         yield {"error": f"Agent B 未写入回执（退出码 {returncode}）"}
         return
+
+    try:
+        from web_frontend.backend.b_paper_contract import dump_file_map
+
+        dumped = dump_file_map(outputspace)
+        n_ok = len(
+            [
+                rec
+                for rec in (dumped.get("file_map") or {}).values()
+                if rec.get("status") == "present"
+            ]
+        )
+        yield {
+            "delta": (
+                f"📂 已写入论文文件契约 `b_file_map.json`（{n_ok} 个逻辑名已对齐 B 目录）。\n"
+            )
+        }
+    except Exception as exc:
+        yield {"delta": f"ℹ️ 文件契约映射跳过：{exc}\n"}
 
     # B 的 mixOmics ggplot 不是文献图；立刻用 Vega-Lite 按文献样式重绘可编辑 PNG。
     try:

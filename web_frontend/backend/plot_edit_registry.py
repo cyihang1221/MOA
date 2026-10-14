@@ -216,6 +216,32 @@ PLOT_SPECS: tuple[PlotSpec, ...] = (
         ("plsda_permutation.csv",),
         "R2/Q2 scatter",
     ),
+    PlotSpec(
+        "paper_fig2_composite",
+        "fig02_volatile_composite",
+        "Volatile profiling (PCA / PLS-DA / network)",
+        (
+            "volatile_pca_scores.csv",
+            "volatile_plsda_scores.csv",
+            "volatile_network_nodes.csv",
+        ),
+        "grade 分组色",
+        "any",
+    ),
+    PlotSpec(
+        "paper_fig5_composite",
+        "fig05_nonvolatile_composite",
+        "Non-volatile metabolomics (PCA / HCA / PLS-DA / permutation / heatmap)",
+        (
+            "pca_scores.csv",
+            "hca_matrix.csv",
+            "plsda_scores.csv",
+            "plsda_permutation.csv",
+            "differential_metabolites_abundance.csv",
+        ),
+        "grade 分组色",
+        "any",
+    ),
     # —— Agent B step8 变体图（metaX / SIMCA-ropls）：C 侧此前只能通用改标题 ——
     PlotSpec(
         "splot",
@@ -339,6 +365,8 @@ PLOT_ALIASES: dict[str, str] = {
     "sensory": "fig07_sensory",
     "permutation": "fig05d_permutation",
     "置换检验": "fig05d_permutation",
+    "fig 2 composite": "fig02_volatile_composite",
+    "fig 5 composite": "fig05_nonvolatile_composite",
     # Agent B step8 变体
     "s-plot": "statistical_analysis_simca_splot",
     "splot": "statistical_analysis_simca_splot",
@@ -421,12 +449,19 @@ _NETWORK_DATA_ALIASES: dict[str, tuple[str, ...]] = {
 
 
 def resolve_plot_data_file(data_dir: Path, filename: str) -> Path | None:
-    """在 data_dir 中解析语义数据文件（含 FBMN 别名）。"""
+    """在 data_dir 中解析语义数据文件（含 FBMN 别名与 ``_b_contract`` 逻辑名）。
+
+    不向会话根扩散：inventory 会遍历子目录。会话级映射走 ``b_paper_contract``。
+    """
     root = Path(data_dir)
-    for candidate in _NETWORK_DATA_ALIASES.get(filename, (filename,)):
+    name = Path(filename).name
+    for candidate in _NETWORK_DATA_ALIASES.get(name, (name,)):
         path = root / candidate
         if path.is_file():
             return path
+    contract_hit = root / "_b_contract" / name
+    if contract_hit.is_file():
+        return contract_hit
     return None
 
 
@@ -699,13 +734,26 @@ _PLOT_EDIT_INTENT_RE = re.compile(
     r"(?:"
     r"改图|修改(?:一下)?图|调整(?:一下)?图|更改?图|美化图|"
     r"标题改|标题改为|标题改成|标题修改为|标题为|改(?:一下)?标题|修改.*标题|更换标题|"
-    r"颜色|色号|配色|调色|着色|上色|字体|字号|图例|"
+    r"颜色|色号|配色|调色|着色|上色|字体|字号|图例|椭圆|ellipse|"
     r"用\s*#|#[0-9a-fA-F]{3,8}\b|"
     r"改成|改为|换成|用.{0,8}色|"
     r"按.{0,12}(?:着色|上色)|聚类|k[\s-]*means|"
     r"直方图|分布图|拓扑图|热图|气泡图|"
     r"重新绘|重绘|重新作图|重新生成图|"
     r"edit\s+(?:the\s+)?plot|change\s+(?:the\s+)?title|recolor|color\s+by|font\s+size|plot\s+style"
+    r")",
+    re.IGNORECASE,
+)
+
+_LITERATURE_RESTYLE_RE = re.compile(
+    r"(?:"
+    r"知识库|RAG|ggsci|\bnpg\b|nature|lancet|jama|"
+    r"DOI[:\s]*\d|doi\.org|"
+    r"发表级|论文风|期刊风|"
+    r"(?:参考|按照?|对照|对齐|贴合).{0,24}(?:文献|论文|期刊|知识库|RAG|skill)|"
+    r"(?:文献|论文|期刊).{0,16}(?:规范|风格|配色|画法|样子|那种)|"
+    r"像(?:论文|文献|期刊).{0,10}(?:那样|那种|里)|"
+    r"按.{0,24}(?:那篇|这篇)"
     r")",
     re.IGNORECASE,
 )
@@ -723,9 +771,19 @@ _PLOT_REFERENCE_RE = re.compile(
     re.IGNORECASE,
 )
 _PLOT_STYLE_RE = re.compile(
-    r"(?:标题|字号|字体|颜色|色号|配色|着色|上色|图例|聚类|改成|改为|换成|用\s*#|#[0-9a-fA-F]{3,8}|color\s+by)",
+    r"(?:标题|字号|字体|颜色|色号|配色|着色|上色|图例|椭圆|聚类|改成|改为|换成|用\s*#|#[0-9a-fA-F]{3,8}|color\s+by)",
     re.IGNORECASE,
 )
+
+
+def looks_like_literature_plot_restyle(message: str) -> bool:
+    """用户是否在要求按文献 / 知识库 / 期刊风格改图。"""
+    text = (message or "").strip()
+    if not text or not _LITERATURE_RESTYLE_RE.search(text):
+        return False
+    if _PLOT_REFERENCE_RE.search(text):
+        return True
+    return bool(re.search(r"(?:图|plot|figure)", text, re.I))
 
 
 def looks_like_plot_edit_request(message: str) -> bool:
@@ -735,9 +793,11 @@ def looks_like_plot_edit_request(message: str) -> bool:
 
     # 全流程分析请求（如「对 raw 进行分析包括 xcms 和分子网络」）不是改图
     if re.search(r"(?:进行|执行|跑|开始|继续).{0,12}分析", text):
-        if not re.search(r"标题|颜色|色号|配色|#|改成|改为|改图|字号|字体|直方图|分布图", text):
+        if not re.search(r"标题|颜色|色号|配色|#|改成|改为|改图|字号|字体|直方图|分布图|文献|知识库", text):
             return False
 
+    if looks_like_literature_plot_restyle(text):
+        return True
     if _PLOT_EDIT_INTENT_RE.search(text):
         return True
     if _PLOT_REFERENCE_RE.search(text) and _PLOT_STYLE_RE.search(text):
@@ -769,11 +829,50 @@ def split_plot_edit_lines(message: str) -> list[str]:
     return [line for line in lines if looks_like_plot_edit_request(line)]
 
 
-def _alias_stem_from_message(message: str) -> str | None:
+def _alias_stems_from_message(message: str) -> list[str]:
+    """按出现顺序找出图类型。长别名优先，避免 plsda 里的 pca 被当成 PCA。"""
     lower = message.lower()
+    occupied = [False] * len(lower)
+    found: list[tuple[int, str]] = []
+    seen: set[str] = set()
     for alias, stem in sorted(PLOT_ALIASES.items(), key=lambda x: len(x[0]), reverse=True):
-        if alias in lower or alias in message:
-            return stem
+        needle = alias.lower()
+        if not needle or stem in UNSUPPORTED_EDIT_STEMS:
+            continue
+        start = 0
+        first = None
+        while True:
+            idx = lower.find(needle, start)
+            if idx < 0:
+                break
+            end = idx + len(needle)
+            if not any(occupied[idx:end]):
+                occupied[idx:end] = [True] * len(needle)
+                if first is None:
+                    first = idx
+            start = end
+        if first is not None and stem not in seen:
+            seen.add(stem)
+            found.append((first, stem))
+    found.sort(key=lambda item: item[0])
+    return [stem for _, stem in found]
+
+
+def _alias_stem_from_message(message: str) -> str | None:
+    stems = _alias_stems_from_message(message)
+    return stems[0] if stems else None
+
+
+def _rel_for_stem(stem: str, plots: list[dict[str, Any]]) -> str | None:
+    if stem in UNSUPPORTED_EDIT_STEMS:
+        return None
+    for item in plots:
+        if item["stem"] == stem or item["stem"].startswith(f"{stem}_"):
+            return item["rel"]
+    compact = stem.replace("_", "")
+    for item in plots:
+        if compact and compact in item["stem"].replace("_", ""):
+            return item["rel"]
     return None
 
 
@@ -847,6 +946,16 @@ def extract_plot_edit_tasks(
 
     tasks: list[tuple[str, str]] = []
     seen_rels: set[str] = set()
+    stems = _alias_stems_from_message(message)
+    if len(stems) > 1:
+        for stem in stems:
+            rel = _rel_for_stem(stem, plots)
+            if not rel or rel in seen_rels:
+                continue
+            seen_rels.add(rel)
+            tasks.append((rel, message))
+        if tasks:
+            return tasks
     for line in lines:
         rel = resolve_plot_target(line, plots)
         if not rel or rel in seen_rels:

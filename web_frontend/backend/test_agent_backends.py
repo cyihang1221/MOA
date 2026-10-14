@@ -22,6 +22,7 @@ from web_frontend.backend.agent_backends import (
     agent_a_backend,
     agent_b_backend,
     backend_status,
+    complete_abc_root,
     massomics_b_available,
     massomics_b_root,
     massomics_root,
@@ -33,8 +34,6 @@ MINI_CATALOG = {
         "statistical_analysis": {},
         "feature_detection": {},
         "enrichment_analysis": {},
-        "library_matching": {},
-        "unknown_identification": {},
     },
     "tools": [
         {
@@ -45,13 +44,6 @@ MINI_CATALOG = {
             "mcp_tools": ["statistical_analysis_mixomics"],
         },
         {
-            "keyword": "extract_differential_features",
-            "stage": "statistical_analysis",
-            "aliases": ["extract differential features"],
-            "support_status": "supported",
-            "mcp_tools": ["extract_differential_features"],
-        },
-        {
             "keyword": "XCMS-Centwave",
             "stage": "feature_detection",
             "aliases": ["XCMS-CentWave"],
@@ -59,32 +51,11 @@ MINI_CATALOG = {
             "mcp_tools": ["data_preprocessing_xcms"],
         },
         {
-            "keyword": "spectral_annotation",
-            "stage": "library_matching",
-            "aliases": ["spectral annotation"],
-            "support_status": "supported",
-            "mcp_tools": ["spectral_annotation"],
-        },
-        {
-            "keyword": "KEGG compound enrichment",
-            "stage": "enrichment_analysis",
-            "aliases": ["kegg_compound_enrichment"],
-            "support_status": "supported",
-            "mcp_tools": ["kegg_compound_enrichment"],
-        },
-        {
             "keyword": "KEGG",
             "stage": "pathway_analysis",
             "aliases": [],
             "support_status": "supported",
             "mcp_tools": ["pathway_analysis_kegg"],
-        },
-        {
-            "keyword": "DeepMASS",
-            "stage": "unknown_identification",
-            "aliases": [],
-            "support_status": "supported",
-            "mcp_tools": ["deepmass_annotation"],
         },
     ],
 }
@@ -101,6 +72,16 @@ class AgentBackendsTest(unittest.TestCase):
         root = massomics_root()
         self.assertTrue((root / "plan" / "schema.py").is_file())
 
+    def test_complete_unifies_a_and_b(self) -> None:
+        unified = complete_abc_root()
+        self.assertIsNotNone(unified)
+        self.assertEqual(unified.name, "MassOmics-Agent-B")
+        self.assertEqual(massomics_root().resolve(), massomics_b_root().resolve())
+        st = backend_status()
+        self.assertEqual(st["layout"], "complete_unified")
+        self.assertTrue(st["same_tree"])
+        self.assertEqual(Path(st["complete_abc_root"]).name, "MassOmics-Agent-B")
+
     def test_massomics_b_worktree(self) -> None:
         root = massomics_b_root()
         self.assertEqual(root.name, "MassOmics-Agent-B")
@@ -114,6 +95,9 @@ class AgentBackendsTest(unittest.TestCase):
         self.assertIn("massomics_root", st)
         self.assertIn("massomics_b_root", st)
         self.assertIn("massomics_b_available", st)
+        self.assertIn("complete_abc_root", st)
+        self.assertIn("layout", st)
+        self.assertIn("tool_catalog_usable", st)
         self.assertTrue(st["massomics_available"] or not st["massomics_available"])
 
     def test_abc_contract_keeps_three_agents(self) -> None:
@@ -205,95 +189,6 @@ class AgentBPlanNormalizeTest(unittest.TestCase):
         self.assertIsNotNone(entry)
         assert entry is not None
         self.assertEqual(entry["keyword"], "mixOmics")
-
-    def test_downstream_mcp_tools_map_and_not_pathway_kegg(self) -> None:
-        extract = resolve_catalog_entry("extract_differential_features", MINI_CATALOG)
-        annot = resolve_catalog_entry("spectral_annotation", MINI_CATALOG)
-        kegg = resolve_catalog_entry("kegg_compound_enrichment", MINI_CATALOG)
-        pathway = resolve_catalog_entry("KEGG", MINI_CATALOG)
-        self.assertEqual(extract["keyword"], "extract_differential_features")
-        self.assertEqual(annot["keyword"], "spectral_annotation")
-        self.assertEqual(kegg["keyword"], "KEGG compound enrichment")
-        self.assertEqual(kegg["mcp_tools"], ["kegg_compound_enrichment"])
-        self.assertEqual(pathway["mcp_tools"], ["pathway_analysis_kegg"])
-
-    def test_unknown_stage_still_maps(self) -> None:
-        plan = {
-            "goal": "demo",
-            "steps": [
-                {
-                    "step_number": 5,
-                    "description": "extract",
-                    "stage": "differential_feature_extraction",
-                    "tools": ["extract_differential_features"],
-                },
-                {
-                    "step_number": 6,
-                    "description": "annotate",
-                    "stage": "Step 6",
-                    "tools": ["spectral_annotation"],
-                },
-        {
-            "step_number": 7,
-            "description": "enrich",
-            "stage": "pathway_analysis",
-            "tools": ["kegg_compound_enrichment"],
-        },
-            ],
-        }
-        out, warnings = normalize_plan_for_b(plan, MINI_CATALOG)
-        self.assertFalse(warnings)
-        self.assertEqual(out["steps"][0]["tools"], ["extract_differential_features"])
-        self.assertEqual(out["steps"][1]["tools"], ["spectral_annotation"])
-        self.assertEqual(out["steps"][2]["tools"], ["KEGG compound enrichment"])
-        self.assertEqual(out["steps"][2]["stage"], "enrichment_analysis")
-
-    def test_mixed_stage_tools_are_split(self) -> None:
-        plan = {
-            "goal": "demo",
-            "steps": [
-                {
-                    "step_number": 6,
-                    "description": "annotate",
-                    "stage": "library_matching",
-                    "tools": ["spectral_annotation", "deepmass_annotation"],
-                    "output_filename": "annotated",
-                }
-            ],
-        }
-        out, warnings = normalize_plan_for_b(plan, MINI_CATALOG)
-        self.assertEqual(
-            [(s["stage"], s["tools"]) for s in out["steps"]],
-            [
-                ("library_matching", ["spectral_annotation"]),
-                ("unknown_identification", ["DeepMASS"]),
-            ],
-        )
-        self.assertEqual(out["steps"][0]["step_number"], 1)
-        self.assertEqual(out["steps"][1]["step_number"], 2)
-        self.assertNotEqual(
-            out["steps"][0]["output_filename"],
-            out["steps"][1]["output_filename"],
-        )
-        self.assertTrue(any("拆成" in w for w in warnings))
-
-    def test_real_b_catalog_maps_skipped_tools(self) -> None:
-        from web_frontend.backend.agent_b.plan_normalize import load_tool_catalog
-        from web_frontend.backend.agent_backends import massomics_b_available, massomics_b_root
-
-        if not massomics_b_available():
-            self.skipTest("MassOmics-Agent-B catalog 不可用")
-        catalog = load_tool_catalog(massomics_b_root() / "src" / "tool_catalog.json")
-        for name, keyword in (
-            ("extract_differential_features", "extract_differential_features"),
-            ("spectral_annotation", "spectral_annotation"),
-            ("kegg_compound_enrichment", "KEGG compound enrichment"),
-        ):
-            entry = resolve_catalog_entry(name, catalog)
-            self.assertIsNotNone(entry, name)
-            assert entry is not None
-            self.assertEqual(entry["keyword"], keyword)
-            self.assertEqual(entry["mcp_tools"][0], name)
 
     def test_find_latest_plan_json(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

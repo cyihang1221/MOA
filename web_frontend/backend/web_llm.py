@@ -134,7 +134,9 @@ class WebLLMClient:
             or override.get("base_url")
             or (os.getenv("LLM_BASE_URL") or "").strip().rstrip("/")
         )
-        self.timeout = int(timeout or os.getenv("LLM_TIMEOUT", "180"))
+        env_timeout = int(timeout if timeout is not None else os.getenv("LLM_TIMEOUT", "180"))
+        # 规划/报告常超过 60s；过小会变成「调用 LLM 超时 / Request timed out」
+        self.timeout = max(env_timeout, 180) if timeout is None else env_timeout
 
         if not all([self.model, resolved_key, resolved_base]):
             raise ValueError(

@@ -8,6 +8,7 @@ from typing import Any
 from web_frontend.backend.agent_c.contract import CONTRACT_VERSION
 from web_frontend.backend.agent_c.figure_pipeline import (
     match_figures,
+    refresh_figure_captions,
     render_jobs,
     write_captions_json,
 )
@@ -87,6 +88,7 @@ def run_agent_c(
         language: ``zh`` / ``en``；空则用方案 reporting_plan.language
         use_llm: 为 true 时启用 **AI 深度解读**（结果意义/价值章节）；
             论文复现（``repro_recipe_id``）路径下自动关闭。
+            读图观察（Vision）不依赖本开关，见 ``MASSAGENT_FIGURE_VISION``。
         goal_text: 分析目标上下文，用于匹配文献作图知识；空则退回方案 objective
         project_root: 文献 Skill 根目录；空则用包内推断
         use_literature: 首次出图是否套用文献样式（关闭时只用发表级基线）
@@ -122,8 +124,8 @@ def run_agent_c(
     from web_frontend.backend.agent_c.report_insights import should_enable_insights
 
     insights_enabled = should_enable_insights(use_llm=use_llm, repro_recipe_id=repro_recipe_id)
-    # 深度报告仍用 LLM 写解读；B 侧 ggplot 只进 existing_figures 附录。
-    # 首次出图必须走 Vega-Lite 文献样式，不能因为写报告就复制 mixOmics PNG。
+    # 方案点名的图仍由 C 重绘。方案没写、但 B 已经写出的 PNG 也并入报告，
+    # 避免结果目录里的 PLS-DA、火山图、热图等在报告中消失。
 
     jobs = match_figures(parsed, inv, figure_mode=figure_mode_effective)
     from web_frontend.backend.agent_c.figure_checklist import (
@@ -134,7 +136,9 @@ def run_agent_c(
 
     plan_checklist = checklist_from_jobs(jobs, plan=parsed)
     figure_checklist = merge_repro_and_plan_checklist(plan_checklist, repro_checklist)
-    figure_checklist_md = format_checklist_markdown(figure_checklist, language=language or "zh")
+    figure_checklist_md = format_checklist_markdown(
+        figure_checklist, language=language or "zh", metadata_csv=meta
+    )
 
     figures = render_jobs(
         jobs,
@@ -160,7 +164,8 @@ def run_agent_c(
         figures=figures,
         results_dir=results,
     )
-    supplement_mode = "all" if figure_mode_effective in {"available", "plan_then_available"} else "none"
+    # plan 模式以前丢掉方案未点名的结果图。现在凡是 B 已写出、且与方案图不重复的 PNG 都进入报告。
+    supplement_mode = "all"
     report_figures, incomplete_figures = prepare_report_figures(
         figures,
         supplement_existing=existing_figures,
@@ -168,15 +173,42 @@ def run_agent_c(
         language=language,
         supplement_mode=supplement_mode,
     )
+    from web_frontend.backend.agent_c.nature_distill.journal_export import load_journal_export
+
+    for fig in report_figures:
+        png = fig.get("png")
+        if not png:
+            continue
+        payload = load_journal_export(png)
+        if payload:
+            fig["journal_export"] = payload
+            if payload.get("pdf"):
+                fig["pdf"] = payload["pdf"]
+            if payload.get("svg"):
+                fig["journal_svg"] = payload["svg"]
 
     from web_frontend.backend.agent_c.figure_data_narrative import enrich_figures_data_narrative
-    from web_frontend.backend.agent_c.figure_vision import attach_vision_to_figures
+    from web_frontend.backend.agent_c.figure_vision import (
+        attach_vision_to_figures,
+        vision_enabled,
+    )
 
     enrich_figures_data_narrative(
         report_figures,
         results_dir=results,
         metadata_csv=meta,
     )
+    refresh_figure_captions(
+        report_figures,
+        language=language or "zh",
+        metadata_csv=meta,
+    )
+    captions_path = write_captions_json(report_figures, out)
+    cap_by_id = {str(f.get("figure_id") or ""): f.get("caption") for f in report_figures}
+    for fig in figures:
+        fid = str(fig.get("figure_id") or "")
+        if fid and fid in cap_by_id:
+            fig["caption"] = cap_by_id[fid]
 
     insights_payload: dict[str, Any] | None = None
     figure_interp: dict[str, dict[str, Any]] = {}
@@ -187,11 +219,16 @@ def run_agent_c(
     )
 
     zh_report = (language or "zh").lower().startswith("zh")
+    # 读图观察（C）与深度解读（B）解耦：出图写报告时默认读前 6 张 PNG。
+    if vision_enabled():
+        try:
+            attach_vision_to_figures(
+                report_figures,
+                objective=str(parsed.get("objective") or goal),
+            )
+        except Exception as exc:
+            warnings.append(f"读图观察失败: {exc}")
     if insights_enabled:
-        attach_vision_to_figures(
-            report_figures,
-            objective=str(parsed.get("objective") or goal),
-        )
         try:
             insights_payload = generate_report_insights(
                 plan=parsed,
@@ -278,6 +315,9 @@ def run_agent_c(
                 "status": f.get("status"),
                 "png": f.get("png"),
                 "svg": f.get("svg"),
+                "pdf": f.get("pdf"),
+                "journal_svg": f.get("journal_svg"),
+                "journal_export": f.get("journal_export"),
                 "caption": f.get("caption"),
                 "missing_reason": f.get("missing_reason"),
                 "literature_style": f.get("literature_style"),
@@ -291,6 +331,9 @@ def run_agent_c(
                 "plot_type": card.get("plot_type"),
                 "status": card.get("status"),
                 "png": f.get("png"),
+                "pdf": f.get("pdf"),
+                "journal_svg": f.get("journal_svg"),
+                "journal_export": f.get("journal_export"),
                 "rel": card.get("rel"),
                 "source": card.get("source"),
                 "caption": card.get("caption"),

@@ -70,7 +70,7 @@ async def _print_stream(paths: dict[str, str], project_root: Path, plan: Path | 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Agent B：读取 A 的 plan_*.json，调用 MassOmics-Agent-B 执行器"
+        description="Agent B：读取 A 的 plan_*.json，调用 complete 同根执行器"
     )
     parser.add_argument("--session", default="", help="会话 id / storage_slug")
     parser.add_argument("--plan", default="", help="覆盖自动查找的 plan_*.json")

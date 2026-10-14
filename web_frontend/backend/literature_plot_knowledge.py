@@ -421,6 +421,66 @@ def _tokenize(text: str) -> list[str]:
     return [t for t in re.split(r"[\s,，。、/;；()（）\-]+", (text or "").lower()) if len(t) >= 2]
 
 
+_GENERIC_SKILL_NAME_TOKENS = frozenset(
+    {
+        "流水线",
+        "非靶向",
+        "出图",
+        "得分图",
+        "热图",
+        "分子",
+        "网络",
+        "文献",
+        "步骤",
+        "代谢组",
+        "统计分析",
+        "pca",
+        "volcano",
+        "heatmap",
+        "plot",
+        "figure",
+    }
+)
+
+
+def _instruction_skill_bonus(instruction: str, skill: dict[str, Any]) -> int:
+    """用户点名论文 / DOI / skill 时抬升排序。"""
+    inst = (instruction or "").strip()
+    if not inst:
+        return 0
+    inst_l = inst.lower()
+    bonus = 0
+    doi = str(skill.get("doi") or "").strip().lower()
+    if doi and doi in inst_l:
+        bonus += 80
+    sid = str(skill.get("skill_id") or "")
+    for part in re.split(r"[-_]", sid):
+        if len(part) >= 4 and part.lower() not in _GENERIC_SKILL_NAME_TOKENS and part.lower() in inst_l:
+            bonus += 24
+    blob = " ".join(
+        [
+            str(skill.get("name") or ""),
+            str(skill.get("description") or ""),
+            str(skill.get("visual_block") or ""),
+            sid,
+        ]
+    )
+    for run in re.findall(r"[\u4e00-\u9fff]{2,6}", blob):
+        if run in _GENERIC_SKILL_NAME_TOKENS:
+            continue
+        if run in inst:
+            bonus += 50 + min(len(run) * 4, 24)
+            break
+    for kw in skill.get("keywords") or []:
+        k = str(kw).strip()
+        if len(k) < 4 or k.lower() in _GENERIC_SKILL_NAME_TOKENS:
+            continue
+        if k.lower() in inst_l or k in inst:
+            bonus += 20
+            break
+    return min(bonus, 120)
+
+
 def _plot_terms_for_type(plot_type: str) -> tuple[str, ...]:
     if not plot_type:
         return ()
@@ -535,6 +595,7 @@ def _score_skill(
         for term in plot_terms:
             if term in inst and term in visual:
                 score += 2
+        score += _instruction_skill_bonus(instruction, skill)
 
     if skill.get("source") == "massomics" and skill.get("skill_pool") == _SKILL_POOL_LITERATURE:
         score += 4
@@ -594,86 +655,27 @@ def rank_skills_for_plot(
 
 
 def _suggest_instruction(plot_type: str, skill: dict[str, Any], visual: str) -> str:
-    """从文献出图清单生成可一键填入的改图建议。"""
-    plot_label = {
-        "pca": "PCA 得分图",
-        "plsda": "PLS-DA 得分图",
-        "volcano": "火山图",
-        "vip_bar": "VIP 条形图",
-        "heatmap_vip": "VIP 热图",
-        "cosine_hist": "余弦相似度分布图",
-        "degree_hist": "节点度数分布图",
-        "family_size": "分子家族大小分布图",
-        "network_topology": "分子网络拓扑图",
-        "splot": "OPLS-DA S-plot",
-        "opls_outlier": "样本离群诊断图",
-        "roc_auc_hist": "单变量 ROC AUC 分布图",
-        "significance_venn": "显著性集合交集图",
-        "log2fc_hist": "log2 倍数变化分布图",
-        "plsda_permutation": "置换检验图",
-    }.get(plot_type, plot_type)
-
-    doi = skill.get("doi") or ""
-    skill_name = skill.get("skill_id") or skill.get("name") or "文献"
-    cite = f"（参考 {skill_name}" + (f", DOI:{doi}" if doi else "") + "）"
-
-    # 从 visual 表格抽第一行相关描述
-    purpose = ""
-    for ln in visual.splitlines():
-        low = ln.lower()
-        if any(t in low for t in _plot_terms_for_type(plot_type)):
-            purpose = re.sub(r"^\|?\s*[-|]+\s*$", "", ln).strip("| ").strip()
-            if purpose and not purpose.startswith("---"):
-                break
-
-    base = f"按文献规范优化{plot_label}{cite}："
+    """从文献出图清单生成可直接发到聊天里的改图话术（口语，不填表格）。"""
+    skill_name = skill.get("skill_id") or skill.get("name") or "知识库里那篇"
+    paper = str(skill_name).replace("-", " ")
     if plot_type in {"pca", "plsda"}:
-        hint = "标题使用 Score Plot；按 Group 着色；图例放右侧；标题字号 18；展示样本聚类与离群点"
-        if "3d" in visual.lower() or "3d pca" in visual.lower():
-            hint += "；若支持则强调 PC1/PC2 解释方差"
-    elif plot_type == "volcano":
-        hint = "显著上调 #E64B35、下调 #4DBBD5、非显著 #B0B0B0；标注 p 与 log2FC 阈值线；标题 Volcano Plot"
-    elif plot_type in {"cosine_hist", "degree_hist", "family_size"}:
-        hint = "采用 GNPS/FBMN 文献常用展示：清晰轴标题、阈值参考线、标题说明网络质量评估目的"
-    elif plot_type == "network_topology":
-        hint = "按分子家族或化学类别着色；边灰色 #aaaaaa；标题说明节点=feature、边=MS2 相似性"
-    elif plot_type == "vip_bar":
-        hint = "突出 VIP>1 特征；柱状主色 #3C5488；标题 VIP Scores"
-    elif plot_type == "heatmap_vip":
-        hint = "行聚类展示 top VIP 特征；色标对比度适中；标题 Top VIP Heatmap"
-    elif plot_type == "splot":
-        hint = (
-            "横轴 p[1]、纵轴 p(corr)[1]；显著特征 #E64B35、其余 #9AA0A6；"
-            "过零参考线保留；标题 OPLS-DA S-plot"
+        return (
+            f"{'PCA' if plot_type == 'pca' else 'PLS-DA'} 按知识库里{paper}那篇改一下，"
+            "分组色用期刊常用的 NPG，加上置信椭圆，样本名就别标了，图例放右边。"
         )
-    elif plot_type == "plsda_permutation":
-        hint = "横轴 similarity、纵轴 R2Y/Q2；真实模型值作水平参考线；标题标注 pR2Y / pQ2"
-    elif plot_type == "opls_outlier":
-        hint = "横轴 score distance、纵轴 orthogonal distance；离群样本 #d62728 并标注样本名；保留两条 95% 阈值线"
-    elif plot_type == "roc_auc_hist":
-        hint = "展示逐特征 AUC 分布；标注 mean AUC 与 AUC=0.5 参考线；说明非 ROC 曲线"
-    elif plot_type == "log2fc_hist":
-        hint = "横轴 log2(ratio)；零点参考线；标题说明差异倍数分布"
-    elif plot_type == "significance_venn":
-        hint = "按交集集合分组计数；集合名保留 t.test / wilcox.test / VIP 原始命名；配色对比清晰"
-    elif plot_type == "constituent_bar":
-        hint = "按等级分面柱图；标注显著性字母；轴单位 μg/g DM；标题对应 TPC/TFC/TFAA"
-    elif plot_type == "relative_abundance_heatmap":
-        hint = "行=化合物、列=等级；YlOrRd 色标；标题 Relative abundance"
-    elif plot_type == "hca_heatmap":
-        hint = "行=样本；色标对比度适中；标题 Hierarchical cluster analysis"
-    elif plot_type == "correlation_heatmap":
-        hint = "对称 Pearson 矩阵；RdBu 色标域 [-1, 1]；对角线为 1"
-    elif plot_type == "bioactivity_bar":
-        hint = "按 assay 分面；等级柱色一致；轴带单位"
-    elif plot_type == "sensory_scores":
-        hint = "分组柱图按感官属性着色；纵轴 0–5；图例放右侧"
-    else:
-        hint = "标题与轴标签符合代谢组学论文惯例；配色对比清晰、图例完整"
-
-    if purpose:
-        hint = f"{purpose}。{hint}"
-    return base + hint
+    if plot_type == "volcano":
+        return (
+            f"火山图按{paper}那种来：上调红下调蓝，灰点别那么抢，阈值线留着，别改 p 和 fold change。"
+        )
+    if plot_type == "vip_bar":
+        return f"VIP 图按{paper}收一下，柱子用深蓝，VIP 线留着，看起来像论文附图就行。"
+    if plot_type == "heatmap_vip":
+        return f"热图按{paper}那种红蓝发散色标，行聚类留着，别把统计阈值改掉。"
+    if plot_type == "network_topology":
+        return f"网络图按{paper}来，按分子家族着色，边淡一点，孤立点可以藏掉。"
+    if plot_type in {"cosine_hist", "degree_hist", "family_size"}:
+        return f"这张分布图按{paper}的网络质控图来改，轴标题写清楚，阈值线留着。"
+    return f"这张图按知识库里{paper}的画法收一收，配色和图例跟论文附图靠近就行，数据别动。"
 
 
 def match_plot_literature(
@@ -700,6 +702,14 @@ def match_plot_literature(
     if not plot_type and source_rel:
         stem = Path(source_rel).stem
         plot_type = plot_type_from_stem(stem) or ""
+
+    try:
+        from web_frontend.backend.plot_edit_registry import looks_like_literature_plot_restyle
+
+        if looks_like_literature_plot_restyle(instruction):
+            max_skills = max(max_skills, 3)
+    except Exception:
+        pass
 
     selected = rank_skills_for_plot(
         plot_type=plot_type,
@@ -754,6 +764,7 @@ def match_plot_literature(
         )
 
     rag_mode = ""
+    rag_sources: list[str] = []
     rag_budget = min(2200, max(0, budget))
     if rag_budget > 200 and plot_type:
         rag = supplement_plot_literature_rag(
@@ -765,6 +776,7 @@ def match_plot_literature(
         )
         rag_text = str(rag.get("text") or "").strip()
         rag_mode = str(rag.get("mode") or "")
+        rag_sources = [str(s) for s in (rag.get("sources") or []) if s]
         if rag_text:
             rag_section = (
                 "## Supplementary literature (repro_recipes / figure_index / RAG)\n"
@@ -774,14 +786,40 @@ def match_plot_literature(
             )
             parts.append(rag_section)
             budget -= len(rag_section)
+            if not hints:
+                preview = next((ln.strip() for ln in rag_text.splitlines() if ln.strip()), "")[:120]
+                hints.append(
+                    {
+                        "skill_id": "literature_rag",
+                        "source": "rag",
+                        "doi": "",
+                        "summary": preview or "知识库 figure captions",
+                        "instruction": _suggest_instruction(
+                            plot_type or "pca",
+                            {"skill_id": "知识库文献", "doi": ""},
+                            rag_text,
+                        ),
+                    }
+                )
 
     text = "\n".join(parts).strip()
     if not matched and not rag_mode:
-        return {"text": "", "matched": [], "hints": [], "error": None, "rag_mode": ""}
-    if not matched and rag_mode:
-        # 仅 RAG 命中时也返回上下文
-        return {"text": text, "matched": [], "hints": [], "error": None, "rag_mode": rag_mode}
-    return {"text": text, "matched": matched, "hints": hints, "error": None, "rag_mode": rag_mode}
+        return {
+            "text": "",
+            "matched": [],
+            "hints": [],
+            "error": None,
+            "rag_mode": "",
+            "rag_sources": [],
+        }
+    return {
+        "text": text,
+        "matched": matched,
+        "hints": hints,
+        "error": None,
+        "rag_mode": rag_mode,
+        "rag_sources": rag_sources,
+    }
 
 
 def session_goal_text(session: dict | None, messages: list[dict] | None) -> str:

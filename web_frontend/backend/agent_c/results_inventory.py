@@ -5,9 +5,15 @@ from pathlib import Path
 from typing import Any
 
 from web_frontend.backend.agent_c.contract import CONTRACT_VERSION, STANDARD_RESULT_FILES
+from web_frontend.backend.b_paper_contract import (
+    CONTRACT_DIR_NAME,
+    FILE_MAP_NAME,
+    build_file_map,
+    materialize_logical_view,
+)
 from web_frontend.backend.plot_edit_registry import (
     PLOT_SPECS,
-    plot_spec_data_ready,
+    plot_data_files_ready,
     resolve_plot_data_file,
 )
 
@@ -17,9 +23,17 @@ _SKIP_DIRS = {
     "agent_c_output",
     "_abc_handoff",
     "_handoff_input",
+    CONTRACT_DIR_NAME,
     "__pycache__",
     ".git",
 }
+
+
+def _path_skipped(path: Path) -> bool:
+    for part in path.parts:
+        if part in _SKIP_DIRS or part.startswith("agent_c_output"):
+            return True
+    return False
 
 
 def _rel(root: Path, path: Path) -> str:
@@ -42,7 +56,7 @@ def find_metadata_csv(results_dir: Path, extra: str | Path | None = None) -> Pat
         if parent.is_file():
             return parent
     for hit in results_dir.rglob("metadata.csv"):
-        if hit.is_file() and hit.parent.name not in _SKIP_DIRS:
+        if hit.is_file() and not _path_skipped(hit):
             return hit
     return None
 
@@ -60,6 +74,8 @@ def inventory_results(
         "files": [],
         "plottable": [],
         "standard_files": {},
+        "file_map": {},
+        "contract_dir": None,
         "metadata_csv": None,
         "result_summary": "",
         "warnings": [],
@@ -72,7 +88,7 @@ def inventory_results(
     for path in sorted(root.rglob("*")):
         if not path.is_file():
             continue
-        if any(part in _SKIP_DIRS for part in path.parts):
+        if _path_skipped(path):
             continue
         files.append(
             {
@@ -85,7 +101,14 @@ def inventory_results(
     manifest["files"] = files
 
     names = {f["name"] for f in files}
+    file_map = build_file_map(root)
+    manifest["file_map"] = file_map
+
     for logical, aliases in STANDARD_RESULT_FILES.items():
+        rec = file_map.get(logical) or {}
+        if rec.get("status") == "present":
+            manifest["standard_files"][logical] = rec.get("rel") or rec.get("alias_used") or logical
+            continue
         hit = next((a for a in aliases if a in names), None)
         manifest["standard_files"][logical] = hit
 
@@ -107,11 +130,11 @@ def inventory_results(
     seen: set[tuple[str, str]] = set()
     dirs = {root}
     for path in root.rglob("*"):
-        if path.is_dir() and path.name not in _SKIP_DIRS:
+        if path.is_dir() and not _path_skipped(path):
             dirs.add(path)
     for data_dir in sorted(dirs, key=lambda p: len(p.parts)):
         for spec in PLOT_SPECS:
-            if not plot_spec_data_ready(data_dir, spec):
+            if not plot_data_files_ready(data_dir, spec.data_files):
                 continue
             key = (spec.plot_type, str(data_dir))
             if key in seen:
@@ -138,4 +161,19 @@ def inventory_results(
             "未找到可渲染的语义数据文件"
             "（如 pca_scores.csv / volcano_results.csv / feature_table.csv）"
         )
+    try:
+        import json
+
+        view = materialize_logical_view(root, file_map)
+        manifest["contract_dir"] = view.get("contract_dir")
+        payload = {
+            "results_dir": manifest["results_dir"],
+            "file_map": file_map,
+            "contract_view": view,
+        }
+        (root / FILE_MAP_NAME).write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+    except Exception as exc:
+        manifest["warnings"].append(f"文件契约视图未落地: {exc}")
     return manifest

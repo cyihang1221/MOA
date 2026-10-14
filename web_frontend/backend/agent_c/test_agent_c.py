@@ -242,6 +242,7 @@ class FrontendIntentTests(unittest.TestCase):
             classify_frontend_intent("把 PCA 标题改成分组比较"),
             "c_visual",
         )
+        self.assertEqual(classify_frontend_intent("重新作图"), "c_visual")
 
     def test_write_report_is_c_report(self):
         self.assertEqual(classify_frontend_intent("写报告"), "c_report")
@@ -250,6 +251,8 @@ class FrontendIntentTests(unittest.TestCase):
             classify_frontend_intent("写深度报告并分析科研意义"),
             "c_report",
         )
+        self.assertEqual(classify_frontend_intent("按方案重新出图"), "c_report")
+        self.assertEqual(classify_frontend_intent("启用读图观察"), "c_report")
 
     def test_pca_from_results(self):
         self.assertEqual(classify_frontend_intent("做 PCA"), "c_from_results")
@@ -313,6 +316,27 @@ class FrontendIntentTests(unittest.TestCase):
             text = "".join(str(e.get("delta") or "") for e in events)
             self.assertIn("仍缺", text)
             self.assertIn("pca", text.lower())
+
+
+class FigureVisionGateTests(unittest.TestCase):
+    def test_ecb_vision_placeholder_not_tied_to_use_llm(self):
+        from web_frontend.backend.agent_c.figure_ecb import build_ecb_blocks
+
+        fig = {"status": "rendered", "png": "x.png", "caption": "cap"}
+        blocks = build_ecb_blocks(fig, insights_enabled=False, zh=True)
+        reason = str(blocks["c"].get("placeholder_reason") or "")
+        self.assertNotIn("use_llm", reason)
+        self.assertIn("读图观察", reason)
+
+    def test_should_attach_follows_env(self):
+        import os
+        from unittest.mock import patch
+        from web_frontend.backend.agent_c.figure_vision import vision_enabled
+
+        with patch.dict(os.environ, {"MASSAGENT_FIGURE_VISION": "1"}):
+            self.assertTrue(vision_enabled())
+        with patch.dict(os.environ, {"MASSAGENT_FIGURE_VISION": "0"}):
+            self.assertFalse(vision_enabled())
 
 
 if __name__ == "__main__":

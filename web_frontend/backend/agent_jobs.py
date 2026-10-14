@@ -44,6 +44,10 @@ def get_thread_cancel_flag(session_id: str) -> threading.Event | None:
     return _thread_flags.get(session_id)
 
 
+def has_active_job(session_id: str) -> bool:
+    return session_id in _cancel_events or session_id in _thread_flags
+
+
 async def cancel_job(session_id: str) -> bool:
     async with _job_lock():
         ev = _cancel_events.get(session_id)

@@ -118,6 +118,14 @@ def step_to_executable_task(
         return None
 
     desc = str(step.get("description") or step.get("task") or "run analysis step").strip()
+    params = step.get("tool_parameters") or {}
+    vip = None
+    if isinstance(params, dict):
+        for slot in params.values():
+            if isinstance(slot, dict) and slot.get("vip_threshold") is not None:
+                vip = str(slot.get("vip_threshold"))
+                break
+    vip = vip or _vip_from_text(desc)
     upload = paths.get("upload") or paths.get("inputspace") or "."
     output = paths.get("outputspace") or "."
     inp = _abs_path(upload, str(step.get("input_filename") or ""))
@@ -139,7 +147,6 @@ def step_to_executable_task(
         )
     if web_tool == "statistical_analysis_mixomics":
         meta = _abs_path(upload, "metadata.csv")
-        vip = _vip_from_text(desc)
         vip_part = f", vip_threshold={vip}" if vip else ""
         return (
             f"Use {web_tool} to perform PCA and differential analysis using metadata.csv "

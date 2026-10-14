@@ -1,7 +1,17 @@
+"""MassAgent 网页编排器（FastAPI）。
+
+A/B/C 分区见 ``web_frontend/LAYOUT.md``。本文件只做会话 API 与阶段编排。
+"""
+import os
+
+# 必须在 TensorFlow / absl 被导入之前设置，否则启动时会刷 oneDNN 与 CPU feature 日志。
+os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")
+os.environ.setdefault("TF_ENABLE_ONEDNN_OPTS", "0")
+os.environ.setdefault("ABSL_MIN_LOG_LEVEL", "3")
+
 import base64
 import binascii
 import logging
-import os
 import json
 import re
 import sqlite3
@@ -18,7 +28,13 @@ from web_frontend.backend.agent_intent import (
     looks_like_agent_request,
     looks_like_c_visual_request,
 )
-from web_frontend.backend.agent_jobs import cancel_job, clear_job, is_cancelled, register_job
+from web_frontend.backend.agent_jobs import (
+    cancel_job,
+    clear_job,
+    has_active_job,
+    is_cancelled,
+    register_job,
+)
 from web_frontend.backend.anti_hallucination import chat_guard_messages
 from web_frontend.backend.plot_versioning import prefer_effective_among_rels
 from web_frontend.backend.session_storage import (
@@ -38,6 +54,7 @@ from web_frontend.backend.session_storage import (
     edited_plots_dir,
     merged_figures_dir,
     upload_target_dir,
+    import_files_into_upload_dir,
 )
 
 from dotenv import find_dotenv, load_dotenv
@@ -58,7 +75,6 @@ load_dotenv(find_dotenv(), override=False)
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 WEB_ROOT = Path(__file__).resolve().parents[1]
 STATIC_DIR = WEB_ROOT / "static"
-DB_PATH = WEB_ROOT / "data" / "sessions.sqlite3"
 DB_LOCK = threading.Lock()
 INPUTSPACE_ROOT = PROJECT_ROOT / INPUTSPACE_ROOT_NAME
 OUTPUTSPACE_ROOT = PROJECT_ROOT / OUTPUTSPACE_ROOT_NAME
@@ -71,6 +87,10 @@ LITERATURE_PERSIST_DIR, LITERATURE_SOURCE_DIR = resolve_literature_dirs(PROJECT_
 
 app = FastAPI(title="MassAgent Web UI")
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+from web_frontend.backend.accounts import install as install_accounts
+
+install_accounts(app)
 
 _logger = logging.getLogger(__name__)
 
@@ -120,64 +140,20 @@ def utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
+def _session_db() -> str:
+    from web_frontend.backend.accounts import open_conversation_db
+
+    return str(open_conversation_db())
+
+
 def init_db() -> None:
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with sqlite3.connect(DB_PATH) as conn:
-        conn.execute(
-            """
-            CREATE TABLE IF NOT EXISTS sessions (
-              id TEXT PRIMARY KEY,
-              title TEXT NOT NULL,
-              model TEXT,
-              temperature REAL,
-              created_at TEXT NOT NULL,
-              updated_at TEXT NOT NULL
-            )
-            """
-        )
-        conn.execute(
-            """
-            CREATE TABLE IF NOT EXISTS messages (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              session_id TEXT NOT NULL,
-              role TEXT NOT NULL,
-              content TEXT NOT NULL,
-              time TEXT NOT NULL,
-              created_at TEXT NOT NULL,
-              FOREIGN KEY(session_id) REFERENCES sessions(id) ON DELETE CASCADE
-            )
-            """
-        )
-        try:
-            conn.execute(
-                "ALTER TABLE sessions ADD COLUMN is_shared INTEGER NOT NULL DEFAULT 0"
-            )
-        except sqlite3.OperationalError:
-            pass
-        try:
-            conn.execute("ALTER TABLE sessions ADD COLUMN storage_slug TEXT")
-        except sqlite3.OperationalError:
-            pass
-        try:
-            conn.execute(
-                "ALTER TABLE sessions ADD COLUMN workflow_status TEXT NOT NULL DEFAULT 'WAITING_INPUT'"
-            )
-        except sqlite3.OperationalError:
-            pass
-        try:
-            conn.execute(
-                "ALTER TABLE sessions ADD COLUMN plan_version INTEGER NOT NULL DEFAULT 0"
-            )
-        except sqlite3.OperationalError:
-            pass
-        try:
-            conn.execute("ALTER TABLE sessions ADD COLUMN plan_locked_at TEXT")
-        except sqlite3.OperationalError:
-            pass
+    from web_frontend.backend.accounts import ensure_conversation_schema
+
+    ensure_conversation_schema(Path(_session_db()))
 
 
 def db_list_sessions() -> list[dict]:
-    with sqlite3.connect(DB_PATH) as conn:
+    with sqlite3.connect(_session_db()) as conn:
         conn.row_factory = sqlite3.Row
         cur = conn.execute(
             "SELECT id, title, updated_at, is_shared, storage_slug, workflow_status FROM sessions ORDER BY updated_at DESC, created_at DESC"
@@ -197,7 +173,7 @@ def db_list_sessions() -> list[dict]:
 
 
 def db_get_session(session_id: str) -> Optional[dict]:
-    with sqlite3.connect(DB_PATH) as conn:
+    with sqlite3.connect(_session_db()) as conn:
         conn.row_factory = sqlite3.Row
         cur = conn.execute(
             "SELECT id, title, model, temperature, created_at, updated_at, is_shared, storage_slug, workflow_status, plan_version, plan_locked_at FROM sessions WHERE id=?",
@@ -216,7 +192,7 @@ def db_get_session(session_id: str) -> Optional[dict]:
 
 
 def db_set_storage_slug(session_id: str, storage_slug: str) -> None:
-    with sqlite3.connect(DB_PATH) as conn:
+    with sqlite3.connect(_session_db()) as conn:
         conn.execute(
             "UPDATE sessions SET storage_slug=? WHERE id=?",
             (storage_slug, session_id),
@@ -231,7 +207,7 @@ def db_set_workflow(
     lock_plan: bool = False,
 ) -> None:
     now = utc_now_iso()
-    with sqlite3.connect(DB_PATH) as conn:
+    with sqlite3.connect(_session_db()) as conn:
         if bump_plan:
             conn.execute(
                 "UPDATE sessions SET workflow_status=?, plan_version=COALESCE(plan_version,0)+1, "
@@ -254,7 +230,7 @@ def db_create_session(title: str, model: Optional[str], temperature: float) -> s
     session_id = uuid.uuid4().hex
     storage_slug = make_storage_slug(session_id, title)
     now = utc_now_iso()
-    with sqlite3.connect(DB_PATH) as conn:
+    with sqlite3.connect(_session_db()) as conn:
         conn.execute(
             """
             INSERT INTO sessions (id, title, model, temperature, created_at, updated_at, storage_slug, workflow_status)
@@ -269,7 +245,7 @@ def db_create_session(title: str, model: Optional[str], temperature: float) -> s
 
 def db_rename_session(session_id: str, title: str) -> None:
     now = utc_now_iso()
-    with sqlite3.connect(DB_PATH) as conn:
+    with sqlite3.connect(_session_db()) as conn:
         cur = conn.execute(
             "UPDATE sessions SET title=?, updated_at=? WHERE id=?",
             (title, now, session_id),
@@ -280,7 +256,7 @@ def db_rename_session(session_id: str, title: str) -> None:
 
 def db_delete_session(session_id: str) -> None:
     sess = db_get_session(session_id)
-    with sqlite3.connect(DB_PATH) as conn:
+    with sqlite3.connect(_session_db()) as conn:
         cur = conn.execute("DELETE FROM sessions WHERE id=?", (session_id,))
         if cur.rowcount == 0:
             raise KeyError(session_id)
@@ -294,45 +270,44 @@ def db_delete_session(session_id: str) -> None:
 
 def db_clear_session_messages(session_id: str) -> None:
     """
-    清空会话消息（不删会话本身），并重置为“新会话”状态。
+    重置当前分析：清空消息与工作区，并恢复为 WAITING_INPUT。
+
+    会话记录本身保留，避免侧栏引用失效；上传和输出目录会重新创建。
     """
+    old_sess = db_get_session(session_id)
+    if old_sess is None:
+        raise KeyError(session_id)
+
     now = utc_now_iso()
-    with sqlite3.connect(DB_PATH) as conn:
-        # 确保 session 存在
-        cur = conn.execute("SELECT id FROM sessions WHERE id=?", (session_id,))
-        if cur.fetchone() is None:
-            raise KeyError(session_id)
+    new_title = default_session_title()
+    new_slug = make_storage_slug(session_id, new_title)
+    delete_workspace_dirs(
+        PROJECT_ROOT,
+        session_id,
+        old_sess.get("storage_slug"),
+    )
 
+    with sqlite3.connect(_session_db()) as conn:
         conn.execute("DELETE FROM messages WHERE session_id=?", (session_id,))
-        new_title = default_session_title()
-        new_slug = make_storage_slug(session_id, new_title)
-        old_sess = db_get_session(session_id)
-        old_slug = (old_sess or {}).get("storage_slug") or session_id
-        conn.execute(
-            "UPDATE sessions SET title=?, updated_at=?, storage_slug=? WHERE id=?",
-            (new_title, now, new_slug, session_id),
-        )
-        if old_sess:
-            rename_workspace_dirs(PROJECT_ROOT, session_id, old_slug, new_slug)
-
         conn.execute(
             """
-            INSERT INTO messages (session_id, role, content, time, created_at)
-            VALUES (?, ?, ?, ?, ?)
+            UPDATE sessions
+            SET title=?, updated_at=?, storage_slug=?,
+                workflow_status='WAITING_INPUT',
+                plan_version=0,
+                plan_locked_at=NULL
+            WHERE id=?
             """,
-            (
-                session_id,
-                "assistant",
-                "会话已清空，请重新提问。",
-                now,
-                now,
-            ),
+            (new_title, now, new_slug, session_id),
         )
+
+    storage_upload_dir(PROJECT_ROOT, new_slug)
+    session_work_dir(PROJECT_ROOT, new_slug)
 
 
 def db_set_session_shared(session_id: str, shared: bool) -> None:
     now = utc_now_iso()
-    with sqlite3.connect(DB_PATH) as conn:
+    with sqlite3.connect(_session_db()) as conn:
         cur = conn.execute(
             "UPDATE sessions SET is_shared=?, updated_at=? WHERE id=?",
             (1 if shared else 0, now, session_id),
@@ -342,7 +317,7 @@ def db_set_session_shared(session_id: str, shared: bool) -> None:
 
 
 def db_get_messages(session_id: str) -> list[dict]:
-    with sqlite3.connect(DB_PATH) as conn:
+    with sqlite3.connect(_session_db()) as conn:
         conn.row_factory = sqlite3.Row
         cur = conn.execute(
             """
@@ -377,7 +352,7 @@ def db_get_shared_messages(session_id: str) -> Optional[dict]:
 
 def db_append_message(session_id: str, role: str, content: str) -> str:
     now = utc_now_iso()
-    with sqlite3.connect(DB_PATH) as conn:
+    with sqlite3.connect(_session_db()) as conn:
         conn.execute(
             """
             INSERT INTO messages (session_id, role, content, time, created_at)
@@ -406,7 +381,7 @@ def maybe_update_title_from_first_user_message(session_id: str, new_title: str) 
 
 def db_update_message(message_id: int, content: str) -> None:
     now = utc_now_iso()
-    with sqlite3.connect(DB_PATH) as conn:
+    with sqlite3.connect(_session_db()) as conn:
         cur = conn.execute(
             "UPDATE messages SET content=?, time=? WHERE id=?",
             (content, now, message_id),
@@ -416,7 +391,7 @@ def db_update_message(message_id: int, content: str) -> None:
 
 
 def db_get_message(message_id: int) -> Optional[dict]:
-    with sqlite3.connect(DB_PATH) as conn:
+    with sqlite3.connect(_session_db()) as conn:
         conn.row_factory = sqlite3.Row
         cur = conn.execute(
             "SELECT id, session_id, role, content, time FROM messages WHERE id=?",
@@ -427,7 +402,7 @@ def db_get_message(message_id: int) -> Optional[dict]:
 
 
 def db_truncate_messages_after(session_id: str, message_id: int) -> None:
-    with sqlite3.connect(DB_PATH) as conn:
+    with sqlite3.connect(_session_db()) as conn:
         conn.execute(
             "DELETE FROM messages WHERE session_id=? AND id>?",
             (session_id, message_id),
@@ -503,7 +478,6 @@ def _resolve_session_chat_action(
     return action, clarify, meta
 
 
-init_db()
 migrate_session_storage_dirs(PROJECT_ROOT)
 
 
@@ -558,6 +532,10 @@ class CreateSessionRequest(BaseModel):
     temperature: float = 0.0
 
 
+class ImportServerPathRequest(BaseModel):
+    path: str
+
+
 class RenameSessionRequest(BaseModel):
     title: str
 
@@ -573,6 +551,8 @@ class ChatStreamRequest(BaseModel):
     # 用户自备 OpenAI 兼容 API（仅本次请求生效，不落库）
     llm_api_key: Optional[str] = None
     llm_base_url: Optional[str] = None
+    # 改图前点选的 PCA/PLS-DA 风格：simca 或 ggplot。首次出图不读这个字段。
+    score_style: Optional[str] = None
 
 
 class LlmProbeRequest(BaseModel):
@@ -613,9 +593,7 @@ class PlotEditAgentRequest(BaseModel):
     model: Optional[str] = None
     llm_api_key: Optional[str] = None
     llm_base_url: Optional[str] = None
-    model: Optional[str] = None
-    llm_api_key: Optional[str] = None
-    llm_base_url: Optional[str] = None
+    score_style: Optional[str] = None
 
 
 class ImageMergeEditRequest(BaseModel):
@@ -901,7 +879,11 @@ def get_session_workspace_files(session_id: str) -> dict:
 
 @app.get("/")
 def index():
-    return FileResponse(str(WEB_ROOT / "index.html"))
+    # index.html 引用带版本号的静态资源；禁止缓存入口，避免部署更新后仍加载旧版 JS/CSS。
+    return FileResponse(
+        str(WEB_ROOT / "index.html"),
+        headers={"Cache-Control": "no-store, max-age=0"},
+    )
 
 
 @app.get("/favicon.ico")
@@ -1238,12 +1220,6 @@ def list_sessions():
 def create_session(req: CreateSessionRequest):
     title = (req.title or default_session_title()).strip()
     session_id = db_create_session(title=title, model=req.model, temperature=req.temperature)
-    # 创建会话后写入一条欢迎消息，保证 UI 加载时有内容可展示
-    db_append_message(
-        session_id=session_id,
-        role="assistant",
-        content="你好，我是 MassAgent。请上传数据并描述分析目标；我会先给出分析计划，你回复「确认计划」后再执行，最后自动出图与报告。",
-    )
     return {"session_id": session_id}
 
 
@@ -1269,7 +1245,7 @@ async def upload_session_files(
         if target.exists():
             stem = Path(filename).stem
             suffix = Path(filename).suffix
-            target = folder / f"{stem}_{uuid.uuid4().hex[:8]}{suffix}"
+            target = dest_dir / f"{stem}_{uuid.uuid4().hex[:8]}{suffix}"
             filename = target.name
         content = await upload.read()
         with open(target, "wb") as handle:
@@ -1284,7 +1260,47 @@ async def upload_session_files(
 
     if not saved:
         raise HTTPException(status_code=400, detail="no valid files uploaded")
+    return _finalize_session_inputs(session_id, folder, saved)
 
+
+@app.post("/api/sessions/{session_id}/files/from-path")
+def import_session_files_from_path(session_id: str, req: ImportServerPathRequest):
+    """从服务器本地路径硬链接/复制数据，避免经浏览器代理上传大文件。"""
+    sess = db_get_session(session_id)
+    if not sess:
+        raise HTTPException(status_code=404, detail="session not found")
+    raw = (req.path or "").strip()
+    if not raw:
+        raise HTTPException(status_code=400, detail="请填写服务器上的文件或目录路径")
+    if not os.path.isabs(os.path.expanduser(raw)):
+        raise HTTPException(
+            status_code=400,
+            detail="请使用绝对路径，例如 /home/.../raw",
+        )
+    source = Path(raw).expanduser()
+    folder = session_upload_dir(session_id)
+    try:
+        imported = import_files_into_upload_dir(folder, source)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except OSError as exc:
+        raise HTTPException(status_code=400, detail=f"导入失败：{exc}") from exc
+    saved = [
+        {
+            "name": item["name"],
+            "path": normalize_display_path(item["path"]),
+            "size": int(item["size"]),
+        }
+        for item in imported
+    ]
+    if not saved:
+        raise HTTPException(status_code=400, detail="没有可导入的文件")
+    return _finalize_session_inputs(session_id, folder, saved)
+
+
+def _finalize_session_inputs(session_id: str, folder: Path, saved: list[dict]) -> dict:
     metadata_info: dict | None = None
     try:
         from web_frontend.backend.agent_runner import build_session_paths
@@ -1304,9 +1320,6 @@ async def upload_session_files(
         metadata_info = None
     except Exception:
         metadata_info = None
-
-    # 会话标题仅由用户首条聊天内容决定（见 chat/stream 中的 derive_title_from_message）
-
     return {"files": saved, "metadata": metadata_info}
 
 
@@ -1354,7 +1367,12 @@ def get_workspace_file(session_id: str, rel: str):
         ".json": "application/json",
     }
     media_type = media_types.get(path.suffix.lower())
-    return FileResponse(path, media_type=media_type, filename=path.name)
+    return FileResponse(
+        path,
+        media_type=media_type,
+        filename=path.name,
+        headers={"Cache-Control": "no-store, max-age=0"},
+    )
 
 
 _OUTPUT_IMAGE_SIDECAR_SUFFIXES = (
@@ -1618,6 +1636,7 @@ def agent_plot_edit(session_id: str, req: PlotEditAgentRequest):
                 model=model,
                 filename=req.filename,
                 goal_text=goal,
+                score_style=req.score_style,
             )
     except PlotEditError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -1652,6 +1671,8 @@ def plot_literature_hints(session_id: str, source_rel: str = ""):
         "matched": payload.get("matched") or [],
         "hints": payload.get("hints") or [],
         "context_preview": (payload.get("text") or "")[:800],
+        "rag_mode": payload.get("rag_mode") or "",
+        "rag_sources": payload.get("rag_sources") or [],
     }
 
 
@@ -1882,6 +1903,14 @@ def _append_chat_images_marker(text: str, files: list[str]) -> str:
     return f"{body}\n\n{marker}"
 
 
+def _chat_file_rel(item: object) -> str:
+    if isinstance(item, str):
+        return item.strip()
+    if isinstance(item, dict):
+        return str(item.get("file") or item.get("name") or "").strip()
+    return ""
+
+
 def _should_auto_agent(session_id: str, user_message: str) -> bool:
     """规划 / 确认 / 执行 / 出图 / 改图 时走编排器，闲聊仍走纯 LLM。"""
     from web_frontend.backend.workflow import is_plan_confirmation
@@ -1989,6 +2018,25 @@ async def chat_stream(req: ChatStreamRequest, request: Request):
             headers=headers,
         )
 
+    if action == "cancel":
+        info = await abort_session_workflow(req.session_id)
+        st = info.get("workflow_status")
+        if st == "AWAITING_APPROVAL":
+            msg = (
+                "已**终止**当前分析。计划仍保留，可点「确认计划并执行」继续，"
+                "或直接说明修改意见（例如不要 DeepMASS）后重新规划。"
+            )
+        else:
+            msg = "已**终止**当前任务。请重新描述分析目标，或点「+ 新分析」开始新会话。"
+        return StreamingResponse(
+            _stream_plain_sse_async(req, msg),
+            media_type="text/event-stream",
+            headers=headers,
+        )
+    if action == "interrupt_plan":
+        await abort_session_workflow(req.session_id)
+        action = "plan"
+
     if action == "refuse_unconfirmed":
         return StreamingResponse(
             _stream_plain_sse_async(
@@ -2013,6 +2061,30 @@ async def chat_stream(req: ChatStreamRequest, request: Request):
             media_type="text/event-stream",
             headers=headers,
         )
+
+    # 执行/报告阶段绝不交给普通 LLM 描述“进度”。普通模型看不到真实任务，
+    # 只能返回基于数据库状态的固定提示，避免伪造工具结果和耗时。
+    workflow_status = sess.get("workflow_status")
+    if action == "chat" and workflow_status in {"PLANNING", "EXECUTING", "REPORTING"}:
+        phase = {
+            "PLANNING": "计划生成",
+            "EXECUTING": "分析执行",
+            "REPORTING": "出图与报告",
+        }.get(workflow_status, "任务")
+        return StreamingResponse(
+            _stream_plain_sse_async(
+                req,
+                (
+                    f"当前会话状态为 **{phase}中**。我不会用普通聊天模型模拟工具进度或结果。\n\n"
+                    "请点击「终止当前任务」或输入「终止」以解锁会话；"
+                    "也可直接说明修改意见（例如不要 DeepMASS）以中断并重新规划。"
+                    "只有右侧真实生成的文件和系统任务日志可作为执行依据。"
+                ),
+            ),
+            media_type="text/event-stream",
+            headers=headers,
+        )
+
     if action == "visual":
         from web_frontend.backend.image_merge_registry import (
             looks_like_merged_figure_edit_request,
@@ -2123,9 +2195,43 @@ async def chat_stream(req: ChatStreamRequest, request: Request):
 
 @app.post("/api/sessions/{session_id}/cancel")
 async def cancel_session_agent(session_id: str):
-    """前端「终止」：置取消标志，并尽力杀掉已登记的子进程（如 Rscript）。"""
-    cancelled = await cancel_job(session_id)
-    return {"ok": True, "cancelled": cancelled}
+    """前端「终止」：置取消标志，杀掉子进程，并解锁卡在执行中的会话。"""
+    if not db_get_session(session_id):
+        raise HTTPException(status_code=404, detail="session not found")
+    info = await abort_session_workflow(session_id)
+    return {"ok": True, **info}
+
+
+def _unlock_status_after_abort(session_id: str) -> str:
+    """执行中断后把会话从 PLANNING/EXECUTING/REPORTING 解开，避免刷新后永久卡住。"""
+    from web_frontend.backend.workflow import (
+        AWAITING_APPROVAL,
+        EXECUTING,
+        FAILED,
+        PLANNING,
+        REPORTING,
+        session_has_locked_plan,
+    )
+
+    sess = db_get_session(session_id) or {}
+    st = sess.get("workflow_status")
+    if st not in {PLANNING, EXECUTING, REPORTING}:
+        return st or "WAITING_INPUT"
+    slug = sess.get("storage_slug") or session_id
+    nxt = AWAITING_APPROVAL if session_has_locked_plan(PROJECT_ROOT, slug) else FAILED
+    db_set_workflow(session_id, nxt)
+    return nxt
+
+
+async def abort_session_workflow(session_id: str) -> dict:
+    had_job = has_active_job(session_id)
+    await cancel_job(session_id)
+    new_status = _unlock_status_after_abort(session_id)
+    return {
+        "cancelled": True,
+        "had_job": had_job,
+        "workflow_status": new_status,
+    }
 
 
 async def _stream_plain_sse_async(req: ChatStreamRequest, text: str):
@@ -2243,6 +2349,12 @@ async def _stream_agent_c_sse_async(req: ChatStreamRequest, request: Request, *,
         sess_now = db_get_session(req.session_id) or {}
         done_payload["workflow_status"] = sess_now.get("workflow_status")
         yield _sse_pack(done_payload)
+    except asyncio.CancelledError:
+        partial = "".join(parts).strip()
+        if partial:
+            db_append_message(req.session_id, "assistant", partial + "\n\n[已终止]")
+        _unlock_status_after_abort(req.session_id)
+        raise
     except Exception as exc:
         err_msg = f"Agent C 失败: {exc}"
         parts.append(f"\n❌ {err_msg}\n")
@@ -2250,6 +2362,9 @@ async def _stream_agent_c_sse_async(req: ChatStreamRequest, request: Request, *,
         if parts:
             db_append_message(req.session_id, "assistant", "".join(parts))
         yield _sse_pack({"done": True, "error": err_msg, "finished": False, "agent_role": "C"})
+        cur = (db_get_session(req.session_id) or {}).get("workflow_status")
+        if cur in {"PLANNING", "EXECUTING", "REPORTING"}:
+            db_set_workflow(req.session_id, "FAILED")
     finally:
         await clear_job(req.session_id)
 
@@ -2364,10 +2479,12 @@ async def _stream_agent_sse_async(
                 parts.append("\n\n⚠️ **已终止**\n")
                 yield _sse_pack({"delta": "\n\n⚠️ **已终止**\n"})
 
-        if final_error or was_cancelled:
+        if final_error:
             cur = (db_get_session(req.session_id) or {}).get("workflow_status")
             if cur in {"PLANNING", "EXECUTING", "REPORTING"}:
                 db_set_workflow(req.session_id, FAILED)
+        elif was_cancelled or is_cancelled(cancel_event):
+            _unlock_status_after_abort(req.session_id)
 
         text = "".join(parts) or (final_error or "Agent 未产生输出")
         chat_files = [
@@ -2404,6 +2521,7 @@ async def _stream_agent_sse_async(
         partial = "".join(parts).strip()
         if partial:
             db_append_message(req.session_id, "assistant", partial + "\n\n[已终止]")
+        _unlock_status_after_abort(req.session_id)
         raise
     except Exception as exc:
         err_msg = f"Agent 执行失败: {exc}"
@@ -2427,12 +2545,20 @@ async def _stream_plot_edit_sse_async(
     parts: list[str] = []
     final_error = None
     plot_edit_ok = False
+    chat_images: list = []
     storage_slug = resolve_storage_slug(req.session_id)
     model = (req.model or "").strip() or None
     sess = db_get_session(req.session_id)
     if sess and not model:
         model = (sess.get("model") or "").strip() or None
     user_message = (message or req.user_message or "").strip()
+    from web_frontend.backend.literature_plot_knowledge import effective_plot_goal_text
+
+    goal_text = effective_plot_goal_text(
+        user_message=user_message,
+        session=sess,
+        messages=db_get_messages(req.session_id),
+    )
 
     try:
         yield _sse_pack({"delta": ""})
@@ -2442,26 +2568,40 @@ async def _stream_plot_edit_sse_async(
             storage_slug=storage_slug,
             message=user_message,
             model=model,
+            goal_text=goal_text,
+            score_style=req.score_style,
         ):
             if "delta" in event:
                 parts.append(event["delta"])
                 yield _sse_pack({"delta": event["delta"]})
-            elif event.get("plot_edit_done"):
+            if event.get("chat_image"):
+                img = event["chat_image"]
+                chat_images.append(img)
+                yield _sse_pack({"chat_image": img})
+            if event.get("plot_edit_done"):
                 plot_edit_ok = True
+                for rel in event.get("chat_images") or []:
+                    if rel and rel not in chat_images:
+                        chat_images.append(rel)
             elif "error" in event:
                 final_error = event["error"]
 
         text = "".join(parts) or (final_error or "改图未产生输出")
-        time_str = db_append_message(req.session_id, "assistant", text)
-        yield _sse_pack(
-            {
-                "done": True,
-                "time": time_str,
-                "error": final_error,
-                "finished": plot_edit_ok and not final_error,
-                "plot_edit": True,
-            }
+        chat_files = prefer_effective_among_rels(
+            [_chat_file_rel(item) for item in chat_images if _chat_file_rel(item)]
         )
+        text = _append_chat_images_marker(text, chat_files)
+        time_str = db_append_message(req.session_id, "assistant", text)
+        done_payload = {
+            "done": True,
+            "time": time_str,
+            "error": final_error,
+            "finished": plot_edit_ok and not final_error,
+            "plot_edit": True,
+        }
+        if chat_files:
+            done_payload["chat_images"] = chat_files
+        yield _sse_pack(done_payload)
     except Exception as exc:
         err_msg = f"改图失败: {exc}"
         parts.append(f"\n❌ {err_msg}\n")
@@ -2480,6 +2620,7 @@ async def _stream_image_merge_sse_async(
     parts: list[str] = []
     final_error = None
     merge_ok = False
+    chat_images: list = []
     storage_slug = resolve_storage_slug(req.session_id)
 
     model = (req.model or "").strip() or None
@@ -2500,22 +2641,31 @@ async def _stream_image_merge_sse_async(
             if "delta" in event:
                 parts.append(event["delta"])
                 yield _sse_pack({"delta": event["delta"]})
-            elif event.get("image_merge_done"):
+            if event.get("chat_image"):
+                img = event["chat_image"]
+                chat_images.append(img)
+                yield _sse_pack({"chat_image": img})
+            if event.get("image_merge_done"):
                 merge_ok = True
             elif "error" in event:
                 final_error = event["error"]
 
         text = "".join(parts) or (final_error or "拼图未产生输出")
-        time_str = db_append_message(req.session_id, "assistant", text)
-        yield _sse_pack(
-            {
-                "done": True,
-                "time": time_str,
-                "error": final_error,
-                "finished": merge_ok and not final_error,
-                "image_merge": True,
-            }
+        chat_files = prefer_effective_among_rels(
+            [_chat_file_rel(item) for item in chat_images if _chat_file_rel(item)]
         )
+        text = _append_chat_images_marker(text, chat_files)
+        time_str = db_append_message(req.session_id, "assistant", text)
+        done_payload = {
+            "done": True,
+            "time": time_str,
+            "error": final_error,
+            "finished": merge_ok and not final_error,
+            "image_merge": True,
+        }
+        if chat_files:
+            done_payload["chat_images"] = chat_files
+        yield _sse_pack(done_payload)
     except Exception as exc:
         err_msg = f"拼图失败: {exc}"
         parts.append(f"\n❌ {err_msg}\n")
@@ -2540,11 +2690,19 @@ async def _stream_compound_visual_sse_async(
     final_error = None
     plot_ok = False
     merge_ok = False
+    chat_images: list = []
     storage_slug = resolve_storage_slug(req.session_id)
     model = (req.model or "").strip() or None
     sess = db_get_session(req.session_id)
     if sess and not model:
         model = (sess.get("model") or "").strip() or None
+    from web_frontend.backend.literature_plot_knowledge import effective_plot_goal_text
+
+    plot_goal = effective_plot_goal_text(
+        user_message=plot_message,
+        session=sess,
+        messages=db_get_messages(req.session_id),
+    )
 
     try:
         yield _sse_pack({"delta": ""})
@@ -2554,11 +2712,17 @@ async def _stream_compound_visual_sse_async(
             storage_slug=storage_slug,
             message=plot_message,
             model=model,
+            goal_text=plot_goal,
+            score_style=req.score_style,
         ):
             if "delta" in event:
                 parts.append(event["delta"])
                 yield _sse_pack({"delta": event["delta"]})
-            elif event.get("plot_edit_done"):
+            if event.get("chat_image"):
+                img = event["chat_image"]
+                chat_images.append(img)
+                yield _sse_pack({"chat_image": img})
+            if event.get("plot_edit_done"):
                 plot_ok = True
             elif "error" in event:
                 final_error = event["error"]
@@ -2576,23 +2740,32 @@ async def _stream_compound_visual_sse_async(
             if "delta" in event:
                 parts.append(event["delta"])
                 yield _sse_pack({"delta": event["delta"]})
-            elif event.get("image_merge_done"):
+            if event.get("chat_image"):
+                img = event["chat_image"]
+                chat_images.append(img)
+                yield _sse_pack({"chat_image": img})
+            if event.get("image_merge_done"):
                 merge_ok = True
             elif "error" in event:
                 final_error = event["error"]
 
         text = "".join(parts) or (final_error or "改图/拼图未产生输出")
-        time_str = db_append_message(req.session_id, "assistant", text)
-        yield _sse_pack(
-            {
-                "done": True,
-                "time": time_str,
-                "error": final_error,
-                "finished": (plot_ok or merge_ok) and not final_error,
-                "plot_edit": True,
-                "image_merge": True,
-            }
+        chat_files = prefer_effective_among_rels(
+            [_chat_file_rel(item) for item in chat_images if _chat_file_rel(item)]
         )
+        text = _append_chat_images_marker(text, chat_files)
+        time_str = db_append_message(req.session_id, "assistant", text)
+        done_payload = {
+            "done": True,
+            "time": time_str,
+            "error": final_error,
+            "finished": (plot_ok or merge_ok) and not final_error,
+            "plot_edit": True,
+            "image_merge": True,
+        }
+        if chat_files:
+            done_payload["chat_images"] = chat_files
+        yield _sse_pack(done_payload)
     except Exception as exc:
         err_msg = f"改图/拼图失败: {exc}"
         parts.append(f"\n❌ {err_msg}\n")

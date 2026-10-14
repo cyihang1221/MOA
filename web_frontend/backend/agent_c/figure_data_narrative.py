@@ -37,13 +37,21 @@ def resolve_figure_plot_type(fig: dict[str, Any]) -> str:
 
 
 def find_plot_data_file(results_root: Path, filename: str) -> Path | None:
-    """在结果目录（含一级子目录）中定位 CSV。"""
+    """在结果目录（含 B 目录契约）中定位 CSV。"""
     root = Path(results_root)
     if not root.is_dir():
         return None
     direct = resolve_plot_data_file(root, filename)
     if direct:
         return direct
+    try:
+        from web_frontend.backend.b_paper_contract import resolve_logical_file
+
+        hit = resolve_logical_file(root, filename)
+        if hit is not None:
+            return hit
+    except Exception:
+        pass
     try:
         for sub in sorted(root.iterdir()):
             if not sub.is_dir() or sub.name.startswith("."):
@@ -108,6 +116,7 @@ def enrich_figures_data_narrative(
             data_dir,
             metadata_csv=metadata_csv,
             results_root=root,
+            plot_config=fig.get("plot_config_hint") if isinstance(fig.get("plot_config_hint"), dict) else None,
         )
 
 
@@ -117,6 +126,7 @@ def build_figure_data_narrative(
     *,
     metadata_csv: str | Path | None = None,
     results_root: str | Path | None = None,
+    plot_config: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """按 plot_type 读取结果 CSV，产出可写入报告的结构化数据解读（不臆造）。"""
     pt = normalize_plot_type(plot_type)
@@ -142,6 +152,8 @@ def build_figure_data_narrative(
         out["bullets"].append("（未安装 pandas，无法读取 CSV 统计）")
         return out
 
+    if plot_config:
+        out["plot_config"] = plot_config
     handler = _NARRATIVE_HANDLERS.get(pt, _narrative_generic)
     try:
         import inspect
@@ -153,6 +165,9 @@ def build_figure_data_narrative(
     except Exception as exc:
         out["bullets"].append(f"读取数据时出错：{exc}")
 
+    from web_frontend.backend.agent_c.nature_distill import attach_reporting_checklist
+
+    attach_reporting_checklist(pt, out)
     if out["bullets"] and not out["sentences"]:
         out["sentences"] = list(out["bullets"])
     return out
@@ -229,6 +244,7 @@ def _narrative_scores(
         if meta_groups:
             out["bullets"].append(f"metadata 分组：{meta_groups}。")
         return
+    out["stats"]["source_file"] = fname
     out["stats"]["n_samples"] = len(df)
     out["bullets"].append(f"{label} 得分表 `{fname}` 含 **{len(df)}** 个样本点。")
     gcol = _pick_col(df, ("Group", "group", "class"))
@@ -252,9 +268,17 @@ def _narrative_volcano(root: Path, spec, out: dict, pd, *, search_root: Path | N
     if df is None:
         out["bullets"].append(f"未找到 `{spec.data_files[0]}`。")
         return
+    from web_frontend.backend.plot_theme import DEFAULT_VOLCANO_THRESHOLDS
+
     n = len(df)
+    p_thr = float(DEFAULT_VOLCANO_THRESHOLDS["p"])
+    fc_thr = float(DEFAULT_VOLCANO_THRESHOLDS["log2fc"])
+    out["stats"]["source_file"] = fname
     out["stats"]["n_features"] = n
+    out["stats"]["p_threshold"] = p_thr
+    out["stats"]["log2fc_threshold"] = fc_thr
     out["bullets"].append(f"火山图数据 `{fname}` 共 **{n}** 个特征。")
+    out["bullets"].append(f"阈值 p<{p_thr}、|log2FC|≥{fc_thr}（mixOmics 默认，按列计数）。")
     if "Significant" in df.columns:
         sig = int(df["Significant"].fillna(False).astype(bool).sum())
         out["stats"]["n_significant"] = sig
@@ -274,13 +298,23 @@ def _narrative_volcano(root: Path, spec, out: dict, pd, *, search_root: Path | N
 def _narrative_vip(root: Path, spec, out: dict, pd, *, search_root: Path | None = None) -> None:
     df, fname = _read_csv(root, spec, pd, search_root=search_root)
     if df is None:
+        out["bullets"].append(f"未找到 `{spec.data_files[0]}`。")
         return
+    from web_frontend.backend.paper_plot_helpers import vip_threshold_from_config
+
+    threshold = vip_threshold_from_config(out.pop("plot_config", None))
+    out["stats"]["source_file"] = fname
+    out["stats"]["vip_threshold"] = float(threshold)
     out["bullets"].append(f"VIP 表 `{fname}` 共 {len(df)} 行。")
     vcol = _pick_col(df, ("VIP", "vip"))
     if vcol:
-        high = df[pd.to_numeric(df[vcol], errors="coerce") > 1]
+        values = pd.to_numeric(df[vcol], errors="coerce")
+        high = df[values > threshold]
+        out["stats"]["n_vip_above_threshold"] = len(high)
         out["stats"]["n_vip_gt1"] = len(high)
-        out["bullets"].append(f"VIP>1 的特征 **{len(high)}** 个。")
+        label = f"VIP>{threshold:g}"
+        out["bullets"].append(f"阈值 {label}（计数与作图虚线同一阈值）。")
+        out["bullets"].append(f"{label} 的特征 **{len(high)}** 个。")
         name_col = _pick_col(df, ("Feature", "feature", "name", "metabolite", "compound"))
         if name_col and len(high):
             top = high.sort_values(vcol, ascending=False).head(5)
@@ -292,7 +326,17 @@ def _narrative_vip(root: Path, spec, out: dict, pd, *, search_root: Path | None 
 def _narrative_kegg(root: Path, spec, out: dict, pd, *, search_root: Path | None = None) -> None:
     df, fname = _read_csv(root, spec, pd, search_root=search_root)
     if df is None:
+        out["stats"]["kegg_status"] = "missing"
+        out["bullets"].append(
+            f"未找到 `{spec.data_files[0]}`。KEGG：标缺。不把未产出通路写成富集阳性。"
+        )
         return
+    out["stats"]["source_file"] = fname
+    if len(df) == 0:
+        out["stats"]["kegg_status"] = "empty"
+        out["bullets"].append(f"KEGG 表 `{fname}` 共 **0** 条。标缺，不把空表写成富集阳性。")
+        return
+    out["stats"]["kegg_status"] = "present"
     out["bullets"].append(f"KEGG 富集表 `{fname}` 共 {len(df)} 条通路/条目。")
     pcol = _pick_col(df, ("p_value", "pvalue", "PValue", "padj", "fdr", "adj_p_value"))
     if pcol:
@@ -307,7 +351,11 @@ def _narrative_kegg(root: Path, spec, out: dict, pd, *, search_root: Path | None
 def _narrative_heatmap(root: Path, spec, out: dict, pd, *, search_root: Path | None = None) -> None:
     df, fname = _read_csv(root, spec, pd, search_root=search_root)
     if df is None:
+        out["bullets"].append(f"未找到 `{spec.data_files[0]}`。")
         return
+    out["stats"]["source_file"] = fname
+    out["stats"]["n_rows"] = len(df)
+    out["stats"]["n_cols"] = len(df.columns)
     out["bullets"].append(f"热图矩阵 `{fname}` 规模约 **{len(df)}** 行 × **{len(df.columns)}** 列。")
 
 

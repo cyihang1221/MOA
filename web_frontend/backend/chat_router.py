@@ -225,6 +225,8 @@ def adjudicate_router_suggestion(
         "refuse_visual_early",
         "remind_confirm",
         "remind_rerun",
+        "cancel",
+        "interrupt_plan",
     }:
         return rule_action, None
     if rule_action == "execute" and (

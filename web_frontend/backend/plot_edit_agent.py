@@ -30,9 +30,10 @@ _SCHEMA_BY_CATEGORY = {
   "figure_size": [10, 8],
   "components": [1, 2],
   "show_sample_labels": true,
+  "ellipse": true,
   "axes": {{"x_title": "", "y_title": "", "x_min": null, "x_max": null, "y_min": null, "y_max": null}},
   "legend": {{"show": true, "position": "right"}},
-  "marks": {{"size": 70, "opacity": 0.85}},
+  "marks": {{"size": 70, "opacity": 0.85, "ellipse": true}},
   "title_align": "left|center|right"
 }}""",
     "volcano": """{{
@@ -117,11 +118,22 @@ def _build_prompt(
     lit_hint = ""
     if (literature_context or "").strip():
         lit_hint = f"""
-文献作图参考（来自已匹配 Skill，优先级低于用户明确要求；不得编造文献未提及的数据列或阈值）：
+文献作图参考（来自 Skill + 知识库 RAG；优先级低于用户明确要求；不得编造文献未提及的数据列或阈值）：
 {(literature_context or "").strip()}
 """
+    follow_lit = ""
+    try:
+        from web_frontend.backend.plot_edit_registry import looks_like_literature_plot_restyle
+
+        if looks_like_literature_plot_restyle(instruction):
+            follow_lit = """
+用户明确要求按文献/知识库/论文风格改图：请吸收上方文献里的配色、图例位置、置信椭圆、标题措辞和点大小；
+不要改统计阈值、不要发明 metadata 列。分组名必须用当前 palette 已有键。
+"""
+    except Exception:
+        follow_lit = ""
     return f"""你是代谢组学作图助手。用户要修改一张「{plot_label}」图（类型: {plot_type}）。
-{lit_hint}
+{lit_hint}{follow_lit}
 当前配置：
 {json.dumps(current_config, ensure_ascii=False, indent=2)}
 

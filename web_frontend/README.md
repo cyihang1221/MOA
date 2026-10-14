@@ -1,18 +1,21 @@
-# MassAgent 网页前端
+# MassAgent 网页前端（仓库根测试副本）
 
-本目录是 **A/B/C 编排器**：一个会话完成上传 → 计划评审 → 执行 → 出图/报告。用户不必切换三个聊天窗口。
+本目录是当前 **工作/测试用** A/B/C 编排器。测通后再拷到
+`MassOmics-Agent/MassOmics-Agent/web_frontend/`。代码区块见 [`LAYOUT.md`](LAYOUT.md)。
+
+一个会话完成上传 → 计划评审 → 执行 → 出图/报告。用户不必切换三个聊天窗口。
 
 ```
 上传 + 分析目标
-  → Agent A 写出 plan_*.json + analysis_plan.md（停在待确认）
-  → 用户回复「确认计划」
-  → Agent B 在独立进程中执行 MassOmics-Agent-B（origin/B）
-  → Agent C 自动出图并写 final_report.md / final_report.pdf
+  → Agent A 调用 complete 同根 plan/，写出 plan_*.json + analysis_plan.md（停在待确认）
+  → 用户点击「确认计划并执行」（也兼容输入「确认计划」）
+  → Agent B 在独立进程中执行同一棵 complete 树的 src/executor（默认 MassOmics-Agent-B）
+  → 本目录 Agent C 自动出图并写 final_report.md / final_report.pdf
   → 完成后可改图 / 拼图 / 修订报告
 ```
 
-A / B / C 保持三个独立智能体：网页只编排交接，不把三者合成一个 Agent。
-默认 B **不**使用本仓库 `src/mcp_server`。需要旧执行器时设置 `WEB_AGENT_B_BACKEND=local`。
+A / B / C 保持三个独立智能体：网页只编排交接，不调用 complete 的 `python main.py`。
+默认 B **不**使用本仓库根 `src/mcp_server`。需要旧执行器时设置 `WEB_AGENT_B_BACKEND=local`。
 
 未确认计划不会启动分析（需求 AC-2）。改图/拼图只在完成后进行。
 
@@ -20,18 +23,21 @@ A / B / C 保持三个独立智能体：网页只编排交接，不把三者合�
 
 ```
 web_frontend/
+├── LAYOUT.md               # A/B/C 区块与仓库树对照
 ├── index.html              # 单页应用入口（会话侧栏 + 聊天 + 文件面板）
 ├── static/
 │   ├── app.js              # 前端逻辑：会话、消息、SSE、附件、文件列表
 │   └── styles.css          # 页面样式与三栏布局
 ├── backend/
+│   ├── README.md           # 后端按编排 / A / B / C 分区
 │   ├── webapp.py           # FastAPI 应用、REST/SSE API、静态资源挂载
 │   ├── workflow.py         # 会话阶段与聊天路由（确认闸门）
 │   ├── agent_intent.py     # 话术分类（规划/执行/出图/改图）
-│   ├── agent_a/            # Agent A：写出可评审的 analysis_plan.md / plan_*.json
-│   ├── agent_b/            # Agent B：调用 MassOmics-Agent-B 执行器
-│   ├── agent_c/            # Agent C：出图、报告
+│   ├── agent_a/            # Agent A 适配：调用 complete plan/
+│   ├── agent_b/            # Agent B 适配：调用 complete src/executor
+│   ├── agent_c/            # Agent C：出图、报告（不跑分析工具）
 │   ├── abc_contract.py     # A/B/C 交接契约
+│   ├── agent_backends.py   # 探测 complete 同根（默认 MassOmics-Agent-B）
 │   ├── agent_runner.py     # mode=plan 只规划；mode=execute 交给 B
 │   ├── literature_rag.py   # softwares_database(_RAG) 文献检索
 │   ├── session_storage.py  # SQLite 会话/消息持久化
@@ -42,44 +48,37 @@ web_frontend/
 └── README.md               # 本说明
 ```
 
-启动入口是 `web_frontend.backend.webapp:app`。`src/webapp.py` 仍是旧拷贝，请不要用它启动。
+启动入口是 `web_frontend.backend.webapp:app`。仓库根 `src/webapp.py` 若存在仍是旧拷贝，不要用它启动。
 
 ## 启动方式
 
-在**仓库根目录**、已激活 Python 环境后：
+在 **MassAgent 仓库根** `agent_py_V2.0`、已激活 Python 环境后：
 
 ```bash
+cd /path/to/agent_py_V2.0
 python -m uvicorn web_frontend.backend.webapp:app --host 0.0.0.0 --port 8010
 ```
 
-浏览器访问：`http://127.0.0.1:8010`
+浏览器访问：`http://127.0.0.1:8010/`。若地址栏带有 `?session=...`，会打开对应历史会话。
 
-本目录可放在两种仓库里：
+默认 A/B 都指向 **同一棵 complete 树**（优先 `MassOmics-Agent-B` = `origin/complete`）。
+嵌套 `MassOmics-Agent/MassOmics-Agent` 的 `cyh` 已 merge complete（后端 complete，网页与 `agent_c/` 仍为原 cyh），尚未 push。
 
-| 布局 | 仓库根 | A / B 默认位置 |
-|------|--------|----------------|
-| MassOmics-Agent `cyh` | 本文件的上一级 | 同仓 `plan/` 与 `src/executor.py` |
-| MassAgent 单仓 | `agent_py_V2.0` | `MassOmics-Agent/MassOmics-Agent` 与 `MassOmics-Agent-B` |
+| 布局 | 网页启动根 | A / B 默认位置 |
+|------|------------|----------------|
+| 本测试副本 | `agent_py_V2.0` | 同根 complete：`MassOmics-Agent-B` |
+| 拷贝到师兄仓之后 | `MassOmics-Agent/MassOmics-Agent` | 该仓自身的 `plan/` + `src/`（若已是 complete） |
 
-未设置环境变量时会自动探测，不必为 cyh 再配 `WEB_MASSOMICS_ROOT`。
-
-### Agent B 工作区（仅单仓布局需要独立 worktree）
-
-不要把 nested 仓库 `MassOmics-Agent/MassOmics-Agent` 切到 `B`（那是 Agent A 的 cyh 规划侧）。单仓里的 B 使用独立 worktree：
-
-```bash
-cd MassOmics-Agent/MassOmics-Agent
-GIT_LFS_SKIP_SMUDGE=1 git worktree add --detach ../../MassOmics-Agent-B origin/B
-```
+未设置环境变量时会自动探测。可用 `GET /api/agent-backends` 看 `layout` 是否为 `complete_unified`。若 `tool_catalog_usable` 为 false，按 `LAYOUT.md` 拉取 Git LFS 中的 catalog。
 
 环境变量：
 
 | 变量 | 默认 | 含义 |
 |------|------|------|
-| `WEB_AGENT_A_BACKEND` | `massomics` | A：cyh 规划 / `local` 网页规划 |
-| `WEB_AGENT_B_BACKEND` | `massomics` | B：origin/B 执行器 / `local` 本仓库 MCP |
-| `WEB_MASSOMICS_ROOT` | 自动探测 | Agent A 代码根（cyh：本仓；单仓：`MassOmics-Agent/MassOmics-Agent`） |
-| `WEB_MASSOMICS_B_ROOT` | 自动探测 | Agent B 代码根（cyh：本仓；单仓：`MassOmics-Agent-B`） |
+| `WEB_AGENT_A_BACKEND` | `massomics` | A：complete `plan/` / `local` 网页规划 |
+| `WEB_AGENT_B_BACKEND` | `massomics` | B：complete 执行器 / `local` 本仓库 MCP |
+| `WEB_MASSOMICS_ROOT` | 自动探测 | Agent A 代码根 |
+| `WEB_MASSOMICS_B_ROOT` | 自动探测 | Agent B 代码根（complete 下应与 A 相同） |
 
 契约：`GET /api/abc/contract`。命令行：
 
@@ -107,7 +106,7 @@ python -m web_frontend.backend.abc_run --data <inputspace> --outputspace <out> -
 | `backend/webapp.py` | 聊天按阶段编排 A/B/C；会话含 `workflow_status` |
 | `backend/workflow.py` | 确认闸门与阶段路由 |
 | `backend/agent_a/` | Agent A：写出可评审的 `analysis_plan.md` / `plan_*.json` |
-| `backend/agent_b/` | Agent B：独立进程调用 MassOmics-Agent-B（`execute_plan`） |
+| `backend/agent_b/` | Agent B 适配：独立进程调用 complete 同根 `execute_plan` |
 | `backend/agent_c/` | Agent C：出图与报告；B 成功后由编排器调用 |
 | `backend/abc_contract.py` | 三智能体交接契约（`GET /api/abc/contract`） |
 | `backend/agent_runner.py` | `mode=plan` 停在确认；`mode=execute` 交给 B |

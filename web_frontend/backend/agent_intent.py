@@ -55,7 +55,8 @@ C_REPORT_RE = re.compile(
     r"写(?:一份|篇)?(?:深度)?报告|写深度报告|深度报告|深度解读|"
     r"生成(?:深度)?报告|分析报告|final_report|"
     r"科研意义|分析价值|价值与意义|分析意义|写解读|"
-    r"按方案出图|出图|可视化|科研图表|figure\s*list|"
+    r"按方案出图|重新出图|出图|可视化|科研图表|figure\s*list|"
+    r"读图观察|启用读图|"
     r"interpretation|图注|caption|insight\s*report"
     r")",
     re.IGNORECASE,

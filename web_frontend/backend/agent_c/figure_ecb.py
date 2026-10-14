@@ -54,6 +54,7 @@ def _plan_interpretation_fallback(fig: dict[str, Any], *, zh: bool) -> dict[str,
     )
     caveats = (
         "本节依据分析方案撰写，未启用 AI 图意解读；不把方案预期观察写成已证实结论。"
+        "分组分离或相关不等于机制。当前若为 BK/DY/QC 设计，不得写成五等级复现或 95% 椭圆/批效应已证实。"
         if zh
         else "Plan-based notes only; planned observations are not stated as confirmed findings."
     )
@@ -128,11 +129,17 @@ def build_ecb_blocks(
             "markdown": format_vision_markdown(vision, zh=zh).strip(),
         }
     else:
-        if not insights_enabled:
+        if vision.get("error"):
             reason = (
-                "未启用 AI 深度解读（use_llm=False），读图观察未运行。"
+                f"读图观察失败：{vision.get('error')}"
                 if zh
-                else "AI insights disabled (use_llm=False); visual observation was not run."
+                else f"Visual observation failed: {vision.get('error')}"
+            )
+        elif vision.get("skipped"):
+            reason = str(vision.get("reason") or "").strip() or (
+                "读图观察已跳过。"
+                if zh
+                else "Visual observation was skipped."
             )
         elif not vision_enabled():
             reason = (
@@ -140,11 +147,11 @@ def build_ecb_blocks(
                 if zh
                 else "Visual observation disabled (MASSAGENT_FIGURE_VISION=0)."
             )
-        elif vision.get("error"):
+        elif not vision:
             reason = (
-                f"读图观察失败：{vision.get('error')}"
+                "读图观察未运行。请在对话发送「按方案出图并写报告」。"
                 if zh
-                else f"Visual observation failed: {vision.get('error')}"
+                else "Visual observation was not run. Ask to regenerate figures and the report."
             )
         else:
             reason = (

@@ -28,6 +28,9 @@ _CN_EN_KEYWORDS = {
     "富集": "enrichment",
     "余弦": "cosine similarity",
     "拓扑": "network topology",
+    "椭圆": "confidence ellipse",
+    "配色": "color palette NPG ggsci",
+    "得分图": "score plot",
 }
 
 _TOOL_HINTS = {
@@ -208,9 +211,12 @@ def _get_vector_retriever(persist_dir: str, source_dir: str, top_k: int):
         return retriever
 
 
+_vector_timeout_latched = False
+
+
 def _vector_retrieve(query: str, persist_dir: str, source_dir: str, top_k: int) -> str | None:
-    global _vector_disabled_reason
-    if _vector_disabled_reason:
+    global _vector_disabled_reason, _vector_timeout_latched
+    if _vector_disabled_reason or _vector_timeout_latched:
         return None
     if not _vector_backend_ready():
         _vector_disabled_reason = "embedding_backend_not_configured"
@@ -235,18 +241,22 @@ def _vector_retrieve(query: str, persist_dir: str, source_dir: str, top_k: int) 
             return None
         return text
 
-    # 首次加载索引/嵌入较慢；可用 WEB_LITERATURE_VECTOR_TIMEOUT 覆盖
-    timeout_s = float(os.getenv("WEB_LITERATURE_VECTOR_TIMEOUT", "60") or 60)
+    # 交互请求不能空等索引冷启动。超时后本进程不再重试，改走关键词文献。
+    raw_timeout = float(os.getenv("WEB_LITERATURE_VECTOR_TIMEOUT", "12") or 12)
+    timeout_s = min(20.0, max(8.0, raw_timeout))
     try:
         from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
 
         with ThreadPoolExecutor(max_workers=1) as pool:
             fut = pool.submit(_run)
             try:
-                return fut.result(timeout=max(8.0, timeout_s))
+                return fut.result(timeout=timeout_s)
             except FuturesTimeout:
-                # 冷启动加载大索引可能超时：不永久禁用，便于预热后再试
-                print(f"[literature_rag] vector retrieve timed out after {timeout_s}s (not permanently disabled)")
+                _vector_timeout_latched = True
+                print(
+                    f"[literature_rag] vector retrieve timed out after {timeout_s:.0f}s; "
+                    "skipping vector search for this process"
+                )
                 return None
     except Exception as exc:
         msg = str(exc)

@@ -14,7 +14,6 @@ from web_frontend.backend.literature_figure_style import (
     resolve_figure_style,
     style_provenance_line,
 )
-from web_frontend.backend.plot_theme import DEFAULT_FONT_SIZES
 
 
 class LiteratureFigureStyleTest(unittest.TestCase):
@@ -24,9 +23,11 @@ class LiteratureFigureStyleTest(unittest.TestCase):
     def test_baseline_raises_font_and_keeps_publication_defaults(self) -> None:
         style = resolve_figure_style(plot_type="pca", use_literature=False)
         patch = style["patch"]
-        self.assertGreater(patch["font_size"]["title"], DEFAULT_FONT_SIZES["title"])
+        self.assertGreaterEqual(patch["font_size"]["title"], 14)
         self.assertEqual(patch["legend"]["position"], "right")
-        self.assertFalse(patch["show_sample_labels"])
+        self.assertTrue(patch["show_sample_labels"])
+        self.assertTrue(patch["ellipse"])
+        self.assertEqual(patch["font_size"]["label"], 8)
         self.assertEqual(style["source"], "baseline")
         self.assertIn("publication_baseline", style["applied_fields"])
 
