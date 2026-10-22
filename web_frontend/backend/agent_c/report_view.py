@@ -292,6 +292,36 @@ def split_markdown_figure_section(md: str) -> tuple[str, str]:
     return prose, figures_section
 
 
+def _enrich_figure_card(card: dict[str, Any], results_root: Path) -> dict[str, Any]:
+    """打开报告时补图注和单张 PDF。分子网络不写 ggplot2。"""
+    from web_frontend.backend.plot_parameter_record import build_parameter_record, enrich_caption
+
+    item = dict(card)
+    rel = str(item.get("rel") or "").strip()
+    if not rel:
+        return item
+    png = (results_root / rel).resolve()
+    plot_type = str(item.get("plot_type") or "")
+    record = build_parameter_record(png) if png.is_file() and plot_type != "network_topology" else None
+    if record:
+        detail = record.get("detail") if isinstance(record.get("detail"), dict) else {}
+        item["caption"] = enrich_caption(
+            str(item.get("caption") or ""),
+            plot_type,
+            record,
+            score_style=str(detail.get("score_style") or ""),
+        )
+        item["parameter_record"] = record
+    if png.is_file():
+        pdf = png.with_suffix(".pdf")
+        if pdf.is_file():
+            try:
+                item["pdf_rel"] = str(pdf.relative_to(results_root.resolve())).replace("\\", "/")
+            except ValueError:
+                item["pdf_rel"] = pdf.name
+    return item
+
+
 def _attach_figure_card_urls(cards: list[dict[str, Any]], *, session_id: str) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     for card in cards:
@@ -299,6 +329,9 @@ def _attach_figure_card_urls(cards: list[dict[str, Any]], *, session_id: str) ->
         rel = str(item.get("rel") or "").strip()
         if rel:
             item["image_url"] = f"/api/sessions/{session_id}/workspace-file?rel={rel}"
+        pdf_rel = str(item.get("pdf_rel") or "").strip()
+        if pdf_rel:
+            item["pdf_url"] = f"/api/sessions/{session_id}/workspace-file?rel={pdf_rel}"
         out.append(item)
     return out
 
@@ -399,6 +432,7 @@ def load_report_bundle(*, session_id: str, results_dir: Path) -> dict[str, Any]:
         insights=insights,
         zh=True,
     )
+    figure_cards = [_enrich_figure_card(card, root) for card in figure_cards]
     figure_cards = _attach_figure_card_urls(figure_cards, session_id=session_id)
 
     prose_md = md_for_api

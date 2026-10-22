@@ -9,7 +9,10 @@ from pathlib import Path
 
 from web_frontend.backend.abc_contract import contract_document
 from web_frontend.backend.agent_b.artifact_bridge import inspect_metadata_csv
-from web_frontend.backend.agent_b.plan_normalize import normalize_plan_for_b
+from web_frontend.backend.agent_b.plan_normalize import (
+    normalize_plan_for_b,
+    sanitize_execution_parameters,
+)
 from web_frontend.backend.agent_c.contract import STANDARD_RESULT_FILES
 from web_frontend.backend.agent_c.results_inventory import inventory_results
 from web_frontend.backend.agent_backends import massomics_b_root
@@ -203,6 +206,250 @@ class PlanHandoffTest(unittest.TestCase):
         self.assertEqual(out["steps"][1]["input_filename"], out["steps"][0]["output_filename"])
         self.assertEqual(out["steps"][2]["input_filename"], out["steps"][1]["output_filename"])
 
+    def test_fbmn_keeps_explicit_mgf_and_feature_table(self) -> None:
+        catalog = {
+            "tools": [
+                {
+                    "keyword": "Cosine",
+                    "stage": "library_matching",
+                    "support_status": "supported",
+                    "mcp_tools": ["library_match_cosine"],
+                    "primary_input": {"parameter": "input_dir"},
+                },
+                {
+                    "keyword": "FBMN",
+                    "stage": "network_analysis",
+                    "support_status": "supported",
+                    "mcp_tools": ["molecular_networking_fbmn"],
+                    "primary_input": {"parameter": "input_mgf"},
+                },
+            ]
+        }
+        plan = {
+            "goal": "demo",
+            "steps": [
+                {
+                    "step_number": 1,
+                    "stage": "library_matching",
+                    "tools": ["Cosine"],
+                    "input_filename": "/data/spectra.mgf",
+                    "output_filename": "/data/library_matching_results",
+                },
+                {
+                    "step_number": 2,
+                    "stage": "network_analysis",
+                    "tools": ["molecular_networking_fbmn"],
+                    "input_filename": "/data/spectra.mgf",
+                    "output_filename": "/data/network",
+                    "tool_parameters": {
+                        "molecular_networking_fbmn": {
+                            "input_mgf": "/data/spectra.mgf",
+                            "input_feature_table": "/data/feature_table.csv",
+                            "output_dir": "/data/network",
+                            "top_k": 10,
+                        }
+                    },
+                },
+            ],
+        }
+        out, _warnings = normalize_plan_for_b(plan, catalog)
+        self.assertEqual(out["steps"][1]["input_filename"], "/data/spectra.mgf")
+        registry = {
+            "library_match_cosine": {
+                "params": {"input_dir": {}, "output_dir": {}},
+                "required": ["input_dir", "output_dir"],
+            },
+            "molecular_networking_fbmn": {
+                "params": {
+                    "input_mgf": {},
+                    "input_feature_table": {},
+                    "output_dir": {},
+                    "top_k": {"type": "integer"},
+                },
+                "required": ["input_mgf", "input_feature_table", "output_dir"],
+            },
+        }
+        sanitize_execution_parameters(out, catalog, registry)
+        self.assertEqual(
+            out["steps"][1]["input_filename"],
+            ["/data/spectra.mgf", "/data/feature_table.csv"],
+        )
+        params = out["steps"][1]["tool_parameters"]["FBMN"]
+        self.assertNotIn("input_feature_table", params)
+        self.assertNotIn("input_mgf", params)
+        self.assertEqual(params["top_k"], 10)
+
+    def test_fbmn_puts_mgf_before_feature_table(self) -> None:
+        catalog = {
+            "tools": [
+                {
+                    "keyword": "FBMN",
+                    "stage": "network_analysis",
+                    "support_status": "supported",
+                    "mcp_tools": ["molecular_networking_fbmn"],
+                    "primary_input": {"parameter": "input_mgf"},
+                }
+            ]
+        }
+        plan = {
+            "steps": [
+                {
+                    "step_number": 6,
+                    "stage": "network_analysis",
+                    "tools": ["FBMN"],
+                    "input_filename": "/data/feature_table.csv, /data/spectra.mgf",
+                    "output_filename": "/data/network",
+                    "tool_parameters": {"FBMN": {"top_k": 10}},
+                }
+            ]
+        }
+        out, _warnings = normalize_plan_for_b(plan, catalog)
+        registry = {
+            "molecular_networking_fbmn": {
+                "params": {
+                    "input_mgf": {},
+                    "input_feature_table": {},
+                    "output_dir": {},
+                    "top_k": {"type": "integer"},
+                },
+                "required": ["input_mgf", "input_feature_table", "output_dir"],
+            }
+        }
+        sanitize_execution_parameters(out, catalog, registry)
+        self.assertEqual(
+            out["steps"][0]["input_filename"],
+            ["/data/spectra.mgf", "/data/feature_table.csv"],
+        )
+
+    def test_mummichog_enables_mass_mapping_when_unset(self) -> None:
+        catalog = {
+            "tools": [
+                {
+                    "keyword": "mummichog",
+                    "stage": "enrichment_analysis",
+                    "support_status": "supported",
+                    "mcp_tools": ["enrichment_analysis_mummichog"],
+                    "primary_input": {"parameter": "input_dir"},
+                }
+            ]
+        }
+        plan = {
+            "steps": [
+                {
+                    "step_number": 7,
+                    "stage": "enrichment_analysis",
+                    "tools": ["mummichog"],
+                    "input_filename": "/data/differential_metabolites.csv",
+                    "output_filename": "/data/enrichment",
+                    "tool_parameters": {"mummichog": {}},
+                }
+            ]
+        }
+        out, _warnings = normalize_plan_for_b(plan, catalog)
+        registry = {
+            "enrichment_analysis_mummichog": {
+                "params": {
+                    "input_dir": {},
+                    "output_dir": {},
+                    "use_network_kegg": {"type": "boolean"},
+                },
+                "required": ["input_dir", "output_dir"],
+            }
+        }
+        sanitize_execution_parameters(out, catalog, registry)
+        params = out["steps"][0]["tool_parameters"]["mummichog"]
+        self.assertTrue(params["use_network_kegg"])
+
+    def test_peakwidth_comma_string_becomes_array(self) -> None:
+        catalog = {
+            "tools": [
+                {
+                    "keyword": "XCMS-Centwave",
+                    "stage": "feature_detection",
+                    "support_status": "supported",
+                    "mcp_tools": ["data_preprocessing_xcms"],
+                    "primary_input": {"parameter": "input_dir"},
+                }
+            ]
+        }
+        plan = {
+            "steps": [
+                {
+                    "step_number": 2,
+                    "stage": "feature_detection",
+                    "tools": ["XCMS-Centwave"],
+                    "input_filename": "/data/mzml",
+                    "output_filename": "/data/peaks",
+                    "tool_parameters": {"XCMS-Centwave": {"peakwidth": "5,20", "ppm": 15}},
+                }
+            ]
+        }
+        out, _warnings = normalize_plan_for_b(plan, catalog)
+        registry = {
+            "data_preprocessing_xcms": {
+                "params": {
+                    "input_dir": {},
+                    "output_dir": {},
+                    "peakwidth": {"type": "array", "default": [5, 20]},
+                    "ppm": {"type": "number"},
+                },
+                "required": ["input_dir", "output_dir"],
+            }
+        }
+        sanitize_execution_parameters(out, catalog, registry)
+        params = out["steps"][0]["tool_parameters"]["XCMS-Centwave"]
+        self.assertEqual(params["peakwidth"], [5, 20])
+        self.assertEqual(params["ppm"], 15)
+
+
+class RelocateMgfTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        root = massomics_b_root()
+        if str(root) not in sys.path:
+            sys.path.insert(0, str(root))
+
+    def test_missing_mgf_is_not_replaced_by_previous_directory(self) -> None:
+        from src.quality_engine import _relocate
+
+        with tempfile.TemporaryDirectory() as tmp:
+            mix = Path(tmp) / "mixOmics"
+            xcms = Path(tmp) / "XCMS"
+            mix.mkdir()
+            xcms.mkdir()
+            (xcms / "spectra.mgf").write_text("BEGIN IONS\nEND IONS\n", encoding="utf-8")
+            stages = [
+                {"output_dir": str(xcms)},
+                {"output_dir": str(mix)},
+            ]
+            found = _relocate(stages, "input_dir", str(Path(tmp) / "peak_detection_results" / "spectra.mgf"))
+            self.assertEqual(Path(found).name, "spectra.mgf")
+            self.assertTrue(str(found).startswith(str(xcms)))
+
+    def test_missing_statistics_csv_is_not_replaced_by_latest_directory(self) -> None:
+        from src.quality_engine import _relocate
+
+        with tempfile.TemporaryDirectory() as tmp:
+            mix = Path(tmp) / "mixOmics"
+            conv = Path(tmp) / "ThermoRawFileParser"
+            mix.mkdir()
+            conv.mkdir()
+            _write_csv(
+                mix / "differential_feature_table.csv",
+                ["feature_id", "mz", "pvalue", "log2fc"],
+                [["FT1", 100.0, 0.01, 1.2]],
+            )
+            stages = [
+                {"output_dir": str(mix)},
+                {"output_dir": str(conv)},
+            ]
+            found = _relocate(
+                stages,
+                "input_dir",
+                str(Path(tmp) / "statistical_results" / "differential_metabolites.csv"),
+            )
+            self.assertEqual(Path(found).name, "differential_feature_table.csv")
+
 
 class MetadataInspectTest(unittest.TestCase):
     def test_warns_n1(self) -> None:
@@ -261,6 +508,17 @@ class ReuseStageTest(unittest.TestCase):
                 stage_output_reusable("convert_raw_to_mzml_ThermoRawFileParser", str(conv))
             )
             self.assertTrue(stage_output_reusable("data_preprocessing_xcms", str(xcms)))
+            self.assertFalse(
+                stage_output_reusable(
+                    "data_preprocessing_xcms", str(xcms), {"extract_ms2": True}
+                )
+            )
+            (xcms / "spectra.mgf").write_text("BEGIN IONS\nEND IONS\n", encoding="utf-8")
+            self.assertTrue(
+                stage_output_reusable(
+                    "data_preprocessing_xcms", str(xcms), {"extract_ms2": True}
+                )
+            )
             self.assertFalse(
                 stage_output_reusable("redundant_feature_filtering_camera", str(empty))
             )

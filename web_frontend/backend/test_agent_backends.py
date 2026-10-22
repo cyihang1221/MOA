@@ -15,8 +15,10 @@ from web_frontend.backend.agent_a.massomics_tool_map import (
 )
 from web_frontend.backend.agent_b.plan_locate import find_massomics_plan_json
 from web_frontend.backend.agent_b.plan_normalize import (
+    align_unregistered_tools,
     normalize_plan_for_b,
     resolve_catalog_entry,
+    sanitize_execution_parameters,
 )
 from web_frontend.backend.agent_backends import (
     agent_a_backend,
@@ -183,6 +185,178 @@ class AgentBPlanNormalizeTest(unittest.TestCase):
         self.assertEqual(out["steps"][1]["stage"], "statistical_analysis")
         self.assertEqual(out["steps"][0]["mode"], "sequential")
         self.assertFalse(warnings)
+
+    def test_wrong_stage_and_hosted_params_still_map(self) -> None:
+        plan = {
+            "goal": "demo",
+            "steps": [
+                {
+                    "step_number": 1,
+                    "description": "convert",
+                    "stage": "data_conversion",
+                    "tools": ["convert_raw_to_mzml_ThermoRawFileParser"],
+                    "tool_parameters": {
+                        "convert_raw_to_mzml_ThermoRawFileParser": {
+                            "input_dir": "/raw",
+                            "output_dir": "/out",
+                        }
+                    },
+                },
+                {
+                    "step_number": 2,
+                    "description": "peaks",
+                    "stage": "data_preprocessing",
+                    "tools": ["data_preprocessing_xcms"],
+                    "tool_parameters": {
+                        "data_preprocessing_xcms": {
+                            "input_dir": "/mzml",
+                            "output_dir": "/peaks",
+                            "ppm": 15,
+                            "method": "centWave",
+                            "mzgap": 0.25,
+                            "n_cores": 1.5,
+                        }
+                    },
+                },
+                {
+                    "step_number": 3,
+                    "description": "stats",
+                    "stage": "statistical_analysis",
+                    "tools": ["statistical_analysis_mixomics"],
+                    "tool_parameters": {
+                        "statistical_analysis_mixomics": {
+                            "input_dir": "/feat",
+                            "metadata_csv": "/meta.csv",
+                            "output_dir": "/stats",
+                            "scale": "pareto",
+                            "vip_threshold": 1.2,
+                            "p_threshold": 0.05,
+                            "fdr_method": "BH",
+                            "group_column": "Group",
+                        }
+                    },
+                },
+            ],
+        }
+        catalog = {
+            "tools": [
+                {
+                    "keyword": "ThermoRawFileParser",
+                    "stage": "data_conversion",
+                    "support_status": "supported",
+                    "mcp_tools": ["convert_raw_to_mzml_ThermoRawFileParser"],
+                    "primary_input": {"parameter": "input_dir"},
+                },
+                {
+                    "keyword": "XCMS-Centwave",
+                    "stage": "feature_detection",
+                    "support_status": "supported",
+                    "mcp_tools": ["data_preprocessing_xcms"],
+                    "primary_input": {"parameter": "input_dir"},
+                },
+                {
+                    "keyword": "mixOmics",
+                    "stage": "statistical_analysis",
+                    "support_status": "supported",
+                    "mcp_tools": ["statistical_analysis_mixomics"],
+                    "primary_input": {"parameter": "input_dir"},
+                },
+            ]
+        }
+        out, warnings = normalize_plan_for_b(plan, catalog)
+        self.assertEqual(
+            [step["tools"][0] for step in out["steps"]],
+            ["ThermoRawFileParser", "XCMS-Centwave", "mixOmics"],
+        )
+        self.assertEqual(out["steps"][1]["stage"], "feature_detection")
+        self.assertTrue(any("data_preprocessing" in w for w in warnings))
+        convert = out["steps"][0]["tool_parameters"]["ThermoRawFileParser"]
+        self.assertNotIn("input_dir", convert)
+        self.assertNotIn("output_dir", convert)
+
+        registry = {
+            "data_preprocessing_xcms": {
+                "params": {
+                    "input_dir": {},
+                    "output_dir": {},
+                    "ppm": {"type": "number"},
+                    "n_cores": {"type": "integer"},
+                },
+                "required": ["input_dir", "output_dir"],
+            },
+            "statistical_analysis_mixomics": {
+                "params": {
+                    "input_dir": {},
+                    "output_dir": {},
+                    "metadata_csv": {},
+                    "scale_method": {},
+                    "vip_threshold": {"type": "number"},
+                    "pvalue_threshold": {"type": "number"},
+                    "use_fdr": {},
+                },
+                "required": ["input_dir", "metadata_csv", "output_dir"],
+            },
+            "convert_raw_to_mzml_ThermoRawFileParser": {
+                "params": {"input_dir": {}, "output_dir": {}},
+                "required": ["input_dir", "output_dir"],
+            },
+        }
+        notes = sanitize_execution_parameters(out, catalog, registry)
+        xcms = out["steps"][1]["tool_parameters"]["data_preprocessing_xcms"]
+        self.assertEqual(xcms, {"ppm": 15})
+        stats = out["steps"][2]["tool_parameters"]["statistical_analysis_mixomics"]
+        self.assertEqual(stats["scale_method"], "autoscale")
+        self.assertEqual(stats["vip_threshold"], 1.2)
+        self.assertEqual(stats["pvalue_threshold"], 0.05)
+        self.assertIs(stats["use_fdr"], True)
+        self.assertNotIn("group_column", stats)
+        self.assertNotIn("input_dir", stats)
+        self.assertTrue(any("n_cores" in note for note in notes))
+        self.assertTrue(any("method" in note or "mzgap" in note for note in notes))
+
+    def test_unregistered_converter_falls_back_to_registered_sibling(self) -> None:
+        plan = {
+            "goal": "demo",
+            "steps": [
+                {
+                    "step_number": 1,
+                    "stage": "data_conversion",
+                    "tools": ["ThermoRawFileParser"],
+                    "tool_parameters": {"ThermoRawFileParser": {"polarity": "positive"}},
+                }
+            ],
+        }
+        catalog = {
+            "tools": [
+                {
+                    "keyword": "ThermoRawFileParser",
+                    "stage": "data_conversion",
+                    "support_status": "supported",
+                    "mcp_tools": ["convert_raw_to_mzml_ThermoRawFileParser"],
+                },
+                {
+                    "keyword": "msconvert",
+                    "stage": "data_conversion",
+                    "support_status": "supported",
+                    "mcp_tools": ["convert_raw_to_mzml_msconvert"],
+                },
+            ]
+        }
+        warnings = align_unregistered_tools(
+            plan,
+            catalog,
+            {"convert_raw_to_mzml_msconvert": {"params": {}}},
+        )
+        self.assertEqual(plan["steps"][0]["tools"], ["msconvert"])
+        self.assertEqual(
+            plan["steps"][0]["tool_parameters"]["msconvert"]["polarity"],
+            "positive",
+        )
+        self.assertTrue(any("msconvert" in item for item in warnings))
+        self.assertEqual(
+            align_unregistered_tools(plan, catalog, {}),
+            [],
+        )
 
     def test_mcp_name_reverse_map(self) -> None:
         entry = resolve_catalog_entry("statistical_analysis_mixomics", MINI_CATALOG)

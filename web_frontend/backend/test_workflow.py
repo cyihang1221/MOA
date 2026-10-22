@@ -13,6 +13,7 @@ from web_frontend.backend.agent_c.plan_parser import parse_plan
 from web_frontend.backend.workflow import (
     AWAITING_APPROVAL,
     COMPLETED,
+    FAILED,
     WAITING_INPUT,
     is_plan_confirmation,
     route_chat_action,
@@ -44,6 +45,22 @@ class WorkflowRoutingTests(unittest.TestCase):
         self.assertEqual(
             route_chat_action(AWAITING_APPROVAL, "第三步改成 MZmine，不要分子网络"),
             "plan",
+        )
+
+    def test_welcome_goal_with_literature_label_is_plan(self):
+        from web_frontend.backend.plot_edit_registry import looks_like_plot_edit_request
+
+        message = (
+            "请对上传的质谱数据做分组差异分析：先评估数据质量，再筛选差异代谢物，并给出 PCA 与火山图。\n\n"
+            "【数据描述】\n"
+            "LC-MS 非靶向代谢组，Thermo RAW；含处理组、对照与 QC。\n\n"
+            "【参考文献/资料】\n"
+            "untargeted metabolomics PCA volcano; 非靶向代谢组 差异代谢物 火山图"
+        )
+        self.assertFalse(looks_like_plot_edit_request(message))
+        self.assertEqual(route_chat_action(WAITING_INPUT, message), "plan")
+        self.assertTrue(
+            looks_like_plot_edit_request("参考文献把火山图弄得像论文里那样")
         )
 
     def test_visual_only_after_complete(self):
@@ -140,6 +157,13 @@ class WorkflowRoutingTests(unittest.TestCase):
             route_chat_action(COMPLETED, "确认计划", has_locked_plan=True),
             "execute",
         )
+
+    def test_failed_confirm_with_locked_plan_executes(self):
+        self.assertEqual(
+            route_chat_action(FAILED, "确认计划", has_locked_plan=True),
+            "execute",
+        )
+        self.assertEqual(route_chat_action(FAILED, "确认计划"), "chat")
 
     def test_completed_full_analysis_with_locked_plan_reminds_rerun(self):
         msg = (

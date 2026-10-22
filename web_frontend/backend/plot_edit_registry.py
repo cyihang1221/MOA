@@ -44,7 +44,7 @@ PLOT_SPECS: tuple[PlotSpec, ...] = (
         "heatmap_top_vip",
         "Top VIP Heatmap",
         ("heatmap_top_vip_matrix.csv",),
-        "热图色标",
+        "热图色标：cmap，或 colors.heatmap_low / heatmap_mid / heatmap_high 三个端点色",
     ),
     PlotSpec(
         "family_size",
@@ -135,14 +135,14 @@ PLOT_SPECS: tuple[PlotSpec, ...] = (
         "kegg_compound_bubble",
         "KEGG Compound Pathway Enrichment",
         ("kegg_compound_enrich.csv",),
-        "点大小 Count / 颜色 -log10(FDR)",
+        "点大小 Count / 颜色 -log10(FDR)：colors.enrich_high（最显著端）/ colors.enrich_low（最不显著端）",
     ),
     PlotSpec(
         "kegg_dotplot",
         "kegg_compound_dotplot",
         "KEGG Compound Enrichment Dotplot",
         ("kegg_compound_enrich.csv",),
-        "点大小 / 颜色",
+        "点大小 Count / 颜色 FDR：colors.enrich_high（最显著端）/ colors.enrich_low（最不显著端）",
     ),
     PlotSpec(
         "kegg_barplot",
@@ -750,7 +750,7 @@ _LITERATURE_RESTYLE_RE = re.compile(
     r"知识库|RAG|ggsci|\bnpg\b|nature|lancet|jama|"
     r"DOI[:\s]*\d|doi\.org|"
     r"发表级|论文风|期刊风|"
-    r"(?:参考|按照?|对照|对齐|贴合).{0,24}(?:文献|论文|期刊|知识库|RAG|skill)|"
+    r"(?:参考(?!文献)|按照?|对照|对齐|贴合).{0,24}(?:文献|论文|期刊|知识库|RAG|skill)|"
     r"(?:文献|论文|期刊).{0,16}(?:规范|风格|配色|画法|样子|那种)|"
     r"像(?:论文|文献|期刊).{0,10}(?:那样|那种|里)|"
     r"按.{0,24}(?:那篇|这篇)"

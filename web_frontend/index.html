@@ -14,7 +14,7 @@
 
     <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
 
-    <link rel="stylesheet" href="/static/styles.css?v=20261012-score-style" />
+    <link rel="stylesheet" href="/static/styles.css?v=20261015-edit-panel" />
 
   </head>
 
@@ -926,7 +926,7 @@
       <div class="score-style-modal-backdrop" id="scoreStyleModalBackdrop"></div>
       <div class="score-style-modal-panel">
         <h3 data-i18n="image.scoreStyleTitle">选择得分图风格</h3>
-        <p class="muted" data-i18n="image.scoreStyleHint">点一张预览，选择这次 PCA / PLS-DA 的风格。第一次出图仍用 SIMCA。</p>
+        <p class="muted" data-i18n="image.scoreStyleHint">两种版式都由 ggplot2 绘制。SIMCA 是灰网格加全体一个 Hotelling 椭圆；ggplot 是按组填充椭圆。SIMCA 不是那套软件。</p>
         <div class="score-style-grid">
           <button type="button" class="score-style-card" data-score-style="simca">
             <img src="/static/score_styles/simca.png" alt="SIMCA" />
@@ -950,7 +950,7 @@
         </header>
         <div class="plot-agent-editor-body">
           <div id="plotAgentScoreStyles" class="score-style-picker hidden">
-            <p class="score-style-hint" data-i18n="image.scoreStyleHint">点一张预览，选择这次 PCA / PLS-DA 的风格。第一次出图仍用 SIMCA。</p>
+            <p class="score-style-hint" data-i18n="image.scoreStyleHint">两种版式都由 ggplot2 绘制。SIMCA 是灰网格加全体一个 Hotelling 椭圆；ggplot 是按组填充椭圆。SIMCA 不是那套软件。</p>
             <div class="score-style-grid">
               <button type="button" class="score-style-card is-selected" data-score-style="simca">
                 <img src="/static/score_styles/simca.png" alt="SIMCA" />
@@ -960,6 +960,30 @@
                 <img src="/static/score_styles/ggplot.png" alt="ggplot" />
                 <span data-i18n="image.scoreStyleGgplot">ggplot 分组椭圆</span>
               </button>
+            </div>
+          </div>
+          <div id="plotEditKindPanel" class="plot-edit-kind">
+            <p class="score-style-hint">先选编辑类型。样式只重绘；分析参数按已有结果表重算；分析方法要回到分析步骤。</p>
+            <div class="plot-edit-kind-tabs">
+              <button type="button" class="plot-edit-kind-tab is-selected" data-edit-kind="style">样式</button>
+              <button type="button" class="plot-edit-kind-tab" data-edit-kind="analysis_param">分析参数</button>
+              <button type="button" class="plot-edit-kind-tab" data-edit-kind="analysis_method">分析方法</button>
+            </div>
+            <div class="plot-edit-kind-body" data-kind-panel="style">
+              <p class="muted">改标题、颜色、图例。不改样本坐标，也不改显著分类。</p>
+              <label>标题 <input id="plotEditTitle" type="text" /></label>
+            </div>
+            <div class="plot-edit-kind-body hidden" data-kind-panel="analysis_param">
+              <p class="muted">只按已有表重算筛选，不覆盖原始结果，也不重跑检验。</p>
+              <label data-param="p">P 小于 <input id="plotEditP" type="number" min="0" max="1" step="0.001" /></label>
+              <label data-param="log2fc">|log2FC| 大于 <input id="plotEditFc" type="number" min="0" step="0.1" /></label>
+              <label data-param="vip">VIP 阈值 <input id="plotEditVip" type="number" min="0" step="0.1" /></label>
+              <label data-param="fdr">FDR 小于 <input id="plotEditFdr" type="number" min="0" max="1" step="0.001" /></label>
+              <label data-param="components">主成分 <input id="plotEditComp1" type="number" min="1" max="9" step="1" /> 和 <input id="plotEditComp2" type="number" min="1" max="9" step="1" /></label>
+              <label data-param="topn">显示前 <input id="plotEditTopN" type="number" min="1" step="1" /> 条</label>
+            </div>
+            <div class="plot-edit-kind-body hidden" data-kind-panel="analysis_method">
+              <p>换归一化、换模型或换统计检验不能在作图层完成。请回到分析步骤重新执行。分子网络仍用原来的网络图。</p>
             </div>
           </div>
           <p id="plotAgentEditorHint" class="plot-agent-editor-hint muted" data-i18n="image.plotAgentHint">
@@ -1130,9 +1154,9 @@
     <script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/markdown-it@14.1.0/dist/markdown-it.min.js"></script>
-    <script src="/static/i18n.js?v=20261009-collapse"></script>
+    <script src="/static/i18n.js?v=20261020-renderer"></script>
     <script src="/static/auth_bar.js?v=20260929-auth2"></script>
-    <script src="/static/app.js?v=20261012-score-style"></script>
+    <script src="/static/app.js?v=20261020-scorestyle"></script>
 
   </body>
 

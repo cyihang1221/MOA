@@ -75,8 +75,9 @@ LOCAL_TOOL_SPECS: dict[str, ToolSpec] = {
         name="plot_edit",
         description=(
             "Agent 改图：按自然语言修改结果图标题、颜色、字号等。"
-            "对 PCA/PLS-DA/火山图/网络分布图等有数据源的图，从原始数据生成可编辑 Vega-Lite/SVG/PNG；"
-            "对其余分析结果图（如 FBMN、Mass2Motif、化学类别图等）做通用标题/样式改图。"
+            "PCA、PLS-DA、火山图、VIP 柱图和 KEGG 用 R（ggplot2）重绘，VIP 热图用 R（pheatmap）；"
+            "分子网络等用 matplotlib。Vega-Lite 只留预览配置，不作为终稿 PNG。"
+            "没有专用渲染器的图只改标题、字号和颜色。"
             "写入 edited_plots/。可传 source_rel（相对路径或文件名）；省略则从 instruction 自动解析。"
         ),
         input_schema=_schema(

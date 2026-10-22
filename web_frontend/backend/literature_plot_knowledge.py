@@ -78,6 +78,7 @@ _PLOT_FAMILY_SKILL_HINTS: dict[str, frozenset[str]] = {
         }
     ),
     "kegg": frozenset({"kegg_bubble", "kegg_dotplot", "kegg_barplot"}),
+    "stats": frozenset({"pca", "plsda", "volcano", "vip_bar", "heatmap_vip"}),
     "ms2lda": frozenset(
         {
             "mass2motif_overview",
@@ -93,10 +94,72 @@ _FAMILY_BLOB_HINTS: dict[str, tuple[str, ...]] = {
     "network": ("gnps", "fbmn", "molecular network", "分子网络", "cytoscape", "cosine", "topology"),
     "kegg": ("kegg", "pathway", "富集", "enrichment", "mummichog"),
     "ms2lda": ("ms2lda", "mass2motif", "motif", "碎片"),
+    "stats": ("mixomics", "metaboanalyst", "pls-da", "volcano", "heatmap", "vip", "pca score"),
+}
+
+# 这些图优先用带出图清单的文献 Skill；少数软件参数卡只在点名图型时放行。
+_PREFERRED_FIGURE_SKILLS: dict[str, tuple[str, ...]] = {
+    "pca": (
+        "rohart-2017-mixomics",
+        "consensus_statistical_analysis",
+        "statistical_analysis_using_metaboanalyst",
+        "duyun-maojian",
+    ),
+    "plsda": (
+        "rohart-2017-mixomics",
+        "szymanska-2012-plsda",
+        "consensus_statistical_analysis",
+        "duyun-maojian",
+    ),
+    "volcano": (
+        "consensus_statistical_analysis",
+        "statistical_analysis_using_metaboanalyst",
+        "general_metabolomics_expanding_the_landscape",
+        "pathway_enrichment_comparative_metabolomics",
+    ),
+    "vip_bar": (
+        "duyun-maojian",
+        "consensus_statistical_analysis",
+        "rohart-2017-mixomics",
+    ),
+    "heatmap_vip": (
+        "consensus_statistical_analysis",
+        "statistical_analysis_using_metaboanalyst",
+        "general_metabolomics_expanding_the_landscape",
+    ),
+    "kegg_bubble": (
+        "kanehisa-2017-kegg",
+        "consensus_pathway_enrichment",
+        "statistical_analysis_using_metaboanalyst",
+    ),
+    "kegg_dotplot": (
+        "kanehisa-2017-kegg",
+        "consensus_pathway_enrichment",
+        "pathway_enrichment_comparative_metabolomics",
+    ),
+    "kegg_barplot": (
+        "kanehisa-2017-kegg",
+        "consensus_pathway_enrichment",
+    ),
+}
+
+_RAG_FIGURE_FOCUS: dict[str, str] = {
+    "pca": "figure type pca_scores; PCA score plot; plotIndiv or ggplot2; group colors; 95% ellipse; legend outside",
+    "plsda": "PLS-DA score plot; plotIndiv; confidence ellipse; class colors; not OPLS S-plot",
+    "volcano": "figure type volcano_plot; ggplot2 theme_bw; log2 fold change; -log10 p; dashed threshold lines",
+    "vip_bar": "VIP bar plot; VIP threshold line; ggplot2; upregulated red downregulated blue",
+    "heatmap_vip": "figure type heatmap; pheatmap; group annotation bar; hierarchical clustering; short metabolite IDs",
+    "kegg_bubble": "KEGG pathway enrichment bubble plot; ggplot2; Count; -log10 FDR; theme_minimal",
+    "kegg_dotplot": "KEGG enrichment dotplot; ggplot2; point size Count; color FDR",
+    "kegg_barplot": "KEGG enrichment barplot; ggplot2; pathway Count",
 }
 
 _SKILL_POOL_SOFTWARE_PARAMS = "software_params"
 _SKILL_POOL_LITERATURE = "literature_workflow"
+_SKILL_POOL_PLOT = "plot_figure"
+# Agent C 自有的改图规范 Skill。放在 web_frontend 下而不是 MassOmics skills/，
+# Agent A 的 skill_match 扫不到，不会混进分析规划。
+_SKILL_POOL_PLOT = "plot_figure"
 
 _VISUAL_SECTION_MARKERS = (
     "出图清单",
@@ -148,6 +211,9 @@ def build_plot_literature_query(
     ]
     if terms:
         task_bits.append(f"Related terms: {terms}")
+    focus = _RAG_FIGURE_FOCUS.get(plot_type)
+    if focus:
+        task_bits.append(f"Prefer papers whose Expected Figures match: {focus}")
     if instruction.strip():
         task_bits.append(f"User edit request: {instruction.strip()[:200]}")
     task_bits.append(
@@ -408,6 +474,79 @@ def _load_phase2_skills(project_root: Path | None = None) -> list[dict[str, Any]
     return skills
 
 
+def _plot_skills_root(project_root: Path | None = None) -> Path:
+    base = project_root if project_root is not None else _project_root()
+    return Path(base) / "web_frontend" / "backend" / "agent_c" / "plot_skills"
+
+
+def _plot_skill_meta(text: str) -> dict[str, Any]:
+    m = re.search(r"^---\s*\n(.*?)\n---", text, re.S)
+    if not m:
+        return {}
+    try:
+        import yaml  # type: ignore
+
+        meta = yaml.safe_load(m.group(1))
+    except Exception:
+        return {}
+    return meta if isinstance(meta, dict) else {}
+
+
+def _str_list(value: Any) -> list[str]:
+    if not isinstance(value, (list, tuple)):
+        return []
+    return [str(v).strip() for v in value if str(v).strip()]
+
+
+def _load_plot_skills(project_root: Path | None = None) -> list[dict[str, Any]]:
+    """Agent C 自己的改图规范 Skill。
+
+    放在 web_frontend 下而不是 MassOmics skills 目录，Agent A 规划检索不到它们。
+    """
+    root = _plot_skills_root(project_root)
+    if not root.is_dir():
+        return []
+    cache_key = f"plot:{root.as_posix()}"
+    signature = _dir_signature(root)
+    cached = _SKILL_CACHE.get(cache_key)
+    if cached and cached[0] == signature:
+        return cached[1]
+    skills: list[dict[str, Any]] = []
+    for skill_md in sorted(root.rglob("SKILL.md")):
+        try:
+            text = skill_md.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        meta = _plot_skill_meta(text)
+        plot_types = _str_list(meta.get("plot_types"))
+        if not plot_types:
+            continue
+        sid = str(meta.get("name") or skill_md.parent.name).strip()
+        desc = str(meta.get("description") or "").strip()
+        refs = _str_list(meta.get("references"))
+        skills.append(
+            {
+                "source": "plot_skill",
+                "skill_id": sid,
+                "skill_pool": _SKILL_POOL_PLOT,
+                "name": str(meta.get("display_name") or sid),
+                "description": desc,
+                "keywords": _trigger_keywords_from_description(desc),
+                "file": str(skill_md),
+                "branch": skill_md.parent.parent.name,
+                "doi": refs[0] if refs else "",
+                "references": refs,
+                "plot_types": plot_types,
+                "pairs_with": _str_list(meta.get("pairs_with")),
+                "suggest": str(meta.get("suggest") or "").strip(),
+                "visual_block": _extract_visual_block(text, max_chars=2400),
+                "body": text,
+            }
+        )
+    _SKILL_CACHE[cache_key] = (signature, skills)
+    return skills
+
+
 def _extract_figure_mentions(text: str, max_chars: int = 800) -> str:
     lines = []
     for ln in text.splitlines():
@@ -507,10 +646,21 @@ def _plot_family_for_type(plot_type: str) -> str | None:
     return None
 
 
+def _skill_is_preferred(skill_id: str, plot_type: str) -> bool:
+    sid = (skill_id or "").lower()
+    if not sid or not plot_type:
+        return False
+    return any(token in sid for token in _PREFERRED_FIGURE_SKILLS.get(plot_type, ()))
+
+
 def skill_plot_relevance(skill: dict[str, Any], plot_type: str) -> int:
     """硬筛：Skill 与图型的相关度（0=不应进入改图样式池）。"""
+    if skill.get("skill_pool") == _SKILL_POOL_PLOT:
+        return 8 if plot_type and plot_type in (skill.get("plot_types") or ()) else 0
     if not plot_type:
         return 1
+    if _skill_is_preferred(str(skill.get("skill_id") or ""), plot_type):
+        return 8
     if skill.get("skill_pool") == _SKILL_POOL_SOFTWARE_PARAMS:
         return 0
     blob = _skill_blob(skill)
@@ -563,10 +713,16 @@ def _score_skill(
     visual = (skill.get("visual_block") or "").lower()
     sid = str(skill.get("skill_id") or "").lower()
 
+    if skill.get("skill_pool") == _SKILL_POOL_PLOT and not plot_type:
+        return 0
     rel = skill_plot_relevance(skill, plot_type) if plot_type else 1
     if plot_type and rel <= 0:
         return 0
     score += rel * 5
+    if plot_type and (
+        _skill_is_preferred(sid, plot_type) or skill.get("skill_pool") == _SKILL_POOL_PLOT
+    ):
+        score += 60
 
     sticky = {str(s).lower() for s in (sticky_skill_ids or []) if s}
     if sid and sid in sticky:
@@ -622,13 +778,22 @@ def rank_skills_for_plot(
     """统一检索排序：图型硬筛 + 目标词 + 会话 sticky Skill。"""
     goal_tokens = _tokenize(goal_text)
     plot_terms = _plot_terms_for_type(plot_type) if plot_type else ()
-    all_skills = _load_massomics_skills(project_root) + _load_phase2_skills(project_root)
+    all_skills = (
+        _load_massomics_skills(project_root)
+        + _load_phase2_skills(project_root)
+        + _load_plot_skills(project_root)
+    )
     if not all_skills:
         return []
 
     pool = all_skills
     if not include_software_params:
-        pool = [sk for sk in pool if sk.get("skill_pool") != _SKILL_POOL_SOFTWARE_PARAMS]
+        pool = [
+            sk
+            for sk in pool
+            if sk.get("skill_pool") != _SKILL_POOL_SOFTWARE_PARAMS
+            or _skill_is_preferred(str(sk.get("skill_id") or ""), plot_type)
+        ]
 
     scored: list[tuple[int, dict[str, Any]]] = []
     for sk in pool:
@@ -651,11 +816,20 @@ def rank_skills_for_plot(
                 scored.append((rel, sk))
         scored.sort(key=lambda x: x[0], reverse=True)
 
-    return [sk for _, sk in scored[: max(1, max_skills)]]
+    ranked = [sk for _, sk in scored]
+    limit = max(1, max_skills)
+    plot_skill = next((sk for sk in ranked if sk.get("skill_pool") == _SKILL_POOL_PLOT), None)
+    if plot_skill is None:
+        return ranked[:limit]
+    # 改图规范 Skill 固定排在最后一个名额：注入 LLM 时论文 Skill 在前，预算不够时先截它。
+    others = [sk for sk in ranked if sk.get("skill_pool") != _SKILL_POOL_PLOT]
+    return others[: limit - 1] + [plot_skill]
 
 
 def _suggest_instruction(plot_type: str, skill: dict[str, Any], visual: str) -> str:
     """从文献出图清单生成可直接发到聊天里的改图话术（口语，不填表格）。"""
+    if skill.get("skill_pool") == _SKILL_POOL_PLOT and skill.get("suggest"):
+        return str(skill["suggest"])
     skill_name = skill.get("skill_id") or skill.get("name") or "知识库里那篇"
     paper = str(skill_name).replace("-", " ")
     if plot_type in {"pca", "plsda"}:
@@ -740,9 +914,15 @@ def match_plot_literature(
         if not visual.strip():
             continue
         doi = sk.get("doi") or ""
-        header = f"### Skill: `{sid}`"
-        if doi:
-            header += f" (DOI:{doi})"
+        if sk.get("skill_pool") == _SKILL_POOL_PLOT:
+            refs = "; ".join((sk.get("references") or [])[:4])
+            header = f"### Figure convention skill: `{sid}` ({sk.get('name') or sid})"
+            if refs:
+                header += f" DOI:{refs}"
+        else:
+            header = f"### Skill: `{sid}`"
+            if doi:
+                header += f" (DOI:{doi})"
         chunk = f"{header}\n{visual.strip()}\n\n---\n"
         if len(chunk) > budget and matched:
             break

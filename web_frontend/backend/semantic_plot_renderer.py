@@ -15,6 +15,19 @@ from web_frontend.backend.plot_theme import DEFAULT_PALETTE, plot_config_path_fo
 
 VEGA_LITE_SCHEMA = "https://vega.github.io/schema/vega-lite/v5.json"
 MATPLOTLIB_PRIMARY_PLOT_TYPES = frozenset({"pca", "plsda"})
+# 这些图的终稿 PNG 由 R 写出。Vega 仍可留 JSON，但不能覆盖 PNG。
+R_PRIMARY_PLOT_TYPES = frozenset(
+    {
+        "pca",
+        "plsda",
+        "volcano",
+        "vip_bar",
+        "heatmap_vip",
+        "kegg_bubble",
+        "kegg_dotplot",
+        "kegg_barplot",
+    }
+)
 FONT_FAMILY = "Noto Sans CJK SC, Noto Sans CJK, Arial, sans-serif"
 
 
@@ -2894,9 +2907,12 @@ def write_semantic_outputs(
     )
     svg_path = svg_path_for_png(png)
 
-    # 得分图终稿由 matplotlib 画成 SIMCA 版式（PNG + SVG 同源），Vega 只留作 JSON 元数据。
-    if png_renderer is not None and str(plot_config.get("plot_type") or "") in MATPLOTLIB_PRIMARY_PLOT_TYPES:
+    # 统计图终稿由 R 画出，Vega 只留 JSON，避免 vl_convert 盖掉 PNG。
+    if png_renderer is not None and str(plot_config.get("plot_type") or "") in R_PRIMARY_PLOT_TYPES:
         png_renderer(png)
+        from web_frontend.backend.plot_parameter_record import attach_parameter_record
+
+        attach_parameter_record(png, config_path)
         return config_path, vega_path, (svg_path if svg_path.is_file() else None), png
 
     try:

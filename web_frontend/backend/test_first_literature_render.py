@@ -10,6 +10,7 @@ from web_frontend.backend.literature_evidence import collect_evidence_cards
 from web_frontend.backend.literature_figure_style import (
     build_initial_plot_config,
     clear_style_cache,
+    first_plot_style_instruction,
 )
 from web_frontend.backend.literature_paths import resolve_literature_dirs, resolve_phase2_registry
 from web_frontend.backend.literature_plot_knowledge import effective_plot_goal_text
@@ -105,6 +106,108 @@ class FirstLiteratureRenderTest(unittest.TestCase):
 
         src = inspect.getsource(run_agent_c)
         self.assertIn("insights_enabled and not use_literature", src)
+
+    def test_first_plot_instruction_is_style_and_admits_literature(self) -> None:
+        from web_frontend.backend.plot_edit_contract import EDIT_STYLE, classify_plot_edit, guard_nl_edit
+        from web_frontend.backend.plot_edit_registry import looks_like_literature_plot_restyle
+
+        instruction = first_plot_style_instruction("pca")
+        self.assertTrue(looks_like_literature_plot_restyle(instruction))
+        self.assertEqual(classify_plot_edit(instruction, "pca"), EDIT_STYLE)
+        guarded = guard_nl_edit(
+            "pca",
+            instruction,
+            model_patch={"legend": {"position": "bottom"}, "thresholds": {"p": 0.01}},
+            literature_patch={"font_size": {"title": 14}, "thresholds": {"p": 0.05}},
+        )
+        self.assertFalse(guarded["blocked"])
+        self.assertTrue(guarded["used_literature"])
+        self.assertEqual(guarded["patch"]["legend"]["position"], "bottom")
+        self.assertEqual(guarded["patch"]["font_size"]["title"], 14)
+        self.assertNotIn("thresholds", guarded["patch"])
+
+    def test_ai_style_applies_model_reading_but_plan_hint_wins(self) -> None:
+        from unittest.mock import patch
+
+        def fake_parse(**kwargs):
+            self.assertIn("文献", kwargs["instruction"])
+            self.assertIn("改图规范", kwargs["literature_context"])
+            return {
+                "legend": {"position": "bottom"},
+                "title": "AI PCA Score Plot",
+                "thresholds": {"p": 0.01},
+                "font_size": {"title": 20},
+            }
+
+        with (
+            patch(
+                "web_frontend.backend.literature_evidence.collect_evidence_cards",
+                return_value=[{
+                    "evidence_id": "score#yaml",
+                    "skill_id": "score-plot-pca-plsda",
+                    "doi": "10.1371/journal.pcbi.1005752",
+                    "claim_type": "structured_spec",
+                    "quote": "legend_position=right",
+                    "field_hints": ["legend.position"],
+                }],
+            ),
+            patch(
+                "web_frontend.backend.literature_plot_knowledge.match_plot_literature",
+                return_value={"text": "### Figure convention skill\n改图规范：图例在右。", "matched": ["score-plot-pca-plsda"]},
+            ),
+            patch(
+                "web_frontend.backend.plot_edit_agent.parse_plot_edit_instruction",
+                side_effect=fake_parse,
+            ),
+        ):
+            config, style = build_initial_plot_config(
+                plot_type="pca",
+                title="Figure 1",
+                weak_titles=["Figure 1", "pca"],
+                plan_hint={"legend": {"position": "left", "show": True}, "colors": {"upregulated": "#112233"}},
+                goal_text="PCA",
+                project_root=Path("/tmp/no-such-plot-root"),
+                use_literature=True,
+                use_ai_style=True,
+                color_keys=["GroupA"],
+                metadata_columns=["Sample", "Group"],
+            )
+        self.assertEqual(style.get("source"), "literature_ai")
+        self.assertEqual(config["legend"]["position"], "left")
+        self.assertEqual(config["font_size"]["title"], 20)
+        self.assertEqual(config["title"], "AI PCA Score Plot")
+        self.assertFalse(config.get("thresholds"))
+        self.assertIn("ai_style", style.get("applied_fields") or [])
+
+    def test_ai_style_failure_keeps_skill_style(self) -> None:
+        from unittest.mock import patch
+
+        with (
+            patch(
+                "web_frontend.backend.literature_evidence.collect_evidence_cards",
+                return_value=[],
+            ),
+            patch(
+                "web_frontend.backend.literature_plot_knowledge.match_plot_literature",
+                return_value={"text": "", "matched": []},
+            ),
+            patch(
+                "web_frontend.backend.plot_edit_agent.parse_plot_edit_instruction",
+                side_effect=RuntimeError("no api"),
+            ),
+        ):
+            config, style = build_initial_plot_config(
+                plot_type="pca",
+                title="PCA Score Plot",
+                goal_text="PCA",
+                project_root=Path(__file__).resolve().parents[2],
+                use_literature=True,
+                use_ai_style=True,
+            )
+        self.assertTrue(any("未完成" in item for item in (style.get("warnings") or [])))
+        self.assertNotEqual(style.get("source"), "literature_ai")
+        self.assertEqual(config["legend"]["position"], "right")
+        self.assertEqual(config["font_size"]["title"], 14)
 
 
 if __name__ == "__main__":

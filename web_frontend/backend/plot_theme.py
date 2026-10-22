@@ -320,6 +320,10 @@ def normalize_plot_config(
     if isinstance(raw, dict) and isinstance(raw.get("vip_threshold"), (int, float)):
         vip_threshold = float(raw["vip_threshold"])
 
+    fdr_cut = None
+    if isinstance(raw, dict) and isinstance(raw.get("fdr_cut"), (int, float)):
+        fdr_cut = float(raw["fdr_cut"])
+
     cmap = ""
     if isinstance(raw, dict) and isinstance(raw.get("cmap"), str) and raw["cmap"].strip():
         cmap = raw["cmap"].strip()
@@ -329,6 +333,8 @@ def normalize_plot_config(
         annotation_columns = [str(x) for x in raw["annotation_columns"] if str(x).strip()]
 
     score_style = "simca" if plot_type in {"pca", "plsda"} else ""
+    edit_kind = ""
+    p_stat = ""
     size_by = None
     if isinstance(raw, dict):
         asked = str(raw.get("score_style") or "").strip().lower()
@@ -342,6 +348,12 @@ def normalize_plot_config(
                 size_by = ""
             else:
                 size_by = str(raw_size).strip()
+        asked_kind = str(raw.get("edit_kind") or "").strip()
+        if asked_kind in {"style", "analysis_param", "analysis_method"}:
+            edit_kind = asked_kind
+        asked_stat = str(raw.get("p_stat") or "").strip().lower()
+        if asked_stat in {"pvalue", "padj"}:
+            p_stat = asked_stat
 
     return {
         "version": 2,
@@ -367,10 +379,13 @@ def normalize_plot_config(
         "hide_isolates": hide_isolates,
         "show_grid": show_grid,
         "vip_threshold": vip_threshold,
+        "fdr_cut": fdr_cut,
         "cmap": cmap,
         "annotation_columns": annotation_columns,
         "score_style": score_style,
         "size_by": size_by,
+        "edit_kind": edit_kind,
+        "p_stat": p_stat,
     }
 
 
@@ -444,7 +459,19 @@ def merge_plot_config(base: dict[str, Any], patch: dict[str, Any]) -> dict[str, 
         merged["thresholds"] = thr
     if isinstance(patch.get("color_channel"), str) and patch["color_channel"].strip():
         merged["color_channel"] = patch["color_channel"].strip()
-    for key in ("ellipse", "hide_isolates", "show_grid", "vip_threshold", "cmap", "annotation_columns", "score_style", "size_by"):
+    for key in (
+        "ellipse",
+        "hide_isolates",
+        "show_grid",
+        "vip_threshold",
+        "fdr_cut",
+        "cmap",
+        "annotation_columns",
+        "score_style",
+        "size_by",
+        "edit_kind",
+        "p_stat",
+    ):
         if key in patch:
             merged[key] = patch[key]
     for section in ("axes", "legend", "marks", "histogram"):

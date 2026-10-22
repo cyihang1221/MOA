@@ -9,6 +9,8 @@ import numpy as np
 import pandas as pd
 
 from web_frontend.backend.paper_plot_helpers import (
+    confidence_ellipse_params,
+    ellipse_core_mask,
     ellipse_polyline,
     hide_isolates_enabled,
     join_vip_volcano,
@@ -31,6 +33,25 @@ class EllipsePolylineTest(unittest.TestCase):
         self.assertEqual(ts, list(range(len(pts))))
         xs_poly = [p["x"] for p in pts]
         self.assertNotEqual(xs_poly, sorted(xs_poly))
+
+
+class EllipseCoreTest(unittest.TestCase):
+    def test_distant_points_stay_outside_the_ellipse(self) -> None:
+        xs = np.array([10.2, 10.6, 10.4, 10.8, 10.3, 10.7, 10.5, 10.9, -0.9, 0.5, 6.9])
+        ys = np.array([-2.0, -1.6, -1.9, -1.5, -1.7, -2.1, -1.8, -1.4, 14.7, 14.0, 10.1])
+        mask = ellipse_core_mask(xs, ys)
+        self.assertEqual(int(mask.sum()), 8)
+        self.assertFalse(mask[-3:].any())
+        params = confidence_ellipse_params(xs, ys)
+        self.assertIsNotNone(params)
+        _cx, cy, _w, height, _ang = params
+        self.assertLess(abs(cy - (-1.8)), 1.0)
+        self.assertLess(height, 8.0)
+
+    def test_one_cloud_keeps_every_point(self) -> None:
+        xs = np.array([-18.0, -17.5, -17.0, -16.2, -15.5, -14.0, -12.0])
+        ys = np.array([-3.0, -2.5, -2.0, -1.0, 0.2, 1.5, 2.5])
+        self.assertEqual(int(ellipse_core_mask(xs, ys).sum()), 7)
 
 
 class ScoreEllipseTest(unittest.TestCase):
@@ -124,6 +145,22 @@ class HonestyDisclaimerTest(unittest.TestCase):
     def test_five_grade_silent(self) -> None:
         text = study_design_disclaimer(groups={"Supreme", "Premium", "Special", "Grade I", "Grade II"})
         self.assertEqual(text, "")
+
+
+class FamilySizePayloadTest(unittest.TestCase):
+    def test_all_singletons_are_one_bar(self) -> None:
+        from web_frontend.backend.plot_renderer import _family_size_payload
+
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "network_nodes.csv"
+            rows = "\n".join(f"FT{i:04d},100,1,MF_{i:04d},0" for i in range(1, 40))
+            path.write_text(
+                "feature_id,precursor_mz,charge,molecular_family,degree\n" + rows + "\n",
+                encoding="utf-8",
+            )
+            labels, sizes, _colors = _family_size_payload(path)
+        self.assertEqual(labels, ["39 singleton families"])
+        self.assertEqual(sizes, [39])
 
 
 if __name__ == "__main__":

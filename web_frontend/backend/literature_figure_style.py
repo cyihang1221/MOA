@@ -15,12 +15,15 @@ JOURNAL_PALETTES: dict[str, tuple[str, ...]] = {
     "aaas": ("#3B4992", "#EE0000", "#008B45", "#631879", "#008280", "#BB0021", "#5F559B", "#A20056"),
     "lancet": ("#00468B", "#ED0000", "#42B540", "#0099B4", "#925E9F", "#FDAF91", "#AD002A", "#ADB6B6"),
     "jama": ("#374E55", "#DF8F44", "#00A1D5", "#B24745", "#79AF97", "#6A6599", "#80796B"),
+    # Wong 2011 Nat Methods（10.1038/nmeth.1618）给出的色盲友好 8 色；黄色对白底对比弱，放到后面。
+    "okabe_ito": ("#0072B2", "#D55E00", "#009E73", "#CC79A7", "#E69F00", "#56B4E9", "#F0E442", "#000000"),
 }
 
 DEFAULT_JOURNAL = "npg"
 
 # 期刊/配色关键词 → palette 名
 _JOURNAL_HINTS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("okabe_ito", ("okabe", "色盲", "色觉", "colorblind", "color-blind", "colour-blind", "color blind")),
     ("npg", ("npg", "nature", "nature publishing", "ggsci")),
     ("aaas", ("aaas", "science", "sci_aaas")),
     ("lancet", ("lancet",)),
@@ -200,6 +203,7 @@ _THRESHOLD_MENTION_RE = re.compile(
 )
 
 _STYLE_CACHE: dict[tuple, dict[str, Any]] = {}
+_AI_STYLE_CACHE: dict[tuple, dict[str, Any]] = {}
 
 
 def env_enabled() -> bool:
@@ -418,6 +422,151 @@ def _is_placeholder_title(title: str, weak_titles: list[str] | None) -> bool:
     return any(t == str(w).strip().lower() for w in (weak_titles or []) if w)
 
 
+def first_plot_style_instruction(plot_type: str) -> str:
+    """首次出图交给改图模型的固定指令：只收样式，并让文献样式参与合并。"""
+    label = (plot_type or "plot").strip() or "plot"
+    return (
+        f"按文献规范和改图 skill，给出这张 {label} 图的发表级样式，"
+        "只调整配色、图例、字号、标题措辞和椭圆，不要改统计阈值。"
+    )
+
+
+def refine_style_with_plot_agent(
+    *,
+    plot_type: str,
+    current_patch: dict[str, Any],
+    goal_text: str = "",
+    project_root: Path | None = None,
+    color_keys: list[str] | None = None,
+    metadata_columns: list[str] | None = None,
+    sticky_skill_ids: list[str] | None = None,
+) -> dict[str, Any]:
+    """用改图同一条链路理解文献和 Skill，返回可并入首次出图的样式。
+
+    模型不可用或返回被拒绝时，patch 为空，调用方保留已有的 Skill 样式。
+    """
+    empty: dict[str, Any] = {
+        "patch": {},
+        "matched": [],
+        "warnings": [],
+        "evidence_refs": [],
+        "applied_fields": [],
+    }
+    if not plot_type or not env_enabled():
+        return empty
+
+    cache_key = (
+        plot_type,
+        (goal_text or "")[:400],
+        str(project_root) if project_root else "",
+        tuple(sticky_skill_ids or ()),
+        tuple(metadata_columns or ()),
+        tuple(color_keys or ()),
+    )
+    cached = _AI_STYLE_CACHE.get(cache_key)
+    if cached is not None:
+        return cached
+
+    instruction = first_plot_style_instruction(plot_type)
+    try:
+        from web_frontend.backend.literature_evidence import (
+            collect_evidence_cards,
+            evidence_cards_to_markdown,
+            suggest_soft_style_patch,
+        )
+        from web_frontend.backend.literature_plot_knowledge import match_plot_literature
+        from web_frontend.backend.plot_edit_agent import parse_plot_edit_instruction
+        from web_frontend.backend.plot_edit_contract import guard_nl_edit
+        from web_frontend.backend.visual_validation import validate_plot_patch
+
+        cards = collect_evidence_cards(
+            plot_type=plot_type,
+            goal_text=goal_text,
+            instruction=instruction,
+            project_root=project_root,
+            sticky_skill_ids=sticky_skill_ids,
+        )
+        lit_payload = match_plot_literature(
+            goal_text=goal_text,
+            plot_type=plot_type,
+            instruction=instruction,
+            project_root=project_root,
+            sticky_skill_ids=sticky_skill_ids,
+            max_skills=3,
+        )
+        literature_context = "\n\n".join(
+            part
+            for part in (
+                evidence_cards_to_markdown(cards),
+                str(lit_payload.get("text") or ""),
+            )
+            if part.strip()
+        )
+        model_patch = parse_plot_edit_instruction(
+            instruction=instruction,
+            plot_type=plot_type,
+            color_keys=list(color_keys or []),
+            current_config=dict(current_patch),
+            metadata_columns=metadata_columns,
+            literature_context=literature_context or None,
+        )
+        soft_patch, soft_warn = suggest_soft_style_patch(
+            plot_type,
+            cards,
+            metadata_columns=metadata_columns,
+            current_config=current_patch,
+            user_instruction=instruction,
+        )
+        contract = guard_nl_edit(
+            plot_type,
+            instruction,
+            model_patch=model_patch,
+            literature_patch=soft_patch,
+        )
+        if contract.get("blocked"):
+            result = {**empty, "warnings": [str(contract.get("message") or "首次样式被拒绝")]}
+            return result
+        validation = validate_plot_patch(
+            patch=dict(contract.get("patch") or {}),
+            current_config=current_patch,
+            color_keys=list(color_keys or []),
+            metadata_columns=metadata_columns,
+            evidence_cards=cards,
+            user_instruction=instruction,
+            plot_type=plot_type,
+        )
+        accepted = dict(validation.get("accepted_patch") or {})
+        accepted.pop("edit_kind", None)
+        warnings = list(contract.get("warnings") or []) + list(soft_warn) + list(validation.get("warnings") or [])
+        if validation.get("errors"):
+            warnings.extend(str(item) for item in validation["errors"])
+        matched = list(dict.fromkeys(
+            [str(sid) for sid in (lit_payload.get("matched") or []) if sid]
+            + [str(card.get("skill_id") or "") for card in cards if card.get("skill_id")]
+        ))
+        result = {
+            "patch": accepted,
+            "matched": matched,
+            "warnings": warnings,
+            "evidence_refs": [
+                {
+                    "evidence_id": card.get("evidence_id"),
+                    "skill_id": card.get("skill_id"),
+                    "doi": card.get("doi"),
+                    "claim_type": card.get("claim_type"),
+                    "quote": (card.get("quote") or "")[:200],
+                }
+                for card in cards
+            ],
+            "applied_fields": ["ai_style"] if accepted else [],
+        }
+    except Exception as exc:
+        return {**empty, "warnings": [f"首次出图的文献理解未完成，已沿用 Skill 样式：{exc}"]}
+
+    _AI_STYLE_CACHE[cache_key] = result
+    return result
+
+
 def build_initial_plot_config(
     *,
     plot_type: str,
@@ -430,10 +579,12 @@ def build_initial_plot_config(
     weak_titles: list[str] | None = None,
     sticky_skill_ids: list[str] | None = None,
     metadata_columns: list[str] | None = None,
+    use_ai_style: bool = False,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """构造首次出图的 plot_config。
 
-    优先级：方案 hint > 文献/基线样式 > 系统默认。
+    优先级：方案 hint > 改图模型对文献和 Skill 的理解 > 文献/Skill 结构化样式 > 系统默认。
+    ``use_ai_style`` 为真时才调用改图模型；失败则保留结构化样式。
     ``weak_titles`` 中的标题视为占位符，允许被文献标题措辞替换。
     Returns: (plot_config, style)
     """
@@ -447,6 +598,28 @@ def build_initial_plot_config(
         sticky_skill_ids=sticky_skill_ids,
         metadata_columns=metadata_columns,
     )
+    if use_literature and use_ai_style:
+        ai_style = refine_style_with_plot_agent(
+            plot_type=plot_type,
+            current_patch=dict(style.get("patch") or {}),
+            goal_text=goal_text,
+            project_root=project_root,
+            color_keys=color_keys,
+            metadata_columns=metadata_columns,
+            sticky_skill_ids=sticky_skill_ids,
+        )
+        ai_patch = dict(ai_style.get("patch") or {})
+        ai_title = str(ai_patch.pop("title", "") or "").strip()
+        if ai_title:
+            style["title_suggestion"] = ai_title
+        if ai_patch:
+            style["patch"] = _merge_style(style.get("patch") or {}, ai_patch)
+            style["source"] = "literature_ai"
+        style["applied_fields"] = list(style.get("applied_fields") or []) + list(ai_style.get("applied_fields") or [])
+        style["warnings"] = list(style.get("warnings") or []) + list(ai_style.get("warnings") or [])
+        style["matched"] = list(dict.fromkeys(list(style.get("matched") or []) + list(ai_style.get("matched") or [])))
+        if ai_style.get("evidence_refs"):
+            style["evidence_refs"] = list(ai_style.get("evidence_refs") or [])
     hint = dict(plan_hint or {})
     raw = _merge_style(style.get("patch") or {}, hint)
 
@@ -489,6 +662,15 @@ def style_provenance_line(style: dict[str, Any] | None, *, language: str = "zh")
     zh = (language or "zh").lower().startswith("zh")
     matched = [m for m in (style.get("matched") or []) if m]
     journal = style.get("journal") or DEFAULT_JOURNAL
+    if style.get("source") == "literature_ai":
+        dois = sorted({str(r.get("doi")) for r in (style.get("evidence_refs") or []) if r.get("doi")})
+        cite = "、".join(matched[:2]) if matched else "改图规范"
+        doi_part = f"，DOI:{'; '.join(dois[:2])}" if dois else ""
+        return (
+            f"作图规范：首次出图已按改图逻辑读取文献与 Skill（{cite}）{doi_part}；配色 {journal}。"
+            if zh
+            else f"Figure style: first render used the plot-edit reading of literature and skills ({cite}){doi_part}; palette {journal}."
+        )
     if style.get("source") == "literature" and matched:
         dois = sorted({str(r.get("doi")) for r in (style.get("evidence_refs") or []) if r.get("doi")})
         cite = "、".join(matched[:2])
@@ -513,6 +695,7 @@ def style_provenance_line(style: dict[str, Any] | None, *, language: str = "zh")
 
 def clear_style_cache() -> None:
     _STYLE_CACHE.clear()
+    _AI_STYLE_CACHE.clear()
 
 
 __all__ = [
@@ -521,6 +704,8 @@ __all__ = [
     "PUBLICATION_BASELINE",
     "resolve_figure_style",
     "build_initial_plot_config",
+    "first_plot_style_instruction",
+    "refine_style_with_plot_agent",
     "apply_journal_palette",
     "style_provenance_line",
     "clear_style_cache",

@@ -108,16 +108,52 @@ def show_grid_enabled(plot_config: dict[str, Any] | None) -> bool:
     return False
 
 
+def ellipse_core_mask(xs: np.ndarray, ys: np.ndarray) -> np.ndarray:
+    """只保留聚在一起的主体。离群、和主体之间空出一大段的点不进椭圆。
+
+    按到组中位数的距离由近到远看。某一跳比已经纳入的半径还大，后面的点就不再圈进去。
+    点本身仍要画，只是不参与椭圆。
+    """
+    x = np.asarray(xs, dtype=float)
+    y = np.asarray(ys, dtype=float)
+    mask = np.zeros(x.size, dtype=bool)
+    finite = np.flatnonzero(np.isfinite(x) & np.isfinite(y))
+    if finite.size < 3:
+        return mask
+    xf = x[finite]
+    yf = y[finite]
+    dist = np.hypot(xf - float(np.median(xf)), yf - float(np.median(yf)))
+    order = np.argsort(dist)
+    ordered = dist[order]
+    keep_n = int(ordered.size)
+    if ordered.size >= 4:
+        for i in range(2, ordered.size - 1):
+            radius = float(ordered[i])
+            gap = float(ordered[i + 1] - ordered[i])
+            # 主体几乎叠在一起时，只要下一点离开这个点就算另一处。
+            separated = gap > 1e-6 if radius <= 1e-8 else gap > radius
+            if separated:
+                keep_n = i + 1
+                break
+    if keep_n < 3:
+        return mask
+    mask[finite[order[:keep_n]]] = True
+    return mask
+
+
 def confidence_ellipse_params(
     xs: np.ndarray,
     ys: np.ndarray,
     *,
     n_std: float = 1.96,
 ) -> tuple[float, float, float, float, float] | None:
-    """返回 (cx, cy, width, height, angle_deg)；样本不足或协方差退化时 None。"""
+    """返回 (cx, cy, width, height, angle_deg)；样本不足或协方差退化时 None。
+
+    没有和主体聚在一起的点不参与拟合，避免椭圆被拉去圈住零散点。
+    """
     x = np.asarray(xs, dtype=float)
     y = np.asarray(ys, dtype=float)
-    mask = np.isfinite(x) & np.isfinite(y)
+    mask = ellipse_core_mask(x, y)
     x, y = x[mask], y[mask]
     if x.size < 3:
         return None

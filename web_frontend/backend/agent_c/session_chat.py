@@ -269,7 +269,19 @@ def stream_session_agent_c(
     for fig in manifest.get("figures") or []:
         png = fig.get("png")
         st = fig.get("status")
-        if st not in {"rendered", "copied_existing"} or not png:
+        plot_type = str(fig.get("plot_type") or "")
+        preview = Path(str(png)) if png else None
+        if plot_type:
+            from web_frontend.backend.agent_c.report_view import preferred_png_for_plot_type
+
+            preferred = preferred_png_for_plot_type(
+                output_root, plot_type, fallback=preview if preview else None
+            )
+            if preferred and preferred.is_file():
+                preview = preferred
+                if st not in {"rendered", "copied_existing"}:
+                    st = "copied_existing"
+        if st not in {"rendered", "copied_existing"} or preview is None or not preview.is_file():
             cap = (fig.get("caption") or "").strip()
             if cap:
                 yield {"delta": cap + "\n\n"}
@@ -277,11 +289,11 @@ def stream_session_agent_c(
                 yield {"delta": f"- {fig.get('figure_id')}: {fig['missing_reason']}\n"}
             continue
         try:
-            rel = str(Path(png).resolve().relative_to(output_root.resolve())).replace("\\", "/")
+            rel = str(preview.resolve().relative_to(output_root.resolve())).replace("\\", "/")
         except ValueError:
-            rel = str(png)
-        # 聊天区只预览 C 新渲染图；B 侧已有 PNG 仅在报告/图库中展示
-        if st == "rendered" and rel.startswith("agent_c_output/figures/"):
+            rel = str(preview)
+        # 预览用当前生效的那张，和报告、右侧文件里保存的图一致。
+        if st in {"rendered", "copied_existing"} and preview.is_file():
             visual.append({"kind": "agent_c", "file": rel})
             yield {"chat_image": {"file": rel, "kind": "agent_c"}}
         cap = (fig.get("caption") or "").strip()

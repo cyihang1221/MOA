@@ -55,6 +55,31 @@ class LiteraturePlotRetrievalTest(unittest.TestCase):
             self.assertIn("volcano-demo", ids)
             self.assertNotIn("centwave", ids)
 
+    def test_preferred_mixomics_skill_ranks_for_pca(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            base = root / "MassOmics-Agent" / "MassOmics-Agent" / "skills"
+            self._write_skill(
+                base,
+                ("software-params", "mixomics", "rohart-2017-mixomics"),
+                "---\nname: mixOmics\ndescription: PCA PLS-DA plotIndiv\n---\n"
+                "## 出图\nplotIndiv 展示 PCA 与 PLS-DA 得分。\n",
+            )
+            self._write_skill(
+                base,
+                ("lcms-untargeted", "unrelated-network"),
+                "---\nname: network\ndescription: GNPS cosine\n---\n## 出图清单\ncosine\n",
+            )
+            ranked = rank_skills_for_plot(
+                plot_type="pca",
+                goal_text="非靶向代谢组 PCA",
+                project_root=root,
+                max_skills=3,
+            )
+            ids = [s["skill_id"] for s in ranked]
+            self.assertEqual(ids[0], "rohart-2017-mixomics")
+            self.assertNotIn("unrelated-network", ids)
+
     def test_sticky_skill_boosted(self) -> None:
         with TemporaryDirectory() as tmp:
             root = Path(tmp)

@@ -202,6 +202,8 @@ def route_chat_action(
 
     if st in {WAITING_INPUT, PLANNING, FAILED}:
         if is_plan_confirmation(user_message):
+            if st == FAILED and has_locked_plan:
+                return "execute"
             return "chat"
         if intent == "c_report":
             return "report"

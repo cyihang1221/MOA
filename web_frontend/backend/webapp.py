@@ -129,7 +129,7 @@ try:
         _logger.info("vl-convert-python 可用 (python=%s)", sys.executable)
     else:
         _logger.warning(
-            "vl-convert-python 未安装 (python=%s)，plot_edit 将回退 matplotlib 导出 PNG",
+            "vl-convert-python 未安装 (python=%s)。得分图、火山图、VIP、热图和 KEGG 的终稿仍由 R 绘制；没有专用渲染器的语义图无法用 Vega 导出 PNG",
             sys.executable,
         )
 except Exception as exc:
@@ -1606,7 +1606,7 @@ def preview_semantic_plot(session_id: str, req: SemanticPlotSaveRequest):
 
 @app.post("/api/sessions/{session_id}/plot-edits/agent")
 def agent_plot_edit(session_id: str, req: PlotEditAgentRequest):
-    """Agent 解析自然语言改图要求，并导出语义一致的 Vega-Lite/SVG/PNG。"""
+    """Agent 解析自然语言改图要求。终稿按图类型用 R 或 matplotlib 绘制，并保留 Vega-Lite 预览配置。"""
     from web_frontend.backend.plot_edit_service import PlotEditError, agent_apply_plot_edit
     from web_frontend.backend.literature_plot_knowledge import session_goal_text
 

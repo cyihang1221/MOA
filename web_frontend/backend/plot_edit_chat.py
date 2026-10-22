@@ -5,12 +5,65 @@ import re
 from pathlib import Path
 from typing import Any, Iterator
 
+from web_frontend.backend.plot_edit_registry import PLOT_SPECS, PLOT_STEM_ALIASES, plot_type_from_stem
+from web_frontend.backend.plot_parameter_record import parameter_record_line
 from web_frontend.backend.plot_edit_service import (
     PlotEditError,
     agent_apply_plot_edit,
     resolve_chat_plot_edit_tasks,
 )
+from web_frontend.backend.plot_versioning import canonical_plot_base
 from web_frontend.backend.session_storage import session_work_dir
+
+_GGPLOT2_TYPES = frozenset(
+    {"pca", "plsda", "volcano", "vip_bar", "kegg_bubble", "kegg_dotplot", "kegg_barplot"}
+)
+_MATPLOTLIB_TYPES = frozenset(
+    {
+        "network_topology",
+        "family_size",
+        "degree_hist",
+        "cosine_hist",
+        "constituent_bar",
+        "relative_abundance_heatmap",
+        "hca_heatmap",
+        "correlation_heatmap",
+        "bioactivity_bar",
+        "sensory_scores",
+        "plsda_permutation",
+        "paper_fig2_composite",
+        "paper_fig5_composite",
+    }
+)
+
+
+def plot_type_for_edit_rel(source_rel: str) -> str:
+    """从文件名认出图类型。报告编号图如 Figure_2__pca_plot 也认。"""
+    stem = canonical_plot_base(Path(source_rel).stem) or Path(source_rel).stem
+    found = plot_type_from_stem(stem)
+    if found:
+        return found
+    candidates = [(spec.stem_prefix, spec.plot_type) for spec in PLOT_SPECS]
+    candidates.extend(PLOT_STEM_ALIASES.items())
+    candidates.sort(key=lambda item: len(item[0]), reverse=True)
+    for prefix, plot_type in candidates:
+        if stem == prefix or stem.endswith("_" + prefix):
+            return plot_type
+    return ""
+
+
+def redraw_engine_phrase(plot_type: str | None) -> str:
+    """聊天进度里写实际出图软件。有 Rscript 时 R 图不写成 matplotlib。"""
+    kind = str(plot_type or "")
+    if kind == "heatmap_vip" or kind in _GGPLOT2_TYPES:
+        from web_frontend.backend.r_plot_backend import find_rscript
+
+        if find_rscript():
+            return "R（pheatmap）" if kind == "heatmap_vip" else "R（ggplot2）"
+        return "matplotlib"
+    if kind in _MATPLOTLIB_TYPES:
+        return "matplotlib"
+    return ""
 
 
 def run_chat_plot_edit(
@@ -105,6 +158,7 @@ def stream_chat_plot_edit_deltas(
     score_style: str | None = None,
 ) -> Iterator[dict[str, Any]]:
     yield {"delta": "**改图模式**：正在解析你的要求，并对照知识库文献改图…\n\n"}
+    project_root = Path(project_root)
     output_root = session_work_dir(project_root, storage_slug)
     try:
         tasks, plots = resolve_chat_plot_edit_tasks(
@@ -123,7 +177,9 @@ def stream_chat_plot_edit_deltas(
             plot_name = source_rel.split("/")[-1]
             prefix = f"**[{index}/{len(tasks)}]** " if len(tasks) > 1 else ""
             yield {"delta": f"{prefix}目标：`{plot_name}`\n\n"}
-            yield {"delta": "正在检索文献作图知识并重绘（matplotlib）…\n\n"}
+            engine = redraw_engine_phrase(plot_type_for_edit_rel(source_rel))
+            engine_bit = f"（{engine}）" if engine else ""
+            yield {"delta": f"正在检索文献作图知识并重绘{engine_bit}…\n\n"}
             instruction = _instruction_for_redraw(instruction, score_style)
             result = agent_apply_plot_edit(
                 project_root=project_root,
@@ -143,6 +199,11 @@ def stream_chat_plot_edit_deltas(
             style_used = str(((result.get("plot_config") or {}).get("data") or {}).get("score_style") or "")
             if style_used:
                 summary_parts.append("风格 → " + ("ggplot 分组椭圆" if style_used.startswith("ggplot") else "SIMCA"))
+            edit_kind = str(result.get("edit_kind") or "")
+            if edit_kind == "analysis_param":
+                summary_parts.append("分析参数已按原表重算筛选并重绘")
+            elif edit_kind == "style":
+                summary_parts.append("样式已更新并重绘")
             if patch.get("title"):
                 summary_parts.append(f"标题 → {patch['title']}")
             if patch.get("palette"):
@@ -171,6 +232,7 @@ def stream_chat_plot_edit_deltas(
                     f"✅ {prefix}完成：**{new_name}**（`{new_rel}`）\n"
                     f"- {summary}{extra}\n"
                     f"{lit_line}"
+                    f"{parameter_record_line(result.get('parameter_record') if isinstance(result.get('parameter_record'), dict) else None)}"
                     f"{warn_lines}"
                     f"- 已设为当前生效版本（连续改图将基于此图）\n"
                     + (

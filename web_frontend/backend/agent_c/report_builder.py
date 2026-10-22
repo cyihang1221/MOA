@@ -288,6 +288,31 @@ def build_report_markdown(
         or ("见方案工作流；本报告不补充未在方案中出现的工具参数。" if zh else "See the planned workflow. No extra tool parameters are invented here."),
         "",
     ]
+    if zh:
+        redrawn = {
+            str(fig.get("plot_type") or "")
+            for fig in figures
+            if str(fig.get("renderer") or "") == "r" or isinstance(fig.get("parameter_record"), dict)
+        }
+        method_bits: list[str] = []
+        if redrawn & {"pca", "plsda"}:
+            method_bits.append(
+                "可视化步骤重绘的 PCA 与 PLS-DA 使用 ggplot2，坐标来自已有得分表，不重新拟合模型。"
+                "ggplot 是按组填充椭圆；simca 是灰网格加全体一个 Hotelling T² 椭圆，只是版式，不是 SIMCA 软件。"
+            )
+        ggplot_bits: list[str] = []
+        if "volcano" in redrawn:
+            ggplot_bits.append("火山图")
+        if "vip_bar" in redrawn:
+            ggplot_bits.append("VIP 柱图")
+        if redrawn & {"kegg_bubble", "kegg_dotplot", "kegg_barplot"}:
+            ggplot_bits.append("KEGG 富集图")
+        if ggplot_bits:
+            method_bits.append(f"{'、'.join(ggplot_bits)}由 R 的 ggplot2 绘制。")
+        if "heatmap_vip" in redrawn:
+            method_bits.append("VIP 热图由 R 的 pheatmap 绘制。")
+        if method_bits:
+            methods_lines[2:2] = [" ".join(method_bits), ""]
 
     workflow_lines = [f"## {'Analysis Workflow' if not zh else '分析流程'}", ""]
     workflow = plan.get("workflow") or []

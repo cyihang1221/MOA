@@ -451,6 +451,72 @@ def _color_keys_for_job(
         return []
 
 
+_DISPLAYED_STYLE_KEYS = (
+    "score_style",
+    "show_sample_labels",
+    "show_grid",
+    "ellipse",
+    "legend",
+)
+
+
+def displayed_plot_config(results_root: Path, plot_type: str) -> dict[str, Any] | None:
+    """右侧文件优先展示的改图稿配置。报告图要和它画成同一张。"""
+    from web_frontend.backend.plot_edit_registry import get_plot_spec
+
+    spec = get_plot_spec(plot_type)
+    if spec is None or not results_root:
+        return None
+    path = Path(results_root) / "edited_plots" / f"{spec.stem_prefix}_intent.plot_config.json"
+    if not path.is_file():
+        return None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    return data if isinstance(data, dict) else None
+
+
+def align_score_figure_with_displayed_plot(
+    item: dict[str, Any],
+    results_root: Path,
+    metadata_csv: str | Path | None = None,
+) -> None:
+    """得分图跟右侧文件走同一套样式。
+
+    普通分组分析曾被都匀毛尖配方改成「Non-volatile PCA」并关掉样本名。
+    文件栏展示的是带样本名的 PCA Score Plot。这里让报告里重绘的那张沿用同一配置。
+    没有改图稿、但分组又不是论文五等级时，去掉论文标题和隐藏标签。
+    """
+    plot_type = str(item.get("plot_type") or "")
+    if plot_type not in {"pca", "plsda"}:
+        return
+    hint = dict(item.get("plot_config_hint") or {})
+    displayed = displayed_plot_config(results_root, plot_type)
+    if displayed:
+        for key in _DISPLAYED_STYLE_KEYS:
+            if key in displayed and displayed[key] is not None:
+                hint[key] = displayed[key]
+        shown = str(displayed.get("title") or "").strip()
+        if shown:
+            item["title"] = shown
+        item["plot_config_hint"] = hint
+        return
+
+    from web_frontend.backend.literature_figure_style import _TITLE_SUGGESTIONS
+    from web_frontend.backend.paper_plot_helpers import study_design_disclaimer
+
+    if not study_design_disclaimer(metadata_csv=metadata_csv):
+        return
+    suggestion = _TITLE_SUGGESTIONS.get(plot_type) or ""
+    title = str(item.get("title") or "")
+    if suggestion and "non-volatile" in title.lower():
+        item["title"] = suggestion
+    if hint.get("show_sample_labels") is False:
+        hint.pop("show_sample_labels", None)
+        item["plot_config_hint"] = hint
+
+
 def render_jobs(
     jobs: list[dict[str, Any]],
     *,
@@ -559,6 +625,7 @@ def render_jobs(
             rendered.append(item)
             continue
 
+        align_score_figure_with_displayed_plot(item, results_root, metadata_csv)
         hint = item.get("plot_config_hint") if isinstance(item.get("plot_config_hint"), dict) else {}
         config, style = build_initial_plot_config(
             plot_type=plot_type,
@@ -571,6 +638,7 @@ def render_jobs(
             weak_titles=[fig_id, plot_type, spec.default_title, item.get("stem") or ""],
             sticky_skill_ids=sticky_skill_ids,
             metadata_columns=metadata_columns,
+            use_ai_style=use_literature,
         )
         item["literature_style"] = {
             "source": style.get("source"),
@@ -664,8 +732,14 @@ def render_jobs(
                 except Exception:
                     pass
                 item["status"] = "rendered"
-                item["renderer"] = "matplotlib_publication"
-                item["plot_config"] = str(png_path.with_suffix(".plot_config.json"))
+                from web_frontend.backend.r_plot_backend import R_PLOT_TYPES
+
+                item["renderer"] = "r" if plot_type in R_PLOT_TYPES else "matplotlib_publication"
+                item["plot_config"] = str(png_path.with_name(f"{png_path.stem}.plot_config.json"))
+                if plot_type in R_PLOT_TYPES:
+                    from web_frontend.backend.plot_parameter_record import attach_parameter_record
+
+                    attach_parameter_record(png_path, item["plot_config"])
                 _attach_journal_export(item, png_path)
             else:
                 vega = build_vegalite_spec(
@@ -692,7 +766,11 @@ def render_jobs(
             else:
                 item["status"] = "render_failed"
                 item["missing_reason"] = str(exc)
-        item["caption"] = _build_caption(item, facts, language, metadata_csv=metadata_csv)
+        item["caption"] = _caption_with_record(
+            item,
+            _build_caption(item, facts, language, metadata_csv=metadata_csv),
+            png_path,
+        )
         if png_path.is_file():
             item["png"] = str(png_path)
             svg = png_path.with_suffix(".svg")
@@ -717,6 +795,21 @@ def _attach_journal_export(item: dict[str, Any], png_path: Path) -> None:
         item["journal_svg"] = str(journal_svg)
 
 
+def _caption_with_record(item: dict[str, Any], caption: str, png_path: Path) -> str:
+    """分子网络不改作图软件说明。其他图只有 C 写出参数记录时才补图注。"""
+    plot_type = str(item.get("plot_type") or "")
+    if plot_type == "network_topology" or not png_path.is_file():
+        return caption
+    from web_frontend.backend.plot_parameter_record import build_parameter_record, enrich_caption
+
+    record = build_parameter_record(png_path)
+    if not record:
+        return caption
+    item["parameter_record"] = record
+    detail = record.get("detail") if isinstance(record.get("detail"), dict) else {}
+    return enrich_caption(caption, plot_type, record, score_style=str(detail.get("score_style") or ""))
+
+
 def refresh_figure_captions(
     figures: list[dict[str, Any]],
     *,
@@ -726,12 +819,17 @@ def refresh_figure_captions(
     """叙事补全后重写图注，把统计清单和文件来源收进 caption。"""
     for fig in figures:
         facts = list(fig.get("facts") or [])
-        fig["caption"] = _build_caption(
+        png_path = Path(str(fig.get("png") or ""))
+        fig["caption"] = _caption_with_record(
             fig,
-            facts,
-            language,
-            metadata_csv=metadata_csv,
-            data_narrative=fig.get("data_narrative"),
+            _build_caption(
+                fig,
+                facts,
+                language,
+                metadata_csv=metadata_csv,
+                data_narrative=fig.get("data_narrative"),
+            ),
+            png_path,
         )
 
 

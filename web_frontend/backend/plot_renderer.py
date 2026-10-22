@@ -159,12 +159,23 @@ def render_score_plot_png(
     plot_type: str = "",
     metadata_csv: str | Path | None = None,
 ) -> Path:
-    """PCA / PLS-DA 得分图。默认 SIMCA；score_style=ggplot 时用分组填色椭圆。"""
+    """PCA / PLS-DA 得分图。有 R 时用 ggplot2，score_style 只作为参数。"""
     from web_frontend.backend.ggplot_score_plot import GGPLOT_STYLE, render_ggplot_score_png
     from web_frontend.backend.paper_plot_helpers import read_explained_variance
+    from web_frontend.backend.r_plot_backend import render_score_r
     from web_frontend.backend.simca_score_plot import render_simca_score_png
 
     inferred = plot_type or ("pca" if str(axis_names[0]).upper().startswith("PC") else "plsda")
+    try:
+        return render_score_r(
+            output_path=output_path,
+            data_dir=data_dir,
+            metadata_csv=metadata_csv,
+            plot_config=plot_config,
+            plot_type=inferred,
+        )
+    except FileNotFoundError:
+        pass
     try:
         ratios = read_explained_variance(Path(data_dir) if data_dir else Path(output_path).parent, inferred)
     except Exception:
@@ -290,6 +301,12 @@ def render_volcano_plot_png(
     plot_config: dict[str, Any],
     output_path: str | Path,
 ) -> Path:
+    from web_frontend.backend.r_plot_backend import render_volcano_r
+
+    try:
+        return render_volcano_r(volcano_csv, plot_config, output_path)
+    except FileNotFoundError:
+        pass
     df = pd.read_csv(volcano_csv)
     required = {"log2FC", "neglog10p"}
     if not required.issubset(df.columns):
@@ -536,6 +553,10 @@ def _family_size_payload(nodes_csv: str | Path) -> tuple[list[str], list[int], l
         counts[fam] = counts.get(fam, 0) + 1
     n_singletons = counts.pop("singleton", 0)
     sorted_fams = sorted(counts.items(), key=lambda x: x[1], reverse=True)
+    # 每个家族都只有 1 个节点时，不要画几十根高度为 1 的柱，再把尾巴加成一根高柱。
+    if sorted_fams and all(size == 1 for _, size in sorted_fams):
+        n = len(sorted_fams) + n_singletons
+        return [f"{n} singleton families"], [n], ["#bdbdbd"]
     labels, sizes, colors = [], [], []
     for i, (fam, size) in enumerate(sorted_fams):
         labels.append(fam)
@@ -547,10 +568,16 @@ def _family_size_payload(nodes_csv: str | Path) -> tuple[list[str], list[int], l
         colors.append("#cccccc")
     max_display = 30
     if len(sizes) > max_display:
-        others = sum(sizes[max_display:])
-        labels = labels[:max_display] + [f"others ({len(sizes) - max_display} families)"]
-        sizes = sizes[:max_display] + [others]
-        colors = colors[:max_display] + ["#999999"]
+        head = max_display - 1
+        tail = sizes[head:]
+        if tail and all(size == 1 for size in tail):
+            labels = labels[:head] + [f"{len(tail)} singleton families"]
+            sizes = sizes[:head] + [len(tail)]
+            colors = colors[:head] + ["#bdbdbd"]
+        else:
+            labels = labels[:max_display]
+            sizes = sizes[:max_display]
+            colors = colors[:max_display]
     return labels, sizes, colors
 
 
@@ -567,6 +594,25 @@ def render_family_size_png(
     fs = plot_config.get("font_size") or {}
     fig_w, fig_h = plot_config.get("figure_size") or [10.0, 5.0]
     fig, ax = plt.subplots(figsize=(float(fig_w), float(fig_h)), facecolor="white")
+    if len(labels) == 1 and "singleton families" in labels[0]:
+        # 家族大小分布：横轴是家族里有几个节点，纵轴是有多少个这样的家族。
+        n_families = int(sizes[0])
+        ax.bar([1], [n_families], width=0.45, color="#3C5488", edgecolor="white")
+        ax.text(1, n_families, str(n_families), ha="center", va="bottom", fontproperties=_cjk(fs.get("label", 9)))
+        ax.set_xlim(0.2, 3.2)
+        ax.set_xticks([1, 2, 3])
+        ax.set_xlabel("Nodes in a family", fontproperties=_cjk(fs.get("axis", 12)))
+        ax.set_ylabel("Number of families", fontproperties=_cjk(fs.get("axis", 12)))
+        title = str(plot_config.get("title") or "Molecular Family Size Distribution")
+        ax.set_title(f"{title}\nEvery family contains one node", fontproperties=_cjk(fs.get("title", 14), bold=True))
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        fig.tight_layout()
+        out = Path(output_path)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(out, dpi=300, bbox_inches="tight", facecolor="white")
+        plt.close(fig)
+        return out
     bars = ax.bar(range(len(labels)), sizes, color=colors, edgecolor="white", linewidth=0.5)
     for bar, val in zip(bars, sizes):
         if val > 0:
@@ -582,7 +628,10 @@ def render_family_size_png(
     ax.set_xticklabels(labels, rotation=45, ha="right", fontproperties=_cjk(fs.get("label", 8)))
     ax.set_ylabel("Number of Nodes", fontproperties=_cjk(fs.get("axis", 12)))
     ax.set_xlabel("Molecular Family", fontproperties=_cjk(fs.get("axis", 12)))
-    ax.set_title(plot_config.get("title", ""), fontproperties=_cjk(fs.get("title", 16), bold=True))
+    title = str(plot_config.get("title") or "Molecular Family Size Distribution")
+    if len(labels) == 1 and "singleton families" in labels[0]:
+        title = f"{title}\nEach family has 1 node"
+    ax.set_title(title, fontproperties=_cjk(fs.get("title", 16), bold=True))
     fig.tight_layout()
     out = Path(output_path)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -724,13 +773,19 @@ def render_vip_bar_png(
     plot_config: dict[str, Any],
     output_path: str | Path,
 ) -> Path:
-    """VIP 条形图：联结火山表按 log2FC 方向着色，并画 VIP 阈值线。"""
+    """VIP 条形图：有 R 时用 ggplot2，否则回退 matplotlib。"""
     from web_frontend.backend.paper_plot_helpers import (
         direction_from_log2fc,
         join_vip_volcano,
         show_grid_enabled,
         vip_threshold_from_config,
     )
+    from web_frontend.backend.r_plot_backend import render_vip_bar_r
+
+    try:
+        return render_vip_bar_r(data_dir, plot_config, output_path)
+    except FileNotFoundError:
+        pass
 
     frame = join_vip_volcano(data_dir)
     if "Feature" not in frame.columns or "VIP" not in frame.columns:
@@ -796,7 +851,14 @@ def render_heatmap_vip_png(
     *,
     metadata_csv: str | Path | None = None,
 ) -> Path:
-    """VIP 热图：Z-score 发散色标、行列聚类树、顶部组别色条。"""
+    """VIP 热图：有 R 时用 pheatmap，否则回退 matplotlib。"""
+    from web_frontend.backend.r_plot_backend import render_heatmap_r
+
+    try:
+        return render_heatmap_r(data_dir, plot_config, output_path, metadata_csv)
+    except FileNotFoundError:
+        pass
+
     from matplotlib.gridspec import GridSpec
 
     from web_frontend.backend.agent_c.tea_paper_plots import _draw_clustered_heatmap
@@ -872,91 +934,216 @@ def render_heatmap_vip_png(
     return out
 
 
+_GROUP_COLORS = {
+    "BK": "#E64B35",
+    "DY": "#4DBBD5",
+    "QC": "#00A087",
+    "Control": "#4DBBD5",
+    "Case": "#E64B35",
+}
+_GROUP_EXTRA = ["#3C5488", "#F39B7F", "#8491B4", "#91D1C2", "#7E6148", "#DC0000"]
+
+
+def _group_color(name: str, index: int) -> str:
+    return _GROUP_COLORS.get(name) or _GROUP_EXTRA[index % len(_GROUP_EXTRA)]
+
+
+def _add_intensity_pie(ax, x: float, y: float, radius: float, fractions, colors) -> None:
+    """节点饼图：各组平均强度占比。单组占满时画实心圆，避免 360° 扇形消失。"""
+    from matplotlib.patches import Circle, Wedge
+
+    vals = np.asarray(list(fractions), dtype=float)
+    vals = np.where(np.isfinite(vals) & (vals > 0), vals, 0.0)
+    total = float(vals.sum())
+    if total <= 0 or radius <= 0:
+        ax.add_patch(Circle((x, y), radius, facecolor="#d9d9d9", edgecolor="#333333", linewidth=0.4, zorder=3))
+        return
+    vals = vals / total
+    if float(vals.max()) >= 0.995:
+        color = colors[int(np.argmax(vals))]
+        ax.add_patch(Circle((x, y), radius, facecolor=color, edgecolor="#333333", linewidth=0.45, zorder=3))
+        return
+    theta = 90.0
+    for frac, color in zip(vals, colors):
+        if frac <= 0.004:
+            continue
+        sweep = 360.0 * float(frac)
+        ax.add_patch(
+            Wedge(
+                (x, y),
+                radius,
+                theta - sweep,
+                theta,
+                facecolor=color,
+                edgecolor="white",
+                linewidth=0.3,
+                zorder=3,
+            )
+        )
+        theta -= sweep
+    ax.add_patch(Circle((x, y), radius, fill=False, edgecolor="#333333", linewidth=0.45, zorder=4))
+
+
 def render_network_topology_png(
     data_dir: str | Path,
     plot_config: dict[str, Any],
     output_path: str | Path,
 ) -> Path:
-    """分子网络：隐藏孤立点，边宽按 cosine，节点按类别/家族着色。"""
-    from web_frontend.backend.paper_plot_helpers import group_color, hide_isolates_enabled
+    """期刊式分子网络：饼图表示各组强度占比，面积表示强度，边按余弦。没有边时按 m/z 排列，不画圆环。"""
+    from matplotlib.lines import Line2D
+    from matplotlib.patches import Patch
+
+    from web_frontend.backend.paper_plot_helpers import hide_isolates_enabled
     from web_frontend.backend.plot_edit_registry import resolve_plot_data_file
-    from web_frontend.backend.semantic_plot_renderer import (
-        _join_topology_node_attrs,
-        _network_layout_frame,
-    )
 
     root = Path(data_dir)
-    layout = _join_topology_node_attrs(root, _network_layout_frame(root, plot_config))
-    n_total = n_iso = 0
     nodes_path = resolve_plot_data_file(root, "network_nodes.csv")
-    if nodes_path is not None:
-        raw = pd.read_csv(nodes_path)
-        n_total = len(raw)
-        if "degree" in raw.columns:
-            n_iso = int((pd.to_numeric(raw["degree"], errors="coerce").fillna(0) <= 0).sum())
-    if hide_isolates_enabled(plot_config) and "degree" in layout.columns:
-        connected = layout[pd.to_numeric(layout["degree"], errors="coerce").fillna(0) > 0]
-        if len(connected) >= 3:
-            layout = connected
-    pos = {str(row["node_id"]): (float(row["x"]), float(row["y"])) for _, row in layout.iterrows()}
-    color_by = str(plot_config.get("color_by") or "family").strip()
-    if color_by in {"molecular_family", "Family"}:
-        color_by = "family"
-    if color_by == "family" and "family" not in layout.columns and "molecular_family" in layout.columns:
-        layout = layout.rename(columns={"molecular_family": "family"})
-        color_by = "family"
-    if color_by not in layout.columns:
-        color_by = next((c for c in ("chemical_category", "family", "molecular_family") if c in layout.columns), None)
+    if nodes_path is None:
+        raise FileNotFoundError("缺少 network_nodes.csv / fbmn_nodes.csv")
+    nodes = pd.read_csv(nodes_path)
+    id_col = next((c for c in ("feature_id", "node_id", "id") if c in nodes.columns), None)
+    if id_col is None:
+        raise ValueError("节点表缺少 feature_id")
+    nodes = nodes.copy()
+    nodes["_id"] = nodes[id_col].astype(str)
+    mz_col = next((c for c in ("precursor_mz", "mz", "mz_med") if c in nodes.columns), None)
+    if mz_col:
+        nodes["_mz"] = pd.to_numeric(nodes[mz_col], errors="coerce")
+    else:
+        nodes["_mz"] = np.arange(len(nodes), dtype=float)
+    group_cols = [c for c in nodes.columns if str(c).startswith("mean_")]
+    groups = [str(c)[len("mean_") :] for c in group_cols]
     palette = plot_config.get("palette") or {}
-    groups = []
-    if color_by:
-        groups = list(dict.fromkeys("unannotated" if pd.isna(v) else str(v) for v in layout[color_by].tolist()))
-    fs = plot_config.get("font_size") or {}
-    fig_w, fig_h = plot_config.get("figure_size") or [8.5, 7.5]
-    fig, ax = plt.subplots(figsize=(float(fig_w), float(fig_h)), facecolor="white")
+    colors = [palette.get(g) or _group_color(g, i) for i, g in enumerate(groups)]
+    means = (
+        nodes[group_cols].apply(pd.to_numeric, errors="coerce").fillna(0.0).clip(lower=0.0)
+        if group_cols
+        else pd.DataFrame(np.ones((len(nodes), 1)), index=nodes.index)
+    )
+    if not group_cols:
+        groups, colors = ["feature"], ["#3C5488"]
+    totals = means.sum(axis=1).to_numpy(dtype=float)
+    logs = np.log10(totals + 1.0)
+    log_span = float(logs.max() - logs.min()) if len(logs) else 1.0
+    if log_span < 1e-9:
+        log_span = 1.0
+    norm = (logs - logs.min()) / log_span
+
+    edges = pd.DataFrame(columns=["source", "target", "cosine"])
     edges_path = resolve_plot_data_file(root, "network_edges.csv")
     if edges_path is not None:
-        edges = pd.read_csv(edges_path)
-        if {"source", "target"}.issubset(edges.columns):
-            for _, row in edges.iterrows():
-                p1 = pos.get(str(row["source"]))
-                p2 = pos.get(str(row["target"]))
-                if not p1 or not p2:
-                    continue
-                cosine = row["cosine"] if "cosine" in edges.columns else 0.7
-                try:
-                    width = max(0.3, min(2.4, float(cosine) * 2.2))
-                except (TypeError, ValueError):
-                    width = 0.6
-                ax.plot([p1[0], p2[0]], [p1[1], p2[1]], color="#c8c8c8", lw=width, zorder=1)
-    xs = layout["x"].to_numpy(dtype=float)
-    ys = layout["y"].to_numpy(dtype=float)
-    sizes = np.full(len(layout), 28.0)
-    if "degree" in layout.columns:
-        deg = pd.to_numeric(layout["degree"], errors="coerce").fillna(1.0).to_numpy(dtype=float)
-        sizes = np.clip(deg * 18 + 16, 16, 160)
-    node_colors = []
-    for i, (_, row) in enumerate(layout.iterrows()):
-        if color_by:
-            raw_val = row.get(color_by)
-            key = "unannotated" if pd.isna(raw_val) else str(raw_val)
-            node_colors.append(group_color(key, palette, groups.index(key) if key in groups else i))
-        else:
-            node_colors.append("#3C5488")
-    ax.scatter(xs, ys, s=sizes, c=node_colors, edgecolors="white", linewidths=0.35, zorder=2)
-    ax.set_xticks([])
-    ax.set_yticks([])
-    for spine in ax.spines.values():
-        spine.set_visible(False)
+        loaded = pd.read_csv(edges_path)
+        if {"source", "target"}.issubset(loaded.columns) and len(loaded):
+            edges = loaded.copy()
+            edges["source"] = edges["source"].astype(str)
+            edges["target"] = edges["target"].astype(str)
+    keep_ids = set(nodes["_id"])
+    if len(edges) and hide_isolates_enabled(plot_config):
+        linked = set(edges["source"]).union(set(edges["target"]))
+        linked &= keep_ids
+        if len(linked) >= 3:
+            nodes = nodes[nodes["_id"].isin(linked)].copy()
+            means = means.loc[nodes.index]
+            totals = means.sum(axis=1).to_numpy(dtype=float)
+            logs = np.log10(totals + 1.0)
+            log_span = float(max(logs.max() - logs.min(), 1e-9))
+            norm = (logs - logs.min()) / log_span
+            keep_ids = set(nodes["_id"])
+            edges = edges[edges["source"].isin(keep_ids) & edges["target"].isin(keep_ids)]
+    n_nodes = len(nodes)
+    n_edges = len(edges)
+    n_hidden = 0
+    if nodes_path is not None:
+        n_hidden = max(0, sum(1 for _ in open(nodes_path)) - 1 - n_nodes)
+
+    pos: dict[str, tuple[float, float]] = {}
+    ordered = nodes.sort_values("_mz", kind="mergesort")
+    if n_edges == 0:
+        ncol = 8 if n_nodes > 12 else max(1, int(np.ceil(np.sqrt(n_nodes))))
+        for i, (_, row) in enumerate(ordered.iterrows()):
+            pos[row["_id"]] = (float(i % ncol), float(-(i // ncol) * 1.35))
+        radius_unit = 0.34
+    else:
+        import networkx as nx
+
+        graph = nx.Graph()
+        graph.add_nodes_from(nodes["_id"])
+        for _, row in edges.iterrows():
+            graph.add_edge(str(row["source"]), str(row["target"]))
+        raw_pos = nx.spring_layout(graph, seed=42, k=1.6 / max(n_nodes ** 0.5, 1), iterations=80)
+        pos = {node: (float(xy[0]), float(xy[1])) for node, xy in raw_pos.items()}
+        span = max(
+            max(p[0] for p in pos.values()) - min(p[0] for p in pos.values()),
+            max(p[1] for p in pos.values()) - min(p[1] for p in pos.values()),
+            1e-6,
+        )
+        radius_unit = 0.055 * span
+
+    fig_w, fig_h = plot_config.get("figure_size") or [9.2, 7.2]
+    fig, ax = plt.subplots(figsize=(float(fig_w), float(fig_h)), facecolor="white")
+    for _, row in edges.iterrows():
+        p1 = pos.get(str(row["source"]))
+        p2 = pos.get(str(row["target"]))
+        if not p1 or not p2:
+            continue
+        try:
+            cosine = float(row["cosine"]) if "cosine" in edges.columns else 0.7
+        except (TypeError, ValueError):
+            cosine = 0.7
+        width = 0.6 + max(0.0, min(cosine, 1.0)) * 1.8
+        ax.plot([p1[0], p2[0]], [p1[1], p2[1]], color="#bdbdbd", lw=width, solid_capstyle="round", zorder=1)
+    id_to_i = {node_id: i for i, node_id in enumerate(nodes["_id"])}
+    for _, row in nodes.iterrows():
+        node_id = row["_id"]
+        xy = pos.get(node_id)
+        if xy is None:
+            continue
+        i = id_to_i[node_id]
+        radius = radius_unit * (0.62 + 0.55 * float(norm[list(nodes.index).index(row.name)]))
+        fracs = means.loc[row.name].to_numpy(dtype=float)
+        _add_intensity_pie(ax, xy[0], xy[1], radius, fracs, colors)
+        if n_edges == 0 and pd.notna(row["_mz"]):
+            ax.text(
+                xy[0],
+                xy[1] - radius - 0.10,
+                f"{float(row['_mz']):.1f}",
+                ha="center",
+                va="top",
+                fontsize=6,
+                color="#555555",
+                zorder=5,
+            )
+    xs = [p[0] for p in pos.values()] or [0.0]
+    ys = [p[1] for p in pos.values()] or [0.0]
+    pad = 0.72 if n_edges == 0 else radius_unit * 3
+    ax.set_xlim(min(xs) - pad, max(xs) + pad)
+    ax.set_ylim(min(ys) - pad * (1.15 if n_edges == 0 else 1), max(ys) + pad * 0.85)
+    ax.set_aspect("equal")
+    ax.axis("off")
     title = str(plot_config.get("title") or "Molecular network")
-    if n_total:
-        title = f"{title}\nIsolates hidden: {n_iso}/{n_total}"
-    ax.set_title(title, fontproperties=_cjk(fs.get("title", 14), bold=True))
-    ax.set_aspect("equal", adjustable="datalim")
+    ax.set_title(title, loc="left", fontproperties=_cjk(13, bold=True), pad=8)
+    note = f"{n_nodes} nodes, {n_edges} edges"
+    if n_hidden:
+        note += f"; {n_hidden} isolates not shown"
+    if n_edges == 0:
+        note += ". No pair passed the similarity cut-off; nodes are ordered by precursor m/z"
+    note += ". Pie: share of mean intensity. Area scales with log intensity."
+    ax.text(0.0, -0.04, note, transform=ax.transAxes, ha="left", va="top", fontsize=8, color="#444444")
+    handles = [Patch(facecolor=color, edgecolor="#333333", label=group) for group, color in zip(groups, colors)]
+    if n_edges:
+        handles.append(Line2D([0], [0], color="#bdbdbd", lw=2.0, label="spectral edge"))
+    ax.legend(
+        handles=handles,
+        loc="center left",
+        bbox_to_anchor=(1.01, 0.5),
+        frameon=False,
+        prop=_cjk(9),
+        title="Group",
+        title_fontproperties=_cjk(9, bold=True),
+    )
     fig.tight_layout()
     out = Path(output_path)
     out.parent.mkdir(parents=True, exist_ok=True)
     _savefig(fig, out, plot_type="network_topology")
     plt.close(fig)
     return out
-

@@ -177,6 +177,7 @@ def ensure_default_plot_configs(
                 goal_text=goal_text,
                 project_root=Path(project_root) if project_root else None,
                 use_literature=use_literature,
+                use_ai_style=use_literature,
             )
         try:
             config["source_rel"] = png.relative_to(root).as_posix()
@@ -238,6 +239,7 @@ def ensure_default_plot_configs(
                     goal_text=goal_text,
                     project_root=Path(project_root) if project_root else None,
                     use_literature=use_literature,
+                    use_ai_style=use_literature,
                 )
                 config["source_rel"] = vip_png.name
                 vega_spec = build_vegalite_spec(
@@ -697,6 +699,12 @@ def _render_and_build_echarts(
         )
         return {}
 
+    if plot_type in {"kegg_bubble", "kegg_dotplot", "kegg_barplot"}:
+        from web_frontend.backend.r_plot_backend import render_kegg_r
+
+        render_kegg_r(data_dir, plot_config, output_path, plot_type)
+        return {}
+
     if plot_type == "network_topology":
         render_network_topology_png(data_dir, plot_config, output_path)
         return {}
@@ -873,6 +881,16 @@ def apply_plot_config(
     if base:
         write_current_pointer(output_root, base, rel_png)
 
+    parameter_record = None
+    try:
+        saved = json.loads(config_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        saved = None
+    if isinstance(saved, dict) and isinstance(saved.get("parameter_record"), dict):
+        parameter_record = saved["parameter_record"]
+        merged = dict(merged)
+        merged["parameter_record"] = parameter_record
+
     result = {
         "file": {
             "name": rel_png,
@@ -893,7 +911,14 @@ def apply_plot_config(
         "plot_base": base,
         "plot_type": plot_type,
         "config_diff": config_diff,
+        "parameter_record": parameter_record,
     }
+    pdf_path = target_png.with_suffix(".pdf")
+    if pdf_path.is_file():
+        result["pdf"] = {
+            "name": pdf_path.relative_to(output_root).as_posix(),
+            "path": normalize_display_path(pdf_path),
+        }
     if svg_path is not None:
         result["svg"] = {
             "name": svg_path.relative_to(output_root).as_posix(),
@@ -1035,7 +1060,7 @@ def agent_apply_plot_edit(
             metadata_columns=metadata_columns,
             literature_context=literature_context or None,
         )
-        from web_frontend.backend.plot_theme import merge_plot_config, sanitize_volcano_plot_patch
+        from web_frontend.backend.plot_theme import sanitize_volcano_plot_patch
 
         soft_patch, soft_warn = suggest_soft_style_patch(
             plot_type,
@@ -1046,9 +1071,22 @@ def agent_apply_plot_edit(
         )
         if plot_type == "volcano":
             soft_patch = sanitize_volcano_plot_patch(soft_patch)
-        if soft_patch:
-            patch = merge_plot_config(current, {**soft_patch, **patch})
-        visual_warnings: list[str] = list(soft_warn)
+        from web_frontend.backend.plot_edit_contract import guard_nl_edit
+
+        contract = guard_nl_edit(
+            plot_type,
+            instruction,
+            model_patch=patch,
+            literature_patch=soft_patch,
+        )
+        if contract.get("blocked"):
+            raise PlotEditError(str(contract.get("message") or "该修改需要重新分析"))
+        patch = dict(contract.get("patch") or {})
+        if plot_type == "volcano":
+            patch = sanitize_volcano_plot_patch(patch)
+        visual_warnings: list[str] = list(contract.get("warnings") or [])
+        if contract.get("used_literature"):
+            visual_warnings.extend(list(soft_warn))
 
         validation = validate_plot_patch(
             patch=patch,
@@ -1062,6 +1100,7 @@ def agent_apply_plot_edit(
         if validation.get("errors"):
             raise PlotEditError("；".join(validation["errors"]))
         accepted_patch = dict(validation.get("accepted_patch") or patch)
+        accepted_patch["edit_kind"] = str(contract.get("edit_kind") or "")
         if plot_type in {"pca", "plsda"} and score_style:
             asked = str(score_style).strip().lower()
             if asked in {"simca", "ggplot", "ggplot2"}:
@@ -1080,6 +1119,7 @@ def agent_apply_plot_edit(
             overwrite_intent=True,
         )
         result["agent_patch"] = accepted_patch
+        result["edit_kind"] = str(contract.get("edit_kind") or "")
         result["edit_mode"] = "semantic"
         result["visual_ir"] = figure_ir
         result["evidence_refs"] = figure_ir.get("evidence_refs") or []

@@ -4,6 +4,7 @@ from __future__ import annotations
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from web_frontend.backend.agent_b.plan_normalize import normalize_plan_for_b
 from web_frontend.backend.agent_b.skill_param_inject import apply_skill_parameters, parse_skill_parameters
@@ -167,7 +168,11 @@ class SkillParamInjectTest(unittest.TestCase):
             ],
         }
         normalized, _ = normalize_plan_for_b(plan, CATALOG)
-        apply_skill_parameters(normalized, CATALOG, sidecar=params)
+        with patch(
+            "web_frontend.backend.agent_b.skill_param_inject.mzmine_headless_ready",
+            return_value=(True, "test"),
+        ):
+            apply_skill_parameters(normalized, CATALOG, sidecar=params)
         tools = [step["tools"][0] for step in normalized["steps"] if step["tools"][0] != "kNN"]
         self.assertIn("MZMine-Pipeline", tools)
         stats = next(s for s in normalized["steps"] if "mixOmics" in s["tools"])
@@ -180,6 +185,33 @@ class SkillParamInjectTest(unittest.TestCase):
         )
         self.assertTrue(params.get("rewrite_preprocess"))
         self.assertNotIn("n_permutations", slot)
+
+    def test_mzmine4_without_user_file_keeps_xcms(self) -> None:
+        plan = {
+            "goal": "复现都匀毛尖",
+            "steps": [
+                {
+                    "step_number": 1,
+                    "description": "peak picking",
+                    "tools": ["XCMS-Centwave"],
+                    "stage": "feature_detection",
+                    "input_filename": "mzml",
+                    "output_filename": "features",
+                }
+            ],
+        }
+        normalized, _ = normalize_plan_for_b(plan, CATALOG)
+        with patch(
+            "web_frontend.backend.agent_b.skill_param_inject.mzmine_headless_ready",
+            return_value=(False, "当前 MZmine 是 4.x，需要 .mzuser"),
+        ):
+            warnings = apply_skill_parameters(
+                normalized,
+                CATALOG,
+                sidecar={"prefer_preprocess": "mzmine", "rewrite_preprocess": True},
+            )
+        self.assertEqual(normalized["steps"][0]["tools"], ["XCMS-Centwave"])
+        self.assertTrue(any("R 作图" in w for w in warnings))
 
     def test_missing_mzmine_records_substitution(self) -> None:
         catalog = {

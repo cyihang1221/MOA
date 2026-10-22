@@ -112,7 +112,8 @@ def _build_prompt(
         meta_hint = """
 火山图规范：
 - 禁止 color_by / palette / cluster（火山按上/下调/不显著三色着色）
-- 不要删除或清空 thresholds；默认 p=0.05、|log2FC|>=1，阈值线由系统绘制
+- 用户没有写明新的 p、FDR 或 log2FC 时，不要输出 thresholds
+- 用户写明了新阈值时，只输出这个数字，不要改用文献里的阈值
 - 文献配色只改 colors.upregulated / downregulated / nonsignificant / threshold_color
 """
     lit_hint = ""
@@ -128,7 +129,7 @@ def _build_prompt(
         if looks_like_literature_plot_restyle(instruction):
             follow_lit = """
 用户明确要求按文献/知识库/论文风格改图：请吸收上方文献里的配色、图例位置、置信椭圆、标题措辞和点大小；
-不要改统计阈值、不要发明 metadata 列。分组名必须用当前 palette 已有键。
+不要输出 thresholds、vip_threshold、fdr_cut、components，不要发明 metadata 列。分组名必须用当前 palette 已有键。
 """
     except Exception:
         follow_lit = ""
@@ -157,6 +158,8 @@ def _build_prompt(
 - 不要输出「已保存」「已改好」等完成声明
 - 不要输出 markdown 或解释文字
 - 若文献参考与用户指令冲突，以用户指令为准
+- 用户没写明新的 p、FDR、log2FC、VIP 或主成分时，不要输出这些字段
+- 用户要求换归一化、换模型或重跑统计时，不要编造新的统计结果，返回空对象即可
 """
 
 

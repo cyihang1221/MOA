@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from web_frontend.backend.literature_plot_knowledge import (
+    _SKILL_POOL_PLOT,
     _plot_terms_for_type,
     rank_skills_for_plot,
 )
@@ -46,6 +47,7 @@ _THRESHOLD_MENTION_RE = re.compile(
 )
 
 _JOURNAL_HINTS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("okabe_ito", ("okabe", "色盲", "色觉", "colorblind", "color-blind", "colour-blind", "color blind")),
     ("npg", ("npg", "nature", "ggsci")),
     ("aaas", ("aaas", "science")),
     ("lancet", ("lancet",)),
@@ -125,14 +127,26 @@ def _cards_from_structured_spec(
     quote_parts = [f"{k}={v}" for k, v in spec.items() if v is not None]
     quote = "; ".join(quote_parts)[:400]
     hints = _field_hints_from_text(quote)
-    for key in ("title", "color_by", "legend_position", "title_align", "journal"):
-        if spec.get(key):
+    for key in (
+        "title",
+        "color_by",
+        "legend_position",
+        "title_align",
+        "journal",
+        "font_size",
+        "colors",
+        "cmap",
+        "ellipse",
+        "hide_isolates",
+    ):
+        if spec.get(key) is not None and spec.get(key) != "":
             mapped = {
                 "title": "title",
                 "color_by": "color_by",
                 "legend_position": "legend.position",
                 "title_align": "title_align",
                 "journal": "palette",
+                "font_size": "font_size.title",
             }.get(key, key)
             if mapped not in hints:
                 hints.append(mapped)
@@ -173,6 +187,9 @@ def _cards_from_skill(skill: dict[str, Any], plot_type: str) -> list[dict[str, A
 
     for spec in _parse_yaml_figure_blocks(body, plot_type):
         cards.extend(_cards_from_structured_spec(skill, plot_type, spec))
+    if skill.get("skill_pool") == _SKILL_POOL_PLOT:
+        # 改图规范 Skill 只给结构化规格；逐行卡会挤掉论文 Skill 与语料图注。
+        return cards
 
     for i, line in enumerate(visual.splitlines()):
         line = line.strip()
@@ -336,6 +353,82 @@ def apply_data_contract_to_patch(
     return out, warnings
 
 
+_HEX_COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}(?:[0-9a-fA-F]{2})?$")
+_FONT_KEYS = ("title", "axis", "legend", "label")
+
+
+def _spec_bool(value: Any) -> bool | None:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str) and value.strip().lower() in {"true", "false"}:
+        return value.strip().lower() == "true"
+    return None
+
+
+def _apply_structured_spec(
+    patch: dict[str, Any],
+    spec: dict[str, Any],
+    plot_type: str,
+    applied: list[str],
+    seen: set[str],
+) -> None:
+    """Skill 的 yaml 出图规格只放行样式字段，阈值类键在这里不读。"""
+    title = str(spec.get("title") or "").strip()
+    if title and "title" not in seen:
+        patch["title"] = title
+        seen.add("title")
+        applied.append("title=structured")
+    align = str(spec.get("title_align") or "").strip()
+    if align in {"left", "center", "right"}:
+        patch["title_align"] = align
+        applied.append(f"title_align={align}")
+    pos = str(spec.get("legend_position") or "").strip()
+    if pos in {"left", "right", "top", "bottom"}:
+        patch.setdefault("legend", {})["position"] = pos
+        applied.append(f"legend.position={pos}")
+    font = spec.get("font_size")
+    if isinstance(font, dict):
+        sizes = {
+            key: int(font[key])
+            for key in _FONT_KEYS
+            if isinstance(font.get(key), (int, float)) and font[key] > 0
+        }
+        if sizes:
+            patch.setdefault("font_size", {}).update(sizes)
+            applied.append("font_size")
+    colors = spec.get("colors")
+    if isinstance(colors, dict):
+        valid = {
+            str(key): val.strip()
+            for key, val in colors.items()
+            if isinstance(val, str) and _HEX_COLOR_RE.fullmatch(val.strip())
+        }
+        if valid:
+            patch.setdefault("colors", {}).update(valid)
+            applied.append("colors=" + ",".join(sorted(valid)))
+    cmap = str(spec.get("cmap") or "").strip()
+    if cmap:
+        patch["cmap"] = cmap
+        applied.append(f"cmap={cmap}")
+    ellipse = _spec_bool(spec.get("ellipse"))
+    if ellipse is not None and plot_type in {"pca", "plsda"}:
+        patch["ellipse"] = ellipse
+        patch.setdefault("marks", {})["ellipse"] = ellipse
+        applied.append(f"ellipse={str(ellipse).lower()}")
+    isolates = _spec_bool(spec.get("hide_isolates"))
+    if isolates is not None and plot_type == "network_topology":
+        patch["hide_isolates"] = isolates
+        applied.append(f"hide_isolates={str(isolates).lower()}")
+    color_by = str(spec.get("color_by") or "").strip()
+    if color_by and plot_type in {"pca", "plsda"}:
+        patch["color_by"] = color_by
+        applied.append(f"color_by={color_by}")
+    journal = str(spec.get("journal") or "").strip()
+    if journal:
+        patch["_journal"] = journal
+        applied.append(f"palette={journal}")
+
+
 def build_style_patch_from_evidence(
     plot_type: str,
     cards: list[dict[str, Any]],
@@ -349,32 +442,18 @@ def build_style_patch_from_evidence(
     if not cards:
         return patch, applied, warnings
 
-    blob = "\n".join(str(c.get("quote") or "") for c in cards)
-    hints = {h for c in cards for h in (c.get("field_hints") or [])}
+    # 关键词启发式只读自由文本卡；结构化规格的 "k=v" 文本里有 sample、threshold_color 等词，
+    # 拿去匹配会误判 color_by=Sample 或误报"文献提及统计阈值"。
+    free_cards = [c for c in cards if not isinstance(c.get("structured"), dict)]
+    specs = [c["structured"] for c in cards if isinstance(c.get("structured"), dict)]
+    blob = "\n".join(str(c.get("quote") or "") for c in free_cards)
+    hints = {h for c in free_cards for h in (c.get("field_hints") or [])}
 
     for card in cards:
         hint = card.get("journal_hint")
         if hint and "_journal" not in patch:
             patch["_journal"] = str(hint)
             applied.append(f"palette={hint}")
-        spec = card.get("structured")
-        if not isinstance(spec, dict):
-            continue
-        if spec.get("title") and "title" not in patch:
-            patch["title"] = str(spec["title"])
-            applied.append("title=structured")
-        if spec.get("title_align"):
-            patch["title_align"] = str(spec["title_align"])
-            applied.append(f"title_align={spec['title_align']}")
-        if spec.get("legend_position"):
-            patch.setdefault("legend", {})["position"] = str(spec["legend_position"])
-            applied.append(f"legend.position={spec['legend_position']}")
-        if spec.get("color_by") and plot_type in {"pca", "plsda"}:
-            patch["color_by"] = str(spec["color_by"])
-            applied.append(f"color_by={spec['color_by']}")
-        if spec.get("journal"):
-            patch["_journal"] = str(spec["journal"])
-            applied.append(f"palette={spec['journal']}")
 
     journal = _detect_journal(blob)
     if journal and "_journal" not in patch:
@@ -418,15 +497,34 @@ def build_style_patch_from_evidence(
 
     if plot_type == "vip_bar":
         patch.setdefault("colors", {})["bar_color"] = "#3C5488"
+        patch.setdefault("colors", {})["upregulated"] = "#E64B35"
+        patch.setdefault("colors", {})["downregulated"] = "#4DBBD5"
         applied.append("colors.bar_color")
+
+    if plot_type == "heatmap_vip":
+        patch["cmap"] = "RdBu_r"
+        applied.append("cmap=RdBu_r")
+
+    if plot_type == "volcano":
+        patch.setdefault("colors", {})
+        patch["colors"].setdefault("upregulated", "#E64B35")
+        patch["colors"].setdefault("downregulated", "#4DBBD5")
+        patch["colors"].setdefault("nonsignificant", "#B0B0B0")
+        applied.append("volcano colors")
 
     if plot_type in {"pca", "plsda"} and re.search(r"椭圆|ellipse|置信", blob, re.IGNORECASE):
         patch["ellipse"] = True
         patch.setdefault("marks", {})["ellipse"] = True
         applied.append("ellipse")
 
+    seen: set[str] = set()
+    for spec in specs:
+        _apply_structured_spec(patch, spec, plot_type, applied, seen)
+
+    for banned in ("thresholds", "vip_threshold", "fdr_cut", "components", "p_stat"):
+        patch.pop(banned, None)
     if _THRESHOLD_MENTION_RE.search(blob):
-        warnings.append("文献提及统计阈值；未自动修改 thresholds（请在改图指令中显式说明）")
+        warnings.append("文献提及统计阈值；未写入绘图配置。要改阈值请在指令里写明数字。")
 
     if "cluster" in hints and plot_type in {"pca", "plsda"}:
         warnings.append("文献提及聚类着色；未自动改变着色维度（需用户确认）")

@@ -330,23 +330,21 @@ function preferOutputGalleryImage(a, b) {
   return aName.length <= bName.length ? a : b;
 }
 
-/** 聊天预览：pca_plot.png 与 pca_plot_intent*.png 归为同一底图（优先 intent） */
+/** 聊天预览：原图、报告图 Figure_N__ 与 intent 归成同一张，优先改图稿。 */
 function outputGalleryBaseKey(rel) {
-  const name = String(rel || "").split("/").pop() || String(rel || "");
-  return name
-    .replace(/\.(png|jpe?g|gif|webp|svg)$/i, "")
-    .replace(/_(?:intent|edited)(_[a-f0-9]+)?$/i, "")
-    .toLowerCase();
+  return outputGalleryDedupeKey(rel);
 }
 
 /**
- * 右侧图库去重键：按语义图型合并（pca_plot / vip_scores / Figure_1__pca 等），
- * intent 改图单独保留 stem。
+ * 右侧图库去重键：同一张图只留一张。
+ * pca_plot、Figure_1__pca_plot、pca_plot_intent 都归成 pca。
  */
 function outputGalleryDedupeKey(rel) {
   const name = String(rel || "").split("/").pop() || String(rel || "");
-  const stem = name.replace(/\.(png|jpe?g|gif|webp|svg)$/i, "").toLowerCase();
-  if (stem.includes("_intent") || stem.includes("_edited")) return stem;
+  const stem = name
+    .replace(/\.(png|jpe?g|gif|webp|svg)$/i, "")
+    .replace(/_(?:intent|edited)(?:_[a-f0-9]+)?$/i, "")
+    .toLowerCase();
   const aliases = [
     ["pca_plot", "pca"],
     ["plsda_plot", "plsda"],
@@ -363,7 +361,7 @@ function outputGalleryDedupeKey(rel) {
 }
 
 /**
- * 不同工具目录常产出同名 PNG；图库按文件名 stem 去重（intent 与原图分开展示）。
+ * 不同目录的同一张图只留一张：改图稿优先，否则报告图，再否则工具原图。
  * merged_figures 内互不去重。
  */
 function dedupeOutputImagesByBasename(files) {
@@ -641,8 +639,16 @@ function renderReportFigureCard(sessionId, fig) {
   if (fig.caption) {
     const cap = document.createElement("div");
     cap.className = "report-figure-card-caption";
-    cap.innerHTML = fig.caption.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+    cap.innerHTML = fig.caption.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/\n/g, "<br>");
     card.appendChild(cap);
+  }
+  if (fig.pdf_url) {
+    const pdf = document.createElement("a");
+    pdf.className = "report-figure-pdf";
+    pdf.href = fig.pdf_url;
+    pdf.download = String(fig.pdf_rel || "figure.pdf").split("/").pop();
+    pdf.textContent = t("image.downloadPdf");
+    card.appendChild(pdf);
   }
 
   if (fig.blocks && Object.keys(fig.blocks).length) {
@@ -1674,6 +1680,11 @@ function renderOutputImageGallery(files, sessionId) {
       ? createDownloadLink(sessionId, svgRel, "SVG")
       : null;
     if (svgDownload) svgDownload.classList.add("output-image-download");
+    const pdfRel = String(file.name || "").replace(/\.(png|jpe?g|gif|webp|svg)$/i, ".pdf");
+    const pdfDownload = fileNames.has(pdfRel)
+      ? createDownloadLink(sessionId, pdfRel, t("image.downloadPdf"))
+      : null;
+    if (pdfDownload) pdfDownload.classList.add("output-image-download");
 
     side.appendChild(title);
     side.appendChild(meta);
@@ -1707,6 +1718,7 @@ function renderOutputImageGallery(files, sessionId) {
         url,
         download,
         svgDownload,
+        pdfDownload,
       })
     );
 
@@ -1725,7 +1737,7 @@ function closeAllOutputImageMenus(except = null) {
   });
 }
 
-function buildOutputImageActionsMenu({ sessionId, file, url, download, svgDownload }) {
+function buildOutputImageActionsMenu({ sessionId, file, url, download, svgDownload, pdfDownload }) {
   const wrap = document.createElement("div");
   wrap.className = "output-image-menu";
 
@@ -1807,6 +1819,20 @@ function buildOutputImageActionsMenu({ sessionId, file, url, download, svgDownlo
         svgDownload.download ||
         String(file.name).split("/").pop().replace(/\.\w+$/i, ".svg") ||
         "download.svg";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    });
+  }
+
+  if (pdfDownload?.href) {
+    addItem(t("image.downloadPdf"), () => {
+      const a = document.createElement("a");
+      a.href = pdfDownload.href;
+      a.download =
+        pdfDownload.download ||
+        String(file.name).split("/").pop().replace(/\.\w+$/i, ".pdf") ||
+        "download.pdf";
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -2989,7 +3015,7 @@ function shouldUsePlotEdit(message) {
     return true;
   }
   const hasLitRestyle =
-    /知识库|RAG|ggsci|\bnpg\b|nature|lancet|jama|DOI[:\s]*\d|doi\.org|发表级|论文风|期刊风|(?:参考|按照?|对照|对齐|贴合).{0,24}(?:文献|论文|期刊|知识库|RAG|skill)|(?:文献|论文|期刊).{0,16}(?:规范|风格|配色|画法|样子|那种)|像(?:论文|文献|期刊).{0,10}(?:那样|那种|里)|按.{0,24}(?:那篇|这篇)/i.test(
+    /知识库|RAG|ggsci|\bnpg\b|nature|lancet|jama|DOI[:\s]*\d|doi\.org|发表级|论文风|期刊风|(?:参考(?!文献)|按照?|对照|对齐|贴合).{0,24}(?:文献|论文|期刊|知识库|RAG|skill)|(?:文献|论文|期刊).{0,16}(?:规范|风格|配色|画法|样子|那种)|像(?:论文|文献|期刊).{0,10}(?:那样|那种|里)|按.{0,24}(?:那篇|这篇)/i.test(
       text
     );
   const hasPlotRef =
@@ -4053,6 +4079,77 @@ function pickScoreStyle() {
   });
 }
 
+let plotEditKind = "style";
+
+function plotFamilyFromRel(rel) {
+  const name = String(rel || "").toLowerCase();
+  if (name.includes("network") || name.includes("拓扑")) return "network";
+  if (name.includes("volcano") || name.includes("火山")) return "volcano";
+  if (name.includes("heatmap") || name.includes("热图")) return "heatmap";
+  if (name.includes("kegg")) return "kegg";
+  if (name.includes("vip")) return "vip";
+  if (name.includes("pls")) return "plsda";
+  if (name.includes("pca") || name.includes("主成分")) return "pca";
+  return "other";
+}
+
+function resetPlotEditFields() {
+  ["plotEditTitle", "plotEditP", "plotEditFc", "plotEditVip", "plotEditFdr", "plotEditComp1", "plotEditComp2", "plotEditTopN"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  });
+}
+
+function showPlotEditKind(kind) {
+  plotEditKind = kind || "style";
+  document.querySelectorAll(".plot-edit-kind-tab").forEach((btn) => {
+    btn.classList.toggle("is-selected", btn.dataset.editKind === plotEditKind);
+  });
+  document.querySelectorAll("[data-kind-panel]").forEach((panel) => {
+    panel.classList.toggle("hidden", panel.dataset.kindPanel !== plotEditKind);
+  });
+  const family = plotFamilyFromRel(plotAgentState.sourceRel);
+  const allow = {
+    p: family === "volcano",
+    log2fc: family === "volcano",
+    vip: family === "vip" || family === "heatmap",
+    fdr: family === "kegg",
+    components: family === "pca" || family === "plsda",
+    topn: family === "vip" || family === "heatmap" || family === "kegg",
+  };
+  document.querySelectorAll("[data-param]").forEach((el) => {
+    el.classList.toggle("hidden", allow[el.dataset.param] !== true);
+  });
+  if (plotAgentEditorApply) plotAgentEditorApply.disabled = plotEditKind === "analysis_method";
+  if (plotEditKind === "analysis_method") {
+    setPlotAgentEditorStatus("分析方法要回到分析步骤重新执行。作图层不会改坐标，分子网络仍用原来的网络图。", "error");
+  } else {
+    setPlotAgentEditorStatus("");
+  }
+}
+
+function composeStructuredPlotInstruction() {
+  const bits = [];
+  const title = document.getElementById("plotEditTitle")?.value.trim();
+  if (plotEditKind === "style" && title) bits.push(`标题改为 ${title}`);
+  if (plotEditKind !== "analysis_param") return bits.join("，");
+  const value = (id) => document.getElementById(id)?.value.trim() || "";
+  const p = value("plotEditP");
+  const fc = value("plotEditFc");
+  const vip = value("plotEditVip");
+  const fdr = value("plotEditFdr");
+  const c1 = value("plotEditComp1");
+  const c2 = value("plotEditComp2");
+  const topn = value("plotEditTopN");
+  if (p) bits.push(`显著性阈值改为 P 小于 ${p}`);
+  if (fc) bits.push(`log2fc 大于 ${fc}`);
+  if (vip) bits.push(`VIP 阈值改为 ${vip}`);
+  if (fdr) bits.push(`只保留 FDR 小于 ${fdr} 的通路`);
+  if (c1 && c2) bits.push(`改用第 ${c1} 和 ${c2} 主成分`);
+  if (topn) bits.push(`前 ${topn} 条`);
+  return bits.join("，");
+}
+
 function openPlotAgentEditor({ rel, title }) {
   if (!plotAgentEditor) return;
   closeImageLightbox();
@@ -4063,6 +4160,11 @@ function openPlotAgentEditor({ rel, title }) {
   plotAgentState.sourceRel = rel;
   plotAgentState.sourceTitle = title || rel.split("/").pop();
   if (plotAgentInstruction) plotAgentInstruction.value = "";
+  resetPlotEditFields();
+  document.querySelectorAll(".plot-edit-kind-tab").forEach((btn) => {
+    btn.onclick = () => showPlotEditKind(btn.dataset.editKind);
+  });
+  showPlotEditKind("style");
   if (plotAgentPreviewWrap) plotAgentPreviewWrap.classList.add("hidden");
   if (plotAgentPreviewImg) {
     plotAgentPreviewImg.classList.add("hidden");
@@ -4176,9 +4278,15 @@ async function renderPlotAgentPreview(result) {
 
 async function submitPlotAgentEdit() {
   if (!currentSessionId || !plotAgentState.sourceRel) return;
-  const instruction = (plotAgentInstruction?.value || "").trim();
+  if (plotEditKind === "analysis_method") {
+    setPlotAgentEditorStatus("分析方法要回到分析步骤重新执行。作图层不会改坐标，分子网络仍用原来的网络图。", "error");
+    return;
+  }
+  const instruction = [composeStructuredPlotInstruction(), (plotAgentInstruction?.value || "").trim()]
+    .filter(Boolean)
+    .join("。");
   if (!instruction) {
-    setPlotAgentEditorStatus(t("image.plotAgentFail", { msg: "请先输入改图要求" }), "error");
+    setPlotAgentEditorStatus(t("image.plotAgentFail", { msg: "请先填写参数或输入改图要求" }), "error");
     return;
   }
   try {
@@ -4192,7 +4300,7 @@ async function submitPlotAgentEdit() {
         instruction,
         model: getEffectiveModelId(),
         score_style:
-          isScorePlotRel(plotAgentState.sourceRel) && plotAgentScoreStyleTouched
+          isScorePlotRel(plotAgentState.sourceRel) && plotAgentScoreStyle
             ? plotAgentScoreStyle
             : null,
         ...getClientLlmPayload(),
@@ -5987,12 +6095,27 @@ function shortStatusLabel(status) {
   return label && label !== key ? label : t("workflow.statusWaiting");
 }
 
+let workflowPlanLocked = false;
+
+function rememberPlanLock(status, session) {
+  if (session && Object.prototype.hasOwnProperty.call(session, "plan_locked_at")) {
+    workflowPlanLocked = Boolean(session.plan_locked_at);
+    return;
+  }
+  if (status === "EXECUTING" || status === "REPORTING" || status === "COMPLETED") {
+    workflowPlanLocked = true;
+  } else if (status === "WAITING_INPUT" || status === "PLANNING") {
+    workflowPlanLocked = false;
+  }
+}
+
 function renderWorkflowStepper(status) {
   const items = workflowStepper?.querySelectorAll("li") || [];
   const failed = status === "FAILED";
   const completed = status === "COMPLETED";
   const current = workflowStepIndex(status);
   const running = status === "PLANNING" || status === "EXECUTING" || status === "REPORTING";
+  const failedAt = workflowPlanLocked ? 3 : 1;
   items.forEach((el, index) => {
     el.classList.remove("is-current", "is-done", "is-error", "needs-action", "is-running");
     el.removeAttribute("aria-current");
@@ -6001,8 +6124,8 @@ function renderWorkflowStepper(status) {
       return;
     }
     if (failed) {
-      if (index < 3) el.classList.add("is-done");
-      else if (index === 3) el.classList.add("is-error");
+      if (index < failedAt) el.classList.add("is-done");
+      else if (index === failedAt) el.classList.add("is-error");
       return;
     }
     if (index < current) el.classList.add("is-done");
@@ -6180,8 +6303,9 @@ function applyWorkflowChrome(status) {
   syncStopButton();
 }
 
-function updateWorkflowStatus(status) {
+function updateWorkflowStatus(status, session) {
   const st = status || "WAITING_INPUT";
+  rememberPlanLock(st, session);
   if (workflowStatusEl) workflowStatusEl.textContent = shortStatusLabel(st);
   applyWorkflowChrome(st);
 }
@@ -6193,7 +6317,7 @@ async function loadSessionView(sessionId) {
   await loadMessages(sessionId);
   await loadWorkspaceFiles(sessionId);
   const data = await statusPromise;
-  updateWorkflowStatus(data?.session?.workflow_status || "WAITING_INPUT");
+  updateWorkflowStatus(data?.session?.workflow_status || "WAITING_INPUT", data?.session);
 }
 
 async function loadSharedMessages(sessionId) {
